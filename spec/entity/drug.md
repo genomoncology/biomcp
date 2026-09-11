@@ -27,6 +27,227 @@ All:
 ../../tools/biomcp-ci --json get drug pembrolizumab all | jq -e '((._meta.next_commands | any(. == "biomcp get drug pembrolizumab all --region us")) | not) and (._meta.next_commands | any(. == "biomcp get drug pembrolizumab approvals"))' | mustmatch 'true'
 ```
 
+The provider fixture exercises the production renderers, rather than only the
+pure owner. It keeps item order and resolved identities, compares the exact
+ordered command projection in single and two-item CLI cards, and checks that
+rendering discovery does not add provider requests.
+
+```bash
+python3 - <<'PY' | mustmatch like 'drug-card production projection passed'
+import json
+import os
+import select
+import shlex
+import subprocess
+import tempfile
+import time
+from urllib.parse import parse_qs, urlparse
+
+binary = os.environ["BIOMCP_BIN"]
+base_env = os.environ.copy()
+log = base_env["BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"]
+identities = ["imatinib", "warfarin"]
+resolved = ["imatinib mesylate", "warfarin"]
+expected = {
+    "imatinib": [
+        "biomcp get drug \"imatinib mesylate\" targets",
+        "biomcp get drug \"imatinib mesylate\" approvals",
+        "biomcp get drug \"imatinib mesylate\" label",
+        "biomcp get drug \"imatinib mesylate\" regulatory --region us",
+        "biomcp get drug \"imatinib mesylate\" all --region us",
+        "biomcp search article --drug \"imatinib mesylate\" --type review --limit 5",
+        "biomcp drug trials \"imatinib mesylate\"",
+        "biomcp drug adverse-events \"imatinib mesylate\"",
+        "biomcp search pgx -d \"imatinib mesylate\"",
+        "biomcp get gene ABL1",
+    ],
+    "warfarin": [
+        "biomcp get drug warfarin targets",
+        "biomcp get drug warfarin approvals",
+        "biomcp get drug warfarin label",
+        "biomcp get drug warfarin regulatory --region us",
+        "biomcp get drug warfarin all --region us",
+        "biomcp search article --drug warfarin --type review --limit 5",
+        "biomcp drug trials warfarin",
+        "biomcp drug adverse-events warfarin",
+        "biomcp search pgx -d warfarin",
+        "biomcp get gene VKORC1",
+    ],
+}
+
+def run(*args, extra_env=None, check=True):
+    child_env = base_env | {"BIOMCP_CACHE_DIR": tempfile.mkdtemp()}
+    child_env.update(extra_env or {})
+    return subprocess.run(
+        [binary, *args], env=child_env, text=True, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, check=check, timeout=60,
+    )
+
+def cli_json(*args, extra_env=None):
+    return json.loads(run("--json", *args, extra_env=extra_env).stdout)
+
+def reset_log():
+    open(log, "w", encoding="utf-8").close()
+
+def request_count():
+    return sum(bool(line.strip()) for line in open(log, encoding="utf-8"))
+
+def wait_for_count(expected):
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and request_count() < expected:
+        time.sleep(0.01)
+    return request_count()
+
+def guidance_commands(markdown):
+    commands = []
+    for line in markdown.splitlines():
+        line = line.strip()
+        if line.startswith("biomcp "):
+            commands.append(line.split("   -", 1)[0])
+        elif line.startswith("Retry: `"):
+            commands.append(line.removeprefix("Retry: `").split("`", 1)[0])
+    return commands
+
+reset_log()
+single_json = cli_json("get", "drug", identities[0])
+assert single_json["name"] == resolved[0]
+assert single_json["_meta"]["next_commands"] == expected[identities[0]]
+single_json_requests = wait_for_count(5)
+assert single_json_requests >= 5
+reset_log()
+single_markdown = run("get", "drug", identities[0]).stdout
+assert guidance_commands(single_markdown) == expected[identities[0]]
+assert wait_for_count(5) == single_json_requests
+
+multi_expected = [
+    "biomcp get drug \"imatinib mesylate\" targets",
+    "biomcp get drug \"imatinib mesylate\" approvals",
+    "biomcp get drug \"imatinib mesylate\" regulatory --region us",
+    "biomcp get drug \"imatinib mesylate\" safety --region us",
+    "biomcp get drug \"imatinib mesylate\" all --region us",
+    "biomcp search article --drug \"imatinib mesylate\" --type review --limit 5",
+    "biomcp drug trials \"imatinib mesylate\"",
+    "biomcp drug adverse-events \"imatinib mesylate\"",
+    "biomcp search pgx -d \"imatinib mesylate\"",
+    "biomcp get gene ABL1",
+]
+reset_log()
+multi_json = cli_json("get", "drug", "imatinib", "label", "targets")
+assert multi_json["_meta"]["next_commands"] == multi_expected
+multi_json_requests = wait_for_count(4)
+assert multi_json_requests >= 4
+reset_log()
+multi_markdown = run("get", "drug", "imatinib", "label", "targets").stdout
+assert guidance_commands(multi_markdown) == multi_expected
+assert wait_for_count(4) == multi_json_requests
+
+reset_log()
+batch_json = cli_json("batch", "drug", ",".join(identities))
+assert batch_json["summary"] == {"total": 2, "succeeded": 2, "failed": 0}
+assert [item["input"] for item in batch_json["items"]] == identities
+assert [item["result"]["name"] for item in batch_json["items"]] == resolved
+assert [item["result"]["_meta"]["next_commands"] for item in batch_json["items"]] == [expected[name] for name in identities]
+batch_json_requests = wait_for_count(10)
+assert batch_json_requests >= 10
+reset_log()
+batch_markdown = run("batch", "drug", ",".join(identities)).stdout
+assert batch_markdown.index("## imatinib — ok") < batch_markdown.index("## warfarin — ok")
+for identity in identities:
+    start = batch_markdown.index("## " + identity + " — ok")
+    end = batch_markdown.find("\n\n---", start)
+    item = batch_markdown[start:] if end < 0 else batch_markdown[start:end]
+    assert guidance_commands(item) == expected[identity]
+assert wait_for_count(10) == batch_json_requests
+
+def execute_emitted(command, extra_env=None):
+    argv = shlex.split(command)
+    assert argv[0] == "biomcp"
+    result = run(*argv[1:], extra_env=extra_env, check=False)
+    assert result.returncode == 0, (command, result.stderr)
+
+execution_card = cli_json("get", "drug", "pembrolizumab")
+for command in execution_card["_meta"]["next_commands"]:
+    if command.endswith((" approvals", " all --region us")) or "drug trials" in command or "adverse-events" in command:
+        execute_emitted(command)
+
+with tempfile.NamedTemporaryFile() as missing_ema:
+    recovery_env = {"BIOMCP_EMA_DIR": missing_ema.name}
+    recovery = cli_json("get", "drug", "pembrolizumab", "safety", "--region", "eu", extra_env=recovery_env)
+    assert recovery["section_outcomes"]["safety"]["outcome"] == "unavailable"
+    assert recovery["_meta"]["next_commands"][0] == "biomcp get drug pembrolizumab safety --region eu"
+    execute_emitted(recovery["_meta"]["next_commands"][0], recovery_env)
+    recovery_markdown = run("get", "drug", "pembrolizumab", "safety", "--region", "eu", extra_env=recovery_env).stdout
+    assert recovery_markdown.count("Retry: `biomcp get drug pembrolizumab safety --region eu`") == 1
+
+with tempfile.NamedTemporaryFile(delete=False) as sentinel:
+    sentinel_path = sentinel.name
+os.unlink(sentinel_path)
+hostile = "ticket1151 hostile 'x' \"q\" \\ $x `rm` ; & $(touch " + sentinel_path + ") path"
+reset_log()
+hostile_card = cli_json("get", "drug", hostile)
+assert hostile_card["name"] == hostile
+hostile_command = next(
+    command for command in hostile_card["_meta"]["next_commands"]
+    if command.endswith(" approvals")
+)
+reset_log()
+shell_env = base_env | {"PATH": os.path.dirname(binary) + ":" + base_env.get("PATH", ""), "BIOMCP_CACHE_DIR": tempfile.mkdtemp()}
+hostile_result = subprocess.run(hostile_command, shell=True, executable="/bin/bash", env=shell_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+assert hostile_result.returncode == 0
+assert not os.path.exists(sentinel_path)
+mychem = [line for line in open(log, encoding="utf-8") if line.startswith("GET /mychem/")]
+assert mychem
+for line in mychem:
+    location = line.split(" ", 1)[1].split(" ", 1)[0]
+    assert parse_qs(urlparse(location).query)["q"][0] == hostile
+
+def rpc(proc, message):
+    proc.stdin.write(json.dumps(message) + "\n")
+    proc.stdin.flush()
+    ready, _, _ = select.select([proc.stdout], [], [], 60)
+    assert ready, "MCP response timeout"
+    return json.loads(proc.stdout.readline())
+
+server_env = base_env | {"BIOMCP_CACHE_DIR": tempfile.mkdtemp()}
+server = subprocess.Popen(
+    [binary, "serve"], env=server_env, stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+)
+try:
+    rpc(server, {"jsonrpc":"2.0", "id":1, "method":"initialize", "params":{"protocolVersion":"2025-03-26", "capabilities":{}, "clientInfo":{"name":"spec", "version":"1"}}})
+    server.stdin.write(json.dumps({"jsonrpc":"2.0", "method":"notifications/initialized", "params":{}}) + "\n")
+    server.stdin.flush()
+    request_id = 2
+    def mcp(tool, arguments):
+        nonlocal_request_id[0] += 1
+        result = rpc(server, {"jsonrpc":"2.0", "id":nonlocal_request_id[0], "method":"tools/call", "params":{"name":tool, "arguments":arguments}})["result"]
+        assert result.get("isError") is False
+        return result["content"][0]["text"]
+    nonlocal_request_id = [1]
+    for json_output in (False, True):
+        cli_text = run(*((["--json"] if json_output else []) + ["get", "drug", "imatinib"])).stdout
+        args = {"command":"biomcp get drug imatinib", "json":json_output}
+        assert mcp("biomcp", args).rstrip("\n") == cli_text.rstrip("\n")
+        typed = {"entity":"drug", "id":"imatinib", "sections":[], "json":json_output}
+        assert mcp("get", typed).rstrip("\n") == cli_text.rstrip("\n")
+    for json_output in (False, True):
+        cli_args = (["--json"] if json_output else []) + ["batch", "drug", "imatinib,warfarin"]
+        cli_text = run(*cli_args).stdout
+        raw_args = {"command":"biomcp batch drug imatinib,warfarin", "json":json_output}
+        assert mcp("biomcp", raw_args).rstrip("\n") == cli_text.rstrip("\n")
+    tools = rpc(server, {"jsonrpc":"2.0", "id":99, "method":"tools/list", "params":{}})["result"]["tools"]
+    assert [tool["name"] for tool in tools] == ["biomcp", "search", "get", "variant_normalize_car", "variant_erepo", "gene_cspec", "variant_articles"]
+    get_schema = next(tool["inputSchema"] for tool in tools if tool["name"] == "get")
+    drug_branch = next(branch for branch in get_schema["oneOf"] if branch["properties"]["entity"]["const"] == "drug")
+    assert drug_branch["properties"]["sections"]["items"]["enum"] == ["label", "regulatory", "safety", "shortage", "targets", "indications", "interactions", "civic", "approvals", "all"]
+finally:
+    server.terminate()
+    server.wait(timeout=5)
+
+print("drug-card production projection passed")
+PY
+```
+
 ## Multi-Region Search
 
 Plain-name search should still show the same drug family across the U.S., EU,

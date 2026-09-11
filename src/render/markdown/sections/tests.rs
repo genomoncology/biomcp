@@ -182,6 +182,173 @@ fn drug_command_discovery_quotes_identity_and_recovery_is_rendered_once() {
 }
 
 #[test]
+fn drug_command_discovery_has_exact_single_section_projections() {
+    let cases = [
+        ("approvals", ["label", "regulatory", "safety"]),
+        ("label", ["approvals", "regulatory", "safety"]),
+        ("regulatory", ["approvals", "label", "safety"]),
+        ("safety", ["approvals", "label", "regulatory"]),
+        ("shortage", ["approvals", "label", "regulatory"]),
+        ("interactions", ["approvals", "label", "regulatory"]),
+        ("indications", ["approvals", "label", "regulatory"]),
+        ("targets", ["approvals", "label", "regulatory"]),
+        ("civic", ["approvals", "label", "regulatory"]),
+    ];
+    for (requested, expected) in cases {
+        let discovery =
+            drug_command_discovery(&discovery_drug(), &[requested.to_string()], DrugRegion::Us);
+        assert_eq!(
+            discovery
+                .sections
+                .iter()
+                .map(|entry| entry.section.as_str())
+                .collect::<Vec<_>>(),
+            expected,
+            "single section {requested}"
+        );
+        assert_eq!(
+            discovery.all.as_deref(),
+            Some("biomcp get drug eflornithine all --region us")
+        );
+    }
+}
+
+#[test]
+fn drug_command_discovery_recovery_is_exact_for_unavailable_and_degraded_sections() {
+    for outcome in [
+        crate::entities::section_outcome::SectionOutcome::unavailable("fixture outage"),
+        crate::entities::section_outcome::SectionOutcome::degraded(
+            ["fixture"],
+            "fixture degradation",
+        ),
+    ] {
+        for section in [
+            "approvals",
+            "safety",
+            "targets",
+            "indications",
+            "interactions",
+            "civic",
+        ] {
+            let mut drug = discovery_drug();
+            drug.section_outcomes.complete(section, outcome.clone());
+            let discovery = drug_command_discovery(&drug, &[section.to_string()], DrugRegion::Eu);
+            let suffix = if section == "safety" {
+                " --region eu"
+            } else {
+                ""
+            };
+            assert_eq!(
+                discovery.recovery,
+                vec![DrugCommand {
+                    section: section.to_string(),
+                    command: format!("biomcp get drug eflornithine {section}{suffix}"),
+                }]
+            );
+            assert_eq!(discovery.next_commands[0], discovery.recovery[0].command);
+        }
+    }
+}
+
+#[test]
+fn drug_command_discovery_covers_sparse_related_and_cap_boundaries() {
+    let mut complete = discovery_drug();
+    complete.label = Some(serde_json::from_value(serde_json::json!({})).unwrap());
+    complete.approvals = Some(Vec::new());
+    complete.ema_regulatory = Some(Vec::new());
+    complete.indications.push("fixture indication".to_string());
+    complete.targets.clear();
+    let related = drug_command_discovery(&complete, &[], DrugRegion::Us).related;
+    assert_eq!(
+        related,
+        vec![
+            "biomcp drug trials eflornithine",
+            "biomcp drug adverse-events eflornithine",
+            "biomcp search pgx -d eflornithine",
+        ]
+    );
+
+    let mut sparse = discovery_drug();
+    sparse.targets.clear();
+    let sparse_related = drug_command_discovery(&sparse, &[], DrugRegion::Us).related;
+    assert!(
+        sparse_related
+            .iter()
+            .any(|command| command.contains("--type review"))
+    );
+    assert!(
+        !sparse_related
+            .iter()
+            .any(|command| command.contains("get gene"))
+    );
+
+    for (count, expected_len) in [(4, 9), (5, 10), (6, 10)] {
+        let mut drug = discovery_drug();
+        for section in [
+            "approvals",
+            "safety",
+            "targets",
+            "indications",
+            "interactions",
+            "civic",
+        ]
+        .into_iter()
+        .take(count)
+        {
+            drug.section_outcomes.complete(
+                section,
+                crate::entities::section_outcome::SectionOutcome::unavailable("fixture outage"),
+            );
+        }
+        let discovery = drug_command_discovery(
+            &drug,
+            &["all".to_string(), "approvals".to_string()],
+            DrugRegion::Us,
+        );
+        assert_eq!(discovery.next_commands.len(), expected_len, "count={count}");
+        assert_eq!(
+            discovery.next_commands[..count],
+            discovery
+                .recovery
+                .iter()
+                .map(|entry| entry.command.clone())
+                .collect::<Vec<_>>()[..]
+        );
+    }
+}
+
+#[test]
+fn drug_command_discovery_deduplicates_exact_commands_and_respects_regions() {
+    let mut seen = HashSet::new();
+    let mut output = Vec::new();
+    push_exact_capped("same bytes".to_string(), &mut seen, &mut output);
+    push_exact_capped("same bytes".to_string(), &mut seen, &mut output);
+    push_exact_capped("SAME BYTES".to_string(), &mut seen, &mut output);
+    assert_eq!(output, vec!["same bytes", "SAME BYTES"]);
+
+    for (region, label) in [
+        (DrugRegion::Us, "us"),
+        (DrugRegion::Eu, "eu"),
+        (DrugRegion::Who, "who"),
+        (DrugRegion::All, "all"),
+    ] {
+        let discovery = drug_command_discovery(&discovery_drug(), &["targets".to_string()], region);
+        assert!(discovery.next_commands.iter().any(|command| {
+            command == &format!("biomcp get drug eflornithine regulatory --region {label}")
+        }));
+        assert!(discovery.next_commands.iter().any(|command| {
+            command == &format!("biomcp get drug eflornithine all --region {label}")
+        }));
+        if region == DrugRegion::Who {
+            assert!(discovery.next_commands.iter().all(|command| {
+                !command.contains(" get drug eflornithine safety")
+                    && !command.contains(" get drug eflornithine shortage")
+            }));
+        }
+    }
+}
+
+#[test]
 fn sections_pathway_for_kegg_excludes_unsupported_sections() {
     let pathway = Pathway {
         section_outcomes: Default::default(),

@@ -95,4 +95,6 @@ report.
 - Design review: ACCEPT on current main; no material findings. The reviewer
   confirmed the rendering owner, dependency, scope, acceptance, and level 2
   Luna High route.
-- Code review: pending.
+- Code review: REJECT on `cd3fef3b`. The projection logic is focused, but the
+  candidate lacks production-path batch/MCP/command-execution evidence and
+  several exact pure cases required above. Remediation pending.
