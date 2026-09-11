@@ -8,15 +8,13 @@ use tracing::warn;
 use crate::entities::SearchPage;
 use crate::entities::drug::{TrialAlias, TrialAliasSource, resolve_trial_aliases_with_sources};
 use crate::error::BioMcpError;
-use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams};
-use crate::utils::date::validate_since;
+use crate::sources::clinicaltrials::ClinicalTrialsClient;
 
 use super::super::TrialCountUnknownReason;
 use super::super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};
 use super::eligibility::ctgov_nct_id;
 use super::{
-    CtGovSearchContext, build_essie_fragments, essie_escape, essie_escape_boolean_expression,
-    normalize_sex, normalize_sponsor_type, prepare_ctgov_search_context, quote_essie_literal,
+    CtGovSearchContext, biodata_plan_error, prepare_ctgov_search_context,
     sort_trials_by_status_priority, validate_search_page_args, validate_trial_search,
     verify_age_eligibility, verify_detail_filters,
 };
@@ -25,228 +23,30 @@ pub(super) const CTGOV_COUNT_PAGE_SIZE: usize = 1000;
 const CTGOV_MAX_PAGE_FETCHES: usize = 20;
 pub(super) const COUNT_TRAVERSAL_PAGE_CAP: usize = 50;
 
-pub(super) fn ctgov_agg_filters(
+fn build_ctgov_search_plan(
     filters: &TrialSearchFilters,
-) -> Result<Option<String>, BioMcpError> {
-    let mut facets: Vec<String> = Vec::new();
-
-    if let Some(sex) = filters
-        .sex
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        && let Some(code) = normalize_sex(sex)?
-    {
-        facets.push(format!("sex:{code}"));
-    }
-
-    if let Some(sponsor_type) = filters
-        .sponsor_type
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        facets.push(format!(
-            "funderType:{}",
-            normalize_sponsor_type(sponsor_type)?
-        ));
-    }
-
-    if facets.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(facets.join(",")))
-    }
-}
-
-pub(super) fn validate_location(filters: &TrialSearchFilters) -> Result<(), BioMcpError> {
-    let has_lat = filters.lat.is_some();
-    let has_lon = filters.lon.is_some();
-    let has_distance = filters.distance.is_some();
-
-    if filters
-        .lat
-        .is_some_and(|lat| !lat.is_finite() || !(-90.0..=90.0).contains(&lat))
-    {
-        return Err(BioMcpError::InvalidArgument(
-            "--lat must be finite and between -90 and 90".into(),
-        ));
-    }
-    if filters
-        .lon
-        .is_some_and(|lon| !lon.is_finite() || !(-180.0..=180.0).contains(&lon))
-    {
-        return Err(BioMcpError::InvalidArgument(
-            "--lon must be finite and between -180 and 180".into(),
-        ));
-    }
-    if filters.distance == Some(0) {
-        return Err(BioMcpError::InvalidArgument(
-            "--distance must be greater than 0".into(),
-        ));
-    }
-    if has_distance && (!has_lat || !has_lon) {
-        return Err(BioMcpError::InvalidArgument(
-            "--distance requires both --lat and --lon".into(),
-        ));
-    }
-    if (has_lat || has_lon) && !has_distance {
-        return Err(BioMcpError::InvalidArgument(
-            "--lat/--lon requires --distance".into(),
-        ));
-    }
-    if has_lat != has_lon {
-        return Err(BioMcpError::InvalidArgument(
-            "--lat and --lon must be provided together".into(),
-        ));
-    }
-    Ok(())
-}
-
-pub(super) fn ctgov_query_term(
-    filters: &TrialSearchFilters,
-    normalized_phase: Option<&[String]>,
-) -> Result<Option<String>, BioMcpError> {
-    let mut terms: Vec<String> = Vec::new();
-
-    if let Some(phases) = normalized_phase {
-        if phases.len() == 1 {
-            terms.push(format!("AREA[Phase]{}", phases[0]));
-        } else if !phases.is_empty() {
-            let inner = phases
-                .iter()
-                .map(|phase| format!("AREA[Phase]{phase}"))
-                .collect::<Vec<_>>()
-                .join(" AND ");
-            terms.push(format!("({inner})"));
-        }
-    }
-    if let Some(sponsor) = filters
-        .sponsor
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        let sponsor = essie_escape(sponsor);
-        terms.push(format!("AREA[LeadSponsorName]\"{sponsor}\""));
-    }
-    if let Some(mutation) = filters
-        .mutation
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        let mutation = essie_escape_boolean_expression(mutation);
-        terms.push(format!(
-            "(AREA[EligibilityCriteria]({mutation}) OR AREA[BriefTitle]({mutation}) \
-             OR AREA[OfficialTitle]({mutation}) OR AREA[BriefSummary]({mutation}) \
-             OR AREA[Keyword]({mutation}))"
-        ));
-    }
-    if let Some(criteria) = filters
-        .criteria
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        let criteria = essie_escape_boolean_expression(criteria);
-        terms.push(format!("AREA[EligibilityCriteria]({criteria})"));
-    }
-    if let Some(biomarker) = filters
-        .biomarker
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        let biomarker = essie_escape(biomarker);
-        terms.push(format!(
-            "(AREA[Keyword]\"{biomarker}\" OR AREA[InterventionName]\"{biomarker}\" OR AREA[Condition]\"{biomarker}\")"
-        ));
-    }
-    if let Some(study_type) = filters
-        .study_type
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        let study_type = essie_escape(study_type);
-        terms.push(format!("AREA[StudyType]\"{study_type}\""));
-    }
-    terms.extend(build_essie_fragments(filters)?);
-    if let Some(date_from) = filters
-        .date_from
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        let date_from = validate_since(date_from)?;
-        let date_to = filters
-            .date_to
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-            .map(validate_since)
-            .transpose()?;
-        if let Some(date_to) = date_to.as_deref() {
-            if date_from.as_str() > date_to {
-                return Err(BioMcpError::InvalidArgument(
-                    "--date-from must be <= --date-to".into(),
-                ));
-            }
-            terms.push(format!(
-                "AREA[LastUpdatePostDate]RANGE[{date_from},{date_to}]"
-            ));
-        } else {
-            terms.push(format!("AREA[LastUpdatePostDate]RANGE[{date_from},MAX]"));
-        }
-    } else if let Some(date_to) = filters
-        .date_to
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        let date_to = validate_since(date_to)?;
-        terms.push(format!("AREA[LastUpdatePostDate]RANGE[MIN,{date_to}]"));
-    }
-    if filters.results_available {
-        terms.push("AREA[ResultsFirstPostDate]RANGE[MIN,MAX]".to_string());
-    }
-    if terms.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(terms.join(" AND ")))
-    }
-}
-
-fn build_ctgov_search_params(
-    filters: &TrialSearchFilters,
-    context: &CtGovSearchContext,
+    _context: &CtGovSearchContext,
     condition_query: Option<&str>,
     intervention_query: Option<&str>,
     page_token: Option<String>,
     page_size: usize,
     count_total: bool,
-) -> CtGovSearchParams {
-    CtGovSearchParams {
-        condition: condition_query.map(str::to_string),
-        intervention: intervention_query.map(str::trim).map(quote_essie_literal),
-        facility: context.facility.clone(),
-        status: context.normalized_status.clone(),
-        agg_filters: context.agg_filters.clone(),
-        query_term: context.query_term.clone(),
-        fields_override: None,
-        count_total,
-        page_token,
+) -> Result<biodata::ClinicalTrialsGovApiV2SearchPlan, BioMcpError> {
+    let mut fields = super::biodata_filter_fields(filters, intervention_query);
+    fields.condition = condition_query.map(str::to_owned);
+    let filters = biodata::ClinicalTrialSearchFilters::new(fields, Default::default())
+        .map_err(|error| biodata_plan_error("invalid trial search", error))?;
+    biodata::ClinicalTrialsGovApiV2SearchPlan::new(
+        &filters,
         page_size,
-        lat: filters.lat,
-        lon: filters.lon,
-        distance_miles: filters.distance,
-    }
+        page_token.as_deref(),
+        count_total,
+    )
+    .map_err(|error| biodata_plan_error("invalid ClinicalTrials.gov trial search", error))
 }
 
 async fn apply_ctgov_post_filters(
     client: &ClinicalTrialsClient,
-    filters: &TrialSearchFilters,
     context: &CtGovSearchContext,
     mut studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
 ) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
@@ -256,7 +56,7 @@ async fn apply_ctgov_post_filters(
         .map(|(facility, lat, lon, distance)| (facility.as_str(), *lat, *lon, *distance));
     studies =
         verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await;
-    if let Some(age) = filters.age {
+    if let Some(age) = context.age_verification {
         studies = verify_age_eligibility(studies, age);
     }
     studies
@@ -348,6 +148,9 @@ fn raw_intervention_query(filters: &TrialSearchFilters) -> Option<&str> {
         .filter(|value| !value.is_empty())
 }
 
+#[cfg(test)]
+mod tests;
+
 async fn resolve_ctgov_intervention_aliases(
     filters: &TrialSearchFilters,
 ) -> Result<Vec<TrialAlias>, BioMcpError> {
@@ -386,7 +189,7 @@ async fn fetch_ctgov_raw_page(
 ) -> Result<CtGovRawPage, BioMcpError> {
     let count_total = !filters.no_count_total;
     let resp = client
-        .search(&build_ctgov_search_params(
+        .search(&build_ctgov_search_plan(
             filters,
             context,
             condition_query,
@@ -394,7 +197,7 @@ async fn fetch_ctgov_raw_page(
             page_token,
             page_size,
             count_total,
-        ))
+        )?)
         .await?;
 
     Ok(CtGovRawPage {
@@ -430,7 +233,7 @@ async fn fetch_ctgov_filtered_page(
     )
     .await?;
     if page.raw_study_count > 0 {
-        page.studies = apply_ctgov_post_filters(client, filters, context, page.studies).await;
+        page.studies = apply_ctgov_post_filters(client, context, page.studies).await;
     }
     Ok(page)
 }
@@ -761,7 +564,7 @@ async fn search_page_with_ctgov_union(
                     continue;
                 };
                 if nct_id.is_empty()
-                    && filters.age.is_some_and(|age| {
+                    && context.age_verification.is_some_and(|age| {
                         verify_age_eligibility(vec![study.clone()], age).is_empty()
                     })
                 {
@@ -784,8 +587,7 @@ async fn search_page_with_ctgov_union(
             }
         }
 
-        let verified_studies =
-            apply_ctgov_post_filters(client, filters, context, round_studies).await;
+        let verified_studies = apply_ctgov_post_filters(client, context, round_studies).await;
         push_ctgov_union_rows(
             &mut merged_rows,
             &mut merged_index,
@@ -828,7 +630,7 @@ pub(super) async fn search_page_with_ctgov_client(
 
     validate_search_page_args(limit, offset, next_page.as_deref())?;
     let normalized = validate_trial_search(filters)?;
-    let context = prepare_ctgov_search_context(filters, &normalized)?;
+    let context = prepare_ctgov_search_context(&normalized)?;
     let condition_query = raw_condition_query(filters);
     let aliases = resolve_ctgov_intervention_aliases(filters).await?;
 
@@ -943,8 +745,7 @@ async fn count_all_with_ctgov_union(
             }
         }
 
-        let verified_studies =
-            apply_ctgov_post_filters(client, filters, context, round_studies).await;
+        let verified_studies = apply_ctgov_post_filters(client, context, round_studies).await;
         add_unique_ctgov_nct_ids(&mut unique_nct_ids, verified_studies);
     }
 }
@@ -961,7 +762,7 @@ pub(super) async fn count_all_with_ctgov_client(
     }
 
     let normalized = validate_trial_search(filters)?;
-    let context = prepare_ctgov_search_context(filters, &normalized)?;
+    let context = prepare_ctgov_search_context(&normalized)?;
     let condition_query = raw_condition_query(filters);
     let aliases = resolve_ctgov_intervention_aliases(filters).await?;
 
@@ -979,7 +780,7 @@ pub(super) async fn count_all_with_ctgov_client(
 
     if !context.uses_expensive_post_filters {
         let resp = client
-            .search(&build_ctgov_search_params(
+            .search(&build_ctgov_search_plan(
                 filters,
                 &context,
                 raw_condition_query(filters),
@@ -987,12 +788,15 @@ pub(super) async fn count_all_with_ctgov_client(
                 None,
                 1,
                 true,
-            ))
+            )?)
             .await?;
         let total = resp
             .total_count()
             .and_then(|total| usize::try_from(total).ok());
-        return Ok(ctgov_count_from_native_total(total, filters.age.is_some()));
+        return Ok(ctgov_count_from_native_total(
+            total,
+            context.age_verification.is_some(),
+        ));
     }
 
     let mut verified_total = 0usize;
@@ -1005,7 +809,7 @@ pub(super) async fn count_all_with_ctgov_client(
         }
 
         let resp = client
-            .search(&build_ctgov_search_params(
+            .search(&build_ctgov_search_plan(
                 filters,
                 &context,
                 raw_condition_query(filters),
@@ -1013,7 +817,7 @@ pub(super) async fn count_all_with_ctgov_client(
                 page_token.clone(),
                 CTGOV_COUNT_PAGE_SIZE,
                 true,
-            ))
+            )?)
             .await?;
         page_count += 1;
 
@@ -1023,7 +827,6 @@ pub(super) async fn count_all_with_ctgov_client(
             .map(str::to_owned);
         let studies = apply_ctgov_post_filters(
             client,
-            filters,
             &context,
             resp.results().unwrap_or_default().to_vec(),
         )
@@ -1038,6 +841,3 @@ pub(super) async fn count_all_with_ctgov_client(
 
     Ok(TrialCount::Exact(verified_total))
 }
-
-#[cfg(test)]
-mod tests;

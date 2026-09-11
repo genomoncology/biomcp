@@ -5,8 +5,7 @@ use crate::entities::drug::resolve_trial_aliases;
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{
-    CTGOV_ADVERSE_EVENT_SEARCH_FIELDS, ClinicalTrialsClient, CtGovAdverseEventStudy,
-    CtGovSearchParams,
+    ClinicalTrialsClient, CtGovAdverseEventSearchParams, CtGovAdverseEventStudy,
 };
 use crate::sources::cvx::{CvxClient, CvxSyncMode, CvxVaccineCandidate};
 use crate::sources::openfda::{FaersEventResult, OpenFdaClient, OpenFdaResponse};
@@ -1267,20 +1266,11 @@ async fn fetch_ctgov_studies_for_alias(
 
     for _ in 0..CTGOV_ADVERSE_EVENT_PAGE_CAP {
         let response = client
-            .search_adverse_events(&CtGovSearchParams {
-                condition: None,
+            .search_adverse_events(&CtGovAdverseEventSearchParams {
                 intervention: Some(alias.to_string()),
-                facility: None,
-                status: None,
                 agg_filters: Some("results:with".into()),
-                query_term: None,
-                fields_override: Some(CTGOV_ADVERSE_EVENT_SEARCH_FIELDS.into()),
-                count_total: false,
                 page_token: page_token.clone(),
                 page_size: CTGOV_ADVERSE_EVENT_PAGE_SIZE,
-                lat: None,
-                lon: None,
-                distance_miles: None,
             })
             .await?;
 

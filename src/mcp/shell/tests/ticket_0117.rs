@@ -206,11 +206,22 @@ async fn ctgov_source_client_transport_preserves_exact_result_digest() {
     let _env = SearchFixtureEnv::set("ctgov", &base);
     let page = crate::sources::clinicaltrials::ClinicalTrialsClient::new()
         .expect("CTGov client")
-        .search(&crate::sources::clinicaltrials::CtGovSearchParams {
-            condition: Some("transport condition".into()),
-            page_size: 1,
-            ..Default::default()
-        })
+        .search(
+            &biodata::ClinicalTrialsGovApiV2SearchPlan::new(
+                &biodata::ClinicalTrialSearchFilters::new(
+                    biodata::ClinicalTrialSearchFilterFields {
+                        condition: Some("transport condition".into()),
+                        ..Default::default()
+                    },
+                    Default::default(),
+                )
+                .expect("filters"),
+                1,
+                None,
+                false,
+            )
+            .expect("plan"),
+        )
         .await
         .expect("transported CTGov page");
     server.abort();
@@ -231,11 +242,22 @@ async fn nci_source_client_transport_preserves_exact_result_digest() {
     let _env = SearchFixtureEnv::set("nci", &base);
     let page = crate::sources::nci_cts::NciCtsClient::new()
         .expect("NCI client")
-        .search(&crate::sources::nci_cts::NciSearchParams {
-            biomarkers: Some("BRAF".into()),
-            size: 1,
-            ..Default::default()
-        })
+        .search(
+            &biodata::NciCtsV2SearchPlan::new(
+                &biodata::ClinicalTrialSearchFilters::new(
+                    biodata::ClinicalTrialSearchFilterFields {
+                        biomarker: Some("BRAF".into()),
+                        ..Default::default()
+                    },
+                    Default::default(),
+                )
+                .expect("filters"),
+                None,
+                1,
+                0,
+            )
+            .expect("plan"),
+        )
         .await
         .expect("transported NCI page");
     server.abort();
@@ -246,4 +268,43 @@ async fn nci_source_client_transport_preserves_exact_result_digest() {
             .digest(),
         first_raw_digest(BODY, "data")
     );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn ticket_0118_refusals_are_safe_across_raw_typed_and_markdown_search() {
+    const BODY: &[u8] = br#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT41300018","briefTitle":"Typed 0118 result"},"statusModule":{"overallStatus":"RECRUITING"}}}],"totalCount":1}"#;
+    let (base, server) = fixture_server(BODY).await;
+    let _env = SearchFixtureEnv::set("ctgov", &base);
+    let command = "biomcp search trial --status active --limit 1";
+    let raw_json = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: command.into(),
+            json: true,
+        }))
+        .await
+        .expect("raw MCP JSON refusal");
+    let raw_markdown = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: command.into(),
+            json: false,
+        }))
+        .await
+        .expect("raw MCP Markdown refusal");
+    let typed = BioMcpServer::new()
+        .search(rmcp::handler::server::wrapper::Parameters(TypedSearch(
+            json!({"entity":"trial", "source":"ctgov", "condition":["melanoma"], "limit":1, "json":true}),
+        )))
+        .await
+        .expect("typed MCP search");
+    server.abort();
+
+    for result in [raw_json, raw_markdown] {
+        let public = mcp_text(result);
+        assert!(public.contains("recruiting"));
+        assert!(public.contains("active_not_recruiting"));
+        assert!(!public.contains("status: active"));
+    }
+    let typed_public = mcp_text(typed);
+    assert!(typed_public.contains("NCT41300018"));
 }

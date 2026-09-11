@@ -7,8 +7,7 @@ use tracing::warn;
 
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 
-use super::super::{TRIAL_SECTION_ELIGIBILITY, TRIAL_SECTION_LOCATIONS, TrialSearchFilters};
-use super::has_boolean_operators;
+use super::super::{TRIAL_SECTION_ELIGIBILITY, TRIAL_SECTION_LOCATIONS};
 
 const DETAIL_VERIFY_CONCURRENCY: usize = 8;
 
@@ -235,44 +234,28 @@ fn eligibility_keyword_in_inclusion(
     !keyword_has_negative_inclusion_context(inclusion_text, &keyword)
 }
 
-pub(super) fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<String> {
+pub(super) fn collect_eligibility_keywords(
+    filters: &biodata::ClinicalTrialSearchFilters,
+) -> Vec<String> {
     let mut keywords = Vec::new();
 
-    if let Some(mutation) = filters
-        .mutation
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        && !has_boolean_operators(mutation)
+    if let Some(mutation) = filters.mutation()
+        && !filters.mutation_has_boolean_operators()
     {
         keywords.push(mutation.to_string());
     }
 
-    if let Some(criteria) = filters
-        .criteria
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        && !has_boolean_operators(criteria)
+    if let Some(criteria) = filters.criteria()
+        && !filters.criteria_has_boolean_operators()
     {
         keywords.push(criteria.to_string());
     }
 
-    if let Some(prior_therapies) = filters
-        .prior_therapies
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    {
+    if let Some(prior_therapies) = filters.prior_therapies() {
         keywords.push(prior_therapies.to_string());
     }
 
-    if let Some(progression_on) = filters
-        .progression_on
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    {
+    if let Some(progression_on) = filters.progression_on() {
         keywords.push(progression_on.to_string());
     }
 

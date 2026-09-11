@@ -1,166 +1,110 @@
-//! NCI CTS trial search helpers.
-
+//! NCI CTS trial search orchestration. BioData owns request grammar.
+use super::super::{TrialSearchFilters, TrialSearchResult};
+use super::{NormalizedTrialSearch, biodata_plan_error};
 use crate::entities::SearchPage;
 use crate::entities::disease::resolve_disease_hit_by_name;
 use crate::error::BioMcpError;
 use crate::sources::mydisease::{MyDiseaseClient, MyDiseaseHit};
-use crate::sources::nci_cts::{
-    NciCtsClient, NciDiseaseFilter, NciGeoFilter, NciSearchParams, NciStatusFilter,
-};
+use crate::sources::nci_cts::NciCtsClient;
 use crate::transform;
 use tracing::warn;
 
-use super::super::{TrialSearchFilters, TrialSearchResult};
-use super::{NormalizedTrialSearch, nci_biomarker_value, normalized_facility_filter};
-
-async fn resolve_nci_disease_filter_with_client(
+async fn resolve_disease(
     client: &MyDiseaseClient,
     condition: Option<&str>,
-) -> Result<Option<NciDiseaseFilter>, BioMcpError> {
-    let Some(condition) = condition.map(str::trim).filter(|value| !value.is_empty()) else {
+) -> Result<Option<biodata::NciCtsV2DiseaseSelection>, BioMcpError> {
+    let Some(condition) = condition.map(str::trim).filter(|v| !v.is_empty()) else {
         return Ok(None);
     };
-
     match resolve_disease_hit_by_name(client, condition).await {
-        Ok(hit) => Ok(Some(nci_disease_filter_from_hit(condition, hit))),
-        Err(BioMcpError::NotFound { .. }) => {
-            Ok(Some(NciDiseaseFilter::Keyword(condition.to_string())))
-        }
-        Err(err) => {
-            warn!(
-                condition,
-                error = %err,
-                "NCI disease grounding failed, falling back to keyword"
-            );
-            Ok(Some(NciDiseaseFilter::Keyword(condition.to_string())))
+        Ok(hit) => Ok(Some(from_hit(condition, hit))),
+        Err(BioMcpError::NotFound { .. }) => Ok(Some(biodata::NciCtsV2DiseaseSelection::Keyword(
+            condition.to_owned(),
+        ))),
+        Err(error) => {
+            warn!(error=%error,"NCI disease grounding failed; using the keyword fallback");
+            Ok(Some(biodata::NciCtsV2DiseaseSelection::Keyword(
+                condition.to_owned(),
+            )))
         }
     }
 }
-
-fn nci_disease_filter_from_hit(condition: &str, hit: MyDiseaseHit) -> NciDiseaseFilter {
+fn from_hit(condition: &str, hit: MyDiseaseHit) -> biodata::NciCtsV2DiseaseSelection {
     let mut disease = transform::disease::from_mydisease_hit(hit);
-    if let Some(nci_id) = disease
+    disease
         .xrefs
         .remove("NCI")
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-    {
-        NciDiseaseFilter::ConceptId(nci_id)
-    } else {
-        NciDiseaseFilter::Keyword(condition.to_string())
-    }
+        .map(|v| v.trim().to_owned())
+        .filter(|v| !v.is_empty())
+        .map_or_else(
+            || biodata::NciCtsV2DiseaseSelection::Keyword(condition.to_owned()),
+            biodata::NciCtsV2DiseaseSelection::ConceptId,
+        )
 }
 
 pub(super) async fn search_page_with_nci_clients(
     client: &NciCtsClient,
-    mydisease_client: &MyDiseaseClient,
+    mydisease: &MyDiseaseClient,
     filters: &TrialSearchFilters,
     normalized: &NormalizedTrialSearch,
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
-    let params = NciSearchParams {
-        disease: resolve_nci_disease_filter_with_client(
-            mydisease_client,
-            filters.condition.as_deref(),
-        )
-        .await?,
-        interventions: filters.intervention.clone(),
-        sites_org_name: normalized_facility_filter(filters),
-        status: nci_status_filter(normalized.normalized_status.as_deref())?,
-        phases: nci_phase_filters(normalized.normalized_phase.as_deref())?,
-        geo: nci_geo_filter(filters),
-        biomarkers: nci_biomarker_value(filters)?,
-        size: limit,
-        from: offset,
-    };
-
-    let resp = client.search(&params).await?;
+    let disease = resolve_disease(mydisease, filters.condition.as_deref()).await?;
+    let plan = biodata::NciCtsV2SearchPlan::new(&normalized.biodata, disease, limit, offset)
+        .map_err(|error| biodata_plan_error("invalid NCI trial search", error))?;
+    let response = client.search(&plan).await?;
     Ok(SearchPage::offset(
-        resp.results()
+        response
+            .results()
             .unwrap_or_default()
             .iter()
-            .map(|result| TrialSearchResult::from_biodata(result.projection().value()))
+            .map(|r| TrialSearchResult::from_biodata(r.projection().value()))
             .collect::<Result<Vec<_>, _>>()?,
-        resp.total_count()
-            .and_then(|value| usize::try_from(value).ok()),
+        response.total_count().and_then(|v| usize::try_from(v).ok()),
     ))
 }
 
-fn nci_status_filter(value: Option<&str>) -> Result<Option<NciStatusFilter>, BioMcpError> {
-    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
-        return Ok(None);
-    };
-
-    if value.contains(',') {
-        return Err(BioMcpError::InvalidArgument(
-            "--status accepts one mapped status at a time for --source nci; comma-separated status lists are not supported".into(),
-        ));
-    }
-
-    let filter = match value {
-        "RECRUITING" => NciStatusFilter::SiteRecruitmentStatus("ACTIVE".into()),
-        "NOT_YET_RECRUITING" => NciStatusFilter::CurrentTrialStatus("Approved".into()),
-        "ENROLLING_BY_INVITATION" => {
-            NciStatusFilter::CurrentTrialStatus("Enrolling by Invitation".into())
-        }
-        "ACTIVE_NOT_RECRUITING" => {
-            NciStatusFilter::SiteRecruitmentStatus("CLOSED_TO_ACCRUAL".into())
-        }
-        "COMPLETED" => NciStatusFilter::CurrentTrialStatus("Complete".into()),
-        "SUSPENDED" => NciStatusFilter::CurrentTrialStatus("Temporarily Closed to Accrual".into()),
-        "TERMINATED" => NciStatusFilter::CurrentTrialStatus("Administratively Complete".into()),
-        "WITHDRAWN" => NciStatusFilter::CurrentTrialStatus("Withdrawn".into()),
-        other => {
-            return Err(BioMcpError::InvalidArgument(format!(
-                "--status {other} is not supported for --source nci"
-            )));
-        }
-    };
-
-    Ok(Some(filter))
-}
-
-fn nci_phase_filters(value: Option<&[String]>) -> Result<Vec<String>, BioMcpError> {
-    let Some(phases) = value else {
-        return Ok(Vec::new());
-    };
-    if phases == ["PHASE1", "PHASE2"] {
-        return Ok(vec!["I_II".to_string()]);
-    }
-    if phases == ["PHASE2", "PHASE3"] {
-        return Ok(vec!["II_III".to_string()]);
-    }
-
-    phases
-        .iter()
-        .map(|phase| match phase.as_str() {
-            "PHASE1" => Ok("I".to_string()),
-            "PHASE2" => Ok("II".to_string()),
-            "PHASE3" => Ok("III".to_string()),
-            "PHASE4" => Ok("IV".to_string()),
-            "NA" => Ok("NA".to_string()),
-            "EARLY_PHASE1" => Err(BioMcpError::InvalidArgument(
-                "--phase early_phase1 is not supported for --source nci".into(),
-            )),
-            other => Err(BioMcpError::InvalidArgument(format!(
-                "--phase {other} is not supported for --source nci"
-            ))),
-        })
-        .collect()
-}
-
-fn nci_geo_filter(filters: &TrialSearchFilters) -> Option<NciGeoFilter> {
-    let (Some(lat), Some(lon), Some(distance_miles)) = (filters.lat, filters.lon, filters.distance)
-    else {
-        return None;
-    };
-    Some(NciGeoFilter {
-        lat,
-        lon,
-        distance_miles,
-    })
-}
-
 #[cfg(test)]
-mod tests;
+mod tests {
+    use super::*;
+
+    fn hit(value: serde_json::Value) -> MyDiseaseHit {
+        serde_json::from_value(value).expect("valid disease hit")
+    }
+
+    #[test]
+    fn disease_grounding_prefers_nci_identity_and_otherwise_keeps_keyword() {
+        let grounded = from_hit(
+            "melanoma",
+            hit(
+                serde_json::json!({"_id":"MONDO:1","mondo":{"name":"Melanoma","xrefs":{"ncit":["C3224"]}}}),
+            ),
+        );
+        assert_eq!(
+            grounded,
+            biodata::NciCtsV2DiseaseSelection::ConceptId("C3224".into())
+        );
+        let fallback = from_hit(
+            "melanoma",
+            hit(serde_json::json!({"_id":"MONDO:1","mondo":{"name":"Melanoma"}})),
+        );
+        assert_eq!(
+            fallback,
+            biodata::NciCtsV2DiseaseSelection::Keyword("melanoma".into())
+        );
+    }
+
+    #[test]
+    fn unsupported_nci_filter_fails_before_client_construction() {
+        let filters = TrialSearchFilters {
+            age: Some(67.0),
+            source: super::super::super::TrialSource::NciCts,
+            ..Default::default()
+        };
+        let error = super::super::validate_trial_search(&filters)
+            .err()
+            .expect("age must fail");
+        assert!(matches!(error, BioMcpError::InvalidArgument(_)));
+    }
+}

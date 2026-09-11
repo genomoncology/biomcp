@@ -1,7 +1,10 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use biodata::{NciCtsV2DetailPlan, NciCtsV2DetailResponse, NciCtsV2Limits, NciCtsV2SearchPage};
+use biodata::{
+    NciCtsV2DetailPlan, NciCtsV2DetailResponse, NciCtsV2Limits, NciCtsV2SearchPage,
+    NciCtsV2SearchPlan,
+};
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
@@ -16,43 +19,6 @@ pub struct NciCtsClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
     api_key: String,
-}
-
-#[derive(Debug, Clone)]
-pub enum NciDiseaseFilter {
-    Keyword(String),
-    ConceptId(String),
-}
-
-#[derive(Debug, Clone)]
-pub enum NciStatusFilter {
-    CurrentTrialStatus(String),
-    SiteRecruitmentStatus(String),
-}
-
-#[derive(Debug, Clone)]
-pub struct NciGeoFilter {
-    pub lat: f64,
-    pub lon: f64,
-    pub distance_miles: u32,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct NciSearchParams {
-    pub disease: Option<NciDiseaseFilter>,
-    pub interventions: Option<String>,
-    pub sites_org_name: Option<String>,
-    pub status: Option<NciStatusFilter>,
-    pub phases: Vec<String>,
-    pub geo: Option<NciGeoFilter>,
-    pub biomarkers: Option<String>,
-    pub size: usize,
-    pub from: usize,
-}
-
-fn trimmed_non_empty(value: &str) -> Option<&str> {
-    let value = value.trim();
-    (!value.is_empty()).then_some(value)
 }
 
 impl NciCtsClient {
@@ -92,81 +58,12 @@ impl NciCtsClient {
         Self::decode_search_response(status, &bytes)
     }
 
-    /// Build the outbound trials-search request (pure — Tier-2 testable, never sent).
-    pub(crate) fn search_plan(api_key: &str, params: &NciSearchParams) -> RequestPlan {
-        let mut plan = RequestPlan::get("trials").header("X-API-KEY", api_key);
-
-        if let Some(disease) = &params.disease {
-            match disease {
-                NciDiseaseFilter::Keyword(v) => {
-                    if let Some(v) = trimmed_non_empty(v.as_str()) {
-                        plan = plan.query("keyword", v);
-                    }
-                }
-                NciDiseaseFilter::ConceptId(v) => {
-                    if let Some(v) = trimmed_non_empty(v.as_str()) {
-                        plan = plan.query("diseases.nci_thesaurus_concept_id", v);
-                    }
-                }
-            }
+    pub(crate) fn biodata_search_plan(api_key: &str, source: &NciCtsV2SearchPlan) -> RequestPlan {
+        let mut plan = RequestPlan::get(source.relative_path());
+        for (name, value) in source.query_pairs() {
+            plan = plan.query(name, value);
         }
-        if let Some(v) = params
-            .interventions
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            plan = plan.query("interventions", v);
-        }
-        if let Some(v) = params
-            .sites_org_name
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            plan = plan.query("sites.org_name", v);
-        }
-        if let Some(status) = &params.status {
-            match status {
-                NciStatusFilter::CurrentTrialStatus(v) => {
-                    if let Some(v) = trimmed_non_empty(v.as_str()) {
-                        plan = plan.query("current_trial_status", v);
-                    }
-                }
-                NciStatusFilter::SiteRecruitmentStatus(v) => {
-                    if let Some(v) = trimmed_non_empty(v.as_str()) {
-                        plan = plan.query("sites.recruitment_status", v);
-                    }
-                }
-            }
-        }
-        for phase in &params.phases {
-            let phase = phase.trim();
-            if phase.is_empty() {
-                continue;
-            }
-            plan = plan.query("phase", phase);
-        }
-        if let Some(geo) = &params.geo {
-            plan = plan.query("sites.org_coordinates_lat", geo.lat.to_string());
-            plan = plan.query("sites.org_coordinates_lon", geo.lon.to_string());
-            plan = plan.query(
-                "sites.org_coordinates_dist",
-                format!("{}mi", geo.distance_miles),
-            );
-        }
-        if let Some(v) = params
-            .biomarkers
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            plan = plan.query("biomarkers", v);
-        }
-
-        plan = plan.query("size", params.size.to_string());
-        plan = plan.query("from", params.from.to_string());
-        plan
+        plan.header("X-API-KEY", api_key)
     }
 
     pub(crate) fn decode_search_response(
@@ -196,10 +93,10 @@ impl NciCtsClient {
 
     pub async fn search(
         &self,
-        params: &NciSearchParams,
+        plan: &NciCtsV2SearchPlan,
     ) -> Result<NciCtsV2SearchPage, BioMcpError> {
-        let plan = Self::search_plan(&self.api_key, params);
-        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let request = Self::biodata_search_plan(&self.api_key, plan);
+        let req = request_from_plan(&self.client, self.base.as_ref(), &request);
         self.get_search_page(req).await
     }
 

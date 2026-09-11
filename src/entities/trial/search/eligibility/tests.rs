@@ -161,14 +161,18 @@ fn verify_age_eligibility_honors_shared_source_stated_no_limit_maximum() {
 
 #[test]
 fn collect_eligibility_keywords_includes_supported_filters() {
-    let filters = TrialSearchFilters {
-        mutation: Some("MSI-H".into()),
-        criteria: Some("mismatch repair deficient".into()),
-        biomarker: Some("TMB-high".into()),
-        prior_therapies: Some("osimertinib".into()),
-        progression_on: Some("pembrolizumab".into()),
-        ..Default::default()
-    };
+    let filters = super::super::biodata_filters(
+        &TrialSearchFilters {
+            mutation: Some("MSI-H".into()),
+            criteria: Some("mismatch repair deficient".into()),
+            biomarker: Some("TMB-high".into()),
+            prior_therapies: Some("osimertinib".into()),
+            progression_on: Some("pembrolizumab".into()),
+            ..Default::default()
+        },
+        None,
+    )
+    .unwrap();
 
     assert_eq!(
         collect_eligibility_keywords(&filters),
@@ -183,26 +187,34 @@ fn collect_eligibility_keywords_includes_supported_filters() {
 
 #[test]
 fn collect_eligibility_keywords_omits_blank_values() {
-    let filters = TrialSearchFilters {
-        mutation: Some("   ".into()),
-        criteria: Some("".into()),
-        biomarker: Some(" MSI-H ".into()),
-        prior_therapies: None,
-        progression_on: Some("".into()),
-        ..Default::default()
-    };
+    let filters = super::super::biodata_filters(
+        &TrialSearchFilters {
+            mutation: Some("   ".into()),
+            criteria: Some("".into()),
+            biomarker: Some(" MSI-H ".into()),
+            prior_therapies: None,
+            progression_on: Some("".into()),
+            ..Default::default()
+        },
+        None,
+    )
+    .unwrap();
 
     assert_eq!(collect_eligibility_keywords(&filters), Vec::<String>::new());
 }
 
 #[test]
 fn collect_eligibility_keywords_skips_boolean_expressions() {
-    let filters = TrialSearchFilters {
-        mutation: Some("dMMR OR MSI-H".into()),
-        criteria: Some("prior platinum AND ECOG 0-1".into()),
-        prior_therapies: Some("pembrolizumab".into()),
-        ..Default::default()
-    };
+    let filters = super::super::biodata_filters(
+        &TrialSearchFilters {
+            mutation: Some("dMMR OR MSI-H".into()),
+            criteria: Some("prior platinum AND ECOG 0-1".into()),
+            prior_therapies: Some("pembrolizumab".into()),
+            ..Default::default()
+        },
+        None,
+    )
+    .unwrap();
 
     assert_eq!(
         collect_eligibility_keywords(&filters),

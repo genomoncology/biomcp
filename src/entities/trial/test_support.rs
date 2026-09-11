@@ -124,7 +124,11 @@ pub(super) fn studies_with_age_matches(
 ) -> Vec<serde_json::Value> {
     (0..total)
         .map(|index| {
-            let nct_id = format!("NCT{prefix}{index:07}");
+            let group = prefix.parse::<usize>().unwrap_or_default();
+            let nct_id = format!(
+                "NCT{:08}",
+                group.saturating_mul(1_000).saturating_add(index)
+            );
             if index < eligible {
                 ctgov_search_study_fixture(&nct_id, "18 Years", "75 Years")
             } else {

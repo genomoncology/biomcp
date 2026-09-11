@@ -4,6 +4,5 @@
 //! decodes committed fixture bytes. Both are pure: no local server, env var, or lock.
 //! Tier 4 (`live`) hits the real API (needs `NCI_API_KEY`) and is `#[ignore]`d.
 
-mod construction;
 mod live;
 mod parsing;

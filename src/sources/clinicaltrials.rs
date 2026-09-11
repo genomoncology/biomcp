@@ -3,7 +3,7 @@ use std::borrow::Cow;
 
 use biodata::{
     ClinicalTrialsGovApiV2DetailPlan, ClinicalTrialsGovApiV2Limits, ClinicalTrialsGovApiV2Response,
-    ClinicalTrialsGovApiV2SearchPage,
+    ClinicalTrialsGovApiV2SearchPage, ClinicalTrialsGovApiV2SearchPlan,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -16,7 +16,6 @@ const CTGOV_BASE_ENV: &str = "BIOMCP_CTGOV_BASE";
 const CTGOV_INTERVENTION_QUERY_ERROR_PREFIX: &str =
     "Error parsing query in Intervention / treatment:";
 
-const CTGOV_SEARCH_FIELDS: &str = "NCTId,BriefTitle,OverallStatus,Phase,StudyType,Condition,InterventionName,LeadSponsorName,EnrollmentCount,BriefSummary,StartDate,CompletionDate,MinimumAge,MaximumAge";
 pub const CTGOV_ADVERSE_EVENT_SEARCH_FIELDS: &str = "protocolSection.identificationModule.nctId,protocolSection.identificationModule.briefTitle,hasResults,resultsSection.adverseEventsModule";
 
 #[derive(Clone)]
@@ -26,28 +25,17 @@ pub struct ClinicalTrialsClient {
 }
 
 #[derive(Clone, Default)]
-pub struct CtGovSearchParams {
-    pub condition: Option<String>,
+pub struct CtGovAdverseEventSearchParams {
     pub intervention: Option<String>,
-    pub facility: Option<String>,
-    pub status: Option<String>,
     pub agg_filters: Option<String>,
-    /// ClinicalTrials.gov advanced query syntax. Multiple terms should be joined by ` AND `.
-    pub query_term: Option<String>,
-    pub fields_override: Option<String>,
-    pub count_total: bool,
     pub page_token: Option<String>,
     pub page_size: usize,
-    pub lat: Option<f64>,
-    pub lon: Option<f64>,
-    pub distance_miles: Option<u32>,
 }
 
-impl std::fmt::Debug for CtGovSearchParams {
+impl std::fmt::Debug for CtGovAdverseEventSearchParams {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
-            .debug_struct("CtGovSearchParams")
-            .field("count_total", &self.count_total)
+            .debug_struct("CtGovAdverseEventSearchParams")
             .field("page_size", &self.page_size)
             .finish_non_exhaustive()
     }
@@ -109,16 +97,16 @@ impl ClinicalTrialsClient {
         )
     }
 
-    pub(crate) fn search_plan(params: &CtGovSearchParams) -> RequestPlan {
-        let mut plan = RequestPlan::get("studies");
-        if let Some(v) = params
-            .condition
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            plan = plan.query("query.cond", v);
+    pub(crate) fn biodata_search_plan(plan: &ClinicalTrialsGovApiV2SearchPlan) -> RequestPlan {
+        let mut request = RequestPlan::get(plan.relative_path());
+        for (name, value) in plan.query_pairs() {
+            request = request.query(name, value);
         }
+        request
+    }
+
+    fn adverse_event_search_plan(params: &CtGovAdverseEventSearchParams) -> RequestPlan {
+        let mut plan = RequestPlan::get("studies");
         if let Some(v) = params
             .intervention
             .as_deref()
@@ -126,22 +114,6 @@ impl ClinicalTrialsClient {
             .filter(|v| !v.is_empty())
         {
             plan = plan.query("query.intr", v);
-        }
-        if let Some(v) = params
-            .facility
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            plan = plan.query("query.locn", v);
-        }
-        if let Some(v) = params
-            .status
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            plan = plan.query("filter.overallStatus", v);
         }
         if let Some(v) = params
             .agg_filters
@@ -152,17 +124,6 @@ impl ClinicalTrialsClient {
             plan = plan.query("aggFilters", v);
         }
         if let Some(v) = params
-            .query_term
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            plan = plan.query("query.term", v);
-        }
-        if params.count_total {
-            plan = plan.query("countTotal", "true");
-        }
-        if let Some(v) = params
             .page_token
             .as_deref()
             .map(str::trim)
@@ -170,37 +131,25 @@ impl ClinicalTrialsClient {
         {
             plan = plan.query("pageToken", v);
         }
-        if let (Some(lat), Some(lon), Some(distance)) =
-            (params.lat, params.lon, params.distance_miles)
-        {
-            plan = plan.query("filter.geo", format!("distance({lat},{lon},{distance}mi)"));
-        }
-
-        let fields = params
-            .fields_override
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .unwrap_or(CTGOV_SEARCH_FIELDS);
         plan.query("pageSize", params.page_size.to_string())
-            .query("fields", fields)
+            .query("fields", CTGOV_ADVERSE_EVENT_SEARCH_FIELDS)
     }
 
     pub async fn search(
         &self,
-        params: &CtGovSearchParams,
+        plan: &ClinicalTrialsGovApiV2SearchPlan,
     ) -> Result<ClinicalTrialsGovApiV2SearchPage, BioMcpError> {
-        let plan = Self::search_plan(params);
-        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let request = Self::biodata_search_plan(plan);
+        let req = request_from_plan(&self.client, self.base.as_ref(), &request);
         let (status, bytes) = self.send(req).await?;
         Self::decode_search_response(status, &bytes)
     }
 
     pub(crate) async fn search_adverse_events(
         &self,
-        params: &CtGovSearchParams,
+        params: &CtGovAdverseEventSearchParams,
     ) -> Result<CtGovAdverseEventSearchPage, BioMcpError> {
-        let plan = Self::search_plan(params);
+        let plan = Self::adverse_event_search_plan(params);
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.get_json(req).await
     }

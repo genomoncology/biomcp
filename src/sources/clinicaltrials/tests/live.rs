@@ -1,18 +1,23 @@
-//! Tier 4 — live upstream smoke. Ignored so normal gates stay pure and fast.
-
-use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams};
+//! Human-only live ClinicalTrials.gov smoke.
+use crate::sources::clinicaltrials::ClinicalTrialsClient;
 
 #[tokio::test]
 #[ignore = "live network"]
 async fn live_search_returns_cancer_trials() {
-    let client = ClinicalTrialsClient::new().expect("client");
-    let response = client
-        .search(&CtGovSearchParams {
+    let filters = biodata::ClinicalTrialSearchFilters::new(
+        biodata::ClinicalTrialSearchFilterFields {
             condition: Some("melanoma".into()),
-            page_size: 1,
             ..Default::default()
-        })
+        },
+        Default::default(),
+    )
+    .expect("filters");
+    let plan =
+        biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 1, None, false).expect("plan");
+    let response = ClinicalTrialsClient::new()
+        .expect("client")
+        .search(&plan)
         .await
-        .expect("live ClinicalTrials.gov search");
+        .expect("live search");
     assert!(!response.results().unwrap_or_default().is_empty());
 }

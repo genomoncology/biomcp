@@ -13,8 +13,8 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-MAX_PACKAGE_FILES = 1_300
-BIODATA_REVISION = "2fb62d1afd75ee161b63f3dd56cea5fc3dfe683a"
+MAX_PACKAGE_FILES = 1_295
+BIODATA_REVISION = "bf111ab25f620a8e16cc92518b693f9696940c0b"
 
 
 def _rust_function(source: str, signature: str) -> str:

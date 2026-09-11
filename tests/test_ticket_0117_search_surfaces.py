@@ -129,3 +129,30 @@ def test_ctgov_current_binary_json_markdown_errors_limits_and_privacy() -> None:
 
 def test_nci_current_binary_json_markdown_errors_limits_and_privacy() -> None:
     _assert_current_binary_surfaces("nci", NCI_FIXTURE, "NCT05929768")
+
+
+def test_ticket_0118_cli_json_and_markdown_explain_ambiguous_active_status() -> None:
+    for prefix in (["--json"], []):
+        result = subprocess.run(
+            [
+                BINARY,
+                *prefix,
+                "search",
+                "trial",
+                "--status",
+                "active",
+                "--limit",
+                "1",
+            ],
+            cwd=ROOT,
+            env={key: value for key, value in os.environ.items() if key != "NCI_API_KEY"},
+            text=True,
+            capture_output=True,
+            timeout=20,
+            check=False,
+        )
+        assert result.returncode != 0
+        public = result.stdout + result.stderr
+        assert "recruiting" in public
+        assert "active_not_recruiting" in public
+        assert "status: active" not in public

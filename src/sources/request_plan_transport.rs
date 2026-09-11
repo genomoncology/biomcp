@@ -218,3 +218,102 @@ async fn request_plan_failures_keep_safe_source_context() {
     .expect_err("malformed JSON should fail");
     assert_eq!(error.public_projection().source, Some("OLS4"));
 }
+
+#[tokio::test]
+async fn biodata_ctgov_search_values_receive_one_transport_encoding() {
+    for value in [
+        "alpha beta",
+        "quoted \"value\"",
+        "A/B",
+        "[BRAF]",
+        r"one\two",
+        "café",
+        "10%",
+        "a&b=c",
+        "fragment#value",
+        "BRAF AND NRAS",
+    ] {
+        let filters = biodata::ClinicalTrialSearchFilters::new(
+            biodata::ClinicalTrialSearchFilterFields {
+                intervention: Some(value.into()),
+                ..Default::default()
+            },
+            Default::default(),
+        )
+        .expect("validated filters");
+        let source = biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 1, None, false)
+            .expect("CTGov plan");
+        let expected = source
+            .query_pairs()
+            .into_iter()
+            .map(|(name, value)| (name.to_owned(), value.to_owned()))
+            .collect::<Vec<_>>();
+        let plan =
+            crate::sources::clinicaltrials::ClinicalTrialsClient::biodata_search_plan(&source);
+        let (captured, _) = send_and_capture(plan, "200 OK", "application/json", "{}").await;
+        let target = captured
+            .head
+            .lines()
+            .next()
+            .expect("request line")
+            .split_whitespace()
+            .nth(1)
+            .expect("request target");
+        assert!(target.starts_with("/studies?query.intr="));
+        assert_eq!(decoded_query_pairs(target), expected);
+        assert!(!target.contains("%2525"));
+    }
+}
+
+#[tokio::test]
+async fn biodata_nci_search_keeps_one_logical_value_and_adds_one_credential() {
+    for value in [
+        "alpha beta",
+        "quoted \"value\"",
+        "A/B",
+        "[BRAF]",
+        r"one\two",
+        "café",
+        "10%",
+        "a&b=c",
+        "fragment#value",
+        "BRAF AND NRAS",
+    ] {
+        let filters = biodata::ClinicalTrialSearchFilters::new(
+            biodata::ClinicalTrialSearchFilterFields {
+                biomarker: Some(value.into()),
+                ..Default::default()
+            },
+            Default::default(),
+        )
+        .expect("validated filters");
+        let source = biodata::NciCtsV2SearchPlan::new(&filters, None, 1, 0).expect("NCI plan");
+        let expected = source
+            .query_pairs()
+            .into_iter()
+            .map(|(name, value)| (name.to_owned(), value.to_owned()))
+            .collect::<Vec<_>>();
+        let plan =
+            crate::sources::nci_cts::NciCtsClient::biodata_search_plan("fixture-key", &source);
+        let (captured, _) = send_and_capture(plan, "200 OK", "application/json", "{}").await;
+        let target = captured
+            .head
+            .lines()
+            .next()
+            .expect("request line")
+            .split_whitespace()
+            .nth(1)
+            .expect("request target");
+        assert!(target.starts_with("/trials?biomarkers="));
+        assert_eq!(decoded_query_pairs(target), expected);
+        assert_eq!(captured.head.matches("x-api-key: fixture-key").count(), 1);
+    }
+}
+
+fn decoded_query_pairs(target: &str) -> Vec<(String, String)> {
+    reqwest::Url::parse(&format!("http://fixture{target}"))
+        .expect("captured request target")
+        .query_pairs()
+        .map(|(name, value)| (name.into_owned(), value.into_owned()))
+        .collect()
+}

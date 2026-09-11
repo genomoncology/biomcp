@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "2fb62d1afd75ee161b63f3dd56cea5fc3dfe683a"
+REVISION = "bf111ab25f620a8e16cc92518b693f9696940c0b"
 
 
 def _write(path: Path, content: str) -> None:
@@ -35,7 +35,7 @@ biodata = {{ git = "{URL}", rev = "{REVISION}" }}
 
 [[package]]
 name = "biodata"
-version = "0.0.19"
+version = "0.0.20"
 source = "git+{URL}?rev={REVISION}#{REVISION}"
 """,
     )
@@ -49,6 +49,7 @@ source = "git+{URL}?rev={REVISION}#{REVISION}"
     ClinicalTrialSearchSummary, ClinicalTrialsGovApiV2SearchPage,
     NciCtsV2DetailPlan, NciCtsV2DetailResponse,
     NciCtsV2SearchPage,
+    ClinicalTrialSearchFilters, ClinicalTrialsGovApiV2SearchPlan, NciCtsV2SearchPlan,
     ClinicalTrialSiteDirectory, ClinicalTrialContact, ClinicalTrialSite,
 };
 
@@ -87,7 +88,7 @@ def test_biodata_boundary_accepts_a_complete_minimal_fixture(tmp_path: Path) -> 
     ("old", "new"),
     [
         (REVISION, "0" * 40),
-        ('version = "0.0.19"', 'version = "0.0.14"'),
+        ('version = "0.0.20"', 'version = "0.0.14"'),
     ],
 )
 def test_biodata_boundary_rejects_wrong_lock_or_revision(
@@ -166,6 +167,9 @@ def test_biodata_boundary_rejects_patch_and_source_replacements(
         "pub struct NciCtsV2DetailPlan { identity: String }",
         "pub struct CtGovDetailPlan { identity: String }",
         "pub struct CtGovDetailResponse { rows: Vec<String> }",
+        "pub struct CtGovSearchParams { value: String }",
+        "pub struct NciSearchParams { value: String }",
+        "pub enum NciDiseaseFilter { Keyword(String) }",
     ],
 )
 def test_biodata_boundary_rejects_retired_declarations_in_new_tracked_rust_files(

@@ -51,13 +51,11 @@ fn intervention_rejection_remains_classified() {
 #[test]
 fn search_params_debug_redacts_queries_and_cursor() {
     const SENTINEL: &str = "CTGOV-PARAM-PRIVATE-SENTINEL-0117";
-    let params = super::super::CtGovSearchParams {
-        condition: Some(SENTINEL.into()),
+    let params = super::super::CtGovAdverseEventSearchParams {
         intervention: Some(SENTINEL.into()),
-        query_term: Some(SENTINEL.into()),
+        agg_filters: Some(SENTINEL.into()),
         page_token: Some(SENTINEL.into()),
         page_size: 1,
-        ..Default::default()
     };
     assert!(!format!("{params:?}").contains(SENTINEL));
 }

@@ -11,8 +11,8 @@ from pathlib import Path
 import tomllib
 
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "2fb62d1afd75ee161b63f3dd56cea5fc3dfe683a"
-VERSION = "0.0.19"
+REVISION = "bf111ab25f620a8e16cc92518b693f9696940c0b"
+VERSION = "0.0.20"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (
@@ -76,6 +76,11 @@ RETIRED_DECLARATIONS = (
     "CtGovStudy",
     "NciSearchResponse",
     "TrialAge",
+    "CtGovSearchParams",
+    "NciSearchParams",
+    "NciDiseaseFilter",
+    "NciStatusFilter",
+    "NciGeoFilter",
 )
 
 
@@ -269,6 +274,14 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
         "contact_role:",
         "contact_phone:",
         "contact_email:",
+        "fn ctgov_query_term",
+        "fn ctgov_agg_filters",
+        "fn normalize_enum_key",
+        "fn normalize_sex",
+        "fn normalize_sponsor_type",
+        "fn essie_escape",
+        "fn build_essie_fragments",
+        "CTGOV_SEARCH_FIELDS",
     ):
         for relative, source in sources:
             require(
@@ -313,6 +326,9 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
         "ClinicalTrialSearchSummary",
         "ClinicalTrialsGovApiV2SearchPage",
         "NciCtsV2SearchPage",
+        "ClinicalTrialSearchFilters",
+        "ClinicalTrialsGovApiV2SearchPlan",
+        "NciCtsV2SearchPlan",
     ):
         require(
             symbol in combined, f"BioData consumption is missing {symbol}", failures
