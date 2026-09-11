@@ -4523,7 +4523,7 @@ keyword-only result set.</p>
 <code>--session</code> label and request JSON. If the next keyword search overlaps the
 previous same-session keyword by at least 60% after BioMCP removes common
 search filler words, JSON <code>_meta.suggestions[]</code> can point to a better fallback:
-inspect the prior hits with <code>article batch</code>, map the topic with <code>discover</code>, or
+inspect the prior hits with <code>batch article --mode compact</code>, map the topic with <code>discover</code>, or
 narrow by publication year when the current page supports that retry.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX DCIS&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
@@ -4672,9 +4672,9 @@ synonym match irrelevant.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
 </code></pre></div>
 <h2 id="fetch-several-shortlisted-papers-at-once">Fetch several shortlisted papers at once<a class="headerlink" href="#fetch-several-shortlisted-papers-at-once" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w"> </span><span class="m">39073865</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969,39073865<span class="w"> </span>--mode<span class="w"> </span>compact
 </code></pre></div>
-<p>Use <code>article batch</code> after search when you already know the candidate PMIDs or
+<p>Use <code>batch article --mode compact</code> after search when you already know the candidate PMIDs or
 DOIs and want compact title/journal/year/entity cards before opening one paper
 in full detail. The helper preserves input order and still works when
 <code>S2_API_KEY</code> is unset.</p>

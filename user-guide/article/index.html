@@ -4472,7 +4472,7 @@ current keyword with the previous successful article keyword search for the
 same local token. The token is not a secret; use a short non-identifying label
 such as <code>lit-review-1</code>. When post-stopword term overlap is at least 60%,
 BioMCP can add JSON-only <code>_meta.suggestions[]</code> fallbacks after exact entity
-suggestions: prior <code>article batch</code>, <code>discover</code>, and a date-narrowed retry when
+suggestions: prior <code>batch article --mode compact</code>, <code>discover</code>, and a date-narrowed retry when
 available. Session baselines expire after 10 minutes. Markdown output is
 unchanged. The local record stores the token, keyword and normalized terms,
 bounded PMID set, and update time under the resolved BioMCP cache root. Opening
@@ -4693,20 +4693,22 @@ it.</p>
 Scholar only after a successful response.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w">          </span><span class="c1"># compact multi-article summary cards</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">   </span><span class="c1"># one Semantic Scholar citation page</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">  </span><span class="c1"># one Semantic Scholar reference page</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact<span class="w">  </span><span class="c1"># compact summary cards</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w">                 </span><span class="c1"># detail records (default)</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">   </span><span class="c1"># one Semantic Scholar citation page</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">  </span><span class="c1"># one Semantic Scholar reference page</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
 </code></pre></div>
-<p><code>article batch</code> works without <code>S2_API_KEY</code> and returns a bare JSON array in
-request order. Each compact card echoes the original <code>requested_id</code>, keeps its
+<p><code>batch article --mode compact</code> works without <code>S2_API_KEY</code> and returns the
+standard <code>{summary, items}</code> batch envelope in request order. Each compact card
+echoes the original <code>requested_id</code>, keeps its
 resolved PMID/PMCID/DOI fields, and carries the same full <code>authors</code>, returned
 <code>author_count</code>, <code>author_completeness</code>, and <code>author_source</code> contract as detail.
 Markdown cards show the source-ordered names and an explicit status, including
 when no author list was supplied. When Semantic Scholar data is available, the
 batch helper can add optional TLDR and citation metadata without changing
 authorship. <code>S2_API_KEY</code> makes that enrichment authenticated and more reliable.
-Use <code>article batch</code> as the default follow-up after <code>search article</code> when you
+Use <code>batch article --mode compact</code> as the default follow-up after <code>search article</code> when you
 already have several shortlisted PMIDs or DOIs.</p>
 <p>The Semantic Scholar graph helpers also work without <code>S2_API_KEY</code>, but they use
 the shared pool and can fail fast on HTTP 429 with guidance to set the key for
@@ -4728,7 +4730,7 @@ This avoids repeated large payload downloads during iterative workflows.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>batch<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>,24200969<span class="w"> </span>--mode<span class="w"> </span>compact
 </code></pre></div>
 <p>JSON article responses include <code>_meta.next_commands</code> and <code>_meta.section_sources</code>,
 so article workflows can promote the next likely pivots and preserve section
@@ -4747,9 +4749,11 @@ score. Keyword-only article searches with an exact gene, drug, or disease
 label/alias match may include <code>_meta.suggestions[]</code> objects with <code>command</code>,
 <code>reason</code>, and <code>sections</code>; same-session keyword loop-breaker suggestions include
 <code>command</code> and <code>reason</code> and omit <code>sections</code>. <code>_meta.next_commands</code> remains the
-executable string command list. JSON <code>article batch</code> responses are a bare array of compact cards
-so callers can map results back to the original input order; this compatibility
-shape is intentionally not wrapped in an object.</p>
+executable string command list. JSON <code>batch article</code> responses use the standard
+batch envelope so callers can map settled results back to the original input order.
+The compatibility spelling <code>biomcp article batch &lt;id1&gt; &lt;id2&gt; ...</code> remains
+available with its existing compact-card output; prefer the canonical command
+in new scripts.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Start with narrow <code>--limit</code> values.</li>
