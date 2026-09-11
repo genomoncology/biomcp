@@ -181,40 +181,112 @@ fn drug_command_discovery_quotes_identity_and_recovery_is_rendered_once() {
     );
 }
 
+fn expected_drug_command(name: &str, section: &str, region: DrugRegion) -> String {
+    let suffix = matches!(section, "regulatory" | "safety" | "shortage")
+        .then(|| format!(" --region {}", region.as_str()))
+        .unwrap_or_default();
+    format!("biomcp get drug {name} {section}{suffix}")
+}
+
+fn expected_sections(name: &str, sections: &[&str], region: DrugRegion) -> Vec<DrugCommand> {
+    sections
+        .iter()
+        .map(|section| DrugCommand {
+            section: (*section).to_string(),
+            command: expected_drug_command(name, section, region),
+        })
+        .collect()
+}
+
+fn expected_related(name: &str, review: bool, target: Option<&str>) -> Vec<String> {
+    let mut related = Vec::new();
+    if review {
+        related.push(format!(
+            "biomcp search article --drug {name} --type review --limit 5"
+        ));
+    }
+    related.extend([
+        format!("biomcp drug trials {name}"),
+        format!("biomcp drug adverse-events {name}"),
+        format!("biomcp search pgx -d {name}"),
+    ]);
+    if let Some(target) = target {
+        related.push(format!("biomcp get gene {target}"));
+    }
+    related
+}
+
+fn expected_flattened(
+    recovery: &[DrugCommand],
+    sections: &[DrugCommand],
+    all: Option<&str>,
+    related: &[String],
+) -> Vec<String> {
+    recovery
+        .iter()
+        .chain(sections)
+        .map(|entry| entry.command.clone())
+        .chain(all.into_iter().map(str::to_string))
+        .chain(related.iter().cloned())
+        .collect()
+}
+
+fn assert_projection(
+    discovery: &DrugCommandDiscovery,
+    recovery: Vec<DrugCommand>,
+    sections: Vec<DrugCommand>,
+    all: Option<&str>,
+    related: Vec<String>,
+) {
+    let flattened = expected_flattened(&recovery, &sections, all, &related);
+    assert_eq!(discovery.recovery, recovery);
+    assert_eq!(discovery.sections, sections);
+    assert_eq!(discovery.all.as_deref(), all);
+    assert_eq!(discovery.related, related);
+    assert_eq!(discovery.next_commands, flattened);
+}
+
 #[test]
-fn drug_command_discovery_has_exact_single_section_projections() {
+fn drug_command_discovery_asserts_every_explicit_single_section_projection() {
     let cases = [
-        ("approvals", ["label", "regulatory", "safety"]),
-        ("label", ["approvals", "regulatory", "safety"]),
-        ("regulatory", ["approvals", "label", "safety"]),
-        ("safety", ["approvals", "label", "regulatory"]),
-        ("shortage", ["approvals", "label", "regulatory"]),
-        ("interactions", ["approvals", "label", "regulatory"]),
-        ("indications", ["approvals", "label", "regulatory"]),
-        ("targets", ["approvals", "label", "regulatory"]),
-        ("civic", ["approvals", "label", "regulatory"]),
+        ("approvals", vec!["label", "regulatory", "safety"]),
+        ("label", vec!["approvals", "regulatory", "safety"]),
+        ("regulatory", vec!["approvals", "label", "safety"]),
+        ("safety", vec!["approvals", "label", "regulatory"]),
+        ("shortage", vec!["approvals", "label", "regulatory"]),
+        ("interactions", vec!["approvals", "label", "regulatory"]),
+        ("indications", vec!["approvals", "label", "regulatory"]),
+        ("targets", vec!["approvals", "label", "regulatory"]),
+        ("civic", vec!["approvals", "label", "regulatory"]),
     ];
-    for (requested, expected) in cases {
+    let related = expected_related("eflornithine", true, Some("ODC1"));
+    for (requested, remaining) in cases {
         let discovery =
             drug_command_discovery(&discovery_drug(), &[requested.to_string()], DrugRegion::Us);
-        assert_eq!(
-            discovery
-                .sections
-                .iter()
-                .map(|entry| entry.section.as_str())
-                .collect::<Vec<_>>(),
-            expected,
-            "single section {requested}"
-        );
-        assert_eq!(
-            discovery.all.as_deref(),
-            Some("biomcp get drug eflornithine all --region us")
+        let sections = expected_sections("eflornithine", &remaining, DrugRegion::Us);
+        assert_projection(
+            &discovery,
+            Vec::new(),
+            sections,
+            Some("biomcp get drug eflornithine all --region us"),
+            related.clone(),
         );
     }
 }
 
 #[test]
-fn drug_command_discovery_recovery_is_exact_for_unavailable_and_degraded_sections() {
+fn drug_command_discovery_asserts_all_and_every_recovery_state() {
+    let all_related = expected_related("eflornithine", true, Some("ODC1"));
+    let all_discovery =
+        drug_command_discovery(&discovery_drug(), &["all".to_string()], DrugRegion::Us);
+    assert_projection(
+        &all_discovery,
+        Vec::new(),
+        expected_sections("eflornithine", &["approvals"], DrugRegion::Us),
+        None,
+        all_related,
+    );
+
     for outcome in [
         crate::entities::section_outcome::SectionOutcome::unavailable("fixture outage"),
         crate::entities::section_outcome::SectionOutcome::degraded(
@@ -233,68 +305,129 @@ fn drug_command_discovery_recovery_is_exact_for_unavailable_and_degraded_section
             let mut drug = discovery_drug();
             drug.section_outcomes.complete(section, outcome.clone());
             let discovery = drug_command_discovery(&drug, &[section.to_string()], DrugRegion::Eu);
-            let suffix = if section == "safety" {
-                " --region eu"
-            } else {
-                ""
+            let recovery = expected_sections("eflornithine", &[section], DrugRegion::Eu);
+            let remaining = match section {
+                "approvals" => vec!["label", "regulatory", "safety"],
+                "safety" => vec!["approvals", "label", "regulatory"],
+                _ => vec!["approvals", "label", "regulatory"],
             };
-            assert_eq!(
-                discovery.recovery,
-                vec![DrugCommand {
-                    section: section.to_string(),
-                    command: format!("biomcp get drug eflornithine {section}{suffix}"),
-                }]
+            let sections = expected_sections("eflornithine", &remaining, DrugRegion::Eu);
+            assert_projection(
+                &discovery,
+                recovery,
+                sections,
+                Some("biomcp get drug eflornithine all --region eu"),
+                expected_related("eflornithine", true, Some("ODC1")),
             );
-            assert_eq!(discovery.next_commands[0], discovery.recovery[0].command);
         }
     }
 }
 
 #[test]
-fn drug_command_discovery_covers_sparse_related_and_cap_boundaries() {
+fn drug_command_discovery_asserts_complete_region_projections_and_who_exclusions() {
+    for (region, label) in [
+        (DrugRegion::Us, "us"),
+        (DrugRegion::Eu, "eu"),
+        (DrugRegion::Who, "who"),
+        (DrugRegion::All, "all"),
+    ] {
+        let discovery = drug_command_discovery(&discovery_drug(), &["targets".to_string()], region);
+        let sections = expected_sections(
+            "eflornithine",
+            &["approvals", "label", "regulatory"],
+            region,
+        );
+        assert_projection(
+            &discovery,
+            Vec::new(),
+            sections,
+            Some(&format!(
+                "biomcp get drug eflornithine all --region {label}"
+            )),
+            expected_related("eflornithine", true, Some("ODC1")),
+        );
+        if region == DrugRegion::Who {
+            assert!(discovery.next_commands.iter().all(|command| {
+                !command.contains(" get drug eflornithine safety")
+                    && !command.contains(" get drug eflornithine shortage")
+            }));
+        }
+    }
+}
+
+#[test]
+fn drug_command_discovery_asserts_sparse_branches_blank_identity_and_projection_deduplication() {
     let mut complete = discovery_drug();
     complete.label = Some(serde_json::from_value(serde_json::json!({})).unwrap());
     complete.approvals = Some(Vec::new());
     complete.ema_regulatory = Some(Vec::new());
     complete.indications.push("fixture indication".to_string());
     complete.targets.clear();
-    let related = drug_command_discovery(&complete, &[], DrugRegion::Us).related;
+    let complete_discovery = drug_command_discovery(&complete, &[], DrugRegion::Us);
+    assert_projection(
+        &complete_discovery,
+        Vec::new(),
+        expected_sections(
+            "eflornithine",
+            &["approvals", "label", "regulatory"],
+            DrugRegion::Us,
+        ),
+        Some("biomcp get drug eflornithine all --region us"),
+        expected_related("eflornithine", false, None),
+    );
+
+    let mut sparse_blank_target = discovery_drug();
+    sparse_blank_target.targets = vec!["  ".to_string()];
+    let sparse_discovery = drug_command_discovery(&sparse_blank_target, &[], DrugRegion::Us);
+    assert_projection(
+        &sparse_discovery,
+        Vec::new(),
+        expected_sections(
+            "eflornithine",
+            &["approvals", "label", "regulatory"],
+            DrugRegion::Us,
+        ),
+        Some("biomcp get drug eflornithine all --region us"),
+        expected_related("eflornithine", true, None),
+    );
+
+    let mut blank = discovery_drug();
+    blank.name = "   ".to_string();
+    let blank_discovery = drug_command_discovery(&blank, &[], DrugRegion::Us);
+    assert_projection(&blank_discovery, Vec::new(), Vec::new(), None, Vec::new());
+
+    let projection = drug_command_discovery(&discovery_drug(), &[], DrugRegion::Us);
+    let categorized = expected_flattened(
+        &projection.recovery,
+        &projection.sections,
+        projection.all.as_deref(),
+        &projection.related,
+    );
+    assert_eq!(projection.next_commands, categorized);
     assert_eq!(
-        related,
-        vec![
-            "biomcp drug trials eflornithine",
-            "biomcp drug adverse-events eflornithine",
-            "biomcp search pgx -d eflornithine",
-        ]
-    );
-
-    let mut sparse = discovery_drug();
-    sparse.targets.clear();
-    let sparse_related = drug_command_discovery(&sparse, &[], DrugRegion::Us).related;
-    assert!(
-        sparse_related
+        projection
+            .next_commands
             .iter()
-            .any(|command| command.contains("--type review"))
+            .collect::<HashSet<_>>()
+            .len(),
+        projection.next_commands.len()
     );
-    assert!(
-        !sparse_related
-            .iter()
-            .any(|command| command.contains("get gene"))
-    );
+}
 
-    for (count, expected_len) in [(4, 9), (5, 10), (6, 10)] {
+#[test]
+fn drug_command_discovery_asserts_complete_9_10_and_over_10_candidate_arrays() {
+    let recovery_order = [
+        "approvals",
+        "safety",
+        "targets",
+        "indications",
+        "interactions",
+        "civic",
+    ];
+    let related = expected_related("eflornithine", true, Some("ODC1"));
+    for (count, expected_related_count, expected_len) in [(4, 5, 9), (5, 5, 10), (6, 4, 10)] {
         let mut drug = discovery_drug();
-        for section in [
-            "approvals",
-            "safety",
-            "targets",
-            "indications",
-            "interactions",
-            "civic",
-        ]
-        .into_iter()
-        .take(count)
-        {
+        for section in recovery_order.iter().take(count) {
             drug.section_outcomes.complete(
                 section,
                 crate::entities::section_outcome::SectionOutcome::unavailable("fixture outage"),
@@ -305,46 +438,17 @@ fn drug_command_discovery_covers_sparse_related_and_cap_boundaries() {
             &["all".to_string(), "approvals".to_string()],
             DrugRegion::Us,
         );
-        assert_eq!(discovery.next_commands.len(), expected_len, "count={count}");
-        assert_eq!(
-            discovery.next_commands[..count],
-            discovery
-                .recovery
-                .iter()
-                .map(|entry| entry.command.clone())
-                .collect::<Vec<_>>()[..]
-        );
-    }
-}
-
-#[test]
-fn drug_command_discovery_deduplicates_exact_commands_and_respects_regions() {
-    let mut seen = HashSet::new();
-    let mut output = Vec::new();
-    push_exact_capped("same bytes".to_string(), &mut seen, &mut output);
-    push_exact_capped("same bytes".to_string(), &mut seen, &mut output);
-    push_exact_capped("SAME BYTES".to_string(), &mut seen, &mut output);
-    assert_eq!(output, vec!["same bytes", "SAME BYTES"]);
-
-    for (region, label) in [
-        (DrugRegion::Us, "us"),
-        (DrugRegion::Eu, "eu"),
-        (DrugRegion::Who, "who"),
-        (DrugRegion::All, "all"),
-    ] {
-        let discovery = drug_command_discovery(&discovery_drug(), &["targets".to_string()], region);
-        assert!(discovery.next_commands.iter().any(|command| {
-            command == &format!("biomcp get drug eflornithine regulatory --region {label}")
-        }));
-        assert!(discovery.next_commands.iter().any(|command| {
-            command == &format!("biomcp get drug eflornithine all --region {label}")
-        }));
-        if region == DrugRegion::Who {
-            assert!(discovery.next_commands.iter().all(|command| {
-                !command.contains(" get drug eflornithine safety")
-                    && !command.contains(" get drug eflornithine shortage")
-            }));
-        }
+        let recovery = recovery_order
+            .iter()
+            .take(count)
+            .map(|section| DrugCommand {
+                section: (*section).to_string(),
+                command: expected_drug_command("eflornithine", section, DrugRegion::Us),
+            })
+            .collect::<Vec<_>>();
+        let related_surviving = related[..expected_related_count].to_vec();
+        assert_projection(&discovery, recovery, Vec::new(), None, related_surviving);
+        assert_eq!(discovery.next_commands.len(), expected_len);
     }
 }
 
