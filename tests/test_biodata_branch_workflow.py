@@ -1,237 +1,193 @@
 from __future__ import annotations
 
-from pathlib import Path
-import re
+from importlib.machinery import SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+import json
 import os
+from pathlib import Path
 import subprocess
+import sys
 import tempfile
 
 import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TOOLS = ROOT / "tools"
+MANIFEST = TOOLS / "biodata-1.0-focused.toml"
+RUNNER = TOOLS / "check-biodata-1.0"
 RETIRED_WORKFLOW = ROOT / ".github/workflows/biodata-1.0.yml"
-RUNNER = ROOT / "tools/check-biodata-1.0"
-OFFLINE_CHECKER = ROOT / "tools/check-offline-network"
-TEST_FILES = (
-    "tests/test_biodata_boundary.py",
-    "tests/test_source_package_boundary.py",
-    "tests/test_ctgov_trial_search_detail_reuse.py",
-    "tests/test_nci_filter_transport.py",
-    "tests/test_biodata_branch_workflow.py",
-)
-TICKET_0117_TESTS = (
-    "tests/test_capture_receipts.py::test_current_adverse_event_code_key_boundary_is_exact_and_receipted",
-    "tests/test_capture_receipts.py::test_adverse_event_code_key_boundary_rejects_a_schema_known_extra_field",
-    "tests/test_capture_receipts.py::test_adverse_event_page_boundary_rejects_an_extra_envelope_field",
-    "tests/test_capture_receipts.py::test_code_key_contract_rejects_reintroduced_stale_supplement",
-    "tests/test_ticket_0117_search_surfaces.py::test_ctgov_current_binary_json_markdown_errors_limits_and_privacy",
-    "tests/test_ticket_0117_search_surfaces.py::test_nci_current_binary_json_markdown_errors_limits_and_privacy",
-    "tests/test_ticket_0117_search_surfaces.py::test_ticket_0118_cli_json_and_markdown_explain_ambiguous_active_status",
-)
-RUST_TESTS = (
-    "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",
-    "entities::trial::get::tests::outcome_product_preserves_grouped_values_and_every_section_state",
-    "entities::trial::get::tests::product_section_state_preserves_all_four_states",
-    "entities::trial::get::tests::shared_core_conversion_preserves_order_and_derives_compatibility_fields",
-    "entities::trial::get::tests::ctgov_product_uses_shared_directory_for_ordered_locations_and_states",
-    "entities::trial::get::tests::shared_directory_views_authorize_output_and_redact_diagnostics",
-    "cli::trial::dispatch::site_directory_tests::location_page_filters_sites_and_site_contacts_but_keeps_central_first",
-    "cli::trial::dispatch::site_directory_tests::standalone_pagination_wrapper_serializes_only_the_current_directory_page",
-    "sources::clinicaltrials::tests::parsing::search_response_uses_biodata_page_without_rewriting_fixture_bytes",
-    "sources::clinicaltrials::tests::parsing::malformed_search_values_are_sanitized",
-    "sources::clinicaltrials::tests::parsing::intervention_rejection_remains_classified",
-    "sources::clinicaltrials::tests::parsing::search_params_debug_redacts_queries_and_cursor",
-    "sources::clinicaltrials::tests::parsing::adverse_event_parser_debug_redacts_every_nested_value",
-    "sources::nci_cts::tests::parsing::search_response_uses_biodata_page_without_aliases",
-    "sources::nci_cts::tests::parsing::malformed_nci_search_values_are_sanitized",
-    "entities::trial::search::plan_tests::public_search_still_rejects_empty_filters",
-    "entities::trial::search::plan_tests::clients_execute_exact_biodata_pairs_and_only_nci_adds_a_credential",
-    "entities::trial::search::plan_tests::error_projection_never_exposes_a_filter_value",
-    "entities::trial::search::plan_tests::ambiguous_active_status_returns_only_safe_correction",
-    "entities::trial::search::plan_tests::post_filter_context_uses_only_the_validated_biodata_projection",
-    "entities::trial::search::plan_tests::product_mapping_covers_every_ctgov_filter_family",
-    "entities::trial::search::plan_tests::nci_refuses_every_unsupported_product_selector_before_transport",
-    "mcp::shell::tests::ticket_0117::ticket_0118_refusals_are_safe_across_raw_typed_and_markdown_search",
-    "entities::trial::search::ctgov::tests::count_all_returns_approximate_for_age_only_filters",
-    "entities::trial::search::ctgov::tests::count_all_returns_exact_for_no_post_filters",
-    "entities::trial::search::ctgov::tests::trim_empty_provider_cursor_stops_without_repeating_page_one",
-    "entities::trial::search::ctgov::tests::alias_union_returns_the_traversal_limit_reason_at_its_cap",
-    "entities::trial::search::nci::tests::disease_grounding_prefers_nci_identity_and_otherwise_keeps_keyword",
-    "entities::trial::search::nci::tests::unsupported_nci_filter_fails_before_client_construction",
-    "entities::trial::search::eligibility::tests::verify_age_eligibility_handles_sub_year_minimum_age",
-    "entities::trial::search::eligibility::tests::verify_age_eligibility_handles_sub_year_maximum_age",
-    "entities::trial::search::eligibility::tests::verify_age_eligibility_honors_shared_source_stated_no_limit_maximum",
-    "entities::trial::search::eligibility::tests::facility_geo_requires_name_and_distance_on_the_same_shared_site",
-    "entities::trial::search::eligibility::tests::facility_geo_keeps_shared_site_name_and_distance_match",
-    "sources::tests::request_plan_transport::biodata_ctgov_search_values_receive_one_transport_encoding",
-    "sources::tests::request_plan_transport::biodata_nci_search_keeps_one_logical_value_and_adds_one_credential",
-    "render::markdown::related::tests::related_trial_uses_the_first_alias_from_the_first_intervention_that_has_one",
-    "entities::trial::search_result_tests::product_search_debug_redacts_untrusted_values",
-    "entities::trial::search_result_tests::shared_summary_maps_to_the_stable_product_keys_without_trimming",
-    "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_preserve_planned_outcome_values_and_states",
-    "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_return_exact_structured_references",
-    "mcp::shell::typed_get_tests::cli_typed_and_raw_nci_trial_get_preserve_assignments_and_outcome_state",
-    "mcp::shell::typed_get_tests::typed_and_raw_trial_get_return_exact_age_objects",
-    "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_share_directory_contacts_locations_and_states",
-    "entities::trial::documents::tests::maps_manifest_metadata_handles_and_empty_state",
-    "entities::trial::documents::tests::eligibility_provenance_tracks_document_availability",
-    "entities::trial::documents::tests::rejects_unsafe_document_filenames",
-    "entities::trial::documents::tests::unadvertised_filename_is_absent_from_error_diagnostics",
-    "entities::trial::documents::tests::omits_handles_for_unsafe_advertised_filenames",
-    "entities::trial::documents::tests::constructs_fixed_percent_encoded_path",
-    "entities::trial::documents::tests::reported_oversize_remains_listable_and_actual_small_body_is_retrievable",
-    "entities::trial::documents::tests::permits_exact_body_limit_and_rejects_one_extra_byte",
-    "entities::trial::documents::tests::rejects_off_origin_redirect_before_contacting_target",
-    "mcp::shell::typed_get_tests::typed_get_schema_and_mapper_match_independent_cli_catalog_oracle",
-    "mcp::shell::typed_get_tests::trial_artifacts_and_capture_match_across_cli_raw_typed_and_markdown",
-    "mcp::shell::tests::ticket_0117::ctgov_search_cross_surface_uses_exact_result_capture",
-    "mcp::shell::tests::ticket_0117::nci_search_cross_surface_uses_exact_result_capture",
-    "mcp::shell::tests::ticket_0117::ctgov_source_client_transport_preserves_exact_result_digest",
-    "mcp::shell::tests::ticket_0117::nci_source_client_transport_preserves_exact_result_digest",
-    "render::markdown::trial::tests::planned_outcome_markdown_preserves_groups_order_text_and_states",
-    "render::markdown::trial::tests::response_markdown_explains_selected_section_states",
-    "render::markdown::trial::tests::trial_markdown_renders_coordinates_and_sanitizes_unnamed_contacts",
-)
-EXPECTED_ISOLATED_INVOCATION = (
-    '"$ROOT/tools/check-offline-network" true\n'
-    'python3 "$ROOT/tools/check-biodata-boundary.py" --root "$ROOT"\n'
-    'python3 "$ROOT/tools/check-source-capture-receipts.py" --root "$ROOT/testdata/sources"\n'
-    'for test_name in "${RUST_TESTS[@]}"; do\n'
-    '  cargo test --locked --offline --no-default-features --lib "$test_name" -- --exact\n'
-    "done\n"
-    'exec env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \\\n'
-    '  uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}" "${TICKET_0117_TESTS[@]}"\n'
-)
-FORBIDDEN_COMMANDS = (
-    "make lint",
-    "make test",
-    "make spec",
-    "make full-feature-check",
-    "make release-gate",
-    "curl ",
-    "wget ",
-    "uv publish",
-    "cargo publish",
-    "git push",
-    "deploy",
+sys.path.insert(0, str(TOOLS))
+
+from biodata_focused_selection import (  # noqa: E402
+    FocusedSelection,
+    SelectionError,
+    load_selection,
+    nextest_filter,
+    validate_python_collection,
+    validate_rust_discovery,
 )
 
 
-def _runner_test_files(runner: str) -> tuple[str, ...]:
-    match = re.search(r"readonly TEST_FILES=\(\n(?P<body>.*?)\n\)", runner, re.DOTALL)
-    if match is None:
-        return ()
-    return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
+def _load_runner() -> object:
+    loader = SourceFileLoader("biodata_focused_runner", str(RUNNER))
+    spec = spec_from_loader(loader.name, loader)
+    if spec is None:
+        raise RuntimeError("cannot load focused runner")
+    module = module_from_spec(spec)
+    sys.modules[loader.name] = module
+    loader.exec_module(module)
+    return module
 
 
-def _runner_rust_tests(runner: str) -> tuple[str, ...]:
-    match = re.search(r"readonly RUST_TESTS=\(\n(?P<body>.*?)\n\)", runner, re.DOTALL)
-    if match is None:
-        return ()
-    return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
+RUNNER_MODULE = _load_runner()
 
 
-def _runner_ticket_0117_tests(runner: str) -> tuple[str, ...]:
-    match = re.search(
-        r"readonly TICKET_0117_TESTS=\(\n(?P<body>.*?)\n\)", runner, re.DOTALL
-    )
-    if match is None:
-        return ()
-    return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
+def _manifest_with(replacements: tuple[tuple[str, str], ...]) -> str:
+    text = MANIFEST.read_text(encoding="utf-8")
+    for old, new in replacements:
+        assert old in text
+        text = text.replace(old, new, 1)
+    return text
 
 
-def _current_process_has_verified_offline_isolation() -> bool:
-    try:
-        probe = subprocess.run(
-            [str(OFFLINE_CHECKER), "true"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-    return probe.returncode == 0
+def _load_mutation(tmp_path: Path, text: str) -> FocusedSelection:
+    path = tmp_path / "focused.toml"
+    path.write_text(text, encoding="utf-8")
+    return load_selection(path)
 
 
-def _runner_violations(runner: str) -> list[str]:
-    violations: list[str] = []
-    for value in (
-        "unset NCI_API_KEY",
-        "env -u NCI_API_KEY",
-        "tools/check-biodata-boundary.py",
-        "tools/check-offline-network",
-        '[[ ! -x "$biomcp_bin" ]]',
-    ):
-        if value not in runner:
-            violations.append(f"missing focused runner control: {value}")
-    if runner.count(EXPECTED_ISOLATED_INVOCATION) != 1:
-        violations.append("isolated focused runner invocation changed")
-    if "tools/run-offline" in runner or "bwrap" in runner:
-        violations.append("BioMCP runner must not establish isolation")
-    if '[[ "${BIOMCP_OFFLINE_NETWORK:-0}" != 1 ]]' not in runner:
-        violations.append("already-isolated mode must require the verified namespace")
-    if _runner_test_files(runner) != TEST_FILES:
-        violations.append("focused runner test selection changed")
-    if _runner_ticket_0117_tests(runner) != TICKET_0117_TESTS:
-        violations.append("ticket 0117 focused selectors changed")
-    if _runner_rust_tests(runner) != RUST_TESTS:
-        violations.append("focused runner Rust test selection changed")
-    if "cargo build" in runner or "cargo run" in runner:
-        violations.append("focused runner must require an existing binary")
-    for command in FORBIDDEN_COMMANDS:
-        if command in runner.lower():
-            violations.append(f"forbidden focused runner command: {command}")
-    return violations
-
-
-def test_biomcp_keeps_only_the_local_focused_runner() -> None:
-    assert not RETIRED_WORKFLOW.exists()
-    assert not any(
-        "biodata/biomcp-1.0" in path.read_text(encoding="utf-8")
-        for path in (ROOT / ".github/workflows").iterdir()
-        if path.suffix in {".yml", ".yaml"}
-    )
+def test_manifest_is_the_only_focused_selection_source() -> None:
+    selection = load_selection(MANIFEST)
+    assert len(selection.rust) == 62
+    assert len(selection.python) == 12
     runner = RUNNER.read_text(encoding="utf-8")
-    assert not _runner_violations(runner)
+    assert runner.count("biodata-1.0-focused.toml") == 1
+    assert not RETIRED_WORKFLOW.exists()
     assert RUNNER.stat().st_mode & 0o111
 
 
 @pytest.mark.parametrize(
-    ("old", "new"),
+    "replacement",
     (
-        ("unset NCI_API_KEY", "true # retain NCI_API_KEY"),
-        ("tools/check-offline-network", "true # trust marker"),
-        (TEST_FILES[2], "tests/test_live_provider.py"),
-        (RUST_TESTS[0], "live_provider_smoke"),
-        ("uv run --no-sync pytest", "make test && uv run --no-sync pytest"),
-        ('[[ ! -x "$biomcp_bin" ]]', '[[ -x "$biomcp_bin" ]]'),
-        ("--basetemp /tmp/pytest", "--basetemp /var/tmp/pytest"),
-        (' "${TEST_FILES[@]}"', ""),
-        (' "${TEST_FILES[@]}"', ' "${TEST_FILES[@]}" tests/'),
-        (TICKET_0117_TESTS[0], "tests/test_live_provider.py::test_live"),
+        (
+            '  "entities::trial::get::tests::outcome_product_preserves_grouped_values_and_every_section_state",',
+            '  "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",',
+        ),
+        (
+            '  "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",',
+            '  " ",',
+        ),
+        (
+            '  "tests/test_biodata_boundary.py",',
+            '  "tests/test_live_provider.py",',
+        ),
+        (
+            '  "tests/test_biodata_boundary.py",',
+            '  "tests/test_credentials.py",',
+        ),
+        (
+            '  "tests/test_biodata_boundary.py",',
+            '  "tests/",',
+        ),
+        (
+            '  "tests/test_biodata_boundary.py",',
+            '  "tests/test_publication.py",',
+        ),
+        (
+            '  "tests/test_biodata_boundary.py",',
+            '  "tests/test_deployment.py",',
+        ),
+        (
+            '  "tests/test_biodata_boundary.py",',
+            '  "tests/test_release.py",',
+        ),
     ),
 )
-def test_representative_runner_mutations_are_rejected(old: str, new: str) -> None:
-    runner = RUNNER.read_text(encoding="utf-8")
-    assert old in runner
-    assert _runner_violations(runner.replace(old, new, 1))
+def test_duplicate_empty_and_forbidden_manifest_mutations_fail(
+    tmp_path: Path, replacement: tuple[str, str]
+) -> None:
+    with pytest.raises(SelectionError):
+        _load_mutation(tmp_path, _manifest_with((replacement,)))
+
+
+def test_renamed_or_zero_match_rust_selector_fails() -> None:
+    selection = load_selection(MANIFEST)
+    validate_rust_discovery(selection, selection.rust)
+    renamed = FocusedSelection((selection.rust[0] + "_renamed", *selection.rust[1:]), selection.python)
+    with pytest.raises(SelectionError, match="matched 0"):
+        validate_rust_discovery(renamed, selection.rust)
+    with pytest.raises(SelectionError, match="matched 0"):
+        validate_rust_discovery(selection, selection.rust[1:])
+
+
+def test_python_collection_validates_in_the_execution_process() -> None:
+    selection = FocusedSelection(
+        rust=("module::test_one",),
+        python=("tests/test_one.py", "tests/test_two.py::test_exact"),
+    )
+    nodeids = ("tests/test_one.py::test_a", "tests/test_two.py::test_exact")
+    validate_python_collection(selection, nodeids)
+    with pytest.raises(SelectionError, match="matched no tests"):
+        validate_python_collection(selection, nodeids[:1])
+    with pytest.raises(SelectionError, match="more than once"):
+        validate_python_collection(selection, nodeids + (nodeids[1],))
+
+
+def test_runner_uses_one_discovery_one_nextest_run_and_one_pytest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    selection = load_selection(MANIFEST)
+    discovery = json.dumps(
+        {"rust-suites": {"library": {"testcases": {name: {} for name in selection.rust}}}}
+    )
+    calls: list[tuple[list[str], dict[str, str]]] = []
+
+    def fake_run(
+        arguments: list[str], environment: dict[str, str]
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append((arguments, environment))
+        stdout = discovery if arguments[:3] == ["cargo", "nextest", "list"] else ""
+        return subprocess.CompletedProcess(arguments, 0, stdout=stdout)
+
+    with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+        binary = Path(directory) / "biomcp"
+        binary.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        binary.chmod(0o755)
+        monkeypatch.setenv("BIOMCP_BIN", str(binary))
+        monkeypatch.setattr(RUNNER_MODULE, "_run", fake_run)
+        RUNNER_MODULE.execute({"NCI_API_KEY": "must-be-removed"})
+
+    commands = [arguments for arguments, _ in calls]
+    assert sum(command[:3] == ["cargo", "nextest", "list"] for command in commands) == 1
+    assert sum(command[:3] == ["cargo", "nextest", "run"] for command in commands) == 1
+    assert sum("pytest" in command for command in commands) == 1
+    rust_run = next(command for command in commands if command[:3] == ["cargo", "nextest", "run"])
+    assert rust_run.count("--filterset") == 1
+    assert nextest_filter(selection) in rust_run
+    pytest_run = next(command for command in commands if "pytest" in command)
+    assert pytest_run[-len(selection.python) :] == list(selection.python)
+    assert all("NCI_API_KEY" not in environment for _, environment in calls)
+
+
+def test_runner_requires_the_prebuilt_worktree_local_binary(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    external = tmp_path / "biomcp"
+    external.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    external.chmod(0o755)
+    monkeypatch.setenv("BIOMCP_BIN", str(external))
+    with pytest.raises(SelectionError, match="worktree-local"):
+        RUNNER_MODULE._worktree_binary()
 
 
 def test_forged_offline_marker_fails_in_the_normal_namespace() -> None:
-    if _current_process_has_verified_offline_isolation():
-        pytest.skip("host-only forged-marker check cannot run inside offline isolation")
-    cache = ROOT / ".cache"
-    cache.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=cache) as directory:
+    with tempfile.TemporaryDirectory(dir=ROOT) as directory:
         binary = Path(directory) / "biomcp"
         binary.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
         binary.chmod(0o755)
         environment = os.environ.copy()
-        environment.update(
-            BIOMCP_BIN=str(binary),
-            BIOMCP_OFFLINE_NETWORK="1",
-        )
+        environment.update(BIOMCP_BIN=str(binary), BIOMCP_OFFLINE_NETWORK="1")
         result = subprocess.run(
             [str(RUNNER), "--already-isolated"],
             cwd=ROOT,
@@ -243,24 +199,19 @@ def test_forged_offline_marker_fails_in_the_normal_namespace() -> None:
     assert "offline privilege isolation failed" in result.stdout + result.stderr
 
 
-def test_host_only_skip_requires_a_successful_live_isolation_probe(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    returncodes = iter((1, 0))
-    calls: list[tuple[object, ...]] = []
-
-    def probe(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
-        calls.append(args)
-        return subprocess.CompletedProcess(args, next(returncodes))
-
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        probe,
-    )
-    assert not _current_process_has_verified_offline_isolation()
-    assert _current_process_has_verified_offline_isolation()
-    assert calls == [
-        ([str(OFFLINE_CHECKER), "true"],),
-        ([str(OFFLINE_CHECKER), "true"],),
-    ]
+def test_runner_contains_no_broad_or_external_command() -> None:
+    runner = RUNNER.read_text(encoding="utf-8").casefold()
+    for command in (
+        "make lint",
+        "make test",
+        "make spec",
+        "make full-feature-check",
+        "make release-gate",
+        "curl ",
+        "wget ",
+        "cargo publish",
+        "uv publish",
+        "git push",
+        "deploy",
+    ):
+        assert command not in runner
