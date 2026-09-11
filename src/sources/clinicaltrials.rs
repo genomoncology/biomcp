@@ -353,7 +353,6 @@ pub struct CtGovProtocolSection {
     pub arms_interventions_module: Option<CtGovArmsInterventionsModule>,
     pub eligibility_module: Option<CtGovEligibilityModule>,
     pub contacts_locations_module: Option<CtGovContactsLocationsModule>,
-    pub outcomes_module: Option<CtGovOutcomesModule>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -581,23 +580,6 @@ pub struct CtGovContact {
 pub struct CtGovGeoPoint {
     pub lat: Option<f64>,
     pub lon: Option<f64>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovOutcome {
-    pub measure: Option<String>,
-    pub description: Option<String>,
-    pub time_frame: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovOutcomesModule {
-    #[serde(default)]
-    pub primary_outcomes: Vec<CtGovOutcome>,
-    #[serde(default)]
-    pub secondary_outcomes: Vec<CtGovOutcome>,
 }
 
 #[cfg(test)]

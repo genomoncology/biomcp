@@ -1,8 +1,6 @@
 #[cfg(test)]
 use crate::entities::trial::{Trial, TrialDesign};
-use crate::entities::trial::{
-    TrialContact, TrialLocation, TrialOutcome, TrialOutcomes, TrialSearchResult, TrialSiteContact,
-};
+use crate::entities::trial::{TrialContact, TrialLocation, TrialSearchResult, TrialSiteContact};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
 
@@ -211,45 +209,6 @@ pub(crate) fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> 
     (!out.is_empty()).then_some(out)
 }
 
-pub(crate) fn extract_outcomes(study: &CtGovStudy) -> Option<TrialOutcomes> {
-    let module = study
-        .protocol_section
-        .as_ref()
-        .and_then(|p| p.outcomes_module.as_ref())?;
-
-    let primary = module
-        .primary_outcomes
-        .iter()
-        .filter_map(|row| {
-            let measure = clean_opt(row.measure.as_deref())?;
-            Some(TrialOutcome {
-                measure,
-                description: clean_opt(row.description.as_deref()),
-                time_frame: clean_opt(row.time_frame.as_deref()),
-            })
-        })
-        .collect::<Vec<_>>();
-
-    let secondary = module
-        .secondary_outcomes
-        .iter()
-        .filter_map(|row| {
-            let measure = clean_opt(row.measure.as_deref())?;
-            Some(TrialOutcome {
-                measure,
-                description: clean_opt(row.description.as_deref()),
-                time_frame: clean_opt(row.time_frame.as_deref()),
-            })
-        })
-        .collect::<Vec<_>>();
-
-    if primary.is_empty() && secondary.is_empty() {
-        None
-    } else {
-        Some(TrialOutcomes { primary, secondary })
-    }
-}
-
 #[cfg(test)]
 pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
     let p = study.protocol_section.as_ref();
@@ -346,7 +305,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         eligibility_provenance: None,
         contacts: extract_contacts(study),
         locations: extract_locations(study),
-        outcomes: extract_outcomes(study),
+        outcomes: None,
         references: None,
     })
 }

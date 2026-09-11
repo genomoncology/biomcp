@@ -251,6 +251,7 @@ def test_nci_detail_executes_the_strict_biodata_plan_through_the_real_cli() -> N
     assert trial["section_states"] == {
         "arms": "present",
         "eligibility": "present",
+        "outcomes": "unavailable",
         "references": "unavailable",
     }
     assert len(trial["arms"]) == 2

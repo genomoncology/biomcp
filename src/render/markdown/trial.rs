@@ -386,6 +386,8 @@ fn render_trial_markdown(
     let arms = arm_views(trial);
     let age_range = trial.eligibility.as_ref().and_then(eligibility_age_range);
     let eligibility_text = trial.eligibility.as_ref().map(eligibility_markdown);
+    let outcomes = crate::entities::trial::outcome_wire::views(&trial.outcomes)
+        .map_err(|_| BioMcpError::InternalProcessing)?;
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&trial.nct_id, requested_sections),
@@ -411,11 +413,12 @@ fn render_trial_markdown(
         contacts => &trial.contacts,
         locations => &trial.locations,
         location_disclosure => location_disclosure,
-        outcomes => &trial.outcomes,
+        outcomes => &outcomes,
         arms => &arms,
         references => &references,
         arms_state => section_states.map(|states| states.arms),
         eligibility_state => section_states.map(|states| states.eligibility),
+        outcomes_state => section_states.map(|states| states.outcomes),
         references_state => section_states.map(|states| states.references),
         show_eligibility_section => show_eligibility_section,
         show_contacts_section => show_contacts_section,

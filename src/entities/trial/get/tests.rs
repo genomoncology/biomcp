@@ -114,6 +114,160 @@ fn ctgov_product_core_ignores_every_legacy_core_field() {
 }
 
 #[test]
+fn ctgov_product_outcomes_ignore_raw_legacy_study_mutation() {
+    let bytes =
+        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
+    let sections = ["outcomes".to_owned()];
+    let expected = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        bytes,
+    )
+    .unwrap();
+    let mut actual = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        bytes,
+    )
+    .unwrap();
+    let mut mutation: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+    mutation["protocolSection"]["outcomesModule"] = serde_json::json!({
+        "primaryOutcomes": [{
+            "measure": "legacy mutation",
+            "description": "must not enter the product",
+            "timeFrame": "never"
+        }],
+        "secondaryOutcomes": [{"measure": "legacy secondary mutation"}],
+        "otherOutcomes": [{"measure": "legacy other mutation"}]
+    });
+    actual.study = ClinicalTrialsClient::decode_get_response(
+        "NCT02576665",
+        reqwest::StatusCode::OK,
+        &serde_json::to_vec(&mutation).unwrap(),
+    )
+    .unwrap();
+
+    let flags = parse_sections(&sections).unwrap();
+    let expected = product_from_ctgov_response(expected, flags, "NCT02576665").unwrap();
+    let actual = product_from_ctgov_response(actual, flags, "NCT02576665").unwrap();
+    assert_eq!(
+        serde_json::to_value(actual).unwrap()["outcomes"],
+        serde_json::to_value(expected).unwrap()["outcomes"]
+    );
+}
+
+#[test]
+fn outcome_product_preserves_grouped_values_and_every_section_state() {
+    let bytes =
+        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
+    let sections = ["outcomes".to_owned()];
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        bytes,
+    )
+    .unwrap();
+    let present =
+        product_from_ctgov_response(response, parse_sections(&sections).unwrap(), "NCT02576665")
+            .unwrap();
+    let present_json = serde_json::to_value(&present).unwrap();
+    assert_eq!(present.section_states.outcomes, TrialSectionState::Present);
+    assert_eq!(
+        present_json["outcomes"],
+        serde_json::json!({
+            "primary": [{
+                "measure": "Changes from baseline in immune activity in tumor and peripheral blood",
+                "time_frame": "Baseline to Weeks 9-10"
+            }],
+            "secondary": [],
+            "other": []
+        })
+    );
+
+    let mut empty_bytes: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+    empty_bytes["protocolSection"]["outcomesModule"] = serde_json::json!({"primaryOutcomes": []});
+    let empty = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        &serde_json::to_vec(&empty_bytes).unwrap(),
+    )
+    .unwrap();
+    let empty =
+        product_from_ctgov_response(empty, parse_sections(&sections).unwrap(), "NCT02576665")
+            .unwrap();
+    assert_eq!(empty.section_states.outcomes, TrialSectionState::Present);
+    assert_eq!(
+        serde_json::to_value(&empty).unwrap()["outcomes"],
+        serde_json::json!({"primary": [], "secondary": [], "other": []})
+    );
+
+    let mut absent_bytes: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+    absent_bytes["protocolSection"]
+        .as_object_mut()
+        .unwrap()
+        .remove("outcomesModule");
+    let absent = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        &serde_json::to_vec(&absent_bytes).unwrap(),
+    )
+    .unwrap();
+    let absent =
+        product_from_ctgov_response(absent, parse_sections(&sections).unwrap(), "NCT02576665")
+            .unwrap();
+    let absent_json = serde_json::to_value(&absent).unwrap();
+    assert_eq!(absent.section_states.outcomes, TrialSectionState::Absent);
+    assert!(absent_json.get("outcomes").is_none());
+
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &[],
+        reqwest::StatusCode::OK,
+        bytes,
+    )
+    .unwrap();
+    let not_requested =
+        product_from_ctgov_response(response, parse_sections(&[]).unwrap(), "NCT02576665").unwrap();
+    assert_eq!(
+        not_requested.section_states.outcomes,
+        TrialSectionState::NotRequested
+    );
+    assert!(
+        serde_json::to_value(&not_requested)
+            .unwrap()
+            .get("outcomes")
+            .is_none()
+    );
+
+    let record = receipted_nci_record();
+    let plan = NciCtsV2DetailPlan::new("NCT05879926", false)
+        .unwrap()
+        .with_outcomes();
+    let response = NciCtsV2DetailResponse::parse(
+        &plan,
+        &serde_json::to_vec(&serde_json::json!({"total": 1, "data": [record]})).unwrap(),
+        &biodata::NciCtsV2Limits::default(),
+    )
+    .unwrap();
+    let unavailable = product_from_nci_response(&response, false, false).unwrap();
+    assert_eq!(
+        unavailable.section_states.outcomes,
+        TrialSectionState::Unavailable
+    );
+    assert!(
+        serde_json::to_value(unavailable)
+            .unwrap()
+            .get("outcomes")
+            .is_none()
+    );
+}
+
+#[test]
 fn parse_sections_accepts_contacts_and_all_includes_contacts() {
     for section in ["arms", "contacts", "locations", "outcomes", "references"] {
         let parsed = parse_sections(&[section.to_string()]).unwrap();
@@ -251,7 +405,7 @@ fn nci_product_conversion_checks_enrollment_and_preserves_source_presence() {
             .unwrap()
             .keys()
             .collect::<Vec<_>>(),
-        ["arms", "eligibility", "references"]
+        ["arms", "eligibility", "outcomes", "references"]
     );
 }
 

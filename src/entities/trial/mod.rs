@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use biodata::{ClinicalTrialEligibility, ClinicalTrialReference};
+use biodata::{ClinicalTrialEligibility, ClinicalTrialPlannedOutcome, ClinicalTrialReference};
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
 
@@ -75,8 +75,13 @@ pub struct Trial {
     pub contacts: Option<Vec<TrialContact>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locations: Option<Vec<TrialLocation>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub outcomes: Option<TrialOutcomes>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "outcome_wire::serialize",
+        deserialize_with = "outcome_wire::deserialize"
+    )]
+    pub outcomes: Option<Vec<ClinicalTrialPlannedOutcome>>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -104,6 +109,7 @@ pub enum TrialSectionState {
 pub struct TrialSectionStates {
     pub arms: TrialSectionState,
     pub eligibility: TrialSectionState,
+    pub outcomes: TrialSectionState,
     pub references: TrialSectionState,
 }
 
@@ -645,21 +651,131 @@ mod age_tests {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialOutcomes {
-    #[serde(default)]
-    pub primary: Vec<TrialOutcome>,
-    #[serde(default)]
-    pub secondary: Vec<TrialOutcome>,
-}
+pub(crate) mod outcome_wire {
+    use biodata::{ClinicalTrialPlannedOutcome, ExtensibleCode};
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialOutcome {
-    pub measure: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_frame: Option<String>,
+    const AUTHORITY: &str = "clinicaltrials.gov";
+    const INVALID_OUTCOME: &str = "invalid clinical trial planned outcome";
+
+    #[derive(Serialize)]
+    pub(crate) struct RowView<'a> {
+        measure: &'a str,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        description: Option<&'a str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        time_frame: Option<&'a str>,
+    }
+
+    impl<'a> From<&'a ClinicalTrialPlannedOutcome> for RowView<'a> {
+        fn from(value: &'a ClinicalTrialPlannedOutcome) -> Self {
+            Self {
+                measure: value.measure(),
+                description: value.description(),
+                time_frame: value.time_frame(),
+            }
+        }
+    }
+
+    #[derive(Serialize)]
+    pub(crate) struct GroupedView<'a> {
+        primary: Vec<RowView<'a>>,
+        secondary: Vec<RowView<'a>>,
+        other: Vec<RowView<'a>>,
+    }
+
+    pub(crate) fn views(
+        outcomes: &Option<Vec<ClinicalTrialPlannedOutcome>>,
+    ) -> Result<Option<GroupedView<'_>>, &'static str> {
+        outcomes
+            .as_deref()
+            .map(|values| {
+                let mut grouped = GroupedView {
+                    primary: Vec::new(),
+                    secondary: Vec::new(),
+                    other: Vec::new(),
+                };
+                for outcome in values {
+                    let classification = outcome.source_classification();
+                    if classification.authority() != AUTHORITY {
+                        return Err(INVALID_OUTCOME);
+                    }
+                    let row = RowView::from(outcome);
+                    match classification.code() {
+                        "primaryOutcomes" => grouped.primary.push(row),
+                        "secondaryOutcomes" => grouped.secondary.push(row),
+                        "otherOutcomes" => grouped.other.push(row),
+                        _ => return Err(INVALID_OUTCOME),
+                    }
+                }
+                Ok(grouped)
+            })
+            .transpose()
+    }
+
+    pub(super) fn serialize<S: Serializer>(
+        outcomes: &Option<Vec<ClinicalTrialPlannedOutcome>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        views(outcomes)
+            .map_err(serde::ser::Error::custom)?
+            .serialize(serializer)
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Grouped {
+        #[serde(default)]
+        primary: Vec<Row>,
+        #[serde(default)]
+        secondary: Vec<Row>,
+        #[serde(default)]
+        other: Vec<Row>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Row {
+        measure: String,
+        description: Option<String>,
+        time_frame: Option<String>,
+    }
+
+    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<Vec<ClinicalTrialPlannedOutcome>>, D::Error> {
+        Option::<Grouped>::deserialize(deserializer)?
+            .map(|grouped| {
+                [
+                    ("primaryOutcomes", grouped.primary),
+                    ("secondaryOutcomes", grouped.secondary),
+                    ("otherOutcomes", grouped.other),
+                ]
+                .into_iter()
+                .flat_map(|(classification, rows)| {
+                    rows.into_iter().map(move |row| (classification, row))
+                })
+                .map(|(classification, row)| {
+                    let classification = ExtensibleCode::new(
+                        AUTHORITY,
+                        classification,
+                        None::<String>,
+                        None::<String>,
+                        None::<String>,
+                    )
+                    .map_err(|_| serde::de::Error::custom(INVALID_OUTCOME))?;
+                    ClinicalTrialPlannedOutcome::new(
+                        row.measure,
+                        row.description,
+                        row.time_frame,
+                        classification,
+                    )
+                    .map_err(|_| serde::de::Error::custom(INVALID_OUTCOME))
+                })
+                .collect()
+            })
+            .transpose()
+    }
 }
 
 pub(crate) mod reference_wire {

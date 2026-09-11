@@ -476,11 +476,7 @@ fn from_ctgov_study_preserves_provider_type_fields_in_json() {
     let trial = from_ctgov_study(&study).expect("valid trial fixture");
     assert!(trial.design.interventions().is_empty());
     assert!(trial.design.arms().is_none());
-    let outcomes = trial.outcomes.as_ref().expect("outcomes");
-    assert_eq!(outcomes.primary.len(), 1);
-    assert_eq!(outcomes.primary[0].measure, "Overall survival");
-    assert_eq!(outcomes.secondary.len(), 1);
-    assert_eq!(outcomes.secondary[0].measure, "Progression-free survival");
+    assert!(trial.outcomes.is_none());
 }
 
 #[test]

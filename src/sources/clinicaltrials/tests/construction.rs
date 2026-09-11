@@ -208,7 +208,7 @@ fn every_product_detail_route_has_one_exact_composed_request() {
         ),
         (
             vec!["all"],
-            "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OfficialTitle,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
+            "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OfficialTitle,OtherOutcomeDescription,OtherOutcomeMeasure,OtherOutcomeTimeFrame,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
         ),
         (
             vec!["eligibility"],
@@ -224,7 +224,7 @@ fn every_product_detail_route_has_one_exact_composed_request() {
         ),
         (
             vec!["arms", "outcomes"],
-            "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OfficialTitle,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
+            "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OfficialTitle,OtherOutcomeDescription,OtherOutcomeMeasure,OtherOutcomeTimeFrame,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
         ),
     ];
 

@@ -274,6 +274,7 @@ fn response_markdown_explains_selected_section_states() {
         section_states: TrialSectionStates {
             arms: TrialSectionState::Present,
             eligibility: TrialSectionState::Absent,
+            outcomes: TrialSectionState::NotRequested,
             references: TrialSectionState::Unavailable,
         },
     };
@@ -286,6 +287,129 @@ fn response_markdown_explains_selected_section_states() {
     omitted.section_states.references = TrialSectionState::NotRequested;
     let markdown = trial_response_markdown(&omitted, &["references".to_owned()]).unwrap();
     assert!(!markdown.contains("## References"));
+}
+
+#[test]
+fn planned_outcome_markdown_preserves_groups_order_text_and_states() {
+    use crate::entities::trial::{TrialResponse, TrialSectionState, TrialSectionStates};
+
+    let planned = |classification: &str, measure: &str, description: &str, time_frame: &str| {
+        biodata::ClinicalTrialPlannedOutcome::new(
+            measure,
+            Some(description),
+            Some(time_frame),
+            biodata::ExtensibleCode::new(
+                "clinicaltrials.gov",
+                classification,
+                None::<String>,
+                None::<String>,
+                None::<String>,
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    };
+    let mut trial = summary_trial(None);
+    trial.outcomes = Some(vec![
+        planned(
+            "primaryOutcomes",
+            "Primary measure α",
+            "Complete primary description.",
+            "From baseline through week 10",
+        ),
+        planned(
+            "primaryOutcomes",
+            "Primary measure β",
+            "Second complete primary description.",
+            "At week 12",
+        ),
+        planned(
+            "secondaryOutcomes",
+            "Secondary measure",
+            "Complete secondary description.",
+            "During follow-up",
+        ),
+        planned(
+            "otherOutcomes",
+            "Other measure",
+            "Complete other description.",
+            "At end of treatment",
+        ),
+    ]);
+    let states = TrialSectionStates {
+        arms: TrialSectionState::NotRequested,
+        eligibility: TrialSectionState::NotRequested,
+        outcomes: TrialSectionState::Present,
+        references: TrialSectionState::NotRequested,
+    };
+    let response = TrialResponse {
+        trial,
+        section_states: states.clone(),
+    };
+    let markdown = trial_response_markdown(&response, &["outcomes".to_owned()]).unwrap();
+    for text in [
+        "Complete primary description.",
+        "From baseline through week 10",
+        "Second complete primary description.",
+        "At week 12",
+        "Complete secondary description.",
+        "During follow-up",
+        "Complete other description.",
+        "At end of treatment",
+    ] {
+        assert!(markdown.contains(text), "missing complete text: {text}");
+    }
+    let positions = [
+        "### Primary",
+        "Primary measure α",
+        "Primary measure β",
+        "### Secondary",
+        "Secondary measure",
+        "### Other",
+        "Other measure",
+    ]
+    .map(|text| markdown.find(text).unwrap());
+    assert!(positions.windows(2).all(|pair| pair[0] < pair[1]));
+
+    let mut empty = summary_trial(None);
+    empty.outcomes = Some(Vec::new());
+    let markdown = trial_response_markdown(
+        &TrialResponse {
+            trial: empty,
+            section_states: states.clone(),
+        },
+        &["outcomes".to_owned()],
+    )
+    .unwrap();
+    assert!(markdown.contains("The provider returned no planned outcomes."));
+
+    for (state, expected) in [
+        (
+            TrialSectionState::Absent,
+            Some("The provider omitted planned outcomes."),
+        ),
+        (
+            TrialSectionState::Unavailable,
+            Some("The selected provider does not support planned outcomes."),
+        ),
+        (TrialSectionState::NotRequested, None),
+    ] {
+        let mut section_states = states.clone();
+        section_states.outcomes = state;
+        let markdown = trial_response_markdown(
+            &TrialResponse {
+                trial: summary_trial(None),
+                section_states,
+            },
+            &["outcomes".to_owned()],
+        )
+        .unwrap();
+        if let Some(expected) = expected {
+            assert!(markdown.contains(expected));
+        } else {
+            assert!(!markdown.contains("## Outcomes"));
+        }
+    }
 }
 
 #[test]
@@ -459,14 +583,22 @@ fn trial_markdown_includes_source_labeled_sections() {
             latitude: None,
             longitude: None,
         }]),
-        outcomes: Some(crate::entities::trial::TrialOutcomes {
-            primary: vec![crate::entities::trial::TrialOutcome {
-                measure: "FEV1".to_string(),
-                description: None,
-                time_frame: None,
-            }],
-            secondary: Vec::new(),
-        }),
+        outcomes: Some(vec![
+            biodata::ClinicalTrialPlannedOutcome::new(
+                "FEV1",
+                None::<String>,
+                None::<String>,
+                biodata::ExtensibleCode::new(
+                    "clinicaltrials.gov",
+                    "primaryOutcomes",
+                    None::<String>,
+                    None::<String>,
+                    None::<String>,
+                )
+                .unwrap(),
+            )
+            .unwrap(),
+        ]),
         references: Some(vec![
             biodata::ClinicalTrialReference::new(
                 Some("22663011".to_string()),

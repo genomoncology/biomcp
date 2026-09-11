@@ -6,8 +6,8 @@ use crate::sources::clinicaltrials::CtGovBiodataDetailResponse;
 use crate::sources::nci_cts::NciCtsClient;
 use crate::transform;
 use biodata::{
-    ClinicalTrialArms, ClinicalTrialEligibility, ClinicalTrialIntervention, ClinicalTrialSection,
-    NciCtsV2DetailPlan, NciCtsV2DetailResponse,
+    ClinicalTrialArms, ClinicalTrialEligibility, ClinicalTrialIntervention,
+    ClinicalTrialPlannedOutcome, ClinicalTrialSection, NciCtsV2DetailPlan, NciCtsV2DetailResponse,
 };
 
 use super::{
@@ -190,6 +190,20 @@ fn product_eligibility(
     }
 }
 
+fn product_outcomes<T>(
+    section: &ClinicalTrialSection<T>,
+) -> Option<Vec<ClinicalTrialPlannedOutcome>>
+where
+    T: AsRef<[ClinicalTrialPlannedOutcome]>,
+{
+    match section {
+        ClinicalTrialSection::Present(values) => Some(values.as_ref().to_vec()),
+        ClinicalTrialSection::NotRequested
+        | ClinicalTrialSection::Unavailable
+        | ClinicalTrialSection::Absent => None,
+    }
+}
+
 fn product_from_nci_response(
     response: &NciCtsV2DetailResponse,
     request_eligibility: bool,
@@ -204,11 +218,14 @@ fn product_from_nci_response(
         product_nci_design(shared, include_arms)?,
     );
     trial.eligibility = eligibility;
+    let outcomes = response.outcomes();
+    trial.outcomes = product_outcomes(&outcomes);
     Ok(TrialResponse {
         trial,
         section_states: TrialSectionStates {
             arms: arms_state,
             eligibility: section_state(&response.eligibility()),
+            outcomes: section_state(&outcomes),
             references: TrialSectionState::NotRequested,
         },
     })
@@ -226,7 +243,7 @@ fn product_from_ctgov_response(
     );
     trial.contacts = transform::trial::extract_contacts(&response.study);
     trial.locations = transform::trial::extract_locations(&response.study);
-    trial.outcomes = transform::trial::extract_outcomes(&response.study);
+    trial.outcomes = product_outcomes(response.shared.outcomes());
     let reference_state = section_state(response.shared.references());
     if section_flags.include_references
         && let ClinicalTrialSection::Present(values) = response.shared.references()
@@ -266,6 +283,7 @@ fn product_from_ctgov_response(
         section_states: TrialSectionStates {
             arms: section_state(response.shared.arms()),
             eligibility: section_state(response.shared.eligibility()),
+            outcomes: section_state(response.shared.outcomes()),
             references: reference_state,
         },
     })
@@ -327,8 +345,11 @@ pub async fn get(
             product_from_ctgov_response(response, section_flags, nct_id)
         }
         TrialSource::NciCts => {
-            let plan = NciCtsV2DetailPlan::new(nct_id, section_flags.request_eligibility)
+            let mut plan = NciCtsV2DetailPlan::new(nct_id, section_flags.request_eligibility)
                 .map_err(|_| BioMcpError::InternalProcessing)?;
+            if section_flags.include_outcomes {
+                plan = plan.with_outcomes();
+            }
             let client = NciCtsClient::new()?;
             let response = client.get(&plan).await?;
             let mut trial = product_from_nci_response(

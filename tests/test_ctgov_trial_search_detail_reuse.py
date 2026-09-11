@@ -52,10 +52,10 @@ REFERENCE_FIELDS = [
 DETAIL_ROUTE_FIELDS = {
     "overview": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OfficialTitle,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
     "arms": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OfficialTitle,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
-    "all": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OfficialTitle,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
+    "all": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OfficialTitle,OtherOutcomeDescription,OtherOutcomeMeasure,OtherOutcomeTimeFrame,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
     "eligibility": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OfficialTitle,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
     "documents": "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,NCTId,OfficialTitle,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
-    "mixed": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OfficialTitle,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
+    "mixed": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OfficialTitle,OtherOutcomeDescription,OtherOutcomeMeasure,OtherOutcomeTimeFrame,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
 }
 
 
@@ -121,7 +121,9 @@ def test_combined_geo_and_eligibility_filters_fetch_one_detail_projection() -> N
             ]
             assert len(detail_requests) == 1, detail_requests
 
-            fields = parse_qs(urlparse(detail_requests[0]).query)["fields"][0].split(",")
+            fields = parse_qs(urlparse(detail_requests[0]).query)["fields"][0].split(
+                ","
+            )
             assert "EligibilityCriteria" in fields
             assert "LocationFacility" in fields
             assert "LocationGeoPoint" in fields
@@ -140,9 +142,7 @@ def _run_alias_search_with_detail_log(
             env["BIOMCP_MYCHEM_BASE"] = fixture_env[
                 "BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE"
             ]
-            biomcp_bin = env.get(
-                "BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp")
-            )
+            biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp"))
             completed = subprocess.run(
                 [
                     biomcp_bin,
@@ -270,8 +270,7 @@ def _run_reference(
             *([section] if isinstance(section, str) else section),
         ],
         cwd=REPO_ROOT,
-        env=os.environ
-        | {"BIOMCP_CTGOV_BASE": base, "BIOMCP_CACHE_DIR": str(cache)},
+        env=os.environ | {"BIOMCP_CTGOV_BASE": base, "BIOMCP_CACHE_DIR": str(cache)},
         text=True,
         capture_output=True,
         timeout=30,
@@ -301,8 +300,41 @@ def test_detail_structured_core_and_section_states_are_complete(tmp_path: Path) 
         assert trial["section_states"] == {
             "arms": "not_requested",
             "eligibility": "present",
+            "outcomes": "not_requested",
             "references": "not_requested",
         }
+
+
+def test_recorded_planned_outcome_uses_the_biodata_product_view(
+    tmp_path: Path,
+) -> None:
+    with _reference_trial_server() as (base, replies, _requests):
+        result = _run_reference(base, tmp_path, "NCT02576665", "outcomes")
+        assert result.returncode == 0, result.stderr
+        trial = json.loads(result.stdout)
+        source = json.loads(replies["NCT02576665"])["protocolSection"]["outcomesModule"]
+        expected_primary = [
+            {
+                "measure": row["measure"],
+                **({"description": row["description"]} if "description" in row else {}),
+                **({"time_frame": row["timeFrame"]} if "timeFrame" in row else {}),
+            }
+            for row in source["primaryOutcomes"]
+        ]
+        assert trial["outcomes"] == {
+            "primary": expected_primary,
+            "secondary": [],
+            "other": [],
+        }
+        assert trial["section_states"]["outcomes"] == "present"
+
+        markdown = _run_reference(
+            base, tmp_path, "NCT02576665", "outcomes", json_output=False
+        )
+        assert markdown.returncode == 0, markdown.stderr
+        assert "### Primary" in markdown.stdout
+        assert source["primaryOutcomes"][0]["measure"] in markdown.stdout
+        assert source["primaryOutcomes"][0]["timeFrame"] in markdown.stdout
 
 
 @pytest.mark.parametrize(
@@ -372,9 +404,7 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
             positions = []
             for row in expected:
                 entry = next(
-                    line
-                    for line in markdown.stdout.splitlines()
-                    if row["pmid"] in line
+                    line for line in markdown.stdout.splitlines() if row["pmid"] in line
                 )
                 assert row["citation"] in entry
                 if row["source_type"]:
@@ -390,7 +420,9 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
             if section == "references":
                 assert fields == REFERENCE_FIELDS
             else:
-                assert {"ReferencePMID", "ReferenceType", "ReferenceCitation"} <= set(fields)
+                assert {"ReferencePMID", "ReferenceType", "ReferenceCitation"} <= set(
+                    fields
+                )
                 assert "PrimaryOutcomeMeasure" in fields
 
 
@@ -443,7 +475,11 @@ def test_synthetic_partial_reply_preserves_complete_changed_references(
                 },
             },
             {"pmid": " ", "citation": " Another citation. ", "source_type": None},
-            {"pmid": None, "citation": "Missing optional members.", "source_type": None},
+            {
+                "pmid": None,
+                "citation": "Missing optional members.",
+                "source_type": None,
+            },
             {"pmid": "discard-empty", "citation": " \t ", "source_type": None},
             {"pmid": "discard-null", "citation": None, "source_type": None},
             {"pmid": "discard-missing", "citation": None, "source_type": None},
@@ -481,7 +517,7 @@ def test_other_trial_section_and_not_found_still_work(tmp_path: Path) -> None:
         assert "panicked" not in missing.stderr.lower()
 
 
-def test_mixed_references_request_keeps_the_legacy_field_set(tmp_path: Path) -> None:
+def test_mixed_references_request_keeps_the_composed_field_set(tmp_path: Path) -> None:
     with _reference_trial_server() as (base, _replies, requests):
         result = _run_reference(
             base, tmp_path, "NCT02576665", ["references", "outcomes"]
@@ -490,6 +526,7 @@ def test_mixed_references_request_keeps_the_legacy_field_set(tmp_path: Path) -> 
         fields = parse_qs(urlparse(requests[-1]).query)["fields"][0].split(",")
         assert "ReferenceCitation" in fields
         assert "PrimaryOutcomeMeasure" in fields
+        assert "OtherOutcomeMeasure" in fields
 
 
 def test_reference_validation_and_http_errors_are_safe(tmp_path: Path) -> None:
@@ -517,7 +554,11 @@ def test_reference_validation_and_http_errors_are_safe(tmp_path: Path) -> None:
             assert "NCT00000001" not in combined
             assert "protocolSection" not in combined
             assert "identificationModule" not in combined
-            recovery = "Narrow the request" if label == "resource limit" else "Retry the remote source"
+            recovery = (
+                "Narrow the request"
+                if label == "resource limit"
+                else "Retry the remote source"
+            )
             assert recovery in combined
         replies["NCT02576665"] = original
 

@@ -7,7 +7,7 @@ use std::sync::{
 use axum::{
     Json, Router,
     body::Body,
-    extract::State,
+    extract::{Path as AxumPath, State},
     http::{Response, StatusCode, Uri, header},
     routing::get as axum_get,
 };
@@ -35,14 +35,32 @@ fn shared_mcp_error_conversion_hides_trial_design_details() {
     assert!(!value.to_string().contains("42"));
 }
 
-struct CtGovAgeMcpEnv(Option<std::ffi::OsString>);
+struct CtGovAgeMcpEnv {
+    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    _cache: tempfile::TempDir,
+}
 
 impl CtGovAgeMcpEnv {
     fn set(base: &str) -> Self {
-        let previous = std::env::var_os("BIOMCP_CTGOV_BASE");
-        // SAFETY: callers hold the serial-test process-wide environment lock.
-        unsafe { std::env::set_var("BIOMCP_CTGOV_BASE", base) };
-        Self(previous)
+        let cache = tempfile::tempdir().expect("ClinicalTrials.gov MCP cache directory");
+        let values = [
+            ("BIOMCP_CTGOV_BASE", base.to_owned()),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
+            ("BIOMCP_TEST_UNPACED_ORIGIN", base.to_owned()),
+        ];
+        let mut previous = Vec::new();
+        for (name, value) in values {
+            previous.push((name, std::env::var_os(name)));
+            // SAFETY: callers hold the serial-test process-wide environment lock.
+            unsafe { std::env::set_var(name, value) };
+        }
+        Self {
+            previous,
+            _cache: cache,
+        }
     }
 }
 
@@ -95,13 +113,48 @@ impl Drop for CtGovAgeMcpEnv {
     fn drop(&mut self) {
         // SAFETY: callers hold the serial-test process-wide environment lock.
         unsafe {
-            if let Some(previous) = self.0.take() {
-                std::env::set_var("BIOMCP_CTGOV_BASE", previous);
-            } else {
-                std::env::remove_var("BIOMCP_CTGOV_BASE");
+            for (name, previous) in self.previous.drain(..) {
+                if let Some(previous) = previous {
+                    std::env::set_var(name, previous);
+                } else {
+                    std::env::remove_var(name);
+                }
             }
         }
     }
+}
+
+async fn trial_json_channels(nct_id: &str, sections: &[&str]) -> [serde_json::Value; 3] {
+    let mut cli_args = ["biomcp", "--json", "get", "trial", nct_id]
+        .map(str::to_owned)
+        .to_vec();
+    cli_args.extend(sections.iter().map(|value| (*value).to_owned()));
+    let cli = crate::cli::execute(cli_args).await.unwrap();
+    let typed = BioMcpServer::new()
+        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
+            json!({
+                "entity":"trial", "id":nct_id, "sections":sections, "json":true
+            }),
+        )))
+        .await
+        .unwrap();
+    let raw = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: format!("biomcp get trial {nct_id} {}", sections.join(" ")),
+            json: true,
+        }))
+        .await
+        .unwrap();
+    let mcp_json = |result| {
+        let value = serde_json::to_value(result).unwrap();
+        serde_json::from_str::<serde_json::Value>(value["content"][0]["text"].as_str().unwrap())
+            .unwrap()
+    };
+    [
+        serde_json::from_str(&cli).unwrap(),
+        mcp_json(typed),
+        mcp_json(raw),
+    ]
 }
 
 struct ClinvarMcpEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
@@ -528,7 +581,7 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     assert_eq!(typed["sponsor"], "Infant study sponsor");
     assert_eq!(
         typed["section_states"],
-        json!({"arms":"present","eligibility":"present","references":"not_requested"})
+        json!({"arms":"present","eligibility":"present","outcomes":"not_requested","references":"not_requested"})
     );
     assert_eq!(typed["interventions"], raw["interventions"]);
     assert_eq!(typed["arms"], raw["arms"]);
@@ -646,7 +699,7 @@ async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
     assert_eq!(cli["sponsor"], "Reference study sponsor");
     assert_eq!(
         cli["section_states"],
-        json!({"arms":"not_requested","eligibility":"not_requested","references":"present"})
+        json!({"arms":"not_requested","eligibility":"not_requested","outcomes":"not_requested","references":"present"})
     );
     assert_eq!(
         expected[0]
@@ -679,7 +732,82 @@ async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
+async fn cli_typed_and_raw_trial_get_preserve_planned_outcome_values_and_states() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let router = Router::new().route(
+        "/studies/{id}",
+        axum_get(|AxumPath(id): AxumPath<String>| async move {
+            let outcomes = match id.as_str() {
+                "NCT60000003" => Some(json!({
+                    "primaryOutcomes": [
+                        {"measure":"Primary one", "description":"Primary description one", "timeFrame":"Week 1"},
+                        {"measure":"Primary two", "description":"Primary description two", "timeFrame":"Week 2"}
+                    ],
+                    "secondaryOutcomes": [
+                        {"measure":"Secondary one", "description":"Secondary description", "timeFrame":"Week 3"}
+                    ],
+                    "otherOutcomes": [
+                        {"measure":"Other one", "description":"Other description", "timeFrame":"Week 4"}
+                    ]
+                })),
+                "NCT60000004" => Some(json!({"primaryOutcomes": []})),
+                "NCT60000005" => None,
+                _ => panic!("unexpected trial fixture identity: {id}"),
+            };
+            let mut protocol = json!({
+                "identificationModule": {"nctId":id,"briefTitle":"Outcome trial"},
+                "statusModule": {"overallStatus":"RECRUITING"},
+                "sponsorCollaboratorsModule": {"leadSponsor":{"name":"Outcome sponsor"}},
+                "conditionsModule": {"conditions":["Outcome condition"]},
+                "designModule": {"studyType":"INTERVENTIONAL","phases":[]}
+            });
+            if let Some(outcomes) = outcomes {
+                protocol["outcomesModule"] = outcomes;
+            }
+            Json(json!({"protocolSection": protocol}))
+        }),
+    );
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let _env = CtGovAgeMcpEnv::set(&base);
+
+    let expected = json!({
+        "primary": [
+            {"measure":"Primary one", "description":"Primary description one", "time_frame":"Week 1"},
+            {"measure":"Primary two", "description":"Primary description two", "time_frame":"Week 2"}
+        ],
+        "secondary": [
+            {"measure":"Secondary one", "description":"Secondary description", "time_frame":"Week 3"}
+        ],
+        "other": [
+            {"measure":"Other one", "description":"Other description", "time_frame":"Week 4"}
+        ]
+    });
+    for value in trial_json_channels("NCT60000003", &["outcomes"]).await {
+        assert_eq!(value["outcomes"], expected);
+        assert_eq!(value["section_states"]["outcomes"], "present");
+    }
+    for value in trial_json_channels("NCT60000004", &["outcomes"]).await {
+        assert_eq!(
+            value["outcomes"],
+            json!({"primary": [], "secondary": [], "other": []})
+        );
+        assert_eq!(value["section_states"]["outcomes"], "present");
+    }
+    for value in trial_json_channels("NCT60000005", &["outcomes"]).await {
+        assert!(value.get("outcomes").is_none());
+        assert_eq!(value["section_states"]["outcomes"], "absent");
+    }
+    for value in trial_json_channels("NCT60000003", &[]).await {
+        assert!(value.get("outcomes").is_none());
+        assert_eq!(value["section_states"]["outcomes"], "not_requested");
+    }
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn cli_typed_and_raw_nci_trial_get_preserve_assignments_and_outcome_state() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let mut envelope: serde_json::Value = serde_json::from_slice(include_bytes!(
@@ -707,6 +835,26 @@ async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
     .map(|name| (name, std::env::var_os(name)));
     let env = NciTrialMcpEnv::set(&base);
 
+    let cli = tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        crate::cli::execute(
+            [
+                "biomcp",
+                "--json",
+                "get",
+                "trial",
+                "NCT05879926",
+                "--source",
+                "nci",
+                "all",
+            ]
+            .map(str::to_owned)
+            .to_vec(),
+        ),
+    )
+    .await
+    .expect("CLI NCI get timeout")
+    .unwrap();
     let typed = tokio::time::timeout(
         std::time::Duration::from_secs(10),
         BioMcpServer::new().get(rmcp::handler::server::wrapper::Parameters(TypedGet(
@@ -736,8 +884,14 @@ async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
         serde_json::from_str::<serde_json::Value>(value["content"][0]["text"].as_str().unwrap())
             .unwrap()
     };
+    let cli = serde_json::from_str::<serde_json::Value>(&cli).unwrap();
     let typed = response_json(typed);
     let raw = response_json(raw);
+    for value in [&cli, &typed, &raw] {
+        assert!(value.get("outcomes").is_none());
+        assert_eq!(value["section_states"]["outcomes"], "unavailable");
+    }
+    assert_eq!(cli["eligibility"], typed["eligibility"]);
     assert_eq!(typed["eligibility"], raw["eligibility"]);
     let eligibility_property_names = typed["eligibility"]
         .as_object()

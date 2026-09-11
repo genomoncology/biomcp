@@ -343,14 +343,22 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             latitude: None,
             longitude: None,
         }]),
-        outcomes: Some(crate::entities::trial::TrialOutcomes {
-            primary: vec![crate::entities::trial::TrialOutcome {
-                measure: "FEV1".to_string(),
-                description: None,
-                time_frame: None,
-            }],
-            secondary: Vec::new(),
-        }),
+        outcomes: Some(vec![
+            biodata::ClinicalTrialPlannedOutcome::new(
+                "FEV1",
+                None::<String>,
+                None::<String>,
+                biodata::ExtensibleCode::new(
+                    "clinicaltrials.gov",
+                    "primaryOutcomes",
+                    None::<String>,
+                    None::<String>,
+                    None::<String>,
+                )
+                .unwrap(),
+            )
+            .unwrap(),
+        ]),
         references: Some(vec![
             biodata::ClinicalTrialReference::new(
                 Some("22663011".to_string()),

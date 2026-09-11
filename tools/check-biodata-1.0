@@ -11,11 +11,16 @@ readonly TEST_FILES=(
 )
 readonly RUST_TESTS=(
   "entities::trial::get::tests::ctgov_product_core_ignores_every_legacy_core_field"
+  "entities::trial::get::tests::ctgov_product_outcomes_ignore_raw_legacy_study_mutation"
   "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence"
+  "entities::trial::get::tests::outcome_product_preserves_grouped_values_and_every_section_state"
   "entities::trial::get::tests::product_section_state_preserves_all_four_states"
   "entities::trial::get::tests::shared_core_conversion_preserves_order_and_derives_compatibility_fields"
+  "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_preserve_planned_outcome_values_and_states"
   "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_return_exact_structured_references"
+  "mcp::shell::typed_get_tests::cli_typed_and_raw_nci_trial_get_preserve_assignments_and_outcome_state"
   "mcp::shell::typed_get_tests::typed_and_raw_trial_get_return_exact_age_objects"
+  "render::markdown::trial::tests::planned_outcome_markdown_preserves_groups_order_text_and_states"
   "render::markdown::trial::tests::response_markdown_explains_selected_section_states"
 )
 
