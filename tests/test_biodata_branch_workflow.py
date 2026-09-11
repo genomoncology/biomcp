@@ -20,6 +20,14 @@ TEST_FILES = (
     "tests/test_nci_filter_transport.py",
     "tests/test_biodata_branch_workflow.py",
 )
+TICKET_0117_TESTS = (
+    "tests/test_capture_receipts.py::test_current_adverse_event_code_key_boundary_is_exact_and_receipted",
+    "tests/test_capture_receipts.py::test_adverse_event_code_key_boundary_rejects_a_schema_known_extra_field",
+    "tests/test_capture_receipts.py::test_adverse_event_page_boundary_rejects_an_extra_envelope_field",
+    "tests/test_capture_receipts.py::test_code_key_contract_rejects_reintroduced_stale_supplement",
+    "tests/test_ticket_0117_search_surfaces.py::test_ctgov_current_binary_json_markdown_errors_limits_and_privacy",
+    "tests/test_ticket_0117_search_surfaces.py::test_nci_current_binary_json_markdown_errors_limits_and_privacy",
+)
 RUST_TESTS = (
     "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",
     "entities::trial::get::tests::outcome_product_preserves_grouped_values_and_every_section_state",
@@ -29,9 +37,26 @@ RUST_TESTS = (
     "entities::trial::get::tests::shared_directory_views_authorize_output_and_redact_diagnostics",
     "cli::trial::dispatch::site_directory_tests::location_page_filters_sites_and_site_contacts_but_keeps_central_first",
     "cli::trial::dispatch::site_directory_tests::standalone_pagination_wrapper_serializes_only_the_current_directory_page",
-    "sources::clinicaltrials::tests::parsing::legacy_source_aggregates_redact_ignored_contact_sentinels",
-    "sources::clinicaltrials::tests::parsing::biodata_detail_response_redacts_field_distinct_site_values_but_getters_retain_them",
-    "entities::trial::search::ctgov::tests::raw_page_debug_redacts_nested_legacy_site_values",
+    "sources::clinicaltrials::tests::parsing::search_response_uses_biodata_page_without_rewriting_fixture_bytes",
+    "sources::clinicaltrials::tests::parsing::malformed_search_values_are_sanitized",
+    "sources::clinicaltrials::tests::parsing::intervention_rejection_remains_classified",
+    "sources::clinicaltrials::tests::parsing::search_params_debug_redacts_queries_and_cursor",
+    "sources::clinicaltrials::tests::parsing::adverse_event_parser_debug_redacts_every_nested_value",
+    "sources::nci_cts::tests::parsing::search_response_uses_biodata_page_without_aliases",
+    "sources::nci_cts::tests::parsing::malformed_nci_search_values_are_sanitized",
+    "entities::trial::search::ctgov::tests::raw_page_debug_redacts_ignored_untrusted_values",
+    "entities::trial::search::ctgov::tests::paging_wrapper_debug_redacts_condition_alias_label_and_cursor",
+    "entities::trial::search::ctgov::tests::ctgov_worker_outcome_skips_only_expanded_parser_rejections",
+    "entities::trial::search::ctgov::tests::recorded_provider_phase_output_round_trips_to_exact_ctgov_request",
+    "entities::trial::search::ctgov::tests::trim_empty_provider_cursor_stops_without_repeating_page_one",
+    "entities::trial::search::nci::tests::recorded_provider_phase_output_round_trips_to_exact_nci_request",
+    "entities::trial::search::eligibility::tests::verify_age_eligibility_handles_sub_year_minimum_age",
+    "entities::trial::search::eligibility::tests::verify_age_eligibility_handles_sub_year_maximum_age",
+    "entities::trial::search::eligibility::tests::verify_age_eligibility_honors_shared_source_stated_no_limit_maximum",
+    "entities::trial::search::eligibility::tests::facility_geo_requires_name_and_distance_on_the_same_shared_site",
+    "entities::trial::search::eligibility::tests::facility_geo_keeps_shared_site_name_and_distance_match",
+    "entities::trial::search_result_tests::product_search_debug_redacts_untrusted_values",
+    "entities::trial::search_result_tests::shared_summary_maps_to_the_stable_product_keys_without_trimming",
     "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_preserve_planned_outcome_values_and_states",
     "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_return_exact_structured_references",
     "mcp::shell::typed_get_tests::cli_typed_and_raw_nci_trial_get_preserve_assignments_and_outcome_state",
@@ -48,6 +73,10 @@ RUST_TESTS = (
     "entities::trial::documents::tests::rejects_off_origin_redirect_before_contacting_target",
     "mcp::shell::typed_get_tests::typed_get_schema_and_mapper_match_independent_cli_catalog_oracle",
     "mcp::shell::typed_get_tests::trial_artifacts_and_capture_match_across_cli_raw_typed_and_markdown",
+    "mcp::shell::tests::ticket_0117::ctgov_search_cross_surface_uses_exact_result_capture",
+    "mcp::shell::tests::ticket_0117::nci_search_cross_surface_uses_exact_result_capture",
+    "mcp::shell::tests::ticket_0117::ctgov_source_client_transport_preserves_exact_result_digest",
+    "mcp::shell::tests::ticket_0117::nci_source_client_transport_preserves_exact_result_digest",
     "render::markdown::trial::tests::planned_outcome_markdown_preserves_groups_order_text_and_states",
     "render::markdown::trial::tests::response_markdown_explains_selected_section_states",
     "render::markdown::trial::tests::trial_markdown_renders_coordinates_and_sanitizes_unnamed_contacts",
@@ -60,7 +89,7 @@ EXPECTED_ISOLATED_INVOCATION = (
     '  cargo test --locked --offline --no-default-features --lib "$test_name" -- --exact\n'
     "done\n"
     'exec env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \\\n'
-    '  uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}"\n'
+    '  uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}" "${TICKET_0117_TESTS[@]}"\n'
 )
 FORBIDDEN_COMMANDS = (
     "make lint",
@@ -86,6 +115,15 @@ def _runner_test_files(runner: str) -> tuple[str, ...]:
 
 def _runner_rust_tests(runner: str) -> tuple[str, ...]:
     match = re.search(r"readonly RUST_TESTS=\(\n(?P<body>.*?)\n\)", runner, re.DOTALL)
+    if match is None:
+        return ()
+    return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
+
+
+def _runner_ticket_0117_tests(runner: str) -> tuple[str, ...]:
+    match = re.search(
+        r"readonly TICKET_0117_TESTS=\(\n(?P<body>.*?)\n\)", runner, re.DOTALL
+    )
     if match is None:
         return ()
     return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
@@ -123,6 +161,8 @@ def _runner_violations(runner: str) -> list[str]:
         violations.append("already-isolated mode must require the verified namespace")
     if _runner_test_files(runner) != TEST_FILES:
         violations.append("focused runner test selection changed")
+    if _runner_ticket_0117_tests(runner) != TICKET_0117_TESTS:
+        violations.append("ticket 0117 focused selectors changed")
     if _runner_rust_tests(runner) != RUST_TESTS:
         violations.append("focused runner Rust test selection changed")
     if "cargo build" in runner or "cargo run" in runner:
@@ -157,6 +197,7 @@ def test_biomcp_keeps_only_the_local_focused_runner() -> None:
         ("--basetemp /tmp/pytest", "--basetemp /var/tmp/pytest"),
         (' "${TEST_FILES[@]}"', ""),
         (' "${TEST_FILES[@]}"', ' "${TEST_FILES[@]}" tests/'),
+        (TICKET_0117_TESTS[0], "tests/test_live_provider.py::test_live"),
     ),
 )
 def test_representative_runner_mutations_are_rejected(old: str, new: str) -> None:

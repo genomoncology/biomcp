@@ -5,7 +5,7 @@ pub(super) use super::{TrialCount, TrialSearchFilters, TrialSource};
 #[allow(unused_imports)]
 pub(super) use crate::error::BioMcpError;
 #[allow(unused_imports)]
-pub(super) use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovStudy};
+pub(super) use crate::sources::clinicaltrials::ClinicalTrialsClient;
 #[allow(unused_imports)]
 pub(super) use serde_json::json;
 use std::sync::{Arc, Mutex};
@@ -95,6 +95,17 @@ pub(super) fn ctgov_search_study_fixture(
             }
         }
     })
+}
+
+pub(super) fn ctgov_search_results(
+    values: Vec<serde_json::Value>,
+) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
+    let bytes = serde_json::to_vec(&json!({"studies": values})).unwrap();
+    biodata::ClinicalTrialsGovApiV2SearchPage::parse(&bytes, &Default::default())
+        .expect("valid CTGov search page")
+        .results()
+        .unwrap_or_default()
+        .to_vec()
 }
 
 pub(super) fn age_filtered_ctgov_filters() -> TrialSearchFilters {

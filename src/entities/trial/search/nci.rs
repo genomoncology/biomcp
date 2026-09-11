@@ -77,11 +77,13 @@ pub(super) async fn search_page_with_nci_clients(
 
     let resp = client.search(&params).await?;
     Ok(SearchPage::offset(
-        resp.hits()
+        resp.results()
+            .unwrap_or_default()
             .iter()
-            .map(transform::trial::from_nci_hit)
+            .map(|result| TrialSearchResult::from_biodata(result.projection().value()))
             .collect::<Result<Vec<_>, _>>()?,
-        resp.total,
+        resp.total_count()
+            .and_then(|value| usize::try_from(value).ok()),
     ))
 }
 

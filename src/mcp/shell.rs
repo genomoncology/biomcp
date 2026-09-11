@@ -1505,6 +1505,7 @@ mod tests {
         mcp_rejection_message_for_args, redact_mcp_json_text, redact_mcp_text, search_args,
     };
     use serde_json::json;
+    mod ticket_0117;
     mod ticket_1120;
 
     #[test]

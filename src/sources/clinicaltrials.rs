@@ -3,6 +3,7 @@ use std::borrow::Cow;
 
 use biodata::{
     ClinicalTrialsGovApiV2DetailPlan, ClinicalTrialsGovApiV2Limits, ClinicalTrialsGovApiV2Response,
+    ClinicalTrialsGovApiV2SearchPage,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -24,7 +25,7 @@ pub struct ClinicalTrialsClient {
     base: Cow<'static, str>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct CtGovSearchParams {
     pub condition: Option<String>,
     pub intervention: Option<String>,
@@ -40,6 +41,16 @@ pub struct CtGovSearchParams {
     pub lat: Option<f64>,
     pub lon: Option<f64>,
     pub distance_miles: Option<u32>,
+}
+
+impl std::fmt::Debug for CtGovSearchParams {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CtGovSearchParams")
+            .field("count_total", &self.count_total)
+            .field("page_size", &self.page_size)
+            .finish_non_exhaustive()
+    }
 }
 
 impl ClinicalTrialsClient {
@@ -87,8 +98,7 @@ impl ClinicalTrialsClient {
         if status == reqwest::StatusCode::BAD_REQUEST
             && bytes.starts_with(CTGOV_INTERVENTION_QUERY_ERROR_PREFIX.as_bytes())
         {
-            let reason = String::from_utf8_lossy(&bytes[..bytes.len().min(256)]).into_owned();
-            return Err(BioMcpError::CtGovInterventionQueryRejected { reason });
+            return Err(BioMcpError::CtGovInterventionQueryRejected);
         }
         crate::sources::decode_json(
             crate::error::SourceContext::retry(crate::error::SourceProvider::CLINICAL_TRIALS),
@@ -179,10 +189,34 @@ impl ClinicalTrialsClient {
     pub async fn search(
         &self,
         params: &CtGovSearchParams,
-    ) -> Result<CtGovSearchResponse, BioMcpError> {
+    ) -> Result<ClinicalTrialsGovApiV2SearchPage, BioMcpError> {
+        let plan = Self::search_plan(params);
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let (status, bytes) = self.send(req).await?;
+        Self::decode_search_response(status, &bytes)
+    }
+
+    pub(crate) async fn search_adverse_events(
+        &self,
+        params: &CtGovSearchParams,
+    ) -> Result<CtGovAdverseEventSearchPage, BioMcpError> {
         let plan = Self::search_plan(params);
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.get_json(req).await
+    }
+
+    pub(crate) fn decode_search_response(
+        status: reqwest::StatusCode,
+        bytes: &[u8],
+    ) -> Result<ClinicalTrialsGovApiV2SearchPage, BioMcpError> {
+        if !status.is_success() {
+            return match Self::decode_json_response::<serde_json::Value>(status, bytes) {
+                Err(error) => Err(error),
+                Ok(_) => Err(BioMcpError::InternalProcessing),
+            };
+        }
+        ClinicalTrialsGovApiV2SearchPage::parse(bytes, &ClinicalTrialsGovApiV2Limits::default())
+            .map_err(Self::map_biodata_response_error)
     }
 
     pub(crate) fn biodata_detail_plan(
@@ -284,31 +318,6 @@ impl ClinicalTrialsClient {
         .with_source_context(context)
     }
 
-    pub(crate) fn decode_get_response(
-        nct_id: &str,
-        status: reqwest::StatusCode,
-        bytes: &[u8],
-    ) -> Result<CtGovStudy, BioMcpError> {
-        if status == reqwest::StatusCode::NOT_FOUND {
-            return Err(BioMcpError::NotFound {
-                entity: "trial".into(),
-                id: nct_id.to_string(),
-                suggestion: format!("Try searching: biomcp search trial -c \"{nct_id}\""),
-            });
-        }
-
-        Self::decode_json_response(status, bytes)
-    }
-
-    pub async fn get(&self, nct_id: &str, sections: &[String]) -> Result<CtGovStudy, BioMcpError> {
-        let biodata_plan = Self::biodata_detail_plan(nct_id, sections)?;
-        let plan = RequestPlan::get(biodata_plan.relative_path())
-            .query("fields", biodata_plan.field_query());
-        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let (status, bytes) = self.send(req).await?;
-        Self::decode_get_response(nct_id, status, &bytes)
-    }
-
     pub(crate) async fn get_biodata_detail(
         &self,
         nct_id: &str,
@@ -331,222 +340,103 @@ impl ClinicalTrialsClient {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CtGovSearchResponse {
+pub(crate) struct CtGovAdverseEventSearchPage {
     #[serde(default)]
-    pub studies: Vec<CtGovStudy>,
-    pub next_page_token: Option<String>,
-    pub total_count: Option<u32>,
+    pub(crate) studies: Vec<CtGovAdverseEventStudy>,
+    pub(crate) next_page_token: Option<String>,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CtGovAdverseEventStudy {
+    pub(crate) protocol_section: Option<CtGovAdverseEventProtocol>,
+    pub(crate) results_section: Option<CtGovResultsSection>,
+}
+
+impl CtGovAdverseEventStudy {
+    pub(crate) fn nct_id(&self) -> Option<&str> {
+        self.protocol_section
+            .as_ref()?
+            .identification_module
+            .as_ref()?
+            .nct_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+    }
+
+    pub(crate) fn counted_terms(&self) -> Vec<&str> {
+        let Some(module) = self
+            .results_section
+            .as_ref()
+            .and_then(|section| section.adverse_events_module.as_ref())
+        else {
+            return Vec::new();
+        };
+        module
+            .serious_events
+            .iter()
+            .chain(module.other_events.iter())
+            .filter(|event| {
+                event.stats.is_empty()
+                    || event
+                        .stats
+                        .iter()
+                        .any(|stat| stat.num_affected.unwrap_or(0) > 0)
+            })
+            .filter_map(|event| {
+                event
+                    .term
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|term| !term.is_empty())
+            })
+            .collect()
+    }
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CtGovAdverseEventProtocol {
+    pub(crate) identification_module: Option<CtGovAdverseEventIdentity>,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CtGovAdverseEventIdentity {
+    pub(crate) nct_id: Option<String>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CtGovStudy {
-    pub protocol_section: Option<CtGovProtocolSection>,
-    pub has_results: Option<bool>,
-    pub results_section: Option<CtGovResultsSection>,
+pub(crate) struct CtGovResultsSection {
+    pub(crate) adverse_events_module: Option<CtGovAdverseEventsModule>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CtGovProtocolSection {
-    pub identification_module: Option<CtGovIdentificationModule>,
-    pub status_module: Option<CtGovStatusModule>,
-    pub sponsor_collaborators_module: Option<CtGovSponsorCollaboratorsModule>,
-    pub description_module: Option<CtGovDescriptionModule>,
-    pub conditions_module: Option<CtGovConditionsModule>,
-    pub design_module: Option<CtGovDesignModule>,
-    pub arms_interventions_module: Option<CtGovArmsInterventionsModule>,
-    pub eligibility_module: Option<CtGovEligibilityModule>,
-    pub contacts_locations_module: Option<CtGovContactsLocationsModule>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovResultsSection {
-    pub adverse_events_module: Option<CtGovAdverseEventsModule>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovAdverseEventsModule {
+pub(crate) struct CtGovAdverseEventsModule {
     #[serde(default)]
-    pub serious_events: Vec<CtGovAdverseEvent>,
+    pub(crate) serious_events: Vec<CtGovAdverseEvent>,
     #[serde(default)]
-    pub other_events: Vec<CtGovAdverseEvent>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovAdverseEvent {
-    pub term: Option<String>,
-    #[serde(default)]
-    pub stats: Vec<CtGovAdverseEventStats>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovAdverseEventStats {
-    pub group_id: Option<String>,
-    pub num_affected: Option<u32>,
-    pub num_at_risk: Option<u32>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovIdentificationModule {
-    pub nct_id: Option<String>,
-    pub brief_title: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovStatusModule {
-    pub overall_status: Option<String>,
-    pub why_stopped: Option<String>,
-    pub start_date_struct: Option<CtGovDateStruct>,
-    pub completion_date_struct: Option<CtGovDateStruct>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CtGovDateStruct {
-    pub date: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovSponsorCollaboratorsModule {
-    pub lead_sponsor: Option<CtGovSponsor>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CtGovSponsor {
-    pub name: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovDescriptionModule {
-    pub brief_summary: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovConditionsModule {
-    #[serde(default)]
-    pub conditions: Vec<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovDesignModule {
-    pub phases: Option<Vec<String>>,
-    pub study_type: Option<String>,
-    pub enrollment_info: Option<CtGovEnrollmentInfo>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovEnrollmentInfo {
-    pub count: Option<i32>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovArmsInterventionsModule {
-    pub interventions: Option<Vec<CtGovIntervention>>,
-    pub arm_groups: Option<Vec<CtGovArmGroup>>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovIntervention {
-    pub name: Option<String>,
-    #[serde(rename = "type")]
-    pub intervention_type: Option<String>,
-    pub description: Option<String>,
-    #[serde(default)]
-    pub other_names: Vec<String>,
-    #[serde(default)]
-    pub arm_group_labels: Vec<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovArmGroup {
-    pub label: Option<String>,
-    #[serde(rename = "type")]
-    pub arm_group_type: Option<String>,
-    pub description: Option<String>,
-    #[serde(default)]
-    pub intervention_names: Vec<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovEligibilityModule {
-    pub eligibility_criteria: Option<String>,
-    pub minimum_age: Option<NormalizedTimeWire>,
-    pub maximum_age: Option<NormalizedTimeWire>,
-}
-
-#[derive(Debug, Clone)]
-pub struct NormalizedTimeWire(String, Option<crate::entities::trial::TrialAge>);
-
-impl NormalizedTimeWire {
-    pub(crate) fn parsed(&self) -> Option<&crate::entities::trial::TrialAge> {
-        self.1.as_ref()
-    }
-
-    pub(crate) fn original(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Serialize for NormalizedTimeWire {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(self.original())
-    }
-}
-
-impl<'de> Deserialize<'de> for NormalizedTimeWire {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let original = String::deserialize(deserializer)?;
-        let parsed = crate::entities::trial::TrialAge::from_provider(&original);
-        Ok(Self(original, parsed))
-    }
+    pub(crate) other_events: Vec<CtGovAdverseEvent>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CtGovContactsLocationsModule {
+pub(crate) struct CtGovAdverseEvent {
+    pub(crate) term: Option<String>,
     #[serde(default)]
-    pub locations: Vec<CtGovLocation>,
+    pub(crate) stats: Vec<CtGovAdverseEventStats>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CtGovLocation {
-    pub facility: Option<String>,
-    pub status: Option<String>,
-    pub city: Option<String>,
-    pub state: Option<String>,
-    pub zip: Option<String>,
-    pub country: Option<String>,
-    pub geo_point: Option<CtGovGeoPoint>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct CtGovGeoPoint {
-    pub lat: Option<f64>,
-    pub lon: Option<f64>,
+pub(crate) struct CtGovAdverseEventStats {
+    pub(crate) num_affected: Option<u32>,
+    pub(crate) num_at_risk: Option<u32>,
 }
 
 macro_rules! redacted_debug {
@@ -560,11 +450,14 @@ macro_rules! redacted_debug {
 }
 
 redacted_debug!(
-    CtGovSearchResponse,
-    CtGovStudy,
-    CtGovProtocolSection,
-    CtGovContactsLocationsModule,
-    CtGovLocation,
+    CtGovAdverseEventSearchPage,
+    CtGovAdverseEventStudy,
+    CtGovAdverseEventProtocol,
+    CtGovAdverseEventIdentity,
+    CtGovResultsSection,
+    CtGovAdverseEventsModule,
+    CtGovAdverseEvent,
+    CtGovAdverseEventStats,
 );
 
 #[cfg(test)]

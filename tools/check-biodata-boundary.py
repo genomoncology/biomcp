@@ -11,8 +11,8 @@ from pathlib import Path
 import tomllib
 
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "522de494c8fcbfbd9581c11ec99259b643dfc371"
-VERSION = "0.0.18"
+REVISION = "2fb62d1afd75ee161b63f3dd56cea5fc3dfe683a"
+VERSION = "0.0.19"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (
@@ -72,6 +72,10 @@ RETIRED_DECLARATIONS = (
     "TrialSiteContact",
     "SiteContactKey",
     "CtGovContact",
+    "CtGovSearchResponse",
+    "CtGovStudy",
+    "NciSearchResponse",
+    "TrialAge",
 )
 
 
@@ -306,6 +310,9 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
         "ClinicalTrialSiteDirectory",
         "ClinicalTrialContact",
         "ClinicalTrialSite",
+        "ClinicalTrialSearchSummary",
+        "ClinicalTrialsGovApiV2SearchPage",
+        "NciCtsV2SearchPage",
     ):
         require(
             symbol in combined, f"BioData consumption is missing {symbol}", failures

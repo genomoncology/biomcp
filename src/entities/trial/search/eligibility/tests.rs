@@ -3,20 +3,14 @@
 use super::super::super::test_support::*;
 use super::*;
 
-fn ctgov_study_fixture(locations: serde_json::Value) -> CtGovStudy {
-    serde_json::from_value(json!({
-        "protocolSection": {
-            "identificationModule": {
-                "nctId": "NCT00000001",
-                "briefTitle": "Fixture Trial",
-                "overallStatus": "RECRUITING"
-            },
-            "contactsLocationsModule": {
-                "locations": locations
-            }
-        }
-    }))
-    .expect("valid CtGovStudy fixture")
+fn receipted_ctgov_detail() -> biodata::ClinicalTrialsGovApiV2Response {
+    ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &["locations".to_owned()],
+        reqwest::StatusCode::OK,
+        include_bytes!("../../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json"),
+    )
+    .expect("receipted CTGov detail")
 }
 
 #[test]
@@ -130,12 +124,12 @@ fn eligibility_keyword_in_inclusion_rejects_mixed_context_without_exclusion_sect
 
 #[test]
 fn verify_age_eligibility_handles_sub_year_minimum_age() {
-    let study: CtGovStudy = serde_json::from_value(ctgov_search_study_fixture(
+    let study = ctgov_search_results(vec![ctgov_search_study_fixture(
         "NCT00000001",
         "6 Months",
         "75 Years",
-    ))
-    .expect("study fixture should deserialize");
+    )])
+    .remove(0);
 
     assert!(verify_age_eligibility(vec![study.clone()], 0.0).is_empty());
     assert_eq!(verify_age_eligibility(vec![study], 0.5).len(), 1);
@@ -143,54 +137,26 @@ fn verify_age_eligibility_handles_sub_year_minimum_age() {
 
 #[test]
 fn verify_age_eligibility_handles_sub_year_maximum_age() {
-    let study: CtGovStudy =
-        serde_json::from_value(ctgov_search_study_fixture("NCT00000002", "N/A", "6 Months"))
-            .expect("study fixture should deserialize");
+    let study = ctgov_search_results(vec![ctgov_search_study_fixture(
+        "NCT00000002",
+        "0 Years",
+        "6 Months",
+    )])
+    .remove(0);
 
     assert_eq!(verify_age_eligibility(vec![study.clone()], 0.5).len(), 1);
     assert!(verify_age_eligibility(vec![study], 1.0).is_empty());
 }
 
 #[test]
-fn verify_age_eligibility_fails_open_for_noncomparable_and_malformed_bounds() {
-    for (index, bound) in [
-        "4 Hours",
-        "+18",
-        "-1",
-        ".5",
-        "5.",
-        "1e2",
-        "NaN",
-        "Infinity",
-        "1e9999",
-        "18, Years",
-        "18 Years,",
-        "18 Years old",
-        "18 Fortnights",
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let study: CtGovStudy = serde_json::from_value(ctgov_search_study_fixture(
-            &format!("NCT{index:08}"),
-            bound,
-            bound,
-        ))
-        .unwrap();
-        assert_eq!(
-            verify_age_eligibility(vec![study], 10.0).len(),
-            1,
-            "{bound}"
-        );
-    }
-    let overflow = "9".repeat(400);
-    let study: CtGovStudy = serde_json::from_value(ctgov_search_study_fixture(
+fn verify_age_eligibility_honors_shared_source_stated_no_limit_maximum() {
+    let study = ctgov_search_results(vec![ctgov_search_study_fixture(
         "NCT99999999",
-        &overflow,
-        &overflow,
-    ))
-    .unwrap();
-    assert_eq!(verify_age_eligibility(vec![study], 10.0).len(), 1);
+        "18 Years",
+        "999 Years",
+    )])
+    .remove(0);
+    assert_eq!(verify_age_eligibility(vec![study], 150.0).len(), 1);
 }
 
 #[test]
@@ -288,47 +254,27 @@ fn contains_keyword_tokens_rejects_substring_word_match() {
 }
 
 #[test]
-fn facility_geo_discards_mixed_site_false_positive() {
-    let study = ctgov_study_fixture(json!([
-        {
-            "facility": "University Hospitals Cleveland Medical Center",
-            "city": "Cleveland",
-            "country": "United States",
-            "geoPoint": { "lat": 40.7128, "lon": -74.0060 }
-        },
-        {
-            "facility": "Cleveland Clinic Taussig Cancer Center",
-            "city": "Cleveland",
-            "country": "United States",
-            "geoPoint": { "lat": 41.4993, "lon": -81.6944 }
-        }
-    ]));
+fn facility_geo_requires_name_and_distance_on_the_same_shared_site() {
+    let study = receipted_ctgov_detail();
 
     assert!(!trial_matches_facility_geo(
         &study,
-        "university hospitals",
-        41.4993,
-        -81.6944,
-        50
+        "sarah cannon",
+        29.76328,
+        -95.36327,
+        10
     ));
 }
 
 #[test]
-fn facility_geo_keeps_same_site_match() {
-    let study = ctgov_study_fixture(json!([
-        {
-            "facility": "University Hospitals Cleveland Medical Center",
-            "city": "Cleveland",
-            "country": "United States",
-            "geoPoint": { "lat": 41.5031, "lon": -81.6208 }
-        }
-    ]));
+fn facility_geo_keeps_shared_site_name_and_distance_match() {
+    let study = receipted_ctgov_detail();
 
     assert!(trial_matches_facility_geo(
         &study,
-        "university hospitals",
-        41.4993,
-        -81.6944,
-        50
+        "sarah cannon",
+        39.73915,
+        -104.9847,
+        10
     ));
 }

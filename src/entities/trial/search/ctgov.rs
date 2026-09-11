@@ -8,8 +8,7 @@ use tracing::warn;
 use crate::entities::SearchPage;
 use crate::entities::drug::{TrialAlias, TrialAliasSource, resolve_trial_aliases_with_sources};
 use crate::error::BioMcpError;
-use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams, CtGovStudy};
-use crate::transform;
+use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams};
 use crate::utils::date::validate_since;
 
 use super::super::TrialCountUnknownReason;
@@ -249,8 +248,8 @@ async fn apply_ctgov_post_filters(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
     context: &CtGovSearchContext,
-    mut studies: Vec<CtGovStudy>,
-) -> Vec<CtGovStudy> {
+    mut studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
+) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
     let facility_geo = context
         .facility_geo_verification
         .as_ref()
@@ -265,7 +264,7 @@ async fn apply_ctgov_post_filters(
 
 struct CtGovRawPage {
     total_count: Option<usize>,
-    studies: Vec<CtGovStudy>,
+    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
     next_page_token: Option<String>,
     raw_study_count: usize,
 }
@@ -275,13 +274,12 @@ impl std::fmt::Debug for CtGovRawPage {
         formatter
             .debug_struct("CtGovRawPage")
             .field("total_count", &self.total_count)
-            .field("next_page_token", &self.next_page_token)
             .field("raw_study_count", &self.raw_study_count)
             .finish_non_exhaustive()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct CtGovWorkerState {
     condition_query: Option<String>,
     intervention_query: Option<String>,
@@ -290,6 +288,16 @@ struct CtGovWorkerState {
     next_page_token: Option<String>,
     exhausted: bool,
     pages_fetched: usize,
+}
+
+impl std::fmt::Debug for CtGovWorkerState {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CtGovWorkerState")
+            .field("exhausted", &self.exhausted)
+            .field("pages_fetched", &self.pages_fetched)
+            .finish_non_exhaustive()
+    }
 }
 
 struct CtGovSinglePageState {
@@ -390,10 +398,15 @@ async fn fetch_ctgov_raw_page(
         .await?;
 
     Ok(CtGovRawPage {
-        total_count: resp.total_count.map(|value| value as usize),
-        raw_study_count: resp.studies.len(),
-        studies: resp.studies,
-        next_page_token: resp.next_page_token,
+        total_count: resp
+            .total_count()
+            .and_then(|value| usize::try_from(value).ok()),
+        raw_study_count: resp.results().unwrap_or_default().len(),
+        studies: resp.results().unwrap_or_default().to_vec(),
+        next_page_token: resp
+            .next_page_token()
+            .filter(|value| !value.trim().is_empty())
+            .map(str::to_owned),
     })
 }
 
@@ -433,12 +446,10 @@ fn handle_ctgov_worker_outcome(
             handle_ctgov_worker_outcome(worker_index, worker, Err(*source))
                 .map_err(|error| error.with_source_context(context))
         }
-        Err(BioMcpError::CtGovInterventionQueryRejected { reason }) if worker_index > 0 => {
+        Err(BioMcpError::CtGovInterventionQueryRejected) if worker_index > 0 => {
             warn!(
-                alias = worker.intervention_query.as_deref().unwrap_or_default(),
                 worker_index,
                 source = worker.intervention_source,
-                reason,
                 "Skipping expanded CTGov intervention alias rejected by the query parser"
             );
             Ok(None)
@@ -480,7 +491,9 @@ fn apply_ctgov_single_page(
             continue;
         }
         if state.rows.len() < limit {
-            let mut row = transform::trial::from_ctgov_hit(&study);
+            let Ok(mut row) = TrialSearchResult::from_biodata(study.projection().value()) else {
+                continue;
+            };
             row.matched_intervention_label = worker.matched_intervention_label.clone();
             state.rows.push(row);
         }
@@ -607,7 +620,10 @@ fn ctgov_workers(
         .collect()
 }
 
-fn claim_ctgov_candidate(seen_nct_ids: &mut HashSet<String>, study: &CtGovStudy) -> Option<String> {
+fn claim_ctgov_candidate(
+    seen_nct_ids: &mut HashSet<String>,
+    study: &biodata::ClinicalTrialsGovApiV2SearchResult,
+) -> Option<String> {
     match ctgov_nct_id(study) {
         Some(nct_id) => seen_nct_ids.insert(nct_id.clone()).then_some(nct_id),
         None => Some(String::new()),
@@ -618,11 +634,13 @@ fn push_ctgov_union_rows(
     merged_rows: &mut Vec<TrialSearchResult>,
     merged_index: &mut HashMap<String, usize>,
     matched_labels: &HashMap<String, Option<String>>,
-    studies: Vec<CtGovStudy>,
+    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
 ) {
     for study in studies {
         let matched_nct_id = ctgov_nct_id(&study).unwrap_or_default();
-        let mut row = transform::trial::from_ctgov_hit(&study);
+        let Ok(mut row) = TrialSearchResult::from_biodata(study.projection().value()) else {
+            continue;
+        };
         if merged_index.contains_key(&row.nct_id) {
             continue;
         }
@@ -632,10 +650,14 @@ fn push_ctgov_union_rows(
     }
 }
 
-fn add_unique_ctgov_nct_ids(unique_nct_ids: &mut HashSet<String>, studies: Vec<CtGovStudy>) {
+fn add_unique_ctgov_nct_ids(
+    unique_nct_ids: &mut HashSet<String>,
+    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
+) {
     for study in studies {
-        let row = transform::trial::from_ctgov_hit(&study);
-        unique_nct_ids.insert(row.nct_id);
+        if let Ok(row) = TrialSearchResult::from_biodata(study.projection().value()) {
+            unique_nct_ids.insert(row.nct_id);
+        }
     }
 }
 
@@ -967,7 +989,9 @@ pub(super) async fn count_all_with_ctgov_client(
                 true,
             ))
             .await?;
-        let total = resp.total_count.map(|total| total as usize);
+        let total = resp
+            .total_count()
+            .and_then(|total| usize::try_from(total).ok());
         return Ok(ctgov_count_from_native_total(total, filters.age.is_some()));
     }
 
@@ -993,8 +1017,17 @@ pub(super) async fn count_all_with_ctgov_client(
             .await?;
         page_count += 1;
 
-        let next_page_token = resp.next_page_token;
-        let studies = apply_ctgov_post_filters(client, filters, &context, resp.studies).await;
+        let next_page_token = resp
+            .next_page_token()
+            .filter(|value| !value.trim().is_empty())
+            .map(str::to_owned);
+        let studies = apply_ctgov_post_filters(
+            client,
+            filters,
+            &context,
+            resp.results().unwrap_or_default().to_vec(),
+        )
+        .await;
         verified_total = verified_total.saturating_add(studies.len());
 
         if next_page_token.is_none() {

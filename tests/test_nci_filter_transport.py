@@ -126,6 +126,80 @@ def test_rejected_nci_filters_never_reach_local_transport() -> None:
         server.server_close()
 
 
+def test_nci_search_page_preserves_public_result_and_private_credential() -> None:
+    response = (
+        REPO_ROOT / "testdata/sources/nci_cts/search_melanoma_20260811.json"
+    ).read_bytes()
+
+    class SearchHandler(BaseHTTPRequestHandler):
+        paths: list[str] = []
+        api_keys: list[str] = []
+
+        def do_GET(self) -> None:  # noqa: N802
+            type(self).paths.append(self.path)
+            type(self).api_keys.extend(self.headers.get_all("X-API-KEY", failobj=[]))
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(response)))
+            self.end_headers()
+            self.wfile.write(response)
+
+        def log_message(self, *_args: object) -> None:
+            pass
+
+    binary = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/debug/biomcp"))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), SearchHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    credential = "nci-search-credential-sentinel-0117"
+    env = os.environ | {
+        "NCI_API_KEY": credential,
+        "BIOMCP_NCI_CTS_BASE": f"http://127.0.0.1:{server.server_port}",
+        "BIOMCP_TEST_UNPACED_ORIGIN": f"http://127.0.0.1:{server.server_port}",
+    }
+    try:
+        result = subprocess.run(
+            [
+                binary,
+                "--json",
+                "search",
+                "trial",
+                "--source",
+                "nci",
+                "--phase",
+                "3",
+                "--limit",
+                "1",
+            ],
+            cwd=REPO_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    finally:
+        server.shutdown()
+        thread.join()
+        server.server_close()
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["pagination"]["total"] == 2112
+    assert payload["results"] == [
+        {
+            "nct_id": "NCT05929768",
+            "title": "Shorter Chemo-Immunotherapy Without Anthracycline Drugs for Early Triple Negative Breast Cancer",
+            "status": "Active",
+            "phase": "III",
+            "conditions": [row["name"] for row in json.loads(response)["data"][0]["diseases"]],
+            "sponsor": "SWOG",
+        }
+    ]
+    assert len(SearchHandler.paths) == 1
+    assert SearchHandler.api_keys == [credential]
+    assert credential not in result.stdout + result.stderr
+
+
 def test_nci_detail_executes_the_strict_biodata_plan_through_the_real_cli() -> None:
     receipted_response = json.loads(
         (

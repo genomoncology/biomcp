@@ -13,10 +13,12 @@ fn trial_alias(label: &str, source: TrialAliasSource) -> TrialAlias {
 }
 
 #[test]
-fn raw_page_debug_redacts_nested_legacy_site_values() {
+fn raw_page_debug_redacts_ignored_untrusted_values() {
     const SENTINEL: &str = "RAW-PAGE-PRIVACY-SENTINEL-0115";
     let studies = ctgov_studies(vec![serde_json::json!({
         "protocolSection": {
+            "identificationModule": {"nctId": "NCT00000001", "briefTitle": "Fixture"},
+            "statusModule": {"overallStatus": "RECRUITING"},
             "contactsLocationsModule": {
                 "overallOfficials": [{"name": SENTINEL}],
                 "locations": [{"facility": SENTINEL, "contacts": [{"name": SENTINEL}]}]
@@ -32,11 +34,36 @@ fn raw_page_debug_redacts_nested_legacy_site_values() {
     assert!(!format!("{page:?}").contains(SENTINEL));
 }
 
-fn ctgov_studies(values: Vec<serde_json::Value>) -> Vec<CtGovStudy> {
-    values
-        .into_iter()
-        .map(|value| serde_json::from_value(value).expect("valid CTGov study"))
-        .collect()
+#[test]
+fn paging_wrapper_debug_redacts_condition_alias_label_and_cursor() {
+    const SENTINEL: &str = "CTGOV-PAGING-PRIVATE-SENTINEL-0117";
+    let worker = CtGovWorkerState {
+        condition_query: Some(SENTINEL.into()),
+        intervention_query: Some(SENTINEL.into()),
+        intervention_source: SENTINEL,
+        matched_intervention_label: Some(SENTINEL.into()),
+        next_page_token: Some(SENTINEL.into()),
+        exhausted: false,
+        pages_fetched: 1,
+    };
+    let page = CtGovRawPage {
+        total_count: None,
+        studies: Vec::new(),
+        next_page_token: Some(SENTINEL.into()),
+        raw_study_count: 0,
+    };
+    assert!(!format!("{worker:?} {page:?}").contains(SENTINEL));
+}
+
+fn ctgov_studies(
+    values: Vec<serde_json::Value>,
+) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
+    let bytes = serde_json::to_vec(&serde_json::json!({"studies": values})).unwrap();
+    biodata::ClinicalTrialsGovApiV2SearchPage::parse(&bytes, &Default::default())
+        .expect("valid CTGov search page")
+        .results()
+        .unwrap_or_default()
+        .to_vec()
 }
 
 fn filtered_page(
@@ -256,25 +283,30 @@ fn ctgov_query_term_joins_multi_phase_filters_with_and() {
 
 #[test]
 fn recorded_provider_phase_output_round_trips_to_exact_ctgov_request() {
-    let ctgov: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../testdata/sources/ctgov/search_keytruda_limit3_20260811.json"
-    ))
+    let ctgov_page = biodata::ClinicalTrialsGovApiV2SearchPage::parse(
+        include_bytes!(
+            "../../../../../testdata/sources/ctgov/search_keytruda_limit3_20260811.json"
+        ),
+        &Default::default(),
+    )
     .expect("receipted CTGov response");
-    let ctgov_study: CtGovStudy =
-        serde_json::from_value(ctgov["studies"][0].clone()).expect("recorded CTGov study");
-    let ctgov_phase = crate::transform::trial::from_ctgov_hit(&ctgov_study)
-        .phase
-        .expect("recorded CTGov phase");
+    let ctgov_phase =
+        TrialSearchResult::from_biodata(ctgov_page.results().unwrap()[0].projection().value())
+            .unwrap()
+            .phase
+            .expect("recorded CTGov phase");
     assert_eq!(ctgov_phase, "PHASE1/PHASE2");
 
-    let nci: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../testdata/sources/nci_cts/search_melanoma_20260811.json"
-    ))
+    let nci_page = biodata::NciCtsV2SearchPage::parse(
+        include_bytes!("../../../../../testdata/sources/nci_cts/search_melanoma_20260811.json"),
+        &Default::default(),
+    )
     .expect("receipted NCI response");
-    let nci_phase = crate::transform::trial::from_nci_hit(&nci["data"][0])
-        .expect("recorded NCI hit")
-        .phase
-        .expect("recorded NCI phase");
+    let nci_phase =
+        TrialSearchResult::from_biodata(nci_page.results().unwrap()[0].projection().value())
+            .unwrap()
+            .phase
+            .expect("recorded NCI phase");
     assert_eq!(nci_phase, "III");
 
     for (phase, expected) in [
@@ -660,6 +692,33 @@ async fn count_all_keeps_an_omitted_provider_total_unknown() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
+async fn trim_empty_provider_cursor_stops_without_repeating_page_one() {
+    let body = serde_json::json!({
+        "studies": [ctgov_search_study_fixture("NCT00000001", "18 Years", "75 Years")],
+        "totalCount": 1,
+        "nextPageToken": " \t "
+    })
+    .to_string();
+    let (base, requests, server) = ctgov_json_fixture(body).await;
+    let _env = CtGovFixtureEnv::set(&base);
+    let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
+    let filters = TrialSearchFilters {
+        condition: Some("melanoma".into()),
+        ..Default::default()
+    };
+
+    let page = search_page_with_ctgov_client(&client, &filters, 2, 0, None)
+        .await
+        .expect("synthetic CTGov search response");
+    assert_eq!(page.results.len(), 1);
+    assert!(page.next_page_token.is_none());
+    assert_eq!(page.results[0].nct_id, "NCT00000001");
+    server.abort();
+    assert_eq!(requests.lock().expect("lock fixture requests").len(), 1);
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
 async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() {
     let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
     let _env = CtGovFixtureEnv::set(&base);
@@ -732,9 +791,7 @@ fn ctgov_worker_outcome_skips_only_expanded_parser_rejections() {
             trial_alias("expanded", TrialAliasSource::DrugBankSynonym),
         ],
     );
-    let rejection = || BioMcpError::CtGovInterventionQueryRejected {
-        reason: "Error parsing query in Intervention / treatment: invalid expression".into(),
-    };
+    let rejection = || BioMcpError::CtGovInterventionQueryRejected;
 
     assert!(
         handle_ctgov_worker_outcome(1, &workers[1], Err(rejection()))
@@ -743,7 +800,7 @@ fn ctgov_worker_outcome_skips_only_expanded_parser_rejections() {
     );
     assert!(matches!(
         handle_ctgov_worker_outcome(0, &workers[0], Err(rejection())),
-        Err(BioMcpError::CtGovInterventionQueryRejected { .. })
+        Err(BioMcpError::CtGovInterventionQueryRejected)
     ));
     assert!(matches!(
         handle_ctgov_worker_outcome(
@@ -891,24 +948,13 @@ fn search_path_rejects_next_page_when_alias_expansion_uses_multiple_queries() {
 }
 
 #[test]
-fn alias_union_does_not_claim_missing_nct_ids_before_filtering() {
-    let study = serde_json::from_value(ctgov_search_study_fixture("   ", "18 Years", "75 Years"))
-        .expect("study");
-    let mut seen_nct_ids = HashSet::new();
-
-    assert!(claim_ctgov_candidate(&mut seen_nct_ids, &study).is_some());
-    assert!(claim_ctgov_candidate(&mut seen_nct_ids, &study).is_some());
-    assert!(seen_nct_ids.is_empty());
-}
-
-#[test]
-fn alias_union_provenance_uses_the_claimed_normalized_nct_id() {
-    let study = serde_json::from_value(ctgov_search_study_fixture(
-        " NCT00000001 ",
+fn alias_union_provenance_uses_the_validated_nct_id() {
+    let study = ctgov_studies(vec![ctgov_search_study_fixture(
+        "NCT00000001",
         "18 Years",
         "75 Years",
-    ))
-    .expect("study");
+    )])
+    .remove(0);
     let mut matched_labels = HashMap::new();
     matched_labels.insert("NCT00000001".to_string(), Some("requested".to_string()));
     let mut merged_rows = Vec::new();
@@ -934,35 +980,35 @@ fn alias_union_count_returns_exact_unique_total_when_exhausted() {
     add_unique_ctgov_nct_ids(
         &mut unique_nct_ids,
         vec![
-            serde_json::from_value(ctgov_search_study_fixture(
+            ctgov_studies(vec![ctgov_search_study_fixture(
                 "NCT00000001",
                 "18 Years",
                 "75 Years",
-            ))
-            .expect("study"),
-            serde_json::from_value(ctgov_search_study_fixture(
+            )])
+            .remove(0),
+            ctgov_studies(vec![ctgov_search_study_fixture(
                 "NCT00000002",
                 "18 Years",
                 "75 Years",
-            ))
-            .expect("study"),
+            )])
+            .remove(0),
         ],
     );
     add_unique_ctgov_nct_ids(
         &mut unique_nct_ids,
         vec![
-            serde_json::from_value(ctgov_search_study_fixture(
+            ctgov_studies(vec![ctgov_search_study_fixture(
                 "NCT00000001",
                 "18 Years",
                 "75 Years",
-            ))
-            .expect("study"),
-            serde_json::from_value(ctgov_search_study_fixture(
+            )])
+            .remove(0),
+            ctgov_studies(vec![ctgov_search_study_fixture(
                 "NCT00000003",
                 "18 Years",
                 "75 Years",
-            ))
-            .expect("study"),
+            )])
+            .remove(0),
         ],
     );
 

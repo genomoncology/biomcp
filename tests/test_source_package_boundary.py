@@ -13,8 +13,8 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-MAX_PACKAGE_FILES = 1_302
-BIODATA_REVISION = "522de494c8fcbfbd9581c11ec99259b643dfc371"
+MAX_PACKAGE_FILES = 1_298
+BIODATA_REVISION = "2fb62d1afd75ee161b63f3dd56cea5fc3dfe683a"
 
 
 def _rust_function(source: str, signature: str) -> str:
@@ -162,7 +162,7 @@ def test_biodata_owns_the_clinical_trial_core_model() -> None:
 def test_biodata_owns_the_clinical_trial_reference_value_codec() -> None:
     source = (ROOT / "src/entities/trial/mod.rs").read_text(encoding="utf-8")
     production = source.split(
-        "#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TrialSearchResult",
+        "#[derive(Clone, Serialize, Deserialize)]\npub struct TrialSearchResult",
         maxsplit=1,
     )[0]
     assert "ClinicalTrialReference::from_json_bytes" in production
@@ -233,19 +233,38 @@ def test_biodata_owns_trial_document_detail_manifest_and_provenance_paths() -> N
         encoding="utf-8"
     )
     adverse_events = (ROOT / "src/entities/adverse_event.rs").read_text(encoding="utf-8")
+    transform = (ROOT / "src/transform/trial.rs").read_text(encoding="utf-8")
     verifier = _rust_function(eligibility, "pub(super) async fn verify_detail_filters")
-    assert verifier.count("client.get(&nct_id, &sections).await") == 1
+    assert verifier.count("client.get_biodata_detail(&nct_id, &sections).await") == 1
+    assert "client.get(" not in verifier
 
     search_decode = _rust_function(provider, "pub async fn search(")
-    assert "Result<CtGovSearchResponse" in search_decode
-    assert "self.get_json(req).await" in search_decode
+    assert "Result<ClinicalTrialsGovApiV2SearchPage" in search_decode
+    assert "decode_search_response" in search_decode
     fetch = _rust_function(adverse_events, "async fn fetch_ctgov_studies_for_alias")
-    assert "Result<Vec<CtGovStudy>" in fetch
+    assert "Result<Vec<CtGovAdverseEventStudy>" in fetch
     assert "client: &ClinicalTrialsClient" in fetch
-    assert ".search(" in fetch
+    assert ".search_adverse_events(" in fetch
     assert "response.studies" in fetch
     aggregate = _rust_function(adverse_events, "fn trial_adverse_events_from_study_batches")
-    assert aggregate.count("CtGovStudy") >= 2
+    assert aggregate.count("CtGovAdverseEventStudy") >= 2
+    adverse_production = adverse_events.split("#[cfg(test)]", maxsplit=1)[0]
+    outside_named_consumers = adverse_production.replace(fetch, "").replace(aggregate, "")
+    outside_named_consumers = outside_named_consumers.replace(
+        "CtGovAdverseEventStudy,", ""
+    )
+    assert "CtGovAdverseEventStudy" not in outside_named_consumers
+
+    migrated = provider + (ROOT / "src/sources/nci_cts.rs").read_text(encoding="utf-8")
+    for retired in (
+        "CtGovSearchResponse",
+        "CtGovStudy",
+        "NciSearchResponse",
+        "from_ctgov_hit",
+        "from_nci_hit",
+        "decode_get_response",
+    ):
+        assert retired not in migrated + transform
 
 
 def test_artifact_checker_rejects_renamed_fixture_bytes(tmp_path: Path) -> None:

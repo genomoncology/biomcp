@@ -179,25 +179,30 @@ fn nci_phase_mapping_uses_i_ii_for_combined_phase() {
 
 #[test]
 fn recorded_provider_phase_output_round_trips_to_exact_nci_request() {
-    let ctgov: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../testdata/sources/ctgov/search_keytruda_limit3_20260811.json"
-    ))
+    let ctgov_page = biodata::ClinicalTrialsGovApiV2SearchPage::parse(
+        include_bytes!(
+            "../../../../../testdata/sources/ctgov/search_keytruda_limit3_20260811.json"
+        ),
+        &Default::default(),
+    )
     .expect("receipted CTGov response");
-    let ctgov_study: crate::sources::clinicaltrials::CtGovStudy =
-        serde_json::from_value(ctgov["studies"][0].clone()).expect("recorded CTGov study");
-    let ctgov_phase = crate::transform::trial::from_ctgov_hit(&ctgov_study)
-        .phase
-        .expect("recorded CTGov phase");
+    let ctgov_phase =
+        TrialSearchResult::from_biodata(ctgov_page.results().unwrap()[0].projection().value())
+            .unwrap()
+            .phase
+            .expect("recorded CTGov phase");
     assert_eq!(ctgov_phase, "PHASE1/PHASE2");
 
-    let nci: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../testdata/sources/nci_cts/search_melanoma_20260811.json"
-    ))
+    let nci_page = biodata::NciCtsV2SearchPage::parse(
+        include_bytes!("../../../../../testdata/sources/nci_cts/search_melanoma_20260811.json"),
+        &Default::default(),
+    )
     .expect("receipted NCI response");
-    let nci_phase = crate::transform::trial::from_nci_hit(&nci["data"][0])
-        .expect("recorded NCI hit")
-        .phase
-        .expect("recorded NCI phase");
+    let nci_phase =
+        TrialSearchResult::from_biodata(nci_page.results().unwrap()[0].projection().value())
+            .unwrap()
+            .phase
+            .expect("recorded NCI phase");
     assert_eq!(nci_phase, "III");
 
     for (phase, expected) in [(ctgov_phase, "I_II"), (nci_phase, "III")] {

@@ -5,7 +5,7 @@ use regex::Regex;
 use std::sync::OnceLock;
 use tracing::warn;
 
-use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovLocation, CtGovStudy};
+use crate::sources::clinicaltrials::ClinicalTrialsClient;
 
 use super::super::{TRIAL_SECTION_ELIGIBILITY, TRIAL_SECTION_LOCATIONS, TrialSearchFilters};
 use super::has_boolean_operators;
@@ -37,56 +37,47 @@ pub(crate) fn haversine_miles(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64
 }
 
 fn location_matches_facility_geo(
-    location: &CtGovLocation,
+    location: &biodata::ClinicalTrialSite,
     facility_needle: &str,
     origin_lat: f64,
     origin_lon: f64,
     max_distance_miles: u32,
 ) -> bool {
-    let Some(location_facility) = location
-        .facility
-        .as_deref()
-        .and_then(normalize_facility_text)
-    else {
+    let Some(location_facility) = location.facility().and_then(normalize_facility_text) else {
         return false;
     };
     if !location_facility.contains(facility_needle) {
         return false;
     }
-    let Some(geo) = location.geo_point.as_ref() else {
+    let Some(geo) = location.coordinates() else {
         return false;
     };
-    let (Some(lat), Some(lon)) = (geo.lat, geo.lon) else {
-        return false;
-    };
-
-    haversine_miles(origin_lat, origin_lon, lat, lon) <= max_distance_miles as f64
+    haversine_miles(origin_lat, origin_lon, geo.latitude(), geo.longitude())
+        <= max_distance_miles as f64
 }
 
-pub(super) fn ctgov_nct_id(study: &CtGovStudy) -> Option<String> {
+pub(super) fn ctgov_nct_id(study: &biodata::ClinicalTrialsGovApiV2SearchResult) -> Option<String> {
     study
-        .protocol_section
-        .as_ref()
-        .and_then(|section| section.identification_module.as_ref())
-        .and_then(|id| id.nct_id.as_deref())
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
+        .projection()
+        .value()
+        .identities()
+        .first()
+        .map(|identity| identity.identifier().to_owned())
 }
 
 fn trial_matches_facility_geo(
-    study: &CtGovStudy,
+    response: &biodata::ClinicalTrialsGovApiV2Response,
     facility_needle: &str,
     origin_lat: f64,
     origin_lon: f64,
     max_distance_miles: u32,
 ) -> bool {
-    study
-        .protocol_section
-        .as_ref()
-        .and_then(|section| section.contacts_locations_module.as_ref())
-        .map(|module| {
-            module.locations.iter().any(|location| {
+    match response.site_directory() {
+        biodata::ClinicalTrialSection::Present(directory) => directory
+            .sites()
+            .unwrap_or_default()
+            .iter()
+            .any(|location| {
                 location_matches_facility_geo(
                     location,
                     facility_needle,
@@ -94,9 +85,9 @@ fn trial_matches_facility_geo(
                     origin_lon,
                     max_distance_miles,
                 )
-            })
-        })
-        .unwrap_or(false)
+            }),
+        _ => false,
+    }
 }
 
 fn exclusion_criteria_header_re() -> &'static Regex {
@@ -290,10 +281,10 @@ pub(super) fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<
 
 pub(super) async fn verify_detail_filters(
     client: &ClinicalTrialsClient,
-    studies: Vec<CtGovStudy>,
+    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
     facility_geo: Option<(&str, f64, f64, u32)>,
     keywords: &[String],
-) -> Vec<CtGovStudy> {
+) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
     let facility_geo = facility_geo.and_then(|(facility, lat, lon, distance)| {
         normalize_facility_text(facility).map(|facility| (facility, lat, lon, distance))
     });
@@ -319,7 +310,7 @@ pub(super) async fn verify_detail_filters(
             let Some(nct_id) = nct_id else {
                 return Some(study);
             };
-            let details = match client.get(&nct_id, &sections).await {
+            let details = match client.get_biodata_detail(&nct_id, &sections).await {
                 Ok(details) => details,
                 Err(e) => {
                     warn!(nct_id, error = %e, "trial detail fetch failed, keeping study");
@@ -336,14 +327,12 @@ pub(super) async fn verify_detail_filters(
             if keywords.is_empty() {
                 return Some(study);
             }
-            let Some(criteria) = details
-                .protocol_section
-                .as_ref()
-                .and_then(|section| section.eligibility_module.as_ref())
-                .and_then(|module| module.eligibility_criteria.as_deref())
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-            else {
+            let Some(criteria) = (match details.eligibility() {
+                biodata::ClinicalTrialSection::Present(value) => value.registry_text(),
+                _ => None,
+            })
+            .map(str::trim)
+            .filter(|value| !value.is_empty()) else {
                 warn!(
                     nct_id,
                     "missing eligibility criteria in detail fetch, keeping study"
@@ -369,27 +358,36 @@ pub(super) async fn verify_detail_filters(
     verified
 }
 
-pub(super) fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: f64) -> Vec<CtGovStudy> {
+pub(super) fn verify_age_eligibility(
+    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
+    age: f64,
+) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
     studies
         .into_iter()
         .filter(|study| {
-            let module = study
-                .protocol_section
-                .as_ref()
-                .and_then(|s| s.eligibility_module.as_ref());
-            let min_ok = module
-                .and_then(|m| m.minimum_age.as_ref())
-                .and_then(|bound| bound.parsed())
-                .and_then(crate::entities::trial::TrialAge::comparable_years)
+            let age_range = study.projection().value().age_range();
+            let min_ok = age_range
+                .and_then(|value| value.minimum())
+                .and_then(comparable_years)
                 .is_none_or(|min| age >= min);
-            let max_ok = module
-                .and_then(|m| m.maximum_age.as_ref())
-                .and_then(|bound| bound.parsed())
-                .and_then(crate::entities::trial::TrialAge::comparable_years)
+            let max_ok = age_range
+                .and_then(|value| value.maximum())
+                .filter(|bound| bound.form() == biodata::ClinicalTrialAgeBoundForm::Limited)
+                .and_then(comparable_years)
                 .is_none_or(|max| age <= max);
             min_ok && max_ok
         })
         .collect()
+}
+
+fn comparable_years(bound: &biodata::ClinicalTrialAgeBound) -> Option<f64> {
+    let quantity = bound.source().source_quantity().parse::<f64>().ok()?;
+    match bound.source().source_unit() {
+        biodata::DurationUnit::Years => Some(quantity),
+        biodata::DurationUnit::Months => Some(quantity / 12.0),
+        biodata::DurationUnit::Weeks => Some(quantity / 52.0),
+        biodata::DurationUnit::Days => Some(quantity / 365.0),
+    }
 }
 
 #[cfg(test)]

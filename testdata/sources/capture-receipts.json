@@ -2309,38 +2309,20 @@
       }
     ],
     "on_disk": [
-      {"path": "clinicaltrials/case-13-location-contacts.json", "selector": "/", "endpoint": "ctgov"},
-      {"path": "clinicaltrials/search.json", "selector": "/studies/*", "endpoint": "ctgov"},
-      {"path": "clinicaltrials/study_contacts.json", "selector": "/", "endpoint": "ctgov"},
-      {"path": "ctgov/get_nct00791778_20260902.json", "selector": "/", "endpoint": "ctgov"},
-      {"path": "ctgov/get_nct02576665_20260811.json", "selector": "/", "endpoint": "ctgov"},
       {"path": "ctgov/get_nct02576665_full_20260903.json", "selector": "/", "endpoint": "ctgov"},
       {"path": "ctgov/search_keytruda_limit3_20260811.json", "selector": "/studies/*", "endpoint": "ctgov"},
-      {"path": "ctgov/search_phelan_limit5_20260811.json", "selector": "/studies/*", "endpoint": "ctgov"},
       {"path": "nci_cts/get_nci_2023_04529_full_20260903.json", "selector": "/data/*", "endpoint": "nci"},
-      {"path": "nci_cts/search_melanoma.json", "selector": "/data/*", "endpoint": "nci"},
       {"path": "nci_cts/search_melanoma_20260811.json", "selector": "/data/*", "endpoint": "nci"}
     ],
-    "inline": [
-      {"path": "src/transform/trial/tests.rs", "selector": "from_ctgov_study_preserves_provider_type_fields_in_json:json:1", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trials_explain_their_status_in_json_and_markdown:json:1", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:1", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:2", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "unreadable_nci_disease_is_an_error:json:1", "endpoint": "nci"}
-    ],
+    "inline": [],
     "exceptions": []
   },
   "code_key_contract": {
     "boundaries": [
-      {"endpoint": "ctgov", "source": "src/sources/clinicaltrials.rs", "root_type": "CtGovStudy"},
-      {"endpoint": "nci", "source": "src/transform/trial.rs", "function": "from_nci_hit", "root_parameter": "hit"}
+      {"endpoint": "ctgov", "source": "src/sources/clinicaltrials.rs", "root_type": "CtGovAdverseEventSearchPage"},
+      {"endpoint": "ctgov", "source": "src/sources/clinicaltrials.rs", "root_type": "CtGovAdverseEventStudy"}
     ],
-    "supplemental_attestations": [
-      {"endpoint": "ctgov", "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lat", "limitation": "The recorded CTGov schema exposes geoPoint as an opaque GeoPoint leaf.", "evidence_path": "ctgov/get_nct06131398_full_20260903.json"},
-      {"endpoint": "ctgov", "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lon", "limitation": "The recorded CTGov schema exposes geoPoint as an opaque GeoPoint leaf.", "evidence_path": "ctgov/get_nct06131398_full_20260903.json"}
-    ],
+    "supplemental_attestations": [],
     "exceptions": []
   },
   "confirmed_byte_unfaithful": 0,

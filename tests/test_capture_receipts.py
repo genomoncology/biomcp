@@ -518,6 +518,8 @@ def _copy_current_trial_contract(repository_root: Path) -> Path:
         "src/sources/nci_cts/tests/parsing.rs",
     ):
         source = REPO_ROOT / relative
+        if not source.exists():
+            continue
         destination = repository_root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         if source.is_dir():
@@ -525,6 +527,40 @@ def _copy_current_trial_contract(repository_root: Path) -> Path:
         else:
             shutil.copy2(source, destination)
     return repository_root / "testdata" / "sources"
+
+
+def test_current_adverse_event_code_key_boundary_is_exact_and_receipted(
+    tmp_path: Path,
+) -> None:
+    source_root = _copy_current_trial_contract(tmp_path / "repo")
+    result = _audit(source_root)
+    assert result.returncode == 0, result.stderr
+
+
+def test_adverse_event_code_key_boundary_rejects_a_schema_known_extra_field(
+    tmp_path: Path,
+) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/sources/clinicaltrials.rs",
+        "pub(crate) results_section: Option<CtGovResultsSection>,",
+        "pub(crate) results_section: Option<CtGovResultsSection>,\n    pub(crate) has_results: Option<bool>,",
+    )
+    assert result.returncode != 0
+    assert "closed field set" in result.stderr
+
+
+def test_adverse_event_page_boundary_rejects_an_extra_envelope_field(
+    tmp_path: Path,
+) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/sources/clinicaltrials.rs",
+        "pub(crate) next_page_token: Option<String>,",
+        "pub(crate) next_page_token: Option<String>,\n    pub(crate) total_count: Option<u64>,",
+    )
+    assert result.returncode != 0
+    assert "closed field set" in result.stderr
 
 
 def test_actual_ctgov_arms_fixture_rejects_reintroduced_arm_group_type(
@@ -1108,39 +1144,25 @@ def test_code_key_contract_boundary_is_closed(tmp_path: Path, change: str) -> No
     assert "code-key boundar" in result.stderr
 
 
-@pytest.mark.parametrize(
-    "change", ("missing", "altered", "limitation", "duplicate", "extra")
-)
-def test_code_key_contract_supplemental_attestations_are_closed(
-    tmp_path: Path, change: str
+def test_code_key_contract_rejects_reintroduced_stale_supplement(
+    tmp_path: Path,
 ) -> None:
     source_root = _copy_current_trial_contract(tmp_path / "repo")
     manifest_path = source_root / "capture-receipts.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     supplements = manifest["code_key_contract"]["supplemental_attestations"]
-    if change == "missing":
-        supplements.pop()
-    elif change == "altered":
-        supplements[0]["evidence_path"] = "ctgov/wrong.json"
-    elif change == "limitation":
-        supplements[0]["limitation"] = "Opaque enough to sound plausible."
-    elif change == "duplicate":
-        supplements.append(dict(supplements[0]))
-    else:
-        supplements.append(
-            {
-                "endpoint": "ctgov",
-                "path": "protocolSection.invented",
-                "limitation": "opaque schema leaf",
-                "evidence_path": "ctgov/get_nct06131398_full_20260903.json",
-            }
-        )
+    supplements.append(
+        {
+            "endpoint": "ctgov",
+            "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lat",
+            "limitation": "stale location parser supplement",
+            "evidence_path": "ctgov/get_nct06131398_full_20260903.json",
+        }
+    )
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     result = _audit(source_root)
     assert result.returncode != 0
     assert "supplement" in result.stderr.lower()
-    if change == "limitation":
-        assert "altered supplemental declaration" in result.stderr
 
 
 def test_code_key_discovery_ignores_commented_fake_reads_and_declarations(

@@ -5,8 +5,8 @@ use crate::entities::drug::resolve_trial_aliases;
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{
-    CTGOV_ADVERSE_EVENT_SEARCH_FIELDS, ClinicalTrialsClient, CtGovAdverseEvent, CtGovSearchParams,
-    CtGovStudy,
+    CTGOV_ADVERSE_EVENT_SEARCH_FIELDS, ClinicalTrialsClient, CtGovAdverseEventStudy,
+    CtGovSearchParams,
 };
 use crate::sources::cvx::{CvxClient, CvxSyncMode, CvxVaccineCandidate};
 use crate::sources::openfda::{FaersEventResult, OpenFdaClient, OpenFdaResponse};
@@ -1258,128 +1258,16 @@ pub async fn search_with_summary(
     }
 }
 
-fn study_nct_id(study: &CtGovStudy) -> Option<&str> {
-    study
-        .protocol_section
-        .as_ref()?
-        .identification_module
-        .as_ref()?
-        .nct_id
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-}
-
-fn ctgov_event_counts_for_study(event: &CtGovAdverseEvent) -> bool {
-    if event.stats.is_empty() {
-        return true;
-    }
-    event
-        .stats
-        .iter()
-        .any(|stat| stat.num_affected.unwrap_or(0) > 0)
-}
-
-fn study_trial_adverse_event_term_count(study: &CtGovStudy) -> usize {
-    let Some(module) = study
-        .results_section
-        .as_ref()
-        .and_then(|section| section.adverse_events_module.as_ref())
-    else {
-        return 0;
-    };
-
-    let mut seen_terms = HashSet::new();
-    for event in module
-        .serious_events
-        .iter()
-        .chain(module.other_events.iter())
-    {
-        let Some(term) = event
-            .term
-            .as_deref()
-            .map(str::trim)
-            .filter(|term| !term.is_empty())
-        else {
-            continue;
-        };
-        if ctgov_event_counts_for_study(event) {
-            seen_terms.insert(term.to_ascii_lowercase());
-        }
-    }
-    seen_terms.len()
-}
-
-fn add_trial_terms(
-    counts: &mut HashMap<String, (String, usize)>,
-    seen_in_study: &mut HashSet<String>,
-    events: &[CtGovAdverseEvent],
-) {
-    for event in events {
-        let Some(term) = event
-            .term
-            .as_deref()
-            .map(str::trim)
-            .filter(|term| !term.is_empty())
-        else {
-            continue;
-        };
-        if !ctgov_event_counts_for_study(event) {
-            continue;
-        }
-        let key = term.to_ascii_lowercase();
-        if !seen_in_study.insert(key.clone()) {
-            continue;
-        }
-        let entry = counts
-            .entry(key)
-            .or_insert_with(|| (term.to_string(), 0usize));
-        entry.1 += 1;
-    }
-}
-
-fn aggregate_trial_adverse_event_terms(
-    studies: impl Iterator<Item = CtGovStudy>,
-) -> Vec<TrialAdverseEventTerm> {
-    let mut counts: HashMap<String, (String, usize)> = HashMap::new();
-
-    for study in studies {
-        let Some(module) = study
-            .results_section
-            .as_ref()
-            .and_then(|section| section.adverse_events_module.as_ref())
-        else {
-            continue;
-        };
-
-        let mut seen_in_study = HashSet::new();
-        add_trial_terms(&mut counts, &mut seen_in_study, &module.serious_events);
-        add_trial_terms(&mut counts, &mut seen_in_study, &module.other_events);
-    }
-
-    let mut rows = counts
-        .into_values()
-        .map(|(term, trial_count)| TrialAdverseEventTerm { term, trial_count })
-        .collect::<Vec<_>>();
-    rows.sort_by(|a, b| {
-        b.trial_count
-            .cmp(&a.trial_count)
-            .then_with(|| a.term.cmp(&b.term))
-    });
-    rows.truncate(TRIAL_ADVERSE_EVENT_LIMIT);
-    rows
-}
-
 async fn fetch_ctgov_studies_for_alias(
     client: &ClinicalTrialsClient,
     alias: &str,
-) -> Result<Vec<CtGovStudy>, BioMcpError> {
+) -> Result<Vec<CtGovAdverseEventStudy>, BioMcpError> {
     let mut studies = Vec::new();
     let mut page_token = None;
 
     for _ in 0..CTGOV_ADVERSE_EVENT_PAGE_CAP {
         let response = client
-            .search(&CtGovSearchParams {
+            .search_adverse_events(&CtGovSearchParams {
                 condition: None,
                 intervention: Some(alias.to_string()),
                 facility: None,
@@ -1397,7 +1285,9 @@ async fn fetch_ctgov_studies_for_alias(
             .await?;
 
         studies.extend(response.studies);
-        page_token = response.next_page_token;
+        page_token = response
+            .next_page_token
+            .filter(|token| !token.trim().is_empty());
         if page_token.is_none() {
             break;
         }
@@ -1424,19 +1314,19 @@ async fn trial_adverse_events_with_aliases(
 }
 
 fn trial_adverse_events_from_study_batches(
-    batches: impl IntoIterator<Item = Vec<CtGovStudy>>,
+    batches: impl IntoIterator<Item = Vec<CtGovAdverseEventStudy>>,
 ) -> TrialAdverseEventOutcome {
-    let mut studies_by_nct: HashMap<String, CtGovStudy> = HashMap::new();
+    let mut studies_by_nct: HashMap<String, CtGovAdverseEventStudy> = HashMap::new();
 
     for studies in batches {
         for study in studies {
-            let Some(nct_id) = study_nct_id(&study).map(str::to_string) else {
+            let Some(nct_id) = study.nct_id().map(str::to_string) else {
                 continue;
             };
-            let new_term_count = study_trial_adverse_event_term_count(&study);
+            let new_term_count = study.counted_terms().len();
             match studies_by_nct.entry(nct_id) {
                 std::collections::hash_map::Entry::Occupied(mut entry) => {
-                    if new_term_count > study_trial_adverse_event_term_count(entry.get()) {
+                    if new_term_count > entry.get().counted_terms().len() {
                         entry.insert(study);
                     }
                 }
@@ -1447,7 +1337,30 @@ fn trial_adverse_events_from_study_batches(
         }
     }
 
-    let rows = aggregate_trial_adverse_event_terms(studies_by_nct.into_values());
+    let mut counts: HashMap<String, (String, usize)> = HashMap::new();
+    for study in studies_by_nct.into_values() {
+        let mut seen_in_study = HashSet::new();
+        for term in study.counted_terms() {
+            let key = term.to_ascii_lowercase();
+            if !seen_in_study.insert(key.clone()) {
+                continue;
+            }
+            let entry = counts
+                .entry(key)
+                .or_insert_with(|| (term.to_owned(), 0usize));
+            entry.1 += 1;
+        }
+    }
+    let mut rows = counts
+        .into_values()
+        .map(|(term, trial_count)| TrialAdverseEventTerm { term, trial_count })
+        .collect::<Vec<_>>();
+    rows.sort_by(|a, b| {
+        b.trial_count
+            .cmp(&a.trial_count)
+            .then_with(|| a.term.cmp(&b.term))
+    });
+    rows.truncate(TRIAL_ADVERSE_EVENT_LIMIT);
     if rows.is_empty() {
         TrialAdverseEventOutcome::Empty
     } else {
@@ -1926,7 +1839,7 @@ mod tests {
         root
     }
 
-    fn ctgov_study(value: serde_json::Value) -> CtGovStudy {
+    fn ctgov_study(value: serde_json::Value) -> CtGovAdverseEventStudy {
         serde_json::from_value(value).expect("valid CTGov study")
     }
 

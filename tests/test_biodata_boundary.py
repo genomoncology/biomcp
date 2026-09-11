@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "522de494c8fcbfbd9581c11ec99259b643dfc371"
+REVISION = "2fb62d1afd75ee161b63f3dd56cea5fc3dfe683a"
 
 
 def _write(path: Path, content: str) -> None:
@@ -35,7 +35,7 @@ biodata = {{ git = "{URL}", rev = "{REVISION}" }}
 
 [[package]]
 name = "biodata"
-version = "0.0.18"
+version = "0.0.19"
 source = "git+{URL}?rev={REVISION}#{REVISION}"
 """,
     )
@@ -46,7 +46,9 @@ source = "git+{URL}?rev={REVISION}#{REVISION}"
     ClinicalTrialArmInterventionAssignment, ClinicalTrialArmRelationshipError,
     ClinicalTrialEligibility, ClinicalTrialReference, ClinicalTrialSection,
     ClinicalTrialsGovApiV2DetailPlan, ClinicalTrialsGovApiV2Response,
+    ClinicalTrialSearchSummary, ClinicalTrialsGovApiV2SearchPage,
     NciCtsV2DetailPlan, NciCtsV2DetailResponse,
+    NciCtsV2SearchPage,
     ClinicalTrialSiteDirectory, ClinicalTrialContact, ClinicalTrialSite,
 };
 
@@ -85,7 +87,7 @@ def test_biodata_boundary_accepts_a_complete_minimal_fixture(tmp_path: Path) -> 
     ("old", "new"),
     [
         (REVISION, "0" * 40),
-        ('version = "0.0.18"', 'version = "0.0.14"'),
+        ('version = "0.0.19"', 'version = "0.0.14"'),
     ],
 )
 def test_biodata_boundary_rejects_wrong_lock_or_revision(

@@ -30,18 +30,45 @@ REQUIRED_RECEIPT_FIELDS = (
 SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
 RFC3339_UTC_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\Z")
 TRIAL_ENDPOINTS = {"ctgov", "nci"}
-INLINE_CONVERTERS = {
-    "from_ctgov_study": "ctgov",
-    "from_nci_hit": "nci",
-}
+INLINE_CONVERTERS: dict[str, str] = {}
 EXPECTED_CODE_BOUNDARIES = {
-    ("ctgov", "src/sources/clinicaltrials.rs", "CtGovStudy", None, None),
-    ("nci", "src/transform/trial.rs", None, "from_nci_hit", "hit"),
+    (
+        "ctgov",
+        "src/sources/clinicaltrials.rs",
+        "CtGovAdverseEventSearchPage",
+        None,
+        None,
+    ),
+    (
+        "ctgov",
+        "src/sources/clinicaltrials.rs",
+        "CtGovAdverseEventStudy",
+        None,
+        None,
+    ),
 }
-EXPECTED_SUPPLEMENTAL_PATHS = {
-    "protocolSection.contactsLocationsModule.locations[].geoPoint.lat",
-    "protocolSection.contactsLocationsModule.locations[].geoPoint.lon",
+EXPECTED_CTGOV_BOUNDARY_PATHS = {
+    "CtGovAdverseEventSearchPage": {"studies", "nextPageToken"},
+    "CtGovAdverseEventStudy": {
+        "protocolSection",
+        "protocolSection.identificationModule",
+        "protocolSection.identificationModule.nctId",
+        "resultsSection",
+        "resultsSection.adverseEventsModule",
+        "resultsSection.adverseEventsModule.seriousEvents",
+        "resultsSection.adverseEventsModule.seriousEvents[].term",
+        "resultsSection.adverseEventsModule.seriousEvents[].stats",
+        "resultsSection.adverseEventsModule.seriousEvents[].stats[].numAffected",
+        "resultsSection.adverseEventsModule.seriousEvents[].stats[].numAtRisk",
+        "resultsSection.adverseEventsModule.otherEvents",
+        "resultsSection.adverseEventsModule.otherEvents[].term",
+        "resultsSection.adverseEventsModule.otherEvents[].stats",
+        "resultsSection.adverseEventsModule.otherEvents[].stats[].numAffected",
+        "resultsSection.adverseEventsModule.otherEvents[].stats[].numAtRisk",
+    },
 }
+EXPECTED_SUPPLEMENTAL_PATHS: set[str] = set()
+CTGOV_ADVERSE_EVENT_PAGE_EVIDENCE = "ctgov/search_keytruda_limit3_20260811.json"
 SUPPLEMENTAL_EVIDENCE = "ctgov/get_nct06131398_full_20260903.json"
 SUPPLEMENTAL_LIMITATION = (
     "The recorded CTGov schema exposes geoPoint as an opaque GeoPoint leaf."
@@ -454,6 +481,23 @@ def _schema_paths(nodes: object, prefix: str = "") -> set[str]:
     return paths
 
 
+def _schema_opaque_paths(nodes: object, prefix: str = "") -> set[str]:
+    paths: set[str] = set()
+    if not isinstance(nodes, list):
+        return paths
+    for node in nodes:
+        if not isinstance(node, dict) or not isinstance(node.get("name"), str):
+            continue
+        name = node["name"]
+        path = f"{prefix}.{name}" if prefix else name
+        child_prefix = f"{path}[]" if str(node.get("type", "")).endswith("[]") else path
+        children = node.get("children")
+        paths.update(_schema_opaque_paths(children, child_prefix))
+        if not isinstance(children, list) and str(node.get("sourceType", "")).startswith("FUNC "):
+            paths.add(path)
+    return paths
+
+
 def _json_paths(value: object, prefix: str = "") -> set[str]:
     paths: set[str] = set()
     if isinstance(value, dict):
@@ -628,7 +672,7 @@ def _validated_ctgov_supplement_paths(
             )
     if (
         set(supplement_paths) != EXPECTED_SUPPLEMENTAL_PATHS
-        or len(supplement_paths) != 2
+        or len(supplement_paths) != len(EXPECTED_SUPPLEMENTAL_PATHS)
     ):
         errors.append(
             "CTGov supplemental attestations differ from the required closed set"
@@ -659,6 +703,7 @@ def _audit_fixture_keys(
         )
 
     allowed: dict[str, set[str]] = {}
+    opaque: dict[str, set[str]] = {}
     endpoints: dict[str, str] = {}
     receipt_entries = {
         entry.get("path"): entry
@@ -692,6 +737,7 @@ def _audit_fixture_keys(
         endpoints[endpoint] = str(attestor.get("label", endpoint))
         if attestor.get("kind") == "ctgov_schema" and endpoint == "ctgov":
             allowed[endpoint] = _schema_paths(body)
+            opaque[endpoint] = _schema_opaque_paths(body)
         elif attestor.get("kind") == "nci_top_level_capture" and endpoint == "nci":
             if (
                 not isinstance(attestor.get("limitation"), str)
@@ -838,6 +884,11 @@ def _audit_fixture_keys(
             )
             if compared_path in fixture_allowed:
                 continue
+            if any(
+                compared_path.startswith(f"{path}.")
+                for path in opaque.get(endpoint, set())
+            ):
+                continue
             exception_key = (
                 str(fixture["path"]),
                 str(fixture["selector"]),
@@ -868,13 +919,15 @@ def _serde_attributes(source: str, code: str) -> list[str]:
 
 
 def _ctgov_code_paths(
-    source: str, root_type: str
+    source: str, root_type: str, *, recursive: bool = True
 ) -> tuple[list[tuple[str, str, int]], list[str]]:
     code, errors = _rust_code_mask(source)
     structs: dict[
         str, tuple[bool, list[tuple[str, str, str | None, int]], list[str]]
     ] = {}
-    matches = list(re.finditer(r"\bpub\s+struct\s+([A-Za-z_]\w*)\s*\{", code))
+    matches = list(
+        re.finditer(r"\bpub(?:\(crate\))?\s+struct\s+([A-Za-z_]\w*)\s*\{", code)
+    )
     for match in matches:
         name = match.group(1)
         try:
@@ -901,7 +954,7 @@ def _ctgov_code_paths(
         fields: list[tuple[str, str, str | None, int]] = []
         cursor = 0
         field_pattern = re.compile(
-            r"(?P<attrs>(?:\s*#\[[^\]]*\]\s*)*)\s*pub\s+(?P<name>[A-Za-z_]\w*)\s*:\s*(?P<type>[^,]+),",
+            r"(?P<attrs>(?:\s*#\[[^\]]*\]\s*)*)\s*pub(?:\(crate\))?\s+(?P<name>[A-Za-z_]\w*)\s*:\s*(?P<type>[^,]+),",
             re.DOTALL,
         )
         for field in field_pattern.finditer(body_code):
@@ -971,9 +1024,9 @@ def _ctgov_code_paths(
                     f"ctgov {type_name}.{rust_name}: unsupported container {rust_type}"
                 )
                 continue
-            if inner in structs:
+            if recursive and inner in structs:
                 walk(inner, f"{path}[]" if vector else path)
-            elif inner.startswith("CtGov"):
+            elif recursive and inner.startswith("CtGov"):
                 errors.append(
                     f"ctgov {type_name}.{rust_name}: unresolved local field type {inner}"
                 )
@@ -1197,6 +1250,25 @@ def _audit_code_keys(root: Path, manifest: dict[str, object]) -> tuple[int, list
     )
     errors.extend(supplement_errors)
 
+    receipt_entries = {
+        entry.get("path"): entry
+        for entry in manifest.get("entries", [])
+        if isinstance(entry, dict)
+    }
+    try:
+        page_evidence = json.loads((root / CTGOV_ADVERSE_EVENT_PAGE_EVIDENCE).read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        errors.append(f"cannot read adverse-event page evidence: {error}")
+        page_evidence = {}
+    page_evidence_paths = set(page_evidence) if isinstance(page_evidence, dict) else set()
+    if (
+        receipt_entries.get(CTGOV_ADVERSE_EVENT_PAGE_EVIDENCE, {}).get("classification")
+        != "real_and_receipted"
+        or not EXPECTED_CTGOV_BOUNDARY_PATHS["CtGovAdverseEventSearchPage"]
+        <= page_evidence_paths
+    ):
+        errors.append("CTGov adverse-event page boundary lacks exact receipted evidence")
+
     checked = 0
     used_supplements: set[str] = set()
     for endpoint, source_path, root_type, function, root_parameter in declared:
@@ -1209,12 +1281,27 @@ def _audit_code_keys(root: Path, manifest: dict[str, object]) -> tuple[int, list
             )
             continue
         if endpoint == "ctgov" and root_type:
-            reads, discovery_errors = _ctgov_code_paths(source, root_type)
+            reads, discovery_errors = _ctgov_code_paths(
+                source,
+                root_type,
+                recursive=root_type != "CtGovAdverseEventSearchPage",
+            )
             errors.extend(f"{source_path}: {item}" for item in discovery_errors)
             if not reads:
                 errors.append(f"ctgov:{source_path}:{root_type}: selected zero reads")
+            actual_paths = {provider_path for provider_path, _, _ in reads}
+            expected_paths = EXPECTED_CTGOV_BOUNDARY_PATHS.get(root_type)
+            if expected_paths is None or actual_paths != expected_paths:
+                errors.append(
+                    "CTGov adverse-event boundary differs from the required closed field set"
+                )
             for provider_path, field, line in sorted(reads):
                 checked += 1
+                if (
+                    root_type == "CtGovAdverseEventSearchPage"
+                    and provider_path in page_evidence_paths
+                ):
+                    continue
                 if provider_path in allowed.get("ctgov", set()):
                     continue
                 if provider_path in supplement_paths:

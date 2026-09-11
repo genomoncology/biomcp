@@ -14,5 +14,5 @@ async fn live_search_returns_cancer_trials() {
         })
         .await
         .expect("live ClinicalTrials.gov search");
-    assert!(!response.studies.is_empty());
+    assert!(!response.results().unwrap_or_default().is_empty());
 }

@@ -634,7 +634,7 @@ async fn run_outcome_with_worker_stack(
     cli: Cli,
     alias_suggestions_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    const EXECUTE_STACK_BYTES: usize = 8 * 1024 * 1024;
+    const EXECUTE_STACK_BYTES: usize = 16 * 1024 * 1024;
     tokio::task::spawn_blocking(move || {
         let handle = std::thread::Builder::new()
             .name("biomcp-cli-execute".into())

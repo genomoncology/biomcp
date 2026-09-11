@@ -23,8 +23,6 @@ pub use self::documents::{
     trial_documents_manifest,
 };
 pub use self::get::get;
-#[cfg(test)]
-pub(crate) use self::get::product_design;
 pub use self::search::{count_all, search, search_page};
 
 pub(crate) fn validate_search_filters(filters: &TrialSearchFilters) -> Result<(), BioMcpError> {
@@ -356,362 +354,7 @@ impl<'a> TrialContactView<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TrialAge {
-    number: Option<f64>,
-    unit: Option<TrialAgeUnit>,
-    original: String,
-}
-
 use eligibility as eligibility_wire;
-
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum TrialAgeUnit {
-    Years,
-    Months,
-    Weeks,
-    Days,
-    Hours,
-    Minutes,
-}
-
-impl TrialAge {
-    pub(crate) fn from_provider(value: &str) -> Option<Self> {
-        let original = value.trim();
-        if original.is_empty() {
-            return None;
-        }
-        if original.eq_ignore_ascii_case("n/a") {
-            return Some(Self::unparsed(original.to_string()));
-        }
-
-        let mut tokens = original.split_whitespace();
-        let number_token = tokens.next().expect("nonblank age has a token");
-        let unit_token = tokens.next();
-        if tokens.next().is_some() || !valid_age_number_token(number_token) {
-            return Some(Self::unparsed(original.to_string()));
-        }
-        let Ok(number) = number_token.parse::<f64>() else {
-            return Some(Self::unparsed(original.to_string()));
-        };
-        if !number.is_finite() {
-            return Some(Self::unparsed(original.to_string()));
-        }
-        let unit = match unit_token {
-            None => TrialAgeUnit::Years,
-            Some(value)
-                if value.eq_ignore_ascii_case("year") || value.eq_ignore_ascii_case("years") =>
-            {
-                TrialAgeUnit::Years
-            }
-            Some(value)
-                if value.eq_ignore_ascii_case("month") || value.eq_ignore_ascii_case("months") =>
-            {
-                TrialAgeUnit::Months
-            }
-            Some(value)
-                if value.eq_ignore_ascii_case("week") || value.eq_ignore_ascii_case("weeks") =>
-            {
-                TrialAgeUnit::Weeks
-            }
-            Some(value)
-                if value.eq_ignore_ascii_case("day") || value.eq_ignore_ascii_case("days") =>
-            {
-                TrialAgeUnit::Days
-            }
-            Some(value)
-                if value.eq_ignore_ascii_case("hour") || value.eq_ignore_ascii_case("hours") =>
-            {
-                TrialAgeUnit::Hours
-            }
-            Some(value)
-                if value.eq_ignore_ascii_case("minute")
-                    || value.eq_ignore_ascii_case("minutes") =>
-            {
-                TrialAgeUnit::Minutes
-            }
-            Some(_) => return Some(Self::unparsed(original.to_string())),
-        };
-        Some(Self {
-            number: Some(number),
-            unit: Some(unit),
-            original: original.to_string(),
-        })
-    }
-
-    fn unparsed(original: String) -> Self {
-        Self {
-            number: None,
-            unit: None,
-            original,
-        }
-    }
-
-    pub fn number(&self) -> Option<f64> {
-        self.number
-    }
-
-    pub fn unit(&self) -> Option<&'static str> {
-        self.unit.map(TrialAgeUnit::as_str)
-    }
-
-    #[cfg(test)]
-    pub fn original(&self) -> &str {
-        &self.original
-    }
-
-    pub(crate) fn comparable_years(&self) -> Option<f64> {
-        let number = self.number?;
-        match self.unit? {
-            TrialAgeUnit::Years => Some(number),
-            TrialAgeUnit::Months => Some(number / 12.0),
-            TrialAgeUnit::Weeks => Some(number / 52.0),
-            TrialAgeUnit::Days => Some(number / 365.0),
-            TrialAgeUnit::Hours | TrialAgeUnit::Minutes => None,
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn is_no_limit(&self) -> bool {
-        self.number.is_none()
-            && (self.original.eq_ignore_ascii_case("n/a")
-                || self.original.eq_ignore_ascii_case("999 Years"))
-    }
-}
-
-impl TrialAgeUnit {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Years => "years",
-            Self::Months => "months",
-            Self::Weeks => "weeks",
-            Self::Days => "days",
-            Self::Hours => "hours",
-            Self::Minutes => "minutes",
-        }
-    }
-}
-
-fn valid_age_number_token(value: &str) -> bool {
-    let mut pieces = value.split('.');
-    let Some(integer) = pieces.next() else {
-        return false;
-    };
-    if integer.is_empty() || !integer.bytes().all(|byte| byte.is_ascii_digit()) {
-        return false;
-    }
-    match (pieces.next(), pieces.next()) {
-        (None, None) => true,
-        (Some(fraction), None) => {
-            !fraction.is_empty() && fraction.bytes().all(|byte| byte.is_ascii_digit())
-        }
-        _ => false,
-    }
-}
-
-impl Serialize for TrialAge {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        if self.original.trim().is_empty()
-            || self.number.is_some() != self.unit.is_some()
-            || self
-                .number
-                .is_some_and(|number| !number.is_finite() || number < 0.0)
-        {
-            return Err(serde::ser::Error::custom("invalid trial age"));
-        }
-        use serde::ser::SerializeStruct;
-        let mut state = serializer.serialize_struct("TrialAge", 3)?;
-        state.serialize_field("number", &self.number())?;
-        state.serialize_field("unit", &self.unit())?;
-        state.serialize_field("original", &self.original)?;
-        state.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for TrialAge {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let value = serde_json::Value::deserialize(deserializer)?;
-        let object = value
-            .as_object()
-            .filter(|object| {
-                object.len() == 3
-                    && object.contains_key("number")
-                    && object.contains_key("unit")
-                    && object.contains_key("original")
-            })
-            .ok_or_else(|| serde::de::Error::custom("trial age must have exactly three members"))?;
-        let number: Option<f64> =
-            serde_json::from_value(object["number"].clone()).map_err(serde::de::Error::custom)?;
-        let unit: Option<TrialAgeUnit> =
-            serde_json::from_value(object["unit"].clone()).map_err(serde::de::Error::custom)?;
-        let original: String =
-            serde_json::from_value(object["original"].clone()).map_err(serde::de::Error::custom)?;
-        if original.trim().is_empty()
-            || number.is_some() != unit.is_some()
-            || number.is_some_and(|number| !number.is_finite() || number < 0.0)
-        {
-            return Err(serde::de::Error::custom("invalid trial age"));
-        }
-        Ok(Self {
-            number,
-            unit,
-            original,
-        })
-    }
-}
-
-#[cfg(test)]
-mod age_tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn provider_age_grammar_is_exact_and_fail_open() {
-        for (input, number, unit, comparable) in [
-            ("0", 0.0, "years", Some(0.0)),
-            ("18.25", 18.25, "years", Some(18.25)),
-            ("1 Year", 1.0, "years", Some(1.0)),
-            ("2 YEARS", 2.0, "years", Some(2.0)),
-            ("6 mOnTh", 6.0, "months", Some(0.5)),
-            ("12 mOnThS", 12.0, "months", Some(1.0)),
-            ("1 Week", 1.0, "weeks", Some(1.0 / 52.0)),
-            ("2 Weeks", 2.0, "weeks", Some(2.0 / 52.0)),
-            ("1 Day", 1.0, "days", Some(1.0 / 365.0)),
-            ("30 DAYS", 30.0, "days", Some(30.0 / 365.0)),
-            ("1 Hour", 1.0, "hours", None),
-            ("4 Hours", 4.0, "hours", None),
-            ("1 Minute", 1.0, "minutes", None),
-            ("5 Minutes", 5.0, "minutes", None),
-        ] {
-            let age = TrialAge::from_provider(input).unwrap();
-            assert_eq!(age.number(), Some(number), "{input}");
-            assert_eq!(age.unit(), Some(unit), "{input}");
-            assert_eq!(age.comparable_years(), comparable, "{input}");
-            assert_eq!(
-                serde_json::to_value(&age).unwrap(),
-                json!({"number":number,"unit":unit,"original":input}),
-                "{input}"
-            );
-        }
-        let spaced = TrialAge::from_provider("\u{2003}6\u{2002}Months\n").unwrap();
-        assert_eq!(spaced.original(), "6\u{2002}Months");
-        for input in [
-            "+18",
-            "-1",
-            ".5",
-            "5.",
-            "1e2",
-            "NaN",
-            "inf",
-            "Infinity",
-            "1e9999",
-            "18, Years",
-            "18 Years,",
-            "18 Years old",
-            "18 Fortnights",
-        ] {
-            let age = TrialAge::from_provider(input).unwrap();
-            assert_eq!(
-                (age.number(), age.unit(), age.comparable_years()),
-                (None, None, None),
-                "{input}"
-            );
-            assert_eq!(age.original(), input);
-        }
-        let overflow = "9".repeat(400);
-        let age = TrialAge::from_provider(&overflow).unwrap();
-        assert_eq!(
-            (age.number(), age.unit(), age.comparable_years()),
-            (None, None, None)
-        );
-        assert_eq!(age.original(), overflow);
-        assert_eq!(
-            serde_json::to_value(age).unwrap(),
-            json!({"number":null,"unit":null,"original":overflow})
-        );
-        assert!(TrialAge::from_provider(" \t\n").is_none());
-        let sentinel = TrialAge::from_provider(" n/A ").unwrap();
-        assert!(sentinel.is_no_limit());
-        assert_eq!(sentinel.original(), "n/A");
-    }
-
-    #[test]
-    fn public_age_serde_is_object_only_and_validated() {
-        let exact = json!({"number":6.0,"unit":"months","original":"6 Months"});
-        let age: TrialAge = serde_json::from_value(exact.clone()).unwrap();
-        assert_eq!(serde_json::to_value(age).unwrap(), exact);
-        let nulls = json!({"number":null,"unit":null,"original":"N/A"});
-        assert_eq!(
-            serde_json::to_value(serde_json::from_value::<TrialAge>(nulls.clone()).unwrap())
-                .unwrap(),
-            nulls
-        );
-        let malformed = json!({"number":null,"unit":null,"original":"18 Years old"});
-        assert_eq!(
-            serde_json::to_value(serde_json::from_value::<TrialAge>(malformed.clone()).unwrap())
-                .unwrap(),
-            malformed
-        );
-        for invalid in [
-            json!("6 Months"),
-            json!({"number":6.0,"unit":null,"original":"6 Months"}),
-            json!({"number":null,"unit":"months","original":"6 Months"}),
-            json!({"number":-1.0,"unit":"years","original":"-1 Years"}),
-            json!({"number":1.0,"unit":"fortnights","original":"1 Fortnight"}),
-            json!({"number":1.0,"unit":"years","original":" "}),
-            json!({"number":1.0,"unit":"years","original":"1 Year","extra":true}),
-            json!({"number":1.0,"original":"1 Year"}),
-        ] {
-            assert!(serde_json::from_value::<TrialAge>(invalid).is_err());
-        }
-        for invalid_memory in [
-            TrialAge {
-                number: Some(f64::NAN),
-                unit: Some(TrialAgeUnit::Years),
-                original: "NaN Years".into(),
-            },
-            TrialAge {
-                number: Some(f64::INFINITY),
-                unit: Some(TrialAgeUnit::Years),
-                original: "+Infinity Years".into(),
-            },
-            TrialAge {
-                number: Some(f64::NEG_INFINITY),
-                unit: Some(TrialAgeUnit::Years),
-                original: "-Infinity Years".into(),
-            },
-            TrialAge {
-                number: Some(1.0),
-                unit: None,
-                original: "1 Year".into(),
-            },
-            TrialAge {
-                number: None,
-                unit: Some(TrialAgeUnit::Years),
-                original: "1 Year".into(),
-            },
-            TrialAge {
-                number: Some(-1.0),
-                unit: Some(TrialAgeUnit::Years),
-                original: "-1 Years".into(),
-            },
-            TrialAge {
-                number: Some(1.0),
-                unit: Some(TrialAgeUnit::Years),
-                original: " \t".into(),
-            },
-        ] {
-            assert!(serde_json::to_value(invalid_memory).is_err());
-        }
-    }
-}
 
 pub(crate) mod outcome_wire {
     use biodata::{ClinicalTrialPlannedOutcome, ExtensibleCode};
@@ -914,7 +557,7 @@ pub(crate) mod reference_wire {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TrialSearchResult {
     pub nct_id: String,
     pub title: String,
@@ -927,6 +570,87 @@ pub struct TrialSearchResult {
     pub sponsor: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub matched_intervention_label: Option<String>,
+}
+
+impl std::fmt::Debug for TrialSearchResult {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TrialSearchResult")
+            .finish_non_exhaustive()
+    }
+}
+
+impl TrialSearchResult {
+    pub(crate) fn from_biodata(
+        value: &biodata::ClinicalTrialSearchSummary,
+    ) -> Result<Self, BioMcpError> {
+        let nct_id = value
+            .identities()
+            .first()
+            .map(|identity| identity.identifier().to_owned())
+            .ok_or(BioMcpError::InternalProcessing)?;
+        let phase = (!value.phases().is_empty()).then(|| {
+            value
+                .phases()
+                .iter()
+                .map(|phase| phase.code())
+                .collect::<Vec<_>>()
+                .join("/")
+        });
+        Ok(Self {
+            nct_id,
+            title: value.brief_title().to_owned(),
+            status: value.overall_status().code().to_owned(),
+            phase,
+            conditions: value.conditions().to_vec(),
+            sponsor: value.lead_sponsor_name().map(str::to_owned),
+            matched_intervention_label: None,
+        })
+    }
+}
+
+#[cfg(test)]
+mod search_result_tests {
+    use super::TrialSearchResult;
+
+    #[test]
+    fn product_search_debug_redacts_untrusted_values() {
+        const SENTINEL: &str = "TRIAL-SEARCH-PRIVATE-SENTINEL-0117";
+        let result = TrialSearchResult {
+            nct_id: "NCT00000001".into(),
+            title: SENTINEL.into(),
+            status: SENTINEL.into(),
+            phase: Some(SENTINEL.into()),
+            conditions: vec![SENTINEL.into()],
+            sponsor: Some(SENTINEL.into()),
+            matched_intervention_label: Some(SENTINEL.into()),
+        };
+        assert!(!format!("{result:?}").contains(SENTINEL));
+        assert!(serde_json::to_string(&result).unwrap().contains(SENTINEL));
+    }
+
+    #[test]
+    fn shared_summary_maps_to_the_stable_product_keys_without_trimming() {
+        let page = biodata::ClinicalTrialsGovApiV2SearchPage::parse(
+            br#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT00000001","briefTitle":" title "},"statusModule":{"overallStatus":" status "},"designModule":{"phases":["PHASE1","PHASE2"]},"conditionsModule":{"conditions":[" A "," A "]},"sponsorCollaboratorsModule":{"leadSponsor":{"name":" sponsor "}}}}],"totalCount":1}"#,
+            &Default::default(),
+        )
+        .unwrap();
+        let result =
+            TrialSearchResult::from_biodata(page.results().unwrap()[0].projection().value())
+                .unwrap();
+        assert_eq!(
+            serde_json::to_value(result).unwrap(),
+            serde_json::json!({
+                "nct_id": "NCT00000001",
+                "title": " title ",
+                "status": " status ",
+                "phase": "PHASE1/PHASE2",
+                "conditions": [" A ", " A "],
+                "sponsor": " sponsor "
+            })
+        );
+    }
 }
 
 #[derive(Debug, Clone, Default)]

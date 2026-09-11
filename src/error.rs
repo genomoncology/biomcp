@@ -359,9 +359,7 @@ pub enum BioMcpError {
         limit: usize,
         unit: &'static str,
     },
-    CtGovInterventionQueryRejected {
-        reason: String,
-    },
+    CtGovInterventionQueryRejected,
     NotFound {
         entity: String,
         id: String,
@@ -471,7 +469,7 @@ impl BioMcpError {
             Self::SourceUnavailable { .. } => {
                 format!("Source unavailable: {source} is not available.")
             }
-            Self::CtGovInterventionQueryRejected { .. } => {
+            Self::CtGovInterventionQueryRejected => {
                 format!("API request to {source} was rejected.")
             }
             Self::NotFound { .. } => format!("Requested item was not found in {source}."),
@@ -518,7 +516,7 @@ impl BioMcpError {
                 limit,
                 unit,
             } => format!("API response from {source_name} exceeded the {limit} {unit} limit."),
-            Self::CtGovInterventionQueryRejected { .. } => {
+            Self::CtGovInterventionQueryRejected => {
                 "ClinicalTrials.gov rejected the intervention query.".to_string()
             }
             Self::NotFound {
@@ -626,7 +624,7 @@ impl BioMcpError {
             Self::HttpClientInit(_) => "http_client_init",
             Self::Http(_) => "http",
             Self::HttpMiddleware(_) => "http_middleware",
-            Self::Api { .. } | Self::CtGovInterventionQueryRejected { .. } => "api",
+            Self::Api { .. } | Self::CtGovInterventionQueryRejected => "api",
             Self::BodyLimit { .. } => "api",
             Self::InputTooLarge { .. } => "input_too_large",
             Self::ProviderResponseLimit { .. } => "provider_response_limit",
@@ -689,11 +687,8 @@ impl fmt::Display for BioMcpError {
             Self::HttpClientInit(source) => {
                 write!(formatter, "HTTP client initialization failed: {source}")
             }
-            Self::CtGovInterventionQueryRejected { reason } => {
-                write!(
-                    formatter,
-                    "ClinicalTrials.gov intervention query rejected: {reason}"
-                )
+            Self::CtGovInterventionQueryRejected => {
+                formatter.write_str("ClinicalTrials.gov rejected the intervention query.")
             }
             Self::InputTooLarge { limit_bytes } => {
                 write!(formatter, "Input exceeds the {limit_bytes}-byte limit.")
@@ -999,9 +994,7 @@ mod tests {
                 suggestion: sentinel.into(),
             },
             BioMcpError::InvalidArgument(sentinel.into()),
-            BioMcpError::CtGovInterventionQueryRejected {
-                reason: sentinel.into(),
-            },
+            BioMcpError::CtGovInterventionQueryRejected,
             BioMcpError::ApiKeyRequired {
                 api: sentinel.into(),
                 env_var: sentinel.into(),

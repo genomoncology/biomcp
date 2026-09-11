@@ -26,7 +26,7 @@ async fn live_search_melanoma_returns_hits() {
         .search(&melanoma(2))
         .await
         .expect("live nci search");
-    assert!(!resp.hits().is_empty());
+    assert!(!resp.results().unwrap_or_default().is_empty());
 }
 
 #[tokio::test]
@@ -37,10 +37,17 @@ async fn live_get_trial_by_id_round_trips() {
         .await
         .expect("live nci search");
     let id = resp
-        .hits()
+        .results()
+        .unwrap_or_default()
         .first()
-        .and_then(|t| t.get("nct_id"))
-        .and_then(|v| v.as_str())
+        .and_then(|result| {
+            result
+                .projection()
+                .value()
+                .identities()
+                .first()
+                .map(|identity| identity.identifier())
+        })
         .expect("a trial with an nct_id");
     let plan = biodata::NciCtsV2DetailPlan::new(id, true).expect("valid NCT identity");
     let trial = client().get(&plan).await.expect("live nci get");

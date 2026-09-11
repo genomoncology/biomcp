@@ -1,9 +1,7 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use biodata::{NciCtsV2DetailPlan, NciCtsV2DetailResponse, NciCtsV2Limits};
-use serde::Deserialize;
-use serde::de::DeserializeOwned;
+use biodata::{NciCtsV2DetailPlan, NciCtsV2DetailResponse, NciCtsV2Limits, NciCtsV2SearchPage};
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
@@ -52,26 +50,6 @@ pub struct NciSearchParams {
     pub from: usize,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct NciSearchResponse {
-    #[serde(default)]
-    pub data: Vec<serde_json::Value>,
-    #[serde(default)]
-    pub trials: Vec<serde_json::Value>,
-    #[serde(default, alias = "total", alias = "total_count", alias = "totalCount")]
-    pub total: Option<usize>,
-}
-
-impl NciSearchResponse {
-    pub fn hits(&self) -> &[serde_json::Value] {
-        if !self.data.is_empty() {
-            &self.data
-        } else {
-            &self.trials
-        }
-    }
-}
-
 fn trimmed_non_empty(value: &str) -> Option<&str> {
     let value = value.trim();
     (!value.is_empty()).then_some(value)
@@ -96,10 +74,10 @@ impl NciCtsClient {
         })
     }
 
-    async fn get_json<T: DeserializeOwned>(
+    async fn get_search_page(
         &self,
         req: reqwest_middleware::RequestBuilder,
-    ) -> Result<T, BioMcpError> {
+    ) -> Result<NciCtsV2SearchPage, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, true)
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::NCI_CTS,
@@ -111,13 +89,7 @@ impl NciCtsClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::NCI_CTS),
         )
         .await?;
-        crate::sources::decode_json(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::NCI_CTS),
-            status,
-            None,
-            &bytes,
-            false,
-        )
+        Self::decode_search_response(status, &bytes)
     }
 
     /// Build the outbound trials-search request (pure — Tier-2 testable, never sent).
@@ -197,10 +169,38 @@ impl NciCtsClient {
         plan
     }
 
-    pub async fn search(&self, params: &NciSearchParams) -> Result<NciSearchResponse, BioMcpError> {
+    pub(crate) fn decode_search_response(
+        status: reqwest::StatusCode,
+        bytes: &[u8],
+    ) -> Result<NciCtsV2SearchPage, BioMcpError> {
+        if !status.is_success() {
+            return match crate::sources::decode_json::<serde_json::Value>(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::NCI_CTS),
+                status,
+                None,
+                bytes,
+                false,
+            ) {
+                Err(error) => Err(error),
+                Ok(_) => Err(BioMcpError::InternalProcessing),
+            };
+        }
+        NciCtsV2SearchPage::parse(bytes, &NciCtsV2Limits::default()).map_err(|error| {
+            let narrow = error.code() == "json_resource_limit";
+            Self::detail_api_error(
+                format!("response validation failed: {}", error.code()),
+                narrow,
+            )
+        })
+    }
+
+    pub async fn search(
+        &self,
+        params: &NciSearchParams,
+    ) -> Result<NciCtsV2SearchPage, BioMcpError> {
         let plan = Self::search_plan(&self.api_key, params);
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        self.get_json(req).await
+        self.get_search_page(req).await
     }
 
     /// Build the outbound single-trial request (pure — Tier-2 testable).
