@@ -961,7 +961,7 @@ fn injected(point: &str, error: StoreError) -> Result<(), StoreError> {
             return Err(error);
         }
     }
-    let _ = point;
+    let _ = (point, error);
     Ok(())
 }
 #[cfg(not(unix))]
