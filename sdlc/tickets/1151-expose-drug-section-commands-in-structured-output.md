@@ -102,6 +102,8 @@ report.
 - Design review: ACCEPT on current main; no material findings. The reviewer
   confirmed the rendering owner, dependency, scope, acceptance, and level 2
   Luna High route.
-- Code review: REJECT on `cd3fef3b`. The projection logic is focused, but the
-  candidate lacks production-path batch/MCP/command-execution evidence and
-  several exact pure cases required above. Remediation pending.
+- Code review: ACCEPT on `ec14532b` after two test-only remediations. The first
+  review required production batch/MCP/command-execution evidence and exact
+  pure projections; the second required a mutation-sensitive proof at the
+  structurally unreachable deduplication boundary. The accepted revision has
+  no material findings.
