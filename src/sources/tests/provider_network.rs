@@ -352,12 +352,12 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
     }
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 #[serial_test::serial(article_resolver_env)]
 async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
     let publication_armed = Arc::new(tokio::sync::Notify::new());
     let publication_release = Arc::new(tokio::sync::Notify::new());
-    let (client, url, requests, gets, puts, armed, _, delay, root, server) = cached_test_client(
+    let (client, url, requests, gets, puts, armed, _, _, root, server) = cached_test_client(
         CacheOriginMode::Initial,
         "deadline-post-write-finalization",
         Some((
@@ -370,12 +370,20 @@ async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
         "BIOMCP_TEST_UNPACED_ORIGIN",
         Some(url.trim_end_matches("/resource")),
     )]);
-    delay.store(40, Ordering::SeqCst);
     armed.store(true, Ordering::SeqCst);
     let deadline =
         crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(10));
+    let driving = Arc::new(AtomicBool::new(true));
+    let driver = tokio::spawn({
+        let driving = Arc::clone(&driving);
+        async move {
+            while driving.load(Ordering::SeqCst) {
+                tokio::task::yield_now().await
+            }
+        }
+    });
     let request_deadline = deadline.clone();
-    let request = tokio::spawn(crate::sources::with_variant_article_deadline(
+    let mut request = tokio::spawn(crate::sources::with_variant_article_deadline(
         deadline.clone(),
         async move {
             client
@@ -385,13 +393,14 @@ async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
                 .await
         },
     ));
-    tokio::time::timeout(
-        std::time::Duration::from_secs(1),
-        publication_armed.notified(),
-    )
-    .await
-    .expect("cache publication must arm before the deadline assertion");
-    tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    tokio::select! {
+        () = publication_armed.notified() => {}
+        result = &mut request => panic!("settled before publication pause: {result:?}"),
+    }
+    assert!(!deadline.is_exhausted());
+    driving.store(false, Ordering::SeqCst);
+    driver.await.unwrap();
+    tokio::time::advance(std::time::Duration::from_millis(11)).await;
     assert!(deadline.is_exhausted());
     publication_release.notify_one();
     let result = request.await.unwrap();
