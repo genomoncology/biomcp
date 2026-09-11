@@ -34,6 +34,10 @@ FORBIDDEN_FRAGMENTS = (
     "deployment",
     "release",
 )
+CREDENTIAL_ASSERTION_SELECTORS = {
+    "entities::trial::search::plan_tests::clients_execute_exact_biodata_pairs_and_only_nci_adds_a_credential",
+    "sources::tests::request_plan_transport::biodata_nci_search_keeps_one_logical_value_and_adds_one_credential",
+}
 
 
 def _selectors(value: object, label: str) -> tuple[str, ...]:
@@ -70,6 +74,8 @@ def load_selection(path: Path) -> FocusedSelection:
         lowered = selector.casefold()
         if any(fragment in lowered for fragment in FORBIDDEN_FRAGMENTS):
             raise SelectionError(f"forbidden focused selector: {selector}")
+        if "credential" in lowered and selector not in CREDENTIAL_ASSERTION_SELECTORS:
+            raise SelectionError(f"credential-bearing focused selector: {selector}")
     if any("::" not in selector for selector in selection.rust):
         raise SelectionError("Rust selectors must name one exact test")
     for selector in selection.python:

@@ -96,6 +96,10 @@ def test_manifest_is_the_only_focused_selection_source() -> None:
             '  "tests/test_credentials.py",',
         ),
         (
+            '  "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",',
+            '  "sources::tests::reads_credential_from_environment",',
+        ),
+        (
             '  "tests/test_biodata_boundary.py",',
             '  "tests/",',
         ),
