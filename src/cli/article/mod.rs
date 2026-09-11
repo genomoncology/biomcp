@@ -332,11 +332,13 @@ See also: biomcp list article")]
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
-    /// Fetch compact summary cards for multiple known article IDs
+    /// Compatibility syntax for compact multi-article summary cards
     #[command(after_help = "\
-EXAMPLES:
-  biomcp article batch 22663011 24200969
-  biomcp article batch 22663011 10.1056/NEJMoa1203421 --json
+COMPATIBILITY SYNTAX:
+  biomcp article batch <id1> <id2> ...
+
+CANONICAL REPLACEMENT:
+  biomcp batch article <id1,id2,...> --mode compact
 
 Returns compact multi-article summary cards for anchor selection.
 Semantic Scholar enrichment is optional. With S2_API_KEY, BioMCP uses

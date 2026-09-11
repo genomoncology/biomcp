@@ -47,9 +47,9 @@ fn embedded_skill_overview_is_routing_first_and_points_to_worked_examples()
     assert!(overview.contains("session loop-breaker suggestions with `command` and `reason` only"));
     assert!(overview.contains("ClinicalTrials.gov usually does not index nicknames"));
     assert!(overview.contains("add `--drug <name>` to `search article`"));
-    assert!(
-        overview.contains("`biomcp article batch <pmid1> <pmid2> ...` uses spaces between PMIDs.")
-    );
+    assert!(overview.contains(
+        "`biomcp batch article <pmid1,pmid2,...> --mode compact` uses commas between PMIDs."
+    ));
     assert!(
         overview
             .contains("If one command already answers the question, stop searching and answer.")

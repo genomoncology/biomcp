@@ -141,7 +141,7 @@ fn session_store_records_first_search_then_emits_ordered_loop_suggestions() {
     assert_eq!(
         commands,
         vec![
-            "biomcp article batch 22663011 24200969",
+            "biomcp batch article 22663011,24200969 --mode compact",
             "biomcp discover \"Oncotype DX DCIS study\"",
             "biomcp search article -k \"Oncotype DX DCIS study\" --year-min 2025 --year-max 2025 --limit 5",
         ]

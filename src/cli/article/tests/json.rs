@@ -455,7 +455,7 @@ fn article_session_suggestions_flow_into_search_json_after_overlap() {
         })
         .collect::<Vec<_>>();
 
-    assert_eq!(commands[0], "biomcp article batch 22663011");
+    assert_eq!(commands[0], "biomcp batch article 22663011 --mode compact");
     assert_eq!(commands[1], "biomcp discover \"Oncotype DX DCIS study\"");
     assert!(
         commands[2].contains("--year-min 2025 --year-max 2025"),
