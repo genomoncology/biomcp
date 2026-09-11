@@ -9,14 +9,17 @@ deps: []
 ## Goal
 
 Make `batch article` the one grammar BioMCP teaches for multi-article lookup,
-while preserving the working `article batch` compact route byte-for-byte for
-existing callers. The canonical command makes compact shortlist cards versus
-ordinary article detail an explicit mode instead of hiding the distinction in
-word order.
+while preserving the working `article batch` compact route for existing
+callers. The canonical command makes compact shortlist cards versus ordinary
+article detail an explicit mode instead of hiding the distinction in word
+order. At the same boundary, replace the route's eager `join_all` fan-out with
+at most ten live item futures, reject compatibility raw positional values over
+512 bytes, and reject canonical trimmed identifiers over 512 bytes. These are
+intentional public safety changes, not incidental implementation details.
 
 ## Current facts
 
-Reconfirmed at `e2e08701ab9790ec5cc40a6b33eb51b9f5decafe`:
+Reconfirmed at current main `7c45f6298cdc970e1aa9b06ea899ac4707701029`:
 
 - `src/cli/system/mod.rs::BatchArgs` parses
   `biomcp batch <entity> <one-comma-separated-argument> [--sections ...]`.
@@ -37,10 +40,12 @@ Reconfirmed at `e2e08701ab9790ec5cc40a6b33eb51b9f5decafe`:
   a bare compact array and must be corrected rather than treated as the wire
   contract. `spec/entity/article.md` exercises the executable envelope.
 - `get_compact` derives each card from the ordinary PubTator/Europe PMC base
-  article, then attempts optional Semantic Scholar enrichment. Semantic
-  Scholar failure is fail-open: it emits the existing provider warning and
-  leaves optional TLDR/citation fields absent without changing an otherwise
-  successful item into an error.
+  article, then attempts optional Semantic Scholar enrichment. After the
+  Semantic Scholar client is constructed successfully, enrichment
+  request/response failure is fail-open: it emits the existing provider
+  warning and leaves optional TLDR/citation fields absent without changing an
+  otherwise successful item into an error. Client construction or
+  configuration failure is instead a settled item error and remains so.
 - Ordinary article detail carries the typed `section_outcomes` map. Semantic
   Scholar is represented by the `tldr` outcome (`data`, `empty`, or
   `unavailable`) and corresponding `_meta.section_sources`; detail must keep
@@ -85,9 +90,15 @@ biomcp article batch <id1> <id2> ...
 ```
 
 It is compact mode and gains no `--mode`, `--sections`, pagination, or comma
-list interpretation. Except for its help text, every previously valid call
-must preserve stdout bytes, stderr bytes, JSON formatting, input echo, and exit
-status exactly. Execution prints no deprecation or migration warning. Only
+list interpretation. For every positional value of 512 raw UTF-8 bytes or
+fewer, including empty, whitespace-only, and literal-comma values, every
+previously valid call must preserve stdout bytes, JSON formatting, input echo,
+exit status, and stderr behavior exactly. Deterministic stderr comparisons run
+with tracing disabled; timestamped provider warnings are proved separately by
+normalized event fields and count. A raw positional value over 512 bytes is
+the one intentional compatibility break: reject the whole command with the
+existing invalid-argument envelope and exit 2 before provider/client/cache
+construction. Execution prints no deprecation or migration warning. Only
 `biomcp article batch --help` identifies the route as compatibility syntax and
 shows the copyable replacement
 `biomcp batch article <id1,id2,...> --mode compact`.
@@ -156,30 +167,38 @@ human-output sanitization remains the final boundary for CLI and raw MCP.
 Validation errors exit 2 through the existing CLI error path. A completely
 successful settlement exits 0. A mixed or all-error settlement prints the
 complete report on stdout, leaves settlement errors off stderr, and exits 1.
-Optional compact Semantic Scholar warnings retain their existing stderr/log
-behavior and do not affect item status or exit status. Raw MCP retains its
-current mapping: a settled report is successful tool content even when the CLI
-outcome carries exit 1; parse/preflight rejection is an MCP tool error.
+Optional compact Semantic Scholar post-construction enrichment warnings retain
+their existing stderr/log behavior and do not affect item status or exit
+status. Client construction/configuration failure remains an item error. Raw
+MCP retains its current mapping: a settled report is successful tool content
+even when the CLI outcome carries exit 1; parse/preflight rejection is an MCP
+tool error.
 
 ## Bounds, ordering, and work ownership
 
 All preflight validation completes before constructing a provider client,
 opening the HTTP cache, starting a retry sleep, or polling an item future:
 
-- canonical compact accepts 1–20 comma-separated IDs;
-- canonical detail accepts 1–10 comma-separated IDs;
-- compatibility compact accepts 1–20 space-separated IDs as it does today;
-- after the route's existing trimming rules, every accepted ID is nonempty and
-  at most 512 UTF-8 bytes; one invalid ID rejects the whole command with exit 2
-  and zero provider requests; and
-- unsupported `--mode`, `--sections`, `--source`, pagination-like flags, and
-  over-limit input are rejected before providers.
+- canonical compact accepts 1–20 surviving comma-separated IDs;
+- canonical detail accepts 1–10 surviving comma-separated IDs;
+- canonical parsing trims each component and ignores empty components; every
+  surviving value must be nonempty and at most 512 UTF-8 bytes after trimming,
+  and an empty surviving list or one overlength value rejects the whole command
+  with exit 2 and zero provider work;
+- compatibility compact accepts 1–20 raw space-separated positional values as
+  it does today, including empty, whitespace-only, and literal-comma values;
+  measure each untouched positional value before any trimming and reject only
+  a value over 512 UTF-8 bytes with exit 2 and zero provider work; and
+- unsupported `--mode`, `--sections`, pagination-like flags, and `--source` on
+  an article batch are rejected before providers. Existing valid and invalid
+  `batch trial ... --source ...` behavior is unchanged.
 
 Canonical comma parsing preserves the current `batch` behavior for valid
 lists: trim each component and ignore empty components, then enforce the
-post-parse lower and upper count. Compatibility passes each positional value
-through exactly as today; the new all-ID length preflight is the only added
-input safety check and must not rewrite the echoed value.
+post-parse lower and upper count and trimmed byte limit. Compatibility passes
+each positional value through exactly as today; the raw-byte length preflight
+is its only added input safety check and must not trim or rewrite the echoed
+value.
 
 Settlement owns at most ten live item futures at once in either mode. Pending
 items enter in request order; completion order never changes output order.
@@ -194,8 +213,11 @@ the underlying compact or ordinary get. An item occupies its concurrency slot
 through retry sleeps. Dropping the CLI/MCP batch future drops queued and active
 item futures, including a pending provider retry sleep; no spawned item may
 continue provider work after cancellation. Deterministic controlled-future
-tests prove the ten-item ceiling, queue order, settlement after failure, and
-cancellation while work and retry sleep are pending.
+scheduler tests prove the ten-item ceiling, queue order, settlement after
+failure, and the dropping of queued and active futures. A separate integration
+test through the real injected provider middleware proves that dropping a CLI
+or raw-MCP batch while an item is in retry backoff prevents the later retry
+request and leaves no cache operation, task, or permit alive.
 
 This ticket explicitly does not optimize provider traffic. Do not introduce a
 PubTator, Europe PMC, Semantic Scholar, or cross-provider bulk request; do not
@@ -213,24 +235,34 @@ from the baseline executable. Afterward prove:
    explicit detail/compact, invalid modes, mode on every non-article entity,
    sections in both modes, 0/1/10/11/20/21 IDs, a 512-byte ID, a 513-byte ID,
    commas/whitespace/empty components, unsupported pagination flags, and
-   `--source`. Limit and length failures must expose request count zero.
-2. Canonical compact and compatibility compact have identical full stdout,
-   stderr, JSON bytes, and exit codes for ordered success, duplicates, mixed
-   failure, all failure, optional Semantic Scholar success, and fail-open
-   Semantic Scholar failure. The committed baseline goldens make the
-   compatibility claim independent of shared implementation.
+   `--source`. Article `--source`, limit, and length failures must expose
+   request count zero; the matrix also freezes unchanged valid and invalid
+   trial-source behavior. Canonical cases measure trimmed surviving values;
+   compatibility cases measure raw positional bytes and preserve empty,
+   whitespace-only, and literal-comma inputs through 512 bytes.
+2. With tracing disabled, canonical compact and compatibility compact have
+   identical full stdout, stderr, JSON bytes, and exit codes for ordered
+   success, duplicates, mixed failure, all failure, optional Semantic Scholar
+   success, post-construction fail-open Semantic Scholar request/response
+   failure, and Semantic Scholar client construction/configuration failure as
+   a settled item error. A separate in-process tracing subscriber proves one
+   normalized post-construction fail-open warning event with the existing
+   fields and no item failure. The committed baseline goldens make
+   compatibility independent of shared implementation.
 3. Canonical detail default and explicit-detail JSON contain the ordinary
    article projection and `_meta`; Markdown contains the exact wrapper and
    unmodified ordinary article rendering. Section fixtures prove Semantic
    Scholar `tldr` data, empty, and unavailable outcomes and matching section
-   provenance. Compact fixtures prove those failures only omit optional
-   enrichment and retain item success.
+   provenance. Compact fixtures prove post-construction enrichment failures
+   only omit optional fields and retain item success, while client
+   construction/configuration failures retain item-error settlement.
 4. Raw stdio and Streamable HTTP MCP execute canonical compact, canonical
    detail, and compatibility compact in Markdown and JSON. Assertions cover
-   exact text/structured content, mixed-failure tool-success behavior,
-   preflight tool errors, ordering, and redaction/sanitization. `tools/list`
-   remains the same seven tools; typed `search` and `get` schemas gain no
-   batch, IDs, or mode field, and no typed article-batch tool is added.
+   the exact single sanitized text content item and absence of protocol
+   `structuredContent`, mixed-failure tool-success behavior, preflight tool
+   errors, ordering, and redaction/sanitization. `tools/list` remains the same
+   seven tools; typed `search` and `get` schemas gain no batch, IDs, or mode
+   field, and no typed article-batch tool is added.
 5. The article-search session loop-breaker, next-command validation, command
    help, `src/cli/list_reference.md`, `list batch`, and `list article` emit or
    teach `biomcp batch article <comma IDs> --mode compact`. No executable
@@ -239,9 +271,11 @@ from the baseline executable. Afterward prove:
    case/ladder, public article/CLI/how-to/reference pages, provider attribution,
    embedded Rust help/reference strings, Python docs/skill contracts, and
    `spec/entity/article.md`, `spec/surface/skills.md`, and the variant/article
-   fixture assertion. A repository-wide current-content assertion allows the
-   old spelling only in the compatibility help/migration paragraph, its exact
-   preservation tests, and append-only records or historical blog prose.
+   fixture assertion. A current-product assertion scans tracked content under
+   `README.md`, `src/`, `skills/`, `spec/`, `tests/`, and `docs/` except
+   `docs/blog/`; it deliberately excludes `sdlc/`, generated output, and other
+   history. Within that domain the old spelling is allowed only in the
+   compatibility help/migration paragraph and exact preservation tests.
 7. Existing non-article batch CLI, JSON, Markdown, and raw-MCP contracts remain
    green. Package inventory/quality ratchets remain within their existing
    limits; implementation must split modules instead of weakening ratchets.
@@ -249,6 +283,27 @@ from the baseline executable. Afterward prove:
 Run focused Rust CLI/entity/renderer/MCP tests, the affected Python
 docs/skills/MCP contracts, and the affected article and skills mustmatch specs,
 then the repository's standard `make lint`, `make test`, and `make spec` gates.
+
+## Complexity
+
+- Contract: 2 — this introduces one canonical article-batch grammar while
+  freezing exact compatibility behavior for the existing grammar.
+- State and timing: 2 — bounded concurrency, ordered settlement, provider
+  retry backoff, and cancellation ownership are part of the contract.
+- Reach: 1 — the change spans several modules and documented CLI/raw-MCP
+  surfaces, but remains within BioMCP 0.9.
+- Proof: 2 — acceptance requires hostile-input, failure-injection,
+  cancellation, and exact-byte compatibility proofs across both output modes.
+- Cost of error: 1 — a mistake would break user-visible commands or silently
+  change batch results, but has no data-loss or external migration risk.
+- Total: 8.
+- Minimum level floor: Level 3 because concurrency and cancellation are
+  explicit correctness boundaries.
+- Final level: Level 3.
+- Reasons: the public contract is settled, but safe implementation depends on
+  coordinated parser, settlement, renderer, MCP, documentation, and fixture
+  proofs.
+- Selected model: `gpt-5.6-sol`, medium.
 
 ## Dependencies and independence
 
@@ -261,14 +316,22 @@ so neither is a prerequisite for 1147 and 1147 is not a prerequisite for them.
 
 ## Boundary
 
-This ticket consolidates and documents article batch routing. It does not
-remove the compatibility parser, change ordinary article detail or compact
-`ArticleBatchItem`, add a typed MCP tool, add pagination, optimize or batch
-provider calls, redesign every entity's batch interface, rename citation or
-reference pivots, change provider retry/cache/rate-limit policy, or change
-historical records.
+This ticket consolidates and documents article batch routing, limits article
+settlement to ten live futures, and adds the stated 512-byte input boundary. It
+does not remove the compatibility parser, change ordinary article detail or
+compact `ArticleBatchItem`, add a typed MCP tool or protocol structured
+content, add pagination, optimize or batch provider calls, redesign every
+entity's batch interface, rename citation or reference pivots, change provider
+retry/cache/rate-limit policy, or change historical records.
 
 ## Review
+
+The 2026-09-11 re-review correction makes the two safety changes explicit in
+the goal, preserves raw compatibility inputs through 512 bytes, isolates
+timestamped warning semantics from byte goldens, freezes raw MCP as one text
+item without structured content, scopes `--source` to article while preserving
+trial behavior, and separates scheduler cancellation proof from provider retry
+drop proof.
 
 Implementation starts only after fresh design acceptance. Code review must
 compare compatibility bytes to the pre-change goldens, inspect preflight
