@@ -1,5 +1,5 @@
 use super::*;
-use crate::entities::drug::{Drug, DrugInteractionReport};
+use crate::entities::drug::{Drug, DrugInteractionReport, DrugRegion};
 use crate::entities::variant::Variant;
 
 #[test]
@@ -95,7 +95,7 @@ fn drug_json_next_commands_parse() {
         "drug",
         &drug,
         crate::render::markdown::drug_evidence_urls(&drug),
-        crate::render::markdown::related_drug(&drug),
+        crate::render::markdown::drug_command_discovery(&drug, &[], DrugRegion::Us).next_commands,
         crate::render::provenance::drug_section_sources(&drug),
     );
 }

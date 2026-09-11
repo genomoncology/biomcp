@@ -390,6 +390,16 @@ continuation describe the filtered EU result set rather than raw feed rows.
   `_meta.evidence_urls`, `_meta.section_sources`, and helper-specific
   `_meta.next_commands`.
 
+Drug cards use the same command-discovery projection in JSON and Markdown.
+`_meta.next_commands` is capped at ten entries and orders recovery commands,
+up to three unloaded sections, a regional `all` command when useful, and
+related pivots. The default request treats only `targets` as loaded; explicit
+section tokens load exactly those sections, while `all` uses the current
+parser expansion. Regional `regulatory`, `safety`, `shortage`, and `all`
+commands include the resolved `--region`; WHO cards omit standalone safety and
+shortage follow-ups. Markdown renders the surviving commands under `More:`,
+`All:`, and `See also:`.
+
 ## Source-section outcomes
 
 JSON and MCP drug records include outcomes for `approvals`, `safety`, `targets`,

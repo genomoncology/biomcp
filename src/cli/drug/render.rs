@@ -57,12 +57,8 @@ pub(crate) fn render_loaded_card(
         Ok(crate::render::json::to_entity_json_with_workflow(
             drug,
             crate::render::markdown::drug_evidence_urls(drug),
-            crate::render::markdown::with_section_recovery(
-                "drug",
-                &drug.name,
-                &drug.section_outcomes,
-                crate::render::markdown::related_drug(drug),
-            ),
+            crate::render::markdown::drug_command_discovery(drug, sections, effective_region)
+                .next_commands,
             crate::render::provenance::drug_section_sources(drug),
             drug_pharmacogene_workflow(drug)?,
         )?)
@@ -74,6 +70,18 @@ pub(crate) fn render_loaded_card(
             raw_label,
         )?)
     }
+}
+
+pub(crate) fn batch_next_commands(
+    drug: &crate::entities::drug::Drug,
+    sections: &[String],
+) -> Vec<String> {
+    crate::render::markdown::drug_command_discovery(
+        drug,
+        sections,
+        crate::entities::drug::DrugRegion::Us,
+    )
+    .next_commands
 }
 
 fn drug_pharmacogene_workflow(
