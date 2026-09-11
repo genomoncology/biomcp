@@ -67,8 +67,25 @@ pub struct SemanticScholarClient {
     api_key: Option<String>,
 }
 
+#[cfg(test)]
+tokio::task_local! {
+    static TEST_CLIENT_OVERRIDE: SemanticScholarClient;
+}
+
+#[cfg(test)]
+pub(crate) async fn with_test_client<F>(client: SemanticScholarClient, future: F) -> F::Output
+where
+    F: std::future::Future,
+{
+    TEST_CLIENT_OVERRIDE.scope(client, future).await
+}
+
 impl SemanticScholarClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        #[cfg(test)]
+        if let Ok(client) = TEST_CLIENT_OVERRIDE.try_with(Clone::clone) {
+            return Ok(client);
+        }
         let base = crate::sources::env_base(SEMANTIC_SCHOLAR_BASE, SEMANTIC_SCHOLAR_BASE_ENV);
         let base_url = reqwest::Url::parse(base.as_ref()).map_err(|_| BioMcpError::Api {
             api: SEMANTIC_SCHOLAR_API.to_string(),
@@ -83,6 +100,44 @@ impl SemanticScholarClient {
             client,
             base,
             api_key,
+        })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn new_with_cache_observers<G, A>(
+        base: &str,
+        observe_get: G,
+        after_put: A,
+    ) -> Result<Self, BioMcpError>
+    where
+        G: Fn(&std::path::Path, &str) + Send + Sync + 'static,
+        A: Fn(&std::path::Path, &str) + Send + Sync + 'static,
+    {
+        let base_url = reqwest::Url::parse(base).map_err(|_| BioMcpError::Api {
+            api: SEMANTIC_SCHOLAR_API.to_string(),
+            message: "invalid test fixture base URL".into(),
+        })?;
+        let policy = ProviderUrlPolicy::semantic_scholar_api(&base_url)?;
+        let config = crate::cache::resolve_cache_config()?;
+        let client = crate::sources::build_http_client_with_config_and_manager(
+            crate::sources::SharedHttpClientKind::SemanticScholarSharedPool,
+            config,
+            Some(&policy),
+            |path, config| {
+                Ok(
+                    crate::cache::SizeAwareCacheManager::new_with_cache_observers(
+                        path,
+                        config,
+                        observe_get,
+                        after_put,
+                    ),
+                )
+            },
+        )?;
+        Ok(Self {
+            client,
+            base: Cow::Owned(base.to_string()),
+            api_key: None,
         })
     }
 

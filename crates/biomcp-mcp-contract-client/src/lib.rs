@@ -28,6 +28,7 @@ pub struct ArticleFulltextFixture {
     repo_root: PathBuf,
     pub base_url: String,
     pub cache_dir: PathBuf,
+    pub request_log: PathBuf,
 }
 
 impl Drop for ArticleFulltextFixture {
@@ -934,6 +935,7 @@ pub fn provision_article_fulltext_fixture(
         repo_root,
         base_url,
         cache_dir,
+        request_log: fixture_root.join("request-log.txt"),
     })
 }
 

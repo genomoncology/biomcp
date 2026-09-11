@@ -46,7 +46,7 @@ raw bytes
 - `get article <id> all` - include all article sections, including PubMed indexing
 - `article authors <id>` - provider-exact Semantic Scholar authors for a PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
 - `article entities <pmid> --limit <N>` - annotated entities with next commands
-- `article batch <id> [<id>...]` - compact multi-article summary cards
+- `batch article <id1,id2,...> [--mode compact|detail] [--sections <s1,s2,...>]` - multi-article lookup; detail is the default and compact accepts up to 20 IDs
 - `article citations <id> --limit <N>` - citation graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)
 - `article references <id> --limit <N>` - reference graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)
 - `article recommendations <id> [<id>...] [--negative <id>...] --limit <N>` - related papers (optional auth; shared pool without `S2_API_KEY`)
@@ -134,7 +134,7 @@ Worked examples:
 - Keyword-only exact entity matches can also add `biomcp get gene <symbol>`, `biomcp get drug <name>`, or `biomcp get disease <name>` to `_meta.next_commands`.
 - Article search `_meta.suggestions` is an optional array of objects with `command` and `reason`. Exact entity suggestions include `sections`; loop-breaker suggestions from `--session` omit `sections`.
 - Multi-concept keyword phrases and typed-filter searches omit direct entity suggestion objects.
-- Loop-breaker suggestions, when emitted, are ordered as prior `biomcp article batch ...`, `biomcp discover <topic>`, then a date-narrowed `biomcp search article ... --year-min ... --year-max ...` retry when available.
+- Loop-breaker suggestions, when emitted, are ordered as prior `biomcp batch article <comma-IDs> --mode compact`, `biomcp discover <topic>`, then a date-narrowed `biomcp search article ... --year-min ... --year-max ...` retry when available.
 - When no explicit article date bounds are present, visible dated rows can also add a year-refinement next command that rebuilds the current search with `--year-min <YYYY> --year-max <YYYY> --limit 5`.
 - Detailed `--full` results may include `first_index_date` as `YYYY-MM-DD` when the upstream record exposes when it was first indexed. Europe PMC and PubMed provide it today; PubTator3, LitSense2, and Semantic Scholar do not.
 

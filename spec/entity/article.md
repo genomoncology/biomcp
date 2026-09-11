@@ -411,7 +411,7 @@ including the same source-ordered authorship contract on each card. A caller can
 therefore confirm a middle author without making a second detail request.
 
 ```bash
-../../tools/biomcp-ci --json article batch 22663011 22663012 | mustmatch like '{
+../../tools/biomcp-ci --json batch article 22663011,22663012 --mode compact | mustmatch like '{
   "summary": {"total": 2, "succeeded": 2, "failed": 0},
   "items": [
   {
@@ -444,7 +444,7 @@ Human-readable batch cards remain in request order and include full authorship
 on the matching card without hiding middle collaborators.
 
 ```bash
-../../tools/biomcp-ci article batch 22663011 22663012 | mustmatch like '# Batch: article (2)
+../../tools/biomcp-ci batch article 22663011,22663012 --mode compact | mustmatch like '# Batch: article (2)
 ...
 ## 22663011 — ok
 ...
@@ -463,6 +463,109 @@ PMID: 22663012
 ## Summary
 ...
 Total: 2; succeeded: 2; failed: 0.'
+```
+
+## Canonical Compact Batch Preserves Compatibility Bytes
+
+<!-- mustmatch-lint: skip -->
+
+The canonical compact spelling preserves the complete compatibility response,
+including ordering, nested headings, authorship, JSON whitespace, and status.
+
+```bash
+tmp="$(mktemp -d)"
+compare_compact_routes() {
+  comma_ids="$1"
+  shift
+  for format in markdown json; do
+    json_args=()
+    test "$format" = json && json_args=(--json)
+    set +e
+    RUST_LOG=off ../../tools/biomcp-ci "${json_args[@]}" article batch "$@" >"$tmp/compat.out" 2>"$tmp/compat.err"
+    compat_status="$?"
+    RUST_LOG=off ../../tools/biomcp-ci "${json_args[@]}" batch article "$comma_ids" --mode compact >"$tmp/canonical.out" 2>"$tmp/canonical.err"
+    canonical_status="$?"
+    set -e
+    test "$canonical_status" = "$compat_status"
+    cmp "$tmp/canonical.out" "$tmp/compat.out"
+    cmp "$tmp/canonical.err" "$tmp/compat.err"
+  done
+}
+compare_compact_routes '22663011,22663012' 22663011 22663012
+compare_compact_routes '22663011,22663011' 22663011 22663011
+compare_compact_routes '22663011,not-an-article-id' 22663011 not-an-article-id
+compare_compact_routes 'not-an-article-id,also-invalid' not-an-article-id also-invalid
+../../tools/biomcp-ci --json batch article 22663011 --mode compact \
+  | jq -e '.items[0].result | .tldr == "Fixture compact summary" and .citation_count == 12 and .influential_citation_count == 3' >/dev/null
+RUST_LOG=warn ../../tools/biomcp-ci --json batch article 22663012 --mode compact >"$tmp/fail-open.out" 2>"$tmp/fail-open.err"
+jq -e '.summary == {"total":1,"succeeded":1,"failed":0} and .items[0].status == "ok" and (.items[0].result | has("tldr") | not)' "$tmp/fail-open.out" >/dev/null
+test "$(grep -c 'Semantic Scholar' "$tmp/fail-open.err")" = 1
+! grep -q 'fixture Semantic Scholar outage' "$tmp/fail-open.err"
+rm -r "$tmp"
+```
+
+## Canonical Detail Batch Defaults to Ordinary Article Detail
+
+Omitting `--mode` is byte-equivalent to explicit detail. Each success retains
+the ordinary article projection and provenance rather than a compact card.
+
+```bash
+default_detail="$(../../tools/biomcp-ci --json batch article 22663011,22663012)"
+explicit_detail="$(../../tools/biomcp-ci --json batch article 22663011,22663012 --mode detail)"
+test "$default_detail" = "$explicit_detail"
+../../tools/biomcp-ci --json batch article 22663011,22663012 \
+  | jq '
+      .summary == {"total":2,"succeeded":2,"failed":0}
+      and [.items[].input] == ["22663011","22663012"]
+      and (.items | all(
+        .status == "ok"
+        and (.result._meta.evidence_urls | type == "array")
+        and (.result._meta.section_sources | type == "array")
+        and ((.result | has("requested_id")) | not)))' \
+  | mustmatch 'true'
+```
+
+## Detail Batch Preserves Typed TLDR Outcomes
+
+Requested detail sections retain ordinary article outcome and provenance states:
+data when Semantic Scholar returns a TLDR, empty when it returns no TLDR, and
+unavailable when the provider fails.
+
+```bash
+../../tools/biomcp-ci --json batch article 22663011,22663023,22663012 --sections tldr \
+  | jq '
+      .items[0].result as $data
+      | .items[1].result as $empty
+      | .items[2].result as $unavailable
+      | ($data.section_outcomes.tldr.outcome == "data")
+        and ($data._meta.section_sources | any(.key == "tldr" and .outcome == "data"))
+        and ($empty.section_outcomes.tldr.outcome == "empty")
+        and ($empty._meta.section_sources | any(.key == "tldr" and .outcome == "empty"))
+        and ($unavailable.section_outcomes.tldr.outcome == "unavailable")
+        and ($unavailable._meta.section_sources | any(.key == "tldr" and .outcome == "unavailable"))' \
+  | mustmatch 'true'
+```
+
+## Article Batch Preflight Starts No Provider Work
+
+<!-- mustmatch-lint: skip -->
+
+Mode, section, count, length, and unsupported-flag failures are rejected before
+the first provider request.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+before="$(wc -l <"$request_log")"
+! ../../tools/biomcp-ci batch article 1 --mode compact --sections '' >/dev/null 2>&1
+! ../../tools/biomcp-ci batch gene BRAF --mode detail >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article "$(printf 'x%.0s' $(seq 1 513))" >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --sections unknown >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --sections '' >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 22663011 --sections tldr,,annotations >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 1 --offset 1 >/dev/null 2>&1
+after="$(wc -l <"$request_log")"
+test "$after" = "$before"
 ```
 
 ## MYD88 Protein-Alias Article Precision

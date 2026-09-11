@@ -412,13 +412,10 @@ pub(in crate::cli) async fn handle_command(
             }
         }
         ArticleCommand::Batch { ids } => {
-            if ids.len() > crate::entities::article::ARTICLE_BATCH_MAX_IDS {
-                return Err(crate::error::BioMcpError::InvalidArgument(format!(
-                    "Article batch is limited to {} IDs",
-                    crate::entities::article::ARTICLE_BATCH_MAX_IDS
-                ))
-                .into());
-            }
+            // This compatibility route intentionally retains each raw positional
+            // value. Its only new preflight is the byte ceiling; canonical comma
+            // parsing and trimming remain owned by `batch article`, not this arm.
+            crate::cli::system::validate_compatibility_article_batch_ids(&ids)?;
             let input_refs = ids.iter().map(String::as_str).collect::<Vec<_>>();
             let futures = ids
                 .iter()

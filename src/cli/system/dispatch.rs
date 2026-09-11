@@ -1,46 +1,18 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use super::settle_batch;
 use super::{
-    BatchArgs, CvxCommand, DdinterCommand, EmaCommand, EnrichArgs, GtrCommand, VersionArgs,
-    WhoCommand, WhoIvdCommand,
+    ArticleBatchMode, BatchArgs, CvxCommand, DdinterCommand, EmaCommand, EnrichArgs, GtrCommand,
+    VersionArgs, WhoCommand, WhoIvdCommand,
 };
+use super::{preflight_batch, settle_batch};
 use crate::cli::CommandOutcome;
 
-pub(super) fn validate_batch_args(args: &BatchArgs) -> Result<(), crate::error::BioMcpError> {
-    let entity = args.entity.trim().to_ascii_lowercase();
-    if entity != "trial" && args.source.is_some() {
-        return Err(crate::error::BioMcpError::InvalidArgument(
-            "--source is only supported for trial batches".into(),
-        ));
-    }
-    Ok(())
-}
-
 pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<CommandOutcome> {
-    validate_batch_args(&args)?;
-    let entity = args.entity.trim().to_ascii_lowercase();
-    let parsed_ids = args
-        .ids
-        .split(',')
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .collect::<Vec<_>>();
-    let batch_sections = parse_batch_sections(args.sections.as_deref());
-
-    if parsed_ids.is_empty() {
-        return Err(crate::error::BioMcpError::InvalidArgument(
-            "Batch IDs are required. Example: biomcp batch gene BRAF,TP53".into(),
-        )
-        .into());
-    }
-    if parsed_ids.len() > 10 {
-        return Err(crate::error::BioMcpError::InvalidArgument(
-            "Batch is limited to 10 IDs".into(),
-        )
-        .into());
-    }
+    let prepared = preflight_batch(&args)?;
+    let entity = prepared.entity;
+    let parsed_ids = prepared.ids;
+    let batch_sections = prepared.sections;
 
     match entity.as_str() {
         "gene" => {
@@ -86,6 +58,22 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
             .await;
         }
         "article" => {
+            if args.mode == Some(ArticleBatchMode::Compact) {
+                let futs = parsed_ids
+                    .iter()
+                    .map(|id| crate::entities::article::get_compact(id));
+                return settle_batch(
+                    "article",
+                    &parsed_ids,
+                    futs,
+                    json,
+                    |item| serde_json::to_value(item).map_err(crate::error::BioMcpError::Json),
+                    |item| {
+                        crate::render::markdown::article_batch_markdown(std::slice::from_ref(item))
+                    },
+                )
+                .await;
+            }
             let futs = parsed_ids.iter().map(|id| {
                 crate::entities::article::get(
                     id,
@@ -111,9 +99,7 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
             .await;
         }
         "trial" => {
-            let trial_source = crate::entities::trial::TrialSource::from_flag(
-                args.source.as_deref().unwrap_or("ctgov"),
-            )?;
+            let trial_source = prepared.trial_source.expect("trial source preflight");
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::trial::get(id, &batch_sections, trial_source));
@@ -240,12 +226,6 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
             .await;
         }
         "adverse-event" | "adverse_event" | "adverseevent" => {
-            if !batch_sections.is_empty() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "Batch sections are not supported for adverse-event".into(),
-                )
-                .into());
-            }
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::adverse_event::get(id));
