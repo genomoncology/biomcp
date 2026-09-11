@@ -505,8 +505,11 @@ fn related_trial_promotes_results_search_for_completed_or_terminated_studies() {
             completion_date: None,
             eligibility: None,
             eligibility_provenance: None,
-            contacts: None,
-            locations: None,
+            site_directory: None,
+
+            site_offset: 0,
+
+            site_limit: None,
             outcomes: None,
             references: None,
         };
@@ -562,8 +565,9 @@ fn provider_trial_title_shell_syntax_stays_inert_in_results_search() {
         completion_date: None,
         eligibility: None,
         eligibility_provenance: None,
-        contacts: None,
-        locations: None,
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     };
@@ -616,8 +620,9 @@ fn related_trial_searches_unverified_jag201_intervention() {
         completion_date: None,
         eligibility: None,
         eligibility_provenance: None,
-        contacts: None,
-        locations: None,
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     };
@@ -650,8 +655,9 @@ fn related_trial_keeps_recruiting_order_without_results_search() {
         completion_date: None,
         eligibility: None,
         eligibility_provenance: None,
-        contacts: None,
-        locations: None,
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     };
@@ -685,8 +691,9 @@ fn related_trial_completed_promotes_results_search_before_condition_pivots() {
         completion_date: None,
         eligibility: None,
         eligibility_provenance: None,
-        contacts: None,
-        locations: None,
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     };
@@ -721,8 +728,9 @@ fn related_trial_results_search_without_intervention_keeps_seed_quoted() {
         completion_date: None,
         eligibility: None,
         eligibility_provenance: None,
-        contacts: None,
-        locations: None,
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     };

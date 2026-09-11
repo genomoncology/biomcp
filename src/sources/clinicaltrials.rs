@@ -24,7 +24,6 @@ pub struct ClinicalTrialsClient {
     base: Cow<'static, str>,
 }
 
-#[derive(Debug)]
 pub(crate) struct CtGovBiodataDetailResponse {
     pub(crate) study: CtGovStudy,
     pub(crate) shared: ClinicalTrialsGovApiV2Response,
@@ -323,7 +322,7 @@ impl ClinicalTrialsClient {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovSearchResponse {
     #[serde(default)]
@@ -332,7 +331,7 @@ pub struct CtGovSearchResponse {
     pub total_count: Option<u32>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovStudy {
     pub protocol_section: Option<CtGovProtocolSection>,
@@ -341,7 +340,7 @@ pub struct CtGovStudy {
     pub results_section: Option<CtGovResultsSection>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovProtocolSection {
     pub identification_module: Option<CtGovIdentificationModule>,
@@ -544,16 +543,14 @@ pub struct CtGovLargeDocument {
     pub has_icf: Option<bool>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovContactsLocationsModule {
-    #[serde(default)]
-    pub central_contacts: Vec<CtGovContact>,
     #[serde(default)]
     pub locations: Vec<CtGovLocation>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovLocation {
     pub facility: Option<String>,
@@ -562,18 +559,7 @@ pub struct CtGovLocation {
     pub state: Option<String>,
     pub zip: Option<String>,
     pub country: Option<String>,
-    #[serde(default)]
-    pub contacts: Vec<CtGovContact>,
     pub geo_point: Option<CtGovGeoPoint>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovContact {
-    pub name: Option<String>,
-    pub role: Option<String>,
-    pub phone: Option<String>,
-    pub email: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -581,6 +567,25 @@ pub struct CtGovGeoPoint {
     pub lat: Option<f64>,
     pub lon: Option<f64>,
 }
+
+macro_rules! redacted_debug {
+    ($($type:ty),+ $(,)?) => {$ (
+        impl std::fmt::Debug for $type {
+            fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.debug_struct(stringify!($type)).finish_non_exhaustive()
+            }
+        }
+    )+ };
+}
+
+redacted_debug!(
+    CtGovBiodataDetailResponse,
+    CtGovSearchResponse,
+    CtGovStudy,
+    CtGovProtocolSection,
+    CtGovContactsLocationsModule,
+    CtGovLocation,
+);
 
 #[cfg(test)]
 mod tests;

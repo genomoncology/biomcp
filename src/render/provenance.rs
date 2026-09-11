@@ -720,7 +720,7 @@ pub(crate) fn trial_section_sources(trial: &Trial) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        trial.locations.is_some(),
+        trial.location_count() > 0,
         "locations",
         "Locations",
         source_ref,

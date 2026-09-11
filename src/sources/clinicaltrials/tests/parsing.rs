@@ -6,6 +6,78 @@ use crate::error::BioMcpError;
 use reqwest::StatusCode;
 
 #[test]
+fn biodata_detail_wrapper_redacts_field_distinct_site_values_but_shared_getters_retain_them() {
+    let body = serde_json::to_vec(&serde_json::json!({"protocolSection": {
+        "identificationModule": {"nctId":"NCT60000015","briefTitle":"Wrapper trial"},
+        "statusModule": {"overallStatus":"RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor":{"name":"Wrapper sponsor"}},
+        "conditionsModule": {"conditions":["Wrapper condition"]},
+        "designModule": {"studyType":"INTERVENTIONAL","phases":[]},
+        "contactsLocationsModule": {
+            "centralContacts": [{
+                "name":"central-name-sentinel", "role":"central-role-sentinel",
+                "phone":"central-phone-sentinel", "phoneExt":"central-extension-sentinel",
+                "email":"central-email@example.test"
+            }],
+            "locations": [{
+                "facility":"facility-sentinel", "status":"location-status-sentinel",
+                "city":"city-sentinel", "state":"state-sentinel",
+                "zip":"postal-sentinel", "country":"country-sentinel",
+                "geoPoint":{"lat":12.5,"lon":-45.25},
+                "contacts":[{"name":"site-name-sentinel","role":"site-role-sentinel",
+                    "phone":"site-phone-sentinel","phoneExt":"site-extension-sentinel",
+                    "email":"site-email@example.test"}]
+            }]
+        }
+    }}))
+    .unwrap();
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT60000015",
+        &["contacts".into(), "locations".into()],
+        StatusCode::OK,
+        &body,
+    )
+    .unwrap();
+    let debug = format!("{response:?}");
+    let forbidden = [
+        "central-name-sentinel",
+        "central-role-sentinel",
+        "central-phone-sentinel",
+        "central-extension-sentinel",
+        "central-email@example.test",
+        "facility-sentinel",
+        "location-status-sentinel",
+        "city-sentinel",
+        "state-sentinel",
+        "postal-sentinel",
+        "country-sentinel",
+        "site-name-sentinel",
+        "site-role-sentinel",
+        "site-phone-sentinel",
+        "site-extension-sentinel",
+        "site-email@example.test",
+    ];
+    for sentinel in forbidden {
+        assert!(!debug.contains(sentinel), "Debug leaked {sentinel}");
+    }
+    let biodata::ClinicalTrialSection::Present(directory) = response.shared.site_directory() else {
+        panic!("selected directory must be present");
+    };
+    assert_eq!(
+        directory.central_contacts().unwrap()[0].name(),
+        Some("central-name-sentinel")
+    );
+    let site = &directory.sites().unwrap()[0];
+    assert_eq!(site.facility(), Some("facility-sentinel"));
+    assert_eq!(
+        site.contacts().unwrap()[0].email(),
+        Some("site-email@example.test")
+    );
+    assert_eq!(site.coordinates().unwrap().latitude(), 12.5);
+    assert_eq!(site.coordinates().unwrap().longitude(), -45.25);
+}
+
+#[test]
 fn parses_search_response_fixture() {
     let response: CtGovSearchResponse = ClinicalTrialsClient::decode_json_response(
         StatusCode::OK,
@@ -29,7 +101,7 @@ fn parses_search_response_fixture() {
 }
 
 #[test]
-fn parses_contacts_fixture_without_consuming_detail_eligibility() {
+fn legacy_detail_decode_ignores_contacts_without_consuming_eligibility() {
     let study = ClinicalTrialsClient::decode_get_response(
         "NCT41300001",
         StatusCode::OK,
@@ -39,15 +111,64 @@ fn parses_contacts_fixture_without_consuming_detail_eligibility() {
 
     let protocol = study.protocol_section.expect("protocol");
     assert!(protocol.eligibility_module.is_some());
-    assert_eq!(
-        protocol
-            .contacts_locations_module
-            .expect("contacts")
-            .central_contacts[0]
-            .email
-            .as_deref(),
-        Some("central@example.test")
-    );
+    assert!(protocol.contacts_locations_module.is_some());
+}
+
+#[test]
+fn legacy_search_fixture_keeps_only_retained_location_fields() {
+    let study = ClinicalTrialsClient::decode_get_response(
+        "NCT00000000",
+        StatusCode::OK,
+        include_bytes!(
+            "../../../../testdata/sources/clinicaltrials/case-13-location-contacts.json"
+        ),
+    )
+    .unwrap();
+    let module = study
+        .protocol_section
+        .and_then(|protocol| protocol.contacts_locations_module)
+        .expect("location module");
+    assert!(!module.locations.is_empty());
+}
+
+#[test]
+fn legacy_source_aggregates_redact_ignored_contact_sentinels() {
+    const SENTINEL: &str = "CONTACT-PRIVACY-SENTINEL-0115";
+    let response: CtGovSearchResponse = serde_json::from_value(serde_json::json!({
+        "studies": [{
+            "protocolSection": {
+                "contactsLocationsModule": {
+                    "centralContacts": [{
+                        "name": SENTINEL,
+                        "phone": SENTINEL,
+                        "email": SENTINEL
+                    }],
+                    "locations": [{
+                        "facility": SENTINEL,
+                        "contacts": [{"name": SENTINEL}]
+                    }]
+                }
+            }
+        }]
+    }))
+    .unwrap();
+    let study = &response.studies[0];
+    let protocol = study.protocol_section.as_ref().unwrap();
+    let module = protocol.contacts_locations_module.as_ref().unwrap();
+    let location = &module.locations[0];
+    for diagnostic in [
+        format!("{response:?}"),
+        format!("{study:?}"),
+        format!("{protocol:?}"),
+        format!("{module:?}"),
+        format!("{location:?}"),
+    ] {
+        assert!(!diagnostic.contains(SENTINEL));
+    }
+    let retained = serde_json::to_value(&response).unwrap();
+    let contacts_module = &retained["studies"][0]["protocolSection"]["contactsLocationsModule"];
+    assert!(contacts_module.get("centralContacts").is_none());
+    assert!(contacts_module["locations"][0].get("contacts").is_none());
 }
 
 #[test]

@@ -263,12 +263,22 @@ async fn apply_ctgov_post_filters(
     studies
 }
 
-#[derive(Debug)]
 struct CtGovRawPage {
     total_count: Option<usize>,
     studies: Vec<CtGovStudy>,
     next_page_token: Option<String>,
     raw_study_count: usize,
+}
+
+impl std::fmt::Debug for CtGovRawPage {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CtGovRawPage")
+            .field("total_count", &self.total_count)
+            .field("next_page_token", &self.next_page_token)
+            .field("raw_study_count", &self.raw_study_count)
+            .finish_non_exhaustive()
+    }
 }
 
 #[derive(Debug, Clone)]

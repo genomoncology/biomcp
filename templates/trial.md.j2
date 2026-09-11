@@ -37,16 +37,31 @@ _and {{ intervention_details | length - 5 }} more (see `arms` section)_
 
 {% for contact in contacts -%}
 ### {% if contact.level == "central" %}Central Contact{% else %}Site Contact{% endif %}
-- Name: {{ contact.name }}
-{% if contact.role -%}- Role: {{ contact.role }}
+{% if contact.name -%}- Name: {{ contact.name | sanitize_inline }}
 {% endif -%}
-{% if contact.email -%}- Email: {{ contact.email }}
+{% if contact.role -%}- Role: {{ contact.role | sanitize_inline }}
 {% endif -%}
-{% if contact.phone -%}- Phone: {{ contact.phone }}
+{% if contact.email -%}- Email: {{ contact.email | sanitize_inline }}
 {% endif -%}
-{% if contact.facility or contact.city or contact.state or contact.country -%}- Location: {% if contact.facility %}{{ contact.facility }}{% endif %}{% if contact.city %}{% if contact.facility %}, {% endif %}{{ contact.city }}{% endif %}{% if contact.state %}, {{ contact.state }}{% endif %}{% if contact.country %}, {{ contact.country }}{% endif %}
+{% if contact.phone -%}- Phone: {{ contact.phone | sanitize_inline }}
+{% endif -%}
+{% if contact.phone_extension -%}- Phone extension: {{ contact.phone_extension | sanitize_inline }}
+{% endif -%}
+{% if contact.facility or contact.city or contact.state or contact.country -%}- Location: {% if contact.facility %}{{ contact.facility | sanitize_inline }}{% endif %}{% if contact.city %}{% if contact.facility %}, {% endif %}{{ contact.city | sanitize_inline }}{% endif %}{% if contact.state %}, {{ contact.state | sanitize_inline }}{% endif %}{% if contact.country %}, {{ contact.country | sanitize_inline }}{% endif %}
 {% endif -%}
 {% endfor %}
+{% elif show_contacts_section and contacts_state == "unavailable" -%}
+## Contacts ({{ trial_source_label }})
+
+The selected provider does not support contacts.
+{% elif show_contacts_section and contacts_state == "absent" -%}
+## Contacts ({{ trial_source_label }})
+
+The provider omitted contacts.
+{% elif show_contacts_section and contacts_state == "present" -%}
+## Contacts ({{ trial_source_label }})
+
+The provider returned no contacts.
 {% endif -%}
 {% if show_eligibility_section and eligibility_present -%}
 ## Eligibility ({{ trial_source_label }})
@@ -78,11 +93,23 @@ No eligibility details found.
 {{ location_disclosure }}
 
 {% endif -%}
-| Facility | City | Postal code | Country | Status | Contact |
-|---|---|---|---|---|---|
+| Facility | City | Postal code | Country | Status | Latitude | Longitude | Contact |
+|---|---|---|---|---|---:|---:|---|
 {% for loc in locations -%}
-| {{ (loc.facility or "-") | truncate(40) | markdown_cell }} | {% if loc.city and loc.state %}{{ (loc.city ~ ", " ~ loc.state) | markdown_cell }}{% elif loc.city %}{{ loc.city | markdown_cell }}{% elif loc.state %}{{ loc.state | markdown_cell }}{% else %}-{% endif %} | {{ (loc.postal_code or "-") | markdown_cell }} | {{ (loc.country or "-") | markdown_cell }} | {{ (loc.status or "-") | markdown_cell }} | {% if loc.contacts %}{% for contact in loc.contacts %}{{ contact.name | markdown_cell }}{% if contact.role %} ({{ contact.role | markdown_cell }}){% endif %}{% if contact.phone %} {{ contact.phone | markdown_cell }}{% endif %}{% if contact.email %} {{ contact.email | markdown_cell }}{% endif %}{% if not loop.last %}<br>{% endif %}{% endfor %}{% elif loc.contact_name %}{{ loc.contact_name | markdown_cell }}{% if loc.contact_role %} ({{ loc.contact_role | markdown_cell }}){% endif %}{% if loc.contact_phone %} {{ loc.contact_phone | markdown_cell }}{% endif %}{% if loc.contact_email %} {{ loc.contact_email | markdown_cell }}{% endif %}{% else %}-{% endif %} |
+| {{ (loc.facility or "-") | truncate(40) | markdown_cell }} | {% if loc.city and loc.state %}{{ (loc.city ~ ", " ~ loc.state) | markdown_cell }}{% elif loc.city %}{{ loc.city | markdown_cell }}{% elif loc.state %}{{ loc.state | markdown_cell }}{% else %}-{% endif %} | {{ (loc.postal_code or "-") | markdown_cell }} | {{ (loc.country or "-") | markdown_cell }} | {{ (loc.status or "-") | markdown_cell }} | {% if loc.latitude is not none %}{{ loc.latitude }}{% else %}-{% endif %} | {% if loc.longitude is not none %}{{ loc.longitude }}{% else %}-{% endif %} | {% if loc.contacts %}{% for contact in loc.contacts %}{% if contact.name %}{{ contact.name | markdown_cell }}{% endif %}{% if contact.role %}{% if contact.name %} {% endif %}({{ contact.role | markdown_cell }}){% endif %}{% if contact.phone %} {{ contact.phone | markdown_cell }}{% endif %}{% if contact.phone_extension %} ext. {{ contact.phone_extension | markdown_cell }}{% endif %}{% if contact.email %} {{ contact.email | markdown_cell }}{% endif %}{% if not contact.name and not contact.role and not contact.phone and not contact.phone_extension and not contact.email %}-{% endif %}{% if not loop.last %}<br>{% endif %}{% endfor %}{% else %}-{% endif %} |
 {% endfor -%}
+{% elif show_locations_section and locations_state == "unavailable" -%}
+## Locations ({{ trial_source_label }})
+
+The selected provider does not support locations.
+{% elif show_locations_section and locations_state == "absent" -%}
+## Locations ({{ trial_source_label }})
+
+The provider omitted locations.
+{% elif show_locations_section and locations_state == "present" -%}
+## Locations ({{ trial_source_label }})
+
+The provider returned no locations.
 {% endif -%}
 {% if show_outcomes_section and outcomes is not none -%}
 ## Outcomes ({{ trial_source_label }})

@@ -1,8 +1,9 @@
 //! Trial entity models and workflows exposed through the stable trial facade.
 
-use std::collections::HashMap;
-
-use biodata::{ClinicalTrialEligibility, ClinicalTrialPlannedOutcome, ClinicalTrialReference};
+use biodata::{
+    ClinicalTrialContact, ClinicalTrialEligibility, ClinicalTrialPlannedOutcome,
+    ClinicalTrialReference, ClinicalTrialSite, ClinicalTrialSiteDirectory,
+};
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
 
@@ -71,10 +72,12 @@ pub struct Trial {
     pub eligibility: Option<ClinicalTrialEligibility>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub eligibility_provenance: Option<TrialEligibilityProvenance>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub contacts: Option<Vec<TrialContact>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub locations: Option<Vec<TrialLocation>>,
+    #[serde(skip)]
+    pub(crate) site_directory: Option<ClinicalTrialSiteDirectory>,
+    #[serde(skip)]
+    pub(crate) site_offset: usize,
+    #[serde(skip)]
+    pub(crate) site_limit: Option<usize>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -111,13 +114,42 @@ pub struct TrialSectionStates {
     pub eligibility: TrialSectionState,
     pub outcomes: TrialSectionState,
     pub references: TrialSectionState,
+    pub contacts: TrialSectionState,
+    pub locations: TrialSectionState,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct TrialResponse {
     #[serde(flatten)]
     pub trial: Trial,
     pub section_states: TrialSectionStates,
+}
+
+impl Serialize for TrialResponse {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        #[derive(Serialize)]
+        struct Wire<'a> {
+            #[serde(flatten)]
+            trial: &'a Trial,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            contacts: Option<Vec<TrialContactView<'a>>>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            locations: Option<Vec<TrialLocationView<'a>>>,
+            section_states: &'a TrialSectionStates,
+        }
+        Wire {
+            trial: &self.trial,
+            contacts: (self.section_states.contacts == TrialSectionState::Present)
+                .then(|| self.trial.contact_views()),
+            locations: (self.section_states.locations == TrialSectionState::Present)
+                .then(|| self.trial.location_views()),
+            section_states: &self.section_states,
+        }
+        .serialize(serializer)
+    }
 }
 
 impl Deref for TrialResponse {
@@ -135,6 +167,76 @@ impl DerefMut for TrialResponse {
 }
 
 impl Trial {
+    pub(crate) fn set_site_directory(&mut self, directory: Option<ClinicalTrialSiteDirectory>) {
+        self.site_directory = directory;
+    }
+
+    pub(crate) fn location_count(&self) -> usize {
+        self.site_directory
+            .as_ref()
+            .and_then(ClinicalTrialSiteDirectory::sites)
+            .map_or(0, <[_]>::len)
+    }
+
+    pub(crate) fn set_site_page(&mut self, offset: usize, limit: usize) {
+        self.site_offset = offset;
+        self.site_limit = Some(limit);
+    }
+
+    pub(crate) fn returned_location_count(&self) -> usize {
+        self.paged_sites().len()
+    }
+
+    fn paged_sites(&self) -> &[ClinicalTrialSite] {
+        let sites = self
+            .site_directory
+            .as_ref()
+            .and_then(ClinicalTrialSiteDirectory::sites)
+            .unwrap_or_default();
+        let start = self.site_offset.min(sites.len());
+        let end = self.site_limit.map_or(sites.len(), |limit| {
+            start.saturating_add(limit).min(sites.len())
+        });
+        &sites[start..end]
+    }
+
+    pub(crate) fn contact_views(&self) -> Vec<TrialContactView<'_>> {
+        let mut views = Vec::new();
+        if let Some(directory) = self.site_directory.as_ref() {
+            views.extend(
+                directory
+                    .central_contacts()
+                    .unwrap_or_default()
+                    .iter()
+                    .map(TrialContactView::central),
+            );
+        }
+        for site in self.paged_sites() {
+            views.extend(
+                site.contacts()
+                    .unwrap_or_default()
+                    .iter()
+                    .map(|contact| TrialContactView::site(contact, site)),
+            );
+        }
+        views
+    }
+
+    pub(crate) fn location_views(&self) -> Vec<TrialLocationView<'_>> {
+        self.paged_sites()
+            .iter()
+            .map(TrialLocationView::new)
+            .collect()
+    }
+
+    pub(crate) fn contact_render_values(&self) -> serde_json::Value {
+        serde_json::to_value(self.contact_views()).expect("borrowed contact views serialize")
+    }
+
+    pub(crate) fn location_render_values(&self) -> serde_json::Value {
+        serde_json::to_value(self.location_views()).expect("borrowed location views serialize")
+    }
+
     pub(crate) fn has_arms(&self) -> bool {
         self.design.arms().is_some()
     }
@@ -146,152 +248,112 @@ impl Trial {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialSiteContact {
-    pub name: String,
+#[derive(Serialize)]
+pub(crate) struct TrialSiteContactView<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
+    name: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub phone: Option<String>,
+    role: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
+    phone: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    phone_extension: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    email: Option<&'a str>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialLocation {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub facility: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub city: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub postal_code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub country: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contacts: Vec<TrialSiteContact>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub contact_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub contact_role: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub contact_phone: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub contact_email: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub latitude: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub longitude: Option<f64>,
+impl<'a> From<&'a ClinicalTrialContact> for TrialSiteContactView<'a> {
+    fn from(contact: &'a ClinicalTrialContact) -> Self {
+        Self {
+            name: contact.name(),
+            role: contact.role().map(|value| value.code()),
+            phone: contact.phone(),
+            phone_extension: contact.phone_extension(),
+            email: contact.email(),
+        }
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialContact {
-    pub level: String,
-    pub name: String,
+#[derive(Serialize)]
+pub(crate) struct TrialLocationView<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
+    facility: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub phone: Option<String>,
+    city: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
+    state: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub facility: Option<String>,
+    postal_code: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub city: Option<String>,
+    country: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
+    status: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub country: Option<String>,
+    latitude: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    longitude: Option<f64>,
+    contacts: Vec<TrialSiteContactView<'a>>,
 }
 
-#[derive(Debug, Eq, Hash, PartialEq)]
-struct SiteContactKey {
-    facility: Option<String>,
-    city: Option<String>,
-    state: Option<String>,
-    country: Option<String>,
-    name: String,
-    role: Option<String>,
-    phone: Option<String>,
-    email: Option<String>,
+impl<'a> TrialLocationView<'a> {
+    fn new(site: &'a ClinicalTrialSite) -> Self {
+        let coordinates = site.coordinates();
+        Self {
+            facility: site.facility(),
+            city: site.city(),
+            state: site.state(),
+            postal_code: site.postal_code(),
+            country: site.country(),
+            status: site.status().map(|value| value.code()),
+            latitude: coordinates.map(|value| value.latitude()),
+            longitude: coordinates.map(|value| value.longitude()),
+            contacts: site
+                .contacts()
+                .unwrap_or_default()
+                .iter()
+                .map(Into::into)
+                .collect(),
+        }
+    }
 }
 
-pub(crate) fn project_contacts_to_locations(
-    contacts: &mut Option<Vec<TrialContact>>,
-    locations: &[TrialLocation],
-) {
-    let Some(current_contacts) = contacts.take() else {
-        return;
-    };
-    let mut authorized = HashMap::<SiteContactKey, usize>::new();
-    for location in locations {
-        if location.contacts.is_empty() {
-            if let Some(name) = location
-                .contact_name
-                .as_deref()
-                .filter(|name| !name.trim().is_empty())
-            {
-                *authorized
-                    .entry(SiteContactKey {
-                        facility: location.facility.clone(),
-                        city: location.city.clone(),
-                        state: location.state.clone(),
-                        country: location.country.clone(),
-                        name: name.to_string(),
-                        role: location.contact_role.clone(),
-                        phone: location.contact_phone.clone(),
-                        email: location.contact_email.clone(),
-                    })
-                    .or_default() += 1;
-            }
-        } else {
-            for contact in &location.contacts {
-                *authorized
-                    .entry(SiteContactKey {
-                        facility: location.facility.clone(),
-                        city: location.city.clone(),
-                        state: location.state.clone(),
-                        country: location.country.clone(),
-                        name: contact.name.clone(),
-                        role: contact.role.clone(),
-                        phone: contact.phone.clone(),
-                        email: contact.email.clone(),
-                    })
-                    .or_default() += 1;
-            }
+#[derive(Serialize)]
+pub(crate) struct TrialContactView<'a> {
+    level: &'static str,
+    #[serde(flatten)]
+    contact: TrialSiteContactView<'a>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    facility: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    city: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    state: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    country: Option<&'a str>,
+}
+
+impl<'a> TrialContactView<'a> {
+    fn central(contact: &'a ClinicalTrialContact) -> Self {
+        Self {
+            level: "central",
+            contact: contact.into(),
+            facility: None,
+            city: None,
+            state: None,
+            country: None,
         }
     }
 
-    let retained: Vec<_> = current_contacts
-        .into_iter()
-        .filter(|contact| {
-            if !contact.level.eq_ignore_ascii_case("site") {
-                return true;
-            }
-            let key = SiteContactKey {
-                facility: contact.facility.clone(),
-                city: contact.city.clone(),
-                state: contact.state.clone(),
-                country: contact.country.clone(),
-                name: contact.name.clone(),
-                role: contact.role.clone(),
-                phone: contact.phone.clone(),
-                email: contact.email.clone(),
-            };
-            let Some(remaining) = authorized.get_mut(&key) else {
-                return false;
-            };
-            if *remaining == 0 {
-                return false;
-            }
-            *remaining -= 1;
-            true
-        })
-        .collect();
-    *contacts = (!retained.is_empty()).then_some(retained);
+    fn site(contact: &'a ClinicalTrialContact, site: &'a ClinicalTrialSite) -> Self {
+        Self {
+            level: "site",
+            contact: contact.into(),
+            facility: site.facility(),
+            city: site.city(),
+            state: site.state(),
+            country: site.country(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

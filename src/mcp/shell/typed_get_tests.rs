@@ -157,6 +157,229 @@ async fn trial_json_channels(nct_id: &str, sections: &[&str]) -> [serde_json::Va
     ]
 }
 
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn cli_typed_and_raw_trial_get_share_directory_contacts_locations_and_states() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let router = Router::new().route(
+        "/studies/{id}",
+        axum_get(|AxumPath(id): AxumPath<String>| async move {
+            let contacts_locations = match id.as_str() {
+                "NCT60000007" => Some(json!({"centralContacts":[],"locations":[]})),
+                "NCT60000008" => None,
+                "NCT60000009" => Some(json!({
+                    "centralContacts":[{"name":"Visible Central"}],
+                    "locations":(0..22).map(|index| json!({
+                        "facility":format!("Facility {index}"), "city":format!("City {index}"),
+                        "country":"Example Country", "contacts":[{"name":format!("Contact {index}")}]
+                    })).collect::<Vec<_>>()
+                })),
+                _ => Some(json!({
+                    "centralContacts":[{"name":"Central\nExample","role":"CONTACT",
+                        "phone":"+1-555-0100","phoneExt":"42","email":"central@example.test"}],
+                    "locations":[{"facility":"Example\nFacility","status":"RECRUITING",
+                        "city":"Example\nCity","country":"Example Country",
+                        "geoPoint":{"lat":10.5,"lon":-20.25},
+                        "contacts":[{"role":"PRINCIPAL_INVESTIGATOR","email":"site@example.test"}]}]
+                })),
+            };
+            let mut protocol = json!({
+                "identificationModule": {"nctId":id,"briefTitle":"Directory trial"},
+                "statusModule": {"overallStatus":"RECRUITING"},
+                "sponsorCollaboratorsModule": {"leadSponsor":{"name":"Directory sponsor"}},
+                "conditionsModule": {"conditions":["Directory condition"]},
+                "designModule": {"studyType":"INTERVENTIONAL","phases":[]}
+            });
+            if let Some(module) = contacts_locations { protocol["contactsLocationsModule"] = module; }
+            Json(json!({"protocolSection":protocol}))
+        }),
+    );
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let _env = CtGovAgeMcpEnv::set(&base);
+
+    let [cli, typed, raw] = trial_json_channels("NCT60000006", &["contacts", "locations"]).await;
+    assert_eq!(cli, typed);
+    assert_eq!(typed, raw);
+    assert_eq!(cli["section_states"]["contacts"], "present");
+    assert_eq!(cli["section_states"]["locations"], "present");
+    assert_eq!(cli["contacts"][0]["level"], "central");
+    assert_eq!(cli["contacts"][0]["phone_extension"], "42");
+    assert_eq!(cli["contacts"][1]["level"], "site");
+    assert!(cli["contacts"][1].get("name").is_none());
+    assert_eq!(
+        cli["locations"][0]["contacts"][0]["email"],
+        "site@example.test"
+    );
+    assert_eq!(cli["locations"][0]["latitude"], 10.5);
+    assert_eq!(cli["locations"][0]["longitude"], -20.25);
+
+    for (id, state) in [("NCT60000007", "present"), ("NCT60000008", "absent")] {
+        for value in trial_json_channels(id, &["contacts", "locations"]).await {
+            assert_eq!(value["section_states"]["contacts"], state);
+            assert_eq!(value["section_states"]["locations"], state);
+            if state == "present" {
+                assert_eq!(value["contacts"], json!([]));
+                assert_eq!(value["locations"], json!([]));
+            } else {
+                assert!(value.get("contacts").is_none());
+                assert!(value.get("locations").is_none());
+            }
+        }
+    }
+    for value in trial_json_channels("NCT60000008", &[]).await {
+        assert_eq!(value["section_states"]["contacts"], "not_requested");
+        assert_eq!(value["section_states"]["locations"], "not_requested");
+    }
+    for value in trial_json_channels("NCT60000006", &["contacts"]).await {
+        assert_eq!(value["section_states"]["contacts"], "present");
+        assert_eq!(value["section_states"]["locations"], "not_requested");
+        assert!(value.get("contacts").is_some());
+        assert!(value.get("locations").is_none());
+    }
+    let not_requested_markdown = crate::cli::execute(
+        ["biomcp", "get", "trial", "NCT60000008"]
+            .map(str::to_owned)
+            .to_vec(),
+    )
+    .await
+    .unwrap();
+    assert!(!not_requested_markdown.contains("## Contacts"));
+    assert!(!not_requested_markdown.contains("## Locations"));
+    let contacts_only_markdown = crate::cli::execute(
+        ["biomcp", "get", "trial", "NCT60000006", "contacts"]
+            .map(str::to_owned)
+            .to_vec(),
+    )
+    .await
+    .unwrap();
+    assert!(contacts_only_markdown.contains("## Contacts"));
+    assert!(!contacts_only_markdown.contains("## Locations"));
+    let markdown = crate::cli::execute(
+        [
+            "biomcp",
+            "get",
+            "trial",
+            "NCT60000006",
+            "contacts",
+            "locations",
+        ]
+        .map(str::to_owned)
+        .to_vec(),
+    )
+    .await
+    .unwrap();
+    for expected in [
+        "Central Example",
+        "Example Facility",
+        "| Latitude | Longitude |",
+        "| 10.5 | -20.25 |",
+    ] {
+        assert!(
+            markdown.contains(expected),
+            "missing {expected:?} from {markdown}"
+        );
+    }
+    assert!(!markdown.contains("Central\nExample"));
+    assert!(!markdown.contains("Example\nFacility"));
+    for (id, expected_contacts, expected_locations) in [
+        (
+            "NCT60000007",
+            "The provider returned no contacts.",
+            "The provider returned no locations.",
+        ),
+        (
+            "NCT60000008",
+            "The provider omitted contacts.",
+            "The provider omitted locations.",
+        ),
+    ] {
+        let output = crate::cli::execute(
+            ["biomcp", "get", "trial", id, "contacts", "locations"]
+                .map(str::to_owned)
+                .to_vec(),
+        )
+        .await
+        .unwrap();
+        assert!(output.contains(expected_contacts));
+        assert!(output.contains(expected_locations));
+    }
+    let first_page: serde_json::Value = serde_json::from_str(
+        &crate::cli::execute(
+            [
+                "biomcp",
+                "--json",
+                "get",
+                "trial",
+                "NCT60000009",
+                "contacts",
+                "locations",
+            ]
+            .map(str::to_owned)
+            .to_vec(),
+        )
+        .await
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(first_page["locations"].as_array().unwrap().len(), 20);
+    assert_eq!(first_page["contacts"].as_array().unwrap().len(), 21);
+    assert_eq!(first_page["location_pagination"]["total"], 22);
+    assert_eq!(first_page["location_pagination"]["has_more"], true);
+    assert!(
+        first_page["location_pagination"]["continuation_command"]
+            .as_str()
+            .unwrap()
+            .contains("--offset 20")
+    );
+    assert!(!first_page.to_string().contains("Contact 20"));
+    assert!(!first_page.to_string().contains("Contact 21"));
+    let last_page: serde_json::Value = serde_json::from_str(
+        &crate::cli::execute(
+            [
+                "biomcp",
+                "--json",
+                "get",
+                "trial",
+                "NCT60000009",
+                "--offset",
+                "20",
+                "--limit",
+                "20",
+                "contacts",
+                "locations",
+            ]
+            .map(str::to_owned)
+            .to_vec(),
+        )
+        .await
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(last_page["locations"].as_array().unwrap().len(), 2);
+    assert_eq!(last_page["contacts"].as_array().unwrap().len(), 3);
+    assert_eq!(last_page["location_pagination"]["has_more"], false);
+    assert!(last_page["location_pagination"]["continuation_command"].is_null());
+    assert_eq!(last_page["locations"][0]["facility"], "Facility 20");
+    let paging_markdown = crate::cli::execute(
+        [
+            "biomcp",
+            "get",
+            "trial",
+            "NCT60000009",
+            "contacts",
+            "locations",
+        ]
+        .map(str::to_owned)
+        .to_vec(),
+    )
+    .await
+    .unwrap();
+    assert!(paging_markdown.contains("Locations: showing 20 of 22"));
+    assert!(paging_markdown.contains("--offset 20"));
+    server.abort();
+}
+
 struct ClinvarMcpEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
 
 impl ClinvarMcpEnv {
@@ -581,7 +804,7 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     assert_eq!(typed["sponsor"], "Infant study sponsor");
     assert_eq!(
         typed["section_states"],
-        json!({"arms":"present","eligibility":"present","outcomes":"not_requested","references":"not_requested"})
+        json!({"arms":"present","contacts":"not_requested","eligibility":"present","locations":"not_requested","outcomes":"not_requested","references":"not_requested"})
     );
     assert_eq!(typed["interventions"], raw["interventions"]);
     assert_eq!(typed["arms"], raw["arms"]);
@@ -699,7 +922,7 @@ async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
     assert_eq!(cli["sponsor"], "Reference study sponsor");
     assert_eq!(
         cli["section_states"],
-        json!({"arms":"not_requested","eligibility":"not_requested","outcomes":"not_requested","references":"present"})
+        json!({"arms":"not_requested","contacts":"not_requested","eligibility":"not_requested","locations":"not_requested","outcomes":"not_requested","references":"present"})
     );
     assert_eq!(
         expected[0]
@@ -878,6 +1101,23 @@ async fn cli_typed_and_raw_nci_trial_get_preserve_assignments_and_outcome_state(
     .expect("raw NCI get timeout")
     .unwrap();
 
+    let markdown = crate::cli::execute(
+        [
+            "biomcp",
+            "get",
+            "trial",
+            "NCT05879926",
+            "--source",
+            "nci",
+            "contacts",
+            "locations",
+        ]
+        .map(str::to_owned)
+        .to_vec(),
+    )
+    .await
+    .unwrap();
+
     server.abort();
     let response_json = |result| {
         let value = serde_json::to_value(result).unwrap();
@@ -890,7 +1130,13 @@ async fn cli_typed_and_raw_nci_trial_get_preserve_assignments_and_outcome_state(
     for value in [&cli, &typed, &raw] {
         assert!(value.get("outcomes").is_none());
         assert_eq!(value["section_states"]["outcomes"], "unavailable");
+        assert!(value.get("contacts").is_none());
+        assert!(value.get("locations").is_none());
+        assert_eq!(value["section_states"]["contacts"], "unavailable");
+        assert_eq!(value["section_states"]["locations"], "unavailable");
     }
+    assert!(markdown.contains("The selected provider does not support contacts."));
+    assert!(markdown.contains("The selected provider does not support locations."));
     assert_eq!(cli["eligibility"], typed["eligibility"]);
     assert_eq!(typed["eligibility"], raw["eligibility"]);
     let eligibility_property_names = typed["eligibility"]

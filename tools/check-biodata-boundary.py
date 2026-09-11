@@ -11,8 +11,8 @@ from pathlib import Path
 import tomllib
 
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "d9d419eb96bfdf8056db7c71d6b973f17f0c1699"
-VERSION = "0.0.16"
+REVISION = "036dd1e2cb51ccbdece3fc1e4ebb2cf8d2509807"
+VERSION = "0.0.17"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (
@@ -67,6 +67,11 @@ RETIRED_DECLARATIONS = (
     "EligibilityWire",
     "EligibilityRef",
     "ReferenceWire",
+    "TrialContact",
+    "TrialLocation",
+    "TrialSiteContact",
+    "SiteContactKey",
+    "CtGovContact",
 )
 
 
@@ -82,7 +87,11 @@ def tracked_files(root: Path) -> list[Path]:
         check=True,
         capture_output=True,
     )
-    return [root / value.decode() for value in result.stdout.split(b"\0") if value]
+    return [
+        root / value.decode()
+        for value in result.stdout.split(b"\0")
+        if value and (root / value.decode()).is_file()
+    ]
 
 
 def cargo_file(path: Path, root: Path) -> bool:
@@ -245,7 +254,18 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
                 failures,
             )
 
-    for marker in ("NO_LIMIT_RULE", "fn eligibility_value", "fn age_bound_value"):
+    for marker in (
+        "NO_LIMIT_RULE",
+        "fn eligibility_value",
+        "fn age_bound_value",
+        "fn project_contacts_to_locations",
+        "fn extract_contacts",
+        "fn extract_locations",
+        "contact_name:",
+        "contact_role:",
+        "contact_phone:",
+        "contact_email:",
+    ):
         for relative, source in sources:
             require(
                 marker not in source,
@@ -283,6 +303,9 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
         "ClinicalTrialsGovApiV2Response",
         "NciCtsV2DetailPlan",
         "NciCtsV2DetailResponse",
+        "ClinicalTrialSiteDirectory",
+        "ClinicalTrialContact",
+        "ClinicalTrialSite",
     ):
         require(
             symbol in combined, f"BioData consumption is missing {symbol}", failures

@@ -267,35 +267,29 @@ fn trial_markdown_with_states(
             .any(|s| s.eq_ignore_ascii_case("locations"));
     let mut projected = trial.clone();
     let location_disclosure = if show_locations_section {
-        projected.locations.as_mut().and_then(|locations| {
-            let total = locations.len();
-            locations.truncate(LOCATION_DISPLAY_CAP);
-            (total > locations.len()).then(|| {
-                let mut disclosure = format!(
-                    "Locations: showing {} of {total} (display cap {LOCATION_DISPLAY_CAP}).",
-                    locations.len()
-                );
-                if let Some(command) = trial_location_continuation_command(
-                    trial,
-                    None,
-                    locations.len(),
-                    LOCATION_DISPLAY_CAP,
-                    show_contacts_section,
-                ) {
-                    let _ = write!(disclosure, "\nNext: {}", markdown_code_span(&command));
-                }
-                disclosure
-            })
+        let total = projected.location_count();
+        if projected.returned_location_count() > LOCATION_DISPLAY_CAP {
+            projected.set_site_page(0, LOCATION_DISPLAY_CAP);
+        }
+        (total > projected.returned_location_count()).then(|| {
+            let mut disclosure = format!(
+                "Locations: showing {} of {total} (display cap {LOCATION_DISPLAY_CAP}).",
+                projected.returned_location_count()
+            );
+            if let Some(command) = trial_location_continuation_command(
+                trial,
+                None,
+                projected.returned_location_count(),
+                LOCATION_DISPLAY_CAP,
+                show_contacts_section,
+            ) {
+                let _ = write!(disclosure, "\nNext: {}", markdown_code_span(&command));
+            }
+            disclosure
         })
     } else {
         None
     };
-    if show_contacts_section && show_locations_section {
-        crate::entities::trial::project_contacts_to_locations(
-            &mut projected.contacts,
-            projected.locations.as_deref().unwrap_or_default(),
-        );
-    }
     render_trial_markdown(
         &projected,
         section_states,
@@ -314,14 +308,6 @@ fn trial_source_from_marker(marker: Option<&str>) -> Option<crate::entities::tri
         }
         _ => None,
     }
-}
-
-#[cfg(test)]
-fn trial_paginated_markdown(
-    trial: &Trial,
-    requested_sections: &[String],
-) -> Result<String, BioMcpError> {
-    render_trial_markdown(trial, None, requested_sections, None)
 }
 
 pub(crate) fn trial_location_continuation_command(
@@ -388,6 +374,8 @@ fn render_trial_markdown(
     let eligibility_text = trial.eligibility.as_ref().map(eligibility_markdown);
     let outcomes = crate::entities::trial::outcome_wire::views(&trial.outcomes)
         .map_err(|_| BioMcpError::InternalProcessing)?;
+    let contacts = trial.contact_render_values();
+    let locations = trial.location_render_values();
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&trial.nct_id, requested_sections),
@@ -410,8 +398,8 @@ fn render_trial_markdown(
         eligibility_text => &eligibility_text,
         eligibility_present => trial.eligibility.is_some(),
         eligibility_provenance => &trial.eligibility_provenance,
-        contacts => &trial.contacts,
-        locations => &trial.locations,
+        contacts => &contacts,
+        locations => &locations,
         location_disclosure => location_disclosure,
         outcomes => &outcomes,
         arms => &arms,
@@ -420,6 +408,8 @@ fn render_trial_markdown(
         eligibility_state => section_states.map(|states| states.eligibility),
         outcomes_state => section_states.map(|states| states.outcomes),
         references_state => section_states.map(|states| states.references),
+        contacts_state => section_states.map(|states| states.contacts),
+        locations_state => section_states.map(|states| states.locations),
         show_eligibility_section => show_eligibility_section,
         show_contacts_section => show_contacts_section,
         show_locations_section => show_locations_section,

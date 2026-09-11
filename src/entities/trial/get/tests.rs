@@ -92,6 +92,19 @@ fn ctgov_product_core_ignores_every_legacy_core_field() {
         vec!["legacy condition mutation".into()];
     protocol.sponsor_collaborators_module = None;
     protocol.description_module = None;
+    if let Some(location) = protocol
+        .contacts_locations_module
+        .as_mut()
+        .and_then(|module| module.locations.first_mut())
+    {
+        location.facility = Some("legacy site mutation".into());
+        location.status = Some("legacy status mutation".into());
+        location.city = Some("legacy city mutation".into());
+        location.state = Some("legacy state mutation".into());
+        location.zip = Some("legacy postal mutation".into());
+        location.country = Some("legacy country mutation".into());
+        location.geo_point = None;
+    }
 
     let flags = parse_sections(&sections).unwrap();
     let expected = product_from_ctgov_response(original, flags, "NCT02576665").unwrap();
@@ -111,6 +124,131 @@ fn ctgov_product_core_ignores_every_legacy_core_field() {
     assert_eq!(actual.summary, expected.summary);
     assert_eq!(actual.start_date, expected.start_date);
     assert_eq!(actual.completion_date, expected.completion_date);
+    assert_eq!(
+        serde_json::to_value(&actual).unwrap(),
+        serde_json::to_value(&expected).unwrap()
+    );
+}
+
+#[test]
+fn ctgov_product_uses_shared_directory_for_ordered_locations_and_states() {
+    let sections = ["contacts".to_owned(), "locations".to_owned()];
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json"),
+    )
+    .unwrap();
+    let product =
+        product_from_ctgov_response(response, parse_sections(&sections).unwrap(), "NCT02576665")
+            .unwrap();
+    let value = serde_json::to_value(product).unwrap();
+
+    assert_eq!(value["section_states"]["locations"], "present");
+    assert_eq!(value["section_states"]["contacts"], "absent");
+    assert!(value.get("contacts").is_none());
+    let locations = value["locations"].as_array().unwrap();
+    assert_eq!(locations.len(), 3);
+    for (location, (facility, latitude, longitude)) in locations.iter().zip([
+        ("Sarah Cannon Research Institute", 39.73915, -104.9847),
+        ("University of Miami", 25.77427, -80.19366),
+        ("MD Anderson Cancer Center", 29.76328, -95.36327),
+    ]) {
+        assert_eq!(location["facility"], facility);
+        assert_eq!(location["latitude"], latitude);
+        assert_eq!(location["longitude"], longitude);
+        assert_eq!(location["contacts"], serde_json::json!([]));
+    }
+}
+
+#[test]
+fn shared_directory_views_authorize_output_and_redact_diagnostics() {
+    const NAME: &str = "Privacy Name 0115";
+    const PHONE: &str = "+1-555-0115";
+    const EXTENSION: &str = "ext-0115";
+    const EMAIL: &str = "privacy-0115@example.test";
+    let sections = ["contacts".to_owned(), "locations".to_owned()];
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json"),
+    )
+    .unwrap();
+    let mut product =
+        product_from_ctgov_response(response, parse_sections(&sections).unwrap(), "NCT02576665")
+            .unwrap();
+    let role = |code| {
+        biodata::ExtensibleCode::new(
+            "clinicaltrials.gov",
+            code,
+            None::<String>,
+            None::<String>,
+            None::<String>,
+        )
+        .unwrap()
+    };
+    let central = biodata::ClinicalTrialContact::new(
+        Some(NAME.to_owned()),
+        Some(role("CONTACT")),
+        Some(PHONE.to_owned()),
+        Some(EXTENSION.to_owned()),
+        Some(EMAIL.to_owned()),
+    )
+    .unwrap();
+    let site_contact = biodata::ClinicalTrialContact::new(
+        None,
+        Some(role("PRINCIPAL_INVESTIGATOR")),
+        None,
+        None,
+        Some(EMAIL.to_owned()),
+    )
+    .unwrap();
+    let site = biodata::ClinicalTrialSite::new(biodata::ClinicalTrialSiteFields {
+        facility: Some("Synthetic Site".to_owned()),
+        status: Some(role("RECRUITING")),
+        city: Some("Example City".to_owned()),
+        state: Some("EX".to_owned()),
+        postal_code: Some("00000".to_owned()),
+        country: Some("Example Country".to_owned()),
+        coordinates: Some(biodata::ClinicalTrialGeographicPoint::new(12.5, -45.25).unwrap()),
+        contacts: Some(vec![site_contact]),
+    })
+    .unwrap();
+    product
+        .trial
+        .set_site_directory(Some(biodata::ClinicalTrialSiteDirectory::new(
+            Some(vec![central]),
+            Some(vec![site]),
+        )));
+    product.section_states.contacts = TrialSectionState::Present;
+    product.section_states.locations = TrialSectionState::Present;
+    let diagnostic = format!("{product:?}");
+    for sentinel in [NAME, PHONE, EXTENSION, EMAIL] {
+        assert!(!diagnostic.contains(sentinel));
+    }
+
+    let value = serde_json::to_value(&product).unwrap();
+    assert_eq!(value["contacts"][0]["level"], "central");
+    assert_eq!(value["contacts"][0]["name"], NAME);
+    assert_eq!(value["contacts"][0]["phone"], PHONE);
+    assert_eq!(value["contacts"][0]["phone_extension"], EXTENSION);
+    assert_eq!(value["contacts"][0]["email"], EMAIL);
+    assert_eq!(value["contacts"][1]["level"], "site");
+    assert!(value["contacts"][1].get("name").is_none());
+    assert_eq!(value["contacts"][1]["facility"], "Synthetic Site");
+    assert_eq!(value["locations"][0]["latitude"], 12.5);
+    assert_eq!(value["locations"][0]["longitude"], -45.25);
+    assert_eq!(
+        value["locations"][0]["contacts"].as_array().unwrap().len(),
+        1
+    );
+
+    let markdown = crate::render::markdown::trial_response_markdown(&product, &sections).unwrap();
+    for sentinel in [NAME, PHONE, EXTENSION, EMAIL] {
+        assert!(markdown.contains(sentinel));
+    }
 }
 
 #[test]
@@ -405,7 +543,14 @@ fn nci_product_conversion_checks_enrollment_and_preserves_source_presence() {
             .unwrap()
             .keys()
             .collect::<Vec<_>>(),
-        ["arms", "eligibility", "outcomes", "references"]
+        [
+            "arms",
+            "contacts",
+            "eligibility",
+            "locations",
+            "outcomes",
+            "references",
+        ]
     );
 }
 
@@ -816,8 +961,14 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
             .is_some_and(|value| !value.is_empty())
     );
     assert!(!trial.conditions.is_empty());
-    assert!(trial.contacts.is_none());
-    assert!(trial.locations.is_none());
+    assert_eq!(
+        trial.section_states.contacts,
+        TrialSectionState::NotRequested
+    );
+    assert_eq!(
+        trial.section_states.locations,
+        TrialSectionState::NotRequested
+    );
     assert!(trial.outcomes.is_none());
     assert!(trial.design.arms().is_none());
 

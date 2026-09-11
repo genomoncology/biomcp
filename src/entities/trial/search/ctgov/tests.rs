@@ -12,6 +12,26 @@ fn trial_alias(label: &str, source: TrialAliasSource) -> TrialAlias {
     }
 }
 
+#[test]
+fn raw_page_debug_redacts_nested_legacy_site_values() {
+    const SENTINEL: &str = "RAW-PAGE-PRIVACY-SENTINEL-0115";
+    let studies = ctgov_studies(vec![serde_json::json!({
+        "protocolSection": {
+            "contactsLocationsModule": {
+                "overallOfficials": [{"name": SENTINEL}],
+                "locations": [{"facility": SENTINEL, "contacts": [{"name": SENTINEL}]}]
+            }
+        }
+    })]);
+    let page = CtGovRawPage {
+        total_count: Some(1),
+        studies,
+        next_page_token: None,
+        raw_study_count: 1,
+    };
+    assert!(!format!("{page:?}").contains(SENTINEL));
+}
+
 fn ctgov_studies(values: Vec<serde_json::Value>) -> Vec<CtGovStudy> {
     values
         .into_iter()

@@ -143,8 +143,9 @@ fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
         completion_date: None,
         eligibility: None,
         eligibility_provenance: None,
-        contacts: None,
-        locations: None,
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     }
@@ -276,6 +277,8 @@ fn response_markdown_explains_selected_section_states() {
             eligibility: TrialSectionState::Absent,
             outcomes: TrialSectionState::NotRequested,
             references: TrialSectionState::Unavailable,
+            contacts: TrialSectionState::NotRequested,
+            locations: TrialSectionState::NotRequested,
         },
     };
     let markdown = trial_response_markdown(&response, &["all".to_owned()]).unwrap();
@@ -341,6 +344,8 @@ fn planned_outcome_markdown_preserves_groups_order_text_and_states() {
         eligibility: TrialSectionState::NotRequested,
         outcomes: TrialSectionState::Present,
         references: TrialSectionState::NotRequested,
+        contacts: TrialSectionState::NotRequested,
+        locations: TrialSectionState::NotRequested,
     };
     let response = TrialResponse {
         trial,
@@ -567,22 +572,24 @@ fn trial_markdown_includes_source_labeled_sections() {
         completion_date: None,
         eligibility: Some(eligibility_fixture()),
         eligibility_provenance: None,
-        contacts: None,
-        locations: Some(vec![crate::entities::trial::TrialLocation {
-            facility: Some("Example Hospital".to_string()),
-            city: Some("Boston".to_string()),
-            state: Some("MA".to_string()),
-            postal_code: None,
-            country: Some("United States".to_string()),
-            status: Some("Recruiting".to_string()),
-            contacts: Vec::new(),
-            contact_name: None,
-            contact_role: None,
-            contact_phone: None,
-            contact_email: None,
-            latitude: None,
-            longitude: None,
-        }]),
+        site_directory: Some(biodata::ClinicalTrialSiteDirectory::new(
+            None,
+            Some(vec![
+                biodata::ClinicalTrialSite::new(biodata::ClinicalTrialSiteFields {
+                    facility: Some("Example Hospital".to_string()),
+                    status: None,
+                    city: Some("Boston".to_string()),
+                    state: Some("MA".to_string()),
+                    postal_code: None,
+                    country: Some("United States".to_string()),
+                    coordinates: None,
+                    contacts: None,
+                })
+                .unwrap(),
+            ]),
+        )),
+        site_offset: 0,
+        site_limit: None,
         outcomes: Some(vec![
             biodata::ClinicalTrialPlannedOutcome::new(
                 "FEV1",
@@ -740,6 +747,60 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
 }
 
 #[test]
+fn trial_markdown_renders_coordinates_and_sanitizes_unnamed_contacts() {
+    let role = biodata::ExtensibleCode::new(
+        "clinicaltrials.gov",
+        "INVESTIGATOR\nROLE",
+        None::<String>,
+        None::<String>,
+        None::<String>,
+    )
+    .unwrap();
+    let contact = biodata::ClinicalTrialContact::new(
+        None,
+        Some(role),
+        Some("555\n0100".to_owned()),
+        Some("4\u{0007}2".to_owned()),
+        Some("site\n@example.test".to_owned()),
+    )
+    .unwrap();
+    let site = biodata::ClinicalTrialSite::new(biodata::ClinicalTrialSiteFields {
+        facility: Some("Example\nFacility".to_owned()),
+        status: None,
+        city: Some("Example\nCity".to_owned()),
+        state: Some("E\u{0007}X".to_owned()),
+        postal_code: Some("00\n000".to_owned()),
+        country: Some("Example\nCountry".to_owned()),
+        coordinates: Some(biodata::ClinicalTrialGeographicPoint::new(10.5, -20.25).unwrap()),
+        contacts: Some(vec![contact]),
+    })
+    .unwrap();
+    let mut trial = summary_trial(None);
+    trial.set_site_directory(Some(biodata::ClinicalTrialSiteDirectory::new(
+        None,
+        Some(vec![site]),
+    )));
+
+    let markdown = trial_markdown(&trial, &["contacts".into(), "locations".into()]).unwrap();
+    assert!(markdown.contains("| Latitude | Longitude |"));
+    assert!(markdown.contains("| 10.5 | -20.25 |"));
+    assert!(markdown.contains("Example Facility"));
+    assert!(markdown.contains("Example City, E X"));
+    assert!(markdown.contains("INVESTIGATOR ROLE"));
+    assert!(markdown.contains("555 0100"));
+    assert!(markdown.contains("ext. 4 2"));
+    assert!(markdown.contains("site @example.test"));
+    assert!(!markdown.contains("- Name:"));
+    for forbidden in ['\n', '\r', '\u{0007}'] {
+        assert!(
+            !markdown
+                .lines()
+                .any(|line| line.contains(forbidden) && line.starts_with('|'))
+        );
+    }
+}
+
+#[test]
 fn arm_rendering_follows_assignment_ids_when_names_do_not_change() {
     use biodata::{
         ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
@@ -810,286 +871,4 @@ fn arm_rendering_follows_assignment_ids_when_names_do_not_change() {
     let after = arm_views(&trial);
     assert_eq!(after[0].interventions, ["beta"]);
     assert_eq!(after[1].interventions, ["alpha"]);
-}
-
-#[test]
-fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
-    let mut trial = crate::entities::trial::Trial {
-        identities: Vec::new(),
-        nct_id: "NCT41300001".to_string(),
-        source: Some("ClinicalTrials.gov".to_string()),
-        title: "Contact trial".to_string(),
-        official_title: None,
-        status: "Recruiting".to_string(),
-        why_stopped: None,
-        phase: None,
-        phases: Vec::new(),
-        study_type: None,
-        conditions: vec![],
-        design: crate::entities::trial::TrialDesign::default(),
-        sponsor: None,
-        enrollment: None,
-        summary: None,
-        start_date: None,
-        completion_date: None,
-        eligibility: Some(eligibility_fixture()),
-        eligibility_provenance: Some(crate::entities::trial::TrialEligibilityProvenance {
-            source_kind: "registry".to_string(),
-            source: "ClinicalTrials.gov registry".to_string(),
-            posted_documents_available: true,
-            documents_handle: Some("biomcp --json get trial NCT41300001 documents".to_string()),
-        }),
-        contacts: Some(vec![crate::entities::trial::TrialContact {
-            level: "central".to_string(),
-            name: "Central Coordinator".to_string(),
-            role: Some("CONTACT".to_string()),
-            phone: Some("555-0100".to_string()),
-            email: Some("central@example.test".to_string()),
-            facility: None,
-            city: None,
-            state: None,
-            country: None,
-        }]),
-        locations: Some(vec![crate::entities::trial::TrialLocation {
-            facility: Some("Rare Disease Center".to_string()),
-            city: Some("Ann Arbor".to_string()),
-            state: Some("Michigan".to_string()),
-            postal_code: None,
-            country: Some("United States".to_string()),
-            status: Some("Recruiting".to_string()),
-            contacts: vec![
-                crate::entities::trial::TrialSiteContact {
-                    name: "Site Coordinator".to_string(),
-                    role: Some("CONTACT".to_string()),
-                    phone: None,
-                    email: Some("site@example.test".to_string()),
-                },
-                crate::entities::trial::TrialSiteContact {
-                    name: "Backup | Coordinator\n\u{7}".to_string(),
-                    role: Some("BACK|UP".to_string()),
-                    phone: Some("555\n0101".to_string()),
-                    email: Some("backup|site@example.test".to_string()),
-                },
-            ],
-            contact_name: Some("Site Coordinator".to_string()),
-            contact_role: Some("CONTACT".to_string()),
-            contact_phone: None,
-            contact_email: Some("site@example.test".to_string()),
-            latitude: None,
-            longitude: None,
-        }]),
-        outcomes: None,
-        references: None,
-    };
-
-    let markdown = trial_markdown(
-        &trial,
-        &[
-            "contacts".to_string(),
-            "eligibility".to_string(),
-            "locations".to_string(),
-        ],
-    )
-    .expect("trial markdown");
-    let contacts = markdown
-        .split_once("## Contacts (ClinicalTrials.gov)\n")
-        .expect("contacts section")
-        .1
-        .split_once("## Eligibility (ClinicalTrials.gov)\n")
-        .expect("eligibility section after contacts")
-        .0;
-    let eligibility = markdown
-        .split_once("## Eligibility (ClinicalTrials.gov)\n")
-        .expect("eligibility section")
-        .1
-        .split_once("## Locations (ClinicalTrials.gov)\n")
-        .expect("locations section after eligibility")
-        .0;
-    let locations = markdown
-        .split_once("## Locations (ClinicalTrials.gov)\n")
-        .expect("locations section")
-        .1;
-
-    assert!(contacts.contains(
-        "### Central Contact\n- Name: Central Coordinator\n- Role: CONTACT\n- Email: central@example.test\n- Phone: 555-0100"
-    ));
-    assert!(!contacts.contains("site@example.test"));
-    assert!(eligibility.contains(
-        "Sex: Female\nEligible Ages: 2 Years to 18 Years\nHealthy Subjects: No\nKey inclusion."
-    ));
-    assert!(eligibility.contains(
-        "**Posted trial documents:** Posted trial documents are available and may contain additional eligibility detail: `biomcp --json get trial NCT41300001 documents`"
-    ));
-    assert!(!eligibility.contains("central@example.test"));
-    assert!(!eligibility.contains("site@example.test"));
-    assert!(locations.contains(
-        "| Facility | City | Postal code | Country | Status | Contact |\n|---|---|---|---|---|---|"
-    ));
-    assert!(locations.contains(
-        "| Rare Disease Center | Ann Arbor, Michigan | - | United States | Recruiting | Site Coordinator (CONTACT) site@example.test<br>Backup \\| Coordinator (BACK\\|UP) 555 0101 backup\\|site@example.test |"
-    ));
-    assert!(!locations.contains("central@example.test"));
-
-    let json = serde_json::to_value(&trial).expect("trial json");
-    assert_eq!(json["contacts"][0]["email"], "central@example.test");
-    assert_eq!(json["eligibility"]["sexes"][0]["code"], "FEMALE");
-    assert_eq!(json["locations"][0]["contact_email"], "site@example.test");
-
-    trial.locations.as_mut().unwrap()[0].contacts.clear();
-    let legacy_markdown = trial_markdown(&trial, &["locations".to_string()])
-        .expect("legacy-compatible location markdown");
-    assert!(legacy_markdown.contains(
-        "| Rare Disease Center | Ann Arbor, Michigan | - | United States | Recruiting | Site Coordinator (CONTACT) site@example.test |"
-    ));
-
-    trial.eligibility_provenance = Some(crate::entities::trial::TrialEligibilityProvenance {
-        source_kind: "registry".to_string(),
-        source: "ClinicalTrials.gov registry".to_string(),
-        posted_documents_available: false,
-        documents_handle: None,
-    });
-    let markdown = trial_markdown(&trial, &["eligibility".to_string()]).expect("trial markdown");
-    assert!(!markdown.contains("Posted trial documents"));
-}
-
-fn markdown_location(index: usize) -> crate::entities::trial::TrialLocation {
-    crate::entities::trial::TrialLocation {
-        facility: Some(format!("Facility {index:02}")),
-        city: Some("Example City".to_string()),
-        state: None,
-        postal_code: None,
-        country: Some("United States".to_string()),
-        status: Some("RECRUITING".to_string()),
-        contacts: vec![crate::entities::trial::TrialSiteContact {
-            name: format!("Person {index:02}"),
-            role: Some("CONTACT".to_string()),
-            phone: None,
-            email: Some(format!("person-{index:02}@example.test")),
-        }],
-        contact_name: Some(format!("Person {index:02}")),
-        contact_role: Some("CONTACT".to_string()),
-        contact_phone: None,
-        contact_email: Some(format!("person-{index:02}@example.test")),
-        latitude: None,
-        longitude: None,
-    }
-}
-
-fn markdown_contact(index: usize) -> crate::entities::trial::TrialContact {
-    crate::entities::trial::TrialContact {
-        level: "site".to_string(),
-        name: format!("Person {index:02}"),
-        role: Some("CONTACT".to_string()),
-        phone: None,
-        email: Some(format!("person-{index:02}@example.test")),
-        facility: Some(format!("Facility {index:02}")),
-        city: Some("Example City".to_string()),
-        state: None,
-        country: Some("United States".to_string()),
-    }
-}
-
-fn markdown_location_trial(count: usize) -> crate::entities::trial::Trial {
-    let mut trial = summary_trial(None);
-    let mut contacts = vec![crate::entities::trial::TrialContact {
-        level: "central".to_string(),
-        name: "Central Person".to_string(),
-        role: None,
-        phone: None,
-        email: Some("central@example.test".to_string()),
-        facility: None,
-        city: None,
-        state: None,
-        country: None,
-    }];
-    contacts.extend((0..count).map(markdown_contact));
-    trial.contacts = Some(contacts);
-    trial.locations = Some((0..count).map(markdown_location).collect());
-    trial
-}
-
-#[test]
-fn generic_trial_markdown_caps_locations_discloses_and_aligns_contacts() {
-    let trial = markdown_location_trial(21);
-
-    let markdown = trial_markdown(&trial, &["all".to_string()]).expect("trial markdown");
-
-    assert_eq!(
-        markdown
-            .lines()
-            .filter(|line| line.starts_with("| Facility ")
-                && *line != "| Facility | City | Postal code | Country | Status | Contact |")
-            .count(),
-        20
-    );
-    assert!(markdown.contains("Locations: showing 20 of 21 (display cap 20)."));
-    assert!(markdown.contains(
-        "Next: `biomcp get trial NCT00000001 --offset 20 --limit 20 contacts locations`"
-    ));
-    assert!(markdown.contains("Central Person"));
-    assert!(markdown.contains("Person 19"));
-    assert!(!markdown.contains("Facility 20"));
-    assert!(!markdown.contains("Person 20"));
-}
-
-#[test]
-fn generic_trial_markdown_omits_cap_disclosure_when_locations_fit() {
-    let markdown =
-        trial_markdown(&markdown_location_trial(20), &["all".to_string()]).expect("trial markdown");
-
-    assert_eq!(
-        markdown
-            .lines()
-            .filter(|line| line.starts_with("| Facility ")
-                && *line != "| Facility | City | Postal code | Country | Status | Contact |")
-            .count(),
-        20
-    );
-    assert!(!markdown.contains("display cap"));
-    assert!(!markdown.contains("\nNext:"));
-}
-
-#[test]
-fn generic_trial_continuation_maps_provider_markers_without_guessing() {
-    let mut ctgov = markdown_location_trial(21);
-    ctgov.nct_id = "NCT id` ;&".to_string();
-    let ctgov_markdown = trial_markdown(&ctgov, &["locations".into()]).expect("CTGov card");
-    assert!(
-        ctgov_markdown.contains(
-            "Next: ``biomcp get trial \"NCT id\\` ;&\" --offset 20 --limit 20 locations``"
-        )
-    );
-
-    let mut nci = markdown_location_trial(21);
-    nci.source = Some("NCI CTS".into());
-    let nci_markdown = trial_markdown(&nci, &["all".into()]).expect("NCI card");
-    assert!(nci_markdown.contains(
-        "Next: `biomcp get trial NCT00000001 --source nci --offset 20 --limit 20 contacts locations`"
-    ));
-
-    let mut unknown = markdown_location_trial(21);
-    unknown.source = Some("Unknown Provider".into());
-    let unknown_markdown = trial_markdown(&unknown, &["all".into()]).expect("unknown card");
-    assert!(!unknown_markdown.contains("\nNext:"));
-}
-
-#[test]
-fn paginated_trial_markdown_does_not_apply_a_second_cap() {
-    let trial = markdown_location_trial(25);
-
-    let markdown =
-        trial_paginated_markdown(&trial, &["contacts".to_string(), "locations".to_string()])
-            .expect("paginated trial markdown");
-
-    assert_eq!(
-        markdown
-            .lines()
-            .filter(|line| line.starts_with("| Facility ")
-                && *line != "| Facility | City | Postal code | Country | Status | Contact |")
-            .count(),
-        25
-    );
-    assert!(markdown.contains("Facility 24"));
-    assert!(markdown.contains("Person 24"));
-    assert!(!markdown.contains("display cap"));
 }

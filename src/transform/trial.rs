@@ -1,8 +1,8 @@
+use crate::entities::trial::TrialSearchResult;
 #[cfg(test)]
 use crate::entities::trial::{Trial, TrialDesign};
-use crate::entities::trial::{TrialContact, TrialLocation, TrialSearchResult, TrialSiteContact};
 use crate::error::BioMcpError;
-use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
+use crate::sources::clinicaltrials::CtGovStudy;
 
 fn truncate_utf8(s: &str, max_bytes: usize, suffix: &str) -> String {
     if s.len() <= max_bytes {
@@ -58,6 +58,7 @@ pub(crate) fn format_conditions(conditions: &[String]) -> String {
     format!("{prefix}{suffix}")
 }
 
+#[cfg(test)]
 fn clean_opt(value: Option<&str>) -> Option<String> {
     value
         .map(str::trim)
@@ -68,145 +69,6 @@ fn clean_opt(value: Option<&str>) -> Option<String> {
 #[cfg(test)]
 fn normalize_summary(value: Option<&str>) -> Option<String> {
     clean_opt(value)
-}
-
-fn is_meaningful_site(location: &CtGovLocation) -> bool {
-    [
-        location.facility.as_deref(),
-        location.city.as_deref(),
-        location.state.as_deref(),
-        location.zip.as_deref(),
-        location.country.as_deref(),
-    ]
-    .into_iter()
-    .any(|value| clean_opt(value).is_some())
-        || location.geo_point.as_ref().is_some_and(|point| {
-            point.lat.is_some_and(f64::is_finite) || point.lon.is_some_and(f64::is_finite)
-        })
-        || location
-            .contacts
-            .iter()
-            .any(|contact| clean_opt(contact.name.as_deref()).is_some())
-}
-
-fn clean_site_contact(contact: &CtGovContact) -> Option<TrialSiteContact> {
-    Some(TrialSiteContact {
-        name: clean_opt(contact.name.as_deref())?,
-        role: clean_opt(contact.role.as_deref()),
-        phone: clean_opt(contact.phone.as_deref()),
-        email: clean_opt(contact.email.as_deref()),
-    })
-}
-
-pub(crate) fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
-    let locations = study
-        .protocol_section
-        .as_ref()
-        .and_then(|p| p.contacts_locations_module.as_ref())
-        .map(|m| &m.locations)?;
-
-    let mut out = locations
-        .iter()
-        .filter_map(|loc| {
-            if !is_meaningful_site(loc) {
-                return None;
-            }
-            let contact = loc.contacts.first();
-            Some(TrialLocation {
-                facility: clean_opt(loc.facility.as_deref()),
-                city: clean_opt(loc.city.as_deref()),
-                state: clean_opt(loc.state.as_deref()),
-                postal_code: clean_opt(loc.zip.as_deref()),
-                country: clean_opt(loc.country.as_deref()),
-                status: clean_opt(loc.status.as_deref()),
-                contacts: loc.contacts.iter().filter_map(clean_site_contact).collect(),
-                contact_name: contact.and_then(|c| clean_opt(c.name.as_deref())),
-                contact_role: contact.and_then(|c| clean_opt(c.role.as_deref())),
-                contact_phone: contact.and_then(|c| clean_opt(c.phone.as_deref())),
-                contact_email: contact.and_then(|c| clean_opt(c.email.as_deref())),
-                latitude: loc
-                    .geo_point
-                    .as_ref()
-                    .and_then(|geo| geo.lat)
-                    .filter(|value| value.is_finite()),
-                longitude: loc
-                    .geo_point
-                    .as_ref()
-                    .and_then(|geo| geo.lon)
-                    .filter(|value| value.is_finite()),
-            })
-        })
-        .collect::<Vec<_>>();
-
-    out.sort_by(|a, b| {
-        let a_recruiting = a
-            .status
-            .as_deref()
-            .is_some_and(|s| s.eq_ignore_ascii_case("RECRUITING"));
-        let b_recruiting = b
-            .status
-            .as_deref()
-            .is_some_and(|s| s.eq_ignore_ascii_case("RECRUITING"));
-        b_recruiting.cmp(&a_recruiting)
-    });
-
-    (!out.is_empty()).then_some(out)
-}
-
-fn extract_contact(
-    level: &str,
-    contact: &CtGovContact,
-    facility: Option<&str>,
-    city: Option<&str>,
-    state: Option<&str>,
-    country: Option<&str>,
-) -> Option<TrialContact> {
-    Some(TrialContact {
-        level: level.to_string(),
-        name: clean_opt(contact.name.as_deref())?,
-        role: clean_opt(contact.role.as_deref()),
-        phone: clean_opt(contact.phone.as_deref()),
-        email: clean_opt(contact.email.as_deref()),
-        facility: clean_opt(facility),
-        city: clean_opt(city),
-        state: clean_opt(state),
-        country: clean_opt(country),
-    })
-}
-
-pub(crate) fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
-    let module = study
-        .protocol_section
-        .as_ref()
-        .and_then(|p| p.contacts_locations_module.as_ref())?;
-    let mut out = module
-        .central_contacts
-        .iter()
-        .filter_map(|contact| extract_contact("central", contact, None, None, None, None))
-        .collect::<Vec<_>>();
-
-    for loc in &module.locations {
-        if !is_meaningful_site(loc) {
-            continue;
-        }
-        for contact in &loc.contacts {
-            if let Some(site_contact) = clean_site_contact(contact) {
-                out.push(TrialContact {
-                    level: "site".to_string(),
-                    name: site_contact.name,
-                    role: site_contact.role,
-                    phone: site_contact.phone,
-                    email: site_contact.email,
-                    facility: clean_opt(loc.facility.as_deref()),
-                    city: clean_opt(loc.city.as_deref()),
-                    state: clean_opt(loc.state.as_deref()),
-                    country: clean_opt(loc.country.as_deref()),
-                });
-            }
-        }
-    }
-
-    (!out.is_empty()).then_some(out)
 }
 
 #[cfg(test)]
@@ -303,8 +165,9 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         completion_date,
         eligibility: None,
         eligibility_provenance: None,
-        contacts: extract_contacts(study),
-        locations: extract_locations(study),
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     })

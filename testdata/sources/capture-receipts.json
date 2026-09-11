@@ -2177,8 +2177,8 @@
         "provider": "ClinicalTrials.gov",
         "request": "https://clinicaltrials.gov/api/v2/studies/NCT00791778",
         "captured_at": "2026-09-02T22:50:57.611106Z",
-        "sha256": "d220af8b0a55ca2a907fb660afea4bf972f04ec42c395a50db35d7ebc4f9f5d9",
-        "minimization_or_redaction": "No fields removed and no values redacted; the committed bytes are byte-for-byte identical to the captured response.",
+        "sha256": "0d04ba04b81cae4b83b95cdd4512dff7bd65c71a8129e798a6583d76501b922e",
+        "minimization_or_redaction": "Removed /protocolSection/contactsLocationsModule/overallOfficials and /resultsSection/moreInfoModule/pointOfContact. No other fields were modified.",
         "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov v2 API study detail endpoint."
       }
     },
@@ -2249,8 +2249,8 @@
         "provider": "ClinicalTrials.gov",
         "request": "https://clinicaltrials.gov/api/v2/studies/NCT02576665?format=json",
         "captured_at": "2026-09-03T12:05:00Z",
-        "sha256": "902041a836bbf764ad158ca9f6ad395b5b3db49358714ca4f8a70f1f71c8b6cf",
-        "minimization_or_redaction": "No fields removed. The complete study record as returned; JSON whitespace normalized after capture. The record carries no central contact, no location contact, and no telephone or electronic address. The only named person is the overall official, a principal investigator published with name, affiliation and role.",
+        "sha256": "193c5f2053b802644628c207d731369908a4a378e528c2c9f52332682a30fe7f",
+        "minimization_or_redaction": "Removed /protocolSection/contactsLocationsModule/overallOfficials. No other fields were modified.",
         "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov v2 API on 2026-09-03 with no field restriction, so the arms, references and eligibility modules are present as the provider sends them."
       }
     },
@@ -2273,8 +2273,8 @@
         "provider": "ClinicalTrials.gov",
         "request": "https://clinicaltrials.gov/api/v2/studies/NCT06131398?format=json",
         "captured_at": "2026-09-03T19:52:00Z",
-        "sha256": "ae0d35b732fe4f6236a4d251860ce12c0d731972dd6ad77d128a5cb8b9f7fc82",
-        "minimization_or_redaction": "No fields removed and no values redacted. The complete study record as returned; JSON whitespace normalized after capture. The record carries no email address and no telephone number. The only named people are overall officials, published with name, affiliation and role.",
+        "sha256": "02062b0ca8ffe2de2e5e5832a0c227211d782834252ce2374b3f8af1777ffdb0",
+        "minimization_or_redaction": "Removed /protocolSection/contactsLocationsModule/overallOfficials. No other fields were modified.",
         "provider_origin_statement": "Recorded from the public ClinicalTrials.gov v2 API on 2026-09-03 with no field restriction. Recorded as a second full capture because the first, NCT02576665, is a trial with no secondary outcomes, so its outcomesModule carries only primaryOutcomes and cannot attest secondaryOutcomes. This record carries both. One trial cannot attest a provider's optional keys; the attested key set is the union across captures."
       }
     },
@@ -2322,18 +2322,13 @@
       {"path": "nci_cts/search_melanoma_20260811.json", "selector": "/data/*", "endpoint": "nci"}
     ],
     "inline": [
-      {"path": "src/transform/trial/tests.rs", "selector": "from_ctgov_study_extracts_age_and_locations_sorted:json:1", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "from_ctgov_study_preserves_contacts_and_structured_eligibility:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "from_ctgov_study_preserves_provider_type_fields_in_json:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trials_explain_their_status_in_json_and_markdown:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:2", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown:json:1", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "ctgov_location_aliases_stay_bound_to_literal_first_source_contact:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "unreadable_nci_disease_is_an_error:json:1", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests/ticket_1114.rs", "selector": "ctgov_postal_codes_are_trimmed_and_blank_values_are_omitted:json:1", "endpoint": "ctgov"}
+      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "unreadable_nci_disease_is_an_error:json:1", "endpoint": "nci"}
     ],
     "exceptions": []
   },

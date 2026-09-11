@@ -172,7 +172,13 @@ def tracked_cli_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     )
     if proc.returncode != 0:
         return [], [proc.stderr.strip() or "git ls-files failed"]
-    return sorted({line for line in proc.stdout.splitlines() if line}), []
+    return sorted(
+        {
+            line
+            for line in proc.stdout.splitlines()
+            if line and (root_dir / line).is_file()
+        }
+    ), []
 
 
 def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
@@ -184,7 +190,13 @@ def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     )
     if proc.returncode != 0:
         return [], [proc.stderr.strip() or "git ls-files failed"]
-    return sorted({line for line in proc.stdout.splitlines() if line}), []
+    return sorted(
+        {
+            line
+            for line in proc.stdout.splitlines()
+            if line and (root_dir / line).is_file()
+        }
+    ), []
 
 
 def tracked_src_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:

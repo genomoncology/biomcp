@@ -13,8 +13,8 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-MAX_PACKAGE_FILES = 1_304
-BIODATA_REVISION = "d9d419eb96bfdf8056db7c71d6b973f17f0c1699"
+MAX_PACKAGE_FILES = 1_302
+BIODATA_REVISION = "036dd1e2cb51ccbdece3fc1e4ebb2cf8d2509807"
 
 
 def _cargo_package_list() -> list[str]:
@@ -159,6 +159,27 @@ def test_biodata_owns_the_clinical_trial_reference_value_codec() -> None:
     for retired in ("references_module", "CtGovReference", "CtGovReferencesModule"):
         assert retired not in provider
     assert "protocol.references_module = None" not in detail
+
+
+def test_biodata_owns_trial_sites_contacts_and_product_projection() -> None:
+    model = (ROOT / "src/entities/trial/mod.rs").read_text(encoding="utf-8")
+    transform = (ROOT / "src/transform/trial.rs").read_text(encoding="utf-8")
+    source = (ROOT / "src/sources/clinicaltrials.rs").read_text(encoding="utf-8")
+    for retired in (
+        "pub struct TrialContact {",
+        "pub struct TrialLocation {",
+        "pub struct TrialSiteContact {",
+        "struct SiteContactKey {",
+        "project_contacts_to_locations",
+        "extract_contacts",
+        "extract_locations",
+        "pub struct CtGovContact {",
+    ):
+        assert retired not in model + transform + source
+    assert "ClinicalTrialSiteDirectory" in model
+    assert "TrialContactView<'a>" in model
+    assert "TrialLocationView<'a>" in model
+    assert "TrialSiteContactView<'a>" in model
 
 
 def test_artifact_checker_rejects_renamed_fixture_bytes(tmp_path: Path) -> None:

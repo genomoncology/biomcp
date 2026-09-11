@@ -27,16 +27,26 @@ RUST_TESTS = (
     "entities::trial::get::tests::outcome_product_preserves_grouped_values_and_every_section_state",
     "entities::trial::get::tests::product_section_state_preserves_all_four_states",
     "entities::trial::get::tests::shared_core_conversion_preserves_order_and_derives_compatibility_fields",
+    "entities::trial::get::tests::ctgov_product_uses_shared_directory_for_ordered_locations_and_states",
+    "entities::trial::get::tests::shared_directory_views_authorize_output_and_redact_diagnostics",
+    "cli::trial::dispatch::site_directory_tests::location_page_filters_sites_and_site_contacts_but_keeps_central_first",
+    "cli::trial::dispatch::site_directory_tests::standalone_pagination_wrapper_serializes_only_the_current_directory_page",
+    "sources::clinicaltrials::tests::parsing::legacy_source_aggregates_redact_ignored_contact_sentinels",
+    "sources::clinicaltrials::tests::parsing::biodata_detail_wrapper_redacts_field_distinct_site_values_but_shared_getters_retain_them",
+    "entities::trial::search::ctgov::tests::raw_page_debug_redacts_nested_legacy_site_values",
     "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_preserve_planned_outcome_values_and_states",
     "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_return_exact_structured_references",
     "mcp::shell::typed_get_tests::cli_typed_and_raw_nci_trial_get_preserve_assignments_and_outcome_state",
     "mcp::shell::typed_get_tests::typed_and_raw_trial_get_return_exact_age_objects",
+    "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_share_directory_contacts_locations_and_states",
     "render::markdown::trial::tests::planned_outcome_markdown_preserves_groups_order_text_and_states",
     "render::markdown::trial::tests::response_markdown_explains_selected_section_states",
+    "render::markdown::trial::tests::trial_markdown_renders_coordinates_and_sanitizes_unnamed_contacts",
 )
 EXPECTED_ISOLATED_INVOCATION = (
     '"$ROOT/tools/check-offline-network" true\n'
     'python3 "$ROOT/tools/check-biodata-boundary.py" --root "$ROOT"\n'
+    'python3 "$ROOT/tools/check-source-capture-receipts.py" --root "$ROOT/testdata/sources"\n'
     'for test_name in "${RUST_TESTS[@]}"; do\n'
     '  cargo test --locked --offline --no-default-features --lib "$test_name" -- --exact\n'
     "done\n"

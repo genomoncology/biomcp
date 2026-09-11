@@ -4,7 +4,6 @@ use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use crate::sources::clinicaltrials::CtGovBiodataDetailResponse;
 use crate::sources::nci_cts::NciCtsClient;
-use crate::transform;
 use biodata::{
     ClinicalTrialArms, ClinicalTrialEligibility, ClinicalTrialIntervention,
     ClinicalTrialPlannedOutcome, ClinicalTrialSection, NciCtsV2DetailPlan, NciCtsV2DetailResponse,
@@ -170,8 +169,9 @@ fn product_from_core(
         completion_date: core.completion_date().map(str::to_owned),
         eligibility: None,
         eligibility_provenance: None,
-        contacts: None,
-        locations: None,
+        site_directory: None,
+        site_offset: 0,
+        site_limit: None,
         outcomes: None,
         references: None,
     }
@@ -220,6 +220,9 @@ fn product_from_nci_response(
     trial.eligibility = eligibility;
     let outcomes = response.outcomes();
     trial.outcomes = product_outcomes(&outcomes);
+    if let ClinicalTrialSection::Present(directory) = response.site_directory() {
+        trial.set_site_directory(Some(directory.clone()));
+    }
     Ok(TrialResponse {
         trial,
         section_states: TrialSectionStates {
@@ -227,6 +230,8 @@ fn product_from_nci_response(
             eligibility: section_state(&response.eligibility()),
             outcomes: section_state(&outcomes),
             references: TrialSectionState::NotRequested,
+            contacts: section_state(&response.contacts_state()),
+            locations: section_state(&response.locations_state()),
         },
     })
 }
@@ -241,17 +246,15 @@ fn product_from_ctgov_response(
         "ClinicalTrials.gov",
         product_design(response.shared.interventions(), response.shared.arms())?,
     );
-    trial.contacts = transform::trial::extract_contacts(&response.study);
-    trial.locations = transform::trial::extract_locations(&response.study);
+    if let ClinicalTrialSection::Present(directory) = response.shared.site_directory() {
+        trial.set_site_directory(Some(directory.clone()));
+    }
     trial.outcomes = product_outcomes(response.shared.outcomes());
     let reference_state = section_state(response.shared.references());
     if section_flags.include_references
         && let ClinicalTrialSection::Present(values) = response.shared.references()
     {
         trial.references = Some(values.clone());
-    }
-    if !section_flags.include_contacts {
-        trial.contacts = None;
     }
     trial.eligibility = match (
         section_flags.request_eligibility,
@@ -263,9 +266,6 @@ fn product_from_ctgov_response(
             return Err(BioMcpError::InternalProcessing);
         }
     };
-    if !section_flags.include_locations {
-        trial.locations = None;
-    }
     if section_flags.include_eligibility_provenance
         && trial
             .eligibility
@@ -285,6 +285,8 @@ fn product_from_ctgov_response(
             eligibility: section_state(response.shared.eligibility()),
             outcomes: section_state(response.shared.outcomes()),
             references: reference_state,
+            contacts: section_state(&response.shared.contacts_state()),
+            locations: section_state(&response.shared.locations_state()),
         },
     })
 }
@@ -349,6 +351,12 @@ pub async fn get(
                 .map_err(|_| BioMcpError::InternalProcessing)?;
             if section_flags.include_outcomes {
                 plan = plan.with_outcomes();
+            }
+            if section_flags.include_contacts {
+                plan = plan.with_contacts();
+            }
+            if section_flags.include_locations {
+                plan = plan.with_locations();
             }
             let client = NciCtsClient::new()?;
             let response = client.get(&plan).await?;

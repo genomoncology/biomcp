@@ -327,22 +327,24 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             .expect("valid eligibility"),
         ),
         eligibility_provenance: None,
-        contacts: None,
-        locations: Some(vec![crate::entities::trial::TrialLocation {
-            facility: Some("Example Hospital".to_string()),
-            city: Some("Boston".to_string()),
-            state: Some("MA".to_string()),
-            postal_code: None,
-            country: Some("United States".to_string()),
-            status: Some("Recruiting".to_string()),
-            contacts: Vec::new(),
-            contact_name: None,
-            contact_role: None,
-            contact_phone: None,
-            contact_email: None,
-            latitude: None,
-            longitude: None,
-        }]),
+        site_directory: Some(biodata::ClinicalTrialSiteDirectory::new(
+            None,
+            Some(vec![
+                biodata::ClinicalTrialSite::new(biodata::ClinicalTrialSiteFields {
+                    facility: Some("Example Hospital".to_string()),
+                    status: None,
+                    city: Some("Boston".to_string()),
+                    state: Some("MA".to_string()),
+                    postal_code: None,
+                    country: Some("United States".to_string()),
+                    coordinates: None,
+                    contacts: None,
+                })
+                .unwrap(),
+            ]),
+        )),
+        site_offset: 0,
+        site_limit: None,
         outcomes: Some(vec![
             biodata::ClinicalTrialPlannedOutcome::new(
                 "FEV1",

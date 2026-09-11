@@ -253,6 +253,8 @@ def test_nci_detail_executes_the_strict_biodata_plan_through_the_real_cli() -> N
         "eligibility": "present",
         "outcomes": "unavailable",
         "references": "unavailable",
+        "contacts": "unavailable",
+        "locations": "unavailable",
     }
     assert len(trial["arms"]) == 2
     assert len(trial["interventions"]) == 53

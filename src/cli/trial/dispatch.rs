@@ -69,7 +69,7 @@ pub(in crate::cli) async fn handle_get(
             let mut md = crate::render::markdown::trial_response_markdown(&trial, &sections)?;
             md.push_str(&format!(
                 "\n\n---\n*Locations: showing {} of {} (offset {}, limit {}{})*",
-                trial.locations.as_ref().map_or(0, |value| value.len()),
+                trial.returned_location_count(),
                 loc_page.total,
                 loc_page.offset,
                 loc_page.limit,
@@ -108,7 +108,7 @@ pub(super) fn attach_location_continuation(
     if !page.has_more {
         return;
     }
-    let returned = trial.locations.as_ref().map_or(0, Vec::len);
+    let returned = trial.returned_location_count();
     let include_contacts = sections.iter().any(|section| {
         matches!(
             section.trim().to_ascii_lowercase().as_str(),
@@ -430,12 +430,16 @@ pub(super) fn trial_locations_json(
     struct TrialWithLocationPagination<'a> {
         #[serde(flatten)]
         trial: &'a crate::entities::trial::Trial,
+        contacts: Vec<crate::entities::trial::TrialContactView<'a>>,
+        locations: Vec<crate::entities::trial::TrialLocationView<'a>>,
         location_pagination: LocationPaginationMeta,
     }
 
     crate::render::json::to_entity_json(
         &TrialWithLocationPagination {
             trial,
+            contacts: trial.contact_views(),
+            locations: trial.location_views(),
             location_pagination,
         },
         crate::render::markdown::trial_evidence_urls(trial),
@@ -473,12 +477,10 @@ pub(super) fn paginate_trial_locations(
     offset: usize,
     limit: usize,
 ) -> LocationPaginationMeta {
-    let locations = trial.locations.take().unwrap_or_default();
-    let total = locations.len();
-    let paged: Vec<_> = locations.into_iter().skip(offset).take(limit).collect();
-    let has_more = offset.saturating_add(paged.len()) < total;
-    crate::entities::trial::project_contacts_to_locations(&mut trial.contacts, &paged);
-    trial.locations = Some(paged);
+    let total = trial.location_count();
+    trial.set_site_page(offset, limit);
+    let returned = trial.returned_location_count();
+    let has_more = offset.saturating_add(returned) < total;
     LocationPaginationMeta {
         total,
         offset,
@@ -638,5 +640,84 @@ mod count_tests {
             assert!(!rendered.contains("Total: 0"));
             assert!(!rendered.contains("traversal limit reached"));
         }
+    }
+}
+
+#[cfg(test)]
+mod site_directory_tests {
+    use super::*;
+    use crate::entities::trial::{
+        Trial, TrialDesign, TrialResponse, TrialSectionState, TrialSectionStates,
+    };
+
+    fn contact(name: &str) -> biodata::ClinicalTrialContact {
+        biodata::ClinicalTrialContact::new(Some(name.to_owned()), None, None, None, None).unwrap()
+    }
+
+    fn site(index: usize) -> biodata::ClinicalTrialSite {
+        biodata::ClinicalTrialSite::new(biodata::ClinicalTrialSiteFields {
+            facility: Some(format!("Site {index}")),
+            status: None,
+            city: Some(format!("City {index}")),
+            state: None,
+            postal_code: None,
+            country: Some("Example Country".to_owned()),
+            coordinates: None,
+            contacts: Some(vec![contact(&format!("Site Contact {index}"))]),
+        })
+        .unwrap()
+    }
+
+    fn response() -> TrialResponse {
+        let mut trial: Trial = serde_json::from_value(serde_json::json!({
+            "identities": [],
+            "nct_id": "NCT41300001",
+            "title": "Paging trial",
+            "status": "RECRUITING",
+            "phases": [],
+            "conditions": [],
+            "interventions": []
+        }))
+        .unwrap();
+        trial.design = TrialDesign::default();
+        trial.set_site_directory(Some(biodata::ClinicalTrialSiteDirectory::new(
+            Some(vec![contact("Central Contact")]),
+            Some((0..3).map(site).collect()),
+        )));
+        TrialResponse {
+            trial,
+            section_states: TrialSectionStates {
+                arms: TrialSectionState::NotRequested,
+                eligibility: TrialSectionState::NotRequested,
+                outcomes: TrialSectionState::NotRequested,
+                references: TrialSectionState::NotRequested,
+                contacts: TrialSectionState::Present,
+                locations: TrialSectionState::Present,
+            },
+        }
+    }
+
+    #[test]
+    fn location_page_filters_sites_and_site_contacts_but_keeps_central_first() {
+        let mut response = response();
+        let page = paginate_trial_locations(&mut response, 1, 1);
+        let encoded = trial_response_locations_json(&response, page).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(value["location_pagination"]["total"], 3);
+        assert_eq!(value["locations"][0]["facility"], "Site 1");
+        assert_eq!(value["contacts"][0]["level"], "central");
+        assert_eq!(value["contacts"][1]["level"], "site");
+        assert_eq!(value["contacts"][1]["facility"], "Site 1");
+        assert_eq!(value["contacts"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn standalone_pagination_wrapper_serializes_only_the_current_directory_page() {
+        let mut response = response();
+        let page = paginate_trial_locations(&mut response, 2, 1);
+        let encoded = trial_locations_json(&response, page).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(value["locations"][0]["facility"], "Site 2");
+        assert_eq!(value["contacts"][1]["facility"], "Site 2");
     }
 }

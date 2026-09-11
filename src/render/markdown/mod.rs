@@ -677,6 +677,9 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     env.add_filter("markdown_cell", |value: String| -> String {
         support::markdown_cell(&value)
     });
+    env.add_filter("sanitize_inline", |value: String| -> String {
+        crate::render::human::sanitize_inline(&value)
+    });
     env.add_filter("truncate", |s: String, max_bytes: usize| -> String {
         if s.len() <= max_bytes {
             return s;
