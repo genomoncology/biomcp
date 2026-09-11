@@ -294,12 +294,15 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
     assert!(article_markdown.contains("## Semantic Scholar"));
 
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT06668103".to_string(),
         source: Some("ClinicalTrials.gov".to_string()),
         title: "Example trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: Some("Phase 2".to_string()),
+        phases: Vec::new(),
         study_type: Some("Interventional".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
         design: crate::entities::trial::TrialDesign::from_names_and_arm(

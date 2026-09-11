@@ -39,6 +39,7 @@ REFERENCE_FIELDS = [
     "InterventionType",
     "LeadSponsorName",
     "NCTId",
+    "OfficialTitle",
     "OverallStatus",
     "Phase",
     "ReferenceCitation",
@@ -49,12 +50,12 @@ REFERENCE_FIELDS = [
     "WhyStopped",
 ]
 DETAIL_ROUTE_FIELDS = {
-    "overview": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
-    "arms": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
-    "all": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
-    "eligibility": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
-    "documents": "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
-    "mixed": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
+    "overview": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OfficialTitle,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
+    "arms": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OfficialTitle,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+    "all": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OfficialTitle,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
+    "eligibility": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,HealthyVolunteers,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OfficialTitle,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
+    "documents": "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,NCTId,OfficialTitle,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+    "mixed": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,NCTId,OfficialTitle,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
 }
 
 
@@ -277,6 +278,33 @@ def _run_reference(
     )
 
 
+def test_detail_structured_core_and_section_states_are_complete(tmp_path: Path) -> None:
+    with _reference_trial_server() as (base, replies, _requests):
+        result = _run_reference(base, tmp_path, "NCT02576665", [])
+        assert result.returncode == 0, result.stderr
+        trial = json.loads(result.stdout)
+        source = json.loads(replies["NCT02576665"])["protocolSection"]
+        identity = source["identificationModule"]
+        design = source["designModule"]
+
+        assert trial["identities"] == [
+            {"authority": "clinicaltrials.gov", "identifier": "NCT02576665"}
+        ]
+        assert trial["title"] == identity["briefTitle"]
+        assert trial["official_title"] == identity["officialTitle"]
+        assert trial["phases"] == design["phases"]
+        assert trial["phase"] == "/".join(trial["phases"])
+        assert trial["summary"] == source["descriptionModule"]["briefSummary"]
+        assert len(trial["summary"].encode()) == 1201
+        assert trial["conditions"] == source["conditionsModule"]["conditions"]
+        assert len(trial["conditions"]) == 12
+        assert trial["section_states"] == {
+            "arms": "not_requested",
+            "eligibility": "present",
+            "references": "not_requested",
+        }
+
+
 @pytest.mark.parametrize(
     ("route", "sections"),
     [
@@ -329,7 +357,13 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
                 }
                 for row in source
             ]
-            assert json.loads(result.stdout)["references"] == expected
+            payload = json.loads(result.stdout)
+            if source:
+                assert payload["references"] == expected
+                assert payload["section_states"]["references"] == "present"
+            else:
+                assert "references" not in payload
+                assert payload["section_states"]["references"] == "absent"
             markdown = _run_reference(
                 base, tmp_path, nct_id, section, json_output=False
             )
@@ -348,7 +382,7 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
                 positions.append(markdown.stdout.index(row["pmid"]))
             assert positions == sorted(positions)
             if not expected:
-                assert "No references" in markdown.stdout
+                assert "The provider omitted references." in markdown.stdout
         for request in requests:
             parsed = urlparse(request)
             assert parsed.path.startswith("/api/v2/studies/NCT")
@@ -366,12 +400,6 @@ def test_synthetic_partial_reply_preserves_complete_changed_references(
     with _reference_trial_server() as (base, replies, _requests):
         replies["NCT02576665"] = json.loads(replies["NCT02576665"])
         protocol = replies["NCT02576665"]["protocolSection"]
-        for module in (
-            "sponsorCollaboratorsModule",
-            "designModule",
-            "conditionsModule",
-        ):
-            protocol.pop(module, None)
         protocol["referencesModule"] = {
             "references": [
                 {

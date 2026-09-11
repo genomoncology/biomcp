@@ -9,6 +9,15 @@ readonly TEST_FILES=(
   "tests/test_nci_filter_transport.py"
   "tests/test_biodata_branch_workflow.py"
 )
+readonly RUST_TESTS=(
+  "entities::trial::get::tests::ctgov_product_core_ignores_every_legacy_core_field"
+  "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence"
+  "entities::trial::get::tests::product_section_state_preserves_all_four_states"
+  "entities::trial::get::tests::shared_core_conversion_preserves_order_and_derives_compatibility_fields"
+  "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_return_exact_structured_references"
+  "mcp::shell::typed_get_tests::typed_and_raw_trial_get_return_exact_age_objects"
+  "render::markdown::trial::tests::response_markdown_explains_selected_section_states"
+)
 
 unset NCI_API_KEY
 biomcp_bin="${BIOMCP_BIN:-$ROOT/target/debug/biomcp}"
@@ -34,5 +43,8 @@ if (($# != 1)) || [[ "${1:-}" != --already-isolated ]] \
 fi
 "$ROOT/tools/check-offline-network" true
 python3 "$ROOT/tools/check-biodata-boundary.py" --root "$ROOT"
+for test_name in "${RUST_TESTS[@]}"; do
+  cargo test --locked --offline --no-default-features --lib "$test_name" -- --exact
+done
 exec env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \
   uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}"

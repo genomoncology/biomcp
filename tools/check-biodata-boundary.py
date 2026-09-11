@@ -11,12 +11,13 @@ from pathlib import Path
 import tomllib
 
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "7fa796c88fe4d4143eba28a883a9bc8f6b3ca893"
-VERSION = "0.0.13"
+REVISION = "d09e57535b07a46ede09c50abbf0597a970b5f41"
+VERSION = "0.0.14"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (
     "ClinicalTrialIdentityError",
+    "ClinicalTrialCore",
     "ClinicalTrialArmId",
     "ClinicalTrialInterventionId",
     "ClinicalTrialEligibilityCriterionId",
@@ -272,6 +273,7 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
 
     for symbol in (
         "ClinicalTrialArm",
+        "ClinicalTrialCore",
         "ClinicalTrialIntervention",
         "ClinicalTrialArms",
         "ClinicalTrialArmInterventionAssignment",

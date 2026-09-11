@@ -20,9 +20,21 @@ TEST_FILES = (
     "tests/test_nci_filter_transport.py",
     "tests/test_biodata_branch_workflow.py",
 )
+RUST_TESTS = (
+    "entities::trial::get::tests::ctgov_product_core_ignores_every_legacy_core_field",
+    "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",
+    "entities::trial::get::tests::product_section_state_preserves_all_four_states",
+    "entities::trial::get::tests::shared_core_conversion_preserves_order_and_derives_compatibility_fields",
+    "mcp::shell::typed_get_tests::cli_typed_and_raw_trial_get_return_exact_structured_references",
+    "mcp::shell::typed_get_tests::typed_and_raw_trial_get_return_exact_age_objects",
+    "render::markdown::trial::tests::response_markdown_explains_selected_section_states",
+)
 EXPECTED_ISOLATED_INVOCATION = (
     '"$ROOT/tools/check-offline-network" true\n'
     'python3 "$ROOT/tools/check-biodata-boundary.py" --root "$ROOT"\n'
+    'for test_name in "${RUST_TESTS[@]}"; do\n'
+    '  cargo test --locked --offline --no-default-features --lib "$test_name" -- --exact\n'
+    "done\n"
     'exec env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \\\n'
     '  uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}"\n'
 )
@@ -43,6 +55,13 @@ FORBIDDEN_COMMANDS = (
 
 def _runner_test_files(runner: str) -> tuple[str, ...]:
     match = re.search(r"readonly TEST_FILES=\(\n(?P<body>.*?)\n\)", runner, re.DOTALL)
+    if match is None:
+        return ()
+    return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
+
+
+def _runner_rust_tests(runner: str) -> tuple[str, ...]:
+    match = re.search(r"readonly RUST_TESTS=\(\n(?P<body>.*?)\n\)", runner, re.DOTALL)
     if match is None:
         return ()
     return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
@@ -80,6 +99,8 @@ def _runner_violations(runner: str) -> list[str]:
         violations.append("already-isolated mode must require the verified namespace")
     if _runner_test_files(runner) != TEST_FILES:
         violations.append("focused runner test selection changed")
+    if _runner_rust_tests(runner) != RUST_TESTS:
+        violations.append("focused runner Rust test selection changed")
     if "cargo build" in runner or "cargo run" in runner:
         violations.append("focused runner must require an existing binary")
     for command in FORBIDDEN_COMMANDS:
@@ -106,6 +127,7 @@ def test_biomcp_keeps_only_the_local_focused_runner() -> None:
         ("unset NCI_API_KEY", "true # retain NCI_API_KEY"),
         ("tools/check-offline-network", "true # trust marker"),
         (TEST_FILES[2], "tests/test_live_provider.py"),
+        (RUST_TESTS[0], "live_provider_smoke"),
         ("uv run --no-sync pytest", "make test && uv run --no-sync pytest"),
         ('[[ ! -x "$biomcp_bin" ]]', '[[ -x "$biomcp_bin" ]]'),
         ("--basetemp /tmp/pytest", "--basetemp /var/tmp/pytest"),

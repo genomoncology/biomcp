@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use biodata::{ClinicalTrialEligibility, ClinicalTrialReference};
 use serde::{Deserialize, Serialize};
+use std::ops::{Deref, DerefMut};
 
 use crate::error::BioMcpError;
 
@@ -31,15 +32,21 @@ pub(crate) fn validate_search_filters(filters: &TrialSearchFilters) -> Result<()
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trial {
+    #[serde(default)]
+    pub identities: Vec<TrialIdentity>,
     pub nct_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub official_title: Option<String>,
     pub status: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub why_stopped: Option<Option<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phase: Option<String>,
+    #[serde(default)]
+    pub phases: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub study_type: Option<String>,
     #[serde(default)]
@@ -49,7 +56,7 @@ pub struct Trial {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sponsor: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub enrollment: Option<i32>,
+    pub enrollment: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -76,6 +83,49 @@ pub struct Trial {
         with = "reference_wire"
     )]
     pub references: Option<Vec<ClinicalTrialReference>>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TrialIdentity {
+    pub authority: String,
+    pub identifier: String,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TrialSectionState {
+    NotRequested,
+    Unavailable,
+    Absent,
+    Present,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TrialSectionStates {
+    pub arms: TrialSectionState,
+    pub eligibility: TrialSectionState,
+    pub references: TrialSectionState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrialResponse {
+    #[serde(flatten)]
+    pub trial: Trial,
+    pub section_states: TrialSectionStates,
+}
+
+impl Deref for TrialResponse {
+    type Target = Trial;
+
+    fn deref(&self) -> &Self::Target {
+        &self.trial
+    }
+}
+
+impl DerefMut for TrialResponse {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.trial
+    }
 }
 
 impl Trial {

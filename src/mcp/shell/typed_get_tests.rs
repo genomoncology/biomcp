@@ -450,8 +450,12 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let study = json!({"protocolSection": {
-        "identificationModule": {"nctId":"NCT60000001","briefTitle":"Infant trial"},
+        "identificationModule": {"nctId":"NCT60000001","briefTitle":"Infant trial","officialTitle":"Infant trial official title"},
         "statusModule": {"overallStatus":"RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor":{"name":"Infant study sponsor"}},
+        "conditionsModule": {"conditions":["Infant condition"]},
+        "designModule": {"studyType":"INTERVENTIONAL","phases":["PHASE1","PHASE2"]},
+        "descriptionModule": {"briefSummary":"Infant study summary"},
         "eligibilityModule": {"minimumAge":"6 Months","sex":"ALL","healthyVolunteers":false},
         "armsInterventionsModule": {
             "armGroups": [{"label":"Arm one","interventionNames":["Drug: first drug"]}],
@@ -504,6 +508,28 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     assert_eq!(typed["eligibility"]["sexes"][0]["code"], "ALL");
     assert_eq!(typed["eligibility"]["includes_healthy_subjects"], false);
     assert_eq!(typed["eligibility"], raw["eligibility"]);
+    for field in [
+        "identities",
+        "official_title",
+        "phases",
+        "phase",
+        "summary",
+        "conditions",
+        "sponsor",
+        "section_states",
+    ] {
+        assert_eq!(typed[field], raw[field], "{field}");
+    }
+    assert_eq!(typed["official_title"], "Infant trial official title");
+    assert_eq!(typed["phases"], json!(["PHASE1", "PHASE2"]));
+    assert_eq!(typed["phase"], "PHASE1/PHASE2");
+    assert_eq!(typed["summary"], "Infant study summary");
+    assert_eq!(typed["conditions"], json!(["Infant condition"]));
+    assert_eq!(typed["sponsor"], "Infant study sponsor");
+    assert_eq!(
+        typed["section_states"],
+        json!({"arms":"present","eligibility":"present","references":"not_requested"})
+    );
     assert_eq!(typed["interventions"], raw["interventions"]);
     assert_eq!(typed["arms"], raw["arms"]);
     assert_eq!(
@@ -524,8 +550,12 @@ async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let study = json!({"protocolSection": {
-        "identificationModule": {"nctId":"NCT60000002","briefTitle":"Reference trial"},
+        "identificationModule": {"nctId":"NCT60000002","briefTitle":"Reference trial","officialTitle":"Reference trial official title"},
         "statusModule": {"overallStatus":"RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor":{"name":"Reference study sponsor"}},
+        "conditionsModule": {"conditions":["Reference condition"]},
+        "designModule": {"studyType":"OBSERVATIONAL","phases":[]},
+        "descriptionModule": {"briefSummary":"Reference study summary"},
         "referencesModule": {"references":[{
             "pmid":"pmid-α", "citation":"Citation β", "type":"PRIMARY"
         }]}
@@ -593,6 +623,31 @@ async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
     assert_eq!(cli["references"], expected);
     assert_eq!(typed["references"], expected);
     assert_eq!(raw["references"], expected);
+    for field in [
+        "identities",
+        "official_title",
+        "phases",
+        "summary",
+        "conditions",
+        "sponsor",
+        "section_states",
+    ] {
+        assert_eq!(cli[field], typed[field], "CLI/typed {field}");
+        assert_eq!(typed[field], raw[field], "typed/raw {field}");
+    }
+    assert_eq!(
+        cli["identities"],
+        json!([{"authority":"clinicaltrials.gov","identifier":"NCT60000002"}])
+    );
+    assert_eq!(cli["official_title"], "Reference trial official title");
+    assert_eq!(cli["phases"], json!([]));
+    assert_eq!(cli["summary"], "Reference study summary");
+    assert_eq!(cli["conditions"], json!(["Reference condition"]));
+    assert_eq!(cli["sponsor"], "Reference study sponsor");
+    assert_eq!(
+        cli["section_states"],
+        json!({"arms":"not_requested","eligibility":"not_requested","references":"present"})
+    );
     assert_eq!(
         expected[0]
             .as_object()

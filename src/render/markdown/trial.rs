@@ -234,7 +234,27 @@ fn bounded_trial_summary(summary: &str) -> String {
     bounded
 }
 
+#[cfg(test)]
 pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<String, BioMcpError> {
+    trial_markdown_with_states(trial, None, requested_sections)
+}
+
+pub(crate) fn trial_response_markdown(
+    response: &crate::entities::trial::TrialResponse,
+    requested_sections: &[String],
+) -> Result<String, BioMcpError> {
+    trial_markdown_with_states(
+        &response.trial,
+        Some(&response.section_states),
+        requested_sections,
+    )
+}
+
+fn trial_markdown_with_states(
+    trial: &Trial,
+    section_states: Option<&crate::entities::trial::TrialSectionStates>,
+    requested_sections: &[String],
+) -> Result<String, BioMcpError> {
     const LOCATION_DISPLAY_CAP: usize = 20;
 
     let include_all = has_all_section(requested_sections);
@@ -278,6 +298,7 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
     }
     render_trial_markdown(
         &projected,
+        section_states,
         requested_sections,
         location_disclosure.as_deref(),
     )
@@ -293,6 +314,14 @@ fn trial_source_from_marker(marker: Option<&str>) -> Option<crate::entities::tri
         }
         _ => None,
     }
+}
+
+#[cfg(test)]
+fn trial_paginated_markdown(
+    trial: &Trial,
+    requested_sections: &[String],
+) -> Result<String, BioMcpError> {
+    render_trial_markdown(trial, None, requested_sections, None)
 }
 
 pub(crate) fn trial_location_continuation_command(
@@ -320,15 +349,9 @@ pub(crate) fn trial_location_continuation_command(
     Some(command.arg("locations").render_shell())
 }
 
-pub(crate) fn trial_paginated_markdown(
-    trial: &Trial,
-    requested_sections: &[String],
-) -> Result<String, BioMcpError> {
-    render_trial_markdown(trial, requested_sections, None)
-}
-
 fn render_trial_markdown(
     trial: &Trial,
+    section_states: Option<&crate::entities::trial::TrialSectionStates>,
     requested_sections: &[String],
     location_disclosure: Option<&str>,
 ) -> Result<String, BioMcpError> {
@@ -391,6 +414,9 @@ fn render_trial_markdown(
         outcomes => &trial.outcomes,
         arms => &arms,
         references => &references,
+        arms_state => section_states.map(|states| states.arms),
+        eligibility_state => section_states.map(|states| states.eligibility),
+        references_state => section_states.map(|states| states.references),
         show_eligibility_section => show_eligibility_section,
         show_contacts_section => show_contacts_section,
         show_locations_section => show_locations_section,

@@ -254,12 +254,15 @@ fn pgx_json_next_commands_parse() {
 #[test]
 fn trial_json_next_commands_parse() {
     let trial = Trial {
+        identities: Vec::new(),
         nct_id: "NCT01234567".to_string(),
         source: None,
         title: "Example trial".to_string(),
+        official_title: None,
         status: "Completed".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec!["melanoma".to_string()],
         design: crate::entities::trial::TrialDesign::from_names(&["dabrafenib"]),

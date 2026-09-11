@@ -130,7 +130,7 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
                         crate::render::provenance::trial_section_sources(item),
                     )
                 },
-                |item| crate::render::markdown::trial_markdown(item, &batch_sections),
+                |item| crate::render::markdown::trial_response_markdown(item, &batch_sections),
             )
             .await;
         }

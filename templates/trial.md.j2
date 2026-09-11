@@ -52,11 +52,24 @@ _and {{ intervention_details | length - 5 }} more (see `arms` section)_
 ## Eligibility ({{ trial_source_label }})
 
 {% if eligibility_text %}{{ eligibility_text }}
+{% elif not eligibility_provenance %}No eligibility details found.
 {% endif -%}
 {% if eligibility_provenance and eligibility_provenance.posted_documents_available -%}
 
 **Posted trial documents:** Posted trial documents are available and may contain additional eligibility detail: `{{ eligibility_provenance.documents_handle }}`
 {% endif -%}
+{% elif show_eligibility_section and eligibility_state == "unavailable" -%}
+## Eligibility ({{ trial_source_label }})
+
+The selected provider does not support eligibility for this request.
+{% elif show_eligibility_section and eligibility_state == "absent" -%}
+## Eligibility ({{ trial_source_label }})
+
+The provider omitted eligibility.
+{% elif show_eligibility_section and eligibility_state == "present" -%}
+## Eligibility ({{ trial_source_label }})
+
+No eligibility details found.
 {% endif -%}
 {% if show_locations_section and locations -%}
 ## Locations ({{ trial_source_label }})
@@ -95,6 +108,18 @@ _and {{ intervention_details | length - 5 }} more (see `arms` section)_
 {% for arm in arms -%}
 | {{ arm.label }} | {{ arm.arm_type or "-" }} | {% if arm.interventions %}{{ arm.interventions | join(", ") }}{% if arm.omitted_interventions %}, and {{ arm.omitted_interventions }} more{% endif %}{% else %}-{% endif %} | {{ (arm.description or "-") | truncate(60) }} |
 {% endfor -%}
+{% elif show_arms_section and arms_state == "unavailable" -%}
+## Arms ({{ trial_source_label }})
+
+The selected provider does not support arms for this request.
+{% elif show_arms_section and arms_state == "absent" -%}
+## Arms ({{ trial_source_label }})
+
+The provider omitted arms.
+{% elif show_arms_section and arms_state == "present" -%}
+## Arms ({{ trial_source_label }})
+
+No arms found.
 {% endif -%}
 {% if show_references_section and references is not none -%}
 ## References ({{ trial_source_label }})
@@ -105,6 +130,18 @@ No references found.
 {{ loop.index }}. {% if ref.citation %}{% if ref.pmid %}[PMID: {{ ref.pmid }}] {% endif %}{{ ref.citation }}{% elif ref.pmid %}[PMID: {{ ref.pmid }}]{% elif ref.source_type_label %}{{ ref.source_type_label }}{% else %}Reference details unavailable.{% endif %}{% if ref.source_type_label and ref.citation %} *({{ ref.source_type_label }})*{% endif %}
 {% endfor -%}
 {% endif -%}
+{% elif show_references_section and references_state == "unavailable" -%}
+## References ({{ trial_source_label }})
+
+The selected provider does not support references for this request.
+{% elif show_references_section and references_state == "absent" -%}
+## References ({{ trial_source_label }})
+
+The provider omitted references.
+{% elif show_references_section and references_state == "present" -%}
+## References ({{ trial_source_label }})
+
+No references found.
 {% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}

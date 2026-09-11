@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
 MAX_PACKAGE_FILES = 1_304
-BIODATA_REVISION = "7fa796c88fe4d4143eba28a883a9bc8f6b3ca893"
+BIODATA_REVISION = "d09e57535b07a46ede09c50abbf0597a970b5f41"
 
 
 def _cargo_package_list() -> list[str]:
@@ -137,6 +137,12 @@ def test_biodata_owns_the_clinical_trial_eligibility_value_codec() -> None:
     assert ".to_json()" in production
     assert "NO_LIMIT_RULE" not in production
     assert "UnitWire" not in production
+
+
+def test_biodata_owns_the_clinical_trial_core_model() -> None:
+    source = (ROOT / "src/entities/trial/get.rs").read_text(encoding="utf-8")
+    assert "biodata::ClinicalTrialCore" in source
+    assert "core.brief_summary()" in source
 
 
 def test_biodata_owns_the_clinical_trial_reference_value_codec() -> None:

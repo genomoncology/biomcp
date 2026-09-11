@@ -64,9 +64,9 @@ pub(in crate::cli) async fn handle_get(
     }
 
     let text = match (json_output, location_pagination) {
-        (true, Some(loc_page)) => trial_locations_json(&trial, loc_page)?,
+        (true, Some(loc_page)) => trial_response_locations_json(&trial, loc_page)?,
         (false, Some(loc_page)) => {
-            let mut md = crate::render::markdown::trial_paginated_markdown(&trial, &sections)?;
+            let mut md = crate::render::markdown::trial_response_markdown(&trial, &sections)?;
             md.push_str(&format!(
                 "\n\n---\n*Locations: showing {} of {} (offset {}, limit {}{})*",
                 trial.locations.as_ref().map_or(0, |value| value.len()),
@@ -87,7 +87,13 @@ pub(in crate::cli) async fn handle_get(
             }
             md
         }
-        (_, None) => render_loaded_card(&trial, &sections, json_output)?,
+        (true, None) => crate::render::json::to_entity_json(
+            &trial,
+            crate::render::markdown::trial_evidence_urls(&trial),
+            crate::render::markdown::related_trial(&trial),
+            crate::render::provenance::trial_section_sources(&trial),
+        )?,
+        (false, None) => crate::render::markdown::trial_response_markdown(&trial, &sections)?,
     };
 
     Ok(CommandOutcome::stdout(text))
@@ -118,6 +124,7 @@ pub(super) fn attach_location_continuation(
     );
 }
 
+#[cfg(test)]
 pub(crate) fn render_loaded_card(
     trial: &crate::entities::trial::Trial,
     sections: &[String],
@@ -414,6 +421,7 @@ pub(super) struct LocationPaginationMeta {
     pub(super) continuation_command: Option<String>,
 }
 
+#[cfg(test)]
 pub(super) fn trial_locations_json(
     trial: &crate::entities::trial::Trial,
     location_pagination: LocationPaginationMeta,
@@ -433,6 +441,29 @@ pub(super) fn trial_locations_json(
         crate::render::markdown::trial_evidence_urls(trial),
         crate::render::markdown::related_trial(trial),
         crate::render::provenance::trial_section_sources(trial),
+    )
+    .map_err(Into::into)
+}
+
+fn trial_response_locations_json(
+    response: &crate::entities::trial::TrialResponse,
+    location_pagination: LocationPaginationMeta,
+) -> anyhow::Result<String> {
+    #[derive(serde::Serialize)]
+    struct TrialWithLocationPagination<'a> {
+        #[serde(flatten)]
+        response: &'a crate::entities::trial::TrialResponse,
+        location_pagination: LocationPaginationMeta,
+    }
+
+    crate::render::json::to_entity_json(
+        &TrialWithLocationPagination {
+            response,
+            location_pagination,
+        },
+        crate::render::markdown::trial_evidence_urls(response),
+        crate::render::markdown::related_trial(response),
+        crate::render::provenance::trial_section_sources(response),
     )
     .map_err(Into::into)
 }

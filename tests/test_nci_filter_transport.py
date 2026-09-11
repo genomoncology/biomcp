@@ -239,6 +239,20 @@ def test_nci_detail_executes_the_strict_biodata_plan_through_the_real_cli() -> N
     assert markdown.stdout.count("### Inclusion Criteria") == 1
     assert markdown.stdout.count("### Exclusion Criteria") == 1
     trial = json.loads(result.stdout)
+    source_trial = json.loads(response)["data"][0]
+    assert trial["identities"] == [
+        {"authority": "nci", "identifier": source_trial["nci_id"]},
+        {"authority": "clinicaltrials.gov", "identifier": source_trial["nct_id"]},
+    ]
+    assert trial["official_title"] == source_trial["official_title"]
+    assert trial["phases"] == [source_trial["phase"]]
+    assert trial["phase"] == source_trial["phase"]
+    assert trial["summary"] == source_trial["brief_summary"]
+    assert trial["section_states"] == {
+        "arms": "present",
+        "eligibility": "present",
+        "references": "unavailable",
+    }
     assert len(trial["arms"]) == 2
     assert len(trial["interventions"]) == 53
     assert len(trial["arm_intervention_assignments"]) == 53

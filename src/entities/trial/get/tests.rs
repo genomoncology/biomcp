@@ -57,6 +57,63 @@ fn normalize_nct_id_uppercases_prefix() {
 }
 
 #[test]
+fn ctgov_product_core_ignores_every_legacy_core_field() {
+    let bytes =
+        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
+    let sections = ["all".to_owned()];
+    let original = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        bytes,
+    )
+    .unwrap();
+    let mut mutated = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &sections,
+        reqwest::StatusCode::OK,
+        bytes,
+    )
+    .unwrap();
+    let protocol = mutated.study.protocol_section.as_mut().unwrap();
+    let identity = protocol.identification_module.as_mut().unwrap();
+    identity.nct_id = Some("NCT99999999".into());
+    identity.brief_title = Some("legacy title mutation".into());
+    let status = protocol.status_module.as_mut().unwrap();
+    status.overall_status = Some("legacy status mutation".into());
+    status.why_stopped = Some("legacy reason mutation".into());
+    status.start_date_struct = None;
+    status.completion_date_struct = None;
+    let design = protocol.design_module.as_mut().unwrap();
+    design.phases = Some(vec!["legacy phase mutation".into()]);
+    design.study_type = Some("legacy type mutation".into());
+    design.enrollment_info = None;
+    protocol.conditions_module.as_mut().unwrap().conditions =
+        vec!["legacy condition mutation".into()];
+    protocol.sponsor_collaborators_module = None;
+    protocol.description_module = None;
+
+    let flags = parse_sections(&sections).unwrap();
+    let expected = product_from_ctgov_response(original, flags, "NCT02576665").unwrap();
+    let actual = product_from_ctgov_response(mutated, flags, "NCT02576665").unwrap();
+    assert_eq!(actual.identities, expected.identities);
+    assert_eq!(actual.nct_id, expected.nct_id);
+    assert_eq!(actual.title, expected.title);
+    assert_eq!(actual.official_title, expected.official_title);
+    assert_eq!(actual.status, expected.status);
+    assert_eq!(actual.why_stopped, expected.why_stopped);
+    assert_eq!(actual.phases, expected.phases);
+    assert_eq!(actual.phase, expected.phase);
+    assert_eq!(actual.study_type, expected.study_type);
+    assert_eq!(actual.conditions, expected.conditions);
+    assert_eq!(actual.sponsor, expected.sponsor);
+    assert_eq!(actual.enrollment, expected.enrollment);
+    assert_eq!(actual.summary, expected.summary);
+    assert_eq!(actual.start_date, expected.start_date);
+    assert_eq!(actual.completion_date, expected.completion_date);
+}
+
+#[test]
 fn parse_sections_accepts_contacts_and_all_includes_contacts() {
     for section in ["arms", "contacts", "locations", "outcomes", "references"] {
         let parsed = parse_sections(&[section.to_string()]).unwrap();
@@ -105,41 +162,64 @@ fn nci_request_state_table_requests_eligibility_exactly_when_selected() {
 }
 
 #[test]
-fn product_references_maps_each_section_state() {
-    use biodata::{ClinicalTrialReference, ClinicalTrialSection};
-
-    assert!(
-        product_references(ClinicalTrialSection::Absent)
-            .expect("absent references")
-            .is_empty()
-    );
-    assert!(
-        product_references(ClinicalTrialSection::Present(Vec::new()))
-            .expect("present empty references")
-            .is_empty()
-    );
-    assert!(matches!(
-        product_references(ClinicalTrialSection::NotRequested),
-        Err(BioMcpError::InternalProcessing)
-    ));
-    assert!(matches!(
-        product_references(ClinicalTrialSection::Unavailable),
-        Err(BioMcpError::InternalProcessing)
-    ));
-
-    let without_citation = ClinicalTrialReference::new(Some("123".to_string()), None, None)
-        .expect("source-stated reference");
-    let retained =
-        ClinicalTrialReference::new(Some("456".to_string()), Some("Citation".to_string()), None)
-            .expect("source-stated reference");
+fn product_section_state_preserves_all_four_states() {
     assert_eq!(
-        product_references(ClinicalTrialSection::Present(vec![
-            without_citation.clone(),
-            retained.clone(),
-        ]))
-        .expect("present references"),
-        vec![without_citation, retained]
+        section_state(&ClinicalTrialSection::<()>::NotRequested),
+        TrialSectionState::NotRequested
     );
+    assert_eq!(
+        section_state(&ClinicalTrialSection::<()>::Unavailable),
+        TrialSectionState::Unavailable
+    );
+    assert_eq!(
+        section_state(&ClinicalTrialSection::<()>::Absent),
+        TrialSectionState::Absent
+    );
+    assert_eq!(
+        section_state(&ClinicalTrialSection::Present(())),
+        TrialSectionState::Present
+    );
+}
+
+#[test]
+fn shared_core_conversion_preserves_order_and_derives_compatibility_fields() {
+    let code = |value: &str| {
+        biodata::ExtensibleCode::new(
+            "provider",
+            value,
+            None::<String>,
+            None::<String>,
+            None::<String>,
+        )
+        .unwrap()
+    };
+    let core = biodata::ClinicalTrialCore::new(biodata::ClinicalTrialCoreFields {
+        identities: vec![
+            biodata::AuthorityScopedReference::new("nci", "NCI-1").unwrap(),
+            biodata::AuthorityScopedReference::new("clinicaltrials.gov", "NCT00000001").unwrap(),
+        ],
+        brief_title: "Brief".into(),
+        official_title: Some("Official".into()),
+        overall_status: code("ACTIVE"),
+        stop_reason: None,
+        phases: vec![code("PHASE1"), code("PHASE2")],
+        study_type: code("INTERVENTIONAL"),
+        conditions: vec!["First".into(), "Second".into()],
+        lead_sponsor_name: "Sponsor".into(),
+        enrollment_count: Some(9_007_199_254_740_991),
+        brief_summary: Some("Complete source summary".into()),
+        start_date: None,
+        completion_date: None,
+    })
+    .unwrap();
+
+    let trial = product_from_core(&core, "NCI CTS", TrialDesign::default());
+    assert_eq!(trial.nct_id, "NCT00000001");
+    assert_eq!(trial.phases, ["PHASE1", "PHASE2"]);
+    assert_eq!(trial.phase.as_deref(), Some("PHASE1/PHASE2"));
+    assert_eq!(trial.conditions, ["First", "Second"]);
+    assert_eq!(trial.enrollment, Some(9_007_199_254_740_991));
+    assert_eq!(trial.summary.as_deref(), Some("Complete source summary"));
 }
 
 #[test]
@@ -148,21 +228,37 @@ fn nci_product_conversion_checks_enrollment_and_preserves_source_presence() {
     record["minimum_target_accrual_number"] = serde_json::json!(2_147_483_648_u64);
     record["why_study_stopped"] = serde_json::json!("  Enrollment target was not met  ");
     record["brief_summary"] = serde_json::json!("  Source summary.  ");
-    let (plan, response) = plan_bound_nci_response(record, true);
+    let (_, response) = plan_bound_nci_response(record, true);
 
-    let trial = product_from_nci_response(&plan, &response, true, false).unwrap();
-    assert_eq!(trial.enrollment, None);
+    let trial = product_from_nci_response(&response, true, false).unwrap();
+    assert_eq!(trial.enrollment, Some(2_147_483_648));
     assert_eq!(
         trial.why_stopped,
-        Some(Some("Enrollment target was not met".to_string()))
+        Some(Some("  Enrollment target was not met  ".to_string()))
     );
-    assert_eq!(trial.summary.as_deref(), Some("Source summary."));
+    assert_eq!(trial.summary.as_deref(), Some("  Source summary.  "));
+    assert_eq!(trial.phase.as_deref(), Some("III"));
+    assert_eq!(trial.phases, ["III"]);
+    assert_eq!(trial.identities.len(), 2);
+    let encoded = serde_json::to_value(&trial).unwrap();
+    assert_eq!(encoded["enrollment"], 2_147_483_648_u64);
+    assert_eq!(encoded["phases"], serde_json::json!(["III"]));
+    assert_eq!(encoded["phase"], "III");
+    assert_eq!(encoded["summary"], "  Source summary.  ");
+    assert_eq!(
+        encoded["section_states"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .collect::<Vec<_>>(),
+        ["arms", "eligibility", "references"]
+    );
 }
 
 #[test]
 fn nci_arm_conversion_preserves_every_occurrence_and_assignment() {
-    let (plan, response) = plan_bound_nci_response(receipted_nci_record(), true);
-    let trial = product_from_nci_response(&plan, &response, true, true).unwrap();
+    let (_, response) = plan_bound_nci_response(receipted_nci_record(), true);
+    let trial = product_from_nci_response(&response, true, true).unwrap();
     assert_eq!(trial.design.arms().map(<[_]>::len), Some(2));
     assert_eq!(trial.design.interventions().len(), 53);
     assert_eq!(trial.design.assignments().map(<[_]>::len), Some(53));
@@ -291,9 +387,9 @@ fn nci_eligibility_keeps_absence_and_an_explicit_empty_list_distinct() {
     assert!(eligibility.criteria().is_some_and(<[_]>::is_empty));
 
     let record = receipted_nci_record();
-    let (unrequested_plan, unrequested) = plan_bound_nci_response(record, false);
+    let (_, unrequested) = plan_bound_nci_response(record, false);
     assert!(matches!(
-        product_from_nci_response(&unrequested_plan, &unrequested, true, false),
+        product_from_nci_response(&unrequested, true, false),
         Err(BioMcpError::InternalProcessing)
     ));
 }
@@ -550,6 +646,8 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
     assert_eq!(trial.source.as_deref(), Some("NCI CTS"));
     assert_eq!(trial.status, "Active");
     assert_eq!(trial.phase.as_deref(), Some("III"));
+    assert_eq!(trial.phases, ["III"]);
+    assert_eq!(trial.identities.len(), 2);
     assert_eq!(trial.study_type.as_deref(), Some("Interventional"));
     assert_eq!(trial.sponsor.as_deref(), Some("NRG Oncology"));
     assert_eq!(trial.enrollment, Some(3960));
@@ -585,7 +683,18 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
     server.abort();
     assert!(overview.eligibility.is_some());
     assert!(overview.eligibility_provenance.is_none());
-    assert!(references.references.as_ref().is_some_and(Vec::is_empty));
+    assert!(references.references.is_none());
+    assert_eq!(
+        references.section_states.references,
+        TrialSectionState::Unavailable
+    );
+    assert_eq!(
+        overview.section_states.references,
+        TrialSectionState::NotRequested
+    );
+    assert_eq!(overview.section_states.arms, TrialSectionState::Present);
+    assert!(overview.design.arms().is_none());
+    assert_eq!(all.section_states.arms, TrialSectionState::Present);
     assert!(all.eligibility.is_some());
     assert!(all.eligibility_provenance.is_none());
 }

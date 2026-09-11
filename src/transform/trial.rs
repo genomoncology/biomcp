@@ -1,6 +1,7 @@
+#[cfg(test)]
+use crate::entities::trial::{Trial, TrialDesign};
 use crate::entities::trial::{
-    Trial, TrialContact, TrialDesign, TrialLocation, TrialOutcome, TrialOutcomes,
-    TrialSearchResult, TrialSiteContact,
+    TrialContact, TrialLocation, TrialOutcome, TrialOutcomes, TrialSearchResult, TrialSiteContact,
 };
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
@@ -66,6 +67,7 @@ fn clean_opt(value: Option<&str>) -> Option<String> {
         .map(str::to_string)
 }
 
+#[cfg(test)]
 fn normalize_summary(value: Option<&str>) -> Option<String> {
     clean_opt(value)
 }
@@ -98,7 +100,7 @@ fn clean_site_contact(contact: &CtGovContact) -> Option<TrialSiteContact> {
     })
 }
 
-fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
+pub(crate) fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
     let locations = study
         .protocol_section
         .as_ref()
@@ -174,7 +176,7 @@ fn extract_contact(
     })
 }
 
-fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
+pub(crate) fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
     let module = study
         .protocol_section
         .as_ref()
@@ -209,7 +211,7 @@ fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
     (!out.is_empty()).then_some(out)
 }
 
-fn extract_outcomes(study: &CtGovStudy) -> Option<TrialOutcomes> {
+pub(crate) fn extract_outcomes(study: &CtGovStudy) -> Option<TrialOutcomes> {
     let module = study
         .protocol_section
         .as_ref()
@@ -248,6 +250,7 @@ fn extract_outcomes(study: &CtGovStudy) -> Option<TrialOutcomes> {
     }
 }
 
+#[cfg(test)]
 pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
     let p = study.protocol_section.as_ref();
     let id = p
@@ -278,6 +281,11 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         .and_then(|p| p.design_module.as_ref())
         .and_then(|m| m.phases.as_ref())
         .and_then(|phases| normalize_phase(phases));
+    let phases = p
+        .and_then(|p| p.design_module.as_ref())
+        .and_then(|m| m.phases.as_ref())
+        .map(|values| values.iter().map(|value| value.trim().to_owned()).collect())
+        .unwrap_or_default();
     let study_type = p
         .and_then(|p| p.design_module.as_ref())
         .and_then(|m| m.study_type.as_deref())
@@ -314,17 +322,23 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         .map(|m| clean_conditions(&m.conditions))
         .unwrap_or_default();
     Ok(Trial {
+        identities: vec![crate::entities::trial::TrialIdentity {
+            authority: "clinicaltrials.gov".to_owned(),
+            identifier: id.clone(),
+        }],
         nct_id: id,
         source: None,
         title,
+        official_title: None,
         status,
         why_stopped,
         phase,
+        phases,
         study_type,
         conditions,
         design: TrialDesign::default(),
         sponsor,
-        enrollment,
+        enrollment: enrollment.and_then(|value| u64::try_from(value).ok()),
         summary,
         start_date,
         completion_date,

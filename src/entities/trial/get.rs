@@ -2,6 +2,7 @@
 
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
+use crate::sources::clinicaltrials::CtGovBiodataDetailResponse;
 use crate::sources::nci_cts::NciCtsClient;
 use crate::transform;
 use biodata::{
@@ -12,7 +13,8 @@ use biodata::{
 use super::{
     TRIAL_SECTION_ALL, TRIAL_SECTION_ARMS, TRIAL_SECTION_CONTACTS, TRIAL_SECTION_ELIGIBILITY,
     TRIAL_SECTION_LOCATIONS, TRIAL_SECTION_NAMES, TRIAL_SECTION_OUTCOMES, TRIAL_SECTION_REFERENCES,
-    Trial, TrialDesign, TrialSource,
+    Trial, TrialDesign, TrialIdentity, TrialResponse, TrialSectionState, TrialSectionStates,
+    TrialSource,
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -77,14 +79,12 @@ fn parse_sections(sections: &[String]) -> Result<TrialSections, BioMcpError> {
     Ok(out)
 }
 
-fn product_references(
-    section: biodata::ClinicalTrialSection<Vec<biodata::ClinicalTrialReference>>,
-) -> Result<Vec<biodata::ClinicalTrialReference>, BioMcpError> {
+fn section_state<T>(section: &ClinicalTrialSection<T>) -> TrialSectionState {
     match section {
-        biodata::ClinicalTrialSection::Present(values) => Ok(values),
-        biodata::ClinicalTrialSection::Absent => Ok(Vec::new()),
-        biodata::ClinicalTrialSection::NotRequested
-        | biodata::ClinicalTrialSection::Unavailable => Err(BioMcpError::InternalProcessing),
+        ClinicalTrialSection::NotRequested => TrialSectionState::NotRequested,
+        ClinicalTrialSection::Unavailable => TrialSectionState::Unavailable,
+        ClinicalTrialSection::Absent => TrialSectionState::Absent,
+        ClinicalTrialSection::Present(_) => TrialSectionState::Present,
     }
 }
 
@@ -126,6 +126,57 @@ fn product_nci_design(
     TrialDesign::new(interventions, arms, assignments).map_err(BioMcpError::TrialDesign)
 }
 
+fn product_from_core(
+    core: &biodata::ClinicalTrialCore,
+    source: &str,
+    design: TrialDesign,
+) -> Trial {
+    let identities = core
+        .identities()
+        .iter()
+        .map(|value| TrialIdentity {
+            authority: value.authority().to_owned(),
+            identifier: value.identifier().to_owned(),
+        })
+        .collect::<Vec<_>>();
+    let nct_id = identities
+        .iter()
+        .find(|value| value.authority == "clinicaltrials.gov")
+        .map(|value| value.identifier.clone())
+        .unwrap_or_default();
+    let phases = core
+        .phases()
+        .iter()
+        .map(|value| value.code().to_owned())
+        .collect::<Vec<_>>();
+    let phase = (!phases.is_empty()).then(|| phases.join("/"));
+    Trial {
+        identities,
+        nct_id,
+        source: Some(source.to_owned()),
+        title: core.brief_title().to_owned(),
+        official_title: core.official_title().map(str::to_owned),
+        status: core.overall_status().code().to_owned(),
+        why_stopped: Some(core.stop_reason().map(str::to_owned)),
+        phase,
+        phases,
+        study_type: Some(core.study_type().code().to_owned()),
+        conditions: core.conditions().to_vec(),
+        design,
+        sponsor: Some(core.lead_sponsor_name().to_owned()),
+        enrollment: core.enrollment_count(),
+        summary: core.brief_summary().map(str::to_owned),
+        start_date: core.start_date().map(str::to_owned),
+        completion_date: core.completion_date().map(str::to_owned),
+        eligibility: None,
+        eligibility_provenance: None,
+        contacts: None,
+        locations: None,
+        outcomes: None,
+        references: None,
+    }
+}
+
 fn product_eligibility(
     section: ClinicalTrialSection<&ClinicalTrialEligibility>,
     requested: bool,
@@ -140,51 +191,83 @@ fn product_eligibility(
 }
 
 fn product_from_nci_response(
-    plan: &NciCtsV2DetailPlan,
     response: &NciCtsV2DetailResponse,
     request_eligibility: bool,
     include_arms: bool,
-) -> Result<Trial, BioMcpError> {
+) -> Result<TrialResponse, BioMcpError> {
     let shared = response.projection().trial();
-    let phase = shared
-        .phases()
-        .first()
-        .map(|value| value.code().to_string());
     let eligibility = product_eligibility(response.eligibility(), request_eligibility)?;
+    let arms_state = section_state(&response.arms_state());
+    let mut trial = product_from_core(
+        response.core(),
+        "NCI CTS",
+        product_nci_design(shared, include_arms)?,
+    );
+    trial.eligibility = eligibility;
+    Ok(TrialResponse {
+        trial,
+        section_states: TrialSectionStates {
+            arms: arms_state,
+            eligibility: section_state(&response.eligibility()),
+            references: TrialSectionState::NotRequested,
+        },
+    })
+}
 
-    Ok(Trial {
-        nct_id: plan.requested_identity().to_string(),
-        source: Some("NCI CTS".to_string()),
-        title: shared.brief_title().to_string(),
-        status: shared.overall_status().code().to_string(),
-        why_stopped: Some(
-            shared
-                .stop_reason()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(str::to_owned),
-        ),
-        phase,
-        study_type: Some(shared.study_type().code().to_string()),
-        conditions: shared.conditions().to_vec(),
-        design: product_nci_design(shared, include_arms)?,
-        sponsor: Some(shared.lead_sponsor_name().to_string()),
-        enrollment: shared
-            .enrollment_count()
-            .and_then(|value| i32::try_from(value).ok()),
-        summary: response
-            .brief_summary()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_owned),
-        start_date: shared.start_date().map(str::to_owned),
-        completion_date: shared.completion_date().map(str::to_owned),
-        eligibility,
-        eligibility_provenance: None,
-        contacts: None,
-        locations: None,
-        outcomes: None,
-        references: None,
+fn product_from_ctgov_response(
+    response: CtGovBiodataDetailResponse,
+    section_flags: TrialSections,
+    nct_id: &str,
+) -> Result<TrialResponse, BioMcpError> {
+    let mut trial = product_from_core(
+        response.shared.core(),
+        "ClinicalTrials.gov",
+        product_design(response.shared.interventions(), response.shared.arms())?,
+    );
+    trial.contacts = transform::trial::extract_contacts(&response.study);
+    trial.locations = transform::trial::extract_locations(&response.study);
+    trial.outcomes = transform::trial::extract_outcomes(&response.study);
+    let reference_state = section_state(response.shared.references());
+    if section_flags.include_references
+        && let ClinicalTrialSection::Present(values) = response.shared.references()
+    {
+        trial.references = Some(values.clone());
+    }
+    if !section_flags.include_contacts {
+        trial.contacts = None;
+    }
+    trial.eligibility = match (
+        section_flags.request_eligibility,
+        response.shared.eligibility(),
+    ) {
+        (true, ClinicalTrialSection::Present(value)) => Some(value.clone()),
+        (true, ClinicalTrialSection::Absent) | (false, _) => None,
+        (true, ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable) => {
+            return Err(BioMcpError::InternalProcessing);
+        }
+    };
+    if !section_flags.include_locations {
+        trial.locations = None;
+    }
+    if section_flags.include_eligibility_provenance
+        && trial
+            .eligibility
+            .as_ref()
+            .and_then(ClinicalTrialEligibility::registry_text)
+            .is_some()
+    {
+        trial.eligibility_provenance = Some(super::documents::eligibility_provenance(
+            nct_id,
+            &response.study,
+        ));
+    }
+    Ok(TrialResponse {
+        trial,
+        section_states: TrialSectionStates {
+            arms: section_state(response.shared.arms()),
+            eligibility: section_state(response.shared.eligibility()),
+            references: reference_state,
+        },
     })
 }
 
@@ -232,7 +315,7 @@ pub async fn get(
     nct_id: &str,
     sections: &[String],
     source: TrialSource,
-) -> Result<Trial, BioMcpError> {
+) -> Result<TrialResponse, BioMcpError> {
     let nct_id = validated_nct_id(nct_id)?;
     let nct_id = nct_id.as_str();
     let section_flags = parse_sections(sections)?;
@@ -241,48 +324,7 @@ pub async fn get(
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
             let response = client.get_biodata_detail(nct_id, sections).await?;
-            let mut study = response.study;
-            if let Some(protocol) = study.protocol_section.as_mut() {
-                protocol.arms_interventions_module = None;
-            }
-            let mut trial = transform::trial::from_ctgov_study(&study)?;
-            trial.design = product_design(response.shared.interventions(), response.shared.arms())?;
-            if section_flags.include_references {
-                trial.references = Some(product_references(response.shared.references().clone())?);
-            }
-            trial.source = Some("ClinicalTrials.gov".into());
-            if !section_flags.include_contacts {
-                trial.contacts = None;
-            }
-            trial.eligibility = match (
-                section_flags.request_eligibility,
-                response.shared.eligibility(),
-            ) {
-                (true, ClinicalTrialSection::Present(value)) => Some(value.clone()),
-                (true, ClinicalTrialSection::Absent) | (false, _) => None,
-                (true, ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable) => {
-                    return Err(BioMcpError::InternalProcessing);
-                }
-            };
-            if !section_flags.include_locations {
-                trial.locations = None;
-            }
-
-            if section_flags.include_eligibility_provenance
-                && trial
-                    .eligibility
-                    .as_ref()
-                    .and_then(ClinicalTrialEligibility::registry_text)
-                    .is_some()
-            {
-                trial.eligibility_provenance =
-                    Some(super::documents::eligibility_provenance(nct_id, &study));
-            }
-            if section_flags.include_references && trial.references.is_none() {
-                trial.references = Some(Vec::new());
-            }
-
-            Ok(trial)
+            product_from_ctgov_response(response, section_flags, nct_id)
         }
         TrialSource::NciCts => {
             let plan = NciCtsV2DetailPlan::new(nct_id, section_flags.request_eligibility)
@@ -290,14 +332,15 @@ pub async fn get(
             let client = NciCtsClient::new()?;
             let response = client.get(&plan).await?;
             let mut trial = product_from_nci_response(
-                &plan,
                 &response,
                 section_flags.request_eligibility,
                 section_flags.include_arms,
             )?;
-            if section_flags.include_references && trial.references.is_none() {
-                trial.references = Some(Vec::new());
-            }
+            trial.section_states.references = if section_flags.include_references {
+                TrialSectionState::Unavailable
+            } else {
+                TrialSectionState::NotRequested
+            };
 
             Ok(trial)
         }

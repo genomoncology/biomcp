@@ -393,12 +393,15 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
         ));
 
     let terminated = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT02576665".to_string(),
         source: None,
         title: "Completed trial".to_string(),
+        official_title: None,
         status: "TERMINATED".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec!["melanoma".to_string()],
         design: crate::entities::trial::TrialDesign::from_names(&["trametinib"]),

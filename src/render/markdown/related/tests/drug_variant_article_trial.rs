@@ -486,12 +486,15 @@ fn related_article_uses_article_entities_helper_command() {
 #[test]
 fn related_trial_promotes_results_search_for_completed_or_terminated_studies() {
     let trial = crate::entities::trial::Trial {
+            identities: Vec::new(),
             nct_id: "NCT02576665".to_string(),
             source: None,
             title: "A Study of Toca 511, a Retroviral Replicating Vector, Combined With Toca FC in Patients With Solid Tumors or Lymphoma (Toca 6)".to_string(),
+            official_title: None,
             status: "TERMINATED".to_string(),
             why_stopped: None,
             phase: None,
+            phases: Vec::new(),
             study_type: None,
             conditions: vec!["Colorectal Cancer".to_string()],
             design: crate::entities::trial::TrialDesign::from_names(&["Toca 511"]),
@@ -539,13 +542,16 @@ fn provider_trial_title_shell_syntax_stays_inert_in_results_search() {
     use clap::Parser;
 
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT35700001".to_string(),
         source: None,
         title: "Alpha\\path's $(touch /tmp/biomcp-trial-title-expanded) \"quoted\" $HOME; `uname` tail"
             .to_string(),
+        official_title: None,
         status: "COMPLETED".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: Vec::new(),
         design: crate::entities::trial::TrialDesign::from_names(&["SAFE-357"]),
@@ -589,12 +595,15 @@ fn provider_trial_title_shell_syntax_stays_inert_in_results_search() {
 #[test]
 fn related_trial_searches_unverified_jag201_intervention() {
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT06662188".to_string(),
         source: Some("ClinicalTrials.gov".to_string()),
         title: "JAG201 in Phelan-McDermid syndrome".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: Some("Interventional".to_string()),
         conditions: vec!["Phelan-McDermid syndrome".to_string()],
         design: crate::entities::trial::TrialDesign::from_names_and_arm(
@@ -622,12 +631,15 @@ fn related_trial_searches_unverified_jag201_intervention() {
 #[test]
 fn related_trial_keeps_recruiting_order_without_results_search() {
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT01234567".to_string(),
         source: None,
         title: "Example trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec!["melanoma".to_string()],
         design: crate::entities::trial::TrialDesign::from_names(&["dabrafenib"]),
@@ -654,12 +666,15 @@ fn related_trial_keeps_recruiting_order_without_results_search() {
 #[test]
 fn related_trial_completed_promotes_results_search_before_condition_pivots() {
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT01234567".to_string(),
         source: None,
         title: "Example completed trial".to_string(),
+        official_title: None,
         status: "Completed".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec!["melanoma".to_string()],
         design: crate::entities::trial::TrialDesign::from_names(&["dabrafenib"]),
@@ -687,12 +702,15 @@ fn related_trial_completed_promotes_results_search_before_condition_pivots() {
 #[test]
 fn related_trial_results_search_without_intervention_keeps_seed_quoted() {
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT09999999".to_string(),
         source: None,
         title: "   ".to_string(),
+        official_title: None,
         status: "Completed".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec!["melanoma".to_string()],
         design: crate::entities::trial::TrialDesign::default(),

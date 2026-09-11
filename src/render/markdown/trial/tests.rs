@@ -124,12 +124,15 @@ fn eligibility_markdown_makes_source_sex_codes_readable_without_changing_json() 
 
 fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
     crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT00000001".to_string(),
         source: Some("ClinicalTrials.gov".to_string()),
         title: "Summary trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec![],
         design: crate::entities::trial::TrialDesign::default(),
@@ -263,6 +266,29 @@ fn trial_markdown_keeps_the_post_abbreviation_clause_and_json_stays_full() {
 }
 
 #[test]
+fn response_markdown_explains_selected_section_states() {
+    use crate::entities::trial::{TrialResponse, TrialSectionState, TrialSectionStates};
+
+    let response = TrialResponse {
+        trial: summary_trial(None),
+        section_states: TrialSectionStates {
+            arms: TrialSectionState::Present,
+            eligibility: TrialSectionState::Absent,
+            references: TrialSectionState::Unavailable,
+        },
+    };
+    let markdown = trial_response_markdown(&response, &["all".to_owned()]).unwrap();
+    assert!(markdown.contains("No arms found."));
+    assert!(markdown.contains("The provider omitted eligibility."));
+    assert!(markdown.contains("The selected provider does not support references"));
+
+    let mut omitted = response;
+    omitted.section_states.references = TrialSectionState::NotRequested;
+    let markdown = trial_response_markdown(&omitted, &["references".to_owned()]).unwrap();
+    assert!(!markdown.contains("## References"));
+}
+
+#[test]
 fn trial_search_markdown_with_footer_shows_scoped_zero_result_nickname_hint() {
     let markdown = trial_search_markdown_with_footer(
         "condition=CodeBreaK 300",
@@ -359,12 +385,15 @@ fn trial_search_markdown_omits_matched_intervention_column_without_labels() {
 #[test]
 fn trial_markdown_includes_source_labeled_sections() {
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT06668103".to_string(),
         source: Some("ClinicalTrials.gov".to_string()),
         title: "Example trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: Some("Phase 2".to_string()),
+        phases: Vec::new(),
         study_type: Some("Interventional".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
         design: {
@@ -654,12 +683,15 @@ fn arm_rendering_follows_assignment_ids_when_names_do_not_change() {
 #[test]
 fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
     let mut trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT41300001".to_string(),
         source: Some("ClinicalTrials.gov".to_string()),
         title: "Contact trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec![],
         design: crate::entities::trial::TrialDesign::default(),

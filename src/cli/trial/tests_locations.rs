@@ -68,12 +68,15 @@ fn paged_contact_trial() -> crate::entities::trial::Trial {
         )
     }));
     crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT00000001".to_string(),
         source: Some("ctgov".to_string()),
         title: "Example trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: None,
+        phases: Vec::new(),
         study_type: None,
         conditions: vec![],
         design: crate::entities::trial::TrialDesign::default(),
@@ -408,12 +411,15 @@ fn parse_trial_location_paging_rejects_legacy_limit_zero() {
 #[test]
 fn trial_locations_json_preserves_location_pagination_and_section_sources() {
     let trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT00000001".to_string(),
         source: Some("ctgov".to_string()),
         title: "Example trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: Some("Phase 2".to_string()),
+        phases: Vec::new(),
         study_type: Some("Interventional".to_string()),
         conditions: vec!["melanoma".to_string()],
         design: crate::entities::trial::TrialDesign::from_names(&["osimertinib"]),
@@ -485,12 +491,15 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
 #[test]
 fn paginate_trial_locations_handles_missing_locations() {
     let mut trial = crate::entities::trial::Trial {
+        identities: Vec::new(),
         nct_id: "NCT00000001".to_string(),
         source: Some("ctgov".to_string()),
         title: "Example trial".to_string(),
+        official_title: None,
         status: "Recruiting".to_string(),
         why_stopped: None,
         phase: Some("Phase 2".to_string()),
+        phases: Vec::new(),
         study_type: Some("Interventional".to_string()),
         conditions: vec!["melanoma".to_string()],
         design: crate::entities::trial::TrialDesign::from_names(&["osimertinib"]),

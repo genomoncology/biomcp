@@ -170,6 +170,10 @@ biomcp get trial NCT02576665
 
 The default response summarizes title, status, condition context, intervention names, and source metadata. CTGov detail can include source-provided intervention alternate names; for investigational codes, follow-ups may use safer search/article routes instead of a brittle drug-card lookup.
 
+Structured detail keeps the provider's ordered `identities`, `phases`, and complete `conditions`, plus `official_title` and the full `summary`. The compatibility field `nct_id` comes from the ClinicalTrials.gov identity. The compatibility field `phase` joins `phases` with `/`. `enrollment` accepts portable unsigned JSON integers.
+
+Structured detail also includes `section_states` for `arms`, `eligibility`, and `references`. Each state is `not_requested`, `unavailable`, `absent`, or `present`. A section value appears only when BioMCP selected it for presentation and the provider returned it. Markdown explains selected unavailable, absent, and present-empty sections. It omits selected sections that were not requested from the provider.
+
 ## Request trial sections
 
 Eligibility:

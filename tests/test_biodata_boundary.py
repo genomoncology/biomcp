@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "7fa796c88fe4d4143eba28a883a9bc8f6b3ca893"
+REVISION = "d09e57535b07a46ede09c50abbf0597a970b5f41"
 
 
 def _write(path: Path, content: str) -> None:
@@ -35,14 +35,14 @@ biodata = {{ git = "{URL}", rev = "{REVISION}" }}
 
 [[package]]
 name = "biodata"
-version = "0.0.13"
+version = "0.0.14"
 source = "git+{URL}?rev={REVISION}#{REVISION}"
 """,
     )
     _write(
         root / "src/boundary.rs",
         """use biodata::{
-    ClinicalTrialArm, ClinicalTrialIntervention, ClinicalTrialArms,
+    ClinicalTrialArm, ClinicalTrialCore, ClinicalTrialIntervention, ClinicalTrialArms,
     ClinicalTrialArmInterventionAssignment, ClinicalTrialArmRelationshipError,
     ClinicalTrialEligibility, ClinicalTrialReference, ClinicalTrialSection,
     ClinicalTrialsGovApiV2DetailPlan, ClinicalTrialsGovApiV2Response,
@@ -55,6 +55,8 @@ fn codecs(value: &[u8], eligibility: &ClinicalTrialEligibility, reference: &Clin
     let _ = ClinicalTrialReference::from_json_bytes(value);
     let _ = reference.to_json();
 }
+
+fn core(value: &ClinicalTrialCore) { let _ = value.brief_summary(); }
 """,
     )
     subprocess.run(["git", "add", "."], cwd=root, check=True)
@@ -82,7 +84,7 @@ def test_biodata_boundary_accepts_a_complete_minimal_fixture(tmp_path: Path) -> 
     ("old", "new"),
     [
         (REVISION, "0" * 40),
-        ('version = "0.0.13"', 'version = "0.0.12"'),
+        ('version = "0.0.14"', 'version = "0.0.13"'),
     ],
 )
 def test_biodata_boundary_rejects_wrong_lock_or_revision(
@@ -157,6 +159,7 @@ def test_biodata_boundary_rejects_patch_and_source_replacements(
     "declaration",
     [
         "pub struct ClinicalTrialArm { value: String }",
+        "pub struct ClinicalTrialCore { value: String }",
         "pub struct NciCtsV2DetailPlan { identity: String }",
         "pub struct CtGovDetailPlan { identity: String }",
         "pub struct CtGovDetailResponse { rows: Vec<String> }",
