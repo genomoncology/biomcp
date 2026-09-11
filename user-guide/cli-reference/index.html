@@ -5131,6 +5131,13 @@ current response. <code>_meta.workflow</code>, <code>_meta.workflow_rationale</c
 <code>_meta.workflow_playbook</code> name and explain an installed playbook;
 executable worked examples are not copied into entity responses because their
 example entities may be unrelated to the current request.</p>
+<p>For drug cards, the list is shared by single-card and batch JSON/Markdown
+renderers, capped at ten commands, and built from loaded-section recovery,
+unloaded section discovery, an optional regional <code>all</code> command, and related
+commands. A default card has <code>targets</code> loaded; section tokens load only the
+named sections, and <code>all</code> follows the parser's existing expansion. Regional
+follow-ups carry the resolved <code>--region</code> (WHO omits standalone safety and
+shortage commands).</p>
 <p>Examples:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--indication<span class="w"> </span><span class="s2">&quot;myasthenia gravis&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--json
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>warfarin<span class="w"> </span>--json
