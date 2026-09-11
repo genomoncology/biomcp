@@ -22,4 +22,4 @@ executable specification group.
 ## Boundary
 
 This repair does not raise the package ceiling, remove the talk assets, change
-runtime behavior, publish a release, or introduce BioData coupling.
+runtime behavior, publish a release, or introduce external trial-crate coupling.
