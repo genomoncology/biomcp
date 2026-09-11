@@ -67,8 +67,25 @@ pub struct SemanticScholarClient {
     api_key: Option<String>,
 }
 
+#[cfg(test)]
+tokio::task_local! {
+    static TEST_CLIENT_OVERRIDE: SemanticScholarClient;
+}
+
+#[cfg(test)]
+pub(crate) async fn with_test_client<F>(client: SemanticScholarClient, future: F) -> F::Output
+where
+    F: std::future::Future,
+{
+    TEST_CLIENT_OVERRIDE.scope(client, future).await
+}
+
 impl SemanticScholarClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        #[cfg(test)]
+        if let Ok(client) = TEST_CLIENT_OVERRIDE.try_with(Clone::clone) {
+            return Ok(client);
+        }
         let base = crate::sources::env_base(SEMANTIC_SCHOLAR_BASE, SEMANTIC_SCHOLAR_BASE_ENV);
         let base_url = reqwest::Url::parse(base.as_ref()).map_err(|_| BioMcpError::Api {
             api: SEMANTIC_SCHOLAR_API.to_string(),
