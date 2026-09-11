@@ -23,6 +23,10 @@ detail.
   `drug_markdown` for Markdown, so those surfaces can disagree too.
 - Ticket 1161 is complete. Its sole-interactions card now makes the existing
   recovery command executable.
+- The current candidate families have disjoint rendered prefixes, so a natural
+  duplicate cannot be forced through `drug_command_discovery` today. Exact
+  owner projections therefore prove category wiring; the private flattening
+  boundary has a direct mutation-sensitive first-wins/cap test.
 
 ## Scope
 
@@ -61,7 +65,10 @@ report.
 
 - Pure projection tests assert exact categorized and flattened results for
   default, explicit sections, `all`, recovery, US/EU/WHO/all regions,
-  deduplication, blank identity, and the ten-command cap.
+  deduplication, blank identity, and the ten-command cap. Because current
+  candidate families are disjoint, deduplication is proven by the exact owner
+  projections plus a direct private-boundary test that forces duplicate exact
+  bytes and verifies first-wins behavior before the cap.
 - Production-path tests prove single and two-item batch JSON/Markdown agree,
   preserve item order and resolved identities, and make no extra provider
   request for discovery.

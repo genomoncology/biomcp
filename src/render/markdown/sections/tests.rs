@@ -247,6 +247,19 @@ fn assert_projection(
 }
 
 #[test]
+fn push_exact_capped_keeps_first_exact_bytes_before_the_ten_item_cap() {
+    let mut seen = HashSet::new();
+    let mut output = Vec::new();
+    for command in ["a", "a", "A", "b", "c", "d", "e", "f", "g", "h", "i"] {
+        push_exact_capped(command.to_string(), &mut seen, &mut output);
+    }
+    assert_eq!(
+        output,
+        vec!["a", "A", "b", "c", "d", "e", "f", "g", "h", "i"]
+    );
+}
+
+#[test]
 fn drug_command_discovery_asserts_every_explicit_single_section_projection() {
     let cases = [
         ("approvals", vec!["label", "regulatory", "safety"]),
