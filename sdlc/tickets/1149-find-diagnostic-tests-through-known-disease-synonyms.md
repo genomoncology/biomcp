@@ -40,14 +40,23 @@ detail once; zero or multiple identities use the literal term only. A direct
 MONDO/DOID query may fetch that detail directly. Do not add MESH/OMIM/ICD
 crosswalk behavior in this ticket.
 
+Query free text with `size=50` and `from=0`. If `total` exceeds the returned
+hit count, return the existing safe MyDisease source error; do not classify the
+result as absent or select an identity. Otherwise deduplicate exact hits by
+canonical ID before deciding zero, one, or multiple identities.
+
 The resolver may make at most two logical requests and uses the client's
 existing cache, transport, response-size, and timeout policies. Validate the
 disease filter before local or remote work: after trimming it must be at most
 512 UTF-8 bytes, contain no control characters, and retain the existing
-three-alphanumeric minimum. Invalid provider identity text is ignored. A
-resolver transport, HTTP, decoding, or selected-detail consistency failure is
-returned as the existing safe MyDisease source error; it must not become a
-confirmed empty diagnostic result.
+three-alphanumeric minimum. A valid provider identity term is a string,
+trimmed nonempty, no more than 256 UTF-8 bytes, and contains no control
+character. Synonym fields accept only a string or a flat array of strings;
+ignore other query-hit shapes. For the selected detail, an invalid ID, missing
+valid canonical name, ID disagreement, or malformed synonym field is a
+selected-detail consistency failure. Resolver transport, HTTP, decoding, or
+selected-detail consistency failure returns the existing safe MyDisease source
+error; it must not become a confirmed empty diagnostic result.
 
 GTR matches the requested term, canonical name, then synonyms in provider
 order using the existing Unicode-safe alphanumeric phrase boundary. Record the
@@ -57,12 +66,14 @@ resolved canonical ID when available. WHO uses only the requested term and
 never invokes MyDisease. No disease filter means no resolver call and no
 `disease_match` field.
 
-Rank disease-filtered GTR rows by match kind and synonym order, then preserve
-the current name/accession ordering. Apply every gene, type, manufacturer, and
-source filter conjunctively; expansion cannot revive a row rejected by another
-filter. Match and rank before the existing offset/limit slice. Preserve
-current cross-source behavior, JSON pagination shape, next commands, and all
-non-disease-filter ordering.
+For disease-filtered merged results, treat WHO literal matches as
+requested-rank matches, then sort all rows by match kind, synonym order where
+applicable, and the current name/accession keys. This intentional ranking
+change applies only to disease-filtered searches. Apply every gene, type,
+manufacturer, and source filter conjunctively; expansion cannot revive a row
+rejected by another filter. Match and rank before the existing offset/limit
+slice. Preserve current cross-source total semantics, JSON pagination shape,
+next commands, and all non-disease-filter ordering.
 
 JSON, Markdown, and raw MCP use the existing diagnostic serializers. Markdown
 adds a compact `Disease match` column only for disease-filtered results. Escape
@@ -97,10 +108,9 @@ Do not raise a source-size or CLI line-count allowance.
 ## Complexity
 
 - Contract: 1; state/timing: 1; reach: 1; proof: 1; cost of error: 1.
-- Total: 5; level 3.
-- Selected model: GPT-5.6 SOL Medium. The implementation crosses a remote
-  resolver and local search/pagination boundary, so this is one of the hard
-  tickets for which the SOL coding route is appropriate.
+- Total: 5; level 2; no minimum-level floor.
+- Selected implementation model: GPT-5.6 Luna High. Design and code review use
+  GPT-5.6 SOL Medium.
 
 ## Review
 
