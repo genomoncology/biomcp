@@ -116,5 +116,7 @@ Do not raise a source-size or CLI line-count allowance.
 
 The earlier accepted design was superseded before implementation because it
 combined this synonym bug with crosswalks, partial-source recovery, typed MCP,
-and byte-level adversarial matrices. Fresh review pending on this focused
-contract.
+and byte-level adversarial matrices. Fresh SOL review rejected four concrete
+ambiguities in the focused replacement: incomplete query pages, merged result
+ordering, provider-term shape, and model routing. Revision `077120e4` resolves
+all four; the same reviewer accepted it with no remaining findings.
