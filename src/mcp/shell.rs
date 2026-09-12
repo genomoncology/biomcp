@@ -1012,20 +1012,20 @@ fn redact_mcp_json_value(value: &mut Value) -> bool {
             redact_mcp_json_value(value) || changed
         }),
         Value::Object(map) => {
-            let full_text_available = map
-                .remove("full_text_path")
-                .is_some_and(|path| !path.is_null());
+            let removed_path = map.remove("full_text_path");
+            let removed_path_field = removed_path.is_some();
+            let full_text_available = removed_path.as_ref().is_some_and(Value::is_string);
             if full_text_available {
                 map.insert("full_text_available".to_string(), Value::Bool(true));
             }
-            map.values_mut()
-                .fold(full_text_available, |changed, value| {
-                    redact_mcp_json_value(value) || changed
-                })
+            map.values_mut().fold(removed_path_field, |changed, value| {
+                redact_mcp_json_value(value) || changed
+            })
         }
         _ => false,
     }
 }
+
 fn redact_mcp_json_text(text: &str) -> Result<String, crate::error::BioMcpError> {
     let mut value: Value = serde_json::from_str(text)?;
     if redact_mcp_json_value(&mut value) {

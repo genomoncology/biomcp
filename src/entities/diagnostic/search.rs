@@ -80,10 +80,7 @@ impl NormalizedSearchFilters {
 
         let disease_match = if self.disease.is_some() {
             let terms = disease_terms.expect("disease terms required for disease filter");
-            index
-                .conditions(&record.accession)
-                .iter()
-                .find_map(|candidate| disease_match(candidate, terms))
+            disease_match(&index.conditions(&record.accession), terms)
         } else {
             None
         };
@@ -216,8 +213,11 @@ fn disease_phrase_matches(haystack: &str, needle_lower: &str) -> bool {
     })
 }
 
-fn disease_match(condition: &str, terms: &ExactDiseaseTerms) -> Option<DiseaseMatch> {
-    if disease_phrase_matches(condition, &terms.requested) {
+fn disease_match(conditions: &[String], terms: &ExactDiseaseTerms) -> Option<DiseaseMatch> {
+    if conditions
+        .iter()
+        .any(|condition| disease_phrase_matches(condition, &terms.requested))
+    {
         return Some(DiseaseMatch {
             kind: DiseaseMatchKind::Requested,
             term: terms.requested.clone(),
@@ -225,7 +225,9 @@ fn disease_match(condition: &str, terms: &ExactDiseaseTerms) -> Option<DiseaseMa
         });
     }
     if let Some(canonical) = terms.canonical_name.as_deref()
-        && disease_phrase_matches(condition, canonical)
+        && conditions
+            .iter()
+            .any(|condition| disease_phrase_matches(condition, canonical))
     {
         return Some(DiseaseMatch {
             kind: DiseaseMatchKind::Canonical,
@@ -234,11 +236,14 @@ fn disease_match(condition: &str, terms: &ExactDiseaseTerms) -> Option<DiseaseMa
         });
     }
     terms.synonyms.iter().find_map(|synonym| {
-        disease_phrase_matches(condition, synonym).then(|| DiseaseMatch {
-            kind: DiseaseMatchKind::Synonym,
-            term: synonym.clone(),
-            resolved_id: terms.canonical_id.clone(),
-        })
+        conditions
+            .iter()
+            .any(|condition| disease_phrase_matches(condition, synonym))
+            .then(|| DiseaseMatch {
+                kind: DiseaseMatchKind::Synonym,
+                term: synonym.clone(),
+                resolved_id: terms.canonical_id.clone(),
+            })
     })
 }
 
@@ -574,21 +579,88 @@ mod tests {
             synonyms: vec!["BABS".to_string(), "Bachmann-Bupp disease".to_string()],
         };
         assert_eq!(
-            disease_match("Bachmann-Bupp syndrome", &terms)
+            disease_match(&["Bachmann-Bupp syndrome".to_string()], &terms)
                 .expect("requested match")
                 .kind,
             DiseaseMatchKind::Requested
         );
         assert_eq!(
-            disease_match("Neurodevelopmental disorder", &terms)
+            disease_match(&["Neurodevelopmental disorder".to_string()], &terms)
                 .expect("canonical match")
                 .kind,
             DiseaseMatchKind::Canonical
         );
         assert_eq!(
-            disease_match("BABS", &terms).expect("synonym match").kind,
+            disease_match(&["BABS".to_string()], &terms)
+                .expect("synonym match")
+                .kind,
             DiseaseMatchKind::Synonym
         );
+    }
+
+    #[test]
+    fn disease_match_uses_term_priority_across_all_conditions() {
+        let terms = ExactDiseaseTerms {
+            requested: "requested disease".to_string(),
+            canonical_id: Some("MONDO:1".to_string()),
+            canonical_name: Some("canonical disease".to_string()),
+            synonyms: vec!["first alias".to_string(), "second alias".to_string()],
+        };
+        let requested = disease_match(
+            &["second alias".to_string(), "requested disease".to_string()],
+            &terms,
+        )
+        .expect("requested term across later condition");
+        assert_eq!(requested.kind, DiseaseMatchKind::Requested);
+
+        let first_synonym = disease_match(
+            &["second alias".to_string(), "first alias".to_string()],
+            &terms,
+        )
+        .expect("first provider synonym across later condition");
+        assert_eq!(first_synonym.kind, DiseaseMatchKind::Synonym);
+        assert_eq!(first_synonym.term, "first alias");
+    }
+
+    #[test]
+    fn cross_condition_match_priority_drives_sort_before_paging() {
+        let terms = ExactDiseaseTerms {
+            requested: "requested disease".to_string(),
+            canonical_id: Some("MONDO:1".to_string()),
+            canonical_name: Some("canonical disease".to_string()),
+            synonyms: vec!["first alias".to_string(), "second alias".to_string()],
+        };
+        let row = |accession: &str, conditions: &[&str]| DiagnosticSearchResult {
+            source: "gtr".to_string(),
+            accession: accession.to_string(),
+            name: accession.to_string(),
+            test_type: None,
+            manufacturer_or_lab: None,
+            genes: Vec::new(),
+            conditions: conditions
+                .iter()
+                .map(|value| (*value).to_string())
+                .collect(),
+            disease_match: None,
+        };
+        let mut results = vec![
+            row("second", &["second alias"]),
+            row("requested", &["second alias", "requested disease"]),
+            row("first", &["second alias", "first alias"]),
+        ];
+        for result in &mut results {
+            result.disease_match = disease_match(&result.conditions, &terms);
+        }
+        sort_results(&mut results, true, Some(&terms));
+        assert_eq!(
+            results
+                .iter()
+                .map(|result| result.accession.as_str())
+                .collect::<Vec<_>>(),
+            vec!["requested", "first", "second"]
+        );
+        let page = results.into_iter().skip(1).take(1).collect::<Vec<_>>();
+        assert_eq!(page[0].accession, "first");
     }
 
     #[test]
