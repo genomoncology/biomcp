@@ -335,6 +335,17 @@
       "authorized_increase": null
     },
     {
+      "path": "src/transform/article/jats/refs.rs",
+      "baseline_lines": 1076,
+      "floor_lines": 513,
+      "authorized_increase": {
+        "ticket": "1145",
+        "delta": 563,
+        "reason": "The pure structural citation-evidence extractor (identifier precedence, marker eligibility, passage slicing) joins the reference-list renderer in the JATS reference module.",
+        "removal_condition": "Extract the citation-evidence extractor into its own module when the package file budget allows a new tracked file."
+      }
+    },
+    {
       "path": "src/transform/disease.rs",
       "baseline_lines": 1050,
       "floor_lines": 1050,
