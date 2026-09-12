@@ -66,8 +66,8 @@
       "authorized_increase": {
         "ticket": "1144",
         "delta": 71,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Extract article graph result types when a package-neutral module split can preserve the exact 1300-file source package boundary."
+        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract.",
+        "removal_condition": "Extract article graph result types when the article graph contract is next decomposed."
       }
     },
     {
@@ -173,8 +173,8 @@
       "authorized_increase": {
         "ticket": "1155, 1150",
         "delta": 113,
-        "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Split exact-search result projection when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+        "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner.",
+        "removal_condition": "Split exact-search result projection when the variant search workflow is next decomposed."
       }
     },
     {
@@ -229,8 +229,8 @@
       "authorized_increase": {
         "ticket": "1144",
         "delta": 37,
-        "reason": "Pin the graph pagination footer and shared continuation command on the existing article Markdown renderer test without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Extract graph renderer tests when a package-neutral module split can preserve the exact 1300-file source package boundary."
+        "reason": "Pin the graph pagination footer and shared continuation command beside the existing article Markdown renderer coverage.",
+        "removal_condition": "Extract graph renderer tests when the article Markdown renderer tests are next decomposed."
       }
     },
     {
@@ -240,8 +240,8 @@
       "authorized_increase": {
         "ticket": "1155",
         "delta": 98,
-        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Split variant-search renderer tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract.",
+        "removal_condition": "Split variant-search renderer tests when the variant Markdown renderer tests are next decomposed."
       }
     },
     {
@@ -285,8 +285,8 @@
       "authorized_increase": {
         "ticket": "1091, 1154, 1155, 1150",
         "delta": 436,
-        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, stream-isolate bounded SnpEff annotations, and expose deadline-aware construction without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Split MyVariant request planning and SnpEff decoding when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+        "reason": "Keep trusted MyGene alias probes, ClinVar fallback freshness, bounded SnpEff decoding, and deadline-aware construction beside the MyVariant request workflow.",
+        "removal_condition": "Split MyVariant request planning and SnpEff decoding when the provider is next decomposed."
       }
     },
     {
@@ -296,8 +296,8 @@
       "authorized_increase": {
         "ticket": "1154",
         "delta": 217,
-        "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Split the ClinVar transport, parser, and tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+        "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client.",
+        "removal_condition": "Split the ClinVar transport, parser, and tests when the NCBI EFetch client is next decomposed."
       }
     },
     {

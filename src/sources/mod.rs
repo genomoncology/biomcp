@@ -1647,7 +1647,6 @@ mod tests {
     mod clingen_runtime;
     #[path = "provider_network.rs"]
     // Includes HTTP transport and cache-construction security coverage.
-    // Kept together to stay within the shipped-package file budget.
     mod provider_network;
     #[path = "../request_plan_transport.rs"]
     mod request_plan_transport;
