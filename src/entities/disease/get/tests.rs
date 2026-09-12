@@ -66,7 +66,7 @@ async fn disease_card_fixture_server()
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
                     r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]}}"#
                 } else if request.contains("query.cond=Medulloblastoma") {
-                    r#"{"studies":[],"totalCount":36}"#
+                    r#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT00000001","briefTitle":"Medulloblastoma Trial 1"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000002","briefTitle":"Medulloblastoma Trial 2"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000003","briefTitle":"Medulloblastoma Trial 3"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000004","briefTitle":"Medulloblastoma Trial 4"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000005","briefTitle":"Medulloblastoma Trial 5"},"statusModule":{"overallStatus":"RECRUITING"}}}],"totalCount":36,"nextPageToken":"fixture-next-page"}"#
                 } else {
                     r#"{"studies":[],"totalCount":0}"#
                 };
