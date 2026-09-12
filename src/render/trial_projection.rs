@@ -80,7 +80,7 @@ pub(crate) fn interventions(
             serde_json::json!({
                 "id": value.id().get(),
                 "name": value.name(),
-                "type": value.source_type().map(biodata::ExtensibleCode::code),
+                "type": value.source_type().map(code),
                 "description": value.description(),
                 "other_names": value.other_names().unwrap_or_default(),
             })
@@ -95,7 +95,7 @@ pub(crate) fn arms(values: Option<&[biodata::ClinicalTrialArm]>) -> serde_json::
         .map(|value| {
             serde_json::json!({
                 "id": value.id().get(), "name": value.name(),
-                "type": value.source_type().map(biodata::ExtensibleCode::code),
+                "type": value.source_type().map(code),
                 "description": value.description(),
             })
         })
