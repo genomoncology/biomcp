@@ -29,8 +29,15 @@ code review.
 ## Exact detector
 
 Own the recovery hook beside `build_cli` and `try_parse_cli` in
-`src/cli/shared.rs`. It applies only after the original argv fails ordinary
-Clap parsing with an error other than `DisplayHelp` or `DisplayVersion`.
+`src/cli/shared.rs`. Run the bounded detector before accepting the parsed
+command because the `gene`, `drug`, and `variant` families deliberately use
+`external_subcommand` catchalls: their reversed forms are syntactically
+accepted by Clap even though they are not valid search grammar. The detector
+must intercept only the exact reversed pattern described below; genuine
+external-subcommand shorthand remains accepted. Root or family help/version
+that occurs before a complete reversed pair remains owned by Clap, while a
+trailing help/version flag after that pair is preserved in the correction as
+specified below.
 
 The searchable-name allowlist is exactly the fifteen `SearchEntity` spellings:
 
@@ -53,9 +60,9 @@ or candidate `DisplayHelp`/`DisplayVersion` is structurally valid. Any other
 candidate error returns the original Clap error unchanged, so a reversal with
 invalid search arguments does not replace a more relevant diagnostic.
 
-The original parser result always wins for genuine help/version requests.
-Thus root or family help/version that Clap already recognizes remains byte-for-
-byte unchanged. A trailing help/version flag after the reversed pair is merely
+Root or family help/version that Clap already recognizes before a complete
+reversed pair remains byte-for-byte unchanged. A trailing help/version flag
+after the reversed pair is merely
 preserved in the proposed command: `biomcp article search --help` is still an
 exit-2 correction to `biomcp search article --help`, not an alias that displays
 help. Global JSON selection recognizes `--json` or `-j` only before `--` for
@@ -172,7 +179,10 @@ than increasing a ratchet. Add no dependency and keep the package at exactly
 
 1. A table-driven parser test covers all fifteen names and proves the exact
    canonical argv and rendered command. Each corrected candidate parses with
-   raw `build_cli`; no test calls `try_parse_cli` recursively.
+   raw `build_cli`; no test calls `try_parse_cli` recursively. Production-hook
+   tests additionally prove that the `gene`, `drug`, and `variant`
+   external-subcommand catchalls cannot bypass correction while their genuine
+   shorthand remains accepted.
 2. Global/delimiter cases cover each global flag before, between, and after the
    reversed words; multiple globals; `--` before the pair; `--` after the pair;
    and `--json` after `--`. Root/family help and version behavior is captured,
