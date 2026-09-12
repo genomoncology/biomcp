@@ -62,5 +62,18 @@ None.
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: ACCEPT 2026-09-12 with no blockers; traced eviction end to
+  end (put-path eviction removes oldest-first regardless of age), confirmed
+  `1B` is the smallest legal value, confirmed isolation via the serial guard
+  and EnvRestore drop semantics. Report-only notes: a sibling test
+  (`fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache`) retains
+  the same host-disk dependence — follow-up ticket, not this one; and the
+  final-refresh path can still take the miss route on a genuinely
+  under-ten-percent host, which does not affect this test's assertions.
+- Code review: ACCEPT 2026-09-12 at commit 8e39e153; verified exactly one
+  line, correct static types, pin set before the first fetch resolves config,
+  no leak past the serial guard, no production or sibling-test changes.
+  Byte-level confirmation (`git show --stat`: one file, one insertion) done by
+  the primary agent. Follow-up recorded: pin the sibling infinite-cache test
+  the same way.
+- Full gates: pending on the 4-core gate host at 8e39e153
