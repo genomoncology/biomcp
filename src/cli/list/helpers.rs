@@ -138,7 +138,7 @@ pub(super) fn list_search_all() -> String {
 
 - At least one typed slot is required.
 - `--gene` accepts one nonempty symbol without whitespace.
-- `--keyword` is provider-neutral and rejects `gene:`, `disease:`, or `drug:` field expressions; use the matching typed slot. Literal quote bytes around such text keep it literal.
+- `--keyword` is provider-neutral and rejects `gene:`, `disease:`, or `drug:` field expressions unless a literal double-quote byte is immediately before each reserved label; use the matching typed slot for structured filters. A whole-value quote does not protect a later label, and shell/JSON quoting alone does not add runtime quote bytes.
 - Unanchored keyword-only dispatch is article-only.
 - Keyword is pushed into drug search only when `--gene` and/or `--disease` is present.
 

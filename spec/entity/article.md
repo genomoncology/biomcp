@@ -44,6 +44,18 @@ after="$(wc -l <"$request_log")"
 test "$after" -eq "$before"
 ```
 
+Literal reserved-label prose is admitted with the quote byte immediately
+before the label and reaches the selected provider unchanged.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+../../tools/biomcp-ci search article --source semanticscholar \
+  -k 'review of "drug: safety"' --limit 1 \
+  | mustmatch like 'Review of "drug: safety" prose keyword fixture'
+test "$(grep -Fc 'search:semanticscholar:review of "drug: safety"' "$request_log")" -eq 1
+```
+
 ## Deterministic Source Contracts
 
 Ticket 376 moves routine article-source proof from public upstream canaries to

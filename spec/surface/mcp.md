@@ -177,9 +177,9 @@ proc.stdin.flush()
 open(request_log, "w", encoding="utf-8").close()
 before = sum(1 for _ in open(request_log, encoding="utf-8"))
 diagnostics = {
-    "gene": 'Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1".',
-    "disease": 'Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma".',
-    "drug": 'Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib".',
+    "gene": r'''Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""].''',
+    "disease": r'''Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""].''',
+    "drug": r'''Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib". To search literal drug: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"drug: safety"'; typed MCP "keyword":["\"drug: safety\""].''',
     "symbol": 'Error: Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields "gene":"TPMT" and "keyword":["mercaptopurine"].',
 }
 calls = [
@@ -203,6 +203,66 @@ assert healthy["isError"] is False
 proc.terminate()
 proc.wait(timeout=5)
 print("raw and typed article validation converges")
+PY
+```
+
+Literal reserved-label prose keeps the same runtime quote byte through raw
+Markdown, raw JSON, and typed MCP decoding. Each reaches exactly one selected
+Semantic Scholar request.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw and typed prose keyword propagation'
+import json, os, subprocess
+from pathlib import Path
+
+env = os.environ.copy()
+request_log = Path(env["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"])
+request_log.write_text("", encoding="utf-8")
+proc = subprocess.Popen(
+    [env["BIOMCP_BIN"], "serve"], stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE, text=True, env=env,
+)
+
+def call(message):
+    proc.stdin.write(json.dumps(message) + "\n")
+    proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+
+call({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+    "protocolVersion":"2025-03-26","capabilities":{},
+    "clientInfo":{"name":"spec","version":"1"}}})
+proc.stdin.write(json.dumps({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}) + "\n")
+proc.stdin.flush()
+
+raw = call({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{
+    "name":"biomcp","arguments":{
+        "command":"biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1",
+        "json":False}}})["result"]
+raw_json = call({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
+    "name":"biomcp","arguments":{
+        "command":"biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1",
+        "json":True}}})["result"]
+typed = call({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{
+    "name":"search","arguments":{
+        "entity":"article","keyword":["review of \"drug: safety\""],
+        "source":"semanticscholar","limit":1,"json":False}}})["result"]
+for result in [raw, typed]:
+    assert result.get("isError") is False
+    assert len(result["content"]) == 1
+    assert 'Review of "drug: safety" prose keyword fixture' in result["content"][0]["text"]
+assert raw_json.get("isError") is False
+assert len(raw_json["content"]) == 1
+raw_json_value = json.loads(raw_json["content"][0]["text"])
+assert raw_json_value["results"][0]["title"] == 'Review of "drug: safety" prose keyword fixture'
+proc.terminate()
+proc.wait(timeout=5)
+lines = request_log.read_text(encoding="utf-8").splitlines()
+assert lines == [
+    'search:semanticscholar:review of "drug: safety"',
+    'search:semanticscholar:review of "drug: safety"',
+    'search:semanticscholar:review of "drug: safety"',
+]
+print("raw and typed prose keyword propagation")
 PY
 ```
 

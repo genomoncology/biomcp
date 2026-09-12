@@ -13,7 +13,7 @@ A caller whose article keyword legitimately contains `gene:`, `disease:`, or
 provider-neutral query they intended. The current fixed diagnostic only points
 to the structured filter, which expresses a different search.
 
-Reconfirmed on `origin/main` at `e95bb7a4`: `review of drug: safety`,
+Reconfirmed on `origin/main` at `cc8c9eca`: `review of drug: safety`,
 `disease: mechanisms`, and `melanoma (gene:RB1)` are rejected before provider
 work. The shared recognizer in `src/entities/article/filters.rs` intentionally
 matches a case-insensitive reserved label when it begins the trimmed runtime
@@ -25,6 +25,15 @@ quote parser and enclosing a whole multiword value does not protect a later
 label. Runtime `"review of drug: safety"` still rejects `drug:`, while runtime
 `review of "drug: safety"` is admitted because `drug:` is immediately preceded
 by a literal `"` byte. BioMCP preserves both quote bytes as query text.
+
+## Complexity and implementation route
+
+Contract 1 + state/timing 0 + reach 1 + proof 2 + cost of error 1 = 5.
+There is no minimum floor, so this is Level 2. The change spans several public
+CLI/MCP/documentation cases but remains pure pre-work validation; the main risk
+is user-visible guidance, and hostile/exact-byte compatibility needs focused
+proof. Use GPT-5.6 Luna High for implementation and GPT-5.6 SOL Medium for
+independent code review.
 
 ## Accepted behavior
 
@@ -117,51 +126,37 @@ semanticscholar, --limit, 1]`; Clap normalization produces the same runtime
 keyword. The `json:true` form again changes only output selection. `keyword`
 remains the published one-to-three string array; no schema change is permitted.
 
-For all six successful combinations (native CLI, raw MCP, typed MCP, each in
-Markdown and JSON mode), reset the owned fixture log immediately before the
-call and require exactly one `GET /graph/v1/paper/search`. Its decoded `query`
-is exactly `review of "drug: safety"`; it contains no structured gene, disease,
-or drug filter—the request has only Semantic Scholar's ordinary `query`,
-`fields`, and `limit` parameters. The Markdown heading contains exactly
-`keyword=review of "drug: safety"` and the JSON response's `query` string
-contains that same substring. A fixture response supplies one stable Semantic
-Scholar row so success cannot be inferred from an empty/degraded card.
+For each distinct input decoder—native CLI, raw MCP, and typed MCP—make one
+successful call through the owned fixture and require exactly one
+`GET /graph/v1/paper/search`. Its decoded `query` is exactly
+`review of "drug: safety"`; it contains no structured gene, disease, or drug
+filter, and the request has only Semantic Scholar's ordinary `query`, `fields`,
+and `limit` parameters. One output selector per decoder is enough for this
+propagation proof. Separately extend existing mapper/envelope assertions to
+show that selecting JSON rather than Markdown changes the mapped argv only by
+adding `--json`; every non-output argument and the resulting runtime keyword
+remain identical. A fixture response supplies one stable Semantic Scholar row
+so success cannot be inferred from an empty or degraded card.
 
 ### Safety and compatibility
 
-Add a second positive value containing spaces, both quote kinds, a literal
-backslash, newline-free shell metacharacters (`` ` ``, `$()`, `;`, `&`, `|`,
-`<`, `>`), and an escaped reserved label. Exercise a genuinely POSIX-safe
-single-quoted native command (using the standard `'\''` splice for an embedded
-apostrophe), the corresponding JSON-escaped raw command, and the typed keyword
-array. Assert one exact decoded provider value, one request, and that a
-test-owned sentinel command/file is never executed or created. Raw MCP remains
-`shlex` parsing plus direct argv execution, never a shell.
+Keep one owning unit table beside `reserved_keyword_field` and
+`validate_query_inputs`. It proves all three exact static messages, no input
+reflection, the four admitted quote-before-each-label rows above, whole-value
+quoting, partial escaping, deterministic field precedence, and representative
+start/whitespace/parenthesis and false-boundary rows from record 1100. Existing
+author/affiliation/journal and gene-value regression tables remain intact; do
+not duplicate their entire corpora in every surface layer.
 
-For rejection, append a unique hostile suffix including quote, backslash,
-control, and metacharacter bytes to each of `gene:`, `disease:`, and `drug:`.
-Across human/JSON CLI and raw/typed MCP, require the label-specific fixed
-message, zero requests after an explicit log reset, no partial result, and no
-suffix bytes anywhere in stdout, stderr, or MCP content. Point all five article
-candidate bases, and every base reachable by search-all, at the counting
-fixture; test `-k`, `-q`, `--query`, positional article query, and
-`search all --keyword` rather than proving only one Clap spelling.
-
-Retain table-driven coverage for the complete record 1100 keyword boundary
-corpus: accepted `NM_004333.6:c.1799T>A`, `protein:protein interaction`,
-`oncogene:RB1`, `MYGENE:RB1`, `ratio 1:2`, and `BRAF[variant]`; rejected
-`gene:RB1`, `GENE:RB1`, `melanoma (gene:RB1)`, and `gene:"RB1"`; ASCII and
-non-breaking-whitespace boundaries; all three labels; and the existing native
-author/affiliation/journal corpus. Add the four admitted rows above plus
-whole-value, partially escaped multiple-label, and field-precedence negatives.
-The retained record corpus includes the existing mixed-case prefix/suffix forms
-(`Williams LS[Author]`, `[au]`, `[ad]`, `[journal]`, `[jour]`, `AUTH:`,
-`AFFILIATION:`, `JOURNAL:`), false forms (`MYAUTH:Williams`, `AUTH receptor`,
-`[author] Williams`, `Williams[author]ized`), and valid keyword rows
-`BRAF p.V600E` and `TP53 (p.Arg175His)`. Existing gene validation also retains
-valid `BRAF`, `braf`, `PD-L1`, `H3-3A`, and outer whitespace, and rejects empty,
-space, tab, newline, and non-breaking-space values with its existing fixed
-message and zero work. Every non-keyword grammar remains unchanged.
+Extend the existing human/JSON CLI and raw/typed MCP error-contract tables with
+representative rows for the new fixed messages and unchanged envelopes rather
+than multiplying every label, spelling, and output selector. Keep direct
+article and search-all pre-provider rejection coverage. One representative
+hostile rejected keyword must include quote, backslash, control, and shell
+metacharacter bytes; prove the fixed message contains none of those bytes,
+provider logs remain empty, managed state is absent, and a test-owned sentinel
+is not created. Existing direct-argv raw-MCP shell-safety contracts continue to
+own the broader metacharacter matrix.
 
 ## Ownership and documentation
 
@@ -209,7 +204,7 @@ and fixture runners are landed behavior to preserve, not dependencies.
 paths at the design base. Add no files, raise no ceiling, and retain exactly
 1,300 package paths. Keep production changes to replacement wording in the
 existing owners: `src/entities/article/filters.rs` is 330 lines,
-`src/cli/commands.rs` 686, `src/cli/list/literature.rs` 211, and
+`src/cli/commands.rs` 693, `src/cli/list/literature.rs` 211, and
 `src/cli/list/helpers.rs` 156. All remain under the enforced 700-line Rust-file
 cap and net production `src/` line growth is zero. Tests/docs/specs grow only in
 their existing files; split a test sidecar rather than raising a ratchet if an
@@ -228,18 +223,19 @@ touched, so `make full-feature-check` is not required.
 - Every fixed rejection teaches both the structured correction and the exact
   per-label literal rule without reflecting input, and all surfaces retain
   their frozen error envelopes and zero provider work.
-- Start, interior, parenthesized, multiple, partially escaped, precedence, and
-  complete record 1100 tables prove the unchanged recognizer precisely.
-- Native POSIX, raw MCP, and typed MCP Markdown/JSON calls deliver identical
-  runtime quote bytes to exactly one explicit Semantic Scholar request; hostile
-  text remains one inert argv/query value.
+- The owning unit table pins start, interior, parenthesized, multiple,
+  partially escaped, precedence, and representative record 1100 boundaries.
+- Native POSIX, raw MCP, and typed MCP decoder calls deliver identical runtime
+  quote bytes to exactly one explicit Semantic Scholar request; JSON selection
+  adds only `--json`, leaving every non-output argument and runtime keyword
+  unchanged, and representative hostile text remains inert and performs no
+  work when rejected.
 - Named shipped guidance is accurate, MCP schemas/catalog are byte-unchanged,
   all source/package ratchets hold, and the standard gates pass.
 
 ## Review
 
-Accepted after independent design review. The reviewer confirmed the literal
-quote-before-each-label rule, exact native/raw/typed encodings and error
-envelopes, deterministic Semantic Scholar request proof, hostile shell-safety
-coverage, corrected guidance ownership, empty dependencies, and source/package
-limits.
+Accepted after fresh independent SOL design review. The review corrected the
+base and size inventory, added the Level 2 route, reduced duplicated proof, and
+confirmed that JSON selection adds only `--json` while every query-bearing
+argument and the runtime keyword remain unchanged.

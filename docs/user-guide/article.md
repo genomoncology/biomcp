@@ -68,7 +68,7 @@ Turn a natural-language literature question into two parts:
 - Put a known gene, disease, or drug in `-g/--gene`, `-d/--disease`, or `--drug`. Article `--gene` accepts one nonempty symbol without whitespace; put extra concepts in `--keyword`.
 - Put mechanisms, phenotypes, outcomes, datasets, and other provider-neutral free-text concepts in `-k/--keyword`.
 - Put a known author in `-a/--author` and a known journal in `--journal`; do not put PubMed or Europe PMC field grammar in `-k/--keyword`.
-- Keyword also rejects `gene:`, `disease:`, and `drug:` labels at the start or after whitespace/`(`. Literal quote bytes keep those phrases literal; shell or JSON quoting alone does not add quote bytes.
+- Keyword also rejects `gene:`, `disease:`, and `drug:` labels at the start or after whitespace/`(`. To keep prose literal, put a literal double-quote byte immediately before every reserved label, such as `review of "drug: safety"`; typed MCP encodes it as `"keyword":["review of \"drug: safety\""]`. A whole-value quote does not protect a later label, and shell or JSON quoting alone does not add runtime quote bytes.
 - If the question is asking which gene, disease, or drug fits the evidence and you do not know the entity yet, do not guess a typed flag. Start with keyword-only article search or run `biomcp discover "<question>"` first.
 - Question-format article terms are acceptable: PubMed ESearch cleans bounded filler words from unfielded gene, disease, drug, and keyword terms provider-locally, while query echoes and non-PubMed sources keep the original wording.
 - Use `--type review` for synthesis questions, list-style questions, and dataset surveys.
