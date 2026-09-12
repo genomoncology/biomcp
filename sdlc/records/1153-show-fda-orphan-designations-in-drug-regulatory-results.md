@@ -20,7 +20,7 @@ designation for Bachmann-Bupp syndrome is reported without being mislabeled as
 an approved use. JSON, Markdown, raw MCP, typed MCP, provenance, health,
 source inventory, configuration, and operator documentation share the same
 source semantics. The package remains self-contained BioMCP 0.9 code with no
-BioData or BioMCP 1.0 dependency.
+external-project dependency.
 
 ## Evidence
 
@@ -60,3 +60,7 @@ and static specification group passed. All-feature Clippy, six AlphaGenome
 behavior tests, the optimized all-feature build, and PNG/SVG/terminal artifact
 smoke passed. `cargo package --list --allow-dirty --locked --offline
 --no-verify` reports exactly 1,300 paths, and `git diff --check` passes.
+
+The first hosted lint run rejected an external-project name in this completion
+record. The record now states that boundary without the forbidden marker; the
+zero-coupling ratchet passes locally before the hosted rerun.
