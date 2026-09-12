@@ -186,7 +186,7 @@ fn bounded_unavailable_error(message: &str) -> BioMcpError {
 fn command_deadline_error() -> BioMcpError {
     BioMcpError::Api {
         api: "article-citation-evidence".into(),
-        message: "citation-evidence command deadline exceeded".into(),
+        message: "invocation deadline exceeded".into(),
     }
 }
 
@@ -502,8 +502,20 @@ pub async fn citation_evidence(
     let deadline = evidence_deadline();
     let client = SemanticScholarClient::new()?;
     let europe = EuropePmcClient::new()?;
-    let (citing, citing_paper) = resolve_citation_seed(citing_id, &client, &europe).await?;
-    let (cited, cited_paper) = resolve_citation_seed(cited_id, &client, &europe).await?;
+    let (citing, citing_paper) =
+        match tokio::time::timeout_at(deadline, resolve_citation_seed(citing_id, &client, &europe))
+            .await
+        {
+            Ok(result) => result?,
+            Err(_) => return Err(command_deadline_error()),
+        };
+    let (cited, cited_paper) =
+        match tokio::time::timeout_at(deadline, resolve_citation_seed(cited_id, &client, &europe))
+            .await
+        {
+            Ok(result) => result?,
+            Err(_) => return Err(command_deadline_error()),
+        };
     let citing_pid = valid_paper_id(citing.paper_id.as_deref())
         .ok_or_else(|| provider_decode_error("citing seed lacks a valid paper ID"))?;
     let cited_pid = valid_paper_id(cited.paper_id.as_deref())

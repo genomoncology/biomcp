@@ -436,3 +436,53 @@ fn extractor_fails_on_malformed_xml() {
             .is_err()
     );
 }
+
+#[test]
+fn extractor_excludes_paragraphs_inside_boxed_text() {
+    let xml = article_with_body(
+        r#"<boxed-text><p>Boxed callout citing <xref ref-type="bibr" rid="bib7">7</xref>.</p></boxed-text><ref-list><ref id="bib7"><element-citation><pub-id pub-id-type="doi">10.1/x</pub-id></element-citation></ref></ref-list>"#,
+    );
+    assert_eq!(
+        extract_citation_evidence(&xml, &target_ids(Some("10.1/x"), None, None)),
+        Ok(JatsCitationExtraction::MarkerUnlinked {
+            ref_id: "bib7".into()
+        })
+    );
+}
+
+#[test]
+fn extractor_anchors_truncation_on_the_marker_not_an_earlier_equal_string() {
+    // The marker string "7" also occurs early in unrelated text. A naive
+    // `text.find(marker)` anchor would clamp the window around that early
+    // digit and drop the real marker near the end.
+    let filler_a: String = "a".repeat(1_100);
+    let filler_b: String = "b".repeat(700);
+    let paragraph = format!(
+        "<p>In study 7 of the cohort, {} <xref ref-type=\"bibr\" rid=\"bib7\">7</xref> {}</p>",
+        filler_a, filler_b
+    );
+    let xml = article_with_body(&format!(
+        "{}<ref-list>{}</ref-list>",
+        paragraph,
+        doi_ref("bib7", "10.1/x")
+    ));
+    match extract_citation_evidence(&xml, &target_ids(Some("10.1/x"), None, None)) {
+        Ok(JatsCitationExtraction::Linked { passages, .. }) => {
+            let text = &passages[0].text;
+            assert_eq!(text.chars().count(), 1_200, "bounded passage length");
+            // The slice must retain the real marker: its first scalar sits
+            // exactly at start + 599 by the clamp rule, and the retained
+            // window contains " a7" (space, last filler a, marker), not the
+            // early digit.
+            let chars: Vec<char> = text.chars().collect();
+            assert_eq!(chars[599 + 1], '7', "marker first scalar inside window");
+            // The early unrelated digit must NOT be the anchor: it sits far
+            // before the window start.
+            assert!(
+                !text.starts_with("In study 7"),
+                "window must not begin at the earlier unrelated digit"
+            );
+        }
+        other => panic!("expected linked, got {other:?}"),
+    }
+}

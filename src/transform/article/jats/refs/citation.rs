@@ -37,7 +37,7 @@ pub(crate) enum JatsCitationExtraction {
     },
 }
 
-const EXCLUDED_PARAGRAPH_SCOPES: [&str; 7] = [
+const EXCLUDED_PARAGRAPH_SCOPES: [&str; 8] = [
     "ref-list",
     "table-wrap",
     "table",
@@ -45,6 +45,7 @@ const EXCLUDED_PARAGRAPH_SCOPES: [&str; 7] = [
     "caption",
     "fn-group",
     "supplementary-material",
+    "boxed-text",
 ];
 
 pub(crate) fn extract_citation_evidence(
@@ -425,24 +426,39 @@ fn eligible_target_marker(node: Node<'_, '_>, selected_id: &str) -> bool {
 fn render_paragraph_text(paragraph: Node<'_, '_>, selected_id: &str) -> (String, String, usize) {
     let mut out = String::new();
     let mut first_marker = String::new();
+    let mut first_marker_raw = String::new();
     let mut first_marker_start = usize::MAX;
     append_paragraph_text(
         paragraph,
         selected_id,
         &mut out,
         &mut first_marker,
+        &mut first_marker_raw,
         &mut first_marker_start,
     );
     let text = normalize_plain_text(&out);
     let start = if first_marker_start == usize::MAX {
         usize::MAX
     } else {
-        // The marker start was recorded in byte length before normalization;
-        // convert by locating the marker text in the normalized output.
-        let normalized_marker = normalize_plain_text(&first_marker);
-        text.find(&normalized_marker)
-            .map(|byte_index| text[..byte_index].chars().count())
-            .unwrap_or(usize::MAX)
+        // The marker start was recorded as a byte offset into the raw
+        // accumulated text. Normalizing the raw prefix before the marker
+        // separately yields the marker's own scalar position in the
+        // normalized output; searching for the marker text could instead
+        // land on an earlier unrelated occurrence and let the bounded slice
+        // drop the marker entirely. A whitespace run between the prefix and
+        // the marker collapses to exactly one space, and that joining space
+        // exists when either side contributes whitespace.
+        let raw_prefix = &out[..first_marker_start];
+        let normalized_prefix = normalize_plain_text(raw_prefix);
+        if normalized_prefix.is_empty() {
+            0
+        } else if raw_prefix.ends_with(char::is_whitespace)
+            || first_marker_raw.starts_with(char::is_whitespace)
+        {
+            normalized_prefix.chars().count() + 1
+        } else {
+            normalized_prefix.chars().count()
+        }
     };
     (text, normalize_plain_text(&first_marker), start)
 }
@@ -452,6 +468,7 @@ fn append_paragraph_text(
     selected_id: &str,
     out: &mut String,
     first_marker: &mut String,
+    first_marker_raw: &mut String,
     first_marker_start: &mut usize,
 ) {
     match node.node_type() {
@@ -460,12 +477,22 @@ fn append_paragraph_text(
             if eligible_target_marker(node, selected_id) && *first_marker_start == usize::MAX {
                 let marker = plain_inline_text(node);
                 if !marker.is_empty() {
+                    let mut raw = String::new();
+                    append_plain_inline(node, &mut raw);
                     *first_marker = marker;
+                    *first_marker_raw = raw;
                     *first_marker_start = out.len();
                 }
             }
             for child in node.children() {
-                append_paragraph_text(child, selected_id, out, first_marker, first_marker_start);
+                append_paragraph_text(
+                    child,
+                    selected_id,
+                    out,
+                    first_marker,
+                    first_marker_raw,
+                    first_marker_start,
+                );
             }
         }
         _ => {}

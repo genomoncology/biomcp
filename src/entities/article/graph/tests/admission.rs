@@ -160,7 +160,7 @@ async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() 
         match error {
             crate::error::BioMcpError::Api { api, message } => {
                 assert_eq!(api, "article-citation-evidence");
-                assert_eq!(message, "citation-evidence command deadline exceeded");
+                assert_eq!(message, "invocation deadline exceeded");
             }
             other => panic!("bounded deadline error, got: {other:?}"),
         }
