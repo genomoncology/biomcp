@@ -42,6 +42,7 @@ impl NciCtsClient {
 
     async fn get_search_page(
         &self,
+        plan: &NciCtsV2SearchPlan,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<NciCtsV2SearchPage, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, true)
@@ -55,7 +56,7 @@ impl NciCtsClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::NCI_CTS),
         )
         .await?;
-        Self::decode_search_response(status, &bytes)
+        Self::decode_search_response(plan, status, &bytes)
     }
 
     pub(crate) fn biodata_search_plan(api_key: &str, source: &NciCtsV2SearchPlan) -> RequestPlan {
@@ -67,6 +68,7 @@ impl NciCtsClient {
     }
 
     pub(crate) fn decode_search_response(
+        plan: &NciCtsV2SearchPlan,
         status: reqwest::StatusCode,
         bytes: &[u8],
     ) -> Result<NciCtsV2SearchPage, BioMcpError> {
@@ -82,7 +84,7 @@ impl NciCtsClient {
                 Ok(_) => Err(BioMcpError::InternalProcessing),
             };
         }
-        NciCtsV2SearchPage::parse(bytes, &NciCtsV2Limits::default()).map_err(|error| {
+        NciCtsV2SearchPage::parse(plan, bytes, &NciCtsV2Limits::default()).map_err(|error| {
             let narrow = error.code() == "json_resource_limit";
             Self::detail_api_error(
                 format!("response validation failed: {}", error.code()),
@@ -97,7 +99,7 @@ impl NciCtsClient {
     ) -> Result<NciCtsV2SearchPage, BioMcpError> {
         let request = Self::biodata_search_plan(&self.api_key, plan);
         let req = request_from_plan(&self.client, self.base.as_ref(), &request);
-        self.get_search_page(req).await
+        self.get_search_page(plan, req).await
     }
 
     /// Build the outbound single-trial request (pure — Tier-2 testable).

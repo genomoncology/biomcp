@@ -7,7 +7,6 @@ mod normalization;
 #[cfg(test)]
 mod plan_tests;
 
-use crate::entities::SearchPage;
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use crate::sources::mydisease::MyDiseaseClient;
@@ -20,7 +19,120 @@ use self::eligibility::{
 use self::nci::search_page_with_nci_clients;
 use self::normalization::sort_trials_by_status_priority;
 
-use super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};
+use super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchResult, TrialSource};
+
+const CTGOV_COUNT_CAP_REASON: biodata::ClinicalTrialSearchUnknownReason =
+    biodata::ClinicalTrialSearchUnknownReason::TraversalLimitReached;
+const CTGOV_COUNT_PAGE_SIZE: usize = 1000;
+const COUNT_TRAVERSAL_PAGE_CAP: usize = 50;
+
+#[derive(Clone)]
+pub(crate) struct TrialSearchPage {
+    pub(crate) results: Vec<TrialSearchResult>,
+    pub(crate) total: biodata::ClinicalTrialSearchTotal,
+    pub(crate) continuation: biodata::ClinicalTrialSearchContinuation,
+}
+
+impl std::fmt::Debug for TrialSearchPage {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TrialSearchPage")
+            .field("returned", &self.results.len())
+            .field("total", &self.total)
+            .field("continuation", &self.continuation)
+            .finish()
+    }
+}
+
+fn exact_total(value: usize) -> Result<biodata::ClinicalTrialSearchTotal, BioMcpError> {
+    let value = u64::try_from(value).map_err(|_| BioMcpError::InternalProcessing)?;
+    biodata::ClinicalTrialSearchTotal::exact(value).map_err(|_| BioMcpError::InternalProcessing)
+}
+
+fn approximate_total(value: usize) -> Result<biodata::ClinicalTrialSearchTotal, BioMcpError> {
+    let value = u64::try_from(value).map_err(|_| BioMcpError::InternalProcessing)?;
+    biodata::ClinicalTrialSearchTotal::approximate(
+        value,
+        biodata::ClinicalTrialSearchApproximationReason::BeforeLocalFiltering,
+    )
+    .map_err(|_| BioMcpError::InternalProcessing)
+}
+
+fn ctgov_count_from_native_total(
+    total: Option<usize>,
+    has_age_filter: bool,
+) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
+    match (total, has_age_filter) {
+        (Some(total), true) => approximate_total(total),
+        (Some(total), false) => exact_total(total),
+        (None, _) => Ok(ClinicalTrialSearchTotal::unknown(
+            biodata::ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
+        )),
+    }
+}
+
+fn add_unique_ctgov_nct_ids(
+    unique_nct_ids: &mut std::collections::HashSet<String>,
+    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
+) {
+    for study in studies {
+        if let Ok(row) = TrialSearchResult::from_biodata(study.projection().value()) {
+            unique_nct_ids.insert(row.nct_id);
+        }
+    }
+}
+
+fn claim_ctgov_candidate(
+    seen_nct_ids: &mut std::collections::HashSet<String>,
+    study: &biodata::ClinicalTrialsGovApiV2SearchResult,
+) -> Option<String> {
+    match eligibility::ctgov_nct_id(study) {
+        Some(nct_id) => seen_nct_ids.insert(nct_id.clone()).then_some(nct_id),
+        None => Some(String::new()),
+    }
+}
+
+fn completed_ctgov_union_count(
+    degraded_coverage: bool,
+    verification_incomplete: bool,
+    unique_count: usize,
+) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
+    final_ctgov_union_count(
+        degraded_coverage,
+        verification_incomplete,
+        false,
+        unique_count,
+    )
+}
+
+fn final_ctgov_union_count(
+    degraded_coverage: bool,
+    verification_incomplete: bool,
+    traversal_capped: bool,
+    unique_count: usize,
+) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
+    let reason = if degraded_coverage {
+        Some(biodata::ClinicalTrialSearchUnknownReason::IncompleteSourceCoverage)
+    } else if verification_incomplete {
+        Some(biodata::ClinicalTrialSearchUnknownReason::IncompleteLocalVerification)
+    } else if traversal_capped {
+        Some(biodata::ClinicalTrialSearchUnknownReason::TraversalLimitReached)
+    } else {
+        None
+    };
+    reason.map_or_else(
+        || exact_total(unique_count),
+        |reason| Ok(ClinicalTrialSearchTotal::unknown(reason)),
+    )
+}
+
+fn offset_continuation(
+    offset: usize,
+) -> Result<biodata::ClinicalTrialSearchContinuation, BioMcpError> {
+    let offset = u64::try_from(offset).map_err(|_| BioMcpError::InternalProcessing)?;
+    biodata::ClinicalTrialSearchContinuation::offset(offset)
+        .map_err(|_| BioMcpError::InternalProcessing)
+}
 
 pub(super) struct NormalizedTrialSearch {
     pub(super) biodata: biodata::ClinicalTrialSearchFilters,
@@ -177,19 +289,29 @@ pub async fn search(
     offset: usize,
 ) -> Result<(Vec<TrialSearchResult>, Option<u32>), BioMcpError> {
     let page = search_page(filters, limit, offset, None).await?;
-    Ok((page.results, page.total.map(|v| v as u32)))
+    Ok(reduce_compatibility_page(page))
 }
 
-pub async fn count_all(filters: &TrialSearchFilters) -> Result<TrialCount, BioMcpError> {
+fn reduce_compatibility_page(page: TrialSearchPage) -> (Vec<TrialSearchResult>, Option<u32>) {
+    let total = (page.total.precision() == "exact")
+        .then(|| page.total.value())
+        .flatten()
+        .and_then(|value| u32::try_from(value).ok());
+    (page.results, total)
+}
+
+pub async fn count_all(
+    filters: &TrialSearchFilters,
+) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
     validate_trial_search(filters)?;
     match filters.source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
-            count_all_with_ctgov_client(&client, filters, ctgov::COUNT_TRAVERSAL_PAGE_CAP).await
+            count_all_with_ctgov_client(&client, filters, COUNT_TRAVERSAL_PAGE_CAP).await
         }
         TrialSource::NciCts => {
             let page = search_page(filters, 1, 0, None).await?;
-            Ok(TrialCount::Exact(page.total.unwrap_or(page.results.len())))
+            Ok(page.total)
         }
     }
 }
@@ -199,7 +321,7 @@ pub async fn search_page(
     limit: usize,
     offset: usize,
     next_page: Option<String>,
-) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
+) -> Result<TrialSearchPage, BioMcpError> {
     validate_trial_search(filters)?;
     validate_search_page_args(limit, offset, next_page.as_deref())?;
     match filters.source {
@@ -231,5 +353,28 @@ pub async fn search_page(
             )
             .await
         }
+    }
+}
+
+#[cfg(test)]
+mod count_state_tests {
+    use super::*;
+
+    #[test]
+    fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
+        let exact = completed_ctgov_union_count(false, false, 2).unwrap();
+        assert_eq!((exact.value(), exact.precision()), (Some(2), "exact"));
+        let incomplete = completed_ctgov_union_count(true, false, 2).unwrap();
+        assert_eq!(incomplete.reason(), Some("incomplete_source_coverage"));
+    }
+
+    #[test]
+    fn alias_count_precedence_keeps_rejection_and_fail_open_ahead_of_cap() {
+        let rejected = final_ctgov_union_count(true, true, true, 4).unwrap();
+        assert_eq!(rejected.reason(), Some("incomplete_source_coverage"));
+        let fail_open = final_ctgov_union_count(false, true, true, 4).unwrap();
+        assert_eq!(fail_open.reason(), Some("incomplete_local_verification"));
+        let capped = final_ctgov_union_count(false, false, true, 4).unwrap();
+        assert_eq!(capped.reason(), Some("traversal_limit_reached"));
     }
 }

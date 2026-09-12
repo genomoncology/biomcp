@@ -1,7 +1,6 @@
 //! NCI CTS trial search orchestration. BioData owns request grammar.
 use super::super::{TrialSearchFilters, TrialSearchResult};
 use super::{NormalizedTrialSearch, biodata_plan_error};
-use crate::entities::SearchPage;
 use crate::entities::disease::resolve_disease_hit_by_name;
 use crate::error::BioMcpError;
 use crate::sources::mydisease::{MyDiseaseClient, MyDiseaseHit};
@@ -49,20 +48,62 @@ pub(super) async fn search_page_with_nci_clients(
     normalized: &NormalizedTrialSearch,
     limit: usize,
     offset: usize,
-) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
+) -> Result<super::TrialSearchPage, BioMcpError> {
     let disease = resolve_disease(mydisease, filters.condition.as_deref()).await?;
     let plan = biodata::NciCtsV2SearchPlan::new(&normalized.biodata, disease, limit, offset)
         .map_err(|error| biodata_plan_error("invalid NCI trial search", error))?;
     let response = client.search(&plan).await?;
-    Ok(SearchPage::offset(
-        response
-            .results()
-            .unwrap_or_default()
-            .iter()
-            .map(|r| TrialSearchResult::from_biodata(r.projection().value()))
-            .collect::<Result<Vec<_>, _>>()?,
-        response.total_count().and_then(|v| usize::try_from(v).ok()),
-    ))
+    let results = response
+        .results()
+        .unwrap_or_default()
+        .iter()
+        .map(|r| TrialSearchResult::from_biodata(r.projection().value()))
+        .collect::<Result<Vec<_>, _>>()?;
+    let (total, continuation) =
+        nci_search_state(response.provider_total(), results.len(), limit, offset)?;
+    Ok(super::TrialSearchPage {
+        results,
+        total,
+        continuation,
+    })
+}
+
+fn nci_search_state(
+    provider_total: &biodata::ClinicalTrialProviderTotal,
+    returned: usize,
+    limit: usize,
+    offset: usize,
+) -> Result<
+    (
+        biodata::ClinicalTrialSearchTotal,
+        biodata::ClinicalTrialSearchContinuation,
+    ),
+    BioMcpError,
+> {
+    let total = match provider_total {
+        biodata::ClinicalTrialProviderTotal::Present(value) => {
+            let value = usize::try_from(*value).map_err(|_| BioMcpError::InternalProcessing)?;
+            super::exact_total(value)?
+        }
+        biodata::ClinicalTrialProviderTotal::Absent => biodata::ClinicalTrialSearchTotal::unknown(
+            biodata::ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
+        ),
+        biodata::ClinicalTrialProviderTotal::NotRequested => {
+            biodata::ClinicalTrialSearchTotal::unknown(
+                biodata::ClinicalTrialSearchUnknownReason::TotalNotRequested,
+            )
+        }
+    };
+    let known_exhausted = total
+        .value()
+        .and_then(|value| usize::try_from(value).ok())
+        .is_some_and(|value| offset.saturating_add(returned) >= value);
+    let continuation = if returned < limit || known_exhausted {
+        biodata::ClinicalTrialSearchContinuation::terminal()
+    } else {
+        super::offset_continuation(offset.saturating_add(returned))?
+    };
+    Ok((total, continuation))
 }
 
 #[cfg(test)]
@@ -106,5 +147,20 @@ mod tests {
             .err()
             .expect("age must fail");
         assert!(matches!(error, BioMcpError::InvalidArgument(_)));
+    }
+
+    #[test]
+    fn nci_missing_total_never_uses_returned_rows_as_a_total() {
+        let (total, continuation) =
+            nci_search_state(&biodata::ClinicalTrialProviderTotal::Absent, 5, 5, 10).unwrap();
+        assert_eq!(total.value(), None);
+        assert_eq!(total.reason(), Some("provider_omitted_total"));
+        assert_eq!(continuation.status(), "offset");
+        assert_eq!(continuation.offset_value(), Some(15));
+
+        let (total, continuation) =
+            nci_search_state(&biodata::ClinicalTrialProviderTotal::Present(15), 5, 5, 10).unwrap();
+        assert_eq!((total.value(), total.precision()), (Some(15), "exact"));
+        assert_eq!(continuation.status(), "terminal");
     }
 }

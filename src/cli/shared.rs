@@ -350,6 +350,8 @@ impl PaginationMeta {
         }
     }
 
+    // dead-code reason: retained for generic cursor pagination outside the typed trial contract
+    #[allow(dead_code)]
     pub(super) fn cursor(
         offset: usize,
         limit: usize,
@@ -532,6 +534,8 @@ pub(super) fn pagination_footer_offset(meta: &PaginationMeta) -> String {
     )
 }
 
+// dead-code reason: retained for non-trial cursor-based entity pagination compatibility
+#[allow(dead_code)]
 pub(super) fn pagination_footer_cursor(meta: &PaginationMeta) -> String {
     crate::render::markdown::pagination_footer(
         crate::render::markdown::PaginationFooterMode::Cursor,

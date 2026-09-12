@@ -264,7 +264,11 @@ async fn run_section(
 
             match crate::entities::trial::search_page(&preferred_filters, limit, 0, None).await {
                 Ok(page) => {
-                    total = page.total;
+                    total = page
+                        .total
+                        .value()
+                        .filter(|_| page.total.precision() == "exact")
+                        .and_then(|value| usize::try_from(value).ok());
                     rows = page.results;
                 }
                 Err(err) => {
@@ -282,7 +286,12 @@ async fn run_section(
                     .await
                 {
                     Ok(page) => {
-                        total = total.or(page.total);
+                        total = total.or_else(|| {
+                            page.total
+                                .value()
+                                .filter(|_| page.total.precision() == "exact")
+                                .and_then(|value| usize::try_from(value).ok())
+                        });
                         rows = merge_trial_backfill_rows(rows, page.results, limit);
                     }
                     Err(err) if rows.is_empty() => {

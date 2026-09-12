@@ -1,17 +1,24 @@
 use super::super::ClinicalTrialsClient;
 use reqwest::StatusCode;
 
+fn search_plan() -> biodata::ClinicalTrialsGovApiV2SearchPlan {
+    let filters = biodata::ClinicalTrialSearchFilters::new(Default::default(), Default::default())
+        .expect("empty source filters");
+    biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 3, None, true)
+        .expect("valid source plan")
+}
+
 #[test]
 fn search_response_uses_biodata_page_without_rewriting_fixture_bytes() {
     let bytes =
         include_bytes!("../../../../testdata/sources/ctgov/search_keytruda_limit3_20260811.json");
-    let page = ClinicalTrialsClient::decode_search_response(StatusCode::OK, bytes)
+    let page = ClinicalTrialsClient::decode_search_response(&search_plan(), StatusCode::OK, bytes)
         .expect("receipted CTGov page");
     let results = page.results().expect("present studies");
     assert_eq!(results.len(), 3);
-    assert_eq!(page.total_count(), Some(2924));
+    assert_eq!(page.provider_total().value(), Some(2924));
     assert_eq!(
-        page.next_page_token(),
+        page.provider_cursor().value(),
         Some("ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd7KrgP4YnzmVtA")
     );
     assert_eq!(
@@ -26,8 +33,12 @@ fn malformed_search_values_are_sanitized() {
     let body = format!(
         r#"{{"studies":[{{"protocolSection":{{"identificationModule":{{"nctId":"bad","briefTitle":"{SENTINEL}"}},"statusModule":{{"overallStatus":"RECRUITING"}}}}}}]}}"#
     );
-    let error = ClinicalTrialsClient::decode_search_response(StatusCode::OK, body.as_bytes())
-        .expect_err("noncanonical NCT ID must fail");
+    let error = ClinicalTrialsClient::decode_search_response(
+        &search_plan(),
+        StatusCode::OK,
+        body.as_bytes(),
+    )
+    .expect_err("noncanonical NCT ID must fail");
     let rendered = format!("{error:?} {error}");
     assert!(!rendered.contains(SENTINEL));
     assert!(!rendered.contains("bad"));
@@ -38,9 +49,12 @@ fn malformed_search_values_are_sanitized() {
 fn intervention_rejection_remains_classified() {
     const SENTINEL: &str = "CTGOV-PROVIDER-BODY-SENTINEL-0117";
     let body = format!("Error parsing query in Intervention / treatment: {SENTINEL}");
-    let error =
-        ClinicalTrialsClient::decode_search_response(StatusCode::BAD_REQUEST, body.as_bytes())
-            .expect_err("provider rejection must fail");
+    let error = ClinicalTrialsClient::decode_search_response(
+        &search_plan(),
+        StatusCode::BAD_REQUEST,
+        body.as_bytes(),
+    )
+    .expect_err("provider rejection must fail");
     assert!(matches!(
         error,
         crate::error::BioMcpError::CtGovInterventionQueryRejected

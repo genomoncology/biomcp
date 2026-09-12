@@ -1,9 +1,11 @@
 //! Tests for CTGov trial search helpers.
 
 use super::super::super::test_support::*;
+use super::super::COUNT_TRAVERSAL_PAGE_CAP;
 use super::super::{prepare_ctgov_search_context, validate_trial_search};
 use super::*;
-use crate::entities::trial::TrialCountUnknownReason;
+use crate::entities::trial::ClinicalTrialSearchUnknownReason;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn trial_alias(label: &str, source: TrialAliasSource) -> TrialAlias {
     TrialAlias {
@@ -26,10 +28,11 @@ fn raw_page_debug_redacts_ignored_untrusted_values() {
         }
     })]);
     let page = CtGovRawPage {
-        total_count: Some(1),
+        provider_total: biodata::ClinicalTrialProviderTotal::Present(1),
         studies,
-        next_page_token: None,
+        provider_cursor: biodata::ClinicalTrialProviderCursor::Absent,
         raw_study_count: 1,
+        verification_incomplete: false,
     };
     assert!(!format!("{page:?}").contains(SENTINEL));
 }
@@ -43,14 +46,17 @@ fn paging_wrapper_debug_redacts_condition_alias_label_and_cursor() {
         intervention_source: SENTINEL,
         matched_intervention_label: Some(SENTINEL.into()),
         next_page_token: Some(SENTINEL.into()),
+        cursor_unusable: false,
         exhausted: false,
         pages_fetched: 1,
+        provider_total_seen: false,
     };
     let page = CtGovRawPage {
-        total_count: None,
+        provider_total: biodata::ClinicalTrialProviderTotal::Absent,
         studies: Vec::new(),
-        next_page_token: Some(SENTINEL.into()),
+        provider_cursor: biodata::ClinicalTrialProviderCursor::Present(SENTINEL.into()),
         raw_study_count: 0,
+        verification_incomplete: false,
     };
     assert!(!format!("{worker:?} {page:?}").contains(SENTINEL));
 }
@@ -59,7 +65,16 @@ fn ctgov_studies(
     values: Vec<serde_json::Value>,
 ) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
     let bytes = serde_json::to_vec(&serde_json::json!({"studies": values})).unwrap();
-    biodata::ClinicalTrialsGovApiV2SearchPage::parse(&bytes, &Default::default())
+    let filters = biodata::ClinicalTrialSearchFilters::new(
+        biodata::ClinicalTrialSearchFilterFields {
+            condition: Some("fixture".into()),
+            ..Default::default()
+        },
+        Default::default(),
+    )
+    .unwrap();
+    let plan = biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 50, None, true).unwrap();
+    biodata::ClinicalTrialsGovApiV2SearchPage::parse(&plan, &bytes, &Default::default())
         .expect("valid CTGov search page")
         .results()
         .unwrap_or_default()
@@ -73,11 +88,72 @@ fn filtered_page(
 ) -> CtGovRawPage {
     let raw_study_count = studies.len();
     CtGovRawPage {
-        total_count,
+        provider_total: total_count.map_or(biodata::ClinicalTrialProviderTotal::Absent, |value| {
+            biodata::ClinicalTrialProviderTotal::Present(value as u64)
+        }),
         studies: ctgov_studies(studies),
-        next_page_token: next_page_token.map(str::to_string),
+        provider_cursor: next_page_token
+            .map_or(biodata::ClinicalTrialProviderCursor::Absent, |value| {
+                biodata::ClinicalTrialProviderCursor::Present(value.to_string())
+            }),
         raw_study_count,
+        verification_incomplete: false,
     }
+}
+
+async fn alias_stability_fixture() -> (
+    String,
+    std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+    tokio::task::JoinHandle<()>,
+) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind alias stability fixture");
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut bytes = vec![0_u8; 16 * 1024];
+                let len = stream.read(&mut bytes).await.unwrap();
+                let request = String::from_utf8_lossy(&bytes[..len]).into_owned();
+                captured.lock().unwrap().push(request.clone());
+                let expanded = request.contains("expanded");
+                let later = request.contains("pageToken=");
+                let (id, status, cursor) = match (expanded, later) {
+                    (false, false) => ("NCT00000001", "COMPLETED", Some("requested-2")),
+                    (false, true) => ("NCT00000002", "RECRUITING", None),
+                    (true, false) => ("NCT00000003", "ACTIVE_NOT_RECRUITING", Some("expanded-2")),
+                    (true, true) => ("NCT00000004", "NOT_YET_RECRUITING", None),
+                };
+                let mut body = serde_json::json!({
+                    "studies": [{
+                        "protocolSection": {
+                            "identificationModule": {"nctId": id, "briefTitle": id},
+                            "statusModule": {"overallStatus": status},
+                            "eligibilityModule": {
+                                "minimumAge": "18 Years",
+                                "maximumAge": "75 Years"
+                            }
+                        }
+                    }],
+                    "totalCount": 2
+                });
+                if let Some(cursor) = cursor {
+                    body["nextPageToken"] = serde_json::Value::String(cursor.into());
+                }
+                let body = body.to_string();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            });
+        }
+    });
+    (base, requests, task)
 }
 
 fn single_ctgov_context_and_worker(
@@ -238,9 +314,10 @@ fn age_filter_uses_native_total_semantics_across_limits() {
                 Some(200),
             ),
         );
-        let page = finish_ctgov_single_page(state, &context, limit, 0);
+        let page = finish_ctgov_single_page(state, &context, limit, 0).unwrap();
 
-        assert_eq!(page.total, Some(200));
+        assert_eq!(page.total.value(), Some(200));
+        assert_eq!(page.total.precision(), "approximate");
     }
 }
 
@@ -256,10 +333,34 @@ fn ctgov_cursor_without_a_reported_total_keeps_the_provider_token() {
         5,
         filtered_page(studies_with_age_matches(5, 5, "20"), Some("p2"), None),
     );
-    let page = finish_ctgov_single_page(state, &context, 5, 0);
+    let page = finish_ctgov_single_page(state, &context, 5, 0).unwrap();
 
-    assert_eq!(page.total, None);
-    assert_eq!(page.next_page_token.as_deref(), Some("p2"));
+    assert_eq!(page.total.value(), None);
+    assert_eq!(page.total.reason(), Some("provider_omitted_total"));
+    assert_eq!(page.continuation.cursor_value(), Some("p2"));
+}
+
+#[test]
+fn empty_provider_page_with_nonblank_cursor_remains_continuable() {
+    let filters = TrialSearchFilters {
+        condition: Some("melanoma".into()),
+        ..Default::default()
+    };
+    let (context, worker) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, true);
+    apply_ctgov_single_page(
+        &mut state,
+        &context,
+        &worker,
+        5,
+        filtered_page(Vec::new(), Some("p2"), Some(2)),
+    );
+    let page = finish_ctgov_single_page(state, &context, 5, 0).unwrap();
+    assert_eq!(page.continuation.cursor_value(), Some("p2"));
+    assert_eq!(
+        (page.total.value(), page.total.precision()),
+        (Some(2), "exact")
+    );
 }
 
 #[test]
@@ -274,10 +375,39 @@ fn ctgov_cursor_preserves_next_page_token_after_offset_full_page_consumption() {
         3,
         filtered_page(studies_with_age_matches(3, 3, "21"), Some("p2"), Some(10)),
     );
-    let page = finish_ctgov_single_page(state, &context, 3, 1);
+    let page = finish_ctgov_single_page(state, &context, 3, 1).unwrap();
 
     assert_eq!(page.results.len(), 2);
-    assert_eq!(page.next_page_token, Some("p2".into()));
+    assert_eq!(page.continuation.cursor_value(), Some("p2"));
+}
+
+#[test]
+fn direct_total_precedence_keeps_fail_open_ahead_of_traversal_cap() {
+    let filters = TrialSearchFilters {
+        condition: Some("melanoma".into()),
+        criteria: Some("BRAF".into()),
+        age: Some(50.0),
+        ..Default::default()
+    };
+    let (context, _) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, true);
+    state.provider_total = Some(biodata::ClinicalTrialProviderTotal::Present(100));
+    state.verification_incomplete = true;
+    state.traversal_capped = true;
+    let page = finish_ctgov_single_page(state, &context, 5, 0).unwrap();
+    assert_eq!(page.total.reason(), Some("incomplete_local_verification"));
+}
+
+#[test]
+fn unrequested_total_stays_unknown_during_local_filtering() {
+    let filters = age_filtered_ctgov_filters();
+    let (context, _) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, false);
+    state.provider_total = Some(biodata::ClinicalTrialProviderTotal::NotRequested);
+    state.page_token = Some("next".into());
+    let page = finish_ctgov_single_page(state, &context, 5, 0).unwrap();
+    assert_eq!(page.total.reason(), Some("total_not_requested"));
+    assert_eq!(page.continuation.cursor_value(), Some("next"));
 }
 
 #[test]
@@ -309,25 +439,35 @@ fn age_filter_total_returns_native_total_when_exhausted() {
                 Some(20),
             ),
         );
-        let page = finish_ctgov_single_page(state, &context, limit, 0);
+        let page = finish_ctgov_single_page(state, &context, limit, 0).unwrap();
 
-        assert_eq!(page.total, Some(20));
+        if limit == 10 {
+            assert_eq!(page.total.value(), Some(20));
+            assert_eq!(page.total.precision(), "approximate");
+        } else {
+            assert_eq!(page.total.value(), Some(20));
+            assert_eq!(page.total.precision(), "exact");
+        }
     }
 }
 
 #[test]
 fn count_all_returns_approximate_for_age_only_filters() {
     assert_eq!(
-        ctgov_count_from_native_total(Some(250), true),
-        TrialCount::Approximate(250)
+        ctgov_count_from_native_total(Some(250), true)
+            .unwrap()
+            .precision(),
+        "approximate"
     );
 }
 
 #[test]
 fn count_all_returns_exact_for_no_post_filters() {
     assert_eq!(
-        ctgov_count_from_native_total(Some(494), false),
-        TrialCount::Exact(494)
+        ctgov_count_from_native_total(Some(494), false)
+            .unwrap()
+            .precision(),
+        "exact"
     );
 }
 
@@ -352,9 +492,10 @@ async fn count_all_keeps_an_omitted_provider_total_unknown() {
         let count = count_all_with_ctgov_client(&client, &filters, COUNT_TRAVERSAL_PAGE_CAP)
             .await
             .expect("synthetic CTGov count response");
+        assert_eq!(count.value(), None);
         assert_eq!(
-            count,
-            TrialCount::Unknown(TrialCountUnknownReason::ProviderOmittedTotal)
+            count.unknown_reason(),
+            Some(ClinicalTrialSearchUnknownReason::ProviderOmittedTotal)
         );
     }
     server.abort();
@@ -372,7 +513,7 @@ async fn count_all_keeps_an_omitted_provider_total_unknown() {
 async fn trim_empty_provider_cursor_stops_without_repeating_page_one() {
     let body = serde_json::json!({
         "studies": [ctgov_search_study_fixture("NCT00000001", "18 Years", "75 Years")],
-        "totalCount": 1,
+        "totalCount": 2,
         "nextPageToken": " \t "
     })
     .to_string();
@@ -388,7 +529,8 @@ async fn trim_empty_provider_cursor_stops_without_repeating_page_one() {
         .await
         .expect("synthetic CTGov search response");
     assert_eq!(page.results.len(), 1);
-    assert!(page.next_page_token.is_none());
+    assert_eq!(page.continuation.status(), "unavailable");
+    assert_eq!(page.continuation.reason(), Some("unusable_provider_cursor"));
     assert_eq!(page.results[0].nct_id, "NCT00000001");
     server.abort();
     assert_eq!(requests.lock().expect("lock fixture requests").len(), 1);
@@ -409,8 +551,8 @@ async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() 
         .await
         .expect("bounded expensive CTGov count");
     assert_eq!(
-        count,
-        TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached)
+        count.unknown_reason(),
+        Some(ClinicalTrialSearchUnknownReason::TraversalLimitReached)
     );
     server.abort();
     assert!(requests.lock().expect("lock fixture requests").is_empty());
@@ -443,8 +585,8 @@ async fn alias_union_returns_the_traversal_limit_reason_at_its_cap() {
     .await
     .expect("bounded alias-union CTGov count");
     assert_eq!(
-        count,
-        TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached)
+        count.unknown_reason(),
+        Some(ClinicalTrialSearchUnknownReason::TraversalLimitReached)
     );
     server.abort();
     assert!(requests.lock().expect("lock fixture requests").is_empty());
@@ -611,10 +753,11 @@ fn literal_condition_search_still_reports_limit_one_total() {
             None,
         ),
     );
-    let page = finish_ctgov_single_page(state, &context, 1, 0);
+    let page = finish_ctgov_single_page(state, &context, 1, 0).unwrap();
 
     assert_eq!(page.results.len(), 1);
-    assert_eq!(page.total, Some(1));
+    assert_eq!(page.total.value(), Some(1));
+    assert_eq!(page.total.precision(), "exact");
 }
 
 #[test]
@@ -689,14 +832,11 @@ fn alias_union_count_returns_exact_unique_total_when_exhausted() {
         ],
     );
 
-    assert_eq!(
-        TrialCount::Exact(unique_nct_ids.len()),
-        TrialCount::Exact(3)
-    );
+    assert_eq!(unique_nct_ids.len(), 3);
 }
 
 #[test]
-fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
+fn unusable_alias_cursor_overrides_another_workers_offset_replay() {
     let mut workers = ctgov_workers(
         None,
         &[
@@ -704,15 +844,156 @@ fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
             trial_alias("expanded", TrialAliasSource::DrugBankSynonym),
         ],
     );
-    for worker in &mut workers {
-        worker.exhausted = true;
-    }
+    apply_worker_cursor(
+        &mut workers[0],
+        biodata::ClinicalTrialProviderCursor::Present(" \t ".into()),
+    );
+    workers[1].next_page_token = Some("usable-for-only-one-worker".into());
 
-    assert_eq!(ctgov_union_total(false, false, &workers, 2), Some(2));
-    assert_eq!(ctgov_union_total(true, false, &workers, 2), None);
-    assert_eq!(completed_ctgov_union_count(false, 2), TrialCount::Exact(2));
+    let continuation = ctgov_union_continuation(&workers, false, false, false, 7).unwrap();
+    assert_eq!(continuation.status(), "unavailable");
+    assert_eq!(continuation.reason(), Some("unusable_provider_cursor"));
+    assert_eq!(continuation.offset_value(), None);
+}
+
+#[test]
+fn buffered_alias_rows_offer_offset_replay_after_workers_exhaust() {
+    let mut workers = ctgov_workers(
+        None,
+        &[trial_alias("requested", TrialAliasSource::Requested)],
+    );
+    workers[0].exhausted = true;
+    let continuation = ctgov_union_continuation(&workers, true, false, false, 5).unwrap();
+    assert_eq!(continuation.status(), "offset");
+    assert_eq!(continuation.offset_value(), Some(5));
+}
+
+#[test]
+fn rejected_alias_coverage_overrides_active_worker_and_cap() {
+    let workers = ctgov_workers(
+        None,
+        &[trial_alias("requested", TrialAliasSource::Requested)],
+    );
+    let with_active = ctgov_union_continuation(&workers, true, true, false, 5).unwrap();
+    assert_eq!(with_active.reason(), Some("incomplete_source_coverage"));
+    let with_cap = ctgov_union_continuation(&workers, false, true, true, 5).unwrap();
+    assert_eq!(with_cap.reason(), Some("incomplete_source_coverage"));
+}
+
+#[test]
+fn alias_cap_invalidates_a_retained_provider_token() {
+    let mut workers = ctgov_workers(
+        None,
+        &[trial_alias("requested", TrialAliasSource::Requested)],
+    );
+    workers[0].next_page_token = Some("provider-token".into());
+    let continuation = ctgov_union_continuation(&workers, false, false, true, 5).unwrap();
+    assert_eq!(continuation.status(), "unavailable");
+    assert_eq!(continuation.reason(), Some("traversal_limit_reached"));
+    assert_eq!(continuation.cursor_value(), None);
+    assert_eq!(continuation.offset_value(), None);
+}
+
+#[test]
+fn page_twenty_exhaustion_is_terminal_while_a_cursor_is_capped() {
+    let aliases = [trial_alias("requested", TrialAliasSource::Requested)];
+    let mut exhausted = ctgov_workers(None, &aliases).remove(0);
+    exhausted.pages_fetched = CTGOV_MAX_PAGE_FETCHES;
+    apply_worker_cursor(&mut exhausted, biodata::ClinicalTrialProviderCursor::Absent);
+    let exhausted_capped = cap_continuable_worker(&mut exhausted);
+    let terminal =
+        ctgov_union_continuation(&[exhausted], false, false, exhausted_capped, 20).unwrap();
+    let exact = completed_ctgov_union_count(false, false, 20).unwrap();
+    assert_eq!((exact.value(), exact.precision()), (Some(20), "exact"));
+    assert_eq!(terminal.status(), "terminal");
+    let mut continuable = ctgov_workers(None, &aliases).remove(0);
+    continuable.pages_fetched = CTGOV_MAX_PAGE_FETCHES;
+    apply_worker_cursor(
+        &mut continuable,
+        biodata::ClinicalTrialProviderCursor::Present("page-21".into()),
+    );
+    assert!(cap_continuable_worker(&mut continuable));
+    let capped = ctgov_union_continuation(&[continuable], false, false, true, 20).unwrap();
+    assert_eq!(capped.reason(), Some("traversal_limit_reached"));
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn bounded_alias_pages_are_stable_across_product_page_invocations() {
+    let (base, requests, server) = alias_stability_fixture().await;
+    let _env = CtGovFixtureEnv::set(&base);
+    let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
+    let filters = TrialSearchFilters {
+        condition: Some("melanoma".into()),
+        ..Default::default()
+    };
+    let normalized = validate_trial_search(&filters).unwrap();
+    let context = prepare_ctgov_search_context(&normalized).unwrap();
+    let aliases = [
+        trial_alias("requested", TrialAliasSource::Requested),
+        trial_alias("expanded", TrialAliasSource::DrugBankSynonym),
+    ];
+
+    let first = search_page_with_ctgov_union(
+        &client,
+        &filters,
+        &context,
+        Some("melanoma"),
+        &aliases,
+        2,
+        0,
+    )
+    .await
+    .unwrap();
+    let second = search_page_with_ctgov_union(
+        &client,
+        &filters,
+        &context,
+        Some("melanoma"),
+        &aliases,
+        2,
+        2,
+    )
+    .await
+    .unwrap();
+    let combined = search_page_with_ctgov_union(
+        &client,
+        &filters,
+        &context,
+        Some("melanoma"),
+        &aliases,
+        4,
+        0,
+    )
+    .await
+    .unwrap();
+
+    let paged = first
+        .results
+        .iter()
+        .chain(&second.results)
+        .map(|row| row.nct_id.as_str())
+        .collect::<Vec<_>>();
+    let one_page = combined
+        .results
+        .iter()
+        .map(|row| row.nct_id.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(paged, one_page);
     assert_eq!(
-        completed_ctgov_union_count(true, 2),
-        TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage)
+        one_page,
+        ["NCT00000002", "NCT00000003", "NCT00000004", "NCT00000001"]
+    );
+    assert_eq!(first.continuation.offset_value(), Some(2));
+    assert_eq!(second.continuation.status(), "terminal");
+    assert_eq!(combined.continuation.status(), "terminal");
+    server.abort();
+
+    let requests = requests.lock().unwrap();
+    assert!(!requests.is_empty());
+    assert!(
+        requests
+            .iter()
+            .all(|request| request.contains("pageSize=100"))
     );
 }

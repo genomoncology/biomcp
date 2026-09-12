@@ -104,6 +104,17 @@ fn first_raw_digest(body: &[u8], collection: &str) -> String {
     format!("sha256:{:x}", Sha256::digest(first.get().as_bytes()))
 }
 
+fn fixture_search_filters() -> biodata::ClinicalTrialSearchFilters {
+    biodata::ClinicalTrialSearchFilters::new(
+        biodata::ClinicalTrialSearchFilterFields {
+            condition: Some("fixture".into()),
+            ..Default::default()
+        },
+        Default::default(),
+    )
+    .expect("fixture filters")
+}
+
 async fn assert_search_surfaces(provider: &str, body: &'static [u8], collection: &str) {
     let (base, server) = fixture_server(body).await;
     let _env = SearchFixtureEnv::set(provider, &base);
@@ -142,14 +153,29 @@ async fn assert_search_surfaces(provider: &str, body: &'static [u8], collection:
     let raw_value: Value = serde_json::from_str(&mcp_text(raw)).expect("raw MCP JSON");
     let typed_value: Value = serde_json::from_str(&mcp_text(typed)).expect("typed MCP JSON");
     assert_eq!(raw_value, typed_value);
+    assert_eq!(raw_value["count"], 1);
+    assert_eq!(raw_value["pagination"]["total"], 1);
+    assert_eq!(raw_value["pagination"]["total_precision"], "exact");
+    assert!(raw_value["pagination"].get("total_reason").is_none());
+    assert_eq!(raw_value["pagination"]["continuation_status"], "terminal");
+    assert_eq!(raw_value["pagination"]["has_more"], false);
+    assert_eq!(raw_value["pagination"]["next_page_token"], Value::Null);
+    assert!(raw_value["pagination"].get("next_offset").is_none());
+    assert!(raw_value["pagination"].get("continuation_reason").is_none());
     let markdown = mcp_text(raw_markdown);
     let nct_id = raw_value["results"][0]["nct_id"]
         .as_str()
         .expect("result identity");
     assert!(markdown.contains(nct_id));
+    assert!(markdown.contains("Total: 1."));
+    assert!(!markdown.contains("Use --offset"));
+    assert!(!markdown.contains("Use --next-page"));
 
     let page_digest = if provider == "ctgov" {
+        let filters = fixture_search_filters();
+        let plan = biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 1, None, true).unwrap();
         let page = crate::sources::clinicaltrials::ClinicalTrialsClient::decode_search_response(
+            &plan,
             reqwest::StatusCode::OK,
             body,
         )
@@ -160,7 +186,10 @@ async fn assert_search_surfaces(provider: &str, body: &'static [u8], collection:
             .digest()
             .to_owned()
     } else {
+        let filters = fixture_search_filters();
+        let plan = biodata::NciCtsV2SearchPlan::new(&filters, None, 1, 0).unwrap();
         let page = crate::sources::nci_cts::NciCtsClient::decode_search_response(
+            &plan,
             reqwest::StatusCode::OK,
             body,
         )
@@ -174,6 +203,85 @@ async fn assert_search_surfaces(provider: &str, body: &'static [u8], collection:
     assert_eq!(page_digest, first_raw_digest(body, collection));
     let public = format!("{markdown}{}{raw_value}{typed_value}", provider);
     assert!(!public.contains("NCI-CREDENTIAL-SENTINEL-0117"));
+}
+
+struct ExpectedTrialState<'a> {
+    total_precision: &'a str,
+    total_reason: Option<&'a str>,
+    continuation_status: &'a str,
+    continuation_reason: Option<&'a str>,
+}
+
+async fn assert_trial_state_surfaces(
+    provider: &str,
+    body: &'static [u8],
+    raw_command: &str,
+    typed_input: Value,
+    expected: ExpectedTrialState<'_>,
+) {
+    let (base, server) = fixture_server(body).await;
+    let _env = SearchFixtureEnv::set(provider, &base);
+    let raw = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: raw_command.into(),
+            json: true,
+        }))
+        .await
+        .unwrap();
+    let markdown = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: raw_command.into(),
+            json: false,
+        }))
+        .await
+        .unwrap();
+    let typed = BioMcpServer::new()
+        .search(rmcp::handler::server::wrapper::Parameters(TypedSearch(
+            typed_input,
+        )))
+        .await
+        .unwrap();
+    server.abort();
+
+    let raw: Value = serde_json::from_str(&mcp_text(raw)).unwrap();
+    let typed: Value = serde_json::from_str(&mcp_text(typed)).unwrap();
+    assert_eq!(raw, typed);
+    let pagination = &raw["pagination"];
+    assert_eq!(pagination["total_precision"], expected.total_precision);
+    assert_eq!(
+        pagination.get("total_reason").and_then(Value::as_str),
+        expected.total_reason
+    );
+    assert_eq!(
+        pagination["continuation_status"],
+        expected.continuation_status
+    );
+    assert_eq!(
+        pagination
+            .get("continuation_reason")
+            .and_then(Value::as_str),
+        expected.continuation_reason
+    );
+    assert_eq!(
+        pagination["has_more"],
+        matches!(expected.continuation_status, "cursor" | "offset")
+    );
+    let markdown = mcp_text(markdown);
+    if expected.total_precision == "approximate" {
+        assert!(markdown.contains("approximate"));
+    }
+    if expected.total_precision == "unknown" {
+        assert!(markdown.contains("Total: unknown"));
+    }
+    match expected.continuation_status {
+        "cursor" => assert!(markdown.contains("Use --next-page")),
+        "offset" => assert!(markdown.contains("Use --offset")),
+        "unavailable" | "terminal" => {
+            assert!(!markdown.contains("Use --next-page"));
+            assert!(!markdown.contains("Use --offset"));
+        }
+        _ => unreachable!(),
+    }
 }
 
 #[tokio::test]
@@ -196,6 +304,88 @@ async fn nci_search_cross_surface_uses_exact_result_capture() {
         "data",
     )
     .await;
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn ctgov_approximate_cursor_state_crosses_cli_raw_and_typed_surfaces() {
+    assert_trial_state_surfaces(
+        "ctgov",
+        br#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT41300001","briefTitle":"Approximate"},"statusModule":{"overallStatus":"RECRUITING"},"eligibilityModule":{"minimumAge":"18 Years","maximumAge":"75 Years"}}}],"totalCount":5,"nextPageToken":"page-two"}"#,
+        "biomcp search trial --condition melanoma --age 50 --limit 1",
+        json!({"entity":"trial","condition":["melanoma"],"age":50,"limit":1,"json":true}),
+        ExpectedTrialState {
+            total_precision: "approximate",
+            total_reason: Some("before_local_filtering"),
+            continuation_status: "cursor",
+            continuation_reason: None,
+        },
+    )
+    .await;
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn nci_unknown_offset_state_crosses_cli_raw_and_typed_surfaces() {
+    assert_trial_state_surfaces(
+        "nci",
+        br#"{"data":[{"nct_id":"NCT05929768","brief_title":"Missing total","current_trial_status":"Active","phase":"III"}]}"#,
+        "biomcp search trial --source nci --mutation BRAF --limit 1",
+        json!({"entity":"trial","source":"nci","mutation":["BRAF"],"limit":1,"json":true}),
+        ExpectedTrialState {
+            total_precision: "unknown",
+            total_reason: Some("provider_omitted_total"),
+            continuation_status: "offset",
+            continuation_reason: None,
+        },
+    )
+    .await;
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn ctgov_unknown_unavailable_state_crosses_cli_raw_and_typed_surfaces() {
+    assert_trial_state_surfaces(
+        "ctgov",
+        br#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT41300001","briefTitle":"Unavailable"},"statusModule":{"overallStatus":"RECRUITING"}}}],"nextPageToken":"  "}"#,
+        "biomcp search trial --condition melanoma --limit 1",
+        json!({"entity":"trial","condition":["melanoma"],"limit":1,"json":true}),
+        ExpectedTrialState {
+            total_precision: "unknown",
+            total_reason: Some("provider_omitted_total"),
+            continuation_status: "unavailable",
+            continuation_reason: Some("unusable_provider_cursor"),
+        },
+    )
+    .await;
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn typed_trial_count_matches_raw_count_output() {
+    let (base, server) = fixture_server(br#"{"studies":[],"totalCount":7}"#).await;
+    let _env = SearchFixtureEnv::set("ctgov", &base);
+    let raw = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp search trial --condition melanoma --count-only".into(),
+            json: true,
+        }))
+        .await
+        .unwrap();
+    let typed = BioMcpServer::new()
+        .search(rmcp::handler::server::wrapper::Parameters(TypedSearch(
+            json!({
+                "entity":"trial", "condition":["melanoma"], "count_only":true, "json":true
+            }),
+        )))
+        .await
+        .unwrap();
+    server.abort();
+    let raw: Value = serde_json::from_str(&mcp_text(raw)).unwrap();
+    let typed: Value = serde_json::from_str(&mcp_text(typed)).unwrap();
+    assert_eq!(raw, typed);
+    assert_eq!(typed["total"], 7);
+    assert_eq!(typed["total_precision"], "exact");
 }
 
 #[tokio::test]

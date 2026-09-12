@@ -44,6 +44,8 @@ impl<T> SearchPage<T> {
         }
     }
 
+    // dead-code reason: retained for generic provider cursors outside the typed trial contract
+    #[allow(dead_code)]
     pub(crate) fn cursor(
         results: Vec<T>,
         total: Option<usize>,

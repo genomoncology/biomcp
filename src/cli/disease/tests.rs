@@ -3,6 +3,69 @@ use clap::{CommandFactory, Parser};
 use super::DiseaseCommand;
 use super::dispatch::disease_search_json;
 use crate::cli::{Cli, Commands, GetEntity, PaginationMeta};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+struct TrialPivotFixtureEnv {
+    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    _cache: tempfile::TempDir,
+}
+
+impl TrialPivotFixtureEnv {
+    fn set(base: &str) -> Self {
+        let cache = tempfile::tempdir().unwrap();
+        let mut previous = Vec::new();
+        for (key, value) in [
+            ("BIOMCP_CTGOV_BASE", base.to_owned()),
+            ("BIOMCP_TEST_UNPACED_ORIGIN", base.to_owned()),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
+        ] {
+            previous.push((key, std::env::var_os(key)));
+            // SAFETY: the fixture test holds the source_env serialization lock.
+            unsafe { std::env::set_var(key, value) };
+        }
+        Self {
+            previous,
+            _cache: cache,
+        }
+    }
+}
+
+impl Drop for TrialPivotFixtureEnv {
+    fn drop(&mut self) {
+        for (key, previous) in self.previous.drain(..).rev() {
+            // SAFETY: the fixture test holds the source_env serialization lock.
+            unsafe {
+                if let Some(previous) = previous {
+                    std::env::set_var(key, previous);
+                } else {
+                    std::env::remove_var(key);
+                }
+            }
+        }
+    }
+}
+
+async fn trial_pivot_fixture(body: &'static str) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let _ = stream.read(&mut request).await.unwrap();
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            });
+        }
+    });
+    (base, task)
+}
 
 fn render_disease_get_long_help() -> String {
     let mut command = Cli::command();
@@ -89,6 +152,59 @@ fn disease_trials_parses_source_and_limit() {
         }
         other => panic!("unexpected command: {other:?}"),
     }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn public_disease_trials_command_keeps_rows_and_exact_trial_total() {
+    let (base, server) = trial_pivot_fixture(
+        r#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT00000001","briefTitle":"Pivot trial one"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000002","briefTitle":"Pivot trial two"},"statusModule":{"overallStatus":"ACTIVE_NOT_RECRUITING"}}}],"totalCount":9,"nextPageToken":"more"}"#,
+    )
+    .await;
+    let _env = TrialPivotFixtureEnv::set(&base);
+    let rendered = crate::cli::execute(vec![
+        "biomcp".into(),
+        "--json".into(),
+        "disease".into(),
+        "trials".into(),
+        "melanoma".into(),
+        "--limit".into(),
+        "2".into(),
+    ])
+    .await
+    .unwrap();
+    server.abort();
+    let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+    assert_eq!(value["count"], 2);
+    assert_eq!(value["total"], 9);
+    assert_eq!(value["results"][0]["nct_id"], "NCT00000001");
+    assert_eq!(value["results"][1]["nct_id"], "NCT00000002");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn public_disease_trials_command_keeps_rows_and_omits_unknown_trial_total() {
+    let (base, server) = trial_pivot_fixture(
+        r#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT00000001","briefTitle":"Pivot trial"},"statusModule":{"overallStatus":"RECRUITING"}}}],"nextPageToken":"  "}"#,
+    )
+    .await;
+    let _env = TrialPivotFixtureEnv::set(&base);
+    let rendered = crate::cli::execute(vec![
+        "biomcp".into(),
+        "--json".into(),
+        "disease".into(),
+        "trials".into(),
+        "melanoma".into(),
+        "--limit".into(),
+        "1".into(),
+    ])
+    .await
+    .unwrap();
+    server.abort();
+    let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+    assert_eq!(value["count"], 1);
+    assert_eq!(value["total"], serde_json::Value::Null);
+    assert_eq!(value["results"][0]["nct_id"], "NCT00000001");
 }
 
 #[test]

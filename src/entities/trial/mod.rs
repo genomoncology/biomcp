@@ -4,6 +4,7 @@ use biodata::{
     ClinicalTrialContact, ClinicalTrialEligibility, ClinicalTrialPlannedOutcome,
     ClinicalTrialReference, ClinicalTrialSite, ClinicalTrialSiteDirectory,
 };
+pub use biodata::{ClinicalTrialSearchTotal, ClinicalTrialSearchUnknownReason};
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
 
@@ -631,7 +632,17 @@ mod search_result_tests {
 
     #[test]
     fn shared_summary_maps_to_the_stable_product_keys_without_trimming() {
+        let filters = biodata::ClinicalTrialSearchFilters::new(
+            biodata::ClinicalTrialSearchFilterFields {
+                condition: Some("fixture".into()),
+                ..Default::default()
+            },
+            Default::default(),
+        )
+        .unwrap();
+        let plan = biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 1, None, true).unwrap();
         let page = biodata::ClinicalTrialsGovApiV2SearchPage::parse(
+            &plan,
             br#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT00000001","briefTitle":" title "},"statusModule":{"overallStatus":" status "},"designModule":{"phases":["PHASE1","PHASE2"]},"conditionsModule":{"conditions":[" A "," A "]},"sponsorCollaboratorsModule":{"leadSponsor":{"name":" sponsor "}}}}],"totalCount":1}"#,
             &Default::default(),
         )
@@ -718,25 +729,3 @@ pub const TRIAL_SECTION_NAMES: &[&str] = &[
     TRIAL_SECTION_REFERENCES,
     TRIAL_SECTION_ALL,
 ];
-
-/// Describes the precision of a trial `--count-only` result.
-#[derive(Debug, PartialEq)]
-pub enum TrialCount {
-    /// Exact post-filtered count.
-    Exact(usize),
-    /// Upstream CTGov total before client-side age post-filtering.
-    Approximate(usize),
-    /// The total is unknown for the stated reason.
-    Unknown(TrialCountUnknownReason),
-}
-
-/// Explains why a trial count could not be stated numerically.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TrialCountUnknownReason {
-    /// ClinicalTrials.gov omitted the requested total from its response.
-    ProviderOmittedTotal,
-    /// Bounded post-filter traversal reached its page limit.
-    TraversalLimitReached,
-    /// An expanded ClinicalTrials.gov worker failed, leaving coverage incomplete.
-    IncompleteCoverage,
-}

@@ -5,23 +5,22 @@ use std::collections::{HashMap, HashSet};
 use futures::future::join_all;
 use tracing::warn;
 
-use crate::entities::SearchPage;
 use crate::entities::drug::{TrialAlias, TrialAliasSource, resolve_trial_aliases_with_sources};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 
-use super::super::TrialCountUnknownReason;
-use super::super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};
-use super::eligibility::ctgov_nct_id;
+use super::super::ClinicalTrialSearchUnknownReason;
+use super::super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchResult, TrialSource};
+use super::eligibility::{DetailFilterOutcome, ctgov_nct_id};
 use super::{
-    CtGovSearchContext, biodata_plan_error, prepare_ctgov_search_context,
+    CTGOV_COUNT_CAP_REASON, CTGOV_COUNT_PAGE_SIZE, CtGovSearchContext, add_unique_ctgov_nct_ids,
+    biodata_plan_error, claim_ctgov_candidate, completed_ctgov_union_count,
+    ctgov_count_from_native_total, final_ctgov_union_count, prepare_ctgov_search_context,
     sort_trials_by_status_priority, validate_search_page_args, validate_trial_search,
     verify_age_eligibility, verify_detail_filters,
 };
 
-pub(super) const CTGOV_COUNT_PAGE_SIZE: usize = 1000;
 const CTGOV_MAX_PAGE_FETCHES: usize = 20;
-pub(super) const COUNT_TRAVERSAL_PAGE_CAP: usize = 50;
 
 fn build_ctgov_search_plan(
     filters: &TrialSearchFilters,
@@ -48,33 +47,35 @@ fn build_ctgov_search_plan(
 async fn apply_ctgov_post_filters(
     client: &ClinicalTrialsClient,
     context: &CtGovSearchContext,
-    mut studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
-) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
+    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
+) -> DetailFilterOutcome {
     let facility_geo = context
         .facility_geo_verification
         .as_ref()
         .map(|(facility, lat, lon, distance)| (facility.as_str(), *lat, *lon, *distance));
-    studies =
+    let mut outcome =
         verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await;
     if let Some(age) = context.age_verification {
-        studies = verify_age_eligibility(studies, age);
+        outcome.studies = verify_age_eligibility(outcome.studies, age);
     }
-    studies
+    outcome
 }
 
 struct CtGovRawPage {
-    total_count: Option<usize>,
+    provider_total: biodata::ClinicalTrialProviderTotal,
     studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
-    next_page_token: Option<String>,
+    provider_cursor: biodata::ClinicalTrialProviderCursor,
     raw_study_count: usize,
+    verification_incomplete: bool,
 }
 
 impl std::fmt::Debug for CtGovRawPage {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
             .debug_struct("CtGovRawPage")
-            .field("total_count", &self.total_count)
+            .field("provider_total", &self.provider_total)
             .field("raw_study_count", &self.raw_study_count)
+            .field("verification_incomplete", &self.verification_incomplete)
             .finish_non_exhaustive()
     }
 }
@@ -86,8 +87,10 @@ struct CtGovWorkerState {
     intervention_source: &'static str,
     matched_intervention_label: Option<String>,
     next_page_token: Option<String>,
+    cursor_unusable: bool,
     exhausted: bool,
     pages_fetched: usize,
+    provider_total_seen: bool,
 }
 
 impl std::fmt::Debug for CtGovWorkerState {
@@ -96,27 +99,31 @@ impl std::fmt::Debug for CtGovWorkerState {
             .debug_struct("CtGovWorkerState")
             .field("exhausted", &self.exhausted)
             .field("pages_fetched", &self.pages_fetched)
+            .field("cursor_unusable", &self.cursor_unusable)
             .finish_non_exhaustive()
     }
 }
 
 struct CtGovSinglePageState {
     rows: Vec<TrialSearchResult>,
-    total: Option<usize>,
-    verified_total: usize,
+    provider_total: Option<biodata::ClinicalTrialProviderTotal>,
+    retained_total: usize,
     exhausted: bool,
     page_token: Option<String>,
+    stopped_inside_page: bool,
+    unusable_cursor: bool,
+    verification_incomplete: bool,
+    traversal_capped: bool,
     remaining_skip: usize,
-    requested_total: bool,
     started_with_cursor: bool,
 }
 
 impl CtGovSinglePageState {
-    fn new(next_page: Option<String>, offset: usize, requested_total: bool) -> Self {
+    fn new(next_page: Option<String>, offset: usize, _requested_total: bool) -> Self {
         Self {
             rows: Vec::new(),
-            total: None,
-            verified_total: 0,
+            provider_total: None,
+            retained_total: 0,
             exhausted: false,
             page_token: next_page
                 .as_deref()
@@ -124,7 +131,10 @@ impl CtGovSinglePageState {
                 .filter(|value| !value.is_empty())
                 .map(str::to_string),
             remaining_skip: offset,
-            requested_total,
+            stopped_inside_page: false,
+            unusable_cursor: false,
+            verification_incomplete: false,
+            traversal_capped: false,
             started_with_cursor: next_page
                 .as_deref()
                 .is_some_and(|value| !value.trim().is_empty()),
@@ -201,15 +211,11 @@ async fn fetch_ctgov_raw_page(
         .await?;
 
     Ok(CtGovRawPage {
-        total_count: resp
-            .total_count()
-            .and_then(|value| usize::try_from(value).ok()),
+        provider_total: resp.provider_total().clone(),
         raw_study_count: resp.results().unwrap_or_default().len(),
         studies: resp.results().unwrap_or_default().to_vec(),
-        next_page_token: resp
-            .next_page_token()
-            .filter(|value| !value.trim().is_empty())
-            .map(str::to_owned),
+        provider_cursor: resp.provider_cursor().clone(),
+        verification_incomplete: false,
     })
 }
 
@@ -233,7 +239,9 @@ async fn fetch_ctgov_filtered_page(
     )
     .await?;
     if page.raw_study_count > 0 {
-        page.studies = apply_ctgov_post_filters(client, context, page.studies).await;
+        let outcome = apply_ctgov_post_filters(client, context, page.studies).await;
+        page.studies = outcome.studies;
+        page.verification_incomplete = outcome.incomplete;
     }
     Ok(page)
 }
@@ -263,25 +271,24 @@ fn handle_ctgov_worker_outcome(
 
 fn apply_ctgov_single_page(
     state: &mut CtGovSinglePageState,
-    context: &CtGovSearchContext,
+    _context: &CtGovSearchContext,
     worker: &CtGovWorkerState,
     limit: usize,
     page: CtGovRawPage,
 ) {
-    if state.total.is_none() {
-        state.total = page.total_count;
+    if state.provider_total.is_none() {
+        state.provider_total = Some(page.provider_total.clone());
     }
+    state.verification_incomplete |= page.verification_incomplete;
 
     if page.raw_study_count == 0 {
-        state.exhausted = true;
+        apply_provider_cursor(state, page.provider_cursor);
         return;
     }
 
-    let next_page_token = page.next_page_token;
+    let provider_cursor = page.provider_cursor;
     let mut studies = page.studies;
-    if context.uses_expensive_post_filters {
-        state.verified_total = state.verified_total.saturating_add(studies.len());
-    }
+    state.retained_total = state.retained_total.saturating_add(studies.len());
 
     let page_started_with_skip = state.remaining_skip;
     let rows_before_page = state.rows.len();
@@ -307,12 +314,10 @@ fn apply_ctgov_single_page(
 
     if state.rows.len() >= limit {
         if page_consumed >= page_study_count {
-            state.page_token = next_page_token.clone();
+            apply_provider_cursor(state, provider_cursor);
         } else {
             state.page_token = None;
-        }
-        if next_page_token.is_none() {
-            state.exhausted = true;
+            state.stopped_inside_page = true;
         }
         return;
     }
@@ -322,16 +327,30 @@ fn apply_ctgov_single_page(
         && state.rows.len() > rows_before_page
         && page_consumed >= page_study_count
     {
-        state.page_token = next_page_token;
-        if state.page_token.is_none() {
-            state.exhausted = true;
-        }
+        apply_provider_cursor(state, provider_cursor);
         return;
     }
 
-    state.page_token = next_page_token;
-    if state.page_token.is_none() {
-        state.exhausted = true;
+    apply_provider_cursor(state, provider_cursor);
+}
+
+fn apply_provider_cursor(
+    state: &mut CtGovSinglePageState,
+    cursor: biodata::ClinicalTrialProviderCursor,
+) {
+    match cursor {
+        biodata::ClinicalTrialProviderCursor::Present(value) if !value.trim().is_empty() => {
+            state.page_token = Some(value);
+        }
+        biodata::ClinicalTrialProviderCursor::Present(_) => {
+            state.page_token = None;
+            state.unusable_cursor = true;
+        }
+        biodata::ClinicalTrialProviderCursor::Absent
+        | biodata::ClinicalTrialProviderCursor::Unavailable => {
+            state.page_token = None;
+            state.exhausted = true;
+        }
     }
 }
 
@@ -340,22 +359,66 @@ fn finish_ctgov_single_page(
     context: &CtGovSearchContext,
     limit: usize,
     offset: usize,
-) -> SearchPage<TrialSearchResult> {
+) -> Result<super::TrialSearchPage, BioMcpError> {
     if !context.has_explicit_status {
         sort_trials_by_status_priority(&mut state.rows);
     }
 
     state.rows.truncate(limit);
-    let returned_total = if context.uses_expensive_post_filters {
-        state.exhausted.then_some(state.verified_total)
+    let has_local_filter =
+        context.uses_expensive_post_filters || context.age_verification.is_some();
+    let total = if state.verification_incomplete {
+        ClinicalTrialSearchTotal::unknown(
+            ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
+        )
+    } else if state.traversal_capped {
+        ClinicalTrialSearchTotal::unknown(ClinicalTrialSearchUnknownReason::TraversalLimitReached)
+    } else if state.exhausted && !state.started_with_cursor {
+        super::exact_total(state.retained_total)?
     } else {
-        state.total.or_else(|| {
-            (!state.started_with_cursor && state.requested_total)
-                .then(|| offset.saturating_add(state.rows.len()))
-        })
+        match state
+            .provider_total
+            .unwrap_or(biodata::ClinicalTrialProviderTotal::Absent)
+        {
+            biodata::ClinicalTrialProviderTotal::NotRequested => ClinicalTrialSearchTotal::unknown(
+                ClinicalTrialSearchUnknownReason::TotalNotRequested,
+            ),
+            biodata::ClinicalTrialProviderTotal::Absent => ClinicalTrialSearchTotal::unknown(
+                ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
+            ),
+            biodata::ClinicalTrialProviderTotal::Present(value) if has_local_filter => {
+                let value = usize::try_from(value).map_err(|_| BioMcpError::InternalProcessing)?;
+                super::approximate_total(value)?
+            }
+            biodata::ClinicalTrialProviderTotal::Present(value) => {
+                let value = usize::try_from(value).map_err(|_| BioMcpError::InternalProcessing)?;
+                super::exact_total(value)?
+            }
+        }
     };
-
-    SearchPage::cursor(state.rows, returned_total, state.page_token)
+    let known_exhausted = total
+        .value()
+        .and_then(|value| usize::try_from(value).ok())
+        .is_some_and(|value| offset.saturating_add(state.rows.len()) >= value);
+    let continuation = if state.stopped_inside_page {
+        super::offset_continuation(offset.saturating_add(state.rows.len()))?
+    } else if state.exhausted || known_exhausted {
+        biodata::ClinicalTrialSearchContinuation::terminal()
+    } else if state.unusable_cursor {
+        biodata::ClinicalTrialSearchContinuation::unavailable(
+            biodata::ClinicalTrialSearchContinuationUnavailableReason::UnusableProviderCursor,
+        )
+    } else if let Some(cursor) = state.page_token {
+        biodata::ClinicalTrialSearchContinuation::cursor(cursor)
+            .map_err(|_| BioMcpError::InternalProcessing)?
+    } else {
+        biodata::ClinicalTrialSearchContinuation::terminal()
+    };
+    Ok(super::TrialSearchPage {
+        results: state.rows,
+        total,
+        continuation,
+    })
 }
 
 async fn search_page_with_single_ctgov_intervention(
@@ -366,7 +429,7 @@ async fn search_page_with_single_ctgov_intervention(
     limit: usize,
     offset: usize,
     next_page: Option<String>,
-) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
+) -> Result<super::TrialSearchPage, BioMcpError> {
     let page_size = limit.clamp(1, 100);
     let request_total = !filters.no_count_total;
     let mut state = CtGovSinglePageState::new(next_page, offset, request_total);
@@ -384,12 +447,14 @@ async fn search_page_with_single_ctgov_intervention(
         .await?;
 
         apply_ctgov_single_page(&mut state, context, worker, limit, page);
-        if state.exhausted || state.rows.len() >= limit {
+        if state.exhausted || state.unusable_cursor || state.rows.len() >= limit {
             break;
         }
     }
-
-    Ok(finish_ctgov_single_page(state, context, limit, offset))
+    if !state.exhausted && state.rows.len() < limit && !state.unusable_cursor {
+        state.traversal_capped = true;
+    }
+    finish_ctgov_single_page(state, context, limit, offset)
 }
 
 fn ctgov_workers(
@@ -404,8 +469,10 @@ fn ctgov_workers(
             intervention_source: "none",
             matched_intervention_label: None,
             next_page_token: None,
+            cursor_unusable: false,
             exhausted: false,
             pages_fetched: 0,
+            provider_total_seen: false,
         }];
     }
 
@@ -417,20 +484,42 @@ fn ctgov_workers(
             intervention_source: alias.source.as_str(),
             matched_intervention_label: has_intervention_fanout.then(|| alias.label.clone()),
             next_page_token: None,
+            cursor_unusable: false,
             exhausted: false,
             pages_fetched: 0,
+            provider_total_seen: false,
         })
         .collect()
 }
 
-fn claim_ctgov_candidate(
-    seen_nct_ids: &mut HashSet<String>,
-    study: &biodata::ClinicalTrialsGovApiV2SearchResult,
-) -> Option<String> {
-    match ctgov_nct_id(study) {
-        Some(nct_id) => seen_nct_ids.insert(nct_id.clone()).then_some(nct_id),
-        None => Some(String::new()),
+fn apply_worker_cursor(
+    worker: &mut CtGovWorkerState,
+    cursor: biodata::ClinicalTrialProviderCursor,
+) {
+    match cursor {
+        biodata::ClinicalTrialProviderCursor::Present(value) if !value.trim().is_empty() => {
+            worker.next_page_token = Some(value);
+        }
+        biodata::ClinicalTrialProviderCursor::Present(_) => {
+            worker.next_page_token = None;
+            worker.exhausted = true;
+            worker.cursor_unusable = true;
+        }
+        biodata::ClinicalTrialProviderCursor::Absent
+        | biodata::ClinicalTrialProviderCursor::Unavailable => {
+            worker.next_page_token = None;
+            worker.exhausted = true;
+        }
     }
+}
+
+fn cap_continuable_worker(worker: &mut CtGovWorkerState) -> bool {
+    let capped = worker.pages_fetched >= CTGOV_MAX_PAGE_FETCHES && !worker.exhausted;
+    if capped {
+        worker.next_page_token = None;
+        worker.exhausted = true;
+    }
+    capped
 }
 
 fn push_ctgov_union_rows(
@@ -453,50 +542,29 @@ fn push_ctgov_union_rows(
     }
 }
 
-fn add_unique_ctgov_nct_ids(
-    unique_nct_ids: &mut HashSet<String>,
-    studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
-) {
-    for study in studies {
-        if let Ok(row) = TrialSearchResult::from_biodata(study.projection().value()) {
-            unique_nct_ids.insert(row.nct_id);
-        }
-    }
-}
-
-const COUNT_CAP_REASON: TrialCountUnknownReason = TrialCountUnknownReason::TraversalLimitReached;
-
-fn ctgov_count_from_native_total(total: Option<usize>, has_age_filter: bool) -> TrialCount {
-    match (total, has_age_filter) {
-        (Some(total), true) => TrialCount::Approximate(total),
-        (Some(total), false) => TrialCount::Exact(total),
-        (None, _) => TrialCount::Unknown(TrialCountUnknownReason::ProviderOmittedTotal),
-    }
-}
-
-fn ctgov_union_total(
+fn ctgov_union_continuation(
+    workers: &[CtGovWorkerState],
+    has_buffered_rows: bool,
     degraded_coverage: bool,
     traversal_capped: bool,
-    workers: &[CtGovWorkerState],
-    merged_row_count: usize,
-) -> Option<usize> {
-    if degraded_coverage
-        || traversal_capped
-        || workers
-            .iter()
-            .any(|worker| !worker.exhausted || worker.next_page_token.is_some())
-    {
-        None
-    } else {
-        Some(merged_row_count)
-    }
-}
-
-fn completed_ctgov_union_count(degraded_coverage: bool, unique_count: usize) -> TrialCount {
+    next_offset: usize,
+) -> Result<biodata::ClinicalTrialSearchContinuation, BioMcpError> {
     if degraded_coverage {
-        TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage)
+        Ok(biodata::ClinicalTrialSearchContinuation::unavailable(
+            biodata::ClinicalTrialSearchContinuationUnavailableReason::IncompleteSourceCoverage,
+        ))
+    } else if traversal_capped {
+        Ok(biodata::ClinicalTrialSearchContinuation::unavailable(
+            biodata::ClinicalTrialSearchContinuationUnavailableReason::TraversalLimitReached,
+        ))
+    } else if workers.iter().any(|worker| worker.cursor_unusable) {
+        Ok(biodata::ClinicalTrialSearchContinuation::unavailable(
+            biodata::ClinicalTrialSearchContinuationUnavailableReason::UnusableProviderCursor,
+        ))
+    } else if has_buffered_rows {
+        super::offset_continuation(next_offset)
     } else {
-        TrialCount::Exact(unique_count)
+        Ok(biodata::ClinicalTrialSearchContinuation::terminal())
     }
 }
 
@@ -508,8 +576,9 @@ async fn search_page_with_ctgov_union(
     intervention_aliases: &[TrialAlias],
     limit: usize,
     offset: usize,
-) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
-    let page_size = offset.saturating_add(limit).clamp(1, 100);
+) -> Result<super::TrialSearchPage, BioMcpError> {
+    const ALIAS_PROVIDER_PAGE_SIZE: usize = 100;
+    let page_size = ALIAS_PROVIDER_PAGE_SIZE;
     let mut workers = ctgov_workers(condition_query, intervention_aliases);
     let mut merged_rows: Vec<TrialSearchResult> = Vec::new();
     let mut merged_index: HashMap<String, usize> = HashMap::new();
@@ -517,6 +586,9 @@ async fn search_page_with_ctgov_union(
     let mut matched_labels: HashMap<String, Option<String>> = HashMap::new();
     let mut traversal_capped = false;
     let mut degraded_coverage = false;
+    let mut verification_incomplete = false;
+    let mut provider_total_sum = 0usize;
+    let mut provider_total_state = biodata::ClinicalTrialProviderTotal::Present(0);
 
     loop {
         let active_indices: Vec<usize> = workers
@@ -552,10 +624,32 @@ async fn search_page_with_ctgov_union(
             };
             let worker = &mut workers[index];
             worker.pages_fetched += 1;
+            if !worker.provider_total_seen {
+                worker.provider_total_seen = true;
+                match page.provider_total {
+                    biodata::ClinicalTrialProviderTotal::Present(value) => {
+                        provider_total_sum = provider_total_sum.saturating_add(
+                            usize::try_from(value).map_err(|_| BioMcpError::InternalProcessing)?,
+                        );
+                    }
+                    biodata::ClinicalTrialProviderTotal::NotRequested => {
+                        provider_total_state = biodata::ClinicalTrialProviderTotal::NotRequested;
+                    }
+                    biodata::ClinicalTrialProviderTotal::Absent
+                        if !matches!(
+                            provider_total_state,
+                            biodata::ClinicalTrialProviderTotal::NotRequested
+                        ) =>
+                    {
+                        provider_total_state = biodata::ClinicalTrialProviderTotal::Absent;
+                    }
+                    biodata::ClinicalTrialProviderTotal::Absent => {}
+                }
+            }
 
             if page.raw_study_count == 0 {
-                worker.exhausted = true;
-                worker.next_page_token = page.next_page_token;
+                apply_worker_cursor(worker, page.provider_cursor);
+                traversal_capped |= cap_continuable_worker(worker);
                 continue;
             }
 
@@ -576,43 +670,66 @@ async fn search_page_with_ctgov_union(
                 round_studies.push(study);
             }
 
-            worker.next_page_token = page.next_page_token;
-            if worker.next_page_token.is_none() {
-                worker.exhausted = true;
-                continue;
-            }
-            if worker.pages_fetched >= CTGOV_MAX_PAGE_FETCHES {
-                worker.exhausted = true;
-                traversal_capped = true;
-            }
+            apply_worker_cursor(worker, page.provider_cursor);
+            traversal_capped |= cap_continuable_worker(worker);
         }
 
-        let verified_studies = apply_ctgov_post_filters(client, context, round_studies).await;
+        let outcome = apply_ctgov_post_filters(client, context, round_studies).await;
+        verification_incomplete |= outcome.incomplete;
         push_ctgov_union_rows(
             &mut merged_rows,
             &mut merged_index,
             &matched_labels,
-            verified_studies,
+            outcome.studies,
         );
-
-        if merged_rows.len() >= offset.saturating_add(limit) {
-            break;
-        }
     }
 
     if !context.has_explicit_status {
         sort_trials_by_status_priority(&mut merged_rows);
     }
 
-    let total = ctgov_union_total(
+    let complete = workers
+        .iter()
+        .all(|worker| worker.exhausted && !worker.cursor_unusable);
+    let total = if degraded_coverage {
+        ClinicalTrialSearchTotal::unknown(
+            ClinicalTrialSearchUnknownReason::IncompleteSourceCoverage,
+        )
+    } else if verification_incomplete {
+        ClinicalTrialSearchTotal::unknown(
+            ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
+        )
+    } else if traversal_capped {
+        ClinicalTrialSearchTotal::unknown(ClinicalTrialSearchUnknownReason::TraversalLimitReached)
+    } else if complete {
+        super::exact_total(merged_rows.len())?
+    } else {
+        match provider_total_state {
+            biodata::ClinicalTrialProviderTotal::Present(_) => {
+                super::approximate_total(provider_total_sum)?
+            }
+            biodata::ClinicalTrialProviderTotal::Absent => ClinicalTrialSearchTotal::unknown(
+                ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
+            ),
+            biodata::ClinicalTrialProviderTotal::NotRequested => ClinicalTrialSearchTotal::unknown(
+                ClinicalTrialSearchUnknownReason::TotalNotRequested,
+            ),
+        }
+    };
+    let has_buffered_rows = merged_rows.len() > offset.saturating_add(limit);
+    let rows: Vec<_> = merged_rows.into_iter().skip(offset).take(limit).collect();
+    let continuation = ctgov_union_continuation(
+        &workers,
+        has_buffered_rows,
         degraded_coverage,
         traversal_capped,
-        &workers,
-        merged_rows.len(),
-    );
-
-    let rows = merged_rows.into_iter().skip(offset).take(limit).collect();
-    Ok(SearchPage::cursor(rows, total, None))
+        offset.saturating_add(rows.len()),
+    )?;
+    Ok(super::TrialSearchPage {
+        results: rows,
+        total,
+        continuation,
+    })
 }
 
 pub(super) async fn search_page_with_ctgov_client(
@@ -621,7 +738,7 @@ pub(super) async fn search_page_with_ctgov_client(
     limit: usize,
     offset: usize,
     next_page: Option<String>,
-) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
+) -> Result<super::TrialSearchPage, BioMcpError> {
     if !matches!(filters.source, TrialSource::ClinicalTrialsGov) {
         return Err(BioMcpError::InvalidArgument(
             "internal ctgov search helper requires --source ctgov".into(),
@@ -677,12 +794,13 @@ async fn count_all_with_ctgov_union(
     condition_query: Option<&str>,
     intervention_aliases: &[TrialAlias],
     traversal_page_cap: usize,
-) -> Result<TrialCount, BioMcpError> {
+) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
     let mut workers = ctgov_workers(condition_query, intervention_aliases);
     let mut seen_nct_ids: HashSet<String> = HashSet::new();
     let mut unique_nct_ids: HashSet<String> = HashSet::new();
     let mut fetched_pages = 0usize;
     let mut degraded_coverage = false;
+    let mut verification_incomplete = false;
 
     loop {
         let active_indices: Vec<usize> = workers
@@ -691,14 +809,20 @@ async fn count_all_with_ctgov_union(
             .filter_map(|(index, worker)| (!worker.exhausted).then_some(index))
             .collect();
         if active_indices.is_empty() {
-            return Ok(completed_ctgov_union_count(
+            return completed_ctgov_union_count(
                 degraded_coverage,
+                verification_incomplete,
                 unique_nct_ids.len(),
-            ));
+            );
         }
 
         if fetched_pages.saturating_add(active_indices.len()) > traversal_page_cap {
-            return Ok(TrialCount::Unknown(COUNT_CAP_REASON));
+            return final_ctgov_union_count(
+                degraded_coverage,
+                verification_incomplete,
+                true,
+                unique_nct_ids.len(),
+            );
         }
 
         let pages = join_all(active_indices.iter().map(|index| {
@@ -728,8 +852,7 @@ async fn count_all_with_ctgov_union(
             worker.pages_fetched += 1;
 
             if page.raw_study_count == 0 {
-                worker.exhausted = true;
-                worker.next_page_token = page.next_page_token;
+                apply_worker_cursor(worker, page.provider_cursor);
                 continue;
             }
 
@@ -739,14 +862,12 @@ async fn count_all_with_ctgov_union(
                 }
             }
 
-            worker.next_page_token = page.next_page_token;
-            if worker.next_page_token.is_none() {
-                worker.exhausted = true;
-            }
+            apply_worker_cursor(worker, page.provider_cursor);
         }
 
-        let verified_studies = apply_ctgov_post_filters(client, context, round_studies).await;
-        add_unique_ctgov_nct_ids(&mut unique_nct_ids, verified_studies);
+        let outcome = apply_ctgov_post_filters(client, context, round_studies).await;
+        verification_incomplete |= outcome.incomplete;
+        add_unique_ctgov_nct_ids(&mut unique_nct_ids, outcome.studies);
     }
 }
 
@@ -754,7 +875,7 @@ pub(super) async fn count_all_with_ctgov_client(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
     traversal_page_cap: usize,
-) -> Result<TrialCount, BioMcpError> {
+) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
     if !matches!(filters.source, TrialSource::ClinicalTrialsGov) {
         return Err(BioMcpError::InvalidArgument(
             "internal ctgov count helper requires --source ctgov".into(),
@@ -791,21 +912,27 @@ pub(super) async fn count_all_with_ctgov_client(
             )?)
             .await?;
         let total = resp
-            .total_count()
+            .provider_total()
+            .value()
             .and_then(|total| usize::try_from(total).ok());
-        return Ok(ctgov_count_from_native_total(
-            total,
-            context.age_verification.is_some(),
-        ));
+        return ctgov_count_from_native_total(total, context.age_verification.is_some());
     }
 
     let mut verified_total = 0usize;
     let mut page_token: Option<String> = None;
     let mut page_count = 0usize;
+    let mut verification_incomplete = false;
+    let mut fallback_total: Option<usize> = None;
 
     loop {
         if page_count >= traversal_page_cap {
-            return Ok(TrialCount::Unknown(COUNT_CAP_REASON));
+            return Ok(if verification_incomplete {
+                ClinicalTrialSearchTotal::unknown(
+                    ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
+                )
+            } else {
+                ClinicalTrialSearchTotal::unknown(CTGOV_COUNT_CAP_REASON)
+            });
         }
 
         let resp = client
@@ -821,23 +948,48 @@ pub(super) async fn count_all_with_ctgov_client(
             .await?;
         page_count += 1;
 
-        let next_page_token = resp
-            .next_page_token()
-            .filter(|value| !value.trim().is_empty())
-            .map(str::to_owned);
-        let studies = apply_ctgov_post_filters(
+        fallback_total = fallback_total.or_else(|| {
+            resp.provider_total()
+                .value()
+                .and_then(|value| usize::try_from(value).ok())
+        });
+        let cursor = resp.provider_cursor().clone();
+        let outcome = apply_ctgov_post_filters(
             client,
             &context,
             resp.results().unwrap_or_default().to_vec(),
         )
         .await;
-        verified_total = verified_total.saturating_add(studies.len());
+        verification_incomplete |= outcome.incomplete;
+        verified_total = verified_total.saturating_add(outcome.studies.len());
 
-        if next_page_token.is_none() {
-            break;
+        match cursor {
+            biodata::ClinicalTrialProviderCursor::Present(value) if !value.trim().is_empty() => {
+                page_token = Some(value);
+            }
+            biodata::ClinicalTrialProviderCursor::Absent => break,
+            biodata::ClinicalTrialProviderCursor::Present(_)
+            | biodata::ClinicalTrialProviderCursor::Unavailable => {
+                return Ok(if verification_incomplete {
+                    ClinicalTrialSearchTotal::unknown(
+                        ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
+                    )
+                } else if let Some(total) = fallback_total {
+                    super::approximate_total(total)?
+                } else {
+                    ClinicalTrialSearchTotal::unknown(
+                        ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
+                    )
+                });
+            }
         }
-        page_token = next_page_token;
     }
 
-    Ok(TrialCount::Exact(verified_total))
+    if verification_incomplete {
+        Ok(ClinicalTrialSearchTotal::unknown(
+            ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
+        ))
+    } else {
+        super::exact_total(verified_total)
+    }
 }

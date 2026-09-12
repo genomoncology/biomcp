@@ -267,12 +267,15 @@ pub(super) async fn verify_detail_filters(
     studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
     facility_geo: Option<(&str, f64, f64, u32)>,
     keywords: &[String],
-) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
+) -> DetailFilterOutcome {
     let facility_geo = facility_geo.and_then(|(facility, lat, lon, distance)| {
         normalize_facility_text(facility).map(|facility| (facility, lat, lon, distance))
     });
     if facility_geo.is_none() && keywords.is_empty() {
-        return studies;
+        return DetailFilterOutcome {
+            studies,
+            incomplete: false,
+        };
     }
 
     let mut sections = Vec::new();
@@ -291,24 +294,34 @@ pub(super) async fn verify_detail_filters(
         let keywords = keywords.clone();
         async move {
             let Some(nct_id) = nct_id else {
-                return Some(study);
+                return (Some(study), true);
             };
             let details = match client.get_biodata_detail(&nct_id, &sections).await {
                 Ok(details) => details,
                 Err(e) => {
                     warn!(nct_id, error = %e, "trial detail fetch failed, keeping study");
-                    return Some(study);
+                    return (Some(study), true);
                 }
             };
 
-            if let Some((facility, lat, lon, distance)) = facility_geo
-                && !trial_matches_facility_geo(&details, &facility, lat, lon, distance)
-            {
-                return None;
+            if let Some((facility, lat, lon, distance)) = facility_geo {
+                if !matches!(
+                    details.locations_state(),
+                    biodata::ClinicalTrialSection::Present(())
+                ) {
+                    warn!(
+                        nct_id,
+                        "missing location evidence in detail fetch, keeping study"
+                    );
+                    return (Some(study), true);
+                }
+                if !trial_matches_facility_geo(&details, &facility, lat, lon, distance) {
+                    return (None, false);
+                }
             }
 
             if keywords.is_empty() {
-                return Some(study);
+                return (Some(study), false);
             }
             let Some(criteria) = (match details.eligibility() {
                 biodata::ClinicalTrialSection::Present(value) => value.registry_text(),
@@ -320,25 +333,36 @@ pub(super) async fn verify_detail_filters(
                     nct_id,
                     "missing eligibility criteria in detail fetch, keeping study"
                 );
-                return Some(study);
+                return (Some(study), true);
             };
 
             let (inclusion, exclusion) = split_eligibility_sections(criteria);
-            keywords
+            let keep = keywords
                 .iter()
                 .all(|keyword| eligibility_keyword_in_inclusion(&inclusion, &exclusion, keyword))
-                .then_some(study)
+                .then_some(study);
+            (keep, false)
         }
     }))
     .buffered(DETAIL_VERIFY_CONCURRENCY);
 
     let mut verified = Vec::new();
-    while let Some(maybe_study) = verification_stream.next().await {
+    let mut incomplete = false;
+    while let Some((maybe_study, decision_incomplete)) = verification_stream.next().await {
+        incomplete |= decision_incomplete;
         if let Some(study) = maybe_study {
             verified.push(study);
         }
     }
-    verified
+    DetailFilterOutcome {
+        studies: verified,
+        incomplete,
+    }
+}
+
+pub(super) struct DetailFilterOutcome {
+    pub(super) studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
+    pub(super) incomplete: bool,
 }
 
 pub(super) fn verify_age_eligibility(

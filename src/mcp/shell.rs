@@ -200,6 +200,8 @@ fn typed_search_branch(entity: &str) -> Value {
                 ("phase", "phase"),
                 ("status", "status"),
                 ("source", "trial_source"),
+                ("age", "age"),
+                ("count_only", "bool"),
             ],
             &[
                 "condition",
@@ -252,6 +254,7 @@ fn typed_search_branch(entity: &str) -> Value {
             "bool" => json!({"type":"boolean"}),
             "probability" => json!({"type":"number","exclusiveMinimum":0,"maximum":1}),
             "unit" => json!({"type":"number","minimum":0,"maximum":1}),
+            "age" => json!({"type":"number","minimum":0,"maximum":150}),
             "existence" => json!({"type":"integer","minimum":1,"maximum":5}),
             "date" => json!({"type":"string","pattern":"^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"}),
             "author_source" => json!({"const":"semanticscholar"}),

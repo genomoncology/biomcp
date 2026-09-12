@@ -142,7 +142,7 @@ impl ClinicalTrialsClient {
         let request = Self::biodata_search_plan(plan);
         let req = request_from_plan(&self.client, self.base.as_ref(), &request);
         let (status, bytes) = self.send(req).await?;
-        Self::decode_search_response(status, &bytes)
+        Self::decode_search_response(plan, status, &bytes)
     }
 
     pub(crate) async fn search_adverse_events(
@@ -155,6 +155,7 @@ impl ClinicalTrialsClient {
     }
 
     pub(crate) fn decode_search_response(
+        plan: &ClinicalTrialsGovApiV2SearchPlan,
         status: reqwest::StatusCode,
         bytes: &[u8],
     ) -> Result<ClinicalTrialsGovApiV2SearchPage, BioMcpError> {
@@ -164,8 +165,12 @@ impl ClinicalTrialsClient {
                 Ok(_) => Err(BioMcpError::InternalProcessing),
             };
         }
-        ClinicalTrialsGovApiV2SearchPage::parse(bytes, &ClinicalTrialsGovApiV2Limits::default())
-            .map_err(Self::map_biodata_response_error)
+        ClinicalTrialsGovApiV2SearchPage::parse(
+            plan,
+            bytes,
+            &ClinicalTrialsGovApiV2Limits::default(),
+        )
+        .map_err(Self::map_biodata_response_error)
     }
 
     pub(crate) fn biodata_detail_plan(

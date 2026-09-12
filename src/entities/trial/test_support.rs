@@ -1,7 +1,7 @@
 //! Shared test-only helpers for decomposed trial module sidecars.
 
 #[allow(unused_imports)]
-pub(super) use super::{TrialCount, TrialSearchFilters, TrialSource};
+pub(super) use super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSource};
 #[allow(unused_imports)]
 pub(super) use crate::error::BioMcpError;
 #[allow(unused_imports)]
@@ -11,23 +11,37 @@ pub(super) use serde_json::json;
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-pub(super) struct CtGovFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+pub(super) struct CtGovFixtureEnv {
+    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    _cache: tempfile::TempDir,
+}
 
 impl CtGovFixtureEnv {
     pub(super) fn set(base: &str) -> Self {
+        let cache = tempfile::tempdir().expect("CTGov fixture cache");
         let mut prior = Vec::new();
-        for key in ["BIOMCP_CTGOV_BASE", "BIOMCP_TEST_UNPACED_ORIGIN"] {
+        for (key, value) in [
+            ("BIOMCP_CTGOV_BASE", base.to_owned()),
+            ("BIOMCP_TEST_UNPACED_ORIGIN", base.to_owned()),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
+        ] {
             prior.push((key, std::env::var_os(key)));
             // SAFETY: callers hold the serial-test process-wide environment lock.
-            unsafe { std::env::set_var(key, base) };
+            unsafe { std::env::set_var(key, value) };
         }
-        Self(prior)
+        Self {
+            previous: prior,
+            _cache: cache,
+        }
     }
 }
 
 impl Drop for CtGovFixtureEnv {
     fn drop(&mut self) {
-        for (key, previous) in self.0.drain(..).rev() {
+        for (key, previous) in self.previous.drain(..).rev() {
             // SAFETY: callers hold the serial-test process-wide environment lock.
             unsafe {
                 if let Some(previous) = previous {
@@ -101,7 +115,16 @@ pub(super) fn ctgov_search_results(
     values: Vec<serde_json::Value>,
 ) -> Vec<biodata::ClinicalTrialsGovApiV2SearchResult> {
     let bytes = serde_json::to_vec(&json!({"studies": values})).unwrap();
-    biodata::ClinicalTrialsGovApiV2SearchPage::parse(&bytes, &Default::default())
+    let filters = biodata::ClinicalTrialSearchFilters::new(
+        biodata::ClinicalTrialSearchFilterFields {
+            condition: Some("fixture".into()),
+            ..Default::default()
+        },
+        Default::default(),
+    )
+    .unwrap();
+    let plan = biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 50, None, true).unwrap();
+    biodata::ClinicalTrialsGovApiV2SearchPage::parse(&plan, &bytes, &Default::default())
         .expect("valid CTGov search page")
         .results()
         .unwrap_or_default()

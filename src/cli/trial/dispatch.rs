@@ -4,6 +4,97 @@ use super::zero_result::{
 use super::{TrialGetArgs, TrialSearchArgs};
 use crate::cli::CommandOutcome;
 
+#[derive(serde::Serialize)]
+struct TrialPaginationMeta {
+    offset: usize,
+    limit: usize,
+    returned: usize,
+    total: Option<u64>,
+    total_precision: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    total_reason: Option<&'static str>,
+    continuation_status: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    next_offset: Option<u64>,
+    next_page_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    continuation_reason: Option<&'static str>,
+    has_more: bool,
+}
+
+impl TrialPaginationMeta {
+    fn new(
+        offset: usize,
+        limit: usize,
+        returned: usize,
+        total: &biodata::ClinicalTrialSearchTotal,
+        continuation: &biodata::ClinicalTrialSearchContinuation,
+    ) -> Self {
+        let continuation_status = continuation.status();
+        Self {
+            offset,
+            limit,
+            returned,
+            total: total.value(),
+            total_precision: total.precision(),
+            total_reason: total.reason(),
+            continuation_status,
+            next_offset: continuation.offset_value(),
+            next_page_token: continuation.cursor_value().map(str::to_owned),
+            continuation_reason: continuation.reason(),
+            has_more: matches!(continuation_status, "cursor" | "offset"),
+        }
+    }
+}
+
+#[derive(serde::Serialize)]
+struct TrialSearchJsonResponse<T: serde::Serialize> {
+    pagination: TrialPaginationMeta,
+    count: usize,
+    results: Vec<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    _meta: Option<super::super::SearchJsonMeta>,
+}
+
+fn trial_search_json<T: serde::Serialize>(
+    results: Vec<T>,
+    pagination: TrialPaginationMeta,
+    next_commands: Vec<String>,
+) -> anyhow::Result<String> {
+    let count = results.len();
+    crate::render::json::to_pretty(&TrialSearchJsonResponse {
+        pagination,
+        count,
+        results,
+        _meta: super::super::search_meta(next_commands),
+    })
+    .map_err(Into::into)
+}
+
+fn trial_pagination_footer(meta: &TrialPaginationMeta) -> String {
+    let total = match (meta.total, meta.total_precision, meta.total_reason) {
+        (Some(value), "exact", _) => format!("Total: {value}."),
+        (Some(value), "approximate", Some(reason)) => {
+            format!("Total: {value} (approximate: {reason}).")
+        }
+        (None, "unknown", Some(reason)) => format!("Total: unknown ({reason})."),
+        _ => "Total: unknown.".to_string(),
+    };
+    let continuation = match (
+        meta.continuation_status,
+        meta.next_offset,
+        meta.next_page_token.as_deref(),
+    ) {
+        ("offset", Some(value), _) => format!(" Use --offset {value} for more."),
+        ("cursor", _, Some(value)) => format!(
+            " Use --next-page {} for more.",
+            crate::render::markdown::shell_quote_arg(value)
+        ),
+        _ => String::new(),
+    };
+    format!("Showing {} results. {total}{continuation}", meta.returned)
+}
+
 pub(in crate::cli) async fn handle_get(
     args: TrialGetArgs,
     json: bool,
@@ -252,33 +343,29 @@ pub(in crate::cli) async fn handle_search(
         let page =
             crate::entities::trial::search_page(&filters, args.limit, args.offset, args.next_page)
                 .await?;
-        let results = page.results;
-        let pagination = super::super::PaginationMeta::cursor(
+        let pagination = TrialPaginationMeta::new(
             args.offset,
             args.limit,
-            results.len(),
-            page.total,
-            page.next_page_token,
+            page.results.len(),
+            &page.total,
+            &page.continuation,
         );
+        let results = page.results;
         if json {
             let next_commands = if results.is_empty() && has_active_trial_filters(&filters) {
                 zero_result_trial_next_commands(&filters)
             } else {
                 crate::render::markdown::search_next_commands_trial(&results)
             };
-            return super::super::search_json_with_meta(results, pagination, next_commands)
+            return trial_search_json(results, pagination, next_commands)
                 .map(CommandOutcome::stdout);
         }
 
-        let footer = if matches!(
-            trial_source,
-            crate::entities::trial::TrialSource::ClinicalTrialsGov
-        ) {
-            super::super::pagination_footer_cursor(&pagination)
-        } else {
-            super::super::pagination_footer_offset(&pagination)
-        };
-        let total = pagination.total.and_then(|value| u32::try_from(value).ok());
+        let footer = trial_pagination_footer(&pagination);
+        let total = pagination
+            .total
+            .filter(|_| pagination.total_precision == "exact")
+            .and_then(|value| u32::try_from(value).ok());
         let show_zero_result_nickname_hint = should_show_trial_zero_result_nickname_hint(
             positional_trial_query.as_deref(),
             trial_source,
@@ -305,43 +392,37 @@ pub(in crate::cli) async fn handle_search(
 }
 
 pub(super) fn render_count_only(
-    count: crate::entities::trial::TrialCount,
+    count: crate::entities::trial::ClinicalTrialSearchTotal,
     json: bool,
 ) -> anyhow::Result<String> {
-    use crate::entities::trial::{TrialCount, TrialCountUnknownReason};
-
     if json {
         #[derive(serde::Serialize)]
-        struct TrialCountOnlyJson {
-            total: Option<usize>,
+        struct ClinicalTrialSearchTotalOnlyJson {
+            total: Option<u64>,
+            total_precision: &'static str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            total_reason: Option<&'static str>,
             #[serde(skip_serializing_if = "Option::is_none")]
             approximate: Option<bool>,
         }
 
-        let (total, approximate) = match count {
-            TrialCount::Exact(total) => (Some(total), None),
-            TrialCount::Approximate(total) => (Some(total), Some(true)),
-            TrialCount::Unknown(_) => (None, None),
-        };
-        Ok(crate::render::json::to_pretty(&TrialCountOnlyJson {
-            total,
-            approximate,
-        })?)
+        let approximate = (count.precision() == "approximate").then_some(true);
+        Ok(crate::render::json::to_pretty(
+            &ClinicalTrialSearchTotalOnlyJson {
+                total: count.value(),
+                total_precision: count.precision(),
+                total_reason: count.reason(),
+                approximate,
+            },
+        )?)
     } else {
-        Ok(match count {
-            TrialCount::Exact(total) => format!("Total: {total}"),
-            TrialCount::Approximate(total) => {
-                format!("Total: {total} (approximate, age post-filtered)")
+        Ok(match (count.value(), count.precision(), count.reason()) {
+            (Some(total), "exact", _) => format!("Total: {total}"),
+            (Some(total), "approximate", Some(reason)) => {
+                format!("Total: {total} (approximate: {reason})")
             }
-            TrialCount::Unknown(TrialCountUnknownReason::ProviderOmittedTotal) => {
-                "Total: unknown (provider omitted the requested total)".to_string()
-            }
-            TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached) => {
-                "Total: unknown (traversal limit reached)".to_string()
-            }
-            TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage) => {
-                "Total: unknown (expanded CTGov coverage incomplete)".to_string()
-            }
+            (None, "unknown", Some(reason)) => format!("Total: unknown ({reason})"),
+            _ => "Total: unknown".to_string(),
         })
     }
 }
@@ -588,28 +669,123 @@ pub(super) fn should_show_trial_zero_result_nickname_hint(
 }
 
 #[cfg(test)]
+mod pagination_state_tests {
+    use super::{TrialPaginationMeta, trial_pagination_footer, trial_search_json};
+
+    #[test]
+    fn json_exposes_exact_total_and_only_the_typed_cursor() {
+        let total = biodata::ClinicalTrialSearchTotal::exact(8).unwrap();
+        let continuation = biodata::ClinicalTrialSearchContinuation::cursor("page-two").unwrap();
+        let pagination = TrialPaginationMeta::new(0, 2, 2, &total, &continuation);
+        let rendered = trial_search_json(
+            vec![serde_json::json!({"nct_id": "NCT00000001"})],
+            pagination,
+            Vec::new(),
+        )
+        .unwrap();
+        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert_eq!(value["count"], 1);
+        assert_eq!(value["pagination"]["total"], 8);
+        assert_eq!(value["pagination"]["total_precision"], "exact");
+        assert!(value["pagination"].get("total_reason").is_none());
+        assert_eq!(value["pagination"]["continuation_status"], "cursor");
+        assert_eq!(value["pagination"]["next_page_token"], "page-two");
+        assert!(value["pagination"].get("next_offset").is_none());
+        assert_eq!(value["pagination"]["has_more"], true);
+    }
+
+    #[test]
+    fn unavailable_state_never_invents_a_markdown_continuation() {
+        let total = biodata::ClinicalTrialSearchTotal::unknown(
+            biodata::ClinicalTrialSearchUnknownReason::IncompleteSourceCoverage,
+        );
+        let continuation = biodata::ClinicalTrialSearchContinuation::unavailable(
+            biodata::ClinicalTrialSearchContinuationUnavailableReason::IncompleteSourceCoverage,
+        );
+        let pagination = TrialPaginationMeta::new(4, 2, 1, &total, &continuation);
+        let footer = trial_pagination_footer(&pagination);
+        assert!(footer.contains("Total: unknown (incomplete_source_coverage)."));
+        assert!(!footer.contains("Use --offset"));
+        assert!(!footer.contains("Use --next-page"));
+        let rendered =
+            trial_search_json(Vec::<serde_json::Value>::new(), pagination, Vec::new()).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert_eq!(value["pagination"]["continuation_status"], "unavailable");
+        assert_eq!(
+            value["pagination"]["continuation_reason"],
+            "incomplete_source_coverage"
+        );
+        assert_eq!(
+            value["pagination"]["next_page_token"],
+            serde_json::Value::Null
+        );
+        assert!(value["pagination"].get("next_offset").is_none());
+        assert_eq!(value["pagination"]["has_more"], false);
+    }
+
+    #[test]
+    fn offset_state_emits_only_the_offset_command() {
+        let total = biodata::ClinicalTrialSearchTotal::approximate(
+            40,
+            biodata::ClinicalTrialSearchApproximationReason::BeforeLocalFiltering,
+        )
+        .unwrap();
+        let continuation = biodata::ClinicalTrialSearchContinuation::offset(12).unwrap();
+        let pagination = TrialPaginationMeta::new(7, 5, 5, &total, &continuation);
+        let footer = trial_pagination_footer(&pagination);
+        assert!(footer.contains("Total: 40 (approximate: before_local_filtering)."));
+        assert!(footer.contains("Use --offset 12 for more."));
+        assert!(!footer.contains("--next-page"));
+    }
+}
+
+#[cfg(test)]
 mod count_tests {
     use super::render_count_only;
-    use crate::entities::trial::{TrialCount, TrialCountUnknownReason};
+    use crate::entities::trial::{ClinicalTrialSearchTotal, ClinicalTrialSearchUnknownReason};
 
     #[test]
     fn json_preserves_precision_and_omits_unknown_approximation() {
-        let approximate =
-            render_count_only(TrialCount::Approximate(23), true).expect("approximate count JSON");
+        let exact = render_count_only(ClinicalTrialSearchTotal::exact(23).unwrap(), true)
+            .expect("exact count JSON");
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&exact).expect("count JSON"),
+            serde_json::json!({"total": 23, "total_precision": "exact"})
+        );
+        let approximate = render_count_only(
+            ClinicalTrialSearchTotal::approximate(
+                23,
+                biodata::ClinicalTrialSearchApproximationReason::BeforeLocalFiltering,
+            )
+            .unwrap(),
+            true,
+        )
+        .expect("approximate count JSON");
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(&approximate).expect("count JSON"),
-            serde_json::json!({"total": 23, "approximate": true})
+            serde_json::json!({
+                "total": 23,
+                "total_precision": "approximate",
+                "total_reason": "before_local_filtering",
+                "approximate": true
+            })
         );
         for reason in [
-            TrialCountUnknownReason::ProviderOmittedTotal,
-            TrialCountUnknownReason::TraversalLimitReached,
-            TrialCountUnknownReason::IncompleteCoverage,
+            ClinicalTrialSearchUnknownReason::TotalNotRequested,
+            ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
+            ClinicalTrialSearchUnknownReason::TraversalLimitReached,
+            ClinicalTrialSearchUnknownReason::IncompleteSourceCoverage,
+            ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
         ] {
-            let rendered =
-                render_count_only(TrialCount::Unknown(reason), true).expect("unknown count JSON");
+            let rendered = render_count_only(ClinicalTrialSearchTotal::unknown(reason), true)
+                .expect("unknown count JSON");
             assert_eq!(
                 serde_json::from_str::<serde_json::Value>(&rendered).expect("count JSON"),
-                serde_json::json!({"total": null})
+                serde_json::json!({
+                    "total": null,
+                    "total_precision": "unknown",
+                    "total_reason": reason.as_str()
+                })
             );
         }
     }
@@ -618,27 +794,29 @@ mod count_tests {
     fn text_explains_each_unknown_reason_truthfully() {
         assert_eq!(
             render_count_only(
-                TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached),
+                ClinicalTrialSearchTotal::unknown(
+                    ClinicalTrialSearchUnknownReason::TraversalLimitReached
+                ),
                 false,
             )
             .expect("cap count text"),
-            "Total: unknown (traversal limit reached)"
+            "Total: unknown (traversal_limit_reached)"
         );
         for (reason, expected) in [
             (
-                TrialCountUnknownReason::ProviderOmittedTotal,
-                "provider omitted the requested total",
+                ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
+                "provider_omitted_total",
             ),
             (
-                TrialCountUnknownReason::IncompleteCoverage,
-                "expanded CTGov coverage incomplete",
+                ClinicalTrialSearchUnknownReason::IncompleteSourceCoverage,
+                "incomplete_source_coverage",
             ),
         ] {
-            let rendered =
-                render_count_only(TrialCount::Unknown(reason), false).expect("unknown count text");
+            let rendered = render_count_only(ClinicalTrialSearchTotal::unknown(reason), false)
+                .expect("unknown count text");
             assert!(rendered.contains(expected));
             assert!(!rendered.contains("Total: 0"));
-            assert!(!rendered.contains("traversal limit reached"));
+            assert!(!rendered.contains("traversal_limit_reached"));
         }
     }
 }
