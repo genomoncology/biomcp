@@ -594,10 +594,14 @@ async fn cli_typed_and_raw_trial_get_share_directory_contacts_locations_and_stat
     server.abort();
 }
 
-struct ClinvarMcpEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+struct ClinvarMcpEnv {
+    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    _cache: tempfile::TempDir,
+}
 
 impl ClinvarMcpEnv {
     fn set(base: &str) -> Self {
+        let cache = tempfile::tempdir().expect("ClinVar MCP cache directory");
         let values = [
             ("BIOMCP_MYVARIANT_BASE", format!("{base}/v1")),
             ("BIOMCP_CLINVAR_BASE", format!("{base}/eutils")),
@@ -607,6 +611,11 @@ impl ClinvarMcpEnv {
             ("BIOMCP_CANCERHOTSPOTS_BASE", format!("{base}/unavailable")),
             ("BIOMCP_CIVIC_BASE", format!("{base}/unavailable")),
             ("BIOMCP_GWAS_BASE", format!("{base}/unavailable")),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
+            ("BIOMCP_CACHE_MIN_DISK_FREE", "1B".to_owned()),
         ];
         let mut previous = Vec::new();
         for (name, value) in values {
@@ -614,7 +623,10 @@ impl ClinvarMcpEnv {
             // SAFETY: callers hold the serial-test process-wide environment lock.
             unsafe { std::env::set_var(name, value) };
         }
-        Self(previous)
+        Self {
+            previous,
+            _cache: cache,
+        }
     }
 }
 
@@ -622,7 +634,7 @@ impl Drop for ClinvarMcpEnv {
     fn drop(&mut self) {
         // SAFETY: callers hold the serial-test process-wide environment lock.
         unsafe {
-            for (name, previous) in self.0.drain(..) {
+            for (name, previous) in self.previous.drain(..) {
                 if let Some(previous) = previous {
                     std::env::set_var(name, previous);
                 } else {
@@ -631,6 +643,28 @@ impl Drop for ClinvarMcpEnv {
             }
         }
     }
+}
+
+#[test]
+#[serial_test::serial(source_env)]
+fn clinvar_env_restores_cache_environment() {
+    let prior_cache_dir = std::env::var_os("BIOMCP_CACHE_DIR");
+    let prior_cache_min_disk_free = std::env::var_os("BIOMCP_CACHE_MIN_DISK_FREE");
+
+    {
+        let _env = ClinvarMcpEnv::set("http://127.0.0.1:0");
+        assert_eq!(
+            std::env::var("BIOMCP_CACHE_MIN_DISK_FREE").as_deref(),
+            Ok("1B")
+        );
+        assert_ne!(std::env::var_os("BIOMCP_CACHE_DIR"), prior_cache_dir);
+    }
+
+    assert_eq!(std::env::var_os("BIOMCP_CACHE_DIR"), prior_cache_dir);
+    assert_eq!(
+        std::env::var_os("BIOMCP_CACHE_MIN_DISK_FREE"),
+        prior_cache_min_disk_free
+    );
 }
 
 #[derive(Clone)]
