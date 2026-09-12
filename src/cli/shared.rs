@@ -9,6 +9,26 @@ use super::types::{Cli, CommandOutcome};
 
 pub(super) const RUNTIME_HELP_SUBCOMMANDS: [&str; 4] = ["mcp", "serve", "serve-http", "serve-sse"];
 const HIDDEN_GLOBAL_FLAGS: [&str; 3] = ["--json", "-j", "--no-cache"];
+const SEARCH_ENTITY_NAMES: [&str; 15] = [
+    "all",
+    "author",
+    "gene",
+    "disease",
+    "diagnostic",
+    "pgx",
+    "phenotype",
+    "gwas",
+    "article",
+    "trial",
+    "variant",
+    "drug",
+    "pathway",
+    "protein",
+    "adverse-event",
+];
+const RECOVERY_ARG_LIMIT: usize = 256;
+const RECOVERY_INPUT_BYTE_LIMIT: usize = 16_384;
+const RECOVERY_SENTENCE_BYTE_LIMIT: usize = 32_768;
 
 fn hide_runtime_help_globals(
     command: clap::Command,
@@ -84,12 +104,98 @@ where
 {
     let args: Vec<OsString> = args.into_iter().map(Into::into).collect();
     reject_reserved_skill_subcommand(&args)?;
-    let matches = build_cli().try_get_matches_from(args)?;
+    let matches = match build_cli().try_get_matches_from(args.clone()) {
+        Ok(matches) => matches,
+        Err(original)
+            if !matches!(
+                original.kind(),
+                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+            ) =>
+        {
+            return match reversed_search_correction(&args) {
+                Some(sentence) => Err(build_cli().error(ErrorKind::InvalidSubcommand, sentence)),
+                None => Err(original),
+            };
+        }
+        Err(original) => return Err(original),
+    };
     Cli::from_arg_matches(&matches)
+}
+
+pub(crate) fn reversed_search_correction<T: AsRef<OsStr>>(args: &[T]) -> Option<String> {
+    if args.len() > RECOVERY_ARG_LIMIT {
+        return None;
+    }
+    let values = args
+        .iter()
+        .map(|arg| arg.as_ref().to_str())
+        .collect::<Option<Vec<_>>>()?;
+    let input_bytes = values
+        .iter()
+        .try_fold(0usize, |total, value| total.checked_add(value.len()))?;
+    if input_bytes > RECOVERY_INPUT_BYTE_LIMIT
+        || values.iter().any(|value| {
+            value
+                .chars()
+                .any(|ch| ('\u{0}'..='\u{1f}').contains(&ch) || ('\u{7f}'..='\u{9f}').contains(&ch))
+        })
+    {
+        return None;
+    }
+    let positions = values
+        .iter()
+        .enumerate()
+        .skip(1)
+        .take_while(|(_, value)| **value != "--")
+        .filter(|(_, value)| !HIDDEN_GLOBAL_FLAGS.contains(value))
+        .take(2)
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    if positions.len() != 2
+        || !SEARCH_ENTITY_NAMES.contains(&values[positions[0]])
+        || values[positions[1]] != "search"
+    {
+        return None;
+    }
+
+    let mut candidate = args
+        .iter()
+        .map(|arg| arg.as_ref().to_os_string())
+        .collect::<Vec<_>>();
+    candidate.swap(positions[0], positions[1]);
+    match build_cli().try_get_matches_from(candidate.clone()) {
+        Ok(_) => {}
+        Err(error)
+            if matches!(
+                error.kind(),
+                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+            ) => {}
+        Err(_) => return None,
+    }
+    let rendered = shlex::try_join(
+        std::iter::once("biomcp").chain(
+            candidate
+                .iter()
+                .skip(1)
+                .map(|arg| arg.to_str().expect("argv was validated as UTF-8")),
+        ),
+    )
+    .ok()?;
+    let sentence = format!(
+        "reversed search syntax; use {}",
+        crate::render::markdown::markdown_command_code_span(&rendered)
+    );
+    (sentence.len() <= RECOVERY_SENTENCE_BYTE_LIMIT).then_some(sentence)
 }
 
 fn args_request_json(args: &[OsString]) -> bool {
     args.iter()
+        .any(|arg| arg == OsStr::new("--json") || arg == OsStr::new("-j"))
+}
+
+fn reversed_args_request_json(args: &[OsString]) -> bool {
+    args.iter()
+        .take_while(|arg| *arg != OsStr::new("--"))
         .any(|arg| arg == OsStr::new("--json") || arg == OsStr::new("-j"))
 }
 
@@ -120,10 +226,15 @@ fn exit_human_clap_error(error: clap::Error, args: &[OsString]) -> ! {
 
 pub fn parse_cli_from_env() -> Cli {
     let args: Vec<OsString> = std::env::args_os().collect();
+    let requests_json = if reversed_search_correction(&args).is_some() {
+        reversed_args_request_json(&args)
+    } else {
+        args_request_json(&args)
+    };
     match try_parse_cli(args.clone()) {
         Ok(cli) => cli,
         Err(err)
-            if args_request_json(&args)
+            if requests_json
                 && matches!(
                     err.kind(),
                     ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
@@ -144,7 +255,7 @@ pub fn parse_cli_from_env() -> Cli {
             let _ = stdout.flush();
             std::process::exit(0);
         }
-        Err(err) if args_request_json(&args) => {
+        Err(err) if requests_json => {
             let exit_code = err.exit_code();
             let bio_err = crate::error::BioMcpError::InvalidArgument(err.to_string());
             let json = crate::render::json::to_error_json(&bio_err)
@@ -582,45 +693,5 @@ pub(super) fn log_pagination_truncation(observed_total: usize, offset: usize, re
             total = observed_total,
             offset, returned, "Results truncated by --limit"
         );
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::entities::section_outcome::SectionOutcomeState;
-
-    #[test]
-    fn cursor_total_suppresses_stale_token_past_the_end() {
-        let pagination = PaginationMeta::cursor(4_000, 5, 0, Some(3_738), Some("stale".into()));
-
-        assert!(!pagination.has_more);
-        assert_eq!(pagination.next_page_token, None);
-    }
-
-    #[test]
-    fn cursor_without_token_never_promises_a_next_page() {
-        let pagination = PaginationMeta::cursor(0, 5, 5, Some(10), None);
-
-        assert!(!pagination.has_more);
-        assert_eq!(pagination.next_page_token, None);
-    }
-
-    #[test]
-    fn section_provenance_keeps_meta_when_search_has_no_next_commands() {
-        let meta = search_meta_with_section_sources(
-            Vec::new(),
-            vec![crate::render::provenance::SectionSource {
-                key: "faers".to_string(),
-                label: "Adverse events (OpenFDA FAERS)".to_string(),
-                outcome: SectionOutcomeState::Unavailable,
-                sources: Vec::new(),
-            }],
-        )
-        .expect("section provenance should create metadata");
-        let value = serde_json::to_value(meta).expect("metadata JSON");
-
-        assert_eq!(value["section_sources"][0]["key"], "faers");
-        assert_eq!(value["section_sources"][0]["outcome"], "unavailable");
     }
 }

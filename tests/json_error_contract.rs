@@ -898,6 +898,80 @@ fn json_mode_unknown_subcommand_parse_error_writes_json_stdout_and_exit_2() {
 }
 
 #[test]
+fn reversed_search_process_errors_are_golden_and_do_no_work() {
+    let fixture = NoProviderContactFixture::start();
+    let state_parent = tempfile::tempdir_in(env!("CARGO_MANIFEST_DIR")).expect("state parent");
+    let cache = state_parent.path().join("absent-cache");
+    let providers = [
+        ("BIOMCP_CACHE_DIR", cache.to_str().unwrap()),
+        ("BIOMCP_PUBMED_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_CTGOV_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_OPENFDA_BASE", fixture.base_url.as_str()),
+    ];
+    for (entity, expected) in [
+        ("article", "biomcp search article"),
+        ("trial", "biomcp search trial"),
+        ("adverse-event", "biomcp search adverse-event"),
+    ] {
+        let result = run_biomcp_with_env(&[entity, "search"], &providers);
+        assert_eq!(result.code, Some(2));
+        assert!(result.stdout.is_empty());
+        assert_eq!(
+            result.stderr,
+            format!(
+                "error: reversed search syntax; use `{expected}`\n\nUsage: biomcp [OPTIONS] <COMMAND>\n\nFor more information, try '--help'.\n"
+            )
+        );
+        fixture.assert_no_request();
+        assert!(
+            !cache.exists(),
+            "correction created managed cache/session state"
+        );
+    }
+
+    for flag in ["--json", "-j"] {
+        let result = run_biomcp_with_env(&[flag, "article", "search"], &providers);
+        assert_eq!(result.code, Some(2));
+        assert!(result.stderr.is_empty());
+        let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
+        assert_eq!(value["error"]["code"], "invalid_argument");
+        assert_eq!(value["_meta"]["not_found"], false);
+        let message = value["error"]["message"].as_str().unwrap();
+        assert_eq!(message.matches("reversed search syntax").count(), 1);
+        assert_eq!(message.matches("biomcp").count(), 2);
+        assert!(message.contains(&format!("use `biomcp {flag} search article`")));
+        fixture.assert_no_request();
+        assert!(!cache.exists());
+    }
+
+    let after_delimiter = run_biomcp_with_env(&["article", "search", "--", "--json"], &providers);
+    assert_eq!(after_delimiter.code, Some(2));
+    assert!(after_delimiter.stdout.is_empty());
+    assert!(
+        after_delimiter
+            .stderr
+            .contains("use `biomcp search article -- --json`")
+    );
+
+    let sentinel = state_parent.path().join("not-created");
+    let payload = format!(
+        "$(touch {}) `touch {}`; >{}",
+        sentinel.display(),
+        sentinel.display(),
+        sentinel.display()
+    );
+    let hostile = run_biomcp_with_env(&["article", "search", "--keyword", &payload], &providers);
+    assert_eq!(hostile.code, Some(2));
+    assert!(hostile.stderr.contains("reversed search syntax; use ``"));
+    assert!(
+        !sentinel.exists(),
+        "rendered correction executed hostile argv"
+    );
+    fixture.assert_no_request();
+    assert!(!cache.exists());
+}
+
+#[test]
 fn json_mode_unknown_flag_parse_error_writes_json_stdout_and_exit_2() {
     let result = run_biomcp(&["--json", "get", "variant", "BRAF V600E", "--not-a-flag"]);
 

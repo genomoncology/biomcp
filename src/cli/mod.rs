@@ -51,6 +51,7 @@ pub use self::outcome::{
 };
 pub use self::pathway::PathwayCommand;
 pub use self::protein::ProteinCommand;
+pub(crate) use self::shared::reversed_search_correction;
 pub use self::shared::{build_cli, parse_cli_from_env, try_parse_cli};
 pub use self::study::StudyCommand;
 pub use self::system::{
