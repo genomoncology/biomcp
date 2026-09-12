@@ -348,7 +348,7 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
 
     ready = workspace / "runner-ready"
     timed_run = subprocess.Popen(
-        ["timeout", "--signal=KILL", "3s", "bash", "scripts/run-specs.sh", "spec"],
+        ["bash", "scripts/run-specs.sh", "spec"],
         cwd=workspace,
         env=os.environ
         | {
@@ -357,7 +357,14 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
             "BIOMCP_SPEC_RUNNER_READY_FILE": str(ready),
             "BIOMCP_SPEC_RUNNER_HOLD": "1",
         },
+        start_new_session=True,
     )
+    kill_deadline = time.monotonic() + 3
+    while timed_run.poll() is None:
+        if time.monotonic() >= kill_deadline:
+            os.kill(timed_run.pid, signal.SIGKILL)
+            break
+        time.sleep(0.05)
     record_path = workspace / ".cache" / "spec-disease-survival-ownership"
     try:
         _wait_until(lambda: ready.exists() and record_path.exists())
