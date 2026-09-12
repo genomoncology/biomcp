@@ -1456,6 +1456,232 @@ PY
 ../../tools/biomcp-ci --json article recommendations 20516115 --limit 10 | jq '(.recommendations | length == 10) and all(.recommendations[]?; (.paper_id | type == "string" and length > 0) and (.title | type == "string" and length > 0))' | mustmatch 'true'
 ```
 
+## Directed Citation Evidence Recovers the Bounded Passage
+
+`biomcp article citation-evidence <citing-id> <cited-id>` returns bounded
+source text for one directed citation pair. Semantic Scholar context wins by
+default; a contextless edge recovers paragraphs from open Europe PMC JATS by
+exact reference identity. The five outcomes below are closed: any other
+input is a command error. The result retrieves evidence only — it never
+summarizes a passage, infers how the cited work was used, or claims the
+citation supports a conclusion.
+
+The full-status JSON keeps the same object shape in every state: `citing`,
+`cited`, `status`, `message`, `source`, `provider_contexts`, `passages`,
+`fulltext_locator`, and `_meta`. Provider contexts survive even when a
+forced `--fulltext` attempt fails, and the failure never masquerades as the
+provider-context outcome.
+
+```bash
+../../tools/biomcp-ci --json article citation-evidence 39991290 10.1038/nature10725 | jq -c '{status,message,source,provider_contexts,passage_count:(.passages|length),locator:.fulltext_locator.pmcid,statuses:._meta.source_status,urls:[._meta.evidence_urls[].source],next:._meta.next_commands}' | mustmatch '{"status":"context_from_fulltext","message":"Open-access JATS linked the cited reference to the returned passage.","source":"europe_pmc_jats","provider_contexts":[],"passage_count":3,"locator":"PMC12923956","statuses":[{"source":"semantic_scholar","status":"available"},{"source":"europe_pmc_jats","status":"available"}],"urls":["semantic_scholar","semantic_scholar","europe_pmc_jats"],"next":[]}'
+../../tools/biomcp-ci --json article citation-evidence 39991290 10.1038/nature10725 | jq -c '.passages[2]' | mustmatch '{"text":"A nested section contributes a third linked paragraph 7 with its own section path.","locator":{"pmcid":"PMC12923956","ref_id":"bib7","section_path":["Results","Subgroup analysis"],"paragraph":3,"marker":"7"},"evidence_url":"https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923956/fullTextXML"}'
+../../tools/biomcp-ci --json article citation-evidence 40001001 10.1016/j.artmed.2020.101822 | jq -c '{status,passage:(.passages[0].text),locator:(.passages[0].locator)}' | mustmatch '{"status":"context_from_fulltext","passage":"Expertise and model life-cycle management both appear in this linked paragraph 11.","locator":{"pmcid":"PMC13200738","ref_id":"ooag047-B11","section_path":["Discussion"],"paragraph":1,"marker":"11"}}'
+../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture | jq -c '{status,source,contexts:.provider_contexts,passages,locator:.fulltext_locator,jats:(._meta.source_status[1].status)}' | mustmatch '{"status":"context_from_provider","source":"semantic_scholar","contexts":["Retained provider context survives a forced full-text failure."],"passages":[],"locator":null,"jats":"not_requested"}'
+../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture --fulltext | jq -c '{status,message,source,contexts:.provider_contexts,passages,locator:.fulltext_locator,urls:[._meta.evidence_urls[].source],jats:(._meta.source_status[1].status)}' | mustmatch '{"status":"fulltext_unavailable","message":"Structured open full text was unavailable for the citing paper.","source":null,"contexts":["Retained provider context survives a forced full-text failure."],"passages":[],"locator":null,"urls":["semantic_scholar","semantic_scholar"],"jats":"unavailable"}'
+../../tools/biomcp-ci --json article citation-evidence 40001006 10.1099/unresolved-fixture | jq -c '{status,message,source,contexts:.provider_contexts,passages,locator:.fulltext_locator}' | mustmatch '{"status":"fulltext_unavailable","message":"Structured open full text was unavailable for the citing paper.","source":null,"contexts":[],"passages":[],"locator":null}'
+../../tools/biomcp-ci --json article citation-evidence 40001003 10.1099/unresolved-fixture | jq -c '{status,message,source,passages,locator:.fulltext_locator}' | mustmatch '{"status":"reference_unresolved","message":"Structured full text was available, but the cited reference could not be resolved exactly.","source":"europe_pmc_jats","passages":[],"locator":{"pmcid":"PMC12923960","evidence_url":"https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923960/fullTextXML"}}'
+../../tools/biomcp-ci --json article citation-evidence 40001004 10.1099/unresolved-fixture | jq -c '{status,message,source,passages,locator:.fulltext_locator.pmcid}' | mustmatch '{"status":"citation_marker_unlinked","message":"The cited reference was resolved, but no unambiguous in-text citation marker linked to it.","source":"europe_pmc_jats","passages":[],"locator":"PMC12923961"}'
+../../tools/biomcp-ci --json article citation-evidence 39991290 10.1093/absent-target >/dev/null 2>&1; test $? -eq 1
+../../tools/biomcp-ci --json article citation-evidence 39991290 10.1093/absent-target 2>&1 | jq -r '.error.message' | mustmatch "directed citation '39991290 -> 10.1093/absent-target' not found.
+
+Semantic Scholar exhausted the directed reference pages without finding this pair."
+../../tools/biomcp-ci --json article citation-evidence 40001005 10.1093/absent-target >/dev/null 2>&1; test $? -eq 1
+```
+
+The Markdown projection keeps the frozen section order, deduplicates nothing
+the JSON kept, and renders every value through the adaptive code span.
+
+```bash
+../../tools/biomcp-ci article citation-evidence 39991290 10.1038/nature10725 | mustmatch '# Citation evidence
+
+Citing: `PMID 39991290`
+Cited: `DOI 10.1038/nature10725`
+Status: Open-access JATS linked the cited reference to the returned passage.
+
+## Passages
+
+### Passage 1
+
+`The later team analyzed 12 ETP-ALL cases and 40 non-ETP T-ALL cases from the referenced cohort 7 before comparing outcomes.`
+Locator: PMCID `PMC12923956`; reference `bib7`; section `Results`; paragraph 1; marker `7`
+Evidence: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923956/fullTextXML`
+
+### Passage 2
+
+`A second paragraph repeats the marker 7 for the same reference.`
+Locator: PMCID `PMC12923956`; reference `bib7`; section `Results`; paragraph 2; marker `7`
+Evidence: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923956/fullTextXML`
+
+### Passage 3
+
+`A nested section contributes a third linked paragraph 7 with its own section path.`
+Locator: PMCID `PMC12923956`; reference `bib7`; section `Results > Subgroup analysis`; paragraph 3; marker `7`
+Evidence: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923956/fullTextXML`
+
+Full text: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923956/fullTextXML`
+'
+../../tools/biomcp-ci article citation-evidence 40001002 10.1099/unresolved-fixture | mustmatch '# Citation evidence
+
+Citing: `PMID 40001002`
+Cited: `DOI 10.1099/unresolved-fixture`
+Status: Semantic Scholar supplied citation context for this directed edge.
+
+## Provider contexts
+
+1. `Retained provider context survives a forced full-text failure.`
+'
+../../tools/biomcp-ci article citation-evidence 40001002 10.1099/unresolved-fixture --fulltext | mustmatch '# Citation evidence
+
+Citing: `PMID 40001002`
+Cited: `DOI 10.1099/unresolved-fixture`
+Status: Structured open full text was unavailable for the citing paper.
+'
+../../tools/biomcp-ci article citation-evidence 40001001 10.1016/j.artmed.2020.101822 | sed -n '9,13p' | mustmatch '### Passage 1
+
+`Expertise and model life-cycle management both appear in this linked paragraph 11.`
+Locator: PMCID `PMC13200738`; reference `ooag047-B11`; section `Discussion`; paragraph 1; marker `11`
+'
+```
+
+Every outcome is bounded: two seed lookups, at most three reference pages of
+one hundred, one JATS request, and no fetch after the matching page. The
+request log proves the shape.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent' <"$request_log"
+test "$(wc -l <"$request_log")" -eq 3
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 39991290 10.1038/nature10725 >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent
+fulltext:xml:europepmc-pmc' <"$request_log"
+test "$(wc -l <"$request_log")" -eq 4
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 40001001 10.1016/j.artmed.2020.101822 >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent
+fulltext:identity:ncbi-idconv
+fulltext:xml:europepmc-pmc' <"$request_log"
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture --fulltext >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent
+fulltext:xml:europepmc-pmc' <"$request_log"
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 40001005 10.1093/absent-target >/dev/null 2>&1 || test $? -eq 1
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent
+s2:graph:references:limit=100:offset=100:x-api-key:absent
+s2:graph:references:limit=100:offset=200:x-api-key:absent' <"$request_log"
+test "$(wc -l <"$request_log")" -eq 5
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 40001006 10.1099/unresolved-fixture >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent' <"$request_log"
+```
+
+Graph edges without usable context carry the evidence command. The blank
+Context cell becomes `Try:`, a contextual edge keeps its text, and the root
+continuation array and `Next:` footer stay exactly as landed by ticket 1144.
+
+```bash
+../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -c '[.edges[] | {id:(.paper.doi // .paper.pmid), context:(.contexts[0] // ""), meta:._meta}]' | mustmatch "$(cat <<'EXPECTED'
+[{"id":"10.1038/nature10725","context":"","meta":{"next_commands":["biomcp article citation-evidence 39991290 10.1038/nature10725"]}},{"id":"39991291","context":"Grouped decoy context.","meta":null},{"id":"10.1093/host'ile`dollar;$x\\&y","context":"","meta":{"next_commands":["biomcp article citation-evidence 39991290 \"10.1093/host'ile\\`dollar;\\$x\\\\&y\""]}}]
+EXPECTED
+)"
+../../tools/biomcp-ci article references 39991290 --limit 3 --offset 0 | sed -n '5,7p' | mustmatch "$(cat <<'EXPECTED'
+| DOI 10.1038/nature10725 | Nature reference target | background | no | Try: `biomcp article citation-evidence 39991290 10.1038/nature10725` |
+| PMID 39991291 | Contextual decoy target | background | no | Grouped decoy context. |
+| DOI 10.1093/host'ile`dollar;$x\&y | Hostile identifier carrier | background | no | Try: ``biomcp article citation-evidence 39991290 "10.1093/host'ile\`dollar;\$x\\&y"`` |
+EXPECTED
+)"
+../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -c '.pagination, ._meta' | mustmatch '{"offset":0,"limit":3,"returned":3,"next_offset":null,"coverage_status":"exhausted"}
+{"next_commands":[]}'
+../../tools/biomcp-ci --json article references 39991290 --limit 1 --offset 0 | jq -c '.pagination, ._meta' | mustmatch '{"offset":0,"limit":1,"returned":1,"next_offset":1,"coverage_status":"continuable"}
+{"next_commands":["biomcp article references 39991290 --limit 1 --offset 1"]}'
+../../tools/biomcp-ci article references 39991290 --limit 1 --offset 0 | tail -n 3 | mustmatch 'Page offset: 0; page size: 1; returned: 1; coverage: continuable.
+Semantic Scholar does not provide an exact total.
+Next: `biomcp article references 39991290 --limit 1 --offset 1`'
+```
+
+Hostile identifiers round-trip through the real parser. The emitted command
+below is executed as-is inside the sandbox, recovers the two original
+arguments, performs exactly the bounded requests, and leaves no marker file
+behind.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+probe="$(mktemp -d)"
+: >"$request_log"
+command="$(../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -r '.edges[2]._meta.next_commands[0]')"
+case "$command" in
+  "biomcp article citation-evidence 39991290 "*) ;;
+  *) exit 1 ;;
+esac
+(cd "$probe" && eval "$command") >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent
+fulltext:xml:europepmc-pmc' <"$request_log"
+test "$(wc -l <"$request_log")" -eq 4
+test -z "$(ls -A "$probe")"
+"$BIOMCP_BIN" --json article citation-evidence "  39991290  " "  10.1038/nature10725  " | jq -c '.status' | mustmatch '"context_from_fulltext"'
+rmdir "$probe"
+```
+
+Raw MCP serves the same five states and error envelope through the generic
+command tool, byte-identical to the CLI, and keeps the typed inventory
+untouched.
+
+```bash
+python3 - <<'PY' | mustmatch 'raw citation-evidence agrees with the CLI; typed tools absent'
+import json, os, subprocess
+
+proc = subprocess.Popen([os.environ["BIOMCP_BIN"], "serve"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=os.environ.copy())
+def call(message):
+    proc.stdin.write(json.dumps(message) + "\n"); proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+call({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"spec","version":"1"}}})
+proc.stdin.write(json.dumps({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}) + "\n"); proc.stdin.flush()
+cases = (
+    ("39991290 10.1038/nature10725", "context_from_fulltext"),
+    ("40001002 10.1099/unresolved-fixture", "context_from_provider"),
+    ("40001002 10.1099/unresolved-fixture --fulltext", "fulltext_unavailable"),
+    ("40001003 10.1099/unresolved-fixture", "reference_unresolved"),
+    ("40001004 10.1099/unresolved-fixture", "citation_marker_unlinked"),
+)
+request_id = 2
+for arguments, expected in cases:
+    cli_json = subprocess.run([os.environ["BIOMCP_BIN"], "--json", "article", "citation-evidence"] + arguments.split(), text=True, capture_output=True, check=True).stdout
+    cli_markdown = subprocess.run([os.environ["BIOMCP_BIN"], "article", "citation-evidence"] + arguments.split(), text=True, capture_output=True, check=True).stdout
+    structured = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article citation-evidence {arguments}","json":True}}})"result"; request_id += 1
+    readable = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article citation-evidence {arguments}"}}})"result"; request_id += 1
+    payload = json.loads(structured["content"][0]["text"])
+    assert structured.get("isError") is False and readable.get("isError") is False
+    assert payload == json.loads(cli_json), (expected, "json mismatch")
+    assert readable["content"][0]["text"].rstrip() == cli_markdown.rstrip(), (expected, "markdown mismatch")
+    assert payload["status"] == expected
+error = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp article citation-evidence 39991290 10.1093/absent-target","json":True}}})"result"; request_id += 1
+assert error.get("isError") is True
+assert "exhausted the directed reference pages" in error["content"][0]["text"]
+tools = call({"jsonrpc":"2.0","id":request_id,"method":"tools/list","params":{}})["result"]["tools"]
+names = {tool["name"] for tool in tools}
+assert "citation_evidence" not in names and "article_citation_evidence" not in names
+proc.terminate(); proc.wait(timeout=5)
+print("raw citation-evidence agrees with the CLI; typed tools absent")
+PY
+```
+
 ## Semantic Scholar Degrades Truthfully Without a Key
 
 The blocking lane is intentionally keyless. Article search should stay usable
