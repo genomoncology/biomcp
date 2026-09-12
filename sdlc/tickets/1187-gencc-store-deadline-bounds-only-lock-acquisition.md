@@ -140,4 +140,9 @@ rerun on the same host from its updated branch.
   PostRenameSync from the recovery path instead of Deadline (a mechanical,
   recoverable consequence of the kept checkpoint); rustfmt reflow enlarged
   the test diff cosmetically.
-- Full gates: pending on the 4-core gate host
+- Full gates: first gate run at 4c53c445 on the 4-core host failed make
+  lint's size ratchet: src/sources/gencc/store.rs (1043 lines) and
+  src/sources/gencc/tests.rs (1083 lines) crossed the 1000-line cap without
+  baselines. Authorized both baselines in tools/rust-source-size-inventory.json
+  (commit 1e36d138, deltas 43 and 101, floors 1000 and 982, with removal
+  conditions); ratchet passes locally. Final gates rerun at 1e36d138: pending.
