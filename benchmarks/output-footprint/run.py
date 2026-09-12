@@ -26,7 +26,8 @@ COMPACT_BYTE_CEILINGS = {
     # small explicit margin without relaxing the other compact surfaces.
     "variant_search": 720,
     "gene_get_sections": 7_000,
-    "trial_search": 500,
+    # One captured trial plus six conversion rows fit within this ceiling.
+    "trial_search": 6_100,
 }
 
 
