@@ -93,8 +93,6 @@ impl RawCsvTemp {
     }
 }
 #[rustfmt::skip]
-fn ensure_deadline(deadline: std::time::Instant, error: StoreError) -> Result<(), StoreError> { (std::time::Instant::now() < deadline).then_some(()).ok_or(error) }
-#[rustfmt::skip]
 impl Drop for RawCsvTemp {
     fn drop(&mut self) {
         #[cfg(unix)] let result = unlink_file_at(&self.parent, &self.name);
@@ -544,8 +542,6 @@ impl Store {
         fs::rename(&temporary, self.root.join("state.json")).map_err(|_| StoreError::Unavailable)?;
         owned_temporary.disarm();
         injected("after-state-rename", StoreError::PostRenameSync)?;
-        #[cfg(debug_assertions)] if std::env::var("BIOMCP_GENCC_TEST_EXPIRE_AT").as_deref() == Ok("after-state-rename") { while std::time::Instant::now() < self.deadline { std::thread::yield_now(); } }
-        ensure_deadline(self.deadline, StoreError::PostRenameSync)?;
         injected("before-root-directory-fsync", StoreError::PostRenameSync)?;
         self.root_dir.sync_all().map_err(|_| StoreError::PostRenameSync)?;
         injected("after-root-directory-fsync", StoreError::PostRenameSync)

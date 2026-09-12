@@ -624,8 +624,8 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
 }
 #[test]
 #[serial_test::serial(gencc_env)]
-fn expired_open_budget_completes_reads_and_fails_only_after_the_state_rename() {
-    use super::store::{PublishMetadata, Store, StoreError};
+fn expired_open_budget_completes_publish_and_deferred_cleanup() {
+    use super::store::{PublishMetadata, Store};
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
@@ -647,12 +647,12 @@ fn expired_open_budget_completes_reads_and_fails_only_after_the_state_rename() {
     let generations = root.join("generations");
     let expired = Store::open_until(std::time::Instant::now()).unwrap();
     assert!(expired.load().unwrap().is_none());
-    let failed = publish(&expired, "2026-01-01T00:00:00Z");
-    assert!(matches!(failed, Err(StoreError::PostRenameSync)));
+    publish(&expired, "2026-01-01T00:00:00Z")
+        .expect("publish completes and commits rows with an expired budget");
     let reader = expired
         .load()
         .unwrap()
-        .expect("committed generation reads with an expired budget");
+        .expect("reads complete with an expired budget");
     let retained = reader.state.active_generation.clone().unwrap();
     assert_eq!(reader.dataset.assertions().len(), 3);
     let live =

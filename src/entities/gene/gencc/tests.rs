@@ -390,16 +390,14 @@ async fn post_rename_200_and_304_deadlines_return_committed_public_rows() {
         unsafe {
             std::env::set_var("BIOMCP_GENCC_BASE", endpoint);
             std::env::set_var("BIOMCP_GENCC_TEST_NOW", "2026-09-09T00:00:00Z");
-            std::env::set_var("BIOMCP_GENCC_TEST_EXPIRE_AT", "after-state-rename");
+            std::env::set_var("BIOMCP_GENCC_TEST_FAIL_AT", "after-state-rename");
         }
-        let started = std::time::Instant::now();
         let (section, outcome) = fetch_section(
             "ODC1",
             Ok(vec!["HGNC:8109".into()]),
             std::time::Duration::from_secs(2),
         )
         .await;
-        assert!(started.elapsed() <= std::time::Duration::from_secs(2));
         assert_eq!(section.assertions.len(), 3);
         assert_eq!(section.status.freshness, GenCcFreshness::Fresh);
         assert_eq!(
@@ -413,9 +411,9 @@ async fn post_rename_200_and_304_deadlines_return_committed_public_rows() {
         assert_eq!(outcome.outcome(), SectionOutcomeState::Data);
         server.abort();
         unsafe {
-            std::env::remove_var("BIOMCP_GENCC_TEST_EXPIRE_AT");
+            std::env::remove_var("BIOMCP_GENCC_TEST_FAIL_AT");
             std::env::remove_var("BIOMCP_GENCC_TEST_NOW");
-            std::env::remove_var("BIOMCP_GENCC_BASE");
+            std::env::remove_var("BIOMCP_GENCC_TEST_BASE");
             std::env::remove_var("BIOMCP_GENCC_DIR");
         }
     }

@@ -269,11 +269,11 @@
     },
     {
       "path": "src/sources/gencc/store.rs",
-      "baseline_lines": 1043,
+      "baseline_lines": 1039,
       "floor_lines": 1000,
       "authorized_increase": {
         "ticket": "1187",
-        "delta": 43,
+        "delta": 39,
         "reason": "Deadline semantics concentrate in the three bounded lock waits beside their helpers after post-lock budget checks were removed; rustfmt reflow widens the shortened signatures and cleanup bodies.",
         "removal_condition": "Extract the lock-wait helpers or the cleanup passes when the GenCC store is next decomposed."
       }
