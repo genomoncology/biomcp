@@ -1,4 +1,5 @@
 use std::net::TcpListener;
+use std::path::Path;
 use std::process::{Command, Output};
 use std::sync::{
     Arc,
@@ -91,6 +92,10 @@ fn run_article_search_at(args: &[&str], base: &str) -> CommandResult {
         .prefix("biomcp-article-usage-stderr-cache-")
         .tempdir()
         .expect("temp dir should be created");
+    run_article_search_at_with_cache(args, base, &cache_home.path().join("absent-cache"))
+}
+
+fn run_article_search_at_with_cache(args: &[&str], base: &str, cache: &Path) -> CommandResult {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
     command.args(["search", "article"]);
     command.args(args);
@@ -104,7 +109,7 @@ fn run_article_search_at(args: &[&str], base: &str) -> CommandResult {
         command.env(name, base);
     }
     command.env("BIOMCP_CACHE_MODE", "off");
-    command.env("XDG_CACHE_HOME", cache_home.path());
+    command.env("BIOMCP_CACHE_DIR", cache);
     command.env_remove("RUST_LOG");
     command.env_remove("S2_API_KEY");
 
@@ -286,16 +291,18 @@ fn malformed_article_query_inputs_are_clean_and_make_zero_requests() {
     }
     let sentinel_dir = tempfile::tempdir().expect("sentinel tempdir");
     let sentinel = sentinel_dir.path().join("must-not-exist");
+    let managed = sentinel_dir.path().join("absent-managed-state");
     let hostile = format!(
-        "gene:RB1\"\\\\\n\\x08\\x1b[31m;$(touch {})",
+        "gene:RB1\"\\\\\n\u{8}\u{1b}[31m;$(touch {})",
         sentinel.display()
     );
-    let malicious = run_article_search_at(&["-k", &hostile], &fixture.base);
+    let malicious = run_article_search_at_with_cache(&["-k", &hostile], &fixture.base, &managed);
     assert_clean_usage_error(&malicious, cases[0].1);
     assert!(!malicious.stderr.contains('\u{8}'));
     assert!(!malicious.stderr.contains('\u{1b}'));
     assert!(!malicious.stderr.contains(sentinel.to_str().unwrap()));
     assert!(!sentinel.exists(), "hostile keyword created a sentinel");
+    assert!(!managed.exists(), "hostile keyword created managed state");
     let gene_line = "Error: Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].";
     for gene in ["TPMT mercaptopurine", ""] {
         let result = run_article_search_at(&["--gene", gene], &fixture.base);

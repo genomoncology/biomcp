@@ -1199,9 +1199,9 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
     thread::sleep(Duration::from_millis(20));
     assert_eq!(fixture.requests.load(Ordering::SeqCst), 2);
 
-    let raw_json = biomcp_mcp_contract_client::call_biomcp(
+    let raw_json = biomcp_mcp_contract_client::call_biomcp_json(
         &client,
-        "biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1 --json",
+        "biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1",
     )
     .await?;
     let typed_json = client

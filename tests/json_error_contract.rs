@@ -843,6 +843,13 @@ fn malformed_article_query_inputs_keep_the_json_error_contract_without_provider_
         assert!(result.stderr.is_empty(), "stderr={}", result.stderr);
         let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
         assert_eq!(value["error"]["message"], expected);
+        assert_eq!(value.as_object().map(serde_json::Map::len), Some(3));
+        assert_eq!(
+            value["error"].as_object().map(serde_json::Map::len),
+            Some(2)
+        );
+        assert_eq!(value["_meta"], serde_json::json!({"not_found": false}));
+        assert_eq!(value["results"], serde_json::json!([]));
         fixture.assert_no_request();
     }
 }
