@@ -13,10 +13,8 @@ SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
 CARGO_WITH_IDENTITY = tools/with-build-identity cargo
 ROUTINE_TEST_ARCHIVE = $(CURDIR)/.cache/routine-tests.tar.zst
 ROUTINE_TEST_TMPDIR = $(CURDIR)/.cache/routine-test-tmp
-PYTEST_BASETEMP = $(ROUTINE_TEST_TMPDIR)/pytest
 ifneq (,$(filter test,$(MAKECMDGOALS)))
 export TMPDIR = $(ROUTINE_TEST_TMPDIR)
-export BIOMCP_ROUTINE_TEST_LANE = 1
 endif
 SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,$(CARGO_WITH_IDENTITY) build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)
 
@@ -46,8 +44,8 @@ test-contracts: prepare-test-contracts
 	$(MAKE) test-contracts-prepared
 
 test-contracts-prepared:
-	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
-	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
+	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS)
+	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \

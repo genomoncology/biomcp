@@ -25,6 +25,21 @@ def test_routine_gates_prepare_before_entering_offline_namespace() -> None:
     assert "scripts/run-specs.sh prepare-spec" in MAKEFILE
 
 
+def test_prepared_contracts_leave_tmpdir_to_the_offline_runner() -> None:
+    prepared = MAKEFILE.split("test-contracts-prepared:\n", 1)[1].split("\nlint:\n", 1)[
+        0
+    ]
+    assert "TMPDIR" not in prepared
+    assert "--basetemp" not in prepared
+    recipe_lines = [line for line in prepared.splitlines() if line.strip()]
+    assert len(recipe_lines) == 2
+    assert all(line.startswith("\ttools/run-offline -- env ") for line in recipe_lines)
+
+    runner = (ROOT / "tools/run-offline").read_text(encoding="utf-8")
+    assert '--bind "$sandbox_tmp" /tmp' in runner
+    assert "--setenv TMPDIR /tmp" in runner
+
+
 def test_live_verify_lane_is_not_network_isolated() -> None:
     verify = MAKEFILE.split("verify:\n", 1)[1].split("\nrelease-live-smoke:", 1)[0]
     assert "tools/run-offline" not in verify
@@ -42,7 +57,9 @@ def test_authoritative_linux_job_installs_pinned_bubblewrap() -> None:
     assert "make spec" in canonical
 
 
-def test_authoritative_linux_job_fetches_release_history_for_version_contracts() -> None:
+def test_authoritative_linux_job_fetches_release_history_for_version_contracts() -> (
+    None
+):
     workflow = yaml.safe_load(WORKFLOW)
     checkout = workflow["jobs"]["canonical-gates"]["steps"][0]
 
@@ -58,8 +75,7 @@ def test_authoritative_linux_job_fetches_release_history_for_version_contracts()
     ]
     assert len(full_history_checkouts) == 2
     assert all(
-        step["with"].get("filter") == "blob:none"
-        for step in full_history_checkouts
+        step["with"].get("filter") == "blob:none" for step in full_history_checkouts
     )
 
 
@@ -127,8 +143,13 @@ def test_failed_bubblewrap_preserves_bootstrap_error_and_status(tmp_path: Path) 
     )
 
     assert completed.returncode == 23
-    assert "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted" in completed.stdout
-    assert "offline sandbox bootstrap failed: verifier did not start" in completed.stdout
+    assert (
+        "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted"
+        in completed.stdout
+    )
+    assert (
+        "offline sandbox bootstrap failed: verifier did not start" in completed.stdout
+    )
     assert "offline ownership isolation failed" not in completed.stdout
     assert "bubblewrap isolated user and network namespaces" not in completed.stdout
     assert list(sentinel_root.iterdir()) == []
@@ -178,8 +199,14 @@ def test_failed_verifier_preserves_isolation_error_and_status(tmp_path: Path) ->
     )
 
     assert completed.returncode == 24
-    assert "offline privilege isolation failed: simulated verifier failure" in completed.stdout
-    assert "offline sandbox verification failed before isolation completed" in completed.stdout
+    assert (
+        "offline privilege isolation failed: simulated verifier failure"
+        in completed.stdout
+    )
+    assert (
+        "offline sandbox verification failed before isolation completed"
+        in completed.stdout
+    )
     assert "offline ownership isolation failed" not in completed.stdout
     assert "bubblewrap isolated user and network namespaces" not in completed.stdout
     assert list(sentinel_root.iterdir()) == []
@@ -278,10 +305,18 @@ print(json.dumps({
         "offline network controls: loopback TCP and Unix sockets available"
         in completed.stdout
     )
-    assert "offline privilege controls: uid/gid 0; capabilities zero; NoNewPrivs 1" in completed.stdout
-    assert f"offline ownership mapping: host uid/gid {os.getuid()}/{os.getgid()} verified" in completed.stdout
+    assert (
+        "offline privilege controls: uid/gid 0; capabilities zero; NoNewPrivs 1"
+        in completed.stdout
+    )
+    assert (
+        f"offline ownership mapping: host uid/gid {os.getuid()}/{os.getgid()} verified"
+        in completed.stdout
+    )
     assert "reusing the verified enclosing namespace" not in completed.stdout
-    report = json.loads(next(line for line in completed.stdout.splitlines() if line.startswith("{")))
+    report = json.loads(
+        next(line for line in completed.stdout.splitlines() if line.startswith("{"))
+    )
     assert report["uid"] == 0
     assert report["gid"] == 0
     assert report["tmp_uid"] == 0
@@ -336,7 +371,10 @@ def test_marker_cannot_bypass_outer_privilege_isolation() -> None:
         timeout=20,
     )
     assert completed.returncode != 0
-    assert "offline privilege isolation failed: namespace uid/gid are not 0" in completed.stdout
+    assert (
+        "offline privilege isolation failed: namespace uid/gid are not 0"
+        in completed.stdout
+    )
 
 
 @pytest.mark.skipif(
@@ -355,7 +393,16 @@ def test_enclosed_runner_revalidates_privilege_and_network_state() -> None:
         timeout=20,
     )
     assert "reusing the verified enclosing namespace" in completed.stdout
-    assert "offline privilege controls: uid/gid 0; capabilities zero; NoNewPrivs 1" in completed.stdout
-    assert "offline network controls: public DNS blocked; direct public TCP blocked" in completed.stdout
-    assert "offline network controls: loopback TCP and Unix sockets available" in completed.stdout
+    assert (
+        "offline privilege controls: uid/gid 0; capabilities zero; NoNewPrivs 1"
+        in completed.stdout
+    )
+    assert (
+        "offline network controls: public DNS blocked; direct public TCP blocked"
+        in completed.stdout
+    )
+    assert (
+        "offline network controls: loopback TCP and Unix sockets available"
+        in completed.stdout
+    )
     assert completed.stdout.rstrip().endswith("reused")
