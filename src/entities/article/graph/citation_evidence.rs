@@ -582,6 +582,11 @@ pub async fn citation_evidence(
                 status = CitationEvidenceStatus::FulltextUnavailable;
             }
         }
+    } else if jats.is_some() {
+        // A forced or contextless attempt that could not produce parsed JATS
+        // reports the bounded unavailability; it never falls back to the
+        // provider-context state, and the provider contexts stay retained.
+        status = CitationEvidenceStatus::FulltextUnavailable;
     }
 
     let mut evidence_urls = vec![
