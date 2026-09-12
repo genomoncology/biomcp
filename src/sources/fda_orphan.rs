@@ -196,7 +196,8 @@ fn direct_rows(
 
 #[cfg(test)]
 fn parse_response(html: &[u8], candidates: &[String]) -> Result<Vec<FdaOrphanRecord>, BioMcpError> {
-    admit_records(parse_table(html)?, candidates)
+    parse_records(parse_table(html)?, candidates)
+        .map(|(records, _)| filter_records(records, candidates))
 }
 
 fn parse_table(html: &[u8]) -> Result<Vec<Vec<String>>, BioMcpError> {
@@ -204,24 +205,19 @@ fn parse_table(html: &[u8]) -> Result<Vec<Vec<String>>, BioMcpError> {
         return Err(source_error("response too large"));
     }
     let rows = table_rows(html)?;
-    if !rows
-        .first()
-        .is_some_and(|row| row.iter().map(String::as_str).eq(HEADERS))
-    {
-        return Err(source_error("unexpected headers"));
-    }
     Ok(rows.into_iter().skip(1).collect())
 }
 
-fn admit_records(
+fn parse_records(
     rows: Vec<Vec<String>>,
     candidates: &[String],
-) -> Result<Vec<FdaOrphanRecord>, BioMcpError> {
+) -> Result<(Vec<FdaOrphanRecord>, bool), BioMcpError> {
     let candidates = candidates
         .iter()
         .map(|v| clean(v).to_ascii_lowercase())
         .collect::<HashSet<_>>();
     let mut records = Vec::new();
+    let mut cacheable = true;
     for row in rows {
         let generic = row.first().map_or_else(String::new, |value| clean(value));
         let trade = row.get(1).cloned().and_then(optional);
@@ -229,15 +225,20 @@ fn admit_records(
             || trade
                 .as_ref()
                 .is_some_and(|value| candidates.contains(&value.to_ascii_lowercase()));
-        if !admitted {
+        if row.len() != HEADERS.len() {
+            if admitted {
+                return Err(source_error("malformed row"));
+            }
+            cacheable = false;
             continue;
         }
-        if row.len() != HEADERS.len() {
-            return Err(source_error("malformed row"));
+        match parse_row(row, generic, trade) {
+            Ok(record) => records.push(record),
+            Err(error) if admitted => return Err(error),
+            Err(_) => cacheable = false,
         }
-        records.push(parse_row(row, generic, trade)?);
     }
-    Ok(records)
+    Ok((records, cacheable))
 }
 
 fn filter_records(records: Vec<FdaOrphanRecord>, candidates: &[String]) -> Vec<FdaOrphanRecord> {
@@ -446,10 +447,11 @@ async fn query(
     }
     let bytes =
         crate::sources::read_limited_body_with_limit(response, FDA_ORPHAN_SOURCE, MAX_BODY).await?;
-    let rows = parse_table(&bytes)?;
-    let records = admit_records(rows, &all_candidates)?;
-    write_cache(cache.as_deref(), &key, &records).await?;
-    Ok(records)
+    let (records, cacheable) = parse_records(parse_table(&bytes)?, &all_candidates)?;
+    if cacheable {
+        write_cache(cache.as_deref(), &key, &records).await?;
+    }
+    Ok(filter_records(records, &all_candidates))
 }
 
 pub(crate) async fn fetch(candidates: Vec<String>) -> FdaOrphanDesignations {
@@ -677,7 +679,12 @@ pub(crate) async fn health_probe(_client: reqwest::Client) -> Result<(), BioMcpE
     }
     let bytes =
         crate::sources::read_limited_body_with_limit(response, FDA_ORPHAN_SOURCE, MAX_BODY).await?;
-    parse_table(&bytes).map(|_| ())
+    let (_, fully_valid) = parse_records(parse_table(&bytes)?, &[])?;
+    if fully_valid {
+        Ok(())
+    } else {
+        Err(source_error("malformed row"))
+    }
 }
 
 #[cfg(test)]
@@ -811,6 +818,8 @@ mod tests {
         let mut malformed = valid_cells("other drug", "target trade", "not-decimal");
         malformed[2] = "bad-date".into();
         let html = html_rows(&[malformed]);
+        let rows = parse_table(html.as_bytes()).unwrap();
+        assert!(!parse_records(rows, &[]).unwrap().1);
         assert!(
             parse_response(html.as_bytes(), &["unrelated".into()])
                 .unwrap()
@@ -828,6 +837,16 @@ mod tests {
                 .unwrap()
                 .is_empty()
         );
+
+        let mut approved = valid_cells("drug", "", "12");
+        approved[4] = "Designated / Approved".into();
+        assert_eq!(
+            parse_response(html_rows(&[approved.clone()]).as_bytes(), &["drug".into()]).unwrap()[0]
+                .orphan_approval,
+            OrphanApproval::Approved
+        );
+        approved[6] = "Not FDA Approved for Orphan Indication".into();
+        assert!(parse_response(html_rows(&[approved]).as_bytes(), &["drug".into()]).is_err());
     }
 
     #[test]
@@ -938,24 +957,6 @@ mod tests {
             ),
             (FdaOrphanOutcome::Unavailable, None, false)
         );
-    }
-
-    #[test]
-    fn approved_and_contradictory_facts_are_distinct() {
-        let mut cells = vec![String::new(); 19];
-        cells[0] = "drug".into();
-        cells[2] = "01/02/2024".into();
-        cells[3] = "use".into();
-        cells[4] = "Designated / Approved".into();
-        cells[18] = "12".into();
-        assert_eq!(
-            parse_row(cells.clone(), "drug".into(), None)
-                .unwrap()
-                .orphan_approval,
-            OrphanApproval::Approved
-        );
-        cells[6] = "Not FDA Approved for Orphan Indication".into();
-        assert!(parse_row(cells, "drug".into(), None).is_err());
     }
 
     #[test]

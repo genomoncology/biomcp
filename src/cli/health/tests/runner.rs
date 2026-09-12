@@ -36,25 +36,25 @@ impl Drop for FdaBaseGuard {
 
 async fn health_fda_server(
     status: axum::http::StatusCode,
+    body: String,
 ) -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
     let requests = Arc::new(AtomicUsize::new(0));
     let seen = Arc::clone(&requests);
+    let response_body = Arc::new(body);
     let app = axum::Router::new().route(
         "/OOPD_Results.cfm",
-        axum::routing::post(move |body: axum::body::Bytes| {
+        axum::routing::post(move |request_body: axum::body::Bytes| {
             let seen = Arc::clone(&seen);
+            let response_body = Arc::clone(&response_body);
             async move {
                 seen.fetch_add(1, Ordering::SeqCst);
                 assert_eq!(
-                    String::from_utf8_lossy(&body),
+                    String::from_utf8_lossy(&request_body),
                     "Product_name=eflornithine+hydrochloride&sponsor_name=&Designation=&Designation_Start_Date=&Designation_End_Date=&Search_param=DESDATE&Output_Format=Excel&Sort_order=GENERIC_NAME&RecordsPerPage=25&newSearch=Run+Search"
                 );
                 (
                     status,
-                    include_str!(concat!(
-                        env!("CARGO_MANIFEST_DIR"),
-                        "/testdata/sources/fda_orphan/provider-shaped.html"
-                    )),
+                    response_body.as_str().to_owned(),
                 )
             }
         }),
@@ -72,7 +72,12 @@ async fn fda_orphan_fixture_probe_reconciles_rows_counts_and_fail_policy() {
         .iter()
         .find(|source| source.api == "FDA Orphan Drug Designations")
         .unwrap();
-    let (base, requests, server) = health_fda_server(axum::http::StatusCode::OK).await;
+    let fixture = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/fda_orphan/provider-shaped.html"
+    ));
+    let (base, requests, server) =
+        health_fda_server(axum::http::StatusCode::OK, fixture.into()).await;
     let _base = FdaBaseGuard::set(&base);
     let good = probe_source(reqwest::Client::new(), source).await;
     server.abort();
@@ -87,7 +92,11 @@ async fn fda_orphan_fixture_probe_reconciles_rows_counts_and_fail_policy() {
         (Some(true), Some("fail_on_error"))
     );
 
-    let (base, _, server) = health_fda_server(axum::http::StatusCode::INTERNAL_SERVER_ERROR).await;
+    let (base, _, server) = health_fda_server(
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        fixture.into(),
+    )
+    .await;
     let _base = FdaBaseGuard::set(&base);
     let bad = report_from_outcomes(vec![probe_source(reqwest::Client::new(), source).await]);
     server.abort();
@@ -98,6 +107,16 @@ async fn fda_orphan_fixture_probe_reconciles_rows_counts_and_fail_policy() {
     );
     let json: serde_json::Value = serde_json::from_str(&bad.to_json(true).unwrap()).unwrap();
     assert_eq!(json["ok"], false);
+
+    let malformed = fixture.replace("03/11/2024", "not-a-date");
+    let (base, _, server) = health_fda_server(axum::http::StatusCode::OK, malformed).await;
+    let _base = FdaBaseGuard::set(&base);
+    let malformed = report_from_outcomes(vec![probe_source(reqwest::Client::new(), source).await]);
+    server.abort();
+    assert_eq!(
+        (malformed.healthy, malformed.error, malformed.total),
+        (0, 1, 1)
+    );
 }
 #[test]
 fn markdown_shows_affects_column_when_present() {
