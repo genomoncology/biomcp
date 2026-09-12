@@ -84,7 +84,11 @@ async fn disease_card_fixture_server()
 #[serial_test::serial(source_env)]
 async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
     let (base, requests, server) = disease_card_fixture_server().await;
+    let cache = crate::test_support::TempDirGuard::new("disease-card");
+    let cache_path = cache.path().to_string_lossy().into_owned();
     let mut env = DiseaseCardFixtureEnv::new();
+    env.set("BIOMCP_CACHE_DIR", &cache_path);
+    env.set("BIOMCP_CACHE_MIN_DISK_FREE", "1B");
     env.set("BIOMCP_MYDISEASE_BASE", &base);
     env.set("BIOMCP_CTGOV_BASE", &base);
     env.set("BIOMCP_OLS4_BASE", "://unavailable-ols-fixture");

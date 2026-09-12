@@ -494,7 +494,7 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
 }
 
 #[tokio::test]
-#[serial_test::serial]
+#[serial_test::serial(source_env)]
 async fn population_request_requires_a_grch38_genomic_coordinate() {
     let mut variant = braf_variant_stub();
     assert_eq!(population_variant_id(&variant), None);
@@ -507,7 +507,11 @@ async fn population_request_requires_a_grch38_genomic_coordinate() {
     );
 
     let (base, requests, server) = population_fixture_server().await;
+    let cache = crate::test_support::TempDirGuard::new("population-request");
+    let cache_path = cache.path().to_string_lossy().into_owned();
     let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_CACHE_DIR", &cache_path);
+    env.set("BIOMCP_CACHE_MIN_DISK_FREE", "1B");
     env.set("BIOMCP_MYVARIANT_BASE", &base);
     env.set("BIOMCP_GNOMAD_BASE", &base);
     env.set("BIOMCP_DBSNP_BASE", &base);
