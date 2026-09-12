@@ -104,21 +104,10 @@ where
 {
     let args: Vec<OsString> = args.into_iter().map(Into::into).collect();
     reject_reserved_skill_subcommand(&args)?;
-    let matches = match build_cli().try_get_matches_from(args.clone()) {
-        Ok(matches) => matches,
-        Err(original)
-            if !matches!(
-                original.kind(),
-                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
-            ) =>
-        {
-            return match reversed_search_correction(&args) {
-                Some(sentence) => Err(build_cli().error(ErrorKind::InvalidSubcommand, sentence)),
-                None => Err(original),
-            };
-        }
-        Err(original) => return Err(original),
-    };
+    if let Some(sentence) = reversed_search_correction(&args) {
+        return Err(build_cli().error(ErrorKind::InvalidSubcommand, sentence));
+    }
+    let matches = build_cli().try_get_matches_from(args)?;
     Cli::from_arg_matches(&matches)
 }
 

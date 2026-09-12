@@ -912,6 +912,9 @@ fn reversed_search_process_errors_are_golden_and_do_no_work() {
         ("article", "biomcp search article"),
         ("trial", "biomcp search trial"),
         ("adverse-event", "biomcp search adverse-event"),
+        ("gene", "biomcp search gene"),
+        ("drug", "biomcp search drug"),
+        ("variant", "biomcp search variant"),
     ] {
         let result = run_biomcp_with_env(&[entity, "search"], &providers);
         assert_eq!(result.code, Some(2));

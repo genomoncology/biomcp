@@ -141,7 +141,24 @@ fn reversed_search_names_report_copyable_canonical_commands() {
             .expect("corrected argv is structurally valid help");
     }
 
-    assert!(super::super::try_parse_cli(["biomcp", "gene", "search", "--help"]).is_ok());
+    for entity in ["gene", "drug", "variant"] {
+        let error = super::super::try_parse_cli(["biomcp", entity, "search", "--help"])
+            .expect_err("external-subcommand catchalls must not bypass correction");
+        assert!(error.to_string().contains(&format!(
+            "reversed search syntax; use `biomcp search {entity} --help`"
+        )));
+    }
+
+    for args in [
+        ["biomcp", "gene", "BRAF"],
+        ["biomcp", "drug", "imatinib"],
+        ["biomcp", "variant", "BRAF V600E"],
+    ] {
+        assert!(
+            super::super::try_parse_cli(args).is_ok(),
+            "genuine external-subcommand shorthand changed: {args:?}"
+        );
+    }
 }
 
 #[test]
