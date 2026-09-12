@@ -52,13 +52,48 @@ an allowlisted lowercase name followed by the exact lowercase token `search`.
 Do not case-fold, prefix-match, normalize hyphens, inspect option values, or
 interpret anything after `--` as command syntax.
 
+Classify the lexical pair before applying recovery budgets or validating the
+candidate. Scan only until a literal `--` or the first two non-global command
+tokens; do not allocate, UTF-8-convert, render, or echo the remaining argv
+during this phase. Keep three explicit outcomes: not reversed, a complete
+correction, or a recognized reversal whose supplied arguments cannot be
+accepted for correction. This distinction is required because the `gene`,
+`drug`, and `variant` external-subcommand catchalls must never turn a
+recognized reversal into runtime work merely because validation, encoding, or
+a recovery bound suppresses the complete correction.
+
 Build the candidate by swapping only those two argv elements. Preserve every
 other argument byte, spelling, position, duplicate, and the `--` delimiter.
 Validate the candidate with a fresh raw `build_cli().try_get_matches_from(...)`
 call, never `try_parse_cli`; this prevents recursive recovery. An `Ok` result
 or candidate `DisplayHelp`/`DisplayVersion` is structurally valid. Any other
-candidate error returns the original Clap error unchanged, so a reversal with
-invalid search arguments does not replace a more relevant diagnostic.
+candidate error normally returns the original Clap error unchanged, so a
+reversal with invalid search arguments does not replace a more relevant
+diagnostic. If the original parse is instead successful only because one of
+the three external-subcommand catchalls accepted the reversed words, reject it
+before dispatch with this fixed safe sentence, substituting the already
+allowlisted entity name:
+
+```text
+reversed search syntax; use `biomcp search <entity>`; the supplied search arguments were not accepted
+```
+
+Use the same fallback when a recognized catchall reversal cannot produce the
+complete correction because of a recovery entry/byte bound, non-UTF-8 or
+control input, shell-rendering failure, or the complete-sentence bound. Do not
+include any rejected argument in this fallback. Native JSON selection still
+honors only `--json` or `-j` before `--`. Raw MCP returns the fallback as its
+ordinary `Error: ` tool error and performs no work. The other twelve command
+families retain their original Clap errors in these suppressed-correction
+cases. Typed MCP remains unaffected.
+
+The native fallback uses the same envelope as a complete correction: construct
+a root `InvalidSubcommand` Clap error with complete root usage/help footer,
+write stderr only, and exit 2. With a pre-`--` `--json` or `-j`, use the
+existing pretty parse-error JSON envelope on stdout only, exit 2,
+`error.code = invalid_argument`, and `_meta.not_found = false`. The fixed
+fallback sentence appears exactly once, and neither human nor JSON output
+contains bytes from rejected arguments.
 
 Root or family help/version that Clap already recognizes before a complete
 reversed pair remains byte-for-byte unchanged. A trailing help/version flag
@@ -73,16 +108,20 @@ The classifier accepts at most 256 argv entries total, including argv[0]. The
 limit is inclusive. The UTF-8 input budget is the sum of the byte lengths of
 every argv entry, including argv[0] and with no separators added; it is at most
 16,384 bytes inclusive. Non-UTF-8 input, C0/C1 controls in any entry, or a
-breached entry/input bound keeps the original sanitized Clap error.
+breached entry/input bound keeps the original sanitized Clap error for the
+twelve non-catchall families. A recognized `gene`, `drug`, or `variant`
+reversal instead uses the fixed safe fallback above so it cannot dispatch.
 
 After candidate validation and lossless shell rendering, build the shared
 diagnostic sentence including its adaptive Markdown code span. That complete
 sentence, from `reversed` through the closing code-span delimiter, must be at
 most 32,768 UTF-8 bytes inclusive. If quoting or code-span expansion makes it
-one byte larger, keep the original Clap error. The raw MCP `Error: ` prefix,
-fixed Clap usage/footer, and fixed JSON-envelope syntax are outside this
-variable-content measurement. These are bounded recovery-classification and
-diagnostic rules, not new limits on valid canonical search commands.
+one byte larger, keep the original Clap error for the twelve non-catchall
+families and use the fixed safe fallback for `gene`, `drug`, or `variant`. The
+raw MCP `Error: ` prefix, fixed Clap usage/footer, and fixed JSON-envelope
+syntax are outside this variable-content measurement. These are bounded
+recovery-classification and diagnostic rules, not new limits on valid
+canonical search commands.
 
 ## Copyable command and error envelopes
 
@@ -120,7 +159,9 @@ envelope: stdout is one pretty-printed object, stderr is empty, exit status is
 2, `error.code` is `invalid_argument`, `error.message` contains the exact
 sentence and quoted command once, and `_meta.not_found` is false. No result,
 pagination, or provider metadata is added. Other human and JSON parse errors,
-including candidate-invalid reversals, remain byte-for-byte unchanged.
+including candidate-invalid reversals in the twelve non-catchall families,
+remain byte-for-byte unchanged. Candidate-invalid `gene`, `drug`, and
+`variant` reversals use the fixed safe fallback envelope above.
 
 For hostile commands the code-span fence grows as required; the prose before
 the span is unchanged and the span's content is the exact shell command.
@@ -193,12 +234,21 @@ than increasing a ratchet. Add no dependency and keep the package at exactly
    preserve the baseline error. Tests pin exactly-at and one-over the 256-entry
    and 16,384-byte input bounds, plus exactly-at and one-over the 32,768-byte
    complete-sentence bound, including a case where shell quoting or Markdown
-   fencing—not raw input alone—causes output overflow. Existing `skill
-   uninstall` recovery remains unchanged.
+   fencing—not raw input alone—causes output overflow. The baseline-preservation
+   rule applies when the original parse is an error; table-driven tests for
+   `gene`, `drug`, and `variant` instead pin the fixed safe fallback for each
+   candidate-invalid and suppressed-correction class and prove no runtime
+   dispatch. Existing `skill uninstall` recovery remains unchanged.
 4. Process goldens pin complete human stderr/stdout/exit and JSON
    stdout/stderr/exit for article, trial, adverse-event, and one global/delimiter
    case. Poisoned provider bases plus an absent temporary cache root prove zero
-   requests and no cache/session filesystem creation.
+   requests and no cache/session filesystem creation. The same subprocess
+   no-work proof covers all three catchall families for an ordinary reversal,
+   an invalid swapped candidate, and representative input/output-bound or
+   encoding suppression; no case may create a lock, cache, or session path.
+   Golden the fixed human and JSON fallback envelopes for all three catchalls
+   on candidate-invalid input, including pre-`--` JSON and post-`--` non-JSON
+   selection/no-echo cases, plus one representative suppression class.
 5. Hostile-argument property tests render and `shlex::split` the correction and
    recover the exact swapped candidate argv. Focused shared-helper goldens pin
    leading/trailing backticks, leading/trailing ASCII spaces, nonempty all-space
@@ -208,8 +258,13 @@ than increasing a ratchet. Add no dependency and keep the package at exactly
    backticks, redirections, and semicolon payloads are not created.
 6. Raw stdio and Streamable HTTP MCP tests cover article/trial corrections,
    hostile round-trip text, both JSON selectors, the generic-error fallback,
-   `isError`, exact content, and zero provider/cache work. Typed-search schema
-   snapshots, behavior fixtures, and the seven-tool catalog remain unchanged.
+   `isError`, exact content, and zero provider/cache work. Both transports also
+   cover the fixed catchall fallback for gene/drug/variant before synthetic
+   JSON insertion: `json: true` and an embedded `--json` remain one text tool
+   error, and poisoned providers plus absent cache/session roots prove no work.
+   Unit tables cover the remaining bound/encoding suppression classes without
+   duplicating every transport. Typed-search schema snapshots, behavior
+   fixtures, and the seven-tool catalog remain unchanged.
 7. Run focused CLI parser/process and MCP tests, the package/source-size and
    quality ratchets, then `make lint`, `make test`, and `make spec`.
 
