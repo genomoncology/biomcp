@@ -43,6 +43,9 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # entries are either controlled test fixtures or provider-returned downloads
     # which install the stronger ProviderUrlPolicy directly. rate_limit.rs is a
     # cfg(test) loopback fixture kept raw to isolate provider-permit ownership.
+    # fda_orphan.rs owns two bounded, fixed-route form clients: acquisition and
+    # its uncached health probe. Both reject redirects, cap response bytes, and
+    # accept a private base only through the documented fixture override seam.
     assert found == Counter(
         {
             "src/sources/mod.rs": 3,
@@ -50,6 +53,7 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
             "src/sources/clingen_cspec.rs": 1,
             "src/sources/provider_url_policy.rs": 1,
             "src/sources/rate_limit.rs": 1,
+            "src/sources/fda_orphan.rs": 2,
             "src/sources/pubmed/tests/parsing.rs": 1,
             "src/entities/trial/documents.rs": 1,
             "src/entities/trial/search/ctgov/tests.rs": 1,

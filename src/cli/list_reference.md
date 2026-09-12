@@ -228,6 +228,7 @@ Results depend on source document wording and may vary across sources.
   dir or `BIOMCP_WHO_IVD_DIR`, then refresh stale files after 72 hours.
 - Run `ema sync`, `who sync`, `cvx sync`, `gtr sync`, or `who-ivd sync` to force-refresh the local runtime data.
 - Use `biomcp health --apis-only` for upstream/API checks. Repeat `--api` for exact providers and add `--fail-on-error` for automation.
+- Probe the orphan-designation form specifically with `biomcp health --api "FDA Orphan Drug Designations"`.
 - Full `biomcp health` includes local EMA/WHO/CVX/GTR/cache readiness plus cache-limit warnings.
 - In multi-worker environments, run one shared `biomcp serve-http` process so workers share one Streamable HTTP `/mcp` endpoint and one limiter budget.
 

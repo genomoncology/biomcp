@@ -16,7 +16,11 @@
         "name": "Eflornithine",
         "synonyms": ["2,5-diamino-2-(difluoromethyl)pentanoic acid", "acid"]
       },
-      "chembl": {"pref_name": "Eflornithine"}
+      "chembl": {"pref_name": "Eflornithine"},
+      "unii": {
+        "unii": "2C4O44BNSN",
+        "display_name": "Eflornithine hydrochloride"
+      }
     },
     {
       "_id": "irrelevant",

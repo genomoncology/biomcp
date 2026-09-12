@@ -6,6 +6,11 @@ searches.
 
 ## Drug approvals (Drugs@FDA)
 
+U.S. `regulatory` cards also contain a separate FDA orphan-designation block.
+That block preserves designation date, designation status, approval status,
+marketing approval, exclusivity end, sponsor, indication, and the validated FDA
+record link as separate facts. An orphan designation does not imply FDA approval.
+
 Use the `approvals` section on drug entities:
 
 ```bash

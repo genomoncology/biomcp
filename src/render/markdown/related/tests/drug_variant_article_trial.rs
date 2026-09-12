@@ -31,6 +31,7 @@ fn related_drug_suggests_review_when_label_and_indications_are_sparse() {
         label_set_id: None,
         shortage: None,
         approvals: None,
+        fda_orphan_designations: None,
         us_safety_warnings: None,
         ema_regulatory: None,
         ema_safety: None,

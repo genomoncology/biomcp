@@ -24,6 +24,7 @@ those U.S. safety and approval workflows.
 | `get drug <name> label` | FDA public label text and sections | OpenFDA label path |
 | `get drug <name> shortage` | Current U.S. shortage status and availability context | Default shortage path is OpenFDA-backed |
 | `get drug <name> approvals` | U.S. approval and application details | Drugs@FDA-derived approval context surfaced through BioMCP |
+| `get drug <name> regulatory --region us|all` | U.S. regulatory context | Also includes a separately labeled, exact-alias overlay from FDA Orphan Drug Designations and Approvals; designation is not approval |
 | `get drug <name> interactions` | Public interaction text when labels expose it | Uses label-backed interaction content or a truthful fallback |
 | `get drug <name> safety --region us` | U.S. safety summary and recall context | OpenFDA-backed U.S. safety workflow |
 | `get diagnostic <id> regulatory` | FDA device 510(k)/PMA status overlay | Exact-name-first live lookup over device regulatory records |

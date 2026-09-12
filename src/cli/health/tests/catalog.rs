@@ -24,6 +24,7 @@ fn health_inventory_includes_all_expected_sources() {
             "NCI CTS",
             "Enrichr",
             "OpenFDA",
+            "FDA Orphan Drug Designations",
             "CDC WONDER VAERS",
             "OncoKB",
             "DisGeNET",
@@ -76,6 +77,20 @@ fn gencc_health_uses_dedicated_head_contract() {
         .expect("GenCC health source");
     assert!(matches!(source.probe, ProbeKind::GenCcHead));
     assert_eq!(source.affects, Some("gene gencc section"));
+}
+
+#[test]
+fn fda_orphan_health_has_dedicated_form_probe() {
+    let source = health_sources()
+        .iter()
+        .find(|source| source.api == "FDA Orphan Drug Designations")
+        .expect("FDA orphan health source");
+    assert!(matches!(source.probe, ProbeKind::FdaOrphan));
+    assert_eq!(source.affects, Some("get drug regulatory --region us|all"));
+    assert_eq!(
+        affects_for_api("FDA Orphan Drug Designations"),
+        source.affects
+    );
 }
 
 #[test]

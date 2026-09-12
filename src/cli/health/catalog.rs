@@ -49,6 +49,7 @@ pub(in crate::cli::health) enum ProbeKind {
     #[cfg(not(feature = "alphagenome"))]
     Unavailable,
     VaersQuery,
+    FdaOrphan,
     GenCcHead,
 }
 
@@ -165,6 +166,11 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         probe: ProbeKind::Get {
             url: "https://api.fda.gov/drug/event.json?limit=1",
         },
+    },
+    SourceDescriptor {
+        api: "FDA Orphan Drug Designations",
+        affects: Some("get drug regulatory --region us|all"),
+        probe: ProbeKind::FdaOrphan,
     },
     SourceDescriptor {
         api: "CDC WONDER VAERS",

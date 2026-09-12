@@ -32,6 +32,7 @@ HEALTH_ALIASES = {
     "cbioportal": "cBioPortal",
     "clinicaltrials": "ClinicalTrials.gov",
     "ddinter": "DDInter local data",
+    "fda_orphan": "FDA Orphan Drug Designations",
     "gprofiler": "g:Profiler",
     "gwas": "GWAS Catalog",
     "ncbi_efetch": "NCBI E-utilities",

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 };
 
@@ -13,11 +13,11 @@ use super::super::{
 use crate::test_support::TempDirGuard;
 use axum::{
     Router,
-    body::Body,
+    body::{Body, Bytes},
     extract::State,
     http::{HeaderMap, Response},
     response::IntoResponse,
-    routing::get,
+    routing::{get, post},
 };
 use http_cache_reqwest::CacheMode;
 use reqwest::StatusCode;
@@ -41,6 +41,334 @@ impl EnvRestore {
         }
         Self(prior)
     }
+}
+
+#[derive(Clone)]
+struct OrphanOriginState {
+    body: Arc<Vec<u8>>,
+    status: StatusCode,
+    requests: Arc<AtomicUsize>,
+    active: Arc<AtomicUsize>,
+    peak: Arc<AtomicUsize>,
+    forms: Arc<Mutex<Vec<String>>>,
+    delay: std::time::Duration,
+}
+
+async fn orphan_origin(State(state): State<OrphanOriginState>, body: Bytes) -> Response<Body> {
+    let active = state.active.fetch_add(1, Ordering::SeqCst) + 1;
+    state.peak.fetch_max(active, Ordering::SeqCst);
+    state.requests.fetch_add(1, Ordering::SeqCst);
+    state
+        .forms
+        .lock()
+        .unwrap()
+        .push(String::from_utf8(body.to_vec()).unwrap());
+    tokio::time::sleep(state.delay).await;
+    state.active.fetch_sub(1, Ordering::SeqCst);
+    Response::builder()
+        .status(state.status)
+        .body(Body::from(state.body.as_ref().clone()))
+        .unwrap()
+}
+
+async fn orphan_server(
+    status: StatusCode,
+    delay: std::time::Duration,
+) -> (String, OrphanOriginState, tokio::task::JoinHandle<()>) {
+    let state = OrphanOriginState {
+        body: Arc::new(
+            include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/testdata/sources/fda_orphan/provider-shaped.html"
+            ))
+            .to_vec(),
+        ),
+        status,
+        requests: Default::default(),
+        active: Default::default(),
+        peak: Default::default(),
+        forms: Default::default(),
+        delay,
+    };
+    let app = Router::new()
+        .route("/OOPD_Results.cfm", post(orphan_origin))
+        .with_state(state.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let task = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    (format!("http://{address}"), state, task)
+}
+
+fn orphan_cache_key(base: &str, candidate: &str) -> String {
+    super::super::fda_orphan::cache_key(base, &super::super::fda_orphan::ordered_form(candidate))
+}
+
+#[test]
+fn fda_orphan_cache_modes_and_expiry_are_exact() {
+    use super::super::fda_orphan::{SourceCacheMode, cache_entry_is_usable, source_cache_mode};
+    use SourceCacheMode::{Infinite, Normal, Off};
+    assert_eq!(source_cache_mode(true, Some("infinite")), Off);
+    assert_eq!(source_cache_mode(false, Some("off")), Off);
+    assert_eq!(source_cache_mode(false, Some("infinite")), Infinite);
+    assert_eq!(source_cache_mode(false, None), Normal);
+    assert!(cache_entry_is_usable(Normal, 100, 99));
+    assert!(!cache_entry_is_usable(Normal, 86_401, 0));
+    assert!(cache_entry_is_usable(Infinite, u64::MAX, 0));
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn fda_orphan_caps_forms_concurrency_and_off_bypasses_cache() {
+    let (base, state, server) =
+        orphan_server(StatusCode::OK, std::time::Duration::from_millis(20)).await;
+    let root = TempDirGuard::new("fda-orphan-off");
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+    ]);
+    let result = super::super::fda_orphan::fetch_with_mode(
+        (0..8).map(|index| format!("candidate {index}")).collect(),
+        super::super::fda_orphan::SourceCacheMode::Off,
+    )
+    .await;
+    server.abort();
+    assert_eq!(
+        result.outcome,
+        super::super::fda_orphan::FdaOrphanOutcome::Empty
+    );
+    assert_eq!(state.requests.load(Ordering::SeqCst), 6);
+    assert!(state.peak.load(Ordering::SeqCst) <= 2);
+    let mut forms = state.forms.lock().unwrap().clone();
+    forms.sort();
+    let mut expected = (0..6)
+        .map(|index| format!("Product_name=candidate+{index}&sponsor_name=&Designation=&Designation_Start_Date=&Designation_End_Date=&Search_param=DESDATE&Output_Format=Excel&Sort_order=GENERIC_NAME&RecordsPerPage=25&newSearch=Run+Search"))
+        .collect::<Vec<_>>();
+    expected.sort();
+    assert_eq!(forms, expected);
+    assert!(!root.path().join("http").exists());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn fda_orphan_normal_cache_is_fresh_then_refreshes_when_expired() {
+    let (base, state, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
+    let root = TempDirGuard::new("fda-orphan-normal");
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+    ]);
+    let candidate = "eflornithine hydrochloride";
+    let first = super::super::fda_orphan::fetch_with_mode(
+        vec![candidate.into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+    )
+    .await;
+    let second = super::super::fda_orphan::fetch_with_mode(
+        vec![candidate.into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+    )
+    .await;
+    assert_eq!(first, second);
+    assert_eq!(state.requests.load(Ordering::SeqCst), 1);
+    let manager = crate::cache::SizeAwareCacheManager::new(
+        root.path().join("http"),
+        super::test_cache_config(root.path()),
+    )
+    .unwrap();
+    let key = orphan_cache_key(&base, candidate);
+    super::super::fda_orphan::rewrite_cached_time_for_test(&manager, &key, 0).await;
+    server.abort();
+    let expired = super::super::fda_orphan::fetch_with_mode(
+        vec![candidate.into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+    )
+    .await;
+    assert_eq!(
+        expired.outcome,
+        super::super::fda_orphan::FdaOrphanOutcome::Unavailable
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn fda_orphan_form_cache_is_independent_of_prior_candidate_set() {
+    let fixture = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/fda_orphan/provider-shaped.html"
+    ));
+    let second = fixture
+        .lines()
+        .find(|line| line.starts_with("<tr><td>Eflornithine"))
+        .unwrap()
+        .replace("Eflornithine hydrochloride", "Other drug")
+        .replace("992323", "992324");
+    let broad = Arc::new(fixture.replace("</table>", &format!("{second}\n</table>")));
+    let app = Router::new().route(
+        "/OOPD_Results.cfm",
+        post(move |body: Bytes| {
+            let broad = Arc::clone(&broad);
+            async move {
+                if String::from_utf8_lossy(&body).starts_with("Product_name=eflornithine+") {
+                    (StatusCode::OK, broad.as_str().to_owned())
+                } else {
+                    (StatusCode::INTERNAL_SERVER_ERROR, String::new())
+                }
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let base = format!("http://{address}");
+    let root = TempDirGuard::new("fda-orphan-candidate-independent");
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+    ]);
+    let first = super::super::fda_orphan::fetch_with_mode(
+        vec!["eflornithine hydrochloride".into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+    )
+    .await;
+    assert_eq!(first.records.len(), 1);
+    let later = super::super::fda_orphan::fetch_with_mode(
+        vec!["eflornithine hydrochloride".into(), "other drug".into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+    )
+    .await;
+    server.abort();
+    assert_eq!(
+        later.outcome,
+        super::super::fda_orphan::FdaOrphanOutcome::Degraded
+    );
+    assert_eq!(later.total_matching, Some(2));
+    assert_eq!(
+        later
+            .records
+            .iter()
+            .map(|row| row.generic_name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Eflornithine hydrochloride", "Other drug"]
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
+    let root = TempDirGuard::new("fda-orphan-infinite");
+    let (base, _state, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+    ]);
+    let candidate = "eflornithine hydrochloride";
+    let first = super::super::fda_orphan::fetch_with_mode(
+        vec![candidate.into()],
+        super::super::fda_orphan::SourceCacheMode::Infinite,
+    )
+    .await;
+    server.abort();
+    let second = super::super::fda_orphan::fetch_with_mode(
+        vec![candidate.into()],
+        super::super::fda_orphan::SourceCacheMode::Infinite,
+    )
+    .await;
+    assert_eq!(first, second);
+    let bad_root = TempDirGuard::new("fda-orphan-http-failure");
+    let (bad_base, _, bad_server) =
+        orphan_server(StatusCode::INTERNAL_SERVER_ERROR, std::time::Duration::ZERO).await;
+    let _bad_env = EnvRestore::set(&[
+        ("BIOMCP_FDA_ORPHAN_BASE", Some(&bad_base)),
+        ("BIOMCP_CACHE_DIR", Some(bad_root.path().to_str().unwrap())),
+    ]);
+    let failed = super::super::fda_orphan::fetch_with_mode(
+        vec![candidate.into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+    )
+    .await;
+    bad_server.abort();
+    assert_eq!(
+        failed.outcome,
+        super::super::fda_orphan::FdaOrphanOutcome::Unavailable
+    );
+    assert!(
+        cacache::metadata(
+            bad_root.path().join("http"),
+            orphan_cache_key(&bad_base, candidate)
+        )
+        .await
+        .unwrap()
+        .is_none()
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn fda_orphan_contended_key_lock_cancels_without_a_late_write() {
+    let root = TempDirGuard::new("fda-orphan-lock-deadline");
+    let (base, _, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
+    let _env = EnvRestore::set(&[
+        ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
+        ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+    ]);
+    let candidate = "eflornithine hydrochloride";
+    let key = orphan_cache_key(&base, candidate);
+    let held = crate::cache::lock_cache_key_async(
+        root.path().to_path_buf(),
+        key.clone(),
+        Arc::new(|_| {}),
+    )
+    .await
+    .unwrap();
+    let started = std::time::Instant::now();
+    let result = super::super::fda_orphan::fetch_with_mode_and_deadline(
+        vec![candidate.into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+        std::time::Duration::from_millis(40),
+    )
+    .await;
+    assert_eq!(
+        result.outcome,
+        super::super::fda_orphan::FdaOrphanOutcome::Unavailable
+    );
+    assert!(started.elapsed() < std::time::Duration::from_millis(500));
+    drop(held);
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    assert!(
+        cacache::metadata(root.path().join("http"), &key)
+            .await
+            .unwrap()
+            .is_none()
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn fda_orphan_missing_post_write_metadata_fails_closed() {
+    let root = TempDirGuard::new("fda-orphan-finalization");
+    let (base, _, server) = orphan_server(StatusCode::OK, std::time::Duration::ZERO).await;
+    let _env = EnvRestore::set(&[("BIOMCP_FDA_ORPHAN_BASE", Some(&base))]);
+    let manager = crate::cache::SizeAwareCacheManager::new_with_cache_observers(
+        root.path().join("http"),
+        super::test_cache_config(root.path()),
+        |_, _| {},
+        |path, key| {
+            cacache::remove_sync(path, key).unwrap();
+        },
+    );
+    let result = super::super::fda_orphan::fetch_with_manager_for_test(
+        vec!["eflornithine hydrochloride".into()],
+        super::super::fda_orphan::SourceCacheMode::Normal,
+        std::time::Duration::from_secs(2),
+        Arc::new(manager),
+    )
+    .await;
+    server.abort();
+    assert_eq!(
+        result.outcome,
+        super::super::fda_orphan::FdaOrphanOutcome::Unavailable
+    );
 }
 
 impl Drop for EnvRestore {

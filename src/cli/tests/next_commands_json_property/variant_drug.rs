@@ -83,6 +83,7 @@ fn drug_json_next_commands_parse() {
         label_set_id: None,
         shortage: None,
         approvals: None,
+        fda_orphan_designations: None,
         us_safety_warnings: None,
         ema_regulatory: None,
         ema_safety: None,

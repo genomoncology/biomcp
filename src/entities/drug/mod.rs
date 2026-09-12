@@ -37,6 +37,7 @@ pub(crate) fn default_drug_section_outcomes() -> SectionOutcomes {
 use crate::error::BioMcpError;
 use crate::sources::civic::CivicContext;
 use crate::sources::ema::EmaDrugIdentity;
+use crate::sources::fda_orphan::FdaOrphanDesignations;
 use crate::sources::mychem::{MYCHEM_FIELDS_GET, MyChemClient, MyChemQueryResponse};
 use crate::sources::who_pq::WhoPqIdentity;
 
@@ -108,6 +109,8 @@ pub struct Drug {
     pub shortage: Option<Vec<DrugShortageEntry>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub approvals: Option<Vec<DrugApproval>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fda_orphan_designations: Option<Box<FdaOrphanDesignations>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub us_safety_warnings: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

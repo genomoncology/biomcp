@@ -62,6 +62,7 @@ variables, test-only override seams, cache settings, and release/install knobs.
 | Pathway | Reactome + KEGG + WikiPathways + g:Profiler | `https://reactome.org/ContentService`, `https://rest.kegg.jp`, `https://www.wikipathways.org/json`, `https://biit.cs.ut.ee/gprofiler/api` | No | Pathway search and detail use Reactome + KEGG + WikiPathways; `genes` are available across all three sources, while `events` and pathway `enrichment` remain Reactome-only; top-level `biomcp enrich` uses **g:Profiler** |
 | Protein | UniProt + InterPro + STRING + ComplexPortal | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/interpro/api`, `https://string-db.org/api`, `https://www.ebi.ac.uk/intact/complex-ws` | No | Protein cards, domains, interactions, structures, and human protein complex membership; structure IDs are surfaced from UniProt cross-references to PDB and AlphaFold DB |
 | Drug/device safety, labels, shortages, approvals, and diagnostic regulatory overlay | OpenFDA | `https://api.fda.gov` | Optional (`OPENFDA_API_KEY`) | FAERS, MAUDE, recalls, drug labels, shortages, Drugs@FDA-derived approvals, and exact-name-first diagnostic device 510(k)/PMA overlays |
+| U.S. orphan-drug designations | FDA Orphan Drug Designations and Approvals | `https://www.accessdata.fda.gov/scripts/opdlisting/oopd/` | None | Bounded exact-alias searches for `get drug <name> regulatory --region us|all`; designation is never reported as approval |
 | Vaccine adverse-event search | CDC WONDER VAERS | `https://wonder.cdc.gov/controller/datarequest/D8` | No | Aggregate-only vaccine adverse-event summaries for `search adverse-event --source vaers|all`; BioMCP uses the CDC WONDER XML POST contract, includes the required data-use agreement, and resolves vaccine identity through the CDC CVX/MVX bridge when available |
 | Gene enrichment sections | Enrichr | `https://maayanlab.cloud/Enrichr` | No | Gene enrichment sections inside entity outputs use Enrichr; this is distinct from top-level `biomcp enrich` |
 | Cohort frequencies (best-effort) | cBioPortal | `https://www.cbioportal.org/api` | No | Supplemental cancer frequency context |
@@ -208,6 +209,12 @@ OpenFDA drives three BioMCP features:
 
 OpenFDA may return no results for highly specific filters even when broader filters succeed.
 Start broad (`--drug`, `--type`) and then tighten with `--reaction`, `--outcome`, `--classification`, or date filters.
+
+FDA's separate Orphan Drug Designations and Approvals search augments U.S. drug
+regulatory cards. BioMCP reports designation, approval, and exclusivity facts
+separately, uses exact anchored drug aliases, and caches validated normalized
+results for 24 hours. `BIOMCP_FDA_ORPHAN_BASE` is reserved for deterministic
+provider fixtures; production uses the FDA origin shown above.
 
 ## CDC WONDER VAERS behavior
 

@@ -177,6 +177,7 @@ fn related_drug_includes_pgx_search() {
         label_set_id: None,
         shortage: None,
         approvals: None,
+        fda_orphan_designations: None,
         us_safety_warnings: None,
         ema_regulatory: None,
         ema_safety: None,
