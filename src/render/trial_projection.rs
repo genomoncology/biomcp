@@ -335,7 +335,23 @@ pub(crate) mod reference_wire {
     use serde::Serialize;
 
     #[derive(Serialize)]
+    pub(crate) struct SourceTypeView<'a> {
+        authority: &'a str,
+        code: &'a str,
+        display: Option<&'a str>,
+        vocabulary_version: Option<&'a str>,
+        recognized_meaning: Option<&'a str>,
+    }
+
+    #[derive(Serialize)]
     pub(crate) struct View<'a> {
+        pub(crate) pmid: Option<&'a str>,
+        pub(crate) citation: Option<&'a str>,
+        source_type: Option<SourceTypeView<'a>>,
+    }
+
+    #[derive(Serialize)]
+    pub(crate) struct MarkdownView<'a> {
         pub(crate) pmid: Option<&'a str>,
         pub(crate) citation: Option<&'a str>,
         pub(crate) source_type_label: Option<&'a str>,
@@ -346,19 +362,39 @@ pub(crate) mod reference_wire {
     }
 
     fn view(reference: &ClinicalTrialReference) -> View<'_> {
-        let source_type_label = reference.source_type().and_then(|source_type| {
-            display_text(source_type.display())
-                .or_else(|| display_text(source_type.recognized_meaning()))
-                .or_else(|| display_text(Some(source_type.code())))
-        });
+        let source_type = reference.source_type();
         View {
+            pmid: reference.pmid(),
+            citation: reference.citation(),
+            source_type: source_type.map(|source_type| SourceTypeView {
+                authority: source_type.authority(),
+                code: source_type.code(),
+                display: source_type.display(),
+                vocabulary_version: source_type.vocabulary_version(),
+                recognized_meaning: source_type.recognized_meaning(),
+            }),
+        }
+    }
+
+    fn markdown_view(reference: &ClinicalTrialReference) -> MarkdownView<'_> {
+        MarkdownView {
             pmid: display_text(reference.pmid()),
             citation: display_text(reference.citation()),
-            source_type_label,
+            source_type_label: reference.source_type().and_then(|source_type| {
+                display_text(source_type.display())
+                    .or_else(|| display_text(source_type.recognized_meaning()))
+                    .or_else(|| display_text(Some(source_type.code())))
+            }),
         }
     }
 
     pub(crate) fn views(references: Option<&[ClinicalTrialReference]>) -> Option<Vec<View<'_>>> {
         references.map(|values| values.iter().map(view).collect())
+    }
+
+    pub(crate) fn markdown_views(
+        references: Option<&[ClinicalTrialReference]>,
+    ) -> Option<Vec<MarkdownView<'_>>> {
+        references.map(|values| values.iter().map(markdown_view).collect())
     }
 }
