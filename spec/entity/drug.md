@@ -231,6 +231,43 @@ try:
         typed = {"entity":"drug", "id":"imatinib", "sections":[], "json":json_output}
         assert mcp("get", typed).rstrip("\n") == cli_text.rstrip("\n")
     for json_output in (False, True):
+        cli_args = (["--json"] if json_output else []) + ["get", "drug", "eflornithine", "regulatory", "--region", "us"]
+        cli_text = run(*cli_args).stdout.rstrip("\n")
+        raw = mcp("biomcp", {
+            "command":"biomcp get drug eflornithine regulatory --region us",
+            "json":json_output,
+        }).rstrip("\n")
+        assert raw == cli_text
+        default_cli = run(*((["--json"] if json_output else []) + ["get", "drug", "eflornithine", "regulatory"])).stdout.rstrip("\n")
+        typed = mcp("get", {
+            "entity":"drug", "id":"eflornithine", "sections":["regulatory"], "json":json_output,
+        }).rstrip("\n")
+        assert typed == default_cli
+        if json_output:
+            orphan = json.loads(cli_text)["fda_orphan_designations"]
+            assert json.loads(typed)["fda_orphan_designations"] == orphan
+            assert orphan["outcome"] == "data"
+            assert orphan["sources"] == ["FDA Orphan Drug Designations and Approvals"]
+            assert orphan["total_matching"] == 1 and orphan["truncated"] is False
+            record = orphan["records"][0]
+            assert set(record) == {
+                "record_id", "generic_name", "trade_name", "designation_date",
+                "designation", "designation_status",
+                "designation_withdrawn_or_revoked_date", "orphan_approval",
+                "orphan_approval_status_text", "approved_labeled_indication",
+                "marketing_approval_date", "exclusivity_end_date",
+                "exclusivity_protected_indication", "sponsor", "source_url",
+            }
+            assert record["record_id"] == "992323"
+            assert record["designation_date"] == "2024-03-11"
+            assert record["orphan_approval"] == "not_approved"
+            assert record["trade_name"] is None and record["marketing_approval_date"] is None
+        else:
+            assert "### FDA orphan designations" in cli_text
+            assert "Treatment of Bachmann-Bupp syndrome" in cli_text
+            assert "Orphan approval: not_approved" in cli_text
+            assert "### FDA orphan designations" in typed
+    for json_output in (False, True):
         cli_args = (["--json"] if json_output else []) + ["batch", "drug", "imatinib,warfarin"]
         cli_text = run(*cli_args).stdout
         raw_args = {"command":"biomcp batch drug imatinib,warfarin", "json":json_output}
@@ -243,6 +280,16 @@ try:
 finally:
     server.terminate()
     server.wait(timeout=5)
+
+orphan_requests = [
+    line for line in open(log, encoding="utf-8")
+    if line.startswith("POST /fda-orphan/OOPD_Results.cfm ")
+]
+assert orphan_requests
+for line in orphan_requests:
+    form = line.rstrip("\n").split(" ", 2)[2]
+    assert form.startswith("Product_name=")
+    assert form.endswith("&sponsor_name=&Designation=&Designation_Start_Date=&Designation_End_Date=&Search_param=DESDATE&Output_Format=Excel&Sort_order=GENERIC_NAME&RecordsPerPage=25&newSearch=Run+Search")
 
 print("drug-card production projection passed")
 PY

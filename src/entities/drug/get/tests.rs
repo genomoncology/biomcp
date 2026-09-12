@@ -299,6 +299,89 @@ fn test_approval_drug() -> Drug {
     crate::transform::drug::merge_mychem_hits(&[], "fixture-drug")
 }
 
+#[test]
+fn orphan_aliases_require_matching_nonconflicting_anchor() {
+    let drug = test_approval_drug();
+    let drug = Drug {
+        drugbank_id: Some("DB1".into()),
+        chembl_id: Some("CHEMBL1".into()),
+        unii: None,
+        name: "canonical".into(),
+        ..drug
+    };
+    let matching: MyChemHit = serde_json::from_value(serde_json::json!({
+        "drugbank": {"id":"DB1", "name":"Salt qualified", "synonyms":["Alias"]},
+        "chembl": {"molecule_chembl_id":"CHEMBL1", "pref_name":"Preferred"},
+        "openfda": {"generic_name":["Generic"], "brand_name":["Brand"]}
+    }))
+    .unwrap();
+    let conflicting: MyChemHit = serde_json::from_value(serde_json::json!({
+        "drugbank": {"id":"DB1", "name":"Wrong alias"},
+        "chembl": {"molecule_chembl_id":"CHEMBL2", "pref_name":"Conflict"}
+    }))
+    .unwrap();
+    assert_eq!(
+        orphan_aliases(" requested ", &drug, &[matching, conflicting]),
+        vec![
+            "requested",
+            "canonical",
+            "Salt qualified",
+            "Alias",
+            "Preferred",
+            "Generic"
+        ]
+    );
+}
+
+#[test]
+fn orphan_aliases_do_not_trust_anchorless_hits() {
+    let drug = test_approval_drug();
+    let hit: MyChemHit = serde_json::from_value(
+        serde_json::json!({"drugbank":{"name":"Unowned", "synonyms":["Alias"]}}),
+    )
+    .unwrap();
+    assert_eq!(
+        orphan_aliases("requested", &drug, &[hit]),
+        vec!["requested", "fixture-drug"]
+    );
+}
+
+#[test]
+fn orphan_aliases_treat_an_absent_identifier_as_neutral() {
+    let drug = Drug {
+        drugbank_id: Some("DB1".into()),
+        chembl_id: Some("CHEMBL1".into()),
+        name: "canonical".into(),
+        ..test_approval_drug()
+    };
+    let hit: MyChemHit = serde_json::from_value(serde_json::json!({
+        "drugbank": {"id":"DB1", "name":"Partially populated salt"}
+    }))
+    .unwrap();
+    assert_eq!(
+        orphan_aliases("requested", &drug, &[hit]),
+        vec!["requested", "canonical", "Partially populated salt"]
+    );
+}
+
+#[test]
+fn orphan_aliases_reject_a_multi_unii_hit_with_any_conflict() {
+    let drug = Drug {
+        unii: Some("MATCH".into()),
+        name: "canonical".into(),
+        ..test_approval_drug()
+    };
+    let hit: MyChemHit = serde_json::from_value(serde_json::json!({
+        "unii": [{"unii":"MATCH", "display_name":"Looks owned"}, {"unii":"CONFLICT"}],
+        "openfda": {"brand_name":["Rejected brand"]}
+    }))
+    .unwrap();
+    assert_eq!(
+        orphan_aliases("requested", &drug, &[hit]),
+        vec!["requested", "canonical"]
+    );
+}
+
 fn interaction_report(
     rows: Vec<super::super::DrugInteraction>,
     label: Option<&str>,

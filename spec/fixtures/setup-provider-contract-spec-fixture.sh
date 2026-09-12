@@ -69,7 +69,7 @@ start_fixture_supervisor "provider-contract" "$cache_dir" "$fixture_root" "spec-
   python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, parse_qsl, urlparse
 import json
 import sys
 
@@ -239,6 +239,7 @@ OPENFDA_FAERS_EVENT = fixture("openfda/faers_event.json")
 OPENFDA_FAERS_COUNT = fixture(
     "openfda/faers_count_pembrolizumab_reaction_20260811.json"
 )
+FDA_ORPHAN = fixture("fda_orphan/provider-shaped.html")
 CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
 OPENTARGETS_DRUG = fixture("opentargets/drug_pembrolizumab_20260811.json")
 QUICKGO_ANNOTATIONS = fixture("quickgo/annotations_braf_20260811.json")
@@ -487,6 +488,23 @@ class Handler(BaseHTTPRequestHandler):
         body = self.rfile.read(length)
         with REQUEST_LOG.open("a", encoding="utf-8") as log:
             log.write(f"POST {self.path} {body.decode('utf-8')}\n")
+        if parsed.path == "/fda-orphan/OOPD_Results.cfm":
+            form = parse_qsl(body.decode("utf-8"), keep_blank_values=True)
+            expected = [
+                ("Product_name", form[0][1] if form else ""),
+                ("sponsor_name", ""),
+                ("Designation", ""),
+                ("Designation_Start_Date", ""),
+                ("Designation_End_Date", ""),
+                ("Search_param", "DESDATE"),
+                ("Output_Format", "Excel"),
+                ("Sort_order", "GENERIC_NAME"),
+                ("RecordsPerPage", "25"),
+                ("newSearch", "Run Search"),
+            ]
+            if form == expected:
+                send(self, 200, FDA_ORPHAN, "text/html; charset=UTF-8")
+                return
         if parsed.path == "/opentargets/api/v4/graphql":
             request = json.loads(body)
             if request.get("variables") == {"chemblId": "CHEMBL3137343"}:
@@ -562,6 +580,7 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/mychem/v1"
   printf 'export BIOMCP_MYGENE_BASE=%q\n' "$base_url/mygene/v3"
   printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url/openfda"
+  printf 'export BIOMCP_FDA_ORPHAN_BASE=%q\n' "$base_url/fda-orphan"
   printf 'export BIOMCP_CHEMBL_BASE=%q\n' "$base_url/chembl"
   printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/opentargets/api/v4"
   printf 'export BIOMCP_QUICKGO_BASE=%q\n' "$base_url/quickgo/QuickGO/services"

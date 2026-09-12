@@ -745,4 +745,9 @@ pub struct DeviceEventText {
 }
 
 #[cfg(test)]
-mod tests;
+mod tests {
+    #[path = "construction.rs"]
+    mod construction;
+    #[path = "parsing.rs"]
+    mod parsing;
+}

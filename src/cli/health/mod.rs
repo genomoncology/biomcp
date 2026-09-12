@@ -473,12 +473,17 @@ mod tests {
 
     #[test]
     fn requested_health_sources_are_exact_case_insensitive_and_deduplicated() {
-        let selected =
-            super::select_sources(&[" mygene ".into(), "MYGENE".into(), "MyVariant".into()])
-                .unwrap();
+        let selected = super::select_sources(&[
+            " mygene ".into(),
+            "MYGENE".into(),
+            "MyVariant".into(),
+            " fda orphan drug designations ".into(),
+            "FDA ORPHAN DRUG DESIGNATIONS".into(),
+        ])
+        .unwrap();
         assert_eq!(
             selected.iter().map(|source| source.api).collect::<Vec<_>>(),
-            ["MyGene", "MyVariant"]
+            ["MyGene", "MyVariant", "FDA Orphan Drug Designations"]
         );
     }
 

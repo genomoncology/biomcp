@@ -22,6 +22,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | ClinGen LDH | Optional bounded article identity observations with exact PMC selectors | [ClinGen LDH](clingen-ldh.md) |
 | GenCC | Submission-level gene-disease validity assertions | [GenCC](gencc.md) |
 | OpenFDA | FAERS, recalls, device events, labels, and U.S. approval context | [OpenFDA](openfda.md) |
+| FDA Orphan Drug Designations and Approvals | U.S. orphan-designation context in drug regulatory cards | [Data Sources](../reference/data-sources.md#source-matrix) |
 | CDC WONDER VAERS | Vaccine adverse-event summaries, seriousness breakdowns, and age-distribution context | [CDC WONDER VAERS](vaers.md) |
 | UniProt | Canonical protein cards and structure-linked context | [UniProt](uniprot.md) |
 | gnomAD | Population frequency and gene constraint context | [gnomAD](gnomad.md) |

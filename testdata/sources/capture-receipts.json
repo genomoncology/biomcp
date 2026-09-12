@@ -590,6 +590,11 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "fda_orphan/provider-shaped.html",
+      "classification": "authored",
+      "authored_reason": "Repository-authored provider-shaped fixture based on ticket 1153's exact admitted FDA table contract. It is not represented as a live or byte-for-byte FDA capture."
+    },
+    {
       "path": "gencc/submissions-new-odc1.csv",
       "classification": "real_and_receipted",
       "receipt": {
@@ -1400,7 +1405,7 @@
     {
       "path": "mychem/query_eflornithine_search_20260905.json",
       "classification": "authored",
-      "authored_reason": "Provider-shaped adversarial fixture derived from ticket 1152's receipted eflornithine response evidence; it retains the real systematic DrugBank synonym while adding explicit multi-value and irrelevant-hit cases for deterministic identity admission coverage."
+      "authored_reason": "Provider-shaped adversarial fixture derived from ticket 1152's receipted eflornithine response evidence; it retains the real systematic DrugBank synonym while adding the anchored salt-qualified UNII display name and irrelevant-hit cases needed for deterministic identity admission coverage in tickets 1152 and 1153."
     },
     {
       "path": "mychem/query_imatinib_get_20260811.json",

@@ -878,6 +878,23 @@
     "notes": "The FAQ states that programmatic access for academic use still requires registration and provider approval."
   },
   {
+    "id": "fda-orphan-designations",
+    "name": "FDA Orphan Drug Designations and Approvals",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["get drug <name> regulatory --region us|all"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public FDA search service",
+    "license_summary": "FDA-origin public information",
+    "redistribution_summary": "designation records are broadly reusable; preserve FDA source context and never imply designation is approval",
+    "terms_url": "https://www.fda.gov/about-fda/about-website/website-policies",
+    "key_url": null,
+    "reviewed_on": "2026-09-11",
+    "notes": "BioMCP performs bounded live searches of FDA's Orphan Drug Designations and Approvals table for U.S. regulatory cards. Orphan designation and FDA approval remain separate facts."
+  },
+  {
     "id": "openfda",
     "name": "OpenFDA",
     "tier": 1,
