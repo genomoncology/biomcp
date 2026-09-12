@@ -202,12 +202,12 @@
     },
     {
       "path": "src/mcp/shell/typed_get_tests.rs",
-      "baseline_lines": 1575,
+      "baseline_lines": 1608,
       "floor_lines": 1558,
       "authorized_increase": {
-        "ticket": "0128",
-        "delta": 17,
-        "reason": "Keep the private ClinVar cache fixture and its environment-restoration regression beside the typed MCP contract it isolates.",
+        "ticket": "0128, 1163",
+        "delta": 50,
+        "reason": "Keep the private ClinVar cache fixture and its environment-restoration regression plus the typed article keyword mapper proof beside the typed MCP contract it isolates.",
         "removal_condition": "Extract typed MCP environment fixtures when this oversized test module is decomposed."
       }
     },
