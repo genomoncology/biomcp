@@ -5319,8 +5319,11 @@ the name as free text.</p>
 Use <code>--gene</code>, <code>--disease</code>, <code>--drug</code>, <code>--author</code>, or <code>--journal</code> for those fields.
 Article <code>--gene</code> accepts one nonempty symbol without whitespace. Recognized field
 expressions are rejected, while ordinary biomedical bracket and colon notation
-remains literal keyword text. Literal quote bytes around reserved field text keep
-it literal; shell or JSON quoting alone does not add those bytes.</p>
+remains literal keyword text. To search literal reserved-label prose, put a
+literal double-quote byte immediately before every label, such as
+<code>-k '"gene: expression"'</code>; typed MCP encodes it as
+<code>"keyword":["\"gene: expression\""]</code>. A whole-value quote does not protect a
+later label, and shell or JSON quoting alone does not add runtime quote bytes.</p>
 <p><code>--session &lt;token&gt;</code> is article-local and optional. Use it as a short
 non-secret local label when a caller may repeat keyword searches for one task;
 JSON responses can then add loop-breaker <code>_meta.suggestions[]</code> if consecutive

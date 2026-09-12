@@ -127,11 +127,15 @@ literal, so biomedical text such as `NM_004333.6:c.1799T>A`, `BRAF[variant]`,
 and `protein:protein interaction` remains searchable.
 
 The case-insensitive labels `gene:`, `disease:`, and `drug:` are also rejected
-when they begin the trimmed keyword or follow whitespace or `(`. Use the
-matching typed field instead. Prefixes such as `oncogene:` and `MYGENE:` stay
-literal. Literal quote bytes around a value such as `"gene:gene interaction"`
-also keep it literal; ordinary shell or JSON delimiters do not become bytes in
-the runtime value.
+when they begin the trimmed keyword or follow whitespace or `(`, unless a
+literal `"` byte is immediately before that label. Use the matching typed field
+for structured filters. To search literal reserved-label prose, put a literal
+double-quote byte immediately before every reserved label; a closing quote is
+optional and remains provider-visible text. For example, the CLI/raw-MCP
+keyword is `-k '"gene: expression"'`, while typed MCP encodes it as
+`"keyword":["\"gene: expression\""]`. Prefixes such as `oncogene:` and
+`MYGENE:` stay literal. Quoting the whole value does not protect a later label,
+and ordinary shell or JSON delimiters do not become bytes in the runtime value.
 
 PubMed-specific behavior: direct `--source pubmed` searches and the compatible
 federated PubMed leg clean bounded question-format filler words from

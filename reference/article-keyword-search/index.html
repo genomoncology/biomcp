@@ -4409,11 +4409,15 @@ keyword text. Matching is case-insensitive. Other bracket and colon forms remain
 literal, so biomedical text such as <code>NM_004333.6:c.1799T&gt;A</code>, <code>BRAF[variant]</code>,
 and <code>protein:protein interaction</code> remains searchable.</p>
 <p>The case-insensitive labels <code>gene:</code>, <code>disease:</code>, and <code>drug:</code> are also rejected
-when they begin the trimmed keyword or follow whitespace or <code>(</code>. Use the
-matching typed field instead. Prefixes such as <code>oncogene:</code> and <code>MYGENE:</code> stay
-literal. Literal quote bytes around a value such as <code>"gene:gene interaction"</code>
-also keep it literal; ordinary shell or JSON delimiters do not become bytes in
-the runtime value.</p>
+when they begin the trimmed keyword or follow whitespace or <code>(</code>, unless a
+literal <code>"</code> byte is immediately before that label. Use the matching typed field
+for structured filters. To search literal reserved-label prose, put a literal
+double-quote byte immediately before every reserved label; a closing quote is
+optional and remains provider-visible text. For example, the CLI/raw-MCP
+keyword is <code>-k '"gene: expression"'</code>, while typed MCP encodes it as
+<code>"keyword":["\"gene: expression\""]</code>. Prefixes such as <code>oncogene:</code> and
+<code>MYGENE:</code> stay literal. Quoting the whole value does not protect a later label,
+and ordinary shell or JSON delimiters do not become bytes in the runtime value.</p>
 <p>PubMed-specific behavior: direct <code>--source pubmed</code> searches and the compatible
 federated PubMed leg clean bounded question-format filler words from
 unfielded gene, disease, drug, and keyword terms before PubMed ESearch.
