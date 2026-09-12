@@ -212,3 +212,96 @@ async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() 
         "the late worker never re-ran"
     );
 }
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_bounds_a_panicking_jats_worker_and_releases_the_permit() {
+    fn panicking_parse(
+        _xml: &str,
+        _target: &JatsCitationTargetIds,
+    ) -> Result<JatsCitationExtraction, ()> {
+        panic!("settlement proof: the pure parse worker panics after admission");
+    }
+
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-admission-panic");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "3000");
+
+    let jats_body = "<article><front><article-meta><article-title>T</article-title>\
+</article-meta></front><body><sec><title>Results</title><p>Anchor \
+<xref ref-type=\"bibr\" rid=\"bib7\">7</xref> text.</p></sec></body>\
+<back><ref-list><ref id=\"bib7\"><element-citation>\
+<pub-id pub-id-type=\"doi\">10.1/target</pub-id>\
+</element-citation></ref></ref-list></back></article>";
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let target = request
+            .split_whitespace()
+            .nth(1)
+            .unwrap_or_default()
+            .to_string();
+        let reply = if request.starts_with("POST") {
+            let (paper_id, ext) = if request.contains(CITING_PID) {
+                (
+                    CITING_PID,
+                    "\"externalIds\":{\"PubMed\":\"39991290\",\"PubMedCentral\":\"PMC12923956\"}",
+                )
+            } else {
+                (CITED_PID, "\"externalIds\":{\"DOI\":\"10.1/target\"}")
+            };
+            format!("[{{\"paperId\":\"{paper_id}\",\"title\":\"T\",{ext}}}]")
+        } else if target.contains("/fullTextXML") {
+            jats_body.to_string()
+        } else if target.contains("/references") {
+            format!(
+                "{{\"offset\":0,\"next\":null,\"data\":[{{\"contexts\":[],\
+\"intents\":[\"background\"],\"isInfluential\":false,\
+\"citedPaper\":{{\"paperId\":\"{CITED_PID}\",\"title\":\"T\",\
+\"externalIds\":{{\"DOI\":\"10.1/target\"}}}}}}]}}"
+            )
+        } else {
+            "{\"records\":[]}".to_string()
+        };
+        TestHttpReply::Bytes(test_http_response(
+            "200 OK",
+            "application/xml",
+            reply.as_bytes(),
+        ))
+    })
+    .await;
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("BIOMCP_NCBI_IDCONV_BASE", &fixture.base);
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+
+    install_jats_citation_seam(Some(panicking_parse));
+    let client =
+        SemanticScholarClient::new_with_cache_observers(&fixture.base, |_, _| {}, |_, _| {})
+            .unwrap();
+    // The panicking worker bounds into the public fulltext_unavailable
+    // message rather than failing the command.
+    let bounded = crate::sources::semantic_scholar::with_test_client(
+        client.clone(),
+        citation_evidence(CITING_PID, CITED_PID, true),
+    )
+    .await
+    .expect("panicking worker bounds to fulltext_unavailable");
+    assert_eq!(
+        bounded.status,
+        super::super::citation_evidence::CitationEvidenceStatus::FulltextUnavailable
+    );
+    install_jats_citation_seam(None);
+
+    // Release on unwind: the permit is free, so a fresh command admits the
+    // real parser and completes normally.
+    let settled = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, true),
+    )
+    .await
+    .expect("permit released after panic");
+    assert_eq!(
+        settled.status,
+        super::super::citation_evidence::CitationEvidenceStatus::ContextFromFulltext
+    );
+    assert_eq!(settled.passages.len(), 1);
+}
