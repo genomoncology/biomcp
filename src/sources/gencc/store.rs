@@ -1,14 +1,19 @@
 //! Private immutable generations and mutable GenCC lifecycle state.
+use super::model::GenCcDataset;
+use chrono::DateTime;
+use fs2::FileExt;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 #[cfg(not(unix))]
 use std::fs::OpenOptions;
 use std::fs::{self, File};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock, Weak}; use std::sync::atomic::AtomicBool; use chrono::DateTime; use fs2::FileExt;
-use serde::{Deserialize, Serialize}; use sha2::{Digest, Sha256};
-use super::model::GenCcDataset;
-const STATE_SCHEMA: u32 = 1; static GENERATION_LEASES: OnceLock<Mutex<HashMap<PathBuf, Weak<File>>>> = OnceLock::new();
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, Mutex, OnceLock, Weak};
+const STATE_SCHEMA: u32 = 1;
+static GENERATION_LEASES: OnceLock<Mutex<HashMap<PathBuf, Weak<File>>>> = OnceLock::new();
 #[cfg(test)]
 #[rustfmt::skip]
 pub(crate) const PUBLICATION_CRASH_POINTS: [&str; 36] = [
@@ -46,7 +51,7 @@ pub(crate) struct Snapshot { pub state: State, pub manifest: Manifest, pub datas
 #[rustfmt::skip]
 pub(crate) struct PublishMetadata<'a> { pub now: &'a str, pub etag: &'a str, pub last_modified: &'a str, pub endpoint: &'a str, pub body_sha256: &'a str, pub row_count: usize }
 #[rustfmt::skip]
-pub(crate) struct RawCsvTemp { path: PathBuf, parent: File, name: String, file: File, hasher: Sha256, len: usize, deadline: std::time::Instant }
+pub(crate) struct RawCsvTemp { path: PathBuf, parent: File, name: String, file: File, hasher: Sha256, len: usize }
 #[rustfmt::skip]
 struct OwnedTemporary { path: PathBuf, parent: File, name: String, directory: bool, armed: bool }
 #[rustfmt::skip]
@@ -71,24 +76,19 @@ impl Drop for OwnedTemporary {
 #[rustfmt::skip]
 impl RawCsvTemp {
     pub(crate) fn write_chunk(&mut self, bytes: &[u8], max: usize) -> Result<(), StoreError> {
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         self.len = self.len.checked_add(bytes.len()).filter(|len| *len <= max).ok_or(StoreError::Invalid)?;
         self.file.write_all(bytes).map_err(|_| StoreError::Unavailable)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         self.hasher.update(bytes);
         Ok(())
     }
     pub(crate) fn finish(&mut self) -> Result<(Vec<u8>, String), StoreError> {
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         injected("before-raw-file-fsync", StoreError::Unavailable)?;
         self.file.sync_all().map_err(|_| StoreError::Unavailable)?;
         injected("after-raw-file-fsync", StoreError::Unavailable)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         let mut reader = self.file.try_clone().map_err(|_| StoreError::Unavailable)?;
         reader.seek(SeekFrom::Start(0)).map_err(|_| StoreError::Unavailable)?;
         let mut bytes = Vec::with_capacity(self.len);
         reader.read_to_end(&mut bytes).map_err(|_| StoreError::Unavailable)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         Ok((bytes, format!("{:x}", self.hasher.clone().finalize())))
     }
 }
@@ -186,7 +186,6 @@ impl Store {
     }
     #[rustfmt::skip]
     pub(crate) fn create_raw_temp(&self) -> Result<RawCsvTemp, StoreError> {
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         self.revalidate_root()?;
         let name = format!(".raw-{}.tmp", unique_suffix()?);
         let path = self.root.join(&name);
@@ -200,7 +199,7 @@ impl Store {
             return Err(StoreError::Unavailable);
         }
         let parent = self.root_dir.try_clone().map_err(|_| StoreError::Unavailable)?;
-        Ok(RawCsvTemp { path, parent, name, file, hasher: Sha256::new(), len: 0, deadline: self.deadline })
+        Ok(RawCsvTemp { path, parent, name, file, hasher: Sha256::new(), len: 0 })
     }
     #[rustfmt::skip]
     pub(crate) fn cleanup_abandoned(&self) {
@@ -209,7 +208,6 @@ impl Store {
         let mut root_changed = false;
         if let Ok(entries) = fs::read_dir(&self.root) {
             for entry in entries.flatten() {
-                if std::time::Instant::now() >= self.deadline { break; }
                 let name = entry.file_name().to_string_lossy().into_owned();
                 if !(name.starts_with(".raw-") || name.starts_with(".state-")) || !name.ends_with(".tmp") { continue; }
                 if entry.file_type().is_ok_and(|kind| kind.is_file() && !kind.is_symlink()) {
@@ -230,7 +228,6 @@ impl Store {
         let mut generations_changed = false;
         if let Ok(entries) = fs::read_dir(&generations) {
             for entry in entries.flatten() {
-                if std::time::Instant::now() >= self.deadline { break; }
                 let name = entry.file_name().to_string_lossy().into_owned();
                 if !name.starts_with(".tmp-") { continue; }
                 if entry.file_type().is_ok_and(|kind| kind.is_dir() && !kind.is_symlink()) {
@@ -250,7 +247,6 @@ impl Store {
         let _ = FileExt::unlock(&self.store_lock);
     }
     pub(crate) fn load(&self) -> Result<Option<Snapshot>, StoreError> {
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         self.revalidate_root()?;
         lock_shared_until(&self.store_lock, self.deadline)?;
         let result = self.load_authoritative_locked();
@@ -267,7 +263,6 @@ impl Store {
         result
     }
     pub(crate) fn load_state(&self) -> Result<State, StoreError> {
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         self.revalidate_root()?;
         lock_shared_until(&self.store_lock, self.deadline)?;
         let path = self.root.join("state.json");
@@ -327,7 +322,6 @@ impl Store {
         let index_bytes = read_at(&directory_handle, "index.json")?;
         #[cfg(not(unix))]
         let index_bytes = read_regular(&directory.join("index.json"))?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         let manifest: Manifest = serde_json::from_slice(&manifest_bytes).map_err(|_| StoreError::Invalid)?;
         if manifest.schema_version != STATE_SCHEMA
             || manifest.endpoint != super::ENDPOINT
@@ -344,7 +338,6 @@ impl Store {
             return Err(StoreError::Invalid);
         }
         let dataset = serde_json::from_slice::<GenCcDataset>(&index_bytes).map_err(|_| StoreError::Invalid)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         if dataset.assertions().len() != manifest.assertion_count || dataset.row_count() != manifest.row_count { return Err(StoreError::Invalid); }
         Ok(Snapshot { state, manifest, dataset, lease })
     }
@@ -388,13 +381,16 @@ impl Store {
         Ok(Some(snapshot))
     }
     #[rustfmt::skip]
-    #[cfg(test)] pub(crate) fn publish(&self, dataset: &GenCcDataset, metadata: PublishMetadata<'_>) -> Result<Snapshot, StoreError> { self.publish_cancellable(dataset, metadata, &AtomicBool::new(false)) }
-    pub(crate) fn publish_cancellable(&self, dataset: &GenCcDataset, metadata: PublishMetadata<'_>, cancelled: &AtomicBool) -> Result<Snapshot, StoreError> {
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
+    #[cfg(test)]    pub(crate) fn publish(&self, dataset: &GenCcDataset, metadata: PublishMetadata<'_>) -> Result<Snapshot, StoreError> { self.publish_cancellable(dataset, metadata, &AtomicBool::new(false)) }
+    pub(crate) fn publish_cancellable(
+        &self,
+        dataset: &GenCcDataset,
+        metadata: PublishMetadata<'_>,
+        cancelled: &AtomicBool,
+    ) -> Result<Snapshot, StoreError> {
         self.revalidate_root()?;
         self.revalidate_generations()?;
         let index = serde_json::to_vec(dataset).map_err(|_| StoreError::Invalid)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         let index_hash = hex_sha256(&index);
         let suffix = unique_suffix()?;
         let generation = format!("{}-{suffix}", &index_hash[..24]);
@@ -404,11 +400,23 @@ impl Store {
         let temporary_dir = create_directory_at(&self.generations_dir, &temporary_name)?;
         #[cfg(not(unix))]
         create_private_dir(&temporary)?;
-        let mut owned_temporary = OwnedTemporary::new(temporary.clone(), &self.generations_dir, temporary_name.clone(), true)?;
-        injected("before-temporary-generations-parent-fsync", StoreError::Unavailable)?;
-        self.generations_dir.sync_all().map_err(|_| StoreError::Unavailable)?;
-        injected("after-temporary-generations-parent-fsync", StoreError::Unavailable)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
+        let mut owned_temporary = OwnedTemporary::new(
+            temporary.clone(),
+            &self.generations_dir,
+            temporary_name.clone(),
+            true,
+        )?;
+        injected(
+            "before-temporary-generations-parent-fsync",
+            StoreError::Unavailable,
+        )?;
+        self.generations_dir
+            .sync_all()
+            .map_err(|_| StoreError::Unavailable)?;
+        injected(
+            "after-temporary-generations-parent-fsync",
+            StoreError::Unavailable,
+        )?;
         #[cfg(unix)]
         write_new_at(&temporary_dir, "index.json", &index, "index-file")?;
         #[cfg(not(unix))]
@@ -417,25 +425,54 @@ impl Store {
         write_new_at(&temporary_dir, "lease.lock", b"", "lease-file")?;
         #[cfg(not(unix))]
         write_new_synced(&temporary.join("lease.lock"), b"", "lease-file")?;
-        let manifest = Manifest { schema_version: STATE_SCHEMA, endpoint: metadata.endpoint.to_string(), body_sha256: metadata.body_sha256.to_string(), index_sha256: index_hash, row_count: metadata.row_count, assertion_count: dataset.assertions().len(), retrieved_at: metadata.now.to_string(), etag: metadata.etag.to_string(), last_modified: metadata.last_modified.to_string(), upstream_version: None };
+        let manifest = Manifest {
+            schema_version: STATE_SCHEMA,
+            endpoint: metadata.endpoint.to_string(),
+            body_sha256: metadata.body_sha256.to_string(),
+            index_sha256: index_hash,
+            row_count: metadata.row_count,
+            assertion_count: dataset.assertions().len(),
+            retrieved_at: metadata.now.to_string(),
+            etag: metadata.etag.to_string(),
+            last_modified: metadata.last_modified.to_string(),
+            upstream_version: None,
+        };
         let manifest_bytes = serde_json::to_vec(&manifest).map_err(|_| StoreError::Invalid)?;
         #[cfg(unix)]
-        write_new_at(&temporary_dir, "manifest.json", &manifest_bytes, "manifest-file")?;
+        write_new_at(
+            &temporary_dir,
+            "manifest.json",
+            &manifest_bytes,
+            "manifest-file",
+        )?;
         #[cfg(not(unix))]
-        write_new_synced(&temporary.join("manifest.json"), &manifest_bytes, "manifest-file")?;
+        write_new_synced(
+            &temporary.join("manifest.json"),
+            &manifest_bytes,
+            "manifest-file",
+        )?;
         injected("before-generation-directory-fsync", StoreError::Unavailable)?;
         #[cfg(unix)]
-        temporary_dir.sync_all().map_err(|_| StoreError::Unavailable)?;
+        temporary_dir
+            .sync_all()
+            .map_err(|_| StoreError::Unavailable)?;
         #[cfg(not(unix))]
         sync_dir(&temporary)?;
         injected("after-generation-directory-fsync", StoreError::Unavailable)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         lock_exclusive_until(&self.store_lock, self.deadline)?;
         #[cfg(not(unix))]
         let final_path = self.root.join("generations").join(&generation);
         let result = (|| {
-            #[cfg(debug_assertions)] if let Ok(marker) = std::env::var("BIOMCP_GENCC_TEST_BLOCK_PUBLICATION") { fs::write(marker, b"entered").map_err(|_| StoreError::Unavailable)?; while !cancelled.load(std::sync::atomic::Ordering::Acquire) { std::thread::sleep(std::time::Duration::from_millis(1)); } }
-            if cancelled.load(std::sync::atomic::Ordering::Acquire) { return Err(StoreError::Deadline); }
+            #[cfg(debug_assertions)]
+            if let Ok(marker) = std::env::var("BIOMCP_GENCC_TEST_BLOCK_PUBLICATION") {
+                fs::write(marker, b"entered").map_err(|_| StoreError::Unavailable)?;
+                while !cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                }
+            }
+            if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                return Err(StoreError::Deadline);
+            }
             injected("before-generation-rename", StoreError::Unavailable)?;
             #[cfg(unix)]
             rename_at(&self.generations_dir, &temporary_name, &generation)?;
@@ -443,13 +480,25 @@ impl Store {
             fs::rename(&temporary, &final_path).map_err(|_| StoreError::Unavailable)?;
             owned_temporary.disarm();
             injected("after-generation-rename", StoreError::Unavailable)?;
-            injected("before-generations-directory-fsync", StoreError::Unavailable)?;
-            self.generations_dir.sync_all().map_err(|_| StoreError::Unavailable)?;
+            injected(
+                "before-generations-directory-fsync",
+                StoreError::Unavailable,
+            )?;
+            self.generations_dir
+                .sync_all()
+                .map_err(|_| StoreError::Unavailable)?;
             injected("after-generations-directory-fsync", StoreError::Unavailable)?;
-            ensure_deadline(self.deadline, StoreError::Deadline)?;
-            let state = State { active_generation: Some(generation.clone()), checked_at: Some(metadata.now.to_string()), attempted_at: Some(metadata.now.to_string()), last_attempt: Some(Attempt::Success200), ..State::default() };
+            let state = State {
+                active_generation: Some(generation.clone()),
+                checked_at: Some(metadata.now.to_string()),
+                attempted_at: Some(metadata.now.to_string()),
+                last_attempt: Some(Attempt::Success200),
+                ..State::default()
+            };
             self.replace_state_locked(&state)?;
-            let snapshot = self.load_generation(&generation, state).map_err(|_| StoreError::PostRenameSync)?;
+            let snapshot = self
+                .load_generation(&generation, state)
+                .map_err(|_| StoreError::PostRenameSync)?;
             if let Err(error) = self.cleanup_locked(Some(&generation)) {
                 tracing::warn!(%error, "GenCC publication cleanup retained extra files");
             }
@@ -480,7 +529,6 @@ impl Store {
     }
     #[rustfmt::skip]
     fn replace_state_locked(&self, state: &State) -> Result<(), StoreError> {
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         let bytes = serde_json::to_vec(state).map_err(|_| StoreError::Invalid)?;
         let temporary_name = format!(".state-{}.tmp", unique_suffix()?);
         let temporary = self.root.join(&temporary_name);
@@ -490,7 +538,6 @@ impl Store {
         #[cfg(not(unix))]
         write_new_synced(&temporary, &bytes, "state-file")?;
         injected("before-state-rename", StoreError::Unavailable)?;
-        ensure_deadline(self.deadline, StoreError::Deadline)?;
         #[cfg(unix)]
         rename_at(&self.root_dir, &temporary_name, "state.json")?;
         #[cfg(not(unix))]
@@ -505,13 +552,11 @@ impl Store {
     }
     #[rustfmt::skip]
     fn cleanup_locked(&self, active: Option<&str>) -> Result<(), StoreError> {
-        if std::time::Instant::now() >= self.deadline { return Ok(()); }
         self.revalidate_generations()?;
         let generations = self.root.join("generations");
         let mut valid = Vec::new();
         let mut invalid = Vec::new();
         for entry in fs::read_dir(&generations).map_err(|_| StoreError::Unavailable)? {
-            if std::time::Instant::now() >= self.deadline { return Ok(()); }
             let entry = entry.map_err(|_| StoreError::Unavailable)?;
             let Some(name) = entry.file_name().to_str().map(str::to_string) else { continue };
             if name.starts_with('.') || !entry.file_type().is_ok_and(|kind| kind.is_dir() && !kind.is_symlink()) { continue; }
@@ -530,12 +575,10 @@ impl Store {
         let newest_other = valid.iter().find(|(name, _)| Some(name.as_str()) != active).map(|(name, _)| name.clone());
         let mut changed = false;
         for name in invalid {
-            if std::time::Instant::now() >= self.deadline { return Ok(()); }
             if Some(name.as_str()) == active { continue; }
             changed |= remove_generation_if_unleased(&self.generations_dir, &generations, &name)?;
         }
         for (name, _) in valid {
-            if std::time::Instant::now() >= self.deadline { return Ok(()); }
             if Some(name.as_str()) == active || newest_other.as_deref() == Some(name.as_str()) { continue; }
             changed |= remove_generation_if_unleased(&self.generations_dir, &generations, &name)?;
         }

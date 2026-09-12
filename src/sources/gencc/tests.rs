@@ -1,12 +1,12 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use sha2::{Digest, Sha256};
 use super::model::{GenCcDataset, HEADER};
 use super::{
     ENDPOINT, inside_retry_window, is_fresh, same_endpoint, valid_endpoint, valid_etag,
     valid_http_date,
 };
+use sha2::{Digest, Sha256};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 fn fixture() -> &'static [u8] {
     include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -251,10 +251,17 @@ fn endpoint_redirect_and_validator_policy_is_closed() {
 fn release_equivalent_fixture_override_requires_exact_signaled_loopback_origin() {
     let endpoint = "http://127.0.0.1:4242/download/action/submissions-export-csv?format=new";
     let _base = EnvRestore::set("BIOMCP_GENCC_BASE", std::ffi::OsStr::new(endpoint));
-    let signal = EnvRestore::set("BIOMCP_TEST_UNPACED_ORIGIN", std::ffi::OsStr::new("http://127.0.0.1:4242"));
+    let signal = EnvRestore::set(
+        "BIOMCP_TEST_UNPACED_ORIGIN",
+        std::ffi::OsStr::new("http://127.0.0.1:4242"),
+    );
     assert!(super::fixture_override_allowed(endpoint));
     drop(signal);
-    for rejected in ["http://127.0.0.1:4243", "http://localhost:4242", "https://127.0.0.1:4242"] {
+    for rejected in [
+        "http://127.0.0.1:4243",
+        "http://localhost:4242",
+        "https://127.0.0.1:4242",
+    ] {
         let signal = EnvRestore::set("BIOMCP_TEST_UNPACED_ORIGIN", std::ffi::OsStr::new(rejected));
         assert!(!super::fixture_override_allowed(endpoint), "{rejected}");
         drop(signal);
@@ -346,7 +353,14 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
                 .status(StatusCode::OK)
                 .header("content-type", "text/csv; charset=UTF-8")
                 .header("content-encoding", "identity")
-                .header("etag", if count == 1 { "\"fixture-v1\"" } else { "\"fixture-v2\"" })
+                .header(
+                    "etag",
+                    if count == 1 {
+                        "\"fixture-v1\""
+                    } else {
+                        "\"fixture-v2\""
+                    },
+                )
                 .header("last-modified", "Sun, 06 Sep 2026 06:00:29 GMT")
                 .body(Body::from(fixture()))
                 .unwrap();
@@ -384,7 +398,10 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
     );
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
     let _base = EnvRestore::set("BIOMCP_GENCC_BASE", std::ffi::OsStr::new(&endpoint));
-    let _now = EnvRestore::set("BIOMCP_GENCC_TEST_NOW", std::ffi::OsStr::new("2026-09-06T06:00:29Z"));
+    let _now = EnvRestore::set(
+        "BIOMCP_GENCC_TEST_NOW",
+        std::ffi::OsStr::new("2026-09-06T06:00:29Z"),
+    );
     let client = super::GenCcClient::new().unwrap();
     let initial = client.acquire(Duration::from_secs(2)).await;
     assert_eq!(
@@ -392,7 +409,10 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
         super::GenCcOperation::InitialDownload
     );
     assert_eq!(initial.status.freshness, super::GenCcFreshness::Fresh);
-    assert_eq!(initial.status.checked_at.as_deref(), Some("2026-09-06T06:00:29Z"));
+    assert_eq!(
+        initial.status.checked_at.as_deref(),
+        Some("2026-09-06T06:00:29Z")
+    );
     let fresh = client.acquire(Duration::from_secs(2)).await;
     assert_eq!(fresh.status.operation, super::GenCcOperation::LocalQuery);
     assert_eq!(requests.lock().unwrap().len(), 1);
@@ -410,9 +430,23 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
     }
     unsafe { std::env::set_var("BIOMCP_GENCC_TEST_NOW", "2026-09-14T06:00:29Z") };
     let stale = client.acquire(Duration::from_secs(2)).await;
-    assert_eq!((stale.status.operation, stale.status.freshness, stale.status.result), (super::GenCcOperation::ConditionalRefresh, super::GenCcFreshness::Stale, super::GenCcResult::Data));
+    assert_eq!(
+        (
+            stale.status.operation,
+            stale.status.freshness,
+            stale.status.result
+        ),
+        (
+            super::GenCcOperation::ConditionalRefresh,
+            super::GenCcFreshness::Stale,
+            super::GenCcResult::Data
+        )
+    );
     let suppressed = client.acquire(Duration::from_secs(2)).await;
-    assert_eq!(suppressed.status.operation, super::GenCcOperation::RetrySuppressed);
+    assert_eq!(
+        suppressed.status.operation,
+        super::GenCcOperation::RetrySuppressed
+    );
     assert_eq!(requests.lock().unwrap().len(), 3);
     assert!(client.sync().await.unwrap());
     assert_eq!(requests.lock().unwrap().len(), 4);
@@ -588,6 +622,56 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
         2
     );
 }
+#[test]
+#[serial_test::serial(gencc_env)]
+fn expired_open_budget_completes_reads_and_fails_only_after_the_state_rename() {
+    use super::store::{PublishMetadata, Store, StoreError};
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("gencc");
+    let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
+    let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+    let body_sha256 = format!("{:x}", Sha256::digest(fixture()));
+    let publish = |store: &Store, now: &str| {
+        store.publish(
+            &dataset,
+            PublishMetadata {
+                now,
+                etag: "\"fixture\"",
+                last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                endpoint: ENDPOINT,
+                body_sha256: &body_sha256,
+                row_count: dataset.row_count(),
+            },
+        )
+    };
+    let generations = root.join("generations");
+    let expired = Store::open_until(std::time::Instant::now()).unwrap();
+    assert!(expired.load().unwrap().is_none());
+    let failed = publish(&expired, "2026-01-01T00:00:00Z");
+    assert!(matches!(failed, Err(StoreError::PostRenameSync)));
+    let reader = expired
+        .load()
+        .unwrap()
+        .expect("committed generation reads with an expired budget");
+    let retained = reader.state.active_generation.clone().unwrap();
+    assert_eq!(reader.dataset.assertions().len(), 3);
+    let live =
+        Store::open_until(std::time::Instant::now() + std::time::Duration::from_secs(30)).unwrap();
+    drop(publish(&live, "2026-01-02T00:00:00Z").unwrap());
+    drop(publish(&live, "2026-01-03T00:00:00Z").unwrap());
+    assert_eq!(std::fs::read_dir(&generations).unwrap().count(), 3);
+    assert!(generations.join(&retained).exists());
+    drop(reader);
+    drop(publish(&live, "2026-01-04T00:00:00Z").unwrap());
+    assert!(!generations.join(&retained).exists());
+    assert_eq!(std::fs::read_dir(&generations).unwrap().count(), 2);
+    let settled = live.load().unwrap().unwrap();
+    assert_ne!(
+        settled.state.active_generation.as_deref(),
+        Some(retained.as_str())
+    );
+    assert_eq!(settled.dataset.assertions().len(), 3);
+}
 #[tokio::test]
 async fn parser_work_obeys_an_expired_refresh_deadline() {
     let result = super::parse_with_deadline(
@@ -621,8 +705,8 @@ fn refresh_leader_removes_only_owned_abandoned_temporaries() {
 #[test]
 #[serial_test::serial(gencc_env)]
 fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
+    use super::store::{PublishMetadata, Store, StoreError};
     use fs2::FileExt;
-    use super::store::{Store, StoreError};
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
@@ -672,6 +756,23 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     let result = Store::open_until(std::time::Instant::now() + Duration::from_millis(30));
     assert!(matches!(result, Err(StoreError::Deadline)));
     drop(held);
+    let store = Store::open_until(std::time::Instant::now() + Duration::from_secs(2)).unwrap();
+    let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+    let snapshot = store
+        .publish(
+            &dataset,
+            PublishMetadata {
+                now: "2026-01-01T00:00:00Z",
+                etag: "\"fixture\"",
+                last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                endpoint: ENDPOINT,
+                body_sha256: &format!("{:x}", Sha256::digest(fixture())),
+                row_count: dataset.row_count(),
+            },
+        )
+        .unwrap();
+    assert_eq!(snapshot.dataset.assertions().len(), 3);
+    drop(snapshot);
 }
 #[test]
 #[ignore = "subprocess helper"]
