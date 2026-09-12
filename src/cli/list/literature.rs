@@ -50,6 +50,7 @@ raw bytes
 - `article citations <id> --limit <N>` - citation graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)
 - `article references <id> --limit <N>` - reference graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)
 - `article recommendations <id> [<id>...] [--negative <id>...] --limit <N>` - related papers (optional auth; shared pool without `S2_API_KEY`)
+- `article citation-evidence <citing-id> <cited-id> [--fulltext]` - recover the passage linking one directed citation pair; Semantic Scholar context by default, open Europe PMC JATS when the edge has no context
 
 ## Search
 
