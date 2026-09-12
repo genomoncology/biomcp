@@ -1481,11 +1481,11 @@ provider-context outcome.
 ../../tools/biomcp-ci --json article citation-evidence 40001006 10.1099/unresolved-fixture | jq -c '{status,message,source,contexts:.provider_contexts,passages,locator:.fulltext_locator}' | mustmatch '{"status":"fulltext_unavailable","message":"Structured open full text was unavailable for the citing paper.","source":null,"contexts":[],"passages":[],"locator":null}'
 ../../tools/biomcp-ci --json article citation-evidence 40001003 10.1099/unresolved-fixture | jq -c '{status,message,source,passages,locator:.fulltext_locator}' | mustmatch '{"status":"reference_unresolved","message":"Structured full text was available, but the cited reference could not be resolved exactly.","source":"europe_pmc_jats","passages":[],"locator":{"pmcid":"PMC12923960","evidence_url":"https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923960/fullTextXML"}}'
 ../../tools/biomcp-ci --json article citation-evidence 40001004 10.1099/unresolved-fixture | jq -c '{status,message,source,passages,locator:.fulltext_locator.pmcid}' | mustmatch '{"status":"citation_marker_unlinked","message":"The cited reference was resolved, but no unambiguous in-text citation marker linked to it.","source":"europe_pmc_jats","passages":[],"locator":"PMC12923961"}'
-../../tools/biomcp-ci --json article citation-evidence 39991290 10.1093/absent-target >/dev/null 2>&1; test $? -eq 1
+if ../../tools/biomcp-ci --json article citation-evidence 39991290 10.1093/absent-target >/dev/null 2>&1; then exit 1; fi
 ../../tools/biomcp-ci --json article citation-evidence 39991290 10.1093/absent-target 2>&1 | jq -r '.error.message' | mustmatch "directed citation '39991290 -> 10.1093/absent-target' not found.
 
 Semantic Scholar exhausted the directed reference pages without finding this pair."
-../../tools/biomcp-ci --json article citation-evidence 40001005 10.1093/absent-target >/dev/null 2>&1; test $? -eq 1
+if ../../tools/biomcp-ci --json article citation-evidence 40001005 10.1093/absent-target >/dev/null 2>&1; then exit 1; fi
 ```
 
 The Markdown projection keeps the frozen section order, deduplicates nothing
@@ -1535,11 +1535,16 @@ Status: Semantic Scholar supplied citation context for this directed edge.
 Citing: `PMID 40001002`
 Cited: `DOI 10.1099/unresolved-fixture`
 Status: Structured open full text was unavailable for the citing paper.
+
+## Provider contexts
+
+1. `Retained provider context survives a forced full-text failure.`
 '
 ../../tools/biomcp-ci article citation-evidence 40001001 10.1016/j.artmed.2020.101822 | sed -n '9,13p' | mustmatch '### Passage 1
 
 `Expertise and model life-cycle management both appear in this linked paragraph 11.`
 Locator: PMCID `PMC13200738`; reference `ooag047-B11`; section `Discussion`; paragraph 1; marker `11`
+Evidence: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13200738/fullTextXML`
 '
 ```
 
@@ -1576,7 +1581,7 @@ s2:seed:x-api-key:absent
 s2:graph:references:limit=100:offset=0:x-api-key:absent
 fulltext:xml:europepmc-pmc' <"$request_log"
 : >"$request_log"
-../../tools/biomcp-ci --json article citation-evidence 40001005 10.1093/absent-target >/dev/null 2>&1 || test $? -eq 1
+if ../../tools/biomcp-ci --json article citation-evidence 40001005 10.1093/absent-target >/dev/null 2>&1; then exit 1; fi
 mustmatch like 's2:seed:x-api-key:absent
 s2:seed:x-api-key:absent
 s2:graph:references:limit=100:offset=0:x-api-key:absent
@@ -1609,7 +1614,7 @@ EXPECTED
 {"next_commands":[]}'
 ../../tools/biomcp-ci --json article references 39991290 --limit 1 --offset 0 | jq -c '.pagination, ._meta' | mustmatch '{"offset":0,"limit":1,"returned":1,"next_offset":1,"coverage_status":"continuable"}
 {"next_commands":["biomcp article references 39991290 --limit 1 --offset 1"]}'
-../../tools/biomcp-ci article references 39991290 --limit 1 --offset 0 | tail -n 3 | mustmatch 'Page offset: 0; page size: 1; returned: 1; coverage: continuable.
+../../tools/biomcp-ci article references 39991290 --limit 1 --offset 0 | tail -n 4 | mustmatch like 'Page offset: 0; page size: 1; returned: 1; coverage: continuable.
 Semantic Scholar does not provide an exact total.
 Next: `biomcp article references 39991290 --limit 1 --offset 1`'
 ```
@@ -1628,6 +1633,7 @@ case "$command" in
   "biomcp article citation-evidence 39991290 "*) ;;
   *) exit 1 ;;
 esac
+: >"$request_log"
 (cd "$probe" && eval "$command") >/dev/null
 mustmatch like 's2:seed:x-api-key:absent
 s2:seed:x-api-key:absent
@@ -1664,16 +1670,24 @@ request_id = 2
 for arguments, expected in cases:
     cli_json = subprocess.run([os.environ["BIOMCP_BIN"], "--json", "article", "citation-evidence"] + arguments.split(), text=True, capture_output=True, check=True).stdout
     cli_markdown = subprocess.run([os.environ["BIOMCP_BIN"], "article", "citation-evidence"] + arguments.split(), text=True, capture_output=True, check=True).stdout
-    structured = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article citation-evidence {arguments}","json":True}}})"result"; request_id += 1
-    readable = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article citation-evidence {arguments}"}}})"result"; request_id += 1
+    structured = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article citation-evidence {arguments}","json":True}}})["result"]; request_id += 1
+    readable = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article citation-evidence {arguments}"}}})["result"]; request_id += 1
     payload = json.loads(structured["content"][0]["text"])
     assert structured.get("isError") is False and readable.get("isError") is False
     assert payload == json.loads(cli_json), (expected, "json mismatch")
     assert readable["content"][0]["text"].rstrip() == cli_markdown.rstrip(), (expected, "markdown mismatch")
     assert payload["status"] == expected
-error = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp article citation-evidence 39991290 10.1093/absent-target","json":True}}})"result"; request_id += 1
+error = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp article citation-evidence 39991290 10.1093/absent-target","json":True}}})["result"]; request_id += 1
 assert error.get("isError") is True
 assert "exhausted the directed reference pages" in error["content"][0]["text"]
+graph_cli = subprocess.run([os.environ["BIOMCP_BIN"], "--json", "article", "references", "39991290", "--limit", "3", "--offset", "0"], text=True, capture_output=True, check=True).stdout
+graph_structured = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp article references 39991290 --limit 3 --offset 0","json":True}}})["result"]; request_id += 1
+assert graph_structured.get("isError") is False
+graph_payload = json.loads(graph_structured["content"][0]["text"])
+assert graph_payload == json.loads(graph_cli), "graph edge-local command mismatch"
+assert graph_payload["edges"][0]["_meta"]["next_commands"] == ["biomcp article citation-evidence 39991290 10.1038/nature10725"]
+assert graph_payload["edges"][1].get("_meta") is None
+assert graph_payload["_meta"]["next_commands"] == []
 tools = call({"jsonrpc":"2.0","id":request_id,"method":"tools/list","params":{}})["result"]["tools"]
 names = {tool["name"] for tool in tools}
 assert "citation_evidence" not in names and "article_citation_evidence" not in names
