@@ -51,6 +51,7 @@ pub use self::outcome::{
 };
 pub use self::pathway::PathwayCommand;
 pub use self::protein::ProteinCommand;
+pub(crate) use self::shared::reversed_search_correction;
 pub use self::shared::{build_cli, parse_cli_from_env, try_parse_cli};
 pub use self::study::StudyCommand;
 pub use self::system::{
@@ -67,11 +68,14 @@ pub fn sanitize_human_diagnostic(message: &str) -> String {
     crate::render::human::sanitize_inline(message)
 }
 
+pub(crate) use self::response_contract::paginate_results;
+use self::response_contract::{
+    log_pagination_truncation, paged_fetch_limit, paged_fetch_limit_for,
+};
 #[cfg(test)]
 use self::shared::RUNTIME_HELP_SUBCOMMANDS;
 #[cfg(test)]
 use self::shared::alias_suggestion_outcome;
-pub(crate) use self::shared::paginate_results;
 #[cfg(test)]
 use self::shared::render_batch_json;
 #[cfg(test)]
@@ -80,9 +84,8 @@ use self::shared::search_json;
 use self::shared::search_meta_with_suggestions;
 use self::shared::{
     PaginationMeta, SearchJsonMeta, empty_sections, extract_json_from_sections,
-    log_pagination_truncation, normalize_cli_query, normalize_cli_tokens, normalize_next_commands,
-    paged_fetch_limit, paged_fetch_limit_for, pagination_footer_cursor, pagination_footer_offset,
-    related_article_filters, resolve_query_input, search_json_with_meta,
+    normalize_cli_query, normalize_cli_tokens, normalize_next_commands, pagination_footer_cursor,
+    pagination_footer_offset, related_article_filters, resolve_query_input, search_json_with_meta,
     search_json_with_meta_and_suggestions, search_meta, search_meta_with_section_sources,
     search_meta_with_workflow, try_alias_fallback_outcome,
 };

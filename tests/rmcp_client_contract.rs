@@ -542,6 +542,104 @@ where
     Ok(())
 }
 
+async fn assert_raw_reversed_search_is_pure_preflight<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+    sentinel: &std::path::Path,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    for (command, tool_json, expected) in [
+        (
+            "biomcp article search",
+            false,
+            "Error: reversed search syntax; use `biomcp search article`",
+        ),
+        (
+            "trial search",
+            true,
+            "Error: reversed search syntax; use `biomcp search trial`",
+        ),
+        (
+            "article search --json",
+            false,
+            "Error: reversed search syntax; use `biomcp search article --json`",
+        ),
+    ] {
+        let result = if tool_json {
+            biomcp_mcp_contract_client::call_biomcp_json(client, command).await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(client, command).await?
+        };
+        assert_eq!(result.is_error, Some(true));
+        assert_eq!(result.content.len(), 1);
+        assert_eq!(
+            biomcp_mcp_contract_client::first_text(&result.content),
+            expected
+        );
+    }
+
+    for (command, tool_json, entity) in [
+        (
+            "biomcp gene search --not-a-search-flag secret-value",
+            false,
+            "gene",
+        ),
+        ("drug search --not-a-search-flag secret-value", true, "drug"),
+        (
+            "variant search --json --not-a-search-flag secret-value",
+            false,
+            "variant",
+        ),
+    ] {
+        let result = if tool_json {
+            biomcp_mcp_contract_client::call_biomcp_json(client, command).await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(client, command).await?
+        };
+        assert_eq!(result.is_error, Some(true));
+        assert_eq!(result.content.len(), 1);
+        assert_eq!(
+            biomcp_mcp_contract_client::first_text(&result.content),
+            format!(
+                "Error: reversed search syntax; use `biomcp search {entity}`; the supplied search arguments were not accepted"
+            )
+        );
+    }
+
+    let bounded = format!("gene search {}", "x ".repeat(254));
+    let bounded = biomcp_mcp_contract_client::call_biomcp(client, &bounded).await?;
+    assert_eq!(bounded.is_error, Some(true));
+    assert_eq!(bounded.content.len(), 1);
+    assert_eq!(
+        biomcp_mcp_contract_client::first_text(&bounded.content),
+        "Error: reversed search syntax; use `biomcp search gene`; the supplied search arguments were not accepted"
+    );
+
+    let hostile_command = format!(
+        "biomcp article search --keyword '$(touch {}) `touch {}`; x>y'",
+        sentinel.display(),
+        sentinel.display()
+    );
+    let hostile = biomcp_mcp_contract_client::call_biomcp(client, &hostile_command).await?;
+    let hostile_text = biomcp_mcp_contract_client::first_text(&hostile.content);
+    assert_eq!(hostile.is_error, Some(true));
+    assert!(hostile_text.starts_with("Error: reversed search syntax; use ``biomcp search article"));
+    assert!(hostile_text.ends_with("'``"));
+    assert!(
+        !sentinel.exists(),
+        "raw MCP correction executed hostile shell text"
+    );
+
+    let generic = biomcp_mcp_contract_client::call_biomcp(client, "biomcp unknown search").await?;
+    assert_eq!(generic.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&generic.content)
+            .starts_with("Error: BioMCP allows read-only commands only.")
+    );
+    Ok(())
+}
+
 async fn assert_raw_article_batch_contract<T>(
     client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
     fixture: &biomcp_mcp_contract_client::ArticleFulltextFixture,
@@ -831,6 +929,32 @@ async fn raw_mcp_global_flags_are_safe_over_stdio() -> anyhow::Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn raw_reversed_search_is_pure_preflight_over_stdio() -> anyhow::Result<()> {
+    let harness = harness();
+    let root = tempfile::tempdir_in(&harness.repo_root)?;
+    let cache = root.path().join("absent-cache");
+    let sentinel = root.path().join("not-created");
+    let env = [
+        ("BIOMCP_CACHE_DIR", cache.display().to_string()),
+        ("BIOMCP_PUBMED_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYCHEM_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_DBSNP_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_GNOMAD_BASE", "http://127.0.0.1:9".to_string()),
+    ];
+    let client = harness.spawn_stdio_client(&env).await?;
+    assert_raw_reversed_search_is_pure_preflight(&client, &sentinel).await?;
+    assert!(
+        !cache.exists(),
+        "correction created managed cache/session state"
+    );
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn raw_article_batch_contract_is_safe_over_stdio() -> anyhow::Result<()> {
     let harness = harness();
     let fixture = provision_article_fulltext_fixture(&harness.repo_root)?;
@@ -853,6 +977,38 @@ async fn raw_mcp_global_flags_are_safe_over_http() -> anyhow::Result<()> {
     }
     .await;
 
+    child.kill().await.ok();
+    result
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_reversed_search_is_pure_preflight_over_http() -> anyhow::Result<()> {
+    let harness = harness();
+    let root = tempfile::tempdir_in(&harness.repo_root)?;
+    let cache = root.path().join("absent-cache");
+    let sentinel = root.path().join("not-created");
+    let env = [
+        ("BIOMCP_CACHE_DIR", cache.display().to_string()),
+        ("BIOMCP_PUBMED_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYCHEM_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_DBSNP_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_GNOMAD_BASE", "http://127.0.0.1:9".to_string()),
+    ];
+    let (mut child, base_url) = harness.spawn_http_server(&env).await?;
+    let result = async {
+        let client = harness.http_client(format!("{base_url}/mcp")).await?;
+        assert_raw_reversed_search_is_pure_preflight(&client, &sentinel).await?;
+        assert!(
+            !cache.exists(),
+            "correction created managed cache/session state"
+        );
+        client.cancel().await?;
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
     child.kill().await.ok();
     result
 }

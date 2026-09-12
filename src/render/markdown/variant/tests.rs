@@ -777,7 +777,7 @@ fn transcript_explanation_sanitizes_controls_and_embedded_backticks() {
     assert!(!nonempty[0].chars().any(char::is_control));
     assert!(!section.contains("\u{202e}"));
     assert!(section.contains("|row"));
-    assert!(section.contains("````NM_1"));
+    assert!(section.contains("```` NM_1"));
     assert!(section.contains("|```"));
 }
 

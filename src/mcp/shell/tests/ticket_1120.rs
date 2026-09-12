@@ -89,3 +89,29 @@ async fn raw_biomcp_tool_preserves_an_omitted_ctgov_total_as_null() {
     assert!(requests[0].contains("countTotal=true"));
     assert!(requests[0].contains("pageSize=1"));
 }
+
+#[tokio::test]
+async fn raw_biomcp_reports_reversed_search_before_the_generic_fallback() {
+    for (command, expected) in [
+        (
+            "biomcp article search",
+            "Error: reversed search syntax; use `biomcp search article`",
+        ),
+        (
+            "trial search --json",
+            "Error: reversed search syntax; use `biomcp search trial --json`",
+        ),
+    ] {
+        let result = BioMcpServer::new()
+            .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+                command: command.into(),
+                json: true,
+            }))
+            .await
+            .expect("raw MCP correction");
+        let value = serde_json::to_value(result).expect("serialize correction");
+        assert_eq!(value["isError"], true);
+        assert_eq!(value["content"][0]["text"], expected);
+        assert_eq!(value["content"].as_array().unwrap().len(), 1);
+    }
+}
