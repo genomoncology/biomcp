@@ -97,18 +97,18 @@ pub(crate) fn validate_query_inputs(
     }
 
     if let Some(field) = keyword.and_then(reserved_keyword_field) {
-        let (label, flag, example) = match field {
-            ReservedKeywordField::Gene => ("gene:", "--gene RB1", r#""gene":"RB1""#),
+        let message = match field {
+            ReservedKeywordField::Gene => {
+                r#"keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#
+            }
             ReservedKeywordField::Disease => {
-                ("disease:", "--disease melanoma", r#""disease":"melanoma""#)
+                r#"keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#
             }
             ReservedKeywordField::Drug => {
-                ("drug:", "--drug vemurafenib", r#""drug":"vemurafenib""#)
+                r#"keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib". To search literal drug: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"drug: safety"'; typed MCP "keyword":["\"drug: safety\""]."#
             }
         };
-        return Err(BioMcpError::InvalidArgument(format!(
-            "keyword is provider-neutral and does not accept {label} filter syntax. Use {flag} for CLI or raw MCP, or the typed MCP field, for example {example}."
-        )));
+        return Err(BioMcpError::InvalidArgument((*message).into()));
     }
     Ok(())
 }

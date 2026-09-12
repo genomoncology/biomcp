@@ -71,15 +71,15 @@ fn preparation_rejects_article_owned_keyword_and_gene_shapes_before_fanout() {
     for (input, expected) in [
         (
             input_with_keyword("gene:RB1"),
-            "Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".",
+            r#"Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#,
         ),
         (
             input_with_keyword("disease:melanoma"),
-            "Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".",
+            r#"Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#,
         ),
         (
             input_with_keyword("drug:vemurafenib"),
-            "Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".",
+            r#"Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib". To search literal drug: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"drug: safety"'; typed MCP "keyword":["\"drug: safety\""]."#,
         ),
         (
             SearchAllInput {

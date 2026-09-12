@@ -54,9 +54,9 @@ fn ordinary_bracket_and_colon_keywords_remain_valid() {
 
 #[test]
 fn reserved_article_keyword_fields_have_precise_boundaries_and_guidance() {
-    const GENE: &str = "Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".";
-    const DISEASE: &str = "Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".";
-    const DRUG: &str = "Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".";
+    const GENE: &str = r#"Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#;
+    const DISEASE: &str = r#"Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#;
+    const DRUG: &str = r#"Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib". To search literal drug: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"drug: safety"'; typed MCP "keyword":["\"drug: safety\""]."#;
     for (keyword, expected) in [
         ("gene:RB1", GENE),
         ("GENE:RB1", GENE),
@@ -76,6 +76,38 @@ fn reserved_article_keyword_fields_have_precise_boundaries_and_guidance() {
             "must not reflect input: {message}"
         );
     }
+}
+
+#[test]
+fn reserved_article_keyword_quote_escape_is_per_label_and_field_ordered() {
+    for keyword in [
+        "\"disease: mechanisms\"",
+        "review of \"drug: safety\"",
+        "melanoma (\"gene:RB1\")",
+        "\"gene:RB1\" and \"drug: trametinib\" in \"disease: melanoma\"",
+    ] {
+        validate_search_filter_values(&keyword_filters(keyword))
+            .unwrap_or_else(|err| panic!("escaped prose keyword {keyword:?} should pass: {err}"));
+    }
+
+    for keyword in [
+        "\"review of drug: safety\"",
+        "review of \"drug: safety and disease: melanoma",
+        "review of \"drug: safety\" and disease: melanoma",
+    ] {
+        let err = validate_search_filter_values(&keyword_filters(keyword))
+            .expect_err("an unescaped reserved label should remain rejected");
+        assert!(
+            err.to_string().contains("does not accept disease:")
+                || err.to_string().contains("does not accept drug:")
+        );
+    }
+
+    let err = validate_search_filter_values(&keyword_filters(
+        "drug: trametinib and disease: melanoma and gene:RB1",
+    ))
+    .expect_err("multiple reserved labels should be rejected");
+    assert!(err.to_string().contains("does not accept gene:"));
 }
 
 #[test]

@@ -277,7 +277,7 @@ EXAMPLES:
 
 INPUT:
   --gene accepts one nonempty symbol without whitespace.
-  --keyword is provider-neutral; use --gene/--disease/--drug instead of gene:/disease:/drug: syntax.
+  --keyword is provider-neutral; use --gene/--disease/--drug instead of gene:/disease:/drug: syntax. To search literal reserved-label prose, put a literal double-quote byte immediately before every label.
 
 See also: biomcp list search-all")]
     All(search_all_command::SearchAllArgs),
@@ -387,7 +387,7 @@ QUERY FORMULATION:
   - Known gene/disease/drug anchors belong in `-g/--gene`, `-d/--disease`, or `--drug`.
   - Article `--gene` accepts one nonempty symbol without whitespace; put additional concepts in `--keyword`.
   - Use provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, outcomes, and other free-text concepts; use `--author` or `--journal` instead of provider field syntax.
-  - Do not put `gene:`, `disease:`, or `drug:` field expressions in keyword. A caller needing that literal phrase can include literal quote bytes; shell/JSON delimiters alone are not bytes in the runtime value.
+  - Do not put `gene:`, `disease:`, or `drug:` field expressions in keyword. To search prose containing them, put a literal double-quote byte immediately before every reserved label (for example, `review of \"drug: safety\"`). A whole-value quote does not protect a later label; shell/JSON delimiters alone are not bytes in the runtime value.
   - `-a/--author` limits default candidate search to author-capable sources (Europe PMC + PubMed when compatible); other filters may narrow further.
   - PubMed ESearch cleans question-format gene/disease/drug/keyword terms provider-locally; query echoes and non-PubMed sources keep the original wording.
   - Unknown-entity questions should stay keyword-first or start with `discover`.

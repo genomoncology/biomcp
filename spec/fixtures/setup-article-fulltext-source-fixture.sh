@@ -871,6 +871,27 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, ARTICLE_ENTITY_AUTHORS)
             return
 
+        if (
+            decoded_path == "/graph/v1/paper/search"
+            and query.get("query") == ['review of "drug: safety"']
+            and set(query) == {"query", "fields", "limit"}
+            and query.get("limit") == ["1"]
+        ):
+            send_json(self, 200, {
+                "total": 1,
+                "data": [{
+                    "paperId": "prose-keyword-escape-fixture",
+                    "externalIds": {"PubMed": "41800003", "DOI": "10.5555/prose-keyword-escape"},
+                    "title": 'Review of "drug: safety" prose keyword fixture',
+                    "venue": "Keyword Fixture Journal",
+                    "year": 2026,
+                    "citationCount": 3,
+                    "influentialCitationCount": 1,
+                    "abstract": 'Stable Semantic Scholar row for review of "drug: safety".',
+                }],
+            })
+            return
+
         if decoded_path == "/graph/v1/paper/search" and query.get("query") == ["Williams LS"]:
             row = AUTHOR_SEARCH["semanticscholar"]
             send_json(self, 200, {

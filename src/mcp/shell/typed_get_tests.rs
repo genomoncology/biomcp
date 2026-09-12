@@ -15,8 +15,41 @@ use clap::CommandFactory;
 use serde_json::json;
 
 use super::{
-    BioMcpServer, ShellCommand, TypedGet, TypedVariantErepo, get_args, redact_mcp_json_text,
+    BioMcpServer, ShellCommand, TypedGet, TypedSearch, TypedVariantErepo, get_args,
+    redact_mcp_json_text, search_args,
 };
+
+#[test]
+fn typed_article_prose_keyword_json_adds_only_the_output_flag() {
+    let input = json!({
+        "entity":"article",
+        "keyword":["review of \"drug: safety\""],
+        "source":"semanticscholar",
+        "limit":1
+    });
+    let markdown = search_args(TypedSearch(input.clone())).expect("Markdown argv");
+    assert_eq!(
+        markdown,
+        [
+            "biomcp",
+            "search",
+            "article",
+            "--keyword",
+            "review of \"drug: safety\"",
+            "--source",
+            "semanticscholar",
+            "--limit",
+            "1",
+        ]
+        .map(String::from)
+    );
+
+    let mut json_input = input;
+    json_input["json"] = json!(true);
+    let mapped_json = search_args(TypedSearch(json_input)).expect("JSON argv");
+    assert_eq!(mapped_json.last().map(String::as_str), Some("--json"));
+    assert_eq!(&mapped_json[..mapped_json.len() - 1], markdown);
+}
 
 #[test]
 fn mcp_json_without_local_paths_preserves_cli_bytes() {
