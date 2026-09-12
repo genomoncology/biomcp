@@ -234,6 +234,12 @@
       }
     },
     {
+      "path": "src/render/markdown/related.rs",
+      "baseline_lines": 1123,
+      "floor_lines": 1123,
+      "authorized_increase": null
+    },
+    {
       "path": "src/render/markdown/variant/tests.rs",
       "baseline_lines": 1098,
       "floor_lines": 1000,
@@ -243,12 +249,6 @@
         "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split variant-search renderer tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
-    },
-    {
-      "path": "src/render/markdown/related.rs",
-      "baseline_lines": 1123,
-      "floor_lines": 1123,
-      "authorized_increase": null
     },
     {
       "path": "src/render/provenance.rs",
@@ -266,6 +266,28 @@
       "baseline_lines": 3195,
       "floor_lines": 3195,
       "authorized_increase": null
+    },
+    {
+      "path": "src/sources/gencc/store.rs",
+      "baseline_lines": 1043,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1187",
+        "delta": 43,
+        "reason": "Deadline semantics concentrate in the three bounded lock waits beside their helpers after post-lock budget checks were removed; rustfmt reflow widens the shortened signatures and cleanup bodies.",
+        "removal_condition": "Extract the lock-wait helpers or the cleanup passes when the GenCC store is next decomposed."
+      }
+    },
+    {
+      "path": "src/sources/gencc/tests.rs",
+      "baseline_lines": 1083,
+      "floor_lines": 982,
+      "authorized_increase": {
+        "ticket": "1187",
+        "delta": 101,
+        "reason": "The expired-budget and reopen-after-release regressions join the bounded-wait and lease-deferral proofs beside the store fixtures they exercise.",
+        "removal_condition": "Extract shared GenCC store test fixtures when the test module is next decomposed."
+      }
     },
     {
       "path": "src/sources/mod.rs",
