@@ -422,7 +422,7 @@ async fn jats_citation_outcome(
     cited_paper: &SemanticScholarPaper,
     deadline: tokio::time::Instant,
 ) -> Result<JatsEvidenceOutcome, BioMcpError> {
-    let Some(pmcid) = citing_pmcid(citing_paper).await? else {
+    let Some(pmcid) = citing_pmcid(citing_paper, deadline).await? else {
         return Ok(JatsEvidenceOutcome::FulltextUnavailable);
     };
     let Some(xml) = fetch_citing_fulltext(&pmcid, deadline).await? else {
@@ -431,7 +431,10 @@ async fn jats_citation_outcome(
     run_jats_extraction(&pmcid, &xml, &cited_target_ids(cited_paper), deadline).await
 }
 
-async fn citing_pmcid(paper: &SemanticScholarPaper) -> Result<Option<String>, BioMcpError> {
+async fn citing_pmcid(
+    paper: &SemanticScholarPaper,
+    deadline: tokio::time::Instant,
+) -> Result<Option<String>, BioMcpError> {
     let external = paper.external_ids.as_ref();
     if let Some(pmcid) = external
         .and_then(|ids| ids.pmcid.as_deref())
@@ -444,17 +447,25 @@ async fn citing_pmcid(paper: &SemanticScholarPaper) -> Result<Option<String>, Bi
         return Ok(Some(pmcid));
     }
     let bridge = NcbiIdConverterClient::new()?;
-    let resolved = match (
+    let (pmid, doi) = (
         external.and_then(|ids| ids.pubmed.as_deref()),
         external.and_then(|ids| ids.doi.as_deref()),
-    ) {
-        (Some(pmid), _) => bridge.pmid_to_pmcid(pmid.trim()).await,
-        (None, Some(doi)) => bridge.doi_to_pmcid(doi.trim()).await,
-        (None, None) => Ok(None),
+    );
+    let resolved = match (pmid, doi) {
+        (Some(pmid), _) => {
+            tokio::time::timeout_at(deadline, bridge.pmid_to_pmcid(pmid.trim())).await
+        }
+        (None, Some(doi)) => {
+            tokio::time::timeout_at(deadline, bridge.doi_to_pmcid(doi.trim())).await
+        }
+        (None, None) => Ok(Ok(None)),
     };
-    // A bridge failure or timeout leaves the JATS attempt unavailable
-    // without failing the command.
-    Ok(resolved.unwrap_or(None))
+    match resolved {
+        // A bridge failure leaves the JATS attempt unavailable without
+        // failing the command; deadline expiry is the bounded command error.
+        Ok(outcome) => Ok(outcome.unwrap_or(None)),
+        Err(_) => Err(command_deadline_error()),
+    }
 }
 
 async fn fetch_citing_fulltext(

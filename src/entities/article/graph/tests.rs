@@ -916,3 +916,81 @@ async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_exp
     let requests = requests.lock().unwrap().join("\n");
     assert_eq!(requests.matches("/references").count(), 0, "{requests}");
 }
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-bridge-deadline");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    // The shrunk command budget makes the stalled bridge hit the absolute
+    // deadline instead of hanging past the test.
+    env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "400");
+    // A raw listener that accepts the ID-converter connection and never
+    // writes a byte: the bridge stalls until the command deadline expires.
+    let stalled = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let bridge_port = stalled.local_addr().unwrap().port();
+    let bridge_base = format!("http://127.0.0.1:{bridge_port}/tools/idconv/api/v1/articles");
+    env.set("BIOMCP_NCBI_IDCONV_BASE", &bridge_base);
+    let holder = tokio::spawn(async move {
+        while let Ok((_socket, _)) = stalled.accept().await {
+            tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+        }
+    });
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let logged = requests.clone();
+    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+        let mut parts = request.splitn(2, ' ');
+        let method = parts.next().unwrap_or_default();
+        let target = parts
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .next()
+            .unwrap_or_default();
+        logged.lock().unwrap().push(format!("{method} {target}"));
+        let reply = if method == "POST" {
+            // The citing seed carries a PubMed ID and no PMCID so resolution
+            // must go through the stalled bridge.
+            if request.contains(CITING_PID) {
+                format!(
+                    "[{{\"paperId\":\"{CITING_PID}\",\"title\":\"T\",\"externalIds\":{{\"PubMed\":\"22663011\"}}}}]"
+                )
+            } else {
+                format!("[{{\"paperId\":\"{CITED_PID}\",\"title\":\"T\"}}]")
+            }
+        } else {
+            GraphPage {
+                offset: 0,
+                next: None,
+                edges: vec![(CITED_PID.to_string(), Vec::new())],
+            }
+            .body()
+        };
+        super::super::test_support::TestHttpReply::Bytes(
+            super::super::test_support::test_http_response("200 OK", "application/json", reply.as_bytes()),
+        )
+    })
+    .await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap_err();
+    holder.abort();
+    assert!(
+        format!("{error:?}").contains("deadline"),
+        "expected the bounded command deadline error from the stalled bridge, got {error:?}"
+    );
+    let requests = requests.lock().unwrap().join("\n");
+    assert_eq!(requests.matches("/references").count(), 1, "{requests}");
+    assert!(!requests.to_lowercase().contains("fulltext"), "{requests}");
+}
