@@ -6,6 +6,13 @@ deps: []
 
 # Show FDA orphan designations in drug regulatory results
 
+## Complexity and implementation route
+
+Contract 2 + state/timing 2 + reach 1 + proof 2 + cost of error 1 = 8.
+This is Level 3 because it combines bounded concurrency, partial failure,
+persistent caching, and parser-version invalidation. Use GPT-5.6 SOL Medium
+for implementation and GPT-5.6 SOL Medium for independent code review.
+
 ## Goal and source boundary
 
 `get drug eflornithine regulatory` must include FDA's March 11, 2024
@@ -53,14 +60,22 @@ the effective region is `us` or `all`. Do not call it for `approvals` alone or
 for `eu`/`who`; then the new field is absent and no orphan source is claimed.
 Existing Drugs@FDA, EMA, WHO, label, and approval acquisition is unchanged.
 
-Build candidates from the already selected MyChem hits for the resolved drug:
-caller spelling, resolved `Drug.name`, UNII display name, DrugBank name and
-synonyms, ChEMBL preferred name, NDC nonproprietary names, and MyChem OpenFDA
-generic/brand names. A hit contributes only when it belongs to the selected
-identity (same selected DrugBank/ChEMBL/UNII anchor); the UNII value itself is
-not sent because FDA's form has no UNII input. Trim, collapse ASCII whitespace,
-deduplicate ASCII-case-insensitively, retain that order, and issue at most six
-logical POSTs with concurrency at most two.
+Build candidates from the already selected MyChem hits for the resolved drug.
+Caller spelling and resolved `Drug.name` are always candidates. A MyChem hit
+may contribute its UNII display name, DrugBank name and synonyms, ChEMBL
+preferred name, NDC nonproprietary names, and MyChem OpenFDA generic/brand
+names only when it shares at least one populated DrugBank, ChEMBL, or UNII
+identifier with the resolved `Drug` and conflicts with none of the resolved
+drug's populated identifiers. An identifier absent on either side is neutral;
+any unequal pair for the same identifier kind rejects the hit. When the
+resolved drug has no populated identifier, no provider-hit aliases contribute.
+The UNII value itself is never sent because FDA's form has no UNII input. Do
+not reuse `select_hits_for_name` as proof of this ownership: it can retain broad
+or salt matches, and `merge_mychem_hits` can source identifiers from different
+hits. Tests pin matching, partially populated, conflicting, and anchorless
+hits. Trim, collapse ASCII whitespace, deduplicate ASCII-case-insensitively,
+retain the stated order, and issue at most six logical POSTs with concurrency
+at most two.
 
 Admit a row only when its normalized generic or trade name exactly equals one
 of those candidates after ASCII-case folding and whitespace collapse. There is
@@ -82,9 +97,16 @@ work; cancellation stops outstanding requests and no detached work continues.
 
 Cache each validated normalized query result, including confirmed empty, for
 24 hours under a versioned key derived from effective base plus the complete
-canonical form body. Use the managed private cache and its normal size,
-permission, and maintenance rules; honor global no-cache/force-cache behavior.
-Never cache transport, HTTP, size, HTML-shape, or row-validation failures.
+canonical form body. This is a source-owned normalized-result cache rather
+than an assumption that POST responses receive the right behavior from the
+ordinary HTTP middleware. In normal mode, use an entry younger than 24 hours
+and refresh an absent or expired entry. With `--no-cache` or
+`BIOMCP_CACHE_MODE=off`, bypass both reads and writes. With
+`BIOMCP_CACHE_MODE=infinite` (`CacheMode::ForceCache`), use a matching entry
+regardless of age; if none exists, fetch, validate, and store it. Tests pin all
+three modes, including the force-cache miss/store path. Use the managed private
+cache and its normal size, permission, and maintenance rules. Never cache
+transport, HTTP, size, HTML-shape, or row-validation failures.
 
 ## Exact public schema and truth semantics
 
@@ -197,20 +219,23 @@ brackets, parentheses, backticks, HTML, CR/LF, controls, and shell
 metacharacters cannot create a column, link, heading, HTML node, terminal
 escape, or command.
 
-Pin the same fixture through production CLI Markdown/JSON, raw MCP `biomcp`
-Markdown/JSON, and typed MCP `get` Markdown/JSON. Assert exact schema, nulls,
-order, links, outcomes, and CLI/MCP equivalence, including eflornithine key
-992323, an approved row, empty, degraded with and without records, unavailable,
-malformed/oversize HTML, cap boundaries, exact generic/trade aliases,
-salt-qualified candidate aliases, rejected prefix/substring matches, anchored
-UNII-selected hits, and all regions. Exact JSON assertions pin every record
-key/null and the state table for `total_matching`/`truncated`. Completion-order
-permutations pin identical-key collapse and conflicting-key discard/degradation
-byte-for-byte. Fixture logs prove exact forms, six/two request/concurrency caps,
-one total deadline, cancellation, cache hit/expiry/no-cache, and zero
-inapplicable requests. Raw and typed MCP delegate to production CLI; typed
-request schema, section enum, tool count, and tool inventory remain
-byte-for-byte unchanged.
+Test parser shape and hostile values, deterministic merging, cache modes, and
+deadline/cancellation behavior at their owning Rust layers. Pin one
+provider-shaped fixture end to end through production CLI Markdown/JSON, raw
+MCP `biomcp` Markdown/JSON, and typed MCP `get` Markdown/JSON, asserting exact
+schema, nulls, order, links, outcomes, and structural CLI/MCP equivalence.
+Coverage includes eflornithine key 992323, an approved row, empty, degraded
+with and without records, unavailable, malformed/oversize HTML, cap
+boundaries, exact generic/trade aliases, salt-qualified candidate aliases,
+rejected prefix/substring matches, the safe anchored-hit cases above, and all
+regions. Exact JSON assertions pin every record key/null and the state table
+for `total_matching`/`truncated`. Completion-order permutations pin structurally
+identical results for identical-key collapse and conflicting-key
+discard/degradation. Owning-layer fixture logs prove exact forms, six/two
+request/concurrency caps, one total deadline, cancellation, normal/expired/off/
+infinite cache behavior, and zero inapplicable requests. Raw and typed MCP
+delegate to production CLI; typed request schema, section enum, tool count, and
+tool inventory remain byte-for-byte unchanged.
 
 ## Ownership, ratchets, and boundaries
 
@@ -246,8 +271,13 @@ the unsupported 1151 dependency.
 
 ## Upstream drift hardening
 
-- Commit a redacted byte-for-byte fixture of the live `OOPD_Results.cfm` HTML
-  response under `testdata/sources/fda_orphan/`.
+- No verified live FDA response artifact is currently available: a direct
+  production POST redirects to FDA abuse detection. Commit a clearly labeled,
+  provenance-documented provider-shaped fixture under
+  `testdata/sources/fda_orphan/`, based on the ticket's exact admitted table
+  contract. Do not invent a fixture and describe it as a live byte-for-byte
+  capture. If a genuine response capture is obtained before implementation,
+  record when and how it was captured and use its redacted bytes instead.
 - Add an `FDA_ORPHAN_PARSE_VERSION` constant baked into the cache key so any
   parser change invalidates cached entries.
 - A live page-shape mismatch beyond header normalization surfaces as
