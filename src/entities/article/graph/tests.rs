@@ -5,6 +5,8 @@ use super::citation_evidence::{
     JatsEvidenceOutcome, install_jats_citation_seam, run_jats_extraction,
 };
 use super::*;
+#[cfg(test)]
+mod admission;
 use crate::sources::semantic_scholar::{
     SemanticScholarCitationEdge, SemanticScholarClient, SemanticScholarExternalIds,
     SemanticScholarGraphResponse, SemanticScholarPaper, SemanticScholarRecommendationsResponse,
