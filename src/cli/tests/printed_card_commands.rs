@@ -105,14 +105,13 @@ fn render_fixtures() -> Vec<(&'static str, String)> {
         "name": "drug with space"
     }))
     .expect("drug fixture");
-    let trial = serde_json::from_value(serde_json::json!({
-        "nct_id": "NCT01234567",
-        "title": "Quoted intervention trial",
-        "status": "Recruiting",
-        "conditions": ["rare disease subtype"],
-        "interventions": [{"id": 1, "name": "drug with space", "type": null, "description": null, "other_names": []}]
-    }))
-    .expect("trial fixture");
+    let trial = crate::entities::trial::TrialResponse::test_ctgov(
+        "NCT01234567",
+        "Quoted intervention trial",
+        "Recruiting",
+        "rare disease subtype",
+        Some("drug with space"),
+    );
     let article = serde_json::from_value(serde_json::json!({
         "pmid": "22663011",
         "title": "BRAF article fixture",

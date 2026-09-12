@@ -1,104 +1,44 @@
 //! Trial entity models and workflows exposed through the stable trial facade.
 
-use biodata::{
-    ClinicalTrialContact, ClinicalTrialEligibility, ClinicalTrialPlannedOutcome,
-    ClinicalTrialReference, ClinicalTrialSite, ClinicalTrialSiteDirectory,
-};
 pub use biodata::{ClinicalTrialSearchTotal, ClinicalTrialSearchUnknownReason};
-use serde::{Deserialize, Serialize};
-use std::ops::{Deref, DerefMut};
+use biodata::{ClinicalTrialSite, ClinicalTrialSiteDirectory};
+use serde::Serialize;
 
 use crate::error::BioMcpError;
 
-mod design;
 mod documents;
-mod eligibility;
 mod get;
 mod search;
+mod search_hit;
 #[cfg(test)]
 mod test_support;
 
-pub use self::design::{TrialDesign, TrialDesignError};
 pub use self::documents::{
     TrialDocumentsManifest, TrialEligibilityProvenance, trial_document_bytes,
     trial_documents_manifest,
 };
 pub use self::get::get;
 pub use self::search::{count_all, search, search_page};
+pub use self::search_hit::TrialSearchHit;
+use crate::render::trial_projection as wire;
+pub(crate) use crate::render::trial_projection::{
+    TrialContactView, TrialLocationView, outcome_wire, reference_wire,
+};
 
 pub(crate) fn validate_search_filters(filters: &TrialSearchFilters) -> Result<(), BioMcpError> {
     search::validate_trial_search(filters).map(|_| ())
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Trial {
-    #[serde(default)]
-    pub identities: Vec<TrialIdentity>,
-    pub nct_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
-    pub title: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub official_title: Option<String>,
-    pub status: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub why_stopped: Option<Option<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub phase: Option<String>,
-    #[serde(default)]
-    pub phases: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub study_type: Option<String>,
-    #[serde(default)]
-    pub conditions: Vec<String>,
-    #[serde(flatten)]
-    pub design: TrialDesign,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sponsor: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enrollment: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub summary: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub start_date: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub completion_date: Option<String>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "eligibility_wire"
-    )]
-    pub eligibility: Option<ClinicalTrialEligibility>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub eligibility_provenance: Option<TrialEligibilityProvenance>,
-    #[serde(skip)]
-    pub(crate) site_directory: Option<ClinicalTrialSiteDirectory>,
-    #[serde(skip)]
-    pub(crate) site_offset: usize,
-    #[serde(skip)]
-    pub(crate) site_limit: Option<usize>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        serialize_with = "outcome_wire::serialize",
-        deserialize_with = "outcome_wire::deserialize"
-    )]
-    pub outcomes: Option<Vec<ClinicalTrialPlannedOutcome>>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "reference_wire"
-    )]
-    pub references: Option<Vec<ClinicalTrialReference>>,
+pub(crate) fn section_state<T>(section: biodata::ClinicalTrialSection<T>) -> TrialSectionState {
+    match section {
+        biodata::ClinicalTrialSection::NotRequested => TrialSectionState::NotRequested,
+        biodata::ClinicalTrialSection::Unavailable => TrialSectionState::Unavailable,
+        biodata::ClinicalTrialSection::Absent => TrialSectionState::Absent,
+        biodata::ClinicalTrialSection::Present(_) => TrialSectionState::Present,
+    }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct TrialIdentity {
-    pub authority: String,
-    pub identifier: String,
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TrialSectionState {
     NotRequested,
@@ -107,7 +47,7 @@ pub enum TrialSectionState {
     Present,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub struct TrialSectionStates {
     pub arms: TrialSectionState,
     pub eligibility: TrialSectionState,
@@ -117,62 +57,76 @@ pub struct TrialSectionStates {
     pub locations: TrialSectionState,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone)]
 pub struct TrialResponse {
-    #[serde(flatten)]
-    pub trial: Trial,
+    projection: biodata::ClinicalTrialProjection<biodata::Capture>,
+    source: String,
+    eligibility_provenance: Option<TrialEligibilityProvenance>,
+    site_offset: usize,
+    site_limit: Option<usize>,
     pub section_states: TrialSectionStates,
 }
 
-impl Serialize for TrialResponse {
+impl std::fmt::Debug for TrialResponse {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TrialResponse")
+            .finish_non_exhaustive()
+    }
+}
+
+impl serde::Serialize for TrialResponse {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        #[derive(Serialize)]
-        struct Wire<'a> {
-            #[serde(flatten)]
-            trial: &'a Trial,
-            #[serde(skip_serializing_if = "Option::is_none")]
-            contacts: Option<Vec<TrialContactView<'a>>>,
-            #[serde(skip_serializing_if = "Option::is_none")]
-            locations: Option<Vec<TrialLocationView<'a>>>,
-            section_states: &'a TrialSectionStates,
+        self.output_value()
+            .map_err(serde::ser::Error::custom)?
+            .serialize(serializer)
+    }
+}
+
+impl TrialResponse {
+    pub(crate) fn new(
+        projection: biodata::ClinicalTrialProjection<biodata::Capture>,
+        source: impl Into<String>,
+        eligibility_provenance: Option<TrialEligibilityProvenance>,
+        section_states: TrialSectionStates,
+    ) -> Self {
+        Self {
+            projection,
+            source: source.into(),
+            eligibility_provenance,
+            site_offset: 0,
+            site_limit: None,
+            section_states,
         }
-        Wire {
-            trial: &self.trial,
-            contacts: (self.section_states.contacts == TrialSectionState::Present)
-                .then(|| self.trial.contact_views()),
-            locations: (self.section_states.locations == TrialSectionState::Present)
-                .then(|| self.trial.location_views()),
-            section_states: &self.section_states,
-        }
-        .serialize(serializer)
     }
-}
 
-impl Deref for TrialResponse {
-    type Target = Trial;
-
-    fn deref(&self) -> &Self::Target {
-        &self.trial
+    pub(crate) fn trial(&self) -> &biodata::ClinicalTrial {
+        self.projection.trial()
     }
-}
 
-impl DerefMut for TrialResponse {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.trial
+    pub(crate) fn source(&self) -> &str {
+        &self.source
     }
-}
 
-impl Trial {
-    pub(crate) fn set_site_directory(&mut self, directory: Option<ClinicalTrialSiteDirectory>) {
-        self.site_directory = directory;
+    pub(crate) fn nct_id(&self) -> &str {
+        self.trial()
+            .identities()
+            .iter()
+            .find(|value| value.authority() == "clinicaltrials.gov")
+            .map(|value| value.identifier())
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn eligibility_provenance(&self) -> Option<&TrialEligibilityProvenance> {
+        self.eligibility_provenance.as_ref()
     }
 
     pub(crate) fn location_count(&self) -> usize {
-        self.site_directory
-            .as_ref()
+        self.trial()
+            .site_directory()
             .and_then(ClinicalTrialSiteDirectory::sites)
             .map_or(0, <[_]>::len)
     }
@@ -188,8 +142,8 @@ impl Trial {
 
     fn paged_sites(&self) -> &[ClinicalTrialSite] {
         let sites = self
-            .site_directory
-            .as_ref()
+            .trial()
+            .site_directory()
             .and_then(ClinicalTrialSiteDirectory::sites)
             .unwrap_or_default();
         let start = self.site_offset.min(sites.len());
@@ -201,13 +155,13 @@ impl Trial {
 
     pub(crate) fn contact_views(&self) -> Vec<TrialContactView<'_>> {
         let mut views = Vec::new();
-        if let Some(directory) = self.site_directory.as_ref() {
+        if let Some(directory) = self.trial().site_directory() {
             views.extend(
                 directory
                     .central_contacts()
                     .unwrap_or_default()
                     .iter()
-                    .map(TrialContactView::central),
+                    .map(wire::TrialContactView::central),
             );
         }
         for site in self.paged_sites() {
@@ -215,7 +169,7 @@ impl Trial {
                 site.contacts()
                     .unwrap_or_default()
                     .iter()
-                    .map(|contact| TrialContactView::site(contact, site)),
+                    .map(|contact| wire::TrialContactView::site(contact, site)),
             );
         }
         views
@@ -224,443 +178,188 @@ impl Trial {
     pub(crate) fn location_views(&self) -> Vec<TrialLocationView<'_>> {
         self.paged_sites()
             .iter()
-            .map(TrialLocationView::new)
+            .map(wire::TrialLocationView::new)
             .collect()
     }
 
-    pub(crate) fn contact_render_values(&self) -> serde_json::Value {
-        serde_json::to_value(self.contact_views()).expect("borrowed contact views serialize")
+    pub(crate) fn contact_render_values(&self) -> Result<serde_json::Value, serde_json::Error> {
+        serde_json::to_value(self.contact_views())
     }
 
-    pub(crate) fn location_render_values(&self) -> serde_json::Value {
-        serde_json::to_value(self.location_views()).expect("borrowed location views serialize")
+    pub(crate) fn location_render_values(&self) -> Result<serde_json::Value, serde_json::Error> {
+        serde_json::to_value(self.location_views())
     }
 
     pub(crate) fn has_arms(&self) -> bool {
-        self.design.arms().is_some()
+        self.trial().arms().is_some()
     }
 
     pub(crate) fn has_eligibility_age(&self) -> bool {
-        self.eligibility
-            .as_ref()
+        self.trial()
+            .eligibility()
             .is_some_and(|value| value.age_range().is_some())
     }
-}
 
-#[derive(Serialize)]
-pub(crate) struct TrialSiteContactView<'a> {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    role: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    phone: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    phone_extension: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    email: Option<&'a str>,
-}
-
-impl<'a> From<&'a ClinicalTrialContact> for TrialSiteContactView<'a> {
-    fn from(contact: &'a ClinicalTrialContact) -> Self {
-        Self {
-            name: contact.name(),
-            role: contact.role().map(|value| value.code()),
-            phone: contact.phone(),
-            phone_extension: contact.phone_extension(),
-            email: contact.email(),
-        }
-    }
-}
-
-#[derive(Serialize)]
-pub(crate) struct TrialLocationView<'a> {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    facility: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    city: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    state: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    postal_code: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    country: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    status: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    latitude: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    longitude: Option<f64>,
-    contacts: Vec<TrialSiteContactView<'a>>,
-}
-
-impl<'a> TrialLocationView<'a> {
-    fn new(site: &'a ClinicalTrialSite) -> Self {
-        let coordinates = site.coordinates();
-        Self {
-            facility: site.facility(),
-            city: site.city(),
-            state: site.state(),
-            postal_code: site.postal_code(),
-            country: site.country(),
-            status: site.status().map(|value| value.code()),
-            latitude: coordinates.map(|value| value.latitude()),
-            longitude: coordinates.map(|value| value.longitude()),
-            contacts: site
-                .contacts()
-                .unwrap_or_default()
-                .iter()
-                .map(Into::into)
-                .collect(),
-        }
-    }
-}
-
-#[derive(Serialize)]
-pub(crate) struct TrialContactView<'a> {
-    level: &'static str,
-    #[serde(flatten)]
-    contact: TrialSiteContactView<'a>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    facility: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    city: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    state: Option<&'a str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    country: Option<&'a str>,
-}
-
-impl<'a> TrialContactView<'a> {
-    fn central(contact: &'a ClinicalTrialContact) -> Self {
-        Self {
-            level: "central",
-            contact: contact.into(),
-            facility: None,
-            city: None,
-            state: None,
-            country: None,
-        }
-    }
-
-    fn site(contact: &'a ClinicalTrialContact, site: &'a ClinicalTrialSite) -> Self {
-        Self {
-            level: "site",
-            contact: contact.into(),
-            facility: site.facility(),
-            city: site.city(),
-            state: site.state(),
-            country: site.country(),
-        }
-    }
-}
-
-use eligibility as eligibility_wire;
-
-pub(crate) mod outcome_wire {
-    use biodata::{ClinicalTrialPlannedOutcome, ExtensibleCode};
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-    const AUTHORITY: &str = "clinicaltrials.gov";
-    const INVALID_OUTCOME: &str = "invalid clinical trial planned outcome";
-
-    #[derive(Serialize)]
-    pub(crate) struct RowView<'a> {
-        measure: &'a str,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        description: Option<&'a str>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        time_frame: Option<&'a str>,
-    }
-
-    impl<'a> From<&'a ClinicalTrialPlannedOutcome> for RowView<'a> {
-        fn from(value: &'a ClinicalTrialPlannedOutcome) -> Self {
-            Self {
-                measure: value.measure(),
-                description: value.description(),
-                time_frame: value.time_frame(),
-            }
-        }
-    }
-
-    #[derive(Serialize)]
-    pub(crate) struct GroupedView<'a> {
-        primary: Vec<RowView<'a>>,
-        secondary: Vec<RowView<'a>>,
-        other: Vec<RowView<'a>>,
-    }
-
-    pub(crate) fn views(
-        outcomes: &Option<Vec<ClinicalTrialPlannedOutcome>>,
-    ) -> Result<Option<GroupedView<'_>>, &'static str> {
-        outcomes
-            .as_deref()
-            .map(|values| {
-                let mut grouped = GroupedView {
-                    primary: Vec::new(),
-                    secondary: Vec::new(),
-                    other: Vec::new(),
-                };
-                for outcome in values {
-                    let classification = outcome.source_classification();
-                    if classification.authority() != AUTHORITY {
-                        return Err(INVALID_OUTCOME);
-                    }
-                    let row = RowView::from(outcome);
-                    match classification.code() {
-                        "primaryOutcomes" => grouped.primary.push(row),
-                        "secondaryOutcomes" => grouped.secondary.push(row),
-                        "otherOutcomes" => grouped.other.push(row),
-                        _ => return Err(INVALID_OUTCOME),
-                    }
-                }
-                Ok(grouped)
-            })
-            .transpose()
-    }
-
-    pub(super) fn serialize<S: Serializer>(
-        outcomes: &Option<Vec<ClinicalTrialPlannedOutcome>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
-        views(outcomes)
-            .map_err(serde::ser::Error::custom)?
-            .serialize(serializer)
-    }
-
-    #[derive(Deserialize)]
-    #[serde(deny_unknown_fields)]
-    struct Grouped {
-        #[serde(default)]
-        primary: Vec<Row>,
-        #[serde(default)]
-        secondary: Vec<Row>,
-        #[serde(default)]
-        other: Vec<Row>,
-    }
-
-    #[derive(Deserialize)]
-    #[serde(deny_unknown_fields)]
-    struct Row {
-        measure: String,
-        description: Option<String>,
-        time_frame: Option<String>,
-    }
-
-    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
-        deserializer: D,
-    ) -> Result<Option<Vec<ClinicalTrialPlannedOutcome>>, D::Error> {
-        Option::<Grouped>::deserialize(deserializer)?
-            .map(|grouped| {
-                [
-                    ("primaryOutcomes", grouped.primary),
-                    ("secondaryOutcomes", grouped.secondary),
-                    ("otherOutcomes", grouped.other),
-                ]
-                .into_iter()
-                .flat_map(|(classification, rows)| {
-                    rows.into_iter().map(move |row| (classification, row))
-                })
-                .map(|(classification, row)| {
-                    let classification = ExtensibleCode::new(
-                        AUTHORITY,
-                        classification,
-                        None::<String>,
-                        None::<String>,
-                        None::<String>,
-                    )
-                    .map_err(|_| serde::de::Error::custom(INVALID_OUTCOME))?;
-                    ClinicalTrialPlannedOutcome::new(
-                        row.measure,
-                        row.description,
-                        row.time_frame,
-                        classification,
-                    )
-                    .map_err(|_| serde::de::Error::custom(INVALID_OUTCOME))
-                })
-                .collect()
-            })
-            .transpose()
-    }
-}
-
-pub(crate) mod reference_wire {
-    use biodata::ClinicalTrialReference;
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    use serde_json::value::RawValue;
-
-    const INVALID_REFERENCE: &str = "invalid clinical trial reference";
-
-    #[derive(Serialize)]
-    pub(crate) struct View<'a> {
-        pub(crate) pmid: Option<&'a str>,
-        pub(crate) citation: Option<&'a str>,
-        pub(crate) source_type_label: Option<&'a str>,
-    }
-
-    fn display_text(value: Option<&str>) -> Option<&str> {
-        value.map(str::trim).filter(|value| !value.is_empty())
-    }
-
-    fn view(reference: &ClinicalTrialReference) -> View<'_> {
-        let source_type_label = reference.source_type().and_then(|source_type| {
-            display_text(source_type.display())
-                .or_else(|| display_text(source_type.recognized_meaning()))
-                .or_else(|| display_text(Some(source_type.code())))
-        });
-        View {
-            pmid: display_text(reference.pmid()),
-            citation: display_text(reference.citation()),
-            source_type_label,
-        }
-    }
-
-    pub(crate) fn views(references: &Option<Vec<ClinicalTrialReference>>) -> Option<Vec<View<'_>>> {
-        references
-            .as_ref()
-            .map(|values| values.iter().map(view).collect())
-    }
-
-    pub(super) fn serialize<S: Serializer>(
-        references: &Option<Vec<ClinicalTrialReference>>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
-        let Some(references) = references else {
-            return serializer.serialize_none();
-        };
-        let encoded = references
-            .iter()
-            .map(|reference| {
-                let json = reference
-                    .to_json()
-                    .map_err(|_| serde::ser::Error::custom(INVALID_REFERENCE))?;
-                RawValue::from_string(json)
-                    .map_err(|_| serde::ser::Error::custom(INVALID_REFERENCE))
-            })
-            .collect::<Result<Vec<_>, S::Error>>()?;
-        encoded.serialize(serializer)
-    }
-
-    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
-        deserializer: D,
-    ) -> Result<Option<Vec<ClinicalTrialReference>>, D::Error> {
-        Option::<Vec<Box<RawValue>>>::deserialize(deserializer)?
-            .map(|values| {
-                values
-                    .into_iter()
-                    .map(|value| {
-                        ClinicalTrialReference::from_json_bytes(value.get().as_bytes())
-                            .map_err(|_| serde::de::Error::custom(INVALID_REFERENCE))
-                    })
-                    .collect()
-            })
-            .transpose()
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct TrialSearchResult {
-    pub nct_id: String,
-    pub title: String,
-    pub status: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub phase: Option<String>,
-    #[serde(default)]
-    pub conditions: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sponsor: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub matched_intervention_label: Option<String>,
-}
-
-impl std::fmt::Debug for TrialSearchResult {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter
-            .debug_struct("TrialSearchResult")
-            .finish_non_exhaustive()
-    }
-}
-
-impl TrialSearchResult {
-    pub(crate) fn from_biodata(
-        value: &biodata::ClinicalTrialSearchSummary,
-    ) -> Result<Self, BioMcpError> {
-        let nct_id = value
-            .identities()
-            .first()
-            .map(|identity| identity.identifier().to_owned())
-            .ok_or(BioMcpError::InternalProcessing)?;
-        let phase = (!value.phases().is_empty()).then(|| {
-            value
-                .phases()
-                .iter()
-                .map(|phase| phase.code())
-                .collect::<Vec<_>>()
-                .join("/")
-        });
-        Ok(Self {
-            nct_id,
-            title: value.brief_title().to_owned(),
-            status: value.overall_status().code().to_owned(),
-            phase,
-            conditions: value.conditions().to_vec(),
-            sponsor: value.lead_sponsor_name().map(str::to_owned),
-            matched_intervention_label: None,
-        })
-    }
-}
-
-#[cfg(test)]
-mod search_result_tests {
-    use super::TrialSearchResult;
-
-    #[test]
-    fn product_search_debug_redacts_untrusted_values() {
-        const SENTINEL: &str = "TRIAL-SEARCH-PRIVATE-SENTINEL-0117";
-        let result = TrialSearchResult {
-            nct_id: "NCT00000001".into(),
-            title: SENTINEL.into(),
-            status: SENTINEL.into(),
-            phase: Some(SENTINEL.into()),
-            conditions: vec![SENTINEL.into()],
-            sponsor: Some(SENTINEL.into()),
-            matched_intervention_label: Some(SENTINEL.into()),
-        };
-        assert!(!format!("{result:?}").contains(SENTINEL));
-        assert!(serde_json::to_string(&result).unwrap().contains(SENTINEL));
-    }
-
-    #[test]
-    fn shared_summary_maps_to_the_stable_product_keys_without_trimming() {
-        let filters = biodata::ClinicalTrialSearchFilters::new(
-            biodata::ClinicalTrialSearchFilterFields {
-                condition: Some("fixture".into()),
-                ..Default::default()
+    #[cfg(test)]
+    pub(crate) fn test_ctgov(
+        nct_id: &str,
+        title: &str,
+        status: &str,
+        condition: &str,
+        intervention: Option<&str>,
+    ) -> Self {
+        let intervention_module = intervention.map_or_else(
+            String::new,
+            |name| {
+                format!(
+                    r#","armsInterventionsModule":{{"interventions":[{{"name":"{name}","type":"DRUG"}}]}}"#
+                )
             },
-            Default::default(),
-        )
-        .unwrap();
-        let plan = biodata::ClinicalTrialsGovApiV2SearchPlan::new(&filters, 1, None, true).unwrap();
-        let page = biodata::ClinicalTrialsGovApiV2SearchPage::parse(
+        );
+        let input = format!(
+            r#"{{"protocolSection":{{"identificationModule":{{"nctId":"{nct_id}","briefTitle":"{title}"}},"statusModule":{{"overallStatus":"{status}"}},"sponsorCollaboratorsModule":{{"leadSponsor":{{"name":"Test sponsor"}}}},"conditionsModule":{{"conditions":["{condition}"]}},"designModule":{{"studyType":"INTERVENTIONAL"}}{intervention_module}}}}}"#
+        );
+        let plan =
+            biodata::ClinicalTrialsGovApiV2DetailPlan::new(nct_id, false).expect("test plan");
+        let response = biodata::ClinicalTrialsGovApiV2Response::parse(
             &plan,
-            br#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT00000001","briefTitle":" title "},"statusModule":{"overallStatus":" status "},"designModule":{"phases":["PHASE1","PHASE2"]},"conditionsModule":{"conditions":[" A "," A "]},"sponsorCollaboratorsModule":{"leadSponsor":{"name":" sponsor "}}}}],"totalCount":1}"#,
+            input.as_bytes(),
             &Default::default(),
         )
-        .unwrap();
-        let result =
-            TrialSearchResult::from_biodata(page.results().unwrap()[0].projection().value())
-                .unwrap();
-        assert_eq!(
-            serde_json::to_value(result).unwrap(),
-            serde_json::json!({
-                "nct_id": "NCT00000001",
-                "title": " title ",
-                "status": " status ",
-                "phase": "PHASE1/PHASE2",
-                "conditions": [" A ", " A "],
-                "sponsor": " sponsor "
-            })
+        .expect("test response");
+        let projection = response.into_projection().expect("test projection");
+        Self::new(
+            projection,
+            "ClinicalTrials.gov",
+            None,
+            TrialSectionStates {
+                arms: TrialSectionState::NotRequested,
+                eligibility: TrialSectionState::NotRequested,
+                outcomes: TrialSectionState::NotRequested,
+                references: TrialSectionState::NotRequested,
+                contacts: TrialSectionState::NotRequested,
+                locations: TrialSectionState::NotRequested,
+            },
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_ctgov_json(nct_id: &str, input: &str) -> Self {
+        let plan =
+            biodata::ClinicalTrialsGovApiV2DetailPlan::new(nct_id, false).expect("test plan");
+        let response = biodata::ClinicalTrialsGovApiV2Response::parse(
+            &plan,
+            input.as_bytes(),
+            &Default::default(),
+        )
+        .expect("test response");
+        Self::new(
+            response.into_projection().expect("test projection"),
+            "ClinicalTrials.gov",
+            None,
+            TrialSectionStates {
+                arms: TrialSectionState::NotRequested,
+                eligibility: TrialSectionState::NotRequested,
+                outcomes: TrialSectionState::NotRequested,
+                references: TrialSectionState::NotRequested,
+                contacts: TrialSectionState::NotRequested,
+                locations: TrialSectionState::NotRequested,
+            },
+        )
+    }
+
+    fn output_value(&self) -> Result<serde_json::Value, &'static str> {
+        const INVALID: &str = "clinical trial projection could not be rendered";
+        let shared = self.trial();
+        let mut output = serde_json::Map::new();
+        output.insert("identities".into(), wire::identities(shared.identities()));
+        output.insert("nct_id".into(), self.nct_id().into());
+        output.insert("source".into(), self.source.clone().into());
+        output.insert("title".into(), shared.brief_title().into());
+        output.insert("status".into(), shared.overall_status().code().into());
+        if let Some(value) = shared.official_title() {
+            output.insert("official_title".into(), value.into());
+        }
+        output.insert(
+            "why_stopped".into(),
+            shared.stop_reason().map(serde_json::Value::from).into(),
         );
+        let phases: Vec<_> = shared.phases().iter().map(|value| value.code()).collect();
+        if !phases.is_empty() {
+            output.insert("phase".into(), phases.join("/").into());
+        }
+        output.insert("phases".into(), phases.into());
+        output.insert("study_type".into(), shared.study_type().code().into());
+        output.insert("conditions".into(), shared.conditions().into());
+        output.insert(
+            "interventions".into(),
+            wire::interventions(shared.interventions()),
+        );
+        if self.section_states.arms == TrialSectionState::Present {
+            output.insert("arms".into(), wire::arms(shared.arms()));
+            output.insert(
+                "arm_intervention_assignments".into(),
+                wire::assignments(shared.arm_intervention_assignments()),
+            );
+        }
+        output.insert("sponsor".into(), shared.lead_sponsor_name().into());
+        if let Some(value) = shared.enrollment_count() {
+            output.insert("enrollment".into(), value.into());
+        }
+        if let Some(value) = shared.brief_summary() {
+            output.insert("summary".into(), value.into());
+        }
+        if let Some(value) = shared.start_date() {
+            output.insert("start_date".into(), value.into());
+        }
+        if let Some(value) = shared.completion_date() {
+            output.insert("completion_date".into(), value.into());
+        }
+        if let Some(value) = shared.eligibility() {
+            output.insert("eligibility".into(), wire::eligibility(value));
+        }
+        if let Some(value) = &self.eligibility_provenance {
+            output.insert(
+                "eligibility_provenance".into(),
+                serde_json::to_value(value).map_err(|_| INVALID)?,
+            );
+        }
+        if let Some(outcomes) =
+            outcome_wire::views(self.trial().planned_outcomes()).map_err(|_| INVALID)?
+        {
+            output.insert(
+                "outcomes".into(),
+                serde_json::to_value(outcomes).map_err(|_| INVALID)?,
+            );
+        }
+        if let Some(references) = reference_wire::views(shared.references()) {
+            output.insert(
+                "references".into(),
+                serde_json::to_value(references).map_err(|_| INVALID)?,
+            );
+        }
+        if self.section_states.contacts == TrialSectionState::Present {
+            output.insert(
+                "contacts".into(),
+                self.contact_render_values().map_err(|_| INVALID)?,
+            );
+        }
+        if self.section_states.locations == TrialSectionState::Present {
+            output.insert(
+                "locations".into(),
+                self.location_render_values().map_err(|_| INVALID)?,
+            );
+        }
+        output.insert(
+            "section_states".into(),
+            serde_json::to_value(&self.section_states).map_err(|_| INVALID)?,
+        );
+        output.insert("capture".into(), wire::capture(self.projection.capture()));
+        output.insert(
+            "conversion_report".into(),
+            wire::report(self.projection.report()),
+        );
+        Ok(output.into())
     }
 }
 

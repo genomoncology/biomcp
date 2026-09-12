@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "fe1481a4b4d842ffe42199f6c09e9b45afc1c21b"
+REVISION = "4f53541dd8c27ffed9cb0bfdfc240c31e0fa698e"
 
 
 def _write(path: Path, content: str) -> None:
@@ -35,14 +35,14 @@ biodata = {{ git = "{URL}", rev = "{REVISION}" }}
 
 [[package]]
 name = "biodata"
-version = "0.0.21"
+version = "0.0.22"
 source = "git+{URL}?rev={REVISION}#{REVISION}"
 """,
     )
     _write(
         root / "src/boundary.rs",
         """use biodata::{
-    ClinicalTrialArm, ClinicalTrialCore, ClinicalTrialIntervention, ClinicalTrialArms,
+    Capture, ClinicalTrial, ClinicalTrialArm, ClinicalTrialIntervention, ClinicalTrialArms,
     ClinicalTrialArmInterventionAssignment, ClinicalTrialArmRelationshipError,
     ClinicalTrialEligibility, ClinicalTrialReference, ClinicalTrialSection,
     ClinicalTrialsGovApiV2DetailPlan, ClinicalTrialsGovApiV2Response,
@@ -51,16 +51,20 @@ source = "git+{URL}?rev={REVISION}#{REVISION}"
     NciCtsV2SearchPage,
     ClinicalTrialSearchFilters, ClinicalTrialsGovApiV2SearchPlan, NciCtsV2SearchPlan,
     ClinicalTrialSiteDirectory, ClinicalTrialContact, ClinicalTrialSite,
+    ClinicalTrialProjection, ClinicalTrialSearchProjection,
+    ClinicalTrialsGovArtifactRetrieval,
 };
 
-fn codecs(value: &[u8], eligibility: &ClinicalTrialEligibility, reference: &ClinicalTrialReference) {
-    let _ = ClinicalTrialEligibility::from_json_bytes(value);
-    let _ = eligibility.to_json();
-    let _ = ClinicalTrialReference::from_json_bytes(value);
-    let _ = reference.to_json();
-}
+struct DetailEnvelope { projection: biodata::ClinicalTrialProjection<biodata::Capture> }
+struct SearchEnvelope { projection: biodata::ClinicalTrialSearchProjection<biodata::Capture> }
 
-fn core(value: &ClinicalTrialCore) { let _ = value.brief_summary(); }
+fn projections() {
+    detail.into_projection();
+    nci_detail.into_projection();
+    search.into_projection();
+    nci_search.into_projection();
+    let _ = ClinicalTrialAgeBound::to_years(&bound);
+}
 """,
     )
     subprocess.run(["git", "add", "."], cwd=root, check=True)
@@ -88,7 +92,7 @@ def test_biodata_boundary_accepts_a_complete_minimal_fixture(tmp_path: Path) -> 
     ("old", "new"),
     [
         (REVISION, "0" * 40),
-        ('version = "0.0.21"', 'version = "0.0.14"'),
+        ('version = "0.0.22"', 'version = "0.0.14"'),
     ],
 )
 def test_biodata_boundary_rejects_wrong_lock_or_revision(
@@ -170,6 +174,10 @@ def test_biodata_boundary_rejects_patch_and_source_replacements(
         "pub struct CtGovSearchParams { value: String }",
         "pub struct NciSearchParams { value: String }",
         "pub enum NciDiseaseFilter { Keyword(String) }",
+        "pub struct Trial { title: String }",
+        "pub struct TrialIdentity { nct_id: String }",
+        "pub struct TrialDesign { arms: Vec<String> }",
+        "pub struct TrialSearchResult { title: String }",
     ],
 )
 def test_biodata_boundary_rejects_retired_declarations_in_new_tracked_rust_files(
@@ -178,4 +186,46 @@ def test_biodata_boundary_rejects_retired_declarations_in_new_tracked_rust_files
     _fixture(tmp_path)
     _write(tmp_path / "src/new_owner.rs", declaration)
     subprocess.run(["git", "add", "src/new_owner.rs"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+def test_biodata_boundary_rejects_a_second_biomedical_field_owner(
+    tmp_path: Path,
+) -> None:
+    _fixture(tmp_path)
+    _write(
+        tmp_path / "src/new_owner.rs",
+        "pub struct AlternateStudy { brief_title: String, conditions: Vec<String> }",
+    )
+    subprocess.run(["git", "add", "src/new_owner.rs"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+def test_biodata_boundary_rejects_a_duplicate_document_owner(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    _write(
+        tmp_path / "src/document.rs",
+        "pub struct ProductDocument { label: Option<String>, size_bytes: Option<u64> }",
+    )
+    subprocess.run(["git", "add", "src/document.rs"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+def test_biodata_boundary_rejects_a_widened_adverse_event_consumer(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    _write(
+        tmp_path / "src/unrelated.rs",
+        "fn consume(value: CtGovAdverseEventStudy) { drop(value); }",
+    )
+    subprocess.run(["git", "add", "src/unrelated.rs"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+def test_biodata_boundary_rejects_a_bidirectional_trial_codec(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    _write(
+        tmp_path / "src/codec.rs",
+        "fn decode(value: &[u8]) { TrialEligibilityWire::from_json_bytes(value); }",
+    )
+    subprocess.run(["git", "add", "src/codec.rs"], cwd=tmp_path, check=True)
     assert _run(tmp_path).returncode == 1

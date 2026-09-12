@@ -101,14 +101,15 @@ pub(super) fn ranked_article_annotation_commands(
         .collect()
 }
 
-pub(super) fn trial_results_search_command(trial: &Trial) -> Option<String> {
-    let nct_id = trial.nct_id.trim();
+pub(super) fn trial_results_search_command(trial: &TrialResponse) -> Option<String> {
+    let nct_id = trial.nct_id().trim();
     if nct_id.is_empty() {
         return None;
     }
 
     let title_seed = trial
-        .title
+        .trial()
+        .brief_title()
         .split_whitespace()
         .take(6)
         .collect::<Vec<_>>()
@@ -123,7 +124,7 @@ pub(super) fn trial_results_search_command(trial: &Trial) -> Option<String> {
         return None;
     }
 
-    if let Some(intervention) = trial.design.interventions().first() {
+    if let Some(intervention) = trial.trial().interventions().unwrap_or_default().first() {
         let intervention_q = quote_arg(intervention.name());
         if !intervention_q.is_empty() {
             return Some(format!(

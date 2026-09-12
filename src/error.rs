@@ -1,4 +1,3 @@
-pub use crate::entities::trial::TrialDesignError;
 pub use biodata::{ClinicalTrialArmId, ClinicalTrialArmRelationshipError};
 use std::fmt;
 
@@ -374,7 +373,6 @@ pub enum BioMcpError {
     },
     InvalidArgument(String),
     InternalProcessing,
-    TrialDesign(TrialDesignError),
     CaptureUnavailable,
     CaptureCorrupt,
     BindingConflict,
@@ -479,9 +477,7 @@ impl BioMcpError {
             }
             Self::InvalidArgument(_) => format!("Invalid request for {source}."),
             Self::InputTooLarge { .. } => format!("Input for {source} was too large."),
-            Self::InternalProcessing | Self::TrialDesign(_) => {
-                "Internal processing failed.".to_string()
-            }
+            Self::InternalProcessing => "Internal processing failed.".to_string(),
             Self::CaptureUnavailable | Self::CaptureCorrupt | Self::BindingConflict => {
                 "Captured source material could not be used.".to_string()
             }
@@ -530,9 +526,7 @@ impl BioMcpError {
                 format!("BioMCP is not installed at {path}.")
             }
             Self::InvalidArgument(message) => format!("Invalid argument: {message}"),
-            Self::InternalProcessing | Self::TrialDesign(_) => {
-                "Internal processing failed.".to_string()
-            }
+            Self::InternalProcessing => "Internal processing failed.".to_string(),
             Self::CaptureUnavailable => {
                 "capture_unavailable: captured source material is unavailable".to_string()
             }
@@ -634,7 +628,7 @@ impl BioMcpError {
             Self::PackageManagedInstall { .. } => "package_managed_install",
             Self::NotInstalled { .. } => "not_installed",
             Self::InvalidArgument(_) => "invalid_argument",
-            Self::InternalProcessing | Self::TrialDesign(_) => "internal_processing",
+            Self::InternalProcessing => "internal_processing",
             Self::CaptureUnavailable => "capture_unavailable",
             Self::CaptureCorrupt => "capture_corrupt",
             Self::BindingConflict => "binding_conflict",
@@ -702,9 +696,7 @@ impl fmt::Display for BioMcpError {
             Self::PackageManagedInstall { guidance } => formatter.write_str(guidance),
             Self::NotInstalled { path } => write!(formatter, "BioMCP is not installed at {path}."),
             Self::InvalidArgument(message) => write!(formatter, "Invalid argument: {message}"),
-            Self::InternalProcessing | Self::TrialDesign(_) => {
-                formatter.write_str("Internal processing failed.")
-            }
+            Self::InternalProcessing => formatter.write_str("Internal processing failed."),
             Self::CaptureUnavailable => {
                 formatter.write_str("capture_unavailable: captured source material is unavailable")
             }
@@ -746,7 +738,6 @@ impl std::error::Error for BioMcpError {
             Self::Template(source) => Some(source),
             Self::Io(source) => Some(source),
             Self::WithSourceContext { source, .. } => Some(source),
-            Self::TrialDesign(source) => Some(source),
             _ => None,
         }
     }

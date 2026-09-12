@@ -32,8 +32,8 @@
     },
     {
       "path": "src/entities/adverse_event.rs",
-      "baseline_lines": 2663,
-      "floor_lines": 2663,
+      "baseline_lines": 2566,
+      "floor_lines": 2566,
       "authorized_increase": null
     },
     {
@@ -179,14 +179,9 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1125,
-      "floor_lines": 1122,
-      "authorized_increase": {
-        "ticket": "1022",
-        "delta": 3,
-        "reason": "Register dbSNP source errors with the shared provider policy.",
-        "removal_condition": "Move provider definitions into a dedicated source registry."
-      }
+      "baseline_lines": 1109,
+      "floor_lines": 1109,
+      "authorized_increase": null
     },
     {
       "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
@@ -196,14 +191,20 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2149,
+      "baseline_lines": 2161,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1031, 1150, 1158",
-        "delta": 193,
-        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions.",
-        "removal_condition": "Extract typed tool schema transforms when the MCP shell is next decomposed."
+        "ticket": "0127",
+        "delta": 205,
+        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract.",
+        "removal_condition": "Extract trial paging and count schema transforms when the typed shell contract is decomposed."
       }
+    },
+    {
+      "path": "src/mcp/shell/typed_get_tests.rs",
+      "baseline_lines": 1558,
+      "floor_lines": 1558,
+      "authorized_increase": null
     },
     {
       "path": "src/render/chart.rs",
@@ -234,6 +235,12 @@
       }
     },
     {
+      "path": "src/render/markdown/related.rs",
+      "baseline_lines": 1064,
+      "floor_lines": 1064,
+      "authorized_increase": null
+    },
+    {
       "path": "src/render/markdown/variant/tests.rs",
       "baseline_lines": 1098,
       "floor_lines": 1000,
@@ -245,21 +252,10 @@
       }
     },
     {
-      "path": "src/render/markdown/related.rs",
-      "baseline_lines": 1123,
-      "floor_lines": 1123,
-      "authorized_increase": null
-    },
-    {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1817,
-      "floor_lines": 1810,
-      "authorized_increase": {
-        "ticket": "1022, 1158",
-        "delta": 7,
-        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs.",
-        "removal_condition": "Extract variant provenance into its own renderer module."
-      }
+      "baseline_lines": 1745,
+      "floor_lines": 1745,
+      "authorized_increase": null
     },
     {
       "path": "src/sources/cbioportal_study.rs",
@@ -269,14 +265,9 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2275,
-      "floor_lines": 1847,
-      "authorized_increase": {
-        "ticket": "1022, 1150, 1158",
-        "delta": 428,
-        "reason": "Register dbSNP and GenCC and carry the task-local variant deadline through shared request, retry, and provider-admission utilities.",
-        "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
-      }
+      "baseline_lines": 2274,
+      "floor_lines": 2274,
+      "authorized_increase": null
     },
     {
       "path": "src/sources/myvariant.rs",

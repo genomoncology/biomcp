@@ -1,5 +1,5 @@
 //! Product status ranking. BioData owns provider filter normalization.
-use super::super::TrialSearchResult;
+use super::super::TrialSearchHit;
 
 fn status_priority(value: &str) -> u8 {
     match value
@@ -21,11 +21,11 @@ fn status_priority(value: &str) -> u8 {
     }
 }
 
-pub(super) fn sort_trials_by_status_priority(rows: &mut [TrialSearchResult]) {
+pub(super) fn sort_trials_by_status_priority(rows: &mut [TrialSearchHit]) {
     rows.sort_by(|a, b| {
-        status_priority(&a.status)
-            .cmp(&status_priority(&b.status))
-            .then_with(|| a.nct_id.cmp(&b.nct_id))
+        status_priority(a.status())
+            .cmp(&status_priority(b.status()))
+            .then_with(|| a.nct_id().cmp(b.nct_id()))
     });
 }
 

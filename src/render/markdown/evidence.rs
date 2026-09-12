@@ -264,13 +264,13 @@ pub(super) fn article_evidence_urls(article: &Article) -> Vec<(&'static str, Str
     urls
 }
 
-pub(super) fn trial_evidence_urls(trial: &Trial) -> Vec<(&'static str, String)> {
-    if trial.nct_id.trim().is_empty() {
+pub(super) fn trial_evidence_urls(trial: &TrialResponse) -> Vec<(&'static str, String)> {
+    if trial.nct_id().trim().is_empty() {
         return Vec::new();
     }
     vec![(
         "ClinicalTrials.gov",
-        format!("https://clinicaltrials.gov/study/{}", trial.nct_id.trim()),
+        format!("https://clinicaltrials.gov/study/{}", trial.nct_id().trim()),
     )]
 }
 

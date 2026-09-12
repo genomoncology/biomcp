@@ -68,7 +68,7 @@ def _load_mutation(tmp_path: Path, text: str) -> FocusedSelection:
 
 def test_manifest_is_the_only_focused_selection_source() -> None:
     selection = load_selection(MANIFEST)
-    assert len(selection.rust) == 86
+    assert len(selection.rust) == 78
     assert len(selection.python) == 12
     runner = RUNNER.read_text(encoding="utf-8")
     assert runner.count("biodata-1.0-focused.toml") == 1
@@ -80,11 +80,11 @@ def test_manifest_is_the_only_focused_selection_source() -> None:
     "replacement",
     (
         (
-            '  "entities::trial::get::tests::outcome_product_preserves_grouped_values_and_every_section_state",',
-            '  "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",',
+                '  "cli::system::batch::tests::trial_batch_json_keeps_shared_projection_metadata",',
+                '  "cli::trial::dispatch::site_directory_tests::location_page_filters_sites_and_site_contacts_but_keeps_central_first",',
         ),
         (
-            '  "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",',
+                '  "cli::system::batch::tests::trial_batch_json_keeps_shared_projection_metadata",',
             '  " ",',
         ),
         (
@@ -96,7 +96,7 @@ def test_manifest_is_the_only_focused_selection_source() -> None:
             '  "tests/test_credentials.py",',
         ),
         (
-            '  "entities::trial::get::tests::nci_product_conversion_checks_enrollment_and_preserves_source_presence",',
+                '  "cli::system::batch::tests::trial_batch_json_keeps_shared_projection_metadata",',
             '  "sources::tests::reads_credential_from_environment",',
         ),
         (

@@ -375,26 +375,17 @@ pub(super) fn verify_age_eligibility(
             let age_range = study.projection().value().age_range();
             let min_ok = age_range
                 .and_then(|value| value.minimum())
-                .and_then(comparable_years)
-                .is_none_or(|min| age >= min);
+                .map(biodata::ClinicalTrialAgeBound::to_years)
+                .transpose()
+                .is_ok_and(|value| value.flatten().is_none_or(|min| age >= min));
             let max_ok = age_range
                 .and_then(|value| value.maximum())
-                .filter(|bound| bound.form() == biodata::ClinicalTrialAgeBoundForm::Limited)
-                .and_then(comparable_years)
-                .is_none_or(|max| age <= max);
+                .map(biodata::ClinicalTrialAgeBound::to_years)
+                .transpose()
+                .is_ok_and(|value| value.flatten().is_none_or(|max| age <= max));
             min_ok && max_ok
         })
         .collect()
-}
-
-fn comparable_years(bound: &biodata::ClinicalTrialAgeBound) -> Option<f64> {
-    let quantity = bound.source().source_quantity().parse::<f64>().ok()?;
-    match bound.source().source_unit() {
-        biodata::DurationUnit::Years => Some(quantity),
-        biodata::DurationUnit::Months => Some(quantity / 12.0),
-        biodata::DurationUnit::Weeks => Some(quantity / 52.0),
-        biodata::DurationUnit::Days => Some(quantity / 365.0),
-    }
 }
 
 #[cfg(test)]

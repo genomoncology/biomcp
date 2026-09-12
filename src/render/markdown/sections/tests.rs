@@ -857,39 +857,20 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
             "biomcp get drug pembrolizumab safety   - regulatory safety detail; use `biomcp drug adverse-events <name>` first when you want post-marketing signal"
         ));
 
-    let terminated = crate::entities::trial::Trial {
-        identities: Vec::new(),
-        nct_id: "NCT02576665".to_string(),
-        source: None,
-        title: "Completed trial".to_string(),
-        official_title: None,
-        status: "TERMINATED".to_string(),
-        why_stopped: None,
-        phase: None,
-        phases: Vec::new(),
-        study_type: None,
-        conditions: vec!["melanoma".to_string()],
-        design: crate::entities::trial::TrialDesign::from_names(&["trametinib"]),
-        sponsor: None,
-        enrollment: None,
-        summary: None,
-        start_date: None,
-        completion_date: None,
-        eligibility: None,
-        eligibility_provenance: None,
-        site_directory: None,
-        site_offset: 0,
-        site_limit: None,
-        outcomes: None,
-        references: None,
-    };
+    let terminated = crate::entities::trial::TrialResponse::test_ctgov(
+        "NCT02576665",
+        "Completed trial",
+        "TERMINATED",
+        "melanoma",
+        Some("trametinib"),
+    );
     let terminated_sections = sections_trial(&terminated, &[]);
     assert_eq!(terminated_sections[0], "outcomes");
     assert_eq!(terminated_sections[1], "references");
     assert_eq!(terminated_sections[2], "arms");
 
     let trial_block =
-        format_sections_block("trial", &terminated.nct_id, terminated_sections.clone());
+        format_sections_block("trial", terminated.nct_id(), terminated_sections.clone());
     assert!(
         trial_block.contains(
             "biomcp get trial NCT02576665 outcomes   - endpoint measures and time frames"
@@ -904,10 +885,13 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
         )
     );
 
-    let recruiting = crate::entities::trial::Trial {
-        status: "Recruiting".to_string(),
-        ..terminated
-    };
+    let recruiting = crate::entities::trial::TrialResponse::test_ctgov(
+        "NCT02576665",
+        "Recruiting trial",
+        "Recruiting",
+        "melanoma",
+        Some("trametinib"),
+    );
     let recruiting_sections = sections_trial(&recruiting, &[]);
     assert_eq!(recruiting_sections[0], "eligibility");
     assert_eq!(recruiting_sections[1], "contacts");

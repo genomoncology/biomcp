@@ -1,7 +1,7 @@
 use super::*;
 use crate::entities::disease::Disease;
 use crate::entities::pgx::Pgx;
-use crate::entities::trial::Trial;
+use crate::entities::trial::TrialResponse;
 
 #[test]
 fn disease_json_next_commands_parse() {
@@ -253,32 +253,13 @@ fn pgx_json_next_commands_parse() {
 
 #[test]
 fn trial_json_next_commands_parse() {
-    let trial = Trial {
-        identities: Vec::new(),
-        nct_id: "NCT01234567".to_string(),
-        source: None,
-        title: "Example trial".to_string(),
-        official_title: None,
-        status: "Completed".to_string(),
-        why_stopped: None,
-        phase: None,
-        phases: Vec::new(),
-        study_type: None,
-        conditions: vec!["melanoma".to_string()],
-        design: crate::entities::trial::TrialDesign::from_names(&["dabrafenib"]),
-        sponsor: None,
-        enrollment: None,
-        summary: None,
-        start_date: None,
-        completion_date: None,
-        eligibility: None,
-        eligibility_provenance: None,
-        site_directory: None,
-        site_offset: 0,
-        site_limit: None,
-        outcomes: None,
-        references: None,
-    };
+    let trial = TrialResponse::test_ctgov(
+        "NCT01234567",
+        "Example trial",
+        "Completed",
+        "melanoma",
+        Some("dabrafenib"),
+    );
     let next_commands = crate::render::markdown::related_trial(&trial);
     assert!(next_commands.iter().any(|cmd| {
         cmd == "biomcp search article --drug dabrafenib -q \"NCT01234567 Example trial\" --limit 5"

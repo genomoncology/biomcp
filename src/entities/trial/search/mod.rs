@@ -19,7 +19,7 @@ use self::eligibility::{
 use self::nci::search_page_with_nci_clients;
 use self::normalization::sort_trials_by_status_priority;
 
-use super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchResult, TrialSource};
+use super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchHit, TrialSource};
 
 const CTGOV_COUNT_CAP_REASON: biodata::ClinicalTrialSearchUnknownReason =
     biodata::ClinicalTrialSearchUnknownReason::TraversalLimitReached;
@@ -28,7 +28,7 @@ const COUNT_TRAVERSAL_PAGE_CAP: usize = 50;
 
 #[derive(Clone)]
 pub(crate) struct TrialSearchPage {
-    pub(crate) results: Vec<TrialSearchResult>,
+    pub(crate) results: Vec<TrialSearchHit>,
     pub(crate) total: biodata::ClinicalTrialSearchTotal,
     pub(crate) continuation: biodata::ClinicalTrialSearchContinuation,
 }
@@ -76,8 +76,8 @@ fn add_unique_ctgov_nct_ids(
     studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
 ) {
     for study in studies {
-        if let Ok(row) = TrialSearchResult::from_biodata(study.projection().value()) {
-            unique_nct_ids.insert(row.nct_id);
+        if let Ok(row) = TrialSearchHit::from_biodata(study.into_projection()) {
+            unique_nct_ids.insert(row.nct_id().to_owned());
         }
     }
 }
@@ -287,12 +287,12 @@ pub async fn search(
     filters: &TrialSearchFilters,
     limit: usize,
     offset: usize,
-) -> Result<(Vec<TrialSearchResult>, Option<u32>), BioMcpError> {
+) -> Result<(Vec<TrialSearchHit>, Option<u32>), BioMcpError> {
     let page = search_page(filters, limit, offset, None).await?;
     Ok(reduce_compatibility_page(page))
 }
 
-fn reduce_compatibility_page(page: TrialSearchPage) -> (Vec<TrialSearchResult>, Option<u32>) {
+fn reduce_compatibility_page(page: TrialSearchPage) -> (Vec<TrialSearchHit>, Option<u32>) {
     let total = (page.total.precision() == "exact")
         .then(|| page.total.value())
         .flatten()

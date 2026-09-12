@@ -11,11 +11,16 @@ from pathlib import Path
 import tomllib
 
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "fe1481a4b4d842ffe42199f6c09e9b45afc1c21b"
-VERSION = "0.0.21"
+REVISION = "4f53541dd8c27ffed9cb0bfdfc240c31e0fa698e"
+VERSION = "0.0.22"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (
+    "Trial",
+    "TrialIdentity",
+    "TrialDesign",
+    "TrialDesignError",
+    "TrialSearchResult",
     "ClinicalTrialIdentityError",
     "ClinicalTrialCore",
     "ClinicalTrialArmId",
@@ -82,6 +87,21 @@ RETIRED_DECLARATIONS = (
     "NciStatusFilter",
     "NciGeoFilter",
 )
+ADVERSE_EVENT_TYPES = (
+    "CtGovAdverseEventSearchParams",
+    "CtGovAdverseEventSearchPage",
+    "CtGovAdverseEventStudy",
+    "CtGovAdverseEventProtocol",
+    "CtGovAdverseEventIdentity",
+    "CtGovResultsSection",
+    "CtGovAdverseEventsModule",
+    "CtGovAdverseEvent",
+    "CtGovAdverseEventStats",
+)
+ADVERSE_EVENT_CONSUMERS = {
+    Path("src/sources/clinicaltrials.rs"),
+    Path("src/entities/adverse_event.rs"),
+}
 
 
 def require(condition: bool, message: str, failures: list[str]) -> None:
@@ -91,7 +111,7 @@ def require(condition: bool, message: str, failures: list[str]) -> None:
 
 def tracked_files(root: Path) -> list[Path]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"],
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         cwd=root,
         check=True,
         capture_output=True,
@@ -246,7 +266,15 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
     sources: list[tuple[Path, str]] = []
     for path in files:
         relative = path.relative_to(root)
-        if path.suffix == ".rs" and relative.parts and relative.parts[0] == "src":
+        if (
+            path.suffix == ".rs"
+            and relative.parts
+            and relative.parts[0] == "src"
+            and "tests" not in relative.parts
+            and path.name != "test_support.rs"
+            and not path.name.endswith("_tests.rs")
+            and path.name != "tests.rs"
+        ):
             sources.append((relative, path.read_text(encoding="utf-8")))
     combined = "\n".join(source for _, source in sources)
     require(
@@ -290,6 +318,58 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
                 failures,
             )
 
+    biomedical_fields = re.compile(
+        r"\b(?:brief_title|official_title|overall_status|phases|conditions|"
+        r"lead_sponsor_name|enrollment_count|eligibility|planned_outcomes|"
+        r"references|identities|arms|interventions)\s*:"
+    )
+    declaration = re.compile(r"struct\s+(\w+)\s*(?:<[^>{}]+>)?\s*\{([^}]*)\}", re.S)
+    allowed_field_owners = {"TrialSearchFilters", "TrialSectionStates"}
+    for relative, source in sources:
+        for match in declaration.finditer(source):
+            name, body = match.groups()
+            if name not in allowed_field_owners and len(biomedical_fields.findall(body)) > 1:
+                failures.append(
+                    f"{relative} declares second biomedical trial/search field owner {name}"
+                )
+
+    document_owned_field = re.compile(
+        r"\b(?:document_type|label|date|upload_date|filename)\s*:\s*(?:Option\s*<\s*)?String"
+    )
+    document_fact_field = re.compile(
+        r"\b(?:size_bytes|has_protocol|has_sap|has_icf)\s*:"
+    )
+    allowed_non_trial_document_owners = {"ArticleAssetEntry"}
+    for relative, source in sources:
+        for match in declaration.finditer(source):
+            name, body = match.groups()
+            if (
+                name not in allowed_non_trial_document_owners
+                and document_owned_field.search(body)
+                and document_fact_field.search(body)
+            ):
+                failures.append(
+                    f"{relative} declares duplicate owned clinical-trial document descriptor {name}"
+                )
+
+    for relative, source in sources:
+        if relative in ADVERSE_EVENT_CONSUMERS:
+            continue
+        for symbol in ADVERSE_EVENT_TYPES:
+            require(
+                not re.search(rf"\b{symbol}\b", source),
+                f"{relative} widens the results-only adverse-event parser consumer set with {symbol}",
+                failures,
+            )
+        require(
+            not re.search(
+                r"(?:ClinicalTrial|Trial(?:Eligibility|Design|Reference|Outcome))\w*::from_json_bytes",
+                source,
+            ),
+            f"{relative} retains a bidirectional product trial codec",
+            failures,
+        )
+
     retired_modules = re.compile(r"\bmod\s+strict_json\b|pub\(crate\)\s+mod\s+shared\b")
     for relative, source in sources:
         require(
@@ -309,11 +389,7 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
         )
 
     for symbol in (
-        "ClinicalTrialArm",
-        "ClinicalTrialCore",
-        "ClinicalTrialIntervention",
-        "ClinicalTrialArms",
-        "ClinicalTrialArmInterventionAssignment",
+        "ClinicalTrial",
         "ClinicalTrialArmRelationshipError",
         "ClinicalTrialSection",
         "ClinicalTrialsGovApiV2DetailPlan",
@@ -329,19 +405,27 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
         "ClinicalTrialSearchFilters",
         "ClinicalTrialsGovApiV2SearchPlan",
         "NciCtsV2SearchPlan",
+        "ClinicalTrialProjection",
+        "ClinicalTrialSearchProjection",
+        "ClinicalTrialsGovArtifactRetrieval",
     ):
         require(
             symbol in combined, f"BioData consumption is missing {symbol}", failures
         )
     require(
-        "ClinicalTrialEligibility::from_json_bytes" in combined
-        and combined.count(".to_json()") >= 2,
-        "eligibility must use BioData's standalone value codec",
+        combined.count("into_projection()") >= 4,
+        "detail and search must consume BioData projections for both providers",
         failures,
     )
     require(
-        "ClinicalTrialReference::from_json_bytes" in combined,
-        "references must use BioData's standalone value codec",
+        "ClinicalTrialAgeBound::to_years" in combined,
+        "age filtering must use BioData's age-bound conversion",
+        failures,
+    )
+    require(
+        "projection: biodata::ClinicalTrialProjection<biodata::Capture>" in combined
+        and "projection: biodata::ClinicalTrialSearchProjection<biodata::Capture>" in combined,
+        "detail and search envelopes must store complete BioData projections",
         failures,
     )
 

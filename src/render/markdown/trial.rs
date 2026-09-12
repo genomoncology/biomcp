@@ -1,4 +1,4 @@
-//! Trial markdown renderers.
+//! TrialResponse markdown renderers.
 
 use super::*;
 
@@ -20,10 +20,11 @@ struct ArmView<'a> {
     omitted_interventions: usize,
 }
 
-fn intervention_views(trial: &Trial) -> Vec<InterventionView<'_>> {
+fn intervention_views(trial: &TrialResponse) -> Vec<InterventionView<'_>> {
     trial
-        .design
+        .trial()
         .interventions()
+        .unwrap_or_default()
         .iter()
         .map(|value| InterventionView {
             name: value.name(),
@@ -33,10 +34,13 @@ fn intervention_views(trial: &Trial) -> Vec<InterventionView<'_>> {
         .collect()
 }
 
-fn arm_views(trial: &Trial) -> Vec<ArmView<'_>> {
-    let assignments = trial.design.assignments().unwrap_or_default();
+fn arm_views(trial: &TrialResponse) -> Vec<ArmView<'_>> {
+    let assignments = trial
+        .trial()
+        .arm_intervention_assignments()
+        .unwrap_or_default();
     trial
-        .design
+        .trial()
         .arms()
         .unwrap_or_default()
         .iter()
@@ -46,8 +50,9 @@ fn arm_views(trial: &Trial) -> Vec<ArmView<'_>> {
                 .filter(|value| value.arm_id() == arm.id())
                 .filter_map(|value| {
                     trial
-                        .design
+                        .trial()
                         .interventions()
+                        .unwrap_or_default()
                         .iter()
                         .find(|item| item.id() == value.intervention_id())
                         .map(|item| item.name())
@@ -143,9 +148,6 @@ fn truncate_inline_text(value: &str, max_chars: usize) -> String {
     format!("{truncated}\n\n(truncated, {count} chars total)")
 }
 
-#[cfg(test)]
-mod tests;
-
 fn abbreviation_at_period(summary: &str, period_index: usize) -> Option<bool> {
     const ABBREVIATIONS: [(&str, bool); 6] = [
         ("pts.", false),
@@ -235,7 +237,13 @@ fn bounded_trial_summary(summary: &str) -> String {
 }
 
 #[cfg(test)]
-pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<String, BioMcpError> {
+mod tests;
+
+#[cfg(test)]
+pub fn trial_markdown(
+    trial: &TrialResponse,
+    requested_sections: &[String],
+) -> Result<String, BioMcpError> {
     trial_markdown_with_states(trial, None, requested_sections)
 }
 
@@ -243,15 +251,11 @@ pub(crate) fn trial_response_markdown(
     response: &crate::entities::trial::TrialResponse,
     requested_sections: &[String],
 ) -> Result<String, BioMcpError> {
-    trial_markdown_with_states(
-        &response.trial,
-        Some(&response.section_states),
-        requested_sections,
-    )
+    trial_markdown_with_states(response, Some(&response.section_states), requested_sections)
 }
 
 fn trial_markdown_with_states(
-    trial: &Trial,
+    trial: &TrialResponse,
     section_states: Option<&crate::entities::trial::TrialSectionStates>,
     requested_sections: &[String],
 ) -> Result<String, BioMcpError> {
@@ -311,16 +315,16 @@ fn trial_source_from_marker(marker: Option<&str>) -> Option<crate::entities::tri
 }
 
 pub(crate) fn trial_location_continuation_command(
-    trial: &Trial,
+    trial: &TrialResponse,
     source: Option<crate::entities::trial::TrialSource>,
     offset: usize,
     limit: usize,
     include_contacts: bool,
 ) -> Option<String> {
-    let source = source.or_else(|| trial_source_from_marker(trial.source.as_deref()))?;
+    let source = source.or_else(|| trial_source_from_marker(Some(trial.source())))?;
     let mut command = crate::next_command::NextCommand::biomcp()
         .args(["get", "trial"])
-        .arg(&trial.nct_id);
+        .arg(trial.nct_id());
     if matches!(source, crate::entities::trial::TrialSource::NciCts) {
         command = command.args(["--source", "nci"]);
     }
@@ -336,12 +340,12 @@ pub(crate) fn trial_location_continuation_command(
 }
 
 fn render_trial_markdown(
-    trial: &Trial,
+    trial: &TrialResponse,
     section_states: Option<&crate::entities::trial::TrialSectionStates>,
     requested_sections: &[String],
     location_disclosure: Option<&str>,
 ) -> Result<String, BioMcpError> {
-    let references = crate::entities::trial::reference_wire::views(&trial.references);
+    let references = crate::entities::trial::reference_wire::views(trial.trial().references());
     let tmpl = env()?.get_template("trial.md.j2")?;
     let section_only = is_section_only_requested(requested_sections);
     let include_all = has_all_section(requested_sections);
@@ -364,40 +368,54 @@ fn render_trial_markdown(
             .iter()
             .any(|s| s.eq_ignore_ascii_case("references"));
     let summary = trial
-        .summary
-        .as_deref()
+        .trial()
+        .brief_summary()
         .map(bounded_trial_summary)
         .filter(|summary| !summary.is_empty());
     let intervention_details = intervention_views(trial);
     let arms = arm_views(trial);
-    let age_range = trial.eligibility.as_ref().and_then(eligibility_age_range);
-    let eligibility_text = trial.eligibility.as_ref().map(eligibility_markdown);
-    let outcomes = crate::entities::trial::outcome_wire::views(&trial.outcomes)
+    let eligibility = trial.trial().eligibility();
+    let age_range = eligibility.and_then(eligibility_age_range);
+    let eligibility_text = eligibility.map(eligibility_markdown);
+    let outcomes = crate::entities::trial::outcome_wire::views(trial.trial().planned_outcomes())
         .map_err(|_| BioMcpError::InternalProcessing)?;
-    let contacts = trial.contact_render_values();
-    let locations = trial.location_render_values();
+    let contacts = trial
+        .contact_render_values()
+        .map_err(|_| BioMcpError::InternalProcessing)?;
+    let locations = trial
+        .location_render_values()
+        .map_err(|_| BioMcpError::InternalProcessing)?;
+    let phases = (!trial.trial().phases().is_empty()).then(|| {
+        trial
+            .trial()
+            .phases()
+            .iter()
+            .map(|phase| phase.code())
+            .collect::<Vec<_>>()
+            .join("/")
+    });
     let body = tmpl.render(context! {
         section_only => section_only,
-        section_header => section_header(&trial.nct_id, requested_sections),
-        trial_source_label => crate::render::provenance::trial_source_label(trial.source.as_deref()),
-        nct_id => &trial.nct_id,
-        title => &trial.title,
-        status => &trial.status,
-        why_stopped_checked => trial.why_stopped.is_some(),
-        why_stopped => trial.why_stopped.as_ref().and_then(|reason| reason.as_deref()),
-        phase => &trial.phase,
-        study_type => &trial.study_type,
+        section_header => section_header(trial.nct_id(), requested_sections),
+        trial_source_label => crate::render::provenance::trial_source_label(Some(trial.source())),
+        nct_id => trial.nct_id(),
+        title => trial.trial().brief_title(),
+        status => trial.trial().overall_status().code(),
+        why_stopped_checked => true,
+        why_stopped => trial.trial().stop_reason(),
+        phase => &phases,
+        study_type => trial.trial().study_type().code(),
         age_range => &age_range,
-        conditions => &trial.conditions,
+        conditions => trial.trial().conditions(),
         intervention_details => &intervention_details,
-        sponsor => &trial.sponsor,
-        enrollment => &trial.enrollment,
+        sponsor => trial.trial().lead_sponsor_name(),
+        enrollment => trial.trial().enrollment_count(),
         summary => &summary,
-        start_date => &trial.start_date,
-        completion_date => &trial.completion_date,
+        start_date => trial.trial().start_date(),
+        completion_date => trial.trial().completion_date(),
         eligibility_text => &eligibility_text,
-        eligibility_present => trial.eligibility.is_some(),
-        eligibility_provenance => &trial.eligibility_provenance,
+        eligibility_present => eligibility.is_some(),
+        eligibility_provenance => trial.eligibility_provenance(),
         contacts => &contacts,
         locations => &locations,
         location_disclosure => location_disclosure,
@@ -416,7 +434,7 @@ fn render_trial_markdown(
         show_outcomes_section => show_outcomes_section,
         show_arms_section => show_arms_section,
         show_references_section => show_references_section,
-        sections_block => format_sections_block("trial", &trial.nct_id, sections_trial(trial, requested_sections)),
+        sections_block => format_sections_block("trial", trial.nct_id(), sections_trial(trial, requested_sections)),
         related_block => format_related_block(related_trial(trial)),
     })?;
     Ok(append_evidence_urls(body, trial_evidence_urls(trial)))
@@ -424,7 +442,7 @@ fn render_trial_markdown(
 
 pub fn trial_search_markdown(
     query: &str,
-    results: &[TrialSearchResult],
+    results: &[TrialSearchHit],
     total: Option<u32>,
 ) -> Result<String, BioMcpError> {
     trial_search_markdown_with_footer(query, results, total, "", false, None)
@@ -432,7 +450,7 @@ pub fn trial_search_markdown(
 
 pub fn trial_search_markdown_with_footer(
     query: &str,
-    results: &[TrialSearchResult],
+    results: &[TrialSearchHit],
     total: Option<u32>,
     pagination_footer: &str,
     show_zero_result_nickname_hint: bool,
@@ -451,7 +469,7 @@ pub fn trial_search_markdown_with_footer(
 
 pub fn trial_search_markdown_with_footer_and_hints(
     query: &str,
-    results: &[TrialSearchResult],
+    results: &[TrialSearchHit],
     total: Option<u32>,
     pagination_footer: &str,
     show_zero_result_nickname_hint: bool,

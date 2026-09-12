@@ -17,7 +17,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-BIODATA_REVISION = "fe1481a4b4d842ffe42199f6c09e9b45afc1c21b"
+BIODATA_REVISION = "4f53541dd8c27ffed9cb0bfdfc240c31e0fa698e"
 REVIEWED_TOP_LEVEL_DIRECTORIES = {
     ".claude-plugin",
     ".github",
@@ -123,13 +123,17 @@ def _artifact_fixture_contract() -> tuple[Callable[[bytes], str], set[str]]:
 
 def _tracked_paths_under(*roots: str) -> set[str]:
     result = subprocess.run(
-        ["git", "ls-files", "--", *roots],
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", *roots],
         cwd=ROOT,
         check=True,
         capture_output=True,
         text=True,
     )
-    return set(result.stdout.splitlines())
+    return {
+        relative
+        for relative in result.stdout.splitlines()
+        if (ROOT / relative).is_file()
+    }
 
 
 def _require_package_members(
@@ -452,30 +456,33 @@ def test_manifest_has_the_exact_reviewed_biodata_dependency_and_compile_deferral
     }
 
 
-def test_biodata_owns_the_clinical_trial_eligibility_value_codec() -> None:
-    source = (ROOT / "src/entities/trial/eligibility.rs").read_text(encoding="utf-8")
+def test_biodata_owns_clinical_trial_age_conversion() -> None:
+    source = (ROOT / "src/entities/trial/search/eligibility.rs").read_text(
+        encoding="utf-8"
+    )
     production = source.split("#[cfg(test)]", maxsplit=1)[0]
-    assert "ClinicalTrialEligibility::from_json_bytes" in production
-    assert ".to_json()" in production
-    assert "NO_LIMIT_RULE" not in production
-    assert "UnitWire" not in production
+    assert production.count("ClinicalTrialAgeBound::to_years") == 2
+    assert "comparable_years" not in production
 
 
-def test_biodata_owns_the_clinical_trial_core_model() -> None:
-    source = (ROOT / "src/entities/trial/get.rs").read_text(encoding="utf-8")
-    assert "biodata::ClinicalTrialCore" in source
-    assert "core.brief_summary()" in source
+def test_detail_and_search_envelopes_store_complete_biodata_projections() -> None:
+    model = (ROOT / "src/entities/trial/mod.rs").read_text(encoding="utf-8")
+    hit = (ROOT / "src/entities/trial/search_hit.rs").read_text(encoding="utf-8")
+    detail = (ROOT / "src/entities/trial/get.rs").read_text(encoding="utf-8")
+    search = (ROOT / "src/entities/trial/search/mod.rs").read_text(encoding="utf-8")
+    assert "projection: biodata::ClinicalTrialProjection<biodata::Capture>" in model
+    assert "projection: biodata::ClinicalTrialSearchProjection<biodata::Capture>" in hit
+    assert detail.count("into_projection()") == 2
+    assert "study.into_projection()" in search
 
 
-def test_biodata_owns_the_clinical_trial_reference_value_codec() -> None:
-    source = (ROOT / "src/entities/trial/mod.rs").read_text(encoding="utf-8")
-    production = source.split(
-        "#[derive(Clone, Serialize, Deserialize)]\npub struct TrialSearchResult",
-        maxsplit=1,
-    )[0]
-    assert "ClinicalTrialReference::from_json_bytes" in production
-    assert ".to_json()" in production
-
+def test_product_trial_codecs_are_output_only_and_live_beside_rendering() -> None:
+    model = (ROOT / "src/entities/trial/mod.rs").read_text(encoding="utf-8")
+    wire = (ROOT / "src/render/trial_projection.rs").read_text(encoding="utf-8")
+    combined = model + wire
+    assert "Deserialize" not in combined
+    assert "from_json_bytes" not in combined
+    assert "ClinicalTrialReference" in wire
     provider = (ROOT / "src/sources/clinicaltrials.rs").read_text(encoding="utf-8")
     detail = (ROOT / "src/entities/trial/get.rs").read_text(encoding="utf-8")
     for retired in ("references_module", "CtGovReference", "CtGovReferencesModule"):
@@ -499,9 +506,10 @@ def test_biodata_owns_trial_sites_contacts_and_product_projection() -> None:
     ):
         assert retired not in model + transform + source
     assert "ClinicalTrialSiteDirectory" in model
-    assert "TrialContactView<'a>" in model
-    assert "TrialLocationView<'a>" in model
-    assert "TrialSiteContactView<'a>" in model
+    wire = (ROOT / "src/render/trial_projection.rs").read_text(encoding="utf-8")
+    assert "TrialContactView<'a>" in wire
+    assert "TrialLocationView<'a>" in wire
+    assert "TrialSiteContactView<'a>" in wire
 
 
 def test_biodata_owns_trial_document_detail_manifest_and_provenance_paths() -> None:
@@ -534,7 +542,9 @@ def test_biodata_owns_trial_document_detail_manifest_and_provenance_paths() -> N
     assert "client.get(" not in ctgov_get
     assert ".get_biodata_detail(" in ctgov_get
     assert ".get_biodata_detail(" in migrated_bodies[2]
-    assert "ClinicalTrialsGovArtifactDescriptor" in documents
+    assert "ClinicalTrialArtifactDescriptor" in documents
+    assert "ClinicalTrialsGovArtifactRetrieval" in documents
+    assert "retrieval.id() == document.id()" in documents
     assert "response.capture()" in documents
 
     eligibility = (ROOT / "src/entities/trial/search/eligibility.rs").read_text(

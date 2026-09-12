@@ -191,7 +191,7 @@ pub(in crate::cli) async fn handle_get(
 }
 
 pub(super) fn attach_location_continuation(
-    trial: &crate::entities::trial::Trial,
+    trial: &crate::entities::trial::TrialResponse,
     source: crate::entities::trial::TrialSource,
     sections: &[String],
     page: &mut LocationPaginationMeta,
@@ -217,7 +217,7 @@ pub(super) fn attach_location_continuation(
 
 #[cfg(test)]
 pub(crate) fn render_loaded_card(
-    trial: &crate::entities::trial::Trial,
+    trial: &crate::entities::trial::TrialResponse,
     sections: &[String],
     json_output: bool,
 ) -> anyhow::Result<String> {
@@ -504,13 +504,13 @@ pub(super) struct LocationPaginationMeta {
 
 #[cfg(test)]
 pub(super) fn trial_locations_json(
-    trial: &crate::entities::trial::Trial,
+    trial: &crate::entities::trial::TrialResponse,
     location_pagination: LocationPaginationMeta,
 ) -> anyhow::Result<String> {
     #[derive(serde::Serialize)]
     struct TrialWithLocationPagination<'a> {
         #[serde(flatten)]
-        trial: &'a crate::entities::trial::Trial,
+        trial: &'a crate::entities::trial::TrialResponse,
         contacts: Vec<crate::entities::trial::TrialContactView<'a>>,
         locations: Vec<crate::entities::trial::TrialLocationView<'a>>,
         location_pagination: LocationPaginationMeta,
@@ -554,7 +554,7 @@ fn trial_response_locations_json(
 }
 
 pub(super) fn paginate_trial_locations(
-    trial: &mut crate::entities::trial::Trial,
+    trial: &mut crate::entities::trial::TrialResponse,
     offset: usize,
     limit: usize,
 ) -> LocationPaginationMeta {
@@ -824,47 +824,24 @@ mod count_tests {
 #[cfg(test)]
 mod site_directory_tests {
     use super::*;
-    use crate::entities::trial::{
-        Trial, TrialDesign, TrialResponse, TrialSectionState, TrialSectionStates,
-    };
-
-    fn contact(name: &str) -> biodata::ClinicalTrialContact {
-        biodata::ClinicalTrialContact::new(Some(name.to_owned()), None, None, None, None).unwrap()
-    }
-
-    fn site(index: usize) -> biodata::ClinicalTrialSite {
-        biodata::ClinicalTrialSite::new(biodata::ClinicalTrialSiteFields {
-            facility: Some(format!("Site {index}")),
-            status: None,
-            city: Some(format!("City {index}")),
-            state: None,
-            postal_code: None,
-            country: Some("Example Country".to_owned()),
-            coordinates: None,
-            contacts: Some(vec![contact(&format!("Site Contact {index}"))]),
-        })
-        .unwrap()
-    }
+    use crate::entities::trial::{TrialResponse, TrialSectionState, TrialSectionStates};
 
     fn response() -> TrialResponse {
-        let mut trial: Trial = serde_json::from_value(serde_json::json!({
-            "identities": [],
-            "nct_id": "NCT41300001",
-            "title": "Paging trial",
-            "status": "RECRUITING",
-            "phases": [],
-            "conditions": [],
-            "interventions": []
-        }))
+        let plan = biodata::ClinicalTrialsGovApiV2DetailPlan::new("NCT41300001", false)
+            .unwrap()
+            .with_contacts()
+            .with_locations();
+        let response = biodata::ClinicalTrialsGovApiV2Response::parse(
+            &plan,
+            br#"{"protocolSection":{"identificationModule":{"nctId":"NCT41300001","briefTitle":"Paging trial"},"statusModule":{"overallStatus":"RECRUITING"},"sponsorCollaboratorsModule":{"leadSponsor":{"name":"Sponsor"}},"conditionsModule":{"conditions":["Condition"]},"designModule":{"studyType":"INTERVENTIONAL"},"contactsLocationsModule":{"centralContacts":[{"name":"Central Contact"}],"locations":[{"facility":"Site 0","city":"City 0","country":"Example Country","contacts":[{"name":"Site Contact 0"}]},{"facility":"Site 1","city":"City 1","country":"Example Country","contacts":[{"name":"Site Contact 1"}]},{"facility":"Site 2","city":"City 2","country":"Example Country","contacts":[{"name":"Site Contact 2"}]}]}}}"#,
+            &Default::default(),
+        )
         .unwrap();
-        trial.design = TrialDesign::default();
-        trial.set_site_directory(Some(biodata::ClinicalTrialSiteDirectory::new(
-            Some(vec![contact("Central Contact")]),
-            Some((0..3).map(site).collect()),
-        )));
-        TrialResponse {
-            trial,
-            section_states: TrialSectionStates {
+        TrialResponse::new(
+            response.into_projection().unwrap(),
+            "ClinicalTrials.gov",
+            None,
+            TrialSectionStates {
                 arms: TrialSectionState::NotRequested,
                 eligibility: TrialSectionState::NotRequested,
                 outcomes: TrialSectionState::NotRequested,
@@ -872,7 +849,7 @@ mod site_directory_tests {
                 contacts: TrialSectionState::Present,
                 locations: TrialSectionState::Present,
             },
-        }
+        )
     }
 
     #[test]

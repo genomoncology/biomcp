@@ -2,7 +2,9 @@
 
 use super::*;
 use crate::entities::adverse_event::DeviceEvent;
-use crate::entities::article::{Article, ArticleAnnotations};
+use crate::entities::article::{
+    AnnotationCount, Article, ArticleAnnotations, ArticleAuthorCompleteness, ArticleSource,
+};
 use crate::entities::drug::Drug;
 use crate::entities::gene::Gene;
 use crate::entities::pathway::Pathway;
@@ -231,7 +233,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
 }
 
 #[test]
-fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
+fn markdown_detail_outputs_label_article_and_pathway_sources() {
     let mut article = Article {
         section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
             crate::entities::article::ARTICLE_OUTCOME_KEYS,
@@ -293,103 +295,6 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
     assert!(article_markdown.contains("## Full Text"));
     assert!(!article_markdown.contains("## Full Text (PMC OA)"));
     assert!(article_markdown.contains("## Semantic Scholar"));
-
-    let trial = crate::entities::trial::Trial {
-        identities: Vec::new(),
-        nct_id: "NCT06668103".to_string(),
-        source: Some("ClinicalTrials.gov".to_string()),
-        title: "Example trial".to_string(),
-        official_title: None,
-        status: "Recruiting".to_string(),
-        why_stopped: None,
-        phase: Some("Phase 2".to_string()),
-        phases: Vec::new(),
-        study_type: Some("Interventional".to_string()),
-        conditions: vec!["cystic fibrosis".to_string()],
-        design: crate::entities::trial::TrialDesign::from_names_and_arm(
-            &["ivacaftor"],
-            "Arm A",
-            Some("Experimental"),
-            Some("Description"),
-        ),
-        sponsor: Some("Example Sponsor".to_string()),
-        enrollment: Some(42),
-        summary: Some("Trial summary.".to_string()),
-        start_date: Some("2025-01-01".to_string()),
-        completion_date: None,
-        eligibility: Some(
-            biodata::ClinicalTrialEligibility::new(
-                Some("Eligibility text.".to_string()),
-                None,
-                None,
-                None,
-                None,
-            )
-            .expect("valid eligibility"),
-        ),
-        eligibility_provenance: None,
-        site_directory: Some(biodata::ClinicalTrialSiteDirectory::new(
-            None,
-            Some(vec![
-                biodata::ClinicalTrialSite::new(biodata::ClinicalTrialSiteFields {
-                    facility: Some("Example Hospital".to_string()),
-                    status: None,
-                    city: Some("Boston".to_string()),
-                    state: Some("MA".to_string()),
-                    postal_code: None,
-                    country: Some("United States".to_string()),
-                    coordinates: None,
-                    contacts: None,
-                })
-                .unwrap(),
-            ]),
-        )),
-        site_offset: 0,
-        site_limit: None,
-        outcomes: Some(vec![
-            biodata::ClinicalTrialPlannedOutcome::new(
-                "FEV1",
-                None::<String>,
-                None::<String>,
-                biodata::ExtensibleCode::new(
-                    "clinicaltrials.gov",
-                    "primaryOutcomes",
-                    None::<String>,
-                    None::<String>,
-                    None::<String>,
-                )
-                .unwrap(),
-            )
-            .unwrap(),
-        ]),
-        references: Some(vec![
-            biodata::ClinicalTrialReference::new(
-                Some("22663011".to_string()),
-                Some("Example citation".to_string()),
-                Some(
-                    biodata::ExtensibleCode::new(
-                        "clinicaltrials.gov",
-                        "background",
-                        None::<String>,
-                        None::<String>,
-                        None::<String>,
-                    )
-                    .expect("valid reference type"),
-                ),
-            )
-            .expect("valid reference"),
-        ]),
-    };
-    let trial_markdown = trial_markdown(&trial, &["all".to_string()]).expect("trial");
-    assert!(trial_markdown.contains("Source: ClinicalTrials.gov"));
-    assert!(trial_markdown.contains("## Conditions (ClinicalTrials.gov)"));
-    assert!(trial_markdown.contains("## Interventions (ClinicalTrials.gov)"));
-    assert!(trial_markdown.contains("## Summary (ClinicalTrials.gov)"));
-    assert!(trial_markdown.contains("## Eligibility (ClinicalTrials.gov)"));
-    assert!(trial_markdown.contains("## Locations (ClinicalTrials.gov)"));
-    assert!(trial_markdown.contains("## Outcomes (ClinicalTrials.gov)"));
-    assert!(trial_markdown.contains("## Arms (ClinicalTrials.gov)"));
-    assert!(trial_markdown.contains("## References (ClinicalTrials.gov)"));
 
     let pathway = Pathway {
         section_outcomes: Default::default(),

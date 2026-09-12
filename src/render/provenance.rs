@@ -8,16 +8,18 @@ use crate::entities::pathway::Pathway;
 use crate::entities::pgx::Pgx;
 use crate::entities::protein::Protein;
 use crate::entities::section_outcome::{SectionOutcomeState, SectionOutcomes};
-use crate::entities::trial::Trial;
+use crate::entities::trial::TrialResponse;
 use crate::entities::variant::{GnomadPopulationStatus, Variant};
 use serde::Serialize;
 use std::collections::HashSet;
 mod adverse_event;
+mod trial;
 pub(crate) use self::adverse_event::{
     report_section_sources as adverse_event_report_section_sources,
     source_search_section_sources as adverse_event_source_search_section_sources,
     subset_section_sources as adverse_event_subset_section_sources,
 };
+pub(crate) use self::trial::trial_section_sources;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SectionSource {
     pub key: String,
@@ -660,80 +662,6 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
             ("tldr", "Semantic Scholar"),
         ],
     ));
-    out
-}
-
-pub(crate) fn trial_section_sources(trial: &Trial) -> Vec<SectionSource> {
-    let mut out = Vec::new();
-    let source = trial_source_label(trial.source.as_deref());
-    let source_ref = [source.as_str()];
-    let overview_present = has_text(&trial.nct_id)
-        || has_text(&trial.title)
-        || has_text(&trial.status)
-        || has_opt_text(&trial.phase)
-        || has_opt_text(&trial.study_type)
-        || trial.has_eligibility_age()
-        || has_opt_text(&trial.sponsor)
-        || trial.enrollment.is_some()
-        || has_opt_text(&trial.start_date)
-        || has_opt_text(&trial.completion_date);
-    push_section(
-        &mut out,
-        overview_present,
-        "overview",
-        "Overview",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        !trial.conditions.is_empty(),
-        "conditions",
-        "Conditions",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        !trial.design.interventions().is_empty(),
-        "interventions",
-        "Interventions",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        has_opt_text(&trial.summary),
-        "summary",
-        "Summary",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        trial.eligibility.is_some(),
-        "eligibility",
-        "Eligibility",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        trial.location_count() > 0,
-        "locations",
-        "Locations",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        trial.outcomes.is_some(),
-        "outcomes",
-        "Outcomes",
-        source_ref,
-    );
-    push_section(&mut out, trial.has_arms(), "arms", "Arms", source_ref);
-    push_section(
-        &mut out,
-        trial.references.is_some(),
-        "references",
-        "References",
-        source_ref,
-    );
     out
 }
 

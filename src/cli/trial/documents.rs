@@ -96,15 +96,10 @@ fn document_arity_error() -> BioMcpError {
 fn manifest_next_commands(manifest: &TrialDocumentsManifest) -> Vec<String> {
     let mut commands = vec![
         crate::next_command::NextCommand::biomcp()
-            .args(["--json", "get", "trial", &manifest.nct_id, "documents"])
+            .args(["--json", "get", "trial", manifest.nct_id(), "documents"])
             .render_shell(),
     ];
-    commands.extend(
-        manifest
-            .documents
-            .iter()
-            .filter_map(|document| document.handle.clone()),
-    );
+    commands.extend(manifest.document_handles().map(str::to_owned));
     commands
 }
 

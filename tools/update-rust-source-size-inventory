@@ -15,7 +15,16 @@ THRESHOLD = 1000
 
 def tracked_sources() -> dict[str, int]:
     output = subprocess.run(
-        ["git", "ls-files", "--", "src/**/*.rs", "src/*.rs"],
+        [
+            "git",
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "--",
+            "src/**/*.rs",
+            "src/*.rs",
+        ],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -25,6 +34,7 @@ def tracked_sources() -> dict[str, int]:
         relative: len((ROOT / relative).read_text(encoding="utf-8").splitlines())
         for relative in sorted(set(output.splitlines()))
         if relative
+        and (ROOT / relative).is_file()
         and len((ROOT / relative).read_text(encoding="utf-8").splitlines()) > THRESHOLD
     }
 

@@ -675,4 +675,34 @@ mod tests {
         assert_eq!(cache_puts.load(Ordering::SeqCst), 0);
         server.abort();
     }
+
+    #[tokio::test]
+    async fn trial_batch_json_keeps_shared_projection_metadata() {
+        let trial = crate::entities::trial::TrialResponse::test_ctgov(
+            "NCT01234567",
+            "Batch trial",
+            "RECRUITING",
+            "melanoma",
+            Some("dabrafenib"),
+        );
+        let outcome = settle_batch(
+            "trial",
+            &["NCT01234567"],
+            [std::future::ready(Ok(trial))],
+            true,
+            |item| serde_json::to_value(item).map_err(crate::error::BioMcpError::Json),
+            |_| Ok(String::new()),
+        )
+        .await
+        .unwrap();
+        let value: serde_json::Value = serde_json::from_str(&outcome.text).unwrap();
+
+        assert_eq!(value["items"][0]["result"]["nct_id"], "NCT01234567");
+        assert!(value["items"][0]["result"].get("capture").is_some());
+        assert!(
+            value["items"][0]["result"]
+                .get("conversion_report")
+                .is_some()
+        );
+    }
 }

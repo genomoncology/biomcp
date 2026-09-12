@@ -531,7 +531,7 @@ async fn trim_empty_provider_cursor_stops_without_repeating_page_one() {
     assert_eq!(page.results.len(), 1);
     assert_eq!(page.continuation.status(), "unavailable");
     assert_eq!(page.continuation.reason(), Some("unusable_provider_cursor"));
-    assert_eq!(page.results[0].nct_id, "NCT00000001");
+    assert_eq!(page.results[0].nct_id(), "NCT00000001");
     server.abort();
     assert_eq!(requests.lock().expect("lock fixture requests").len(), 1);
 }
@@ -972,12 +972,12 @@ async fn bounded_alias_pages_are_stable_across_product_page_invocations() {
         .results
         .iter()
         .chain(&second.results)
-        .map(|row| row.nct_id.as_str())
+        .map(|row| row.nct_id())
         .collect::<Vec<_>>();
     let one_page = combined
         .results
         .iter()
-        .map(|row| row.nct_id.as_str())
+        .map(|row| row.nct_id())
         .collect::<Vec<_>>();
     assert_eq!(paged, one_page);
     assert_eq!(

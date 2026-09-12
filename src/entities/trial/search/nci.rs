@@ -1,5 +1,5 @@
 //! NCI CTS trial search orchestration. BioData owns request grammar.
-use super::super::{TrialSearchFilters, TrialSearchResult};
+use super::super::{TrialSearchFilters, TrialSearchHit};
 use super::{NormalizedTrialSearch, biodata_plan_error};
 use crate::entities::disease::resolve_disease_hit_by_name;
 use crate::error::BioMcpError;
@@ -57,7 +57,8 @@ pub(super) async fn search_page_with_nci_clients(
         .results()
         .unwrap_or_default()
         .iter()
-        .map(|r| TrialSearchResult::from_biodata(r.projection().value()))
+        .cloned()
+        .map(|result| TrialSearchHit::from_biodata(result.into_projection()))
         .collect::<Result<Vec<_>, _>>()?;
     let (total, continuation) =
         nci_search_state(response.provider_total(), results.len(), limit, offset)?;

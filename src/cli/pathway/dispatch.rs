@@ -265,7 +265,7 @@ pub(in crate::cli) async fn handle_command(
                 struct SearchResponse {
                     count: usize,
                     total: Option<u32>,
-                    results: Vec<crate::entities::trial::TrialSearchResult>,
+                    results: Vec<crate::entities::trial::TrialSearchHit>,
                 }
 
                 crate::render::json::to_pretty(&SearchResponse {

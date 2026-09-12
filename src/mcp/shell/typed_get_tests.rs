@@ -47,25 +47,6 @@ fn mcp_json_removes_every_path_shape_and_reserializes_on_presence() {
     assert!(!nested.contains("full_text_path"));
 }
 
-#[test]
-fn shared_mcp_error_conversion_hides_trial_design_details() {
-    let relationship = crate::error::ClinicalTrialArmRelationshipError::MissingArmEndpoint {
-        arm_id: biodata::ClinicalTrialArmId::new(42).unwrap(),
-    };
-    let error = crate::error::BioMcpError::TrialDesign(
-        crate::error::TrialDesignError::InvalidRelationship(relationship),
-    );
-    let value = serde_json::to_value(BioMcpServer::tool_error(format!("Error: {error}")))
-        .expect("serialize MCP error");
-
-    assert_eq!(
-        value["content"][0]["text"],
-        "Error: Internal processing failed."
-    );
-    assert!(!value.to_string().contains("MissingArmEndpoint"));
-    assert!(!value.to_string().contains("42"));
-}
-
 struct CtGovAgeMcpEnv {
     previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
     _cache: tempfile::TempDir,

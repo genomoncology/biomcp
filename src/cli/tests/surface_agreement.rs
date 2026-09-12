@@ -7,7 +7,7 @@ use crate::entities::gene::Gene;
 use crate::entities::pathway::Pathway;
 use crate::entities::pgx::Pgx;
 use crate::entities::protein::Protein;
-use crate::entities::trial::Trial;
+use crate::entities::trial::TrialResponse;
 use crate::entities::variant::Variant;
 use std::collections::BTreeSet;
 
@@ -152,12 +152,13 @@ fn every_detail_card_markdown_and_json_commands_agree() {
         &[],
     );
 
-    let trial: Trial = serde_json::from_value(serde_json::json!({
-        "nct_id": "NCT01234567", "title": "Example trial", "status": "Completed",
-        "conditions": ["melanoma"],
-        "interventions": [{"id": 1, "name": "dabrafenib", "type": null, "description": null, "other_names": []}]
-    }))
-    .unwrap();
+    let trial = TrialResponse::test_ctgov(
+        "NCT01234567",
+        "Example trial",
+        "Completed",
+        "melanoma",
+        Some("dabrafenib"),
+    );
     assert_command_surfaces(
         "trial",
         crate::cli::trial::render_loaded_card(&trial, &[], false).unwrap(),

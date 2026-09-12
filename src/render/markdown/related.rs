@@ -1,9 +1,12 @@
 //! Cross-entity follow-up command generation and related-command descriptions.
 
 pub(super) mod article_support;
+mod trial_related;
+pub(super) use trial_related::{related_trial, search_next_commands_trial};
+#[cfg(test)]
+mod projection_tests;
 
 use super::*;
-
 pub(super) fn format_related_block(commands: Vec<String>) -> String {
     let commands: Vec<String> = commands
         .into_iter()
@@ -378,23 +381,6 @@ pub(super) fn search_next_commands_article(
     dedupe_markdown_commands(out)
 }
 
-pub(super) fn search_next_commands_trial(results: &[TrialSearchResult]) -> Vec<String> {
-    if results.is_empty() {
-        return Vec::new();
-    }
-
-    let mut out = Vec::new();
-    if let Some(nct_id) = results
-        .first()
-        .map(|result| quote_arg(&result.nct_id))
-        .filter(|nct_id| !nct_id.is_empty())
-    {
-        out.push(format!("biomcp get trial {nct_id}"));
-    }
-    out.push("biomcp list trial".to_string());
-    dedupe_markdown_commands(out)
-}
-
 pub(super) fn search_next_commands_variant(
     results: &[VariantSearchResult],
     gene_filter: Option<&str>,
@@ -745,7 +731,7 @@ pub(super) fn article_annotation_command(
     article_support::article_annotation_command(bucket, text)
 }
 
-pub(super) fn trial_results_search_command(trial: &Trial) -> Option<String> {
+pub(super) fn trial_results_search_command(trial: &TrialResponse) -> Option<String> {
     article_support::trial_results_search_command(trial)
 }
 
@@ -759,51 +745,6 @@ pub(super) fn article_related_label(paper: &ArticleRelatedPaper) -> String {
 
 pub(super) fn related_article(article: &Article) -> Vec<String> {
     article_support::related_article(article)
-}
-
-pub(super) fn related_trial(trial: &Trial) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-
-    if is_completed_or_terminated_trial_status(&trial.status)
-        && let Some(command) = trial_results_search_command(trial)
-    {
-        out.push(command);
-    }
-
-    if let Some(condition) = trial.conditions.first().map(String::as_str) {
-        let cond = quote_arg(condition);
-        if !cond.is_empty() {
-            out.push(format!("biomcp search disease --query {cond}"));
-            out.push(format!("biomcp search article -d {cond}"));
-            out.push(format!("biomcp search trial -c {cond}"));
-        }
-    }
-
-    if let Some(detail) = trial.design.interventions().iter().find(|detail| {
-        detail
-            .other_names()
-            .is_some_and(|names| names.iter().any(|name| !name.trim().is_empty()))
-    }) {
-        if let Some(alias) = detail
-            .other_names()
-            .unwrap_or_default()
-            .iter()
-            .find(|name| !name.trim().is_empty())
-        {
-            let alias = force_quote_arg(alias);
-            if !alias.is_empty() {
-                out.push(format!("biomcp search drug -q {alias}"));
-            }
-        }
-    } else if let Some(intervention) = trial.design.interventions().first() {
-        let name = quote_arg(intervention.name());
-        if !name.is_empty() {
-            out.push(format!("biomcp search drug -q {name}"));
-            out.push(format!("biomcp drug trials {name}"));
-        }
-    }
-
-    dedupe_markdown_commands(out)
 }
 
 pub(super) fn related_disease(disease: &Disease) -> Vec<String> {

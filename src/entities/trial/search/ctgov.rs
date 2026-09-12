@@ -10,7 +10,7 @@ use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 
 use super::super::ClinicalTrialSearchUnknownReason;
-use super::super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchResult, TrialSource};
+use super::super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchHit, TrialSource};
 use super::eligibility::{DetailFilterOutcome, ctgov_nct_id};
 use super::{
     CTGOV_COUNT_CAP_REASON, CTGOV_COUNT_PAGE_SIZE, CtGovSearchContext, add_unique_ctgov_nct_ids,
@@ -105,7 +105,7 @@ impl std::fmt::Debug for CtGovWorkerState {
 }
 
 struct CtGovSinglePageState {
-    rows: Vec<TrialSearchResult>,
+    rows: Vec<TrialSearchHit>,
     provider_total: Option<biodata::ClinicalTrialProviderTotal>,
     retained_total: usize,
     exhausted: bool,
@@ -301,7 +301,7 @@ fn apply_ctgov_single_page(
             continue;
         }
         if state.rows.len() < limit {
-            let Ok(mut row) = TrialSearchResult::from_biodata(study.projection().value()) else {
+            let Ok(mut row) = TrialSearchHit::from_biodata(study.into_projection()) else {
                 continue;
             };
             row.matched_intervention_label = worker.matched_intervention_label.clone();
@@ -523,21 +523,21 @@ fn cap_continuable_worker(worker: &mut CtGovWorkerState) -> bool {
 }
 
 fn push_ctgov_union_rows(
-    merged_rows: &mut Vec<TrialSearchResult>,
+    merged_rows: &mut Vec<TrialSearchHit>,
     merged_index: &mut HashMap<String, usize>,
     matched_labels: &HashMap<String, Option<String>>,
     studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
 ) {
     for study in studies {
         let matched_nct_id = ctgov_nct_id(&study).unwrap_or_default();
-        let Ok(mut row) = TrialSearchResult::from_biodata(study.projection().value()) else {
+        let Ok(mut row) = TrialSearchHit::from_biodata(study.into_projection()) else {
             continue;
         };
-        if merged_index.contains_key(&row.nct_id) {
+        if merged_index.contains_key(row.nct_id()) {
             continue;
         }
         row.matched_intervention_label = matched_labels.get(&matched_nct_id).cloned().flatten();
-        merged_index.insert(row.nct_id.clone(), merged_rows.len());
+        merged_index.insert(row.nct_id().to_owned(), merged_rows.len());
         merged_rows.push(row);
     }
 }
@@ -580,7 +580,7 @@ async fn search_page_with_ctgov_union(
     const ALIAS_PROVIDER_PAGE_SIZE: usize = 100;
     let page_size = ALIAS_PROVIDER_PAGE_SIZE;
     let mut workers = ctgov_workers(condition_query, intervention_aliases);
-    let mut merged_rows: Vec<TrialSearchResult> = Vec::new();
+    let mut merged_rows: Vec<TrialSearchHit> = Vec::new();
     let mut merged_index: HashMap<String, usize> = HashMap::new();
     let mut seen_nct_ids: HashSet<String> = HashSet::new();
     let mut matched_labels: HashMap<String, Option<String>> = HashMap::new();

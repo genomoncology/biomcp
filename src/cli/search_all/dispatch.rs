@@ -415,10 +415,10 @@ pub(super) fn section_fetch_limit(kind: SectionKind, input: &PreparedInput) -> u
 }
 
 pub(super) fn merge_trial_backfill_rows(
-    mut preferred: Vec<crate::entities::trial::TrialSearchResult>,
-    backfill: Vec<crate::entities::trial::TrialSearchResult>,
+    mut preferred: Vec<crate::entities::trial::TrialSearchHit>,
+    backfill: Vec<crate::entities::trial::TrialSearchHit>,
     limit: usize,
-) -> Vec<crate::entities::trial::TrialSearchResult> {
+) -> Vec<crate::entities::trial::TrialSearchHit> {
     preferred.truncate(limit);
     if preferred.len() >= limit {
         return preferred;
@@ -426,13 +426,13 @@ pub(super) fn merge_trial_backfill_rows(
 
     let mut seen = preferred
         .iter()
-        .map(|row| row.nct_id.clone())
+        .map(|row| row.nct_id().to_owned())
         .collect::<HashSet<_>>();
     for row in backfill {
         if preferred.len() >= limit {
             break;
         }
-        if seen.insert(row.nct_id.clone()) {
+        if seen.insert(row.nct_id().to_owned()) {
             preferred.push(row);
         }
     }

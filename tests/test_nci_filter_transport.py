@@ -185,7 +185,16 @@ def test_nci_search_page_preserves_public_result_and_private_credential() -> Non
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["pagination"]["total"] == 2112
-    assert payload["results"] == [
+    row = payload["results"][0]
+    assert row.pop("capture") == {
+        "source_authority": "nci",
+        "provider_record_identity": "NCT05929768",
+        "digest": "sha256:b22fcb8d10167f8612d0462066ba888386ffa2865a5e8ec4ee16a2902096a432",
+    }
+    report = row.pop("conversion_report")
+    assert isinstance(report, list)
+    assert row.pop("phases") == ["III"]
+    assert [row] == [
         {
             "nct_id": "NCT05929768",
             "title": "Shorter Chemo-Immunotherapy Without Anthracycline Drugs for Early Triple Negative Breast Cancer",

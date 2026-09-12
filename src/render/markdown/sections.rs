@@ -362,16 +362,17 @@ pub(super) fn is_completed_or_terminated_trial_status(status: &str) -> bool {
     status.eq_ignore_ascii_case("COMPLETED") || status.eq_ignore_ascii_case("TERMINATED")
 }
 
-pub(super) fn sections_trial(trial: &Trial, requested: &[String]) -> Vec<String> {
-    let nct_id = trial.nct_id.trim();
+pub(super) fn sections_trial(trial: &TrialResponse, requested: &[String]) -> Vec<String> {
+    let nct_id = trial.nct_id().trim();
     if nct_id.is_empty() {
         return Vec::new();
     }
-    let available = if is_completed_or_terminated_trial_status(&trial.status) {
-        COMPLETED_TRIAL_SECTION_NAMES
-    } else {
-        crate::entities::trial::TRIAL_SECTION_NAMES
-    };
+    let available =
+        if is_completed_or_terminated_trial_status(trial.trial().overall_status().code()) {
+            COMPLETED_TRIAL_SECTION_NAMES
+        } else {
+            crate::entities::trial::TRIAL_SECTION_NAMES
+        };
     sections_for(requested, available)
 }
 

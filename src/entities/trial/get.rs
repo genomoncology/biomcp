@@ -3,16 +3,12 @@
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use crate::sources::nci_cts::NciCtsClient;
-use biodata::{
-    ClinicalTrialArms, ClinicalTrialEligibility, ClinicalTrialIntervention,
-    ClinicalTrialPlannedOutcome, ClinicalTrialSection, NciCtsV2DetailPlan, NciCtsV2DetailResponse,
-};
+use biodata::{ClinicalTrialSection, NciCtsV2DetailPlan, NciCtsV2DetailResponse};
 
 use super::{
     TRIAL_SECTION_ALL, TRIAL_SECTION_ARMS, TRIAL_SECTION_CONTACTS, TRIAL_SECTION_ELIGIBILITY,
     TRIAL_SECTION_LOCATIONS, TRIAL_SECTION_NAMES, TRIAL_SECTION_OUTCOMES, TRIAL_SECTION_REFERENCES,
-    Trial, TrialDesign, TrialIdentity, TrialResponse, TrialSectionState, TrialSectionStates,
-    TrialSource,
+    TrialResponse, TrialSectionState, TrialSectionStates, TrialSource,
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -78,209 +74,60 @@ fn parse_sections(sections: &[String]) -> Result<TrialSections, BioMcpError> {
 }
 
 fn section_state<T>(section: &ClinicalTrialSection<T>) -> TrialSectionState {
-    match section {
-        ClinicalTrialSection::NotRequested => TrialSectionState::NotRequested,
-        ClinicalTrialSection::Unavailable => TrialSectionState::Unavailable,
-        ClinicalTrialSection::Absent => TrialSectionState::Absent,
-        ClinicalTrialSection::Present(_) => TrialSectionState::Present,
-    }
-}
-
-pub(crate) fn product_design(
-    interventions: &ClinicalTrialSection<Vec<ClinicalTrialIntervention>>,
-    arms: &ClinicalTrialSection<ClinicalTrialArms>,
-) -> Result<TrialDesign, BioMcpError> {
-    let interventions = match interventions {
-        ClinicalTrialSection::Present(values) => values.clone(),
-        ClinicalTrialSection::Absent => Vec::new(),
-        ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable => {
-            return Err(BioMcpError::InternalProcessing);
-        }
-    };
-    let (arms, assignments) = match arms {
-        ClinicalTrialSection::Present(value) => (
-            Some(value.arms().to_vec()),
-            Some(value.assignments().to_vec()),
-        ),
-        ClinicalTrialSection::Absent | ClinicalTrialSection::NotRequested => (None, None),
-        ClinicalTrialSection::Unavailable => return Err(BioMcpError::InternalProcessing),
-    };
-    TrialDesign::new(interventions, arms, assignments).map_err(BioMcpError::TrialDesign)
-}
-
-fn product_nci_design(
-    shared: &biodata::ClinicalTrial,
-    include_arms: bool,
-) -> Result<TrialDesign, BioMcpError> {
-    let interventions = shared.interventions().unwrap_or_default().to_vec();
-    let (arms, assignments) = if include_arms {
-        (
-            shared.arms().map(<[_]>::to_vec),
-            shared.arm_intervention_assignments().map(<[_]>::to_vec),
-        )
-    } else {
-        (None, None)
-    };
-    TrialDesign::new(interventions, arms, assignments).map_err(BioMcpError::TrialDesign)
-}
-
-fn product_from_core(
-    core: &biodata::ClinicalTrialCore,
-    source: &str,
-    design: TrialDesign,
-) -> Trial {
-    let identities = core
-        .identities()
-        .iter()
-        .map(|value| TrialIdentity {
-            authority: value.authority().to_owned(),
-            identifier: value.identifier().to_owned(),
-        })
-        .collect::<Vec<_>>();
-    let nct_id = identities
-        .iter()
-        .find(|value| value.authority == "clinicaltrials.gov")
-        .map(|value| value.identifier.clone())
-        .unwrap_or_default();
-    let phases = core
-        .phases()
-        .iter()
-        .map(|value| value.code().to_owned())
-        .collect::<Vec<_>>();
-    let phase = (!phases.is_empty()).then(|| phases.join("/"));
-    Trial {
-        identities,
-        nct_id,
-        source: Some(source.to_owned()),
-        title: core.brief_title().to_owned(),
-        official_title: core.official_title().map(str::to_owned),
-        status: core.overall_status().code().to_owned(),
-        why_stopped: Some(core.stop_reason().map(str::to_owned)),
-        phase,
-        phases,
-        study_type: Some(core.study_type().code().to_owned()),
-        conditions: core.conditions().to_vec(),
-        design,
-        sponsor: Some(core.lead_sponsor_name().to_owned()),
-        enrollment: core.enrollment_count(),
-        summary: core.brief_summary().map(str::to_owned),
-        start_date: core.start_date().map(str::to_owned),
-        completion_date: core.completion_date().map(str::to_owned),
-        eligibility: None,
-        eligibility_provenance: None,
-        site_directory: None,
-        site_offset: 0,
-        site_limit: None,
-        outcomes: None,
-        references: None,
-    }
-}
-
-fn product_eligibility(
-    section: ClinicalTrialSection<&ClinicalTrialEligibility>,
-    requested: bool,
-) -> Result<Option<ClinicalTrialEligibility>, BioMcpError> {
-    match (requested, section) {
-        (true, ClinicalTrialSection::Present(value)) => Ok(Some(value.clone())),
-        (true, ClinicalTrialSection::Absent) | (false, _) => Ok(None),
-        (true, ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable) => {
-            Err(BioMcpError::InternalProcessing)
-        }
-    }
-}
-
-fn product_outcomes<T>(
-    section: &ClinicalTrialSection<T>,
-) -> Option<Vec<ClinicalTrialPlannedOutcome>>
-where
-    T: AsRef<[ClinicalTrialPlannedOutcome]>,
-{
-    match section {
-        ClinicalTrialSection::Present(values) => Some(values.as_ref().to_vec()),
-        ClinicalTrialSection::NotRequested
-        | ClinicalTrialSection::Unavailable
-        | ClinicalTrialSection::Absent => None,
-    }
+    super::section_state(match section {
+        ClinicalTrialSection::NotRequested => ClinicalTrialSection::NotRequested,
+        ClinicalTrialSection::Unavailable => ClinicalTrialSection::Unavailable,
+        ClinicalTrialSection::Absent => ClinicalTrialSection::Absent,
+        ClinicalTrialSection::Present(_) => ClinicalTrialSection::Present(()),
+    })
 }
 
 fn product_from_nci_response(
-    response: &NciCtsV2DetailResponse,
-    request_eligibility: bool,
+    response: NciCtsV2DetailResponse,
     include_arms: bool,
-) -> Result<TrialResponse, BioMcpError> {
-    let shared = response.projection().trial();
-    let eligibility = product_eligibility(response.eligibility(), request_eligibility)?;
-    let arms_state = section_state(&response.arms_state());
-    let mut trial = product_from_core(
-        response.core(),
-        "NCI CTS",
-        product_nci_design(shared, include_arms)?,
-    );
-    trial.eligibility = eligibility;
+) -> TrialResponse {
+    let arms_state = if include_arms {
+        section_state(&response.arms_state())
+    } else {
+        TrialSectionState::NotRequested
+    };
     let outcomes = response.outcomes();
-    trial.outcomes = product_outcomes(&outcomes);
-    if let ClinicalTrialSection::Present(directory) = response.site_directory() {
-        trial.set_site_directory(Some(directory.clone()));
-    }
-    Ok(TrialResponse {
-        trial,
-        section_states: TrialSectionStates {
-            arms: arms_state,
-            eligibility: section_state(&response.eligibility()),
-            outcomes: section_state(&outcomes),
-            references: TrialSectionState::NotRequested,
-            contacts: section_state(&response.contacts_state()),
-            locations: section_state(&response.locations_state()),
-        },
-    })
+    let states = TrialSectionStates {
+        arms: arms_state,
+        eligibility: section_state(&response.eligibility()),
+        outcomes: section_state(&outcomes),
+        references: TrialSectionState::NotRequested,
+        contacts: section_state(&response.contacts_state()),
+        locations: section_state(&response.locations_state()),
+    };
+    TrialResponse::new(response.into_projection(), "NCI CTS", None, states)
 }
 
 fn product_from_ctgov_response(
     response: biodata::ClinicalTrialsGovApiV2Response,
     section_flags: TrialSections,
 ) -> Result<TrialResponse, BioMcpError> {
-    let mut trial = product_from_core(
-        response.core(),
-        "ClinicalTrials.gov",
-        product_design(response.interventions(), response.arms())?,
-    );
-    if let ClinicalTrialSection::Present(directory) = response.site_directory() {
-        trial.set_site_directory(Some(directory.clone()));
-    }
-    trial.outcomes = product_outcomes(response.outcomes());
     let reference_state = section_state(response.references());
-    if section_flags.include_references
-        && let ClinicalTrialSection::Present(values) = response.references()
-    {
-        trial.references = Some(values.clone());
-    }
-    trial.eligibility = match (section_flags.request_eligibility, response.eligibility()) {
-        (true, ClinicalTrialSection::Present(value)) => Some(value.clone()),
-        (true, ClinicalTrialSection::Absent) | (false, _) => None,
-        (true, ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable) => {
-            return Err(BioMcpError::InternalProcessing);
-        }
+    let provenance = (section_flags.include_eligibility_provenance
+        && matches!(response.eligibility(), ClinicalTrialSection::Present(value) if value.registry_text().is_some()))
+        .then(|| super::documents::eligibility_provenance(&response));
+    let states = TrialSectionStates {
+        arms: section_state(response.arms()),
+        eligibility: section_state(response.eligibility()),
+        outcomes: section_state(response.outcomes()),
+        references: reference_state,
+        contacts: section_state(&response.contacts_state()),
+        locations: section_state(&response.locations_state()),
     };
-    if section_flags.include_eligibility_provenance
-        && trial
-            .eligibility
-            .as_ref()
-            .and_then(ClinicalTrialEligibility::registry_text)
-            .is_some()
-    {
-        trial.eligibility_provenance = Some(super::documents::eligibility_provenance(&response));
-    }
-    Ok(TrialResponse {
-        trial,
-        section_states: TrialSectionStates {
-            arms: section_state(response.arms()),
-            eligibility: section_state(response.eligibility()),
-            outcomes: section_state(response.outcomes()),
-            references: reference_state,
-            contacts: section_state(&response.contacts_state()),
-            locations: section_state(&response.locations_state()),
-        },
-    })
+    let projection = response
+        .into_projection()
+        .map_err(|_| BioMcpError::InternalProcessing)?;
+    Ok(TrialResponse::new(
+        projection,
+        "ClinicalTrials.gov",
+        provenance,
+        states,
+    ))
 }
 
 fn looks_like_nct_id(value: &str) -> bool {
@@ -352,11 +199,7 @@ pub async fn get(
             }
             let client = NciCtsClient::new()?;
             let response = client.get(&plan).await?;
-            let mut trial = product_from_nci_response(
-                &response,
-                section_flags.request_eligibility,
-                section_flags.include_arms,
-            )?;
+            let mut trial = product_from_nci_response(response, section_flags.include_arms);
             trial.section_states.references = if section_flags.include_references {
                 TrialSectionState::Unavailable
             } else {
@@ -367,6 +210,3 @@ pub async fn get(
         }
     }
 }
-
-#[cfg(test)]
-mod tests;

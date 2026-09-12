@@ -286,7 +286,7 @@ use crate::entities::study::{
     StudyInfo, StudyQueryResult, SurvivalResult as StudySurvivalResult,
     TopMutatedGenesResult as StudyTopMutatedGenesResult,
 };
-use crate::entities::trial::{Trial, TrialSearchResult};
+use crate::entities::trial::{TrialResponse, TrialSearchHit};
 use crate::entities::variant::{
     Variant, VariantGwasAssociation, VariantNormalizationResponse, VariantOncoKbResult,
     VariantPrediction, VariantSearchResult, VariantStructureResult, gnomad_variant_slug,
@@ -471,7 +471,7 @@ pub(crate) fn related_protein(protein: &Protein, requested_sections: &[String]) 
     related::related_protein(protein, requested_sections)
 }
 
-pub(crate) fn related_trial(trial: &Trial) -> Vec<String> {
+pub(crate) fn related_trial(trial: &TrialResponse) -> Vec<String> {
     related::related_trial(trial)
 }
 
@@ -520,7 +520,7 @@ pub(crate) fn search_next_commands_article(
     related::search_next_commands_article(results, filters, source_filter, exact_entity_commands)
 }
 
-pub(crate) fn search_next_commands_trial(results: &[TrialSearchResult]) -> Vec<String> {
+pub(crate) fn search_next_commands_trial(results: &[TrialSearchHit]) -> Vec<String> {
     related::search_next_commands_trial(results)
 }
 
@@ -603,7 +603,7 @@ pub(crate) fn search_next_commands_gwas(results: &[VariantGwasAssociation]) -> V
     related::search_next_commands_gwas(results)
 }
 
-pub(crate) fn trial_evidence_urls(trial: &Trial) -> Vec<(&'static str, String)> {
+pub(crate) fn trial_evidence_urls(trial: &TrialResponse) -> Vec<(&'static str, String)> {
     evidence::trial_evidence_urls(trial)
 }
 

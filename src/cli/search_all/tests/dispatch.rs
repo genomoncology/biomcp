@@ -1,6 +1,6 @@
 //! Search-all dispatch and timeout tests.
 
-use crate::entities::trial::TrialSearchResult;
+use crate::entities::trial::TrialSearchHit;
 
 use super::super::dispatch::{merge_trial_backfill_rows, section_fetch_limit, section_timeout};
 use super::super::plan::PreparedInput;
@@ -8,16 +8,8 @@ use super::super::{
     SearchAllInput, SearchAllLink, SearchAllResults, SearchAllSection, SectionKind,
 };
 
-fn trial_row(nct_id: &str, status: &str) -> TrialSearchResult {
-    TrialSearchResult {
-        nct_id: nct_id.to_string(),
-        title: format!("Trial {nct_id}"),
-        status: status.to_string(),
-        phase: None,
-        conditions: Vec::new(),
-        sponsor: None,
-        matched_intervention_label: None,
-    }
+fn trial_row(nct_id: &str, status: &str) -> TrialSearchHit {
+    TrialSearchHit::test(nct_id, status)
 }
 
 #[test]
@@ -164,7 +156,7 @@ fn merge_trial_backfill_rows_preserves_preferred_order_and_dedupes() {
     let merged = merge_trial_backfill_rows(preferred, backfill, 3);
     let ids = merged
         .iter()
-        .map(|row| row.nct_id.clone())
+        .map(|row| row.nct_id().to_owned())
         .collect::<Vec<_>>();
     assert_eq!(ids, vec!["NCT00000001", "NCT00000002", "NCT00000003"]);
 }
@@ -180,7 +172,7 @@ fn merge_trial_backfill_rows_respects_limit_with_preferred_only() {
     let merged = merge_trial_backfill_rows(preferred, vec![], 2);
     let ids = merged
         .iter()
-        .map(|row| row.nct_id.clone())
+        .map(|row| row.nct_id().to_owned())
         .collect::<Vec<_>>();
     assert_eq!(ids, vec!["NCT00000001", "NCT00000002"]);
 }
