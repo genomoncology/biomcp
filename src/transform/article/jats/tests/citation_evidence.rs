@@ -486,3 +486,68 @@ fn extractor_anchors_truncation_on_the_marker_not_an_earlier_equal_string() {
         other => panic!("expected linked, got {other:?}"),
     }
 }
+
+#[test]
+fn extractor_pins_the_exact_passage_scalar_boundaries() {
+    // Paragraph totals of exactly 1,199, 1,200, and 1,200+1 scalars: the
+    // first two pass through untruncated; 1,201 begins truncation, and with
+    // the marker at the very end the window clamps to the paragraph end, so
+    // only the removed prefix contributes its ellipsis (1,198 slice + 1).
+    for (filler, expected, prefix_ellipsis, suffix_ellipsis) in [
+        (1_197, 1_199, false, false),
+        (1_198, 1_200, false, false),
+        (1_199, 1_199, true, false),
+    ] {
+        let text: String = "x".repeat(filler);
+        let paragraph = format!("<p>{text} <xref ref-type=\"bibr\" rid=\"bib7\">7</xref></p>");
+        let xml = article_with_body(&format!(
+            "{}<ref-list>{}</ref-list>",
+            paragraph,
+            doi_ref("bib7", "10.1/x")
+        ));
+        match extract_citation_evidence(&xml, &target_ids(Some("10.1/x"), None, None)) {
+            Ok(JatsCitationExtraction::Linked { passages, .. }) => {
+                assert_eq!(passages[0].text.chars().count(), expected);
+                assert_eq!(
+                    passages[0].text.starts_with('\u{2026}'),
+                    prefix_ellipsis,
+                    "filler {filler}"
+                );
+                assert_eq!(
+                    passages[0].text.ends_with('\u{2026}'),
+                    suffix_ellipsis,
+                    "filler {filler}"
+                );
+                assert!(passages[0].text.ends_with('7'), "filler {filler}");
+            }
+            other => panic!("expected linked, got {other:?}"),
+        }
+    }
+}
+
+#[test]
+fn extractor_ignores_an_empty_marker_on_both_sides_of_the_clamp() {
+    // An empty marker followed by a nonblank marker with the anchor clamped
+    // at the window start: the marker sits early, so the slice keeps the
+    // paragraph head and adds only a suffix ellipsis. The mirror case with
+    // the nonblank marker late (clamp at the window end) is covered by
+    // extractor_skips_empty_marker_text_before_truncation.
+    let filler: String = "z".repeat(1_300);
+    let paragraph = format!(
+        "<p><xref ref-type=\"bibr\" rid=\"bib7\"></xref> <xref ref-type=\"bibr\" rid=\"bib7\">7</xref> {filler}</p>"
+    );
+    let xml = article_with_body(&format!(
+        "{}<ref-list>{}</ref-list>",
+        paragraph,
+        doi_ref("bib7", "10.1/x")
+    ));
+    match extract_citation_evidence(&xml, &target_ids(Some("10.1/x"), None, None)) {
+        Ok(JatsCitationExtraction::Linked { passages, .. }) => {
+            let text = &passages[0].text;
+            assert_eq!(text.chars().count(), 1_199);
+            assert!(text.starts_with('7'), "nonblank marker anchors the head");
+            assert!(text.ends_with('\u{2026}'));
+        }
+        other => panic!("expected linked, got {other:?}"),
+    }
+}
