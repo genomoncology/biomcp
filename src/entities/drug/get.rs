@@ -801,10 +801,10 @@ async fn populate_us_regional_sections(
     }
 
     drug.fda_orphan_designations = if section_flags.include_regulatory {
-        Some(
+        Some(Box::new(
             crate::sources::fda_orphan::fetch(orphan_aliases(requested_name, drug, selected_hits))
                 .await,
-        )
+        ))
     } else {
         None
     };

@@ -560,7 +560,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
             );
             format!(
                 "{approvals}\n{}",
-                render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_ref())
+                render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_deref())
             )
         }
         DrugRegion::Eu => {
@@ -575,7 +575,8 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
                 "## Regulatory (US - Drugs@FDA)",
                 drug.approvals.as_deref(),
             );
-            let orphan = render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_ref());
+            let orphan =
+                render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_deref());
             let eu = render_eu_regulatory_block(
                 "## Regulatory (EU - EMA)",
                 drug.ema_regulatory.as_deref(),

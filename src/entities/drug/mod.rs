@@ -110,7 +110,7 @@ pub struct Drug {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub approvals: Option<Vec<DrugApproval>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub fda_orphan_designations: Option<FdaOrphanDesignations>,
+    pub fda_orphan_designations: Option<Box<FdaOrphanDesignations>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub us_safety_warnings: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
