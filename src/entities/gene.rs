@@ -1,7 +1,6 @@
 mod clingen;
 pub(crate) mod cspec;
 mod gencc;
-
 use std::collections::HashMap;
 use std::fs;
 use std::future::Future;
@@ -3492,6 +3491,7 @@ mod tests {
                 manufacturer_or_lab: Some("Example Lab".to_string()),
                 genes: vec!["BRCA1".to_string()],
                 conditions: vec!["Hereditary breast ovarian cancer".to_string()],
+                disease_match: None,
             }]),
         );
         let rows = gene.diagnostics.as_ref().expect("diagnostics rows");

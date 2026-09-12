@@ -3,6 +3,232 @@
 use super::fallback::resolve_disease_hit_via_discover_fallback;
 use super::*;
 
+const EXACT_RESOLUTION_QUERY_SIZE: usize = 50;
+const MAX_EXACT_SYNONYMS: usize = 20;
+const MAX_PROVIDER_TERM_BYTES: usize = 256;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ExactDiseaseTerms {
+    pub requested: String,
+    pub canonical_id: Option<String>,
+    pub canonical_name: Option<String>,
+    pub synonyms: Vec<String>,
+}
+
+fn source_resolution_error() -> BioMcpError {
+    BioMcpError::SourceUnavailable {
+        source_name: "MyDisease.info".to_string(),
+        reason: "exact disease identity resolution failed".to_string(),
+        suggestion: "Retry the diagnostic search.".to_string(),
+    }
+}
+
+fn valid_provider_term(value: &str) -> Option<String> {
+    let value = value.trim();
+    if value.is_empty()
+        || value.len() > MAX_PROVIDER_TERM_BYTES
+        || value.chars().any(char::is_control)
+    {
+        return None;
+    }
+    Some(value.to_string())
+}
+
+fn normalized_term(value: &str) -> Option<String> {
+    let value = value.trim();
+    if value.is_empty() || value.chars().any(char::is_control) {
+        return None;
+    }
+    let mut normalized = String::new();
+    let mut pending_space = false;
+    for ch in value.chars() {
+        if ch.is_whitespace() {
+            pending_space = !normalized.is_empty();
+        } else {
+            if pending_space {
+                normalized.push(' ');
+            }
+            normalized.push(ch.to_ascii_lowercase());
+            pending_space = false;
+        }
+    }
+    (!normalized.is_empty()).then_some(normalized)
+}
+
+fn normalized_provider_term(value: &str) -> Option<String> {
+    normalized_term(&valid_provider_term(value)?)
+}
+
+fn synonym_values(value: &serde_json::Value) -> Option<Vec<String>> {
+    match value {
+        serde_json::Value::String(value) => valid_provider_term(value).map(|value| vec![value]),
+        serde_json::Value::Array(values) => values
+            .iter()
+            .map(|value| value.as_str().and_then(valid_provider_term))
+            .collect(),
+        _ => None,
+    }
+}
+
+fn provider_terms(hit: &MyDiseaseHit) -> (Vec<String>, Vec<String>, bool) {
+    let mut names = Vec::new();
+    let mut synonyms = Vec::new();
+    let mut malformed_synonyms = false;
+    for object in [hit.disease_ontology.as_ref(), hit.mondo.as_ref()]
+        .into_iter()
+        .flatten()
+    {
+        if let Some(value) = object.get("name")
+            && let Some(value) = value.as_str().and_then(valid_provider_term)
+        {
+            names.push(value);
+        }
+    }
+    for object in [hit.mondo.as_ref(), hit.disease_ontology.as_ref()]
+        .into_iter()
+        .flatten()
+    {
+        if let Some(value) = object.get("synonym").or_else(|| object.get("synonyms")) {
+            if let Some(values) =
+                synonym_values(value).or_else(|| value.get("exact").and_then(synonym_values))
+            {
+                synonyms.extend(values);
+            } else if !value.is_null() {
+                malformed_synonyms = true;
+            }
+        }
+    }
+    (names, synonyms, malformed_synonyms)
+}
+
+fn canonical_name(hit: &MyDiseaseHit) -> Option<String> {
+    let (names, _, _) = provider_terms(hit);
+    names
+        .into_iter()
+        .find_map(|value| valid_provider_term(&value))
+}
+
+fn valid_canonical_id(value: &str) -> Option<String> {
+    let id = normalize_disease_id(value)?;
+    let (_, rest) = id.split_once(':')?;
+    rest.chars().all(|ch| ch.is_ascii_digit()).then_some(id)
+}
+
+fn exact_hit_matches(query: &str, hit: &MyDiseaseHit) -> bool {
+    let query = match normalized_term(query) {
+        Some(query) => query,
+        None => return false,
+    };
+    let (names, synonyms, _) = provider_terms(hit);
+    names
+        .into_iter()
+        .chain(synonyms)
+        .any(|term| normalized_provider_term(&term).is_some_and(|term| term == query))
+}
+
+fn detail_terms(
+    requested: &str,
+    expected_id: &str,
+    hit: MyDiseaseHit,
+) -> Result<ExactDiseaseTerms, BioMcpError> {
+    let id = valid_canonical_id(&hit.id).ok_or_else(source_resolution_error)?;
+    let expected_id = valid_canonical_id(expected_id).ok_or_else(source_resolution_error)?;
+    if id != expected_id {
+        return Err(source_resolution_error());
+    }
+    let canonical_name = canonical_name(&hit).ok_or_else(source_resolution_error)?;
+    let (_, synonyms, malformed_synonyms) = provider_terms(&hit);
+    if malformed_synonyms {
+        return Err(source_resolution_error());
+    }
+
+    let mut seen = std::collections::HashSet::new();
+    let requested_key = normalized_term(requested).ok_or_else(source_resolution_error)?;
+    let canonical_key =
+        normalized_provider_term(&canonical_name).ok_or_else(source_resolution_error)?;
+    let mut valid_synonyms = Vec::new();
+    for synonym in synonyms {
+        let key = normalized_provider_term(&synonym).ok_or_else(source_resolution_error)?;
+        if key == requested_key || key == canonical_key || !seen.insert(key) {
+            continue;
+        }
+        valid_synonyms.push(synonym);
+        if valid_synonyms.len() == MAX_EXACT_SYNONYMS {
+            break;
+        }
+    }
+    Ok(ExactDiseaseTerms {
+        requested: requested.trim().to_string(),
+        canonical_id: Some(id),
+        canonical_name: Some(canonical_name),
+        synonyms: valid_synonyms,
+    })
+}
+
+pub(crate) async fn resolve_exact_disease_terms(
+    client: &MyDiseaseClient,
+    disease: &str,
+) -> Result<ExactDiseaseTerms, BioMcpError> {
+    let requested = disease.trim();
+    if requested.len() > 512 || normalized_term(requested).is_none() {
+        return Err(source_resolution_error());
+    }
+
+    if let Some(id) = normalize_disease_id(requested) {
+        let detail = client
+            .get(&id)
+            .await
+            .map_err(|_| source_resolution_error())?;
+        return detail_terms(requested, &id, detail);
+    }
+
+    let response = client
+        .query(
+            requested,
+            EXACT_RESOLUTION_QUERY_SIZE,
+            0,
+            None,
+            None,
+            None,
+            None,
+        )
+        .await
+        .map_err(|_| source_resolution_error())?;
+    if response.total > response.hits.len() {
+        return Err(source_resolution_error());
+    }
+
+    let mut exact_hits = std::collections::HashMap::new();
+    for hit in response.hits {
+        if !exact_hit_matches(requested, &hit) {
+            continue;
+        }
+        let Some(id) = valid_canonical_id(&hit.id) else {
+            continue;
+        };
+        exact_hits.entry(id).or_insert(hit);
+    }
+    if exact_hits.len() != 1 {
+        return Ok(ExactDiseaseTerms {
+            requested: requested.to_string(),
+            canonical_id: None,
+            canonical_name: None,
+            synonyms: Vec::new(),
+        });
+    }
+
+    let id = exact_hits
+        .keys()
+        .next()
+        .cloned()
+        .ok_or_else(source_resolution_error)?;
+    let detail = client
+        .get(&id)
+        .await
+        .map_err(|_| source_resolution_error())?;
+    detail_terms(requested, &id, detail)
+}
+
 pub(super) fn normalize_disease_id(value: &str) -> Option<String> {
     let v = value.trim();
     if v.is_empty() {

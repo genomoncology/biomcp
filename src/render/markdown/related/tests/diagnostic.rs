@@ -9,6 +9,7 @@ fn search_next_commands_diagnostic_prefers_top_accession_then_list() {
             manufacturer_or_lab: Some("OncoPanel BRCA1".to_string()),
             genes: vec!["BRCA1".to_string()],
             conditions: vec!["Breast cancer".to_string()],
+            disease_match: None,
         },
         DiagnosticSearchResult {
             source: "gtr".to_string(),
@@ -18,6 +19,7 @@ fn search_next_commands_diagnostic_prefers_top_accession_then_list() {
             manufacturer_or_lab: Some("Precision Diagnostics".to_string()),
             genes: vec!["EGFR".to_string()],
             conditions: vec!["Cutaneous melanoma".to_string()],
+            disease_match: None,
         },
     ];
 
@@ -74,6 +76,7 @@ fn search_next_commands_diagnostic_quotes_who_product_code() {
         manufacturer_or_lab: Some("InTec Products, Inc.".to_string()),
         genes: vec![],
         conditions: vec!["HIV".to_string()],
+        disease_match: None,
     }];
 
     assert_eq!(

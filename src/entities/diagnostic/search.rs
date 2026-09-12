@@ -1,14 +1,16 @@
 use crate::entities::SearchPage;
+use crate::entities::disease::{ExactDiseaseTerms, resolve_exact_disease_terms};
 use crate::error::BioMcpError;
 use crate::sources::gtr::{GtrClient, GtrIndex, GtrRecord, GtrSyncMode};
+use crate::sources::mydisease::MyDiseaseClient;
 use crate::sources::who_ivd::{WhoIvdClient, WhoIvdRecord, WhoIvdSyncMode};
 
 #[cfg(test)]
 use std::path::Path;
 
 use super::{
-    DiagnosticSearchFilters, DiagnosticSearchResult, DiagnosticSourceFilter, search_result,
-    who_ivd_search_result,
+    DiagnosticSearchFilters, DiagnosticSearchResult, DiagnosticSourceFilter, DiseaseMatch,
+    DiseaseMatchKind, search_result, who_ivd_search_result,
 };
 
 const MAX_SEARCH_LIMIT: usize = 50;
@@ -27,10 +29,18 @@ struct NormalizedSearchFilters {
 
 impl NormalizedSearchFilters {
     fn from_filters(filters: &DiagnosticSearchFilters) -> Result<Self, BioMcpError> {
+        if let Some(disease) = filters
+            .disease
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            validate_disease_filter(disease)?;
+        }
         let normalized = Self {
             source: filters.source,
             gene: normalized_exact(filters.gene.as_deref()),
-            disease: normalized_contains(filters.disease.as_deref()),
+            disease: normalized_disease(filters.disease.as_deref()),
             test_type: normalized_exact(filters.test_type.as_deref()),
             manufacturer: normalized_contains(filters.manufacturer.as_deref()),
         };
@@ -43,10 +53,6 @@ impl NormalizedSearchFilters {
             return Err(BioMcpError::InvalidArgument(ZERO_FILTER_ERROR.to_string()));
         }
 
-        if let Some(disease) = normalized.disease.as_deref() {
-            validate_disease_filter(disease)?;
-        }
-
         if matches!(normalized.source, DiagnosticSourceFilter::WhoIvd) && normalized.gene.is_some()
         {
             return Err(BioMcpError::InvalidArgument(
@@ -57,51 +63,65 @@ impl NormalizedSearchFilters {
         Ok(normalized)
     }
 
-    fn matches_gtr(&self, record: &GtrRecord, index: &GtrIndex) -> bool {
+    fn matches_gtr(
+        &self,
+        record: &GtrRecord,
+        index: &GtrIndex,
+        disease_terms: Option<&ExactDiseaseTerms>,
+    ) -> Option<Option<DiseaseMatch>> {
         if let Some(gene) = self.gene.as_deref()
             && !index
                 .merged_genes(&record.accession)
                 .iter()
                 .any(|candidate| candidate.trim().eq_ignore_ascii_case(gene))
         {
-            return false;
+            return None;
         }
 
-        if let Some(disease) = self.disease.as_deref()
-            && !index
+        let disease_match = if self.disease.is_some() {
+            let terms = disease_terms.expect("disease terms required for disease filter");
+            index
                 .conditions(&record.accession)
                 .iter()
-                .any(|candidate| disease_phrase_matches(candidate, disease))
-        {
-            return false;
+                .find_map(|candidate| disease_match(candidate, terms))
+        } else {
+            None
+        };
+        if self.disease.is_some() && disease_match.is_none() {
+            return None;
         }
 
         if let Some(test_type) = self.test_type.as_deref()
             && !record.test_type.trim().eq_ignore_ascii_case(test_type)
         {
-            return false;
+            return None;
         }
 
         if let Some(manufacturer) = self.manufacturer.as_deref()
             && !manufacturer_matches(record, manufacturer)
         {
-            return false;
+            return None;
         }
 
-        true
+        Some(disease_match)
     }
 
-    fn matches_who_ivd(&self, record: &WhoIvdRecord) -> bool {
-        if let Some(disease) = self.disease.as_deref()
-            && !disease_phrase_matches(&record.target_marker, disease)
-        {
-            return false;
+    fn matches_who_ivd(&self, record: &WhoIvdRecord) -> Option<Option<DiseaseMatch>> {
+        let disease_match = self.disease.as_deref().and_then(|disease| {
+            disease_phrase_matches(&record.target_marker, disease).then(|| DiseaseMatch {
+                kind: DiseaseMatchKind::Requested,
+                term: disease.to_string(),
+                resolved_id: None,
+            })
+        });
+        if self.disease.is_some() && disease_match.is_none() {
+            return None;
         }
 
         if let Some(test_type) = self.test_type.as_deref()
             && !record.assay_format.trim().eq_ignore_ascii_case(test_type)
         {
-            return false;
+            return None;
         }
 
         if let Some(manufacturer) = self.manufacturer.as_deref()
@@ -110,10 +130,10 @@ impl NormalizedSearchFilters {
                 .to_ascii_lowercase()
                 .contains(manufacturer)
         {
-            return false;
+            return None;
         }
 
-        true
+        Some(disease_match)
     }
 }
 
@@ -131,7 +151,41 @@ fn normalized_contains(value: Option<&str>) -> Option<String> {
         .map(str::to_ascii_lowercase)
 }
 
+fn normalized_disease(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
+fn collapse_unicode_whitespace(value: &str) -> String {
+    let mut out = String::new();
+    let mut pending_space = false;
+    for ch in value.chars() {
+        if ch.is_whitespace() {
+            pending_space = !out.is_empty();
+        } else {
+            if pending_space {
+                out.push(' ');
+            }
+            out.push(ch.to_ascii_lowercase());
+            pending_space = false;
+        }
+    }
+    out
+}
+
 fn validate_disease_filter(value: &str) -> Result<(), BioMcpError> {
+    if value.len() > 512 {
+        return Err(BioMcpError::InvalidArgument(
+            "--disease must be at most 512 UTF-8 bytes".to_string(),
+        ));
+    }
+    if value.chars().any(char::is_control) {
+        return Err(BioMcpError::InvalidArgument(
+            "--disease must not contain control characters".to_string(),
+        ));
+    }
     let alnum_count = value.chars().filter(|ch| ch.is_alphanumeric()).count();
     if alnum_count < MIN_DISEASE_MATCH_ALNUM_CHARS {
         return Err(BioMcpError::InvalidArgument(format!(
@@ -146,8 +200,9 @@ fn disease_phrase_matches(haystack: &str, needle_lower: &str) -> bool {
         return false;
     }
 
-    let lower = haystack.to_ascii_lowercase();
-    lower.match_indices(needle_lower).any(|(pos, matched)| {
+    let lower = collapse_unicode_whitespace(haystack);
+    let needle_lower = collapse_unicode_whitespace(needle_lower);
+    lower.match_indices(&needle_lower).any(|(pos, matched)| {
         let before_ok = lower[..pos]
             .chars()
             .next_back()
@@ -159,6 +214,53 @@ fn disease_phrase_matches(haystack: &str, needle_lower: &str) -> bool {
             .is_none_or(|ch| !ch.is_alphanumeric());
         before_ok && after_ok
     })
+}
+
+fn disease_match(condition: &str, terms: &ExactDiseaseTerms) -> Option<DiseaseMatch> {
+    if disease_phrase_matches(condition, &terms.requested) {
+        return Some(DiseaseMatch {
+            kind: DiseaseMatchKind::Requested,
+            term: terms.requested.clone(),
+            resolved_id: terms.canonical_id.clone(),
+        });
+    }
+    if let Some(canonical) = terms.canonical_name.as_deref()
+        && disease_phrase_matches(condition, canonical)
+    {
+        return Some(DiseaseMatch {
+            kind: DiseaseMatchKind::Canonical,
+            term: canonical.to_string(),
+            resolved_id: terms.canonical_id.clone(),
+        });
+    }
+    terms.synonyms.iter().find_map(|synonym| {
+        disease_phrase_matches(condition, synonym).then(|| DiseaseMatch {
+            kind: DiseaseMatchKind::Synonym,
+            term: synonym.clone(),
+            resolved_id: terms.canonical_id.clone(),
+        })
+    })
+}
+
+fn disease_match_rank(
+    result: &DiagnosticSearchResult,
+    terms: Option<&ExactDiseaseTerms>,
+) -> (u8, usize) {
+    match result.disease_match.as_ref().map(|m| m.kind) {
+        Some(DiseaseMatchKind::Requested) => (0, 0),
+        Some(DiseaseMatchKind::Canonical) => (1, 0),
+        Some(DiseaseMatchKind::Synonym) => (
+            2,
+            terms
+                .and_then(|terms| {
+                    result.disease_match.as_ref().and_then(|matched| {
+                        terms.synonyms.iter().position(|term| term == &matched.term)
+                    })
+                })
+                .unwrap_or(usize::MAX),
+        ),
+        None => (3, 0),
+    }
 }
 
 fn manufacturer_matches(record: &GtrRecord, needle: &str) -> bool {
@@ -180,6 +282,23 @@ fn result_sort_key(result: &DiagnosticSearchResult) -> (String, String) {
     )
 }
 
+fn sort_results(
+    results: &mut [DiagnosticSearchResult],
+    disease_filtered: bool,
+    terms: Option<&ExactDiseaseTerms>,
+) {
+    if disease_filtered {
+        results.sort_by(|left, right| {
+            disease_match_rank(left, terms)
+                .cmp(&disease_match_rank(right, terms))
+                .then_with(|| result_sort_key(left).cmp(&result_sort_key(right)))
+                .then_with(|| left.source.cmp(&right.source))
+        });
+    } else {
+        results.sort_by_key(result_sort_key);
+    }
+}
+
 pub async fn search_page(
     filters: &DiagnosticSearchFilters,
     limit: usize,
@@ -192,6 +311,16 @@ pub async fn search_page(
     }
 
     let filters = NormalizedSearchFilters::from_filters(filters)?;
+    let disease_terms = if filters.source.includes_gtr() {
+        if let Some(disease) = filters.disease.as_deref() {
+            let client = MyDiseaseClient::new()?;
+            Some(resolve_exact_disease_terms(&client, disease).await?)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
     let gtr_index = if filters.source.includes_gtr() {
         let client = GtrClient::ready(GtrSyncMode::Auto).await?;
         Some(client.load_index()?)
@@ -207,7 +336,14 @@ pub async fn search_page(
         None
     };
 
-    search_page_from_data(filters, limit, offset, gtr_index, who_rows)
+    search_page_from_data(
+        filters,
+        limit,
+        offset,
+        gtr_index,
+        who_rows,
+        disease_terms.as_ref(),
+    )
 }
 
 #[cfg(test)]
@@ -244,7 +380,20 @@ pub(super) fn search_page_with_roots(
         None
     };
 
-    search_page_from_data(filters, limit, offset, gtr_index, who_rows)
+    let disease_terms = filters.disease.as_ref().map(|requested| ExactDiseaseTerms {
+        requested: requested.clone(),
+        canonical_id: None,
+        canonical_name: None,
+        synonyms: Vec::new(),
+    });
+    search_page_from_data(
+        filters,
+        limit,
+        offset,
+        gtr_index,
+        who_rows,
+        disease_terms.as_ref(),
+    )
 }
 
 fn search_page_from_data(
@@ -253,6 +402,7 @@ fn search_page_from_data(
     offset: usize,
     gtr_index: Option<GtrIndex>,
     who_rows: Option<Vec<WhoIvdRecord>>,
+    disease_terms: Option<&ExactDiseaseTerms>,
 ) -> Result<SearchPage<DiagnosticSearchResult>, BioMcpError> {
     let mut results = Vec::new();
     let mut matching_sources = 0usize;
@@ -262,8 +412,12 @@ fn search_page_from_data(
         let gtr_results = index
             .records_by_id
             .values()
-            .filter(|record| filters.matches_gtr(record, &index))
-            .map(|record| search_result(record, &index))
+            .filter_map(|record| {
+                let disease_match = filters.matches_gtr(record, &index, disease_terms)?;
+                let mut result = search_result(record, &index);
+                result.disease_match = disease_match;
+                Some(result)
+            })
             .collect::<Vec<_>>();
         if !gtr_results.is_empty() {
             matching_sources += 1;
@@ -275,8 +429,12 @@ fn search_page_from_data(
     if let Some(who_rows) = who_rows {
         let who_results = who_rows
             .into_iter()
-            .filter(|record| filters.matches_who_ivd(record))
-            .map(|record| who_ivd_search_result(&record))
+            .filter_map(|record| {
+                let disease_match = filters.matches_who_ivd(&record)?;
+                let mut result = who_ivd_search_result(&record);
+                result.disease_match = disease_match;
+                Some(result)
+            })
             .collect::<Vec<_>>();
         if !who_results.is_empty() {
             matching_sources += 1;
@@ -285,7 +443,7 @@ fn search_page_from_data(
         results.extend(who_results);
     }
 
-    results.sort_by_key(result_sort_key);
+    sort_results(&mut results, filters.disease.is_some(), disease_terms);
 
     let total = match filters.source {
         DiagnosticSourceFilter::All if matching_sources > 1 => None,
@@ -381,6 +539,97 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "Invalid argument: --disease must contain at least 3 alphanumeric characters for diagnostic disease matching"
+        );
+    }
+
+    #[test]
+    fn disease_filter_validation_rejects_controls_and_oversize_before_normalization() {
+        let controls = NormalizedSearchFilters::from_filters(&DiagnosticSearchFilters {
+            disease: Some("rare\nsyndrome".to_string()),
+            ..DiagnosticSearchFilters::default()
+        })
+        .expect_err("controls must fail before provider or local work");
+        assert_eq!(
+            controls.to_string(),
+            "Invalid argument: --disease must not contain control characters"
+        );
+
+        let oversize = NormalizedSearchFilters::from_filters(&DiagnosticSearchFilters {
+            disease: Some("x".repeat(513)),
+            ..DiagnosticSearchFilters::default()
+        })
+        .expect_err("oversize disease text must fail before provider or local work");
+        assert_eq!(
+            oversize.to_string(),
+            "Invalid argument: --disease must be at most 512 UTF-8 bytes"
+        );
+    }
+
+    #[test]
+    fn disease_match_prefers_requested_then_canonical_then_synonym() {
+        let terms = ExactDiseaseTerms {
+            requested: "Bachmann-Bupp syndrome".to_string(),
+            canonical_id: Some("MONDO:0033642".to_string()),
+            canonical_name: Some("Neurodevelopmental disorder".to_string()),
+            synonyms: vec!["BABS".to_string(), "Bachmann-Bupp disease".to_string()],
+        };
+        assert_eq!(
+            disease_match("Bachmann-Bupp syndrome", &terms)
+                .expect("requested match")
+                .kind,
+            DiseaseMatchKind::Requested
+        );
+        assert_eq!(
+            disease_match("Neurodevelopmental disorder", &terms)
+                .expect("canonical match")
+                .kind,
+            DiseaseMatchKind::Canonical
+        );
+        assert_eq!(
+            disease_match("BABS", &terms).expect("synonym match").kind,
+            DiseaseMatchKind::Synonym
+        );
+    }
+
+    #[test]
+    fn disease_sort_ranks_who_requested_then_canonical_then_provider_synonym_order() {
+        let terms = ExactDiseaseTerms {
+            requested: "requested disease".to_string(),
+            canonical_id: Some("MONDO:1".to_string()),
+            canonical_name: Some("canonical disease".to_string()),
+            synonyms: vec!["first alias".to_string(), "second alias".to_string()],
+        };
+        let row = |accession: &str, source: &str, kind, term: &str| DiagnosticSearchResult {
+            source: source.to_string(),
+            accession: accession.to_string(),
+            name: "same name".to_string(),
+            test_type: None,
+            manufacturer_or_lab: None,
+            genes: Vec::new(),
+            conditions: Vec::new(),
+            disease_match: Some(DiseaseMatch {
+                kind,
+                term: term.to_string(),
+                resolved_id: (source == "gtr").then(|| "MONDO:1".to_string()),
+            }),
+        };
+        let mut rows = vec![
+            row("S2", "gtr", DiseaseMatchKind::Synonym, "second alias"),
+            row("C", "gtr", DiseaseMatchKind::Canonical, "canonical disease"),
+            row("S1", "gtr", DiseaseMatchKind::Synonym, "first alias"),
+            row(
+                "W",
+                "who-ivd",
+                DiseaseMatchKind::Requested,
+                "requested disease",
+            ),
+        ];
+        sort_results(&mut rows, true, Some(&terms));
+        assert_eq!(
+            rows.iter()
+                .map(|row| row.accession.as_str())
+                .collect::<Vec<_>>(),
+            vec!["W", "C", "S1", "S2"]
         );
     }
 }

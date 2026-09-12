@@ -92,6 +92,7 @@ fn disease_markdown_renders_diagnostics_note_then_shell_safe_search_command() {
         manufacturer_or_lab: Some("Rare Diagnostics Lab".to_string()),
         genes: vec!["GENE1".to_string()],
         conditions: vec!["Rare disease; subtype".to_string()],
+        disease_match: None,
     }]);
     disease.diagnostics_note = Some(
         "Showing first 10 diagnostic matches in this disease card. Use diagnostic search with --limit and --offset for the larger result set."

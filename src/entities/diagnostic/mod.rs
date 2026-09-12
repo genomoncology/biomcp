@@ -189,6 +189,24 @@ pub struct DiagnosticSearchResult {
     pub genes: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub conditions: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disease_match: Option<DiseaseMatch>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DiseaseMatch {
+    pub kind: DiseaseMatchKind,
+    pub term: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolved_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DiseaseMatchKind {
+    Requested,
+    Canonical,
+    Synonym,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -257,6 +275,7 @@ pub(crate) fn search_result(record: &GtrRecord, index: &GtrIndex) -> DiagnosticS
         manufacturer_or_lab: manufacturer_or_lab_label(record),
         genes: index.merged_genes(&record.accession),
         conditions: index.conditions(&record.accession),
+        disease_match: None,
     }
 }
 
@@ -269,6 +288,7 @@ pub(crate) fn who_ivd_search_result(record: &WhoIvdRecord) -> DiagnosticSearchRe
         manufacturer_or_lab: optional_text(&record.manufacturer_name),
         genes: Vec::new(),
         conditions: optional_text(&record.target_marker).into_iter().collect(),
+        disease_match: None,
     }
 }
 
