@@ -8,7 +8,7 @@ mod detail;
 mod enrichment;
 pub(crate) mod filters;
 mod fulltext;
-mod graph;
+pub(crate) mod graph;
 mod identity_verification;
 mod planner;
 mod query;
@@ -21,7 +21,7 @@ pub(crate) mod variant_search;
 pub use self::assets::{article_asset_bytes, article_assets_manifest};
 pub use self::batch::get_compact;
 pub use self::detail::get;
-pub use self::graph::{authors, citations, recommendations, references};
+pub use self::graph::{authors, citation_evidence, citations, recommendations, references};
 pub(crate) use self::identity_verification::VariantArticleVerificationOptions;
 #[allow(unused_imports)]
 pub(crate) use self::planner::{
@@ -39,17 +39,14 @@ pub(crate) use self::variant_search::{
     search_variant_article_batch_with_options, search_variant_articles_with_options,
     search_variant_articles_with_plan,
 };
-
-use std::path::PathBuf;
-
-use chrono::NaiveDate;
-use serde::{Deserialize, Serialize};
-
 use crate::entities::section_outcome::SectionOutcomes;
 use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcSort;
 use crate::sources::semantic_scholar::SemanticScholarAuthMode;
+use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 fn is_false(value: &bool) -> bool {
     !*value
@@ -758,6 +755,8 @@ pub struct ArticleGraphEdge {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contexts: Vec<String>,
     pub is_influential: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) _meta: Option<crate::entities::article::graph::GraphEdgeMeta>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1123,6 +1122,7 @@ mod tests {
                 intents: vec!["background".to_string()],
                 contexts: Vec::new(),
                 is_influential: false,
+                _meta: None,
             }],
             pagination: ArticleGraphPagination {
                 offset: 0,

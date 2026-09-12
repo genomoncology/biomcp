@@ -322,3 +322,60 @@ fn recommendations_map_semantic_scholar_papers() {
     assert_eq!(result.recommendations.len(), 1);
     assert_eq!(result.recommendations[0].pmid.as_deref(), Some("28052061"));
 }
+
+#[tokio::test]
+async fn jats_extraction_seam_controls_the_blocking_parse_outcome() {
+    struct SeamGuard;
+    impl Drop for SeamGuard {
+        fn drop(&mut self) {
+            install_jats_citation_seam(None);
+        }
+    }
+    let _guard = SeamGuard;
+
+    // A seam parse failure bounds into the public fulltext_unavailable state.
+    install_jats_citation_seam(Some(|_xml: &str, _target: &JatsCitationTargetIds| Err(())));
+    let unavailable = run_jats_extraction(
+        "PMC1",
+        "<article/>",
+        &JatsCitationTargetIds {
+            doi: None,
+            pmid: None,
+            pmcid: None,
+        },
+        tokio::time::Instant::now() + std::time::Duration::from_secs(5),
+    )
+    .await
+    .unwrap();
+    assert!(matches!(
+        unavailable,
+        JatsEvidenceOutcome::FulltextUnavailable
+    ));
+
+    // A seam success settles through the same single-permit path.
+    install_jats_citation_seam(Some(|_xml: &str, _target: &JatsCitationTargetIds| {
+        Ok(JatsCitationExtraction::Linked {
+            ref_id: "bib7".to_string(),
+            passages: Vec::new(),
+        })
+    }));
+    let parsed = run_jats_extraction(
+        "PMC1",
+        "<article/>",
+        &JatsCitationTargetIds {
+            doi: None,
+            pmid: None,
+            pmcid: None,
+        },
+        tokio::time::Instant::now() + std::time::Duration::from_secs(5),
+    )
+    .await
+    .unwrap();
+    match parsed {
+        JatsEvidenceOutcome::Parsed { pmcid, extraction } => {
+            assert_eq!(pmcid, "PMC1");
+            assert!(matches!(extraction, JatsCitationExtraction::Linked { .. }));
+        }
+        other => panic!("expected parsed seam outcome, got {other:?}"),
+    }
+}

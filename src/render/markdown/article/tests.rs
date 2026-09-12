@@ -311,6 +311,7 @@ fn article_graph_markdown_renders_expected_table_headers() {
             intents: vec!["Background".to_string()],
             contexts: vec!["Important supporting context".to_string()],
             is_influential: true,
+            _meta: None,
         }],
         pagination: crate::entities::article::ArticleGraphPagination {
             offset: 4,

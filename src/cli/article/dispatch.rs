@@ -222,7 +222,8 @@ pub(in crate::cli) async fn handle_search(
     let limit = request.limit;
     let offset = request.offset;
 
-    let query = article_query_summary(filters, source_filter, include_retracted, limit, offset);
+    let query =
+        super::article_query_summary(filters, source_filter, include_retracted, limit, offset);
 
     let search_future =
         crate::entities::article::search_page(filters, limit, offset, source_filter);
@@ -448,6 +449,19 @@ pub(in crate::cli) async fn handle_command(
                 crate::render::markdown::article_graph_markdown("References", &graph)?
             }
         }
+        ArticleCommand::CitationEvidence {
+            citing,
+            cited,
+            fulltext,
+        } => {
+            let evidence =
+                crate::entities::article::citation_evidence(&citing, &cited, fulltext).await?;
+            if json {
+                crate::render::json::to_pretty(&evidence)?
+            } else {
+                crate::render::markdown::article_citation_evidence_markdown(&evidence)?
+            }
+        }
         ArticleCommand::Recommendations {
             ids,
             negative,
@@ -465,65 +479,6 @@ pub(in crate::cli) async fn handle_command(
     };
 
     Ok(CommandOutcome::stdout(text))
-}
-
-pub(super) fn article_query_summary(
-    filters: &crate::entities::article::ArticleSearchFilters,
-    source_filter: crate::entities::article::ArticleSourceFilter,
-    include_retracted: bool,
-    limit: usize,
-    offset: usize,
-) -> String {
-    let mut query = vec![
-        filters.gene.as_deref().map(|v| format!("gene={v}")),
-        filters.disease.as_deref().map(|v| format!("disease={v}")),
-        filters.drug.as_deref().map(|v| format!("drug={v}")),
-        filters.author.as_deref().map(|v| format!("author={v}")),
-        filters.keyword.as_deref().map(|v| format!("keyword={v}")),
-        filters.article_type.as_deref().map(|v| format!("type={v}")),
-        filters
-            .date_from
-            .as_deref()
-            .map(|v| format!("date_from={v}")),
-        filters.date_to.as_deref().map(|v| format!("date_to={v}")),
-        filters.journal.as_deref().map(|v| format!("journal={v}")),
-        filters.open_access.then(|| "open_access=true".to_string()),
-        filters
-            .no_preprints
-            .then(|| "no_preprints=true".to_string()),
-        if include_retracted {
-            Some("include_retracted=true".to_string())
-        } else {
-            filters
-                .exclude_retracted
-                .then(|| "exclude_retracted=true".to_string())
-        },
-        Some(format!("sort={}", filters.sort.as_str())),
-        (source_filter != crate::entities::article::ArticleSourceFilter::All)
-            .then(|| format!("source={}", source_filter.as_str())),
-        article_max_per_source_summary(filters.max_per_source, limit),
-        (offset > 0).then(|| format!("offset={offset}")),
-    ];
-    if let Some(mode) = crate::entities::article::article_effective_ranking_mode(filters) {
-        query.push(Some(format!("ranking_mode={}", mode.as_str())));
-        query.push(
-            crate::entities::article::article_relevance_ranking_policy(filters)
-                .map(|policy| format!("ranking_policy={policy}")),
-        );
-    }
-    query.into_iter().flatten().collect::<Vec<_>>().join(", ")
-}
-
-pub(super) fn article_max_per_source_summary(
-    max_per_source: Option<usize>,
-    limit: usize,
-) -> Option<String> {
-    match max_per_source {
-        None => None,
-        Some(0) => Some("max_per_source=default".to_string()),
-        Some(value) if value == limit => Some("max_per_source=disabled".to_string()),
-        Some(value) => Some(format!("max_per_source={value}")),
-    }
 }
 
 pub(super) fn article_debug_filters(
@@ -551,7 +506,7 @@ pub(super) fn article_debug_filters(
         Some(format!("exclude_retracted={}", filters.exclude_retracted)),
         Some(format!("sort={}", filters.sort.as_str())),
         Some(format!("source={}", source_filter.as_str())),
-        article_max_per_source_summary(filters.max_per_source, limit),
+        super::article_max_per_source_summary(filters.max_per_source, limit),
     ];
     if let Some(mode) = crate::entities::article::article_effective_ranking_mode(filters) {
         values.push(Some(format!("ranking_mode={}", mode.as_str())));

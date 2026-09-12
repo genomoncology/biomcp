@@ -353,6 +353,7 @@ fn graph_markdown_is_exact_for_every_page_shape_and_direction() {
         intents: vec!["Background".into()],
         contexts: vec!["Important supporting context".into()],
         is_influential: true,
+        _meta: None,
     };
     let cases = [
         (0, 1, Some(1), GraphCoverageStatus::Continuable, false),

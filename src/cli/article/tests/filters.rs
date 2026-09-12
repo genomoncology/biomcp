@@ -1,10 +1,13 @@
 //! Article CLI filter, ranking, and debug tests.
 
 use super::super::dispatch::{
-    ArticleSearchJsonPage, article_debug_filters, article_query_summary,
-    article_search_json_with_detail, article_search_request, build_article_debug_plan,
+    ArticleSearchJsonPage, article_debug_filters, article_search_json_with_detail,
+    article_search_request, build_article_debug_plan,
 };
-use super::super::{ArticleSearchDetail, article_search_warnings, truncate_article_annotations};
+use super::super::{
+    ArticleSearchDetail, article_query_summary, article_search_warnings,
+    truncate_article_annotations,
+};
 use crate::cli::PaginationMeta;
 
 fn default_article_search_args() -> super::super::ArticleSearchArgs {

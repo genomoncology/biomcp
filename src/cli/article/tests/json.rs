@@ -2,9 +2,10 @@
 use chrono::NaiveDate;
 
 use super::super::ArticleSearchDetail;
+use super::super::article_query_summary;
 use super::super::dispatch::{
-    ArticleSearchJsonPage, ArticleSuggestion, article_query_summary, article_search_json,
-    article_search_json_with_detail, article_session_suggestions,
+    ArticleSearchJsonPage, ArticleSuggestion, article_search_json, article_search_json_with_detail,
+    article_session_suggestions,
 };
 use crate::cli::PaginationMeta;
 use crate::test_support::TempDirGuard;

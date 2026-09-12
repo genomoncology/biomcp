@@ -79,6 +79,7 @@ const ITEMS_PATH: JsonPath = &["items"];
 const BUCKETS_PATH: JsonPath = &["buckets"];
 const EDGES_PATH: JsonPath = &["edges"];
 const RECOMMENDATIONS_PATH: JsonPath = &["recommendations"];
+const CITATION_EVIDENCE_PATH: JsonPath = &["passages"];
 const PAPERS_PATH: JsonPath = &["papers"];
 const AUTHORS_PATH: JsonPath = &["authors"];
 const INTERACTIONS_PATH: JsonPath = &["interactions"];
@@ -182,6 +183,9 @@ impl JsonResponseContract {
                 },
                 super::article::ArticleCommand::Recommendations { .. } => Self {
                     collection_paths: &[RECOMMENDATIONS_PATH],
+                },
+                super::article::ArticleCommand::CitationEvidence { .. } => Self {
+                    collection_paths: &[CITATION_EVIDENCE_PATH],
                 },
                 super::article::ArticleCommand::Entities { .. }
                 | super::article::ArticleCommand::Batch { .. } => Self::NONE,

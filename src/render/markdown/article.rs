@@ -379,11 +379,23 @@ pub fn article_graph_markdown(
             } else {
                 markdown_cell(&edge.intents.join(", "))
             };
-            let context = edge
-                .contexts
-                .first()
-                .map(|value| markdown_cell(value))
-                .unwrap_or_else(|| "-".to_string());
+            let context = if edge.contexts.iter().any(|value| !value.trim().is_empty()) {
+                markdown_cell(
+                    edge.contexts
+                        .first()
+                        .map(String::as_str)
+                        .unwrap_or_default(),
+                )
+            } else {
+                match edge
+                    ._meta
+                    .as_ref()
+                    .and_then(|meta| meta.next_commands.first())
+                {
+                    Some(command) => format!("Try: {}", markdown_code_span(command)),
+                    None => "-".to_string(),
+                }
+            };
             out.push_str(&format!(
                 "| {} | {} | {} | {} | {} |\n",
                 article_related_id(&edge.paper),
@@ -705,4 +717,68 @@ fn newest_indexed_footer(results: &[ArticleSearchResult]) -> Option<String> {
         max_first_index_date(results)?,
         Utc::now().date_naive(),
     ))
+}
+
+pub fn article_citation_evidence_markdown(
+    result: &crate::entities::article::graph::ArticleCitationEvidenceResult,
+) -> Result<String, BioMcpError> {
+    use crate::entities::article::graph::CitationEvidenceStatus;
+
+    let mut out = String::from("# Citation evidence\n\n");
+    out.push_str(&format!(
+        "Citing: {}\n",
+        markdown_code_span(&related::article_related_label(&result.citing))
+    ));
+    out.push_str(&format!(
+        "Cited: {}\n",
+        markdown_code_span(&related::article_related_label(&result.cited))
+    ));
+    out.push_str(&format!("Status: {}\n", result.message));
+
+    if !result.provider_contexts.is_empty() {
+        out.push_str("\n## Provider contexts\n\n");
+        for (index, context) in result.provider_contexts.iter().enumerate() {
+            out.push_str(&format!("{}. {}\n", index + 1, markdown_code_span(context)));
+        }
+    }
+
+    if !result.passages.is_empty() {
+        out.push_str("\n## Passages\n");
+        for (index, passage) in result.passages.iter().enumerate() {
+            let section = if passage.locator.section_path.is_empty() {
+                "-".to_string()
+            } else {
+                passage.locator.section_path.join(" > ")
+            };
+            let marker = if passage.locator.marker.is_empty() {
+                "-".to_string()
+            } else {
+                passage.locator.marker.clone()
+            };
+            out.push_str(&format!("\n### Passage {}\n\n", index + 1));
+            out.push_str(&format!("{}\n", markdown_code_span(&passage.text)));
+            out.push_str(&format!(
+                "Locator: PMCID {}; reference {}; section {}; paragraph {}; marker {}\n",
+                markdown_code_span(&passage.locator.pmcid),
+                markdown_code_span(&passage.locator.ref_id),
+                markdown_code_span(&section),
+                passage.locator.paragraph,
+                markdown_code_span(&marker)
+            ));
+            out.push_str(&format!(
+                "Evidence: {}\n",
+                markdown_code_span(&passage.evidence_url)
+            ));
+        }
+    }
+
+    if let Some(locator) = &result.fulltext_locator {
+        out.push_str(&format!(
+            "\nFull text: {}\n",
+            markdown_code_span(&locator.evidence_url)
+        ));
+    }
+
+    let _ = CitationEvidenceStatus::ContextFromProvider;
+    Ok(out)
 }
