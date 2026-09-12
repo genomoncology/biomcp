@@ -271,6 +271,16 @@ fn evidence_deadline() -> tokio::time::Instant {
     tokio::time::Instant::now() + CITATION_EVIDENCE_COMMAND_DEADLINE
 }
 
+fn graph_deadline_budget() -> Duration {
+    #[cfg(debug_assertions)]
+    if let Ok(value) = std::env::var("BIOMCP_TEST_CITATION_GRAPH_DEADLINE_MS")
+        && let Ok(millis) = value.trim().parse::<u64>()
+    {
+        return Duration::from_millis(millis);
+    }
+    CITATION_EVIDENCE_GRAPH_DEADLINE
+}
+
 enum EvidenceGraphOutcome {
     Matched(Vec<String>),
     ExhaustedWithoutMatch,
@@ -283,7 +293,7 @@ async fn directed_edge_contexts(
     deadline: tokio::time::Instant,
 ) -> Result<EvidenceGraphOutcome, BioMcpError> {
     let now = tokio::time::Instant::now();
-    let graph_deadline = now + CITATION_EVIDENCE_GRAPH_DEADLINE;
+    let graph_deadline = now + graph_deadline_budget();
     let graph_deadline = if graph_deadline < deadline {
         graph_deadline
     } else {

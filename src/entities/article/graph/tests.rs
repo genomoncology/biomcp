@@ -755,3 +755,164 @@ async fn citation_evidence_compares_paper_ids_case_insensitively() {
     .unwrap();
     assert_eq!(result.provider_contexts, vec!["Cased".to_string()]);
 }
+
+#[test]
+fn graph_edge_evidence_meta_orders_arguments_per_direction() {
+    let edge_with = |contexts: Vec<&str>, pmid: Option<&str>| super::ArticleGraphEdge {
+        paper: super::ArticleRelatedPaper {
+            paper_id: Some(CITED_PID.to_string()),
+            pmid: pmid.map(str::to_string),
+            doi: None,
+            arxiv_id: None,
+            title: "T".into(),
+            journal: None,
+            year: None,
+        },
+        intents: vec![],
+        contexts: contexts.into_iter().map(str::to_string).collect(),
+        is_influential: false,
+        _meta: None,
+    };
+    let caller = CITING_PID;
+    // Contextless citations edge: the edge paper is the citing ID, so its
+    // executable identifier comes first.
+    let meta = graph_edge_evidence_meta(
+        &edge_with(vec![], Some("31666226")),
+        GraphDirection::Citations,
+        caller,
+    )
+    .expect("contextless citations edge carries the evidence command");
+    assert_eq!(
+        meta.next_commands,
+        vec![format!(
+            "biomcp article citation-evidence 31666226 {caller}"
+        )]
+    );
+    // References direction keeps the caller first: the caller cites the edge.
+    let meta = graph_edge_evidence_meta(
+        &edge_with(vec![], Some("31666226")),
+        GraphDirection::References,
+        caller,
+    )
+    .expect("contextless references edge carries the evidence command");
+    assert_eq!(
+        meta.next_commands,
+        vec![format!(
+            "biomcp article citation-evidence {caller} 31666226"
+        )]
+    );
+    // A contextual edge carries no edge-local command.
+    assert!(
+        graph_edge_evidence_meta(
+            &edge_with(vec!["context"], None),
+            GraphDirection::Citations,
+            caller
+        )
+        .is_none()
+    );
+    // Whitespace-only contexts still count as contextless.
+    assert!(
+        graph_edge_evidence_meta(
+            &edge_with(vec!["  "], None),
+            GraphDirection::Citations,
+            caller
+        )
+        .is_some()
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_rejects_equal_and_decreasing_next_values() {
+    for pages in [
+        vec![graph_page(0, Some(0), vec![])],
+        vec![
+            graph_page(0, Some(100), vec![]),
+            graph_page(100, Some(50), vec![]),
+        ],
+    ] {
+        let mut env = TestEnv::new();
+        let cache = crate::test_support::TempDirGuard::new("citation-bad-next");
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        let (fixture, _requests) = spawn_citation_fixture(pages).await;
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        let client =
+            crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+                &fixture.base,
+                |_, _| {},
+                |_, _| {},
+            )
+            .unwrap();
+        let error = crate::sources::semantic_scholar::with_test_client(
+            client,
+            citation_evidence(CITING_PID, CITED_PID, false),
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            format!("{error:?}").contains("did not advance"),
+            "expected continuation error, got {error:?}"
+        );
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_rejects_a_page_with_more_rows_than_the_page_size() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-oversize-page");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let oversize: Vec<(String, Vec<&'static str>)> = (0..101)
+        .map(|index| (format!("{index:040}"), vec![] as Vec<&'static str>))
+        .collect();
+    let (fixture, _requests) = spawn_citation_fixture(vec![graph_page(0, None, oversize)]).await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        format!("{error:?}").contains("more rows than the page size"),
+        "expected page-size error, got {error:?}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_expires() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-graph-deadline");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    // A zero-millisecond graph budget makes the pre-page deadline check fire
+    // before any request is issued, pinning the bounded-unavailable outcome
+    // of the ten-second graph deadline deterministically.
+    env.set("BIOMCP_TEST_CITATION_GRAPH_DEADLINE_MS", "0");
+    let (fixture, requests) = spawn_citation_fixture(vec![graph_page(0, None, vec![])]).await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        format!("{error:?}").contains("bounded deadline"),
+        "expected bounded deadline error, got {error:?}"
+    );
+    let requests = requests.lock().unwrap().join("\n");
+    assert_eq!(requests.matches("/references").count(), 0, "{requests}");
+}
