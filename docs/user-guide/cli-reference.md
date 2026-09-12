@@ -291,8 +291,11 @@ the name as free text.
 Use `--gene`, `--disease`, `--drug`, `--author`, or `--journal` for those fields.
 Article `--gene` accepts one nonempty symbol without whitespace. Recognized field
 expressions are rejected, while ordinary biomedical bracket and colon notation
-remains literal keyword text. Literal quote bytes around reserved field text keep
-it literal; shell or JSON quoting alone does not add those bytes.
+remains literal keyword text. To search literal reserved-label prose, put a
+literal double-quote byte immediately before every label, such as
+`-k '"gene: expression"'`; typed MCP encodes it as
+`"keyword":["\"gene: expression\""]`. A whole-value quote does not protect a
+later label, and shell or JSON quoting alone does not add runtime quote bytes.
 
 `--session <token>` is article-local and optional. Use it as a short
 non-secret local label when a caller may repeat keyword searches for one task;

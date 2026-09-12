@@ -98,8 +98,12 @@ drug, variant, or general keyword.
 `--gene` accepts one nonempty symbol without whitespace. `--keyword` is
 provider-neutral and rejects `gene:`, `disease:`, or `drug:` expressions at the
 same boundary as direct article search, before any fan-out begins. Use the
-matching typed slot. Literal quote bytes preserve such text as a keyword;
-ordinary shell or JSON delimiters do not add those bytes.
+matching typed slot. To search literal reserved-label prose, put a literal
+double-quote byte immediately before every label, such as
+`review of "drug: safety"`; typed MCP sends that byte as
+`"keyword":["review of \"drug: safety\""]`. A whole-value quote does not
+protect a later label, and ordinary shell or JSON delimiters do not add runtime
+quote bytes.
 
 ## Related
 

@@ -266,15 +266,15 @@ fn malformed_article_query_inputs_are_clean_and_make_zero_requests() {
     let cases = [
         (
             "gene:RB1",
-            "Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".",
+            r#"Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#,
         ),
         (
             "disease:melanoma",
-            "Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".",
+            r#"Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#,
         ),
         (
             "drug:vemurafenib",
-            "Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".",
+            r#"Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib". To search literal drug: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"drug: safety"'; typed MCP "keyword":["\"drug: safety\""]."#,
         ),
     ];
     for (keyword, expected) in cases {
@@ -284,8 +284,18 @@ fn malformed_article_query_inputs_are_clean_and_make_zero_requests() {
             assert_clean_usage_error(&result, expected);
         }
     }
-    let malicious = run_article_search_at(&["-k", "gene:RB1;$(touch /tmp/nope)"], &fixture.base);
+    let sentinel_dir = tempfile::tempdir().expect("sentinel tempdir");
+    let sentinel = sentinel_dir.path().join("must-not-exist");
+    let hostile = format!(
+        "gene:RB1\"\\\\\n\\x08\\x1b[31m;$(touch {})",
+        sentinel.display()
+    );
+    let malicious = run_article_search_at(&["-k", &hostile], &fixture.base);
     assert_clean_usage_error(&malicious, cases[0].1);
+    assert!(!malicious.stderr.contains('\u{8}'));
+    assert!(!malicious.stderr.contains('\u{1b}'));
+    assert!(!malicious.stderr.contains(sentinel.to_str().unwrap()));
+    assert!(!sentinel.exists(), "hostile keyword created a sentinel");
     let gene_line = "Error: Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].";
     for gene in ["TPMT mercaptopurine", ""] {
         let result = run_article_search_at(&["--gene", gene], &fixture.base);
@@ -300,15 +310,15 @@ fn malformed_search_all_inputs_fail_before_the_seven_leg_plan() {
     let cases = [
         (
             vec!["--keyword", "gene:RB1"],
-            "Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".",
+            r#"Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#,
         ),
         (
             vec!["--keyword", "disease:melanoma"],
-            "Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".",
+            r#"Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#,
         ),
         (
             vec!["--keyword", "drug:vemurafenib"],
-            "Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".",
+            r#"Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib". To search literal drug: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"drug: safety"'; typed MCP "keyword":["\"drug: safety\""]."#,
         ),
         (
             vec!["--gene", "TPMT mercaptopurine"],

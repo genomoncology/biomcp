@@ -1075,9 +1075,9 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
     }
     env.push(("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()));
     let client = harness.spawn_stdio_client(&env).await?;
-    const GENE: &str = "Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".";
-    const DISEASE: &str = "Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".";
-    const DRUG: &str = "Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".";
+    const GENE: &str = r#"Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1". To search literal gene: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"gene: expression"'; typed MCP "keyword":["\"gene: expression\""]."#;
+    const DISEASE: &str = r#"Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma". To search literal disease: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"disease: mechanisms"'; typed MCP "keyword":["\"disease: mechanisms\""]."#;
+    const DRUG: &str = r#"Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib". To search literal drug: text, put a literal double-quote byte immediately before every reserved label: CLI/raw MCP -k '"drug: safety"'; typed MCP "keyword":["\"drug: safety\""]."#;
     const SYMBOL: &str = "Error: Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].";
     let keyword_cases = [
         ("gene:RB1", GENE),
@@ -1168,30 +1168,66 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
     thread::sleep(Duration::from_millis(20));
     assert_eq!(fixture.requests.load(Ordering::SeqCst), 0);
 
-    let quoted = client
+    let raw_prose = biomcp_mcp_contract_client::call_biomcp(
+        &client,
+        "biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1",
+    )
+    .await?;
+    assert_eq!(raw_prose.is_error, Some(false));
+    assert_eq!(raw_prose.content.len(), 1);
+    let typed_prose = client
         .peer()
         .call_tool(
             CallToolRequestParams::new("search").with_arguments(
                 BTreeMap::from([
                     ("entity".to_string(), json!("article")),
-                    ("keyword".to_string(), json!(["\"gene:gene interaction\""])),
+                    ("keyword".to_string(), json!(["review of \"drug: safety\""])),
                     ("source".to_string(), json!("semanticscholar")),
+                    ("limit".to_string(), json!(1)),
                 ])
                 .into_iter()
                 .collect(),
             ),
         )
         .await?;
-    let quoted_text = biomcp_mcp_contract_client::first_text(&quoted.content);
-    assert!(
-        !quoted_text.contains("does not accept gene:"),
-        "{quoted_text}"
+    assert_eq!(typed_prose.is_error, Some(false));
+    assert_eq!(typed_prose.content.len(), 1);
+    let raw_text = biomcp_mcp_contract_client::first_text(&raw_prose.content);
+    let typed_text = biomcp_mcp_contract_client::first_text(&typed_prose.content);
+    assert!(!raw_text.contains("does not accept"), "{raw_text}");
+    assert_eq!(typed_text, raw_text);
+    thread::sleep(Duration::from_millis(20));
+    assert_eq!(fixture.requests.load(Ordering::SeqCst), 2);
+
+    let raw_json = biomcp_mcp_contract_client::call_biomcp(
+        &client,
+        "biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1 --json",
+    )
+    .await?;
+    let typed_json = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("search").with_arguments(
+                BTreeMap::from([
+                    ("entity".to_string(), json!("article")),
+                    ("keyword".to_string(), json!(["review of \"drug: safety\""])),
+                    ("source".to_string(), json!("semanticscholar")),
+                    ("limit".to_string(), json!(1)),
+                    ("json".to_string(), json!(true)),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await?;
+    assert_eq!(raw_json.is_error, Some(false));
+    assert_eq!(typed_json.is_error, Some(false));
+    assert_eq!(
+        biomcp_mcp_contract_client::first_text(&raw_json.content),
+        biomcp_mcp_contract_client::first_text(&typed_json.content)
     );
     thread::sleep(Duration::from_millis(20));
-    assert!(
-        fixture.requests.load(Ordering::SeqCst) > 0,
-        "quoted literal should reach its provider"
-    );
+    assert_eq!(fixture.requests.load(Ordering::SeqCst), 4);
     client.cancel().await?;
     Ok(())
 }
