@@ -505,3 +505,14 @@ handling, empty-marker eligibility and truncation boundaries, and the bounded
 late-settling parser worker under one absolute deadline. Previously accepted
 traversal, public outcomes, 1144 compatibility, surface coverage, ownership,
 and ratchets remain unchanged.
+
+Implementation notes for re-review, 2026-09-12. The first independent code
+review returned REJECT with three P1s and eight P2s; all eleven are resolved
+on this branch. One deliberate deviation for re-review to bless: the admission
+proof does not use a paused clock. The prescribed tokio clock cannot pause a
+`spawn_blocking` worker's real socket read without widening the seam beyond
+the parse function, so the test instead shrinks the real command deadline to
+three seconds through a debug-only `BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS`
+budget seam (mirroring the graph-deadline seam) and settles in about three
+seconds against the genuine absolute-deadline admission path; the frozen
+twenty-two-second production value is untouched.
