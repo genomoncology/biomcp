@@ -498,6 +498,6 @@ mod tests;
 
 pub(crate) mod citation_evidence;
 
+pub(crate) use citation_evidence::ArticleCitationEvidenceResult;
 pub(crate) use citation_evidence::GraphEdgeMeta;
 use citation_evidence::graph_edge_evidence_meta;
-pub(crate) use citation_evidence::{ArticleCitationEvidenceResult, CitationEvidenceStatus};

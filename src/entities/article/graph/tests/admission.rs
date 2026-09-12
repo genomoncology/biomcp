@@ -200,7 +200,7 @@ async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() 
     .expect("permit released");
     assert_eq!(
         settled.status,
-        super::super::CitationEvidenceStatus::ContextFromFulltext
+        super::super::citation_evidence::CitationEvidenceStatus::ContextFromFulltext
     );
     assert_eq!(settled.passages.len(), 1);
     assert_eq!(

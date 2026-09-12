@@ -722,8 +722,6 @@ fn newest_indexed_footer(results: &[ArticleSearchResult]) -> Option<String> {
 pub fn article_citation_evidence_markdown(
     result: &crate::entities::article::graph::ArticleCitationEvidenceResult,
 ) -> Result<String, BioMcpError> {
-    use crate::entities::article::graph::CitationEvidenceStatus;
-
     let mut out = String::from("# Citation evidence\n\n");
     out.push_str(&format!(
         "Citing: {}\n",
@@ -779,6 +777,5 @@ pub fn article_citation_evidence_markdown(
         ));
     }
 
-    let _ = CitationEvidenceStatus::ContextFromProvider;
     Ok(out)
 }

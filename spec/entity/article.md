@@ -1540,6 +1540,22 @@ Status: Structured open full text was unavailable for the citing paper.
 
 1. `Retained provider context survives a forced full-text failure.`
 '
+../../tools/biomcp-ci article citation-evidence 40001003 10.1099/unresolved-fixture | mustmatch '# Citation evidence
+
+Citing: `PMID 40001003`
+Cited: `DOI 10.1099/unresolved-fixture`
+Status: Structured full text was available, but the cited reference could not be resolved exactly.
+
+Full text: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923960/fullTextXML`
+'
+../../tools/biomcp-ci article citation-evidence 40001004 10.1099/unresolved-fixture | mustmatch '# Citation evidence
+
+Citing: `PMID 40001004`
+Cited: `DOI 10.1099/unresolved-fixture`
+Status: The cited reference was resolved, but no unambiguous in-text citation marker linked to it.
+
+Full text: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923961/fullTextXML`
+'
 ../../tools/biomcp-ci article citation-evidence 40001001 10.1016/j.artmed.2020.101822 | sed -n '9,13p' | mustmatch '### Passage 1
 
 `Expertise and model life-cycle management both appear in this linked paragraph 11.`
