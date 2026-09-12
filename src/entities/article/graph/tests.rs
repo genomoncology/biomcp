@@ -379,3 +379,372 @@ async fn jats_extraction_seam_controls_the_blocking_parse_outcome() {
         other => panic!("expected parsed seam outcome, got {other:?}"),
     }
 }
+
+// --- Ticket 1145: directed citation-evidence traversal ---
+
+use std::sync::Arc;
+use std::sync::Mutex;
+
+const CITING_PID: &str = "0123456789abcdef0123456789abcdef01234567";
+const CITED_PID: &str = "fedcba9876543210fedcba9876543210fedcba98";
+
+#[derive(Clone, Default)]
+struct GraphPage {
+    offset: u64,
+    next: Option<u64>,
+    /// (cited paper ID, contexts) per edge.
+    edges: Vec<(String, Vec<&'static str>)>,
+}
+
+impl GraphPage {
+    fn body(&self) -> String {
+        let edges: Vec<String> = self
+            .edges
+            .iter()
+            .map(|(pid, contexts)| {
+                let contexts = contexts
+                    .iter()
+                    .map(|value| format!("\"{value}\""))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                format!(
+                    "{{\"contexts\":[{contexts}],\"intents\":[],\"citedPaper\":{{\"paperId\":\"{pid}\"}}}}"
+                )
+            })
+            .collect();
+        let next = match self.next {
+            Some(value) => value.to_string(),
+            None => "null".to_string(),
+        };
+        format!(
+            "{{\"offset\":{},\"next\":{},\"data\":[{}]}}",
+            self.offset,
+            next,
+            edges.join(",")
+        )
+    }
+}
+
+async fn spawn_citation_fixture(
+    pages: Vec<GraphPage>,
+) -> (
+    super::super::test_support::TestHttpFixture,
+    Arc<Mutex<Vec<String>>>,
+) {
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let logged = requests.clone();
+    let pages_arc = Arc::new(Mutex::new(pages));
+    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+        let mut parts = request.splitn(2, ' ');
+        let method = parts.next().unwrap_or_default();
+        let target = parts
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .next()
+            .unwrap_or_default();
+        requests.lock().unwrap().push(format!("{method} {target}"));
+        let reply = if method == "POST" {
+            // The singleton seed batch must answer exactly one paper row.
+            let requested = if request.contains(CITING_PID) {
+                CITING_PID
+            } else {
+                CITED_PID
+            };
+            format!("[{{\"paperId\":\"{requested}\",\"title\":\"T\"}}]")
+        } else if target.contains("/references") {
+            let mut queue = pages_arc.lock().unwrap();
+            if queue.is_empty() {
+                "{\"offset\":0,\"next\":null,\"data\":[]}".to_string()
+            } else {
+                queue.remove(0).body()
+            }
+        } else {
+            "{\"offset\":0,\"next\":null,\"data\":[]}".to_string()
+        };
+        super::super::test_support::TestHttpReply::Bytes(
+            super::super::test_support::test_http_response(
+                "200 OK",
+                "application/json",
+                reply.as_bytes(),
+            ),
+        )
+    })
+    .await;
+    (fixture, logged)
+}
+
+fn graph_page(
+    offset: u64,
+    next: Option<u64>,
+    edges: Vec<(String, Vec<&'static str>)>,
+) -> GraphPage {
+    GraphPage {
+        offset,
+        next,
+        edges,
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_provider_context_needs_no_fulltext_request() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-context");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, requests) = spawn_citation_fixture(vec![graph_page(
+        0,
+        Some(100),
+        vec![(CITED_PID.to_ascii_uppercase(), vec![" Context one "])],
+    )])
+    .await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.provider_contexts, vec!["Context one".to_string()]);
+    let requests = requests.lock().unwrap().join("\n");
+    assert_eq!(requests.matches("/references").count(), 1, "{requests}");
+    assert!(!requests.contains("fullTextXML"), "{requests}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_deduplicates_duplicate_edges_and_contexts() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-dedup");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, requests) = spawn_citation_fixture(vec![graph_page(
+        0,
+        None,
+        vec![
+            (CITED_PID.to_string(), vec!["Shared", " Alpha ", "Shared"]),
+            (CITED_PID.to_string(), vec!["Alpha", "Beta"]),
+        ],
+    )])
+    .await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        result.provider_contexts,
+        vec![
+            "Shared".to_string(),
+            "Alpha".to_string(),
+            "Beta".to_string()
+        ]
+    );
+    let requests = requests.lock().unwrap().join("\n");
+    assert_eq!(requests.matches("/references").count(), 1, "{requests}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_follows_the_advertised_next_offset() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-next");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, requests) = spawn_citation_fixture(vec![
+        graph_page(
+            0,
+            Some(100),
+            vec![(
+                "9999999999999999999999999999999999999999".to_string(),
+                vec![],
+            )],
+        ),
+        graph_page(
+            100,
+            None,
+            vec![(CITED_PID.to_string(), vec!["Second page"])],
+        ),
+    ])
+    .await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.provider_contexts, vec!["Second page".to_string()]);
+    let requests = requests.lock().unwrap().join("\n");
+    assert!(requests.contains("offset=100"), "{requests}");
+    assert_eq!(requests.matches("/references").count(), 2, "{requests}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_stops_after_the_matching_page() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-stop");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, requests) = spawn_citation_fixture(vec![
+        graph_page(0, Some(100), vec![(CITED_PID.to_string(), vec!["Hit"])]),
+        graph_page(100, None, vec![(CITED_PID.to_string(), vec!["Never"])]),
+    ])
+    .await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.provider_contexts, vec!["Hit".to_string()]);
+    let requests = requests.lock().unwrap().join("\n");
+    assert_eq!(requests.matches("/references").count(), 1, "{requests}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_exhausted_pages_return_the_directed_not_found() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-notfound");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, _requests) = spawn_citation_fixture(vec![graph_page(0, None, vec![])]).await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap_err();
+    match error {
+        BioMcpError::NotFound {
+            entity,
+            id,
+            suggestion,
+        } => {
+            assert_eq!(entity, "directed citation");
+            assert_eq!(id, format!("{CITING_PID} -> {CITED_PID}"));
+            assert_eq!(
+                suggestion,
+                "Semantic Scholar exhausted the directed reference pages without finding this pair."
+            );
+        }
+        other => panic!("expected not found, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_rejects_a_mismatched_page_offset() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-offset");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, _requests) = spawn_citation_fixture(vec![graph_page(7, None, vec![])]).await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        format!("{error:?}").contains("offset"),
+        "expected offset decode error, got {error:?}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_bounds_the_traversal_at_three_pages() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-cap");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, requests) = spawn_citation_fixture(vec![
+        graph_page(0, Some(100), vec![]),
+        graph_page(100, Some(200), vec![]),
+        graph_page(200, Some(300), vec![]),
+        graph_page(300, None, vec![]),
+    ])
+    .await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        format!("{error:?}").contains("three-page bound"),
+        "expected bounded unavailable error, got {error:?}"
+    );
+    let requests = requests.lock().unwrap().join("\n");
+    assert_eq!(requests.matches("/references").count(), 3, "{requests}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_compares_paper_ids_case_insensitively() {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("citation-case");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let upper = CITED_PID.to_ascii_uppercase();
+    let (fixture, _requests) =
+        spawn_citation_fixture(vec![graph_page(0, None, vec![(upper, vec!["Cased"])])]).await;
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(CITING_PID, CITED_PID, false),
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.provider_contexts, vec!["Cased".to_string()]);
+}
