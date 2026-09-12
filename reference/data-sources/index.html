@@ -4753,6 +4753,13 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td>FAERS, MAUDE, recalls, drug labels, shortages, Drugs@FDA-derived approvals, and exact-name-first diagnostic device 510(k)/PMA overlays</td>
 </tr>
 <tr>
+<td>U.S. orphan-drug designations</td>
+<td>FDA Orphan Drug Designations and Approvals</td>
+<td><code>https://www.accessdata.fda.gov/scripts/opdlisting/oopd/</code></td>
+<td>None</td>
+<td>Bounded exact-alias searches for <code>get drug &lt;name&gt; regulatory --region us|all</code>; designation is never reported as approval</td>
+</tr>
+<tr>
 <td>Vaccine adverse-event search</td>
 <td>CDC WONDER VAERS</td>
 <td><code>https://wonder.cdc.gov/controller/datarequest/D8</code></td>
@@ -5032,6 +5039,11 @@ for the same PMID.</p>
 </ul>
 <p>OpenFDA may return no results for highly specific filters even when broader filters succeed.
 Start broad (<code>--drug</code>, <code>--type</code>) and then tighten with <code>--reaction</code>, <code>--outcome</code>, <code>--classification</code>, or date filters.</p>
+<p>FDA's separate Orphan Drug Designations and Approvals search augments U.S. drug
+regulatory cards. BioMCP reports designation, approval, and exclusivity facts
+separately, uses exact anchored drug aliases, and caches validated normalized
+results for 24 hours. <code>BIOMCP_FDA_ORPHAN_BASE</code> is reserved for deterministic
+provider fixtures; production uses the FDA origin shown above.</p>
 <h2 id="cdc-wonder-vaers-behavior">CDC WONDER VAERS behavior<a class="headerlink" href="#cdc-wonder-vaers-behavior" title="Permanent link">&para;</a></h2>
 <p>CDC WONDER VAERS drives the aggregate vaccine branch of <code>search adverse-event</code>.</p>
 <ul>

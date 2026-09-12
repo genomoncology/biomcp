@@ -3785,6 +3785,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fda-orphan-drug-designations-and-approvals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FDA Orphan Drug Designations and Approvals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#openfda" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5460,6 +5471,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fda-orphan-drug-designations-and-approvals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FDA Orphan Drug Designations and Approvals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#openfda" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6175,6 +6197,15 @@ specific capture requires a separate source-by-source rights record.</p>
 <td>public repository API; each article/file carries its own license metadata</td>
 <td>reuse downloaded article assets according to the Figshare item license and preserve Figshare/article provenance</td>
 <td><a href="https://figshare.com/terms">https://figshare.com/terms</a></td>
+</tr>
+<tr>
+<td>FDA Orphan Drug Designations and Approvals</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>FDA-origin public information</td>
+<td>designation records are broadly reusable; preserve FDA source context and never imply designation is approval</td>
+<td><a href="https://www.fda.gov/about-fda/about-website/website-policies">https://www.fda.gov/about-fda/about-website/website-policies</a></td>
 </tr>
 <tr>
 <td>gnomAD</td>
@@ -7056,6 +7087,18 @@ specific capture requires a separate source-by-source rights record.</p>
 <li>Official terms URL: <a href="https://www.ebi.ac.uk/ols4/">https://www.ebi.ac.uk/ols4/</a></li>
 <li>Reviewed on: <code>2026-03-20</code></li>
 <li>Notes: OLS4 is BioMCP's required backbone for discover. It is an ontology index, not a single-license data source.</li>
+</ul>
+<h3 id="fda-orphan-drug-designations-and-approvals">FDA Orphan Drug Designations and Approvals<a class="headerlink" href="#fda-orphan-drug-designations-and-approvals" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP surfaces: <code>get drug &lt;name&gt; regulatory --region us|all</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: public FDA search service</li>
+<li>License / terms summary: FDA-origin public information</li>
+<li>Redistribution / reuse summary: designation records are broadly reusable; preserve FDA source context and never imply designation is approval</li>
+<li>Terms / policy URL: <a href="https://www.fda.gov/about-fda/about-website/website-policies">https://www.fda.gov/about-fda/about-website/website-policies</a></li>
+<li>Reviewed on: <code>2026-09-11</code></li>
+<li>Notes: BioMCP performs bounded live searches of FDA's Orphan Drug Designations and Approvals table for U.S. regulatory cards. Orphan designation and FDA approval remain separate facts.</li>
 </ul>
 <h3 id="openfda">OpenFDA<a class="headerlink" href="#openfda" title="Permanent link">&para;</a></h3>
 <ul>

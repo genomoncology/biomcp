@@ -59,6 +59,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | Enrichr | 1 | direct_api | none | open web/API service with citation expectations for Enrichr and its libraries | reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries | <https://maayanlab.cloud/Enrichr/> |
 | Europe PMC | 1 | direct_api | none | open literature metadata service; article and full-text licenses vary by record | metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses | <https://europepmc.org/RestfulWebService> |
 | Figshare | 1 | direct_api | none | public repository API; each article/file carries its own license metadata | reuse downloaded article assets according to the Figshare item license and preserve Figshare/article provenance | <https://figshare.com/terms> |
+| FDA Orphan Drug Designations and Approvals | 1 | direct_api | none | FDA-origin public information | designation records are broadly reusable; preserve FDA source context and never imply designation is approval | <https://www.fda.gov/about-fda/about-website/website-policies> |
 | gnomAD | 3 | direct_api | none | Broad Institute data policies with attribution and service-specific conditions | querying is open, but users should review the gnomAD policies before bulk reuse or republishing | <https://gnomad.broadinstitute.org/policies> |
 | g:Profiler | 1 | direct_api | none | open enrichment service with provider citation expectations | results are queryable and reusable, but cite g:Profiler and any underlying databases you depend on | <https://biit.cs.ut.ee/gprofiler/help.cgi> |
 | GTEx | 1 | direct_api | none | NIH-hosted public-access expression resource | public summary/expression views are broadly reusable; controlled-access data remains outside BioMCP's scope | <https://gtexportal.org/home/documentationPage> |
@@ -555,6 +556,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://www.ebi.ac.uk/ols4/>
 - Reviewed on: `2026-03-20`
 - Notes: OLS4 is BioMCP's required backbone for discover. It is an ontology index, not a single-license data source.
+
+### FDA Orphan Drug Designations and Approvals
+
+- Integration mode: `direct_api`
+- BioMCP surfaces: `get drug <name> regulatory --region us|all`
+- BioMCP auth: `none`
+- Provider access / registration: public FDA search service
+- License / terms summary: FDA-origin public information
+- Redistribution / reuse summary: designation records are broadly reusable; preserve FDA source context and never imply designation is approval
+- Terms / policy URL: <https://www.fda.gov/about-fda/about-website/website-policies>
+- Reviewed on: `2026-09-11`
+- Notes: BioMCP performs bounded live searches of FDA's Orphan Drug Designations and Approvals table for U.S. regulatory cards. Orphan designation and FDA approval remain separate facts.
 
 ### OpenFDA
 

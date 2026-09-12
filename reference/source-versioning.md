@@ -28,6 +28,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | Enrichr | `https://maayanlab.cloud/Enrichr` | Unversioned | Service does not publish versioned path variant for current API | 2026-02-15 |
 | EMA human medicines data | `https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format` | Unversioned download page | EMA publishes current JSON batch links from a stable page | 2026-06-11 |
 | Europe PMC | `https://www.ebi.ac.uk/europepmc/webservices/rest` | Unversioned | REST root is stable and not versioned in URL | 2026-02-15 |
+| FDA Orphan Drug Designations and Approvals | `https://www.accessdata.fda.gov/scripts/opdlisting/oopd/` | Unversioned HTML form service | FDA publishes the current designation table behind a stable form route; BioMCP versions its strict parser and normalized cache key rather than inventing an upstream API version | 2026-09-12 |
 | gnomAD GraphQL | `https://gnomad.broadinstitute.org/api` | Unversioned | Versioning is dataset-level (`gnomad_r4`, `gnomad_r3`, `gnomad_r2_1`) in query payload | 2026-02-15 |
 | g:Profiler | `https://biit.cs.ut.ee/gprofiler/api` | Unversioned | Public endpoint does not expose version path segment | 2026-02-15 |
 | GTEx Portal | `https://gtexportal.org/api/v2` | Versioned (`v2`) | Endpoint already pinned | 2026-06-11 |
