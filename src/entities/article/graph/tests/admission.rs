@@ -2,8 +2,10 @@
 //! absolute twenty-two-second command deadline. The seam blocks on a Unix
 //! socket read held by the test; a ready file proves the permit was acquired
 //! before blocking. No tokio clock manipulation is involved — the commands
-//! run against the real deadline, so this test takes about twenty-five
-//! seconds by construction.
+//! run against a shrunk real deadline (three seconds via the test-only
+//! command-budget seam), so the whole proof settles in a few seconds while
+//! exercising the same absolute-deadline admission and settlement path as
+//! the frozen twenty-two-second production value.
 
 use std::io::{Read, Write};
 use std::os::unix::net::UnixStream;
@@ -64,6 +66,7 @@ async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() 
     let mut env = TestEnv::new();
     let cache = crate::test_support::TempDirGuard::new("citation-admission");
     env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "3000");
 
     let jats_body = "<article><front><article-meta><article-title>T</article-title>\
 </article-meta></front><body><sec><title>Results</title><p>Anchor \

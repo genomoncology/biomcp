@@ -17,6 +17,11 @@
 
 ### New features
 
+- Added `article citation-evidence <citing-id> <cited-id>` returning bounded source
+  text for one directed citation pair: Semantic Scholar context by default, and an
+  exact open-access Europe PMC JATS reference resolution when that edge carries no
+  context or `--fulltext` is passed. The result retrieves evidence only and never
+  interprets the citation.
 - Added read-only ClinGen Allele Registry (`clingen_car`) normalization for supported
   versioned RefSeq HGVS values, including bounded CLI JSON batches and the typed
   `variant_normalize_car` MCP tool.

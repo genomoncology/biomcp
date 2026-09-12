@@ -138,6 +138,8 @@ biomcp article entities 22663011
 biomcp article citations 22663011 --limit 3
 biomcp article references 22663011 --limit 3
 biomcp article recommendations 22663011 --limit 3
+biomcp article citation-evidence 22663011 10.1038/nature10725
+biomcp article citation-evidence PMC9984800 24200969 --fulltext
 ```
 
 ## Study commands

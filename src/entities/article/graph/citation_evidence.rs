@@ -268,7 +268,17 @@ fn normalized_contexts(
 }
 
 fn evidence_deadline() -> tokio::time::Instant {
-    tokio::time::Instant::now() + CITATION_EVIDENCE_COMMAND_DEADLINE
+    tokio::time::Instant::now() + command_deadline_budget()
+}
+
+fn command_deadline_budget() -> Duration {
+    #[cfg(debug_assertions)]
+    if let Ok(value) = std::env::var("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS")
+        && let Ok(millis) = value.trim().parse::<u64>()
+    {
+        return Duration::from_millis(millis);
+    }
+    CITATION_EVIDENCE_COMMAND_DEADLINE
 }
 
 fn graph_deadline_budget() -> Duration {
