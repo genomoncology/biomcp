@@ -52,16 +52,41 @@ struct TrialDocumentView<'a> {
     handle: Option<&'a str>,
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone)]
 pub struct TrialEligibilityProvenance {
     pub source_kind: String,
     pub source: String,
-    pub source_authority: String,
-    pub provider_record_identity: String,
-    pub capture_digest: String,
     pub posted_documents_available: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub documents_handle: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+pub(crate) struct TrialEligibilityProvenanceView<'a> {
+    source_kind: &'a str,
+    source: &'a str,
+    source_authority: &'a str,
+    provider_record_identity: &'a str,
+    capture_digest: &'a str,
+    posted_documents_available: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    documents_handle: Option<&'a str>,
+}
+
+impl TrialEligibilityProvenance {
+    pub(crate) fn view<'a>(
+        &'a self,
+        capture: &'a biodata::Capture,
+    ) -> TrialEligibilityProvenanceView<'a> {
+        TrialEligibilityProvenanceView {
+            source_kind: &self.source_kind,
+            source: &self.source,
+            source_authority: capture.source_authority(),
+            provider_record_identity: capture.provider_record_identity(),
+            capture_digest: capture.digest(),
+            posted_documents_available: self.posted_documents_available,
+            documents_handle: self.documents_handle.as_deref(),
+        }
+    }
 }
 
 impl std::fmt::Debug for TrialDocumentsManifest {
@@ -120,17 +145,14 @@ async fn document_bytes_from_manifest(
 pub(super) fn eligibility_provenance(
     response: &ClinicalTrialsGovApiV2Response,
 ) -> TrialEligibilityProvenance {
-    let capture = response.capture();
     let available =
         matches!(response.artifacts(), ClinicalTrialSection::Present(rows) if !rows.is_empty());
     TrialEligibilityProvenance {
         source_kind: "registry".into(),
         source: "ClinicalTrials.gov registry".into(),
-        source_authority: capture.source_authority().to_owned(),
-        provider_record_identity: capture.provider_record_identity().to_owned(),
-        capture_digest: capture.digest().to_owned(),
         posted_documents_available: available,
-        documents_handle: available.then(|| documents_command(capture.provider_record_identity())),
+        documents_handle: available
+            .then(|| documents_command(response.capture().provider_record_identity())),
     }
 }
 
@@ -524,9 +546,10 @@ mod tests {
         let response = response_with_documents(serde_json::json!([{"filename": "Protocol.pdf"}]));
         let available = eligibility_provenance(&response);
         assert!(available.posted_documents_available);
-        assert_eq!(available.source_authority, "clinicaltrials.gov");
-        assert_eq!(available.provider_record_identity, "NCT03361748");
-        assert_eq!(available.capture_digest, response.capture().digest());
+        let rendered = serde_json::to_value(available.view(response.capture())).unwrap();
+        assert_eq!(rendered["source_authority"], "clinicaltrials.gov");
+        assert_eq!(rendered["provider_record_identity"], "NCT03361748");
+        assert_eq!(rendered["capture_digest"], response.capture().digest());
         let diagnostic = format!("{available:?}");
         for sentinel in ["clinicaltrials.gov", "NCT03361748", "sha256:"] {
             assert!(!diagnostic.contains(sentinel));

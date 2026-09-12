@@ -211,6 +211,22 @@ def test_biodata_boundary_rejects_a_duplicate_document_owner(tmp_path: Path) -> 
     assert _run(tmp_path).returncode == 1
 
 
+@pytest.mark.parametrize(
+    "declaration",
+    [
+        "pub struct TrialProvenance { capture_digest: String }",
+        "#[derive(serde::Deserialize)] pub struct TrialProvenance { source: String }",
+    ],
+)
+def test_biodata_boundary_rejects_owned_or_input_provenance(
+    tmp_path: Path, declaration: str
+) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / "src/provenance.rs", declaration)
+    subprocess.run(["git", "add", "src/provenance.rs"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
 def test_biodata_boundary_rejects_a_widened_adverse_event_consumer(tmp_path: Path) -> None:
     _fixture(tmp_path)
     _write(

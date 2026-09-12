@@ -376,6 +376,7 @@ fn render_trial_markdown(
     let intervention_details = intervention_views(trial);
     let arms = arm_views(trial);
     let eligibility = trial.trial().eligibility();
+    let eligibility_provenance = trial.eligibility_provenance();
     let age_range = eligibility.and_then(eligibility_age_range);
     let eligibility_text = eligibility.map(eligibility_markdown);
     let outcomes = crate::entities::trial::outcome_wire::views(trial.trial().planned_outcomes())
@@ -416,7 +417,7 @@ fn render_trial_markdown(
         completion_date => trial.trial().completion_date(),
         eligibility_text => &eligibility_text,
         eligibility_present => eligibility.is_some(),
-        eligibility_provenance => trial.eligibility_provenance(),
+        eligibility_provenance => &eligibility_provenance,
         contacts => &contacts,
         locations => &locations,
         location_disclosure => location_disclosure,

@@ -352,6 +352,27 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
                     f"{relative} declares duplicate owned clinical-trial document descriptor {name}"
                 )
 
+    owned_capture_field = re.compile(
+        r"\b(?:source_authority|provider_record_identity|capture_digest)\s*:\s*String"
+    )
+    deserialize_provenance = re.compile(
+        r"#\[derive\([^\]]*\bDeserialize\b[^\]]*\)\]\s*"
+        r"pub(?:\([^)]*\))?\s+struct\s+\w*Provenance\b",
+        re.S,
+    )
+    for relative, source in sources:
+        for match in declaration.finditer(source):
+            name, body = match.groups()
+            if "Provenance" in name and owned_capture_field.search(body):
+                failures.append(
+                    f"{relative} declares duplicate owned capture fields on provenance {name}"
+                )
+        require(
+            not deserialize_provenance.search(source),
+            f"{relative} makes output-only provenance deserializable",
+            failures,
+        )
+
     for relative, source in sources:
         if relative in ADVERSE_EVENT_CONSUMERS:
             continue

@@ -61,7 +61,7 @@ pub struct TrialSectionStates {
 pub struct TrialResponse {
     projection: biodata::ClinicalTrialProjection<biodata::Capture>,
     source: String,
-    eligibility_provenance: Option<TrialEligibilityProvenance>,
+    eligibility_provenance_metadata: Option<TrialEligibilityProvenance>,
     site_offset: usize,
     site_limit: Option<usize>,
     pub section_states: TrialSectionStates,
@@ -96,7 +96,7 @@ impl TrialResponse {
         Self {
             projection,
             source: source.into(),
-            eligibility_provenance,
+            eligibility_provenance_metadata: eligibility_provenance,
             site_offset: 0,
             site_limit: None,
             section_states,
@@ -120,8 +120,12 @@ impl TrialResponse {
             .unwrap_or_default()
     }
 
-    pub(crate) fn eligibility_provenance(&self) -> Option<&TrialEligibilityProvenance> {
-        self.eligibility_provenance.as_ref()
+    pub(crate) fn eligibility_provenance(
+        &self,
+    ) -> Option<documents::TrialEligibilityProvenanceView<'_>> {
+        self.eligibility_provenance_metadata
+            .as_ref()
+            .map(|value| value.view(self.projection.capture()))
     }
 
     pub(crate) fn location_count(&self) -> usize {
@@ -318,7 +322,7 @@ impl TrialResponse {
         if let Some(value) = shared.eligibility() {
             output.insert("eligibility".into(), wire::eligibility(value));
         }
-        if let Some(value) = &self.eligibility_provenance {
+        if let Some(value) = self.eligibility_provenance() {
             output.insert(
                 "eligibility_provenance".into(),
                 serde_json::to_value(value).map_err(|_| INVALID)?,
