@@ -46,6 +46,23 @@ cp -R "$script_dir/who-pq" "$who_dir"
 cp -R "$script_dir/gtr" "$gtr_dir"
 cp -R "$script_dir/who-ivd" "$who_ivd_dir"
 find "$ema_dir" "$who_dir" "$who_ivd_dir" "$gtr_dir" -type f -exec touch {} +
+python3 - "$gtr_dir/test_version.gz" <<'PY'
+import gzip
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+body = gzip.decompress(path.read_bytes()).decode("utf-8")
+body += (
+    "GTR000596648.2\t1\tBachmann-Bupp diagnostic panel\tExample Diagnostics\t"
+    "molecular\tExample Lab\tExample Institute\t00D5966482\tNY\tUSA\tCurrent\tPublic\t"
+    "Molecular genetics\tSequence analysis\tODC1\tMONDO:0033642\n"
+    "GTR000596649.1\t1\tZulu Bachmann-Bupp assay\tExample Diagnostics\t"
+    "molecular\tAnother Lab\tExample Institute\t00D5966491\tNY\tUSA\tCurrent\tPublic\t"
+    "Molecular genetics\tSequence analysis\tODC1\tMONDO:0033642\n"
+)
+path.write_bytes(gzip.compress(body.encode("utf-8")))
+PY
 prepare_fixture_supervisor_owner
 
 start_fixture_supervisor "provider-contract" "$cache_dir" "$fixture_root" "spec-provider-contract." "$server_pid_file" \

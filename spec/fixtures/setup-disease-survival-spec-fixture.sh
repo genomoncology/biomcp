@@ -263,6 +263,27 @@ class Handler(BaseHTTPRequestHandler):
                 return
         if parsed.path == "/mydisease/query":
             disease_query = query.get("q", [""])[0]
+            literal_query = disease_query.replace("\\", "")
+            if "resolver failure syndrome" in literal_query:
+                send_json(self, 503, {"error": "synthetic resolver failure"})
+                return
+            if (
+                "Bachmann-Bupp syndrome" in literal_query
+                or "neurodevelopmental disorder with alopecia and brain abnormalities" in literal_query
+            ):
+                send_json(self, 200, {
+                    "total": 1,
+                    "hits": [{
+                        "_id": "MONDO:0033642",
+                        "disease_ontology": {
+                            "name": "Bachmann-Bupp syndrome",
+                            "synonyms": {"exact": [
+                                "neurodevelopmental disorder with alopecia and brain abnormalities"
+                            ]},
+                        },
+                    }],
+                })
+                return
             if "Marfan syndrome" in disease_query:
                 send_bytes(self, 200, source_bytes("mydisease/query_marfan_syndrome.json"))
                 return
@@ -276,6 +297,19 @@ class Handler(BaseHTTPRequestHandler):
                     source_bytes("mydisease/query_chronic_myeloid_leukemia.json"),
                 )
                 return
+            send_json(self, 200, {"total": 0, "hits": []})
+            return
+        if parsed.path == "/mydisease/disease/MONDO:0033642":
+            send_json(self, 200, {
+                "_id": "MONDO:0033642",
+                "disease_ontology": {
+                    "name": "Bachmann-Bupp syndrome",
+                    "synonyms": {"exact": [
+                        "neurodevelopmental disorder with alopecia and brain abnormalities"
+                    ]},
+                },
+            })
+            return
         if parsed.path == "/mydisease/disease/MONDO:0011996":
             send_bytes(self, 200, source_bytes("mydisease/get_mondo_0011996.json"))
             return

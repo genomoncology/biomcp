@@ -14,7 +14,38 @@ use axum::{
 use clap::CommandFactory;
 use serde_json::json;
 
-use super::{BioMcpServer, ShellCommand, TypedGet, TypedVariantErepo, get_args};
+use super::{
+    BioMcpServer, ShellCommand, TypedGet, TypedVariantErepo, get_args, redact_mcp_json_text,
+};
+
+#[test]
+fn mcp_json_without_local_paths_preserves_cli_bytes() {
+    let body = "{\n  \"pagination\": {\"offset\": 0},\n  \"count\": 1\n}";
+    assert_eq!(redact_mcp_json_text(body).expect("valid JSON"), body);
+}
+
+#[test]
+fn mcp_json_removes_every_path_shape_and_reserializes_on_presence() {
+    for body in [
+        r#"{"full_text_path":null}"#,
+        r#"{"full_text_path":7}"#,
+        r#"{"full_text_path":{"nested":"/secret"}}"#,
+        r#"{"full_text_path":"/secret","full_text_path":null}"#,
+        r#"{"items":[{"full_text_path":"/one"},{"full_text_path":"/two"}]}"#,
+    ] {
+        let redacted = redact_mcp_json_text(body).expect("valid JSON");
+        assert_ne!(redacted, body, "a removed field must force reserialization");
+        assert!(!redacted.contains("full_text_path"));
+    }
+
+    let nested =
+        redact_mcp_json_text(r#"{"outer":{"full_text_path":"/secret"},"full_text_path":false}"#)
+            .expect("valid nested JSON");
+    let value: serde_json::Value = serde_json::from_str(&nested).expect("redacted JSON");
+    assert_eq!(value["outer"]["full_text_available"], true);
+    assert!(value.get("full_text_available").is_none());
+    assert!(!nested.contains("full_text_path"));
+}
 
 #[test]
 fn shared_mcp_error_conversion_hides_trial_design_details() {

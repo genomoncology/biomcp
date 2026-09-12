@@ -67,6 +67,7 @@ fn diagnostic_row(
             .iter()
             .map(|condition| condition.to_string())
             .collect(),
+        disease_match: None,
     }
 }
 

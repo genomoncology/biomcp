@@ -102,6 +102,7 @@ fn diagnostic_search_markdown_shows_source_column_and_detail_hint() {
             manufacturer_or_lab: Some("OncoPanel BRCA1".to_string()),
             genes: vec!["BRCA1".to_string(), "BARD1".to_string()],
             conditions: vec!["Breast cancer".to_string()],
+            disease_match: None,
         },
         DiagnosticSearchResult {
             source: "who-ivd".to_string(),
@@ -111,6 +112,7 @@ fn diagnostic_search_markdown_shows_source_column_and_detail_hint() {
             manufacturer_or_lab: Some("InTec Products, Inc.".to_string()),
             genes: vec![],
             conditions: vec!["HIV".to_string()],
+            disease_match: None,
         },
     ];
 
@@ -122,6 +124,39 @@ fn diagnostic_search_markdown_shows_source_column_and_detail_hint() {
     assert!(markdown.contains("|GTR000000001.1|BRCA1 Hereditary Cancer Panel|molecular|OncoPanel BRCA1|NCBI Genetic Testing Registry|BRCA1, BARD1|Breast cancer|"));
     assert!(markdown.contains("|ITPW02232- TC40|ONE STEP Anti-HIV (1&2) Test|Immunochromatographic (lateral flow)|InTec Products, Inc.|WHO Prequalified IVD|-|HIV|"));
     assert!(markdown.contains("Use `biomcp get diagnostic GTR000000001.1` for details."));
+}
+
+#[test]
+fn diagnostic_search_markdown_adds_escaped_disease_match_column_only_when_present() {
+    let mut result = DiagnosticSearchResult {
+        source: "gtr".to_string(),
+        accession: "GTR000596648.2".to_string(),
+        name: "Bachmann-Bupp panel".to_string(),
+        test_type: None,
+        manufacturer_or_lab: None,
+        genes: Vec::new(),
+        conditions: vec!["Neurodevelopmental disorder".to_string()],
+        disease_match: Some(crate::entities::diagnostic::DiseaseMatch {
+            kind: crate::entities::diagnostic::DiseaseMatchKind::Synonym,
+            term: "BABS | probe".to_string(),
+            resolved_id: Some("MONDO:0033642".to_string()),
+        }),
+    };
+    let markdown = diagnostic_search_markdown(
+        "disease=Bachmann-Bupp syndrome",
+        std::slice::from_ref(&result),
+        Some(1),
+    )
+    .expect("rendered markdown");
+    assert!(markdown.contains(
+        "|Accession|Name|Type|Manufacturer / Lab|Source|Genes|Conditions|Disease match|"
+    ));
+    assert!(markdown.contains("Synonym: BABS \\| probe"));
+
+    result.disease_match = None;
+    let markdown = diagnostic_search_markdown("gene=BRCA1", std::slice::from_ref(&result), Some(1))
+        .expect("rendered markdown");
+    assert!(!markdown.contains("Disease match"));
 }
 
 #[test]
@@ -186,6 +221,7 @@ fn diagnostic_search_rows_caps_genes_and_conditions_with_overflow_marker() {
         .into_iter()
         .map(String::from)
         .collect(),
+        disease_match: None,
     };
 
     let results = vec![result];
@@ -210,6 +246,7 @@ fn diagnostic_search_rows_escapes_markdown_table_cells() {
         manufacturer_or_lab: None,
         genes: vec!["A|B".to_string()],
         conditions: vec!["Line\nBreak".to_string()],
+        disease_match: None,
     };
 
     let results = vec![result];

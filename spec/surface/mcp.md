@@ -206,6 +206,57 @@ print("raw and typed article validation converges")
 PY
 ```
 
+## Diagnostic Synonym Provenance Reaches Raw MCP
+
+Raw MCP keeps the diagnostic CLI body and its optional disease-match provenance
+for both JSON and Markdown responses. WHO-only disease search remains literal
+and does not need a typed diagnostic branch.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw diagnostic MCP preserves disease-match provenance'
+import json, os, subprocess
+
+env = os.environ.copy()
+cli_json = subprocess.run(
+    [env["BIOMCP_BIN"], "search", "diagnostic", "--source", "gtr",
+     "--disease", "Bachmann-Bupp syndrome", "--json"],
+    check=True, capture_output=True, text=True, env=env,
+)
+cli_markdown = subprocess.run(
+    [env["BIOMCP_BIN"], "search", "diagnostic", "--source", "gtr",
+     "--disease", "Bachmann-Bupp syndrome"],
+    check=True, capture_output=True, text=True, env=env,
+)
+cli_value = json.loads(cli_json.stdout)
+assert cli_value["results"][0]["disease_match"]["kind"] == "synonym"
+
+proc = subprocess.Popen(
+    [env["BIOMCP_BIN"], "serve"], stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE, text=True, env=env,
+)
+def call(message):
+    proc.stdin.write(json.dumps(message) + "\n")
+    proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+call({"jsonrpc":"2.0", "id":1, "method":"initialize", "params":{
+    "protocolVersion":"2025-03-26", "capabilities":{},
+    "clientInfo":{"name":"spec", "version":"1"}}})
+proc.stdin.write(json.dumps({"jsonrpc":"2.0", "method":"notifications/initialized", "params":{}}) + "\n")
+proc.stdin.flush()
+raw_json = call({"jsonrpc":"2.0", "id":2, "method":"tools/call", "params":{
+    "name":"biomcp", "arguments":{"command":"biomcp search diagnostic --source gtr --disease 'Bachmann-Bupp syndrome' --json"}}})
+raw_json_text = raw_json["result"]["content"][0]["text"]
+assert raw_json_text == cli_json.stdout.rstrip("\n")
+raw_markdown = call({"jsonrpc":"2.0", "id":3, "method":"tools/call", "params":{
+    "name":"biomcp", "arguments":{"command":"biomcp search diagnostic --source gtr --disease 'Bachmann-Bupp syndrome'"}}})
+raw_markdown_text = raw_markdown["result"]["content"][0]["text"]
+assert raw_markdown_text == cli_markdown.stdout.removesuffix("\n")
+proc.terminate()
+proc.wait(timeout=5)
+print("raw diagnostic MCP preserves disease-match provenance")
+PY
+```
+
 ## Variant filter evaluation is identical through raw and typed tools
 
 Raw and typed MCP search calls use the same CLI execution and rendering path.

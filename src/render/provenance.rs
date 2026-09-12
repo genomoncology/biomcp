@@ -1,7 +1,3 @@
-use std::collections::HashSet;
-
-use serde::Serialize;
-
 use crate::entities::article::Article;
 use crate::entities::diagnostic::{Diagnostic, diagnostic_source_label};
 use crate::entities::discover::DiscoverResult;
@@ -14,7 +10,8 @@ use crate::entities::protein::Protein;
 use crate::entities::section_outcome::{SectionOutcomeState, SectionOutcomes};
 use crate::entities::trial::Trial;
 use crate::entities::variant::{GnomadPopulationStatus, Variant};
-
+use serde::Serialize;
+use std::collections::HashSet;
 mod adverse_event;
 pub(crate) use self::adverse_event::{
     report_section_sources as adverse_event_report_section_sources,
@@ -1383,6 +1380,7 @@ mod tests {
                 manufacturer_or_lab: Some("Example Lab".to_string()),
                 genes: vec!["BRCA1".to_string()],
                 conditions: vec!["breast cancer".to_string()],
+                disease_match: None,
             }]),
             diagnostics_note: None,
         };
@@ -1540,6 +1538,7 @@ mod tests {
                     manufacturer_or_lab: Some("Example Lab".to_string()),
                     genes: vec!["BRCA1".to_string()],
                     conditions: vec!["melanoma".to_string()],
+                    disease_match: None,
                 },
                 crate::entities::diagnostic::DiagnosticSearchResult {
                     source: "who-ivd".to_string(),
@@ -1549,6 +1548,7 @@ mod tests {
                     manufacturer_or_lab: Some("WHO Lab".to_string()),
                     genes: Vec::new(),
                     conditions: vec!["melanoma".to_string()],
+                    disease_match: None,
                 },
             ]),
             diagnostics_note: None,
