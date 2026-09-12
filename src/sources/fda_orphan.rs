@@ -1,9 +1,12 @@
 //! Bounded client for FDA's HTML orphan-designation search service.
 
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use futures::{StreamExt, stream};
+use http_cache::{CacheManager, HttpResponse, HttpVersion};
+use http_cache_semantics::CachePolicy;
 use scraper::{ElementRef, Html, Selector};
 use serde::{Deserialize, Serialize};
 
@@ -144,14 +147,14 @@ fn table_rows(html: &[u8]) -> Result<Vec<Vec<String>>, BioMcpError> {
     let table_sel = Selector::parse("table").expect("selector");
     let row_sel = Selector::parse("tr").expect("selector");
     let cell_sel = Selector::parse("th, td").expect("selector");
-    let tables = doc
-        .select(&table_sel)
-        .map(|table| direct_rows(table, &row_sel, &cell_sel))
-        .collect::<Vec<_>>();
-    if tables.len() != 1 {
+    let mut tables = doc.select(&table_sel);
+    let Some(table) = tables.next() else {
+        return Err(source_error("unexpected table shape"));
+    };
+    if tables.next().is_some() {
         return Err(source_error("unexpected table shape"));
     }
-    let rows = tables.into_iter().next().expect("one table");
+    let rows = direct_rows(table, &row_sel, &cell_sel)?;
     if !rows
         .first()
         .is_some_and(|row| row.iter().map(String::as_str).eq(HEADERS))
@@ -161,16 +164,19 @@ fn table_rows(html: &[u8]) -> Result<Vec<Vec<String>>, BioMcpError> {
     Ok(rows)
 }
 
-fn direct_rows(table: ElementRef<'_>, row_sel: &Selector, cell_sel: &Selector) -> Vec<Vec<String>> {
-    table
-        .select(row_sel)
-        .filter(|row| {
-            row.ancestors()
-                .filter_map(ElementRef::wrap)
-                .find(|node| node.value().name() == "table")
-                .is_some_and(|owner| owner.id() == table.id())
-        })
-        .map(|row| {
+fn direct_rows(
+    table: ElementRef<'_>,
+    row_sel: &Selector,
+    cell_sel: &Selector,
+) -> Result<Vec<Vec<String>>, BioMcpError> {
+    let mut rows = Vec::new();
+    for row in table.select(row_sel).filter(|row| {
+        row.ancestors()
+            .filter_map(ElementRef::wrap)
+            .find(|node| node.value().name() == "table")
+            .is_some_and(|owner| owner.id() == table.id())
+    }) {
+        rows.push(
             row.select(cell_sel)
                 .filter(|cell| {
                     cell.ancestors()
@@ -179,17 +185,21 @@ fn direct_rows(table: ElementRef<'_>, row_sel: &Selector, cell_sel: &Selector) -
                         .is_some_and(|owner| owner.id() == row.id())
                 })
                 .map(|cell| clean(&cell.text().collect::<String>().replace('\u{a0}', " ")))
-                .collect()
-        })
-        .collect()
+                .collect(),
+        );
+        if rows.len() > MAX_WIRE_ROWS + 1 {
+            return Err(source_error("too many rows"));
+        }
+    }
+    Ok(rows)
 }
 
 #[cfg(test)]
 fn parse_response(html: &[u8], candidates: &[String]) -> Result<Vec<FdaOrphanRecord>, BioMcpError> {
-    Ok(filter_records(parse_table(html)?, candidates))
+    admit_records(parse_table(html)?, candidates)
 }
 
-fn parse_table(html: &[u8]) -> Result<Vec<FdaOrphanRecord>, BioMcpError> {
+fn parse_table(html: &[u8]) -> Result<Vec<Vec<String>>, BioMcpError> {
     if html.len() > MAX_BODY {
         return Err(source_error("response too large"));
     }
@@ -200,35 +210,49 @@ fn parse_table(html: &[u8]) -> Result<Vec<FdaOrphanRecord>, BioMcpError> {
     {
         return Err(source_error("unexpected headers"));
     }
-    if rows.len().saturating_sub(1) > MAX_WIRE_ROWS {
-        return Err(source_error("too many rows"));
+    Ok(rows.into_iter().skip(1).collect())
+}
+
+fn admit_records(
+    rows: Vec<Vec<String>>,
+    candidates: &[String],
+) -> Result<Vec<FdaOrphanRecord>, BioMcpError> {
+    let candidates = candidates
+        .iter()
+        .map(|v| clean(v).to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    let mut records = Vec::new();
+    for row in rows {
+        let generic = row.first().map_or_else(String::new, |value| clean(value));
+        let trade = row.get(1).cloned().and_then(optional);
+        let admitted = candidates.contains(&generic.to_ascii_lowercase())
+            || trade
+                .as_ref()
+                .is_some_and(|value| candidates.contains(&value.to_ascii_lowercase()));
+        if !admitted {
+            continue;
+        }
+        if row.len() != HEADERS.len() {
+            return Err(source_error("malformed row"));
+        }
+        records.push(parse_row(row, generic, trade)?);
     }
-    rows.into_iter()
-        .skip(1)
-        .map(|row| {
-            if row.len() != HEADERS.len() {
-                return Err(source_error("malformed row"));
-            }
-            let generic = clean(&row[0]);
-            let trade = optional(row[1].clone());
-            parse_row(row, generic, trade)
-        })
-        .collect()
+    Ok(records)
 }
 
 fn filter_records(records: Vec<FdaOrphanRecord>, candidates: &[String]) -> Vec<FdaOrphanRecord> {
     let candidates = candidates
         .iter()
-        .map(|v| clean(v).to_ascii_lowercase())
+        .map(|value| clean(value).to_ascii_lowercase())
         .collect::<HashSet<_>>();
     records
         .into_iter()
-        .filter(|row| {
-            candidates.contains(&row.generic_name.to_ascii_lowercase())
-                || row
+        .filter(|record| {
+            candidates.contains(&record.generic_name.to_ascii_lowercase())
+                || record
                     .trade_name
                     .as_ref()
-                    .is_some_and(|v| candidates.contains(&v.to_ascii_lowercase()))
+                    .is_some_and(|value| candidates.contains(&value.to_ascii_lowercase()))
         })
         .collect()
 }
@@ -290,13 +314,13 @@ fn parse_row(
     })
 }
 
-fn cache_key(base: &str, form: &[(String, String)]) -> String {
+pub(crate) fn cache_key(base: &str, form: &[(String, String)]) -> String {
     let encoded = serde_json::to_string(form).expect("form serializes");
     format!("fda-orphan-v{FDA_ORPHAN_PARSE_VERSION}:{base}:{encoded}")
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SourceCacheMode {
+pub(crate) enum SourceCacheMode {
     Normal,
     Off,
     Infinite,
@@ -309,7 +333,7 @@ fn cache_mode() -> SourceCacheMode {
     )
 }
 
-fn source_cache_mode(no_cache: bool, env: Option<&str>) -> SourceCacheMode {
+pub(crate) fn source_cache_mode(no_cache: bool, env: Option<&str>) -> SourceCacheMode {
     if no_cache || env.is_some_and(|v| v.trim().eq_ignore_ascii_case("off")) {
         SourceCacheMode::Off
     } else if env.is_some_and(|v| v.trim().eq_ignore_ascii_case("infinite")) {
@@ -319,40 +343,43 @@ fn source_cache_mode(no_cache: bool, env: Option<&str>) -> SourceCacheMode {
     }
 }
 
-fn cache_entry_is_usable(mode: SourceCacheMode, now: u64, stored_at: u64) -> bool {
+pub(crate) fn cache_entry_is_usable(mode: SourceCacheMode, now: u64, stored_at: u64) -> bool {
     mode == SourceCacheMode::Infinite || now.saturating_sub(stored_at) < TTL.as_secs()
 }
 
-async fn read_cache(key: &str, mode: SourceCacheMode) -> Option<Vec<FdaOrphanRecord>> {
-    if mode == SourceCacheMode::Off {
-        return None;
-    }
-    let config = crate::cache::resolve_cache_config().ok()?;
-    let bytes = cacache::read(config.cache_root.join("http"), key)
+async fn read_cache(
+    manager: Option<&crate::cache::SizeAwareCacheManager>,
+    key: &str,
+    mode: SourceCacheMode,
+) -> Result<Option<Vec<FdaOrphanRecord>>, BioMcpError> {
+    let Some(manager) = manager else {
+        return Ok(None);
+    };
+    let Some((response, _)) = manager
+        .get(key)
         .await
-        .ok()?;
-    let cached: CachedQuery = serde_json::from_slice(&bytes).ok()?;
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).ok()?.as_secs();
-    cache_entry_is_usable(mode, now, cached.stored_at).then_some(cached.records)
+        .map_err(|error| source_error(&error.to_string()))?
+    else {
+        return Ok(None);
+    };
+    let Some(cached) = serde_json::from_slice::<CachedQuery>(&response.body).ok() else {
+        return Ok(None);
+    };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    Ok(cache_entry_is_usable(mode, now, cached.stored_at).then_some(cached.records))
 }
 
 async fn write_cache(
+    manager: Option<&crate::cache::SizeAwareCacheManager>,
     key: &str,
     records: &[FdaOrphanRecord],
-    mode: SourceCacheMode,
 ) -> Result<(), BioMcpError> {
-    if mode == SourceCacheMode::Off {
+    let Some(manager) = manager else {
         return Ok(());
-    }
-    let config = crate::cache::resolve_cache_config()?;
-    let path = config.cache_root.join("http");
-    let _guard = crate::cache::lock_cache_key_async(
-        config.cache_root.clone(),
-        key.to_string(),
-        std::sync::Arc::new(|_| {}),
-    )
-    .await?;
-    crate::cache::prepare_write_paths(&path, key)?;
+    };
     let value = CachedQuery {
         stored_at: SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -360,16 +387,38 @@ async fn write_cache(
             .as_secs(),
         records: records.to_vec(),
     };
-    cacache::write(&path, key, serde_json::to_vec(&value)?)
+    manager
+        .put(
+            key.to_string(),
+            cache_response(serde_json::to_vec(&value)?),
+            cache_policy(),
+        )
         .await
         .map_err(|error| source_error(&error.to_string()))?;
-    if let Some(meta) = cacache::metadata(&path, key)
-        .await
-        .map_err(|error| source_error(&error.to_string()))?
-    {
-        crate::cache::secure_written_content(&path, &meta.integrity)?;
-    }
     Ok(())
+}
+
+fn cache_response(body: Vec<u8>) -> HttpResponse {
+    HttpResponse {
+        body,
+        headers: HashMap::from([("cache-control".into(), "max-age=86400".into())]),
+        status: 200,
+        url: reqwest::Url::parse("https://biomcp.local/cache/fda-orphan").expect("fixed URL"),
+        version: HttpVersion::Http11,
+    }
+}
+
+fn cache_policy() -> CachePolicy {
+    let request = http::Request::builder()
+        .uri("https://biomcp.local/cache/fda-orphan")
+        .body(())
+        .expect("fixed request");
+    let response = http::Response::builder()
+        .status(200)
+        .header("cache-control", "max-age=86400")
+        .body(())
+        .expect("fixed response");
+    CachePolicy::new(&request, &response)
 }
 
 async fn query(
@@ -378,10 +427,11 @@ async fn query(
     candidate: String,
     all_candidates: Vec<String>,
     mode: SourceCacheMode,
+    cache: Option<Arc<crate::cache::SizeAwareCacheManager>>,
 ) -> Result<Vec<FdaOrphanRecord>, BioMcpError> {
     let form = ordered_form(&candidate);
     let key = cache_key(&base, &form);
-    if let Some(records) = read_cache(&key, mode).await {
+    if let Some(records) = read_cache(cache.as_deref(), &key, mode).await? {
         return Ok(filter_records(records, &all_candidates));
     }
     let url = format!("{}/OOPD_Results.cfm", base.trim_end_matches('/'));
@@ -396,29 +446,66 @@ async fn query(
     }
     let bytes =
         crate::sources::read_limited_body_with_limit(response, FDA_ORPHAN_SOURCE, MAX_BODY).await?;
-    let records = parse_table(&bytes)?;
-    write_cache(&key, &records, mode).await?;
-    Ok(filter_records(records, &all_candidates))
+    let rows = parse_table(&bytes)?;
+    let records = admit_records(rows, &all_candidates)?;
+    write_cache(cache.as_deref(), &key, &records).await?;
+    Ok(records)
 }
 
 pub(crate) async fn fetch(candidates: Vec<String>) -> FdaOrphanDesignations {
     fetch_with_mode(candidates, cache_mode()).await
 }
 
-async fn fetch_with_mode(candidates: Vec<String>, mode: SourceCacheMode) -> FdaOrphanDesignations {
+pub(crate) async fn fetch_with_mode(
+    candidates: Vec<String>,
+    mode: SourceCacheMode,
+) -> FdaOrphanDesignations {
     fetch_with_mode_and_deadline(candidates, mode, DEADLINE).await
 }
 
-async fn fetch_with_mode_and_deadline(
+pub(crate) async fn fetch_with_mode_and_deadline(
     candidates: Vec<String>,
     mode: SourceCacheMode,
     deadline: Duration,
 ) -> FdaOrphanDesignations {
+    let deadline = crate::sources::VariantArticleDeadline::from_now(deadline);
+    crate::sources::with_variant_article_deadline(deadline.clone(), async move {
+        fetch_with_deadline(candidates, mode, deadline, None).await
+    })
+    .await
+}
+
+async fn fetch_with_deadline(
+    candidates: Vec<String>,
+    mode: SourceCacheMode,
+    deadline: crate::sources::VariantArticleDeadline,
+    cache_override: Option<Arc<crate::cache::SizeAwareCacheManager>>,
+) -> FdaOrphanDesignations {
     let candidates = normalize_candidates(candidates);
     let base = crate::sources::env_base(BASE, BASE_ENV).into_owned();
+    let cache = match (mode, cache_override) {
+        (SourceCacheMode::Off, _) => None,
+        (_, Some(manager)) => Some(manager),
+        (_, None) => {
+            let config = match crate::cache::resolve_cache_config() {
+                Ok(config) => config,
+                Err(_) => return unavailable(),
+            };
+            match crate::cache::SizeAwareCacheManager::new_with_deadline(
+                config.cache_root.join("http"),
+                config,
+                &deadline,
+            )
+            .await
+            {
+                Ok(manager) => Some(Arc::new(manager)),
+                Err(_) => return unavailable(),
+            }
+        }
+    };
     let client = match reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
-        .timeout(deadline)
+        .timeout(deadline.remaining())
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .build()
     {
@@ -433,11 +520,12 @@ async fn fetch_with_mode_and_deadline(
             candidate,
             candidates.clone(),
             mode,
+            cache.clone(),
         )
     }))
     .buffer_unordered(2)
     .collect::<Vec<_>>();
-    let results = match tokio::time::timeout(deadline, work).await {
+    let results = match deadline.run(work).await {
         Ok(results) => results,
         Err(_) => return unavailable(),
     };
@@ -447,6 +535,39 @@ async fn fetch_with_mode_and_deadline(
         .filter_map(Result::ok)
         .collect::<Vec<_>>();
     merge(successes, failures, count)
+}
+
+#[cfg(test)]
+pub(crate) async fn fetch_with_manager_for_test(
+    candidates: Vec<String>,
+    mode: SourceCacheMode,
+    limit: Duration,
+    manager: Arc<crate::cache::SizeAwareCacheManager>,
+) -> FdaOrphanDesignations {
+    let deadline = crate::sources::VariantArticleDeadline::from_now(limit);
+    crate::sources::with_variant_article_deadline(deadline.clone(), async move {
+        fetch_with_deadline(candidates, mode, deadline, Some(manager)).await
+    })
+    .await
+}
+
+#[cfg(test)]
+pub(crate) async fn rewrite_cached_time_for_test(
+    manager: &crate::cache::SizeAwareCacheManager,
+    key: &str,
+    stored_at: u64,
+) {
+    let (response, _) = manager.get(key).await.unwrap().unwrap();
+    let mut cached: CachedQuery = serde_json::from_slice(&response.body).unwrap();
+    cached.stored_at = stored_at;
+    manager
+        .put(
+            key.to_owned(),
+            cache_response(serde_json::to_vec(&cached).unwrap()),
+            cache_policy(),
+        )
+        .await
+        .unwrap();
 }
 
 fn normalize_candidates(values: Vec<String>) -> Vec<String> {
@@ -562,12 +683,6 @@ pub(crate) async fn health_probe(_client: reqwest::Client) -> Result<(), BioMcpE
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{
-        Arc, Mutex,
-        atomic::{AtomicUsize, Ordering},
-    };
-
-    use axum::{Router, body::Bytes, extract::State, http::StatusCode, routing::post};
 
     fn fixture(row: &str) -> String {
         format!(
@@ -599,200 +714,6 @@ mod tests {
     }
 
     #[test]
-    fn cache_modes_and_expiry_are_explicit() {
-        assert_eq!(
-            source_cache_mode(true, Some("infinite")),
-            SourceCacheMode::Off
-        );
-        assert_eq!(source_cache_mode(false, Some("off")), SourceCacheMode::Off);
-        assert_eq!(
-            source_cache_mode(false, Some("infinite")),
-            SourceCacheMode::Infinite
-        );
-        assert_eq!(source_cache_mode(false, None), SourceCacheMode::Normal);
-        assert!(cache_entry_is_usable(SourceCacheMode::Normal, 100, 99));
-        assert!(!cache_entry_is_usable(
-            SourceCacheMode::Normal,
-            TTL.as_secs() + 1,
-            0
-        ));
-        assert!(cache_entry_is_usable(
-            SourceCacheMode::Infinite,
-            u64::MAX,
-            0
-        ));
-    }
-
-    struct EnvGuard {
-        name: &'static str,
-        old: Option<std::ffi::OsString>,
-    }
-    impl EnvGuard {
-        fn set(name: &'static str, value: impl AsRef<std::ffi::OsStr>) -> Self {
-            let old = std::env::var_os(name);
-            unsafe {
-                std::env::set_var(name, value);
-            }
-            Self { name, old }
-        }
-    }
-    impl Drop for EnvGuard {
-        fn drop(&mut self) {
-            unsafe {
-                match &self.old {
-                    Some(value) => std::env::set_var(self.name, value),
-                    None => std::env::remove_var(self.name),
-                }
-            }
-        }
-    }
-
-    #[derive(Clone)]
-    struct ServerState {
-        bodies: Arc<Mutex<Vec<String>>>,
-        active: Arc<AtomicUsize>,
-        peak: Arc<AtomicUsize>,
-        status: StatusCode,
-        delay: Duration,
-    }
-
-    async fn form_handler(
-        State(state): State<ServerState>,
-        body: Bytes,
-    ) -> (StatusCode, &'static str) {
-        let active = state.active.fetch_add(1, Ordering::SeqCst) + 1;
-        state.peak.fetch_max(active, Ordering::SeqCst);
-        state
-            .bodies
-            .lock()
-            .unwrap()
-            .push(String::from_utf8(body.to_vec()).unwrap());
-        tokio::time::sleep(state.delay).await;
-        state.active.fetch_sub(1, Ordering::SeqCst);
-        (
-            state.status,
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/testdata/sources/fda_orphan/provider-shaped.html"
-            )),
-        )
-    }
-
-    async fn fixture_server(
-        status: StatusCode,
-    ) -> (String, ServerState, tokio::task::JoinHandle<()>) {
-        fixture_server_with_delay(status, Duration::from_millis(20)).await
-    }
-
-    async fn fixture_server_with_delay(
-        status: StatusCode,
-        delay: Duration,
-    ) -> (String, ServerState, tokio::task::JoinHandle<()>) {
-        let state = ServerState {
-            bodies: Default::default(),
-            active: Default::default(),
-            peak: Default::default(),
-            status,
-            delay,
-        };
-        let app = Router::new()
-            .route("/OOPD_Results.cfm", post(form_handler))
-            .with_state(state.clone());
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let address = listener.local_addr().unwrap();
-        let task = tokio::spawn(async move {
-            axum::serve(listener, app).await.unwrap();
-        });
-        (format!("http://{address}"), state, task)
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn acquisition_caps_requests_and_concurrency_and_preserves_exact_forms() {
-        let (base, state, server) = fixture_server(StatusCode::OK).await;
-        let _base = EnvGuard::set(BASE_ENV, &base);
-        let cache = tempfile::tempdir().unwrap();
-        let _cache = EnvGuard::set("BIOMCP_CACHE_DIR", cache.path());
-        let result = fetch_with_mode(
-            (0..8).map(|index| format!("candidate {index}")).collect(),
-            SourceCacheMode::Off,
-        )
-        .await;
-        server.abort();
-        assert_eq!(result.outcome, FdaOrphanOutcome::Empty);
-        assert_eq!(state.bodies.lock().unwrap().len(), 6);
-        assert!(state.peak.load(Ordering::SeqCst) <= 2);
-        let mut bodies = state.bodies.lock().unwrap().clone();
-        bodies.sort();
-        let mut expected = (0..6).map(|index| format!("Product_name=candidate+{index}&sponsor_name=&Designation=&Designation_Start_Date=&Designation_End_Date=&Search_param=DESDATE&Output_Format=Excel&Sort_order=GENERIC_NAME&RecordsPerPage=25&newSearch=Run+Search")).collect::<Vec<_>>();
-        expected.sort();
-        assert_eq!(bodies, expected);
-        assert!(!cache.path().join("http").exists());
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn one_deadline_cancels_queued_alias_work() {
-        let (base, state, server) =
-            fixture_server_with_delay(StatusCode::OK, Duration::from_secs(1)).await;
-        let _base = EnvGuard::set(BASE_ENV, &base);
-        let started = std::time::Instant::now();
-        let result = fetch_with_mode_and_deadline(
-            (0..6).map(|index| format!("candidate {index}")).collect(),
-            SourceCacheMode::Off,
-            Duration::from_millis(40),
-        )
-        .await;
-        server.abort();
-        assert_eq!(result.outcome, FdaOrphanOutcome::Unavailable);
-        assert!(started.elapsed() < Duration::from_millis(500));
-        assert!(state.bodies.lock().unwrap().len() <= 2);
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn infinite_cache_miss_fetches_stores_and_then_serves_without_network() {
-        let (base, state, server) = fixture_server(StatusCode::OK).await;
-        let cache = tempfile::tempdir().unwrap();
-        let _base = EnvGuard::set(BASE_ENV, &base);
-        let _cache = EnvGuard::set("BIOMCP_CACHE_DIR", cache.path());
-        let candidates = vec!["eflornithine hydrochloride".into()];
-        let first = fetch_with_mode(candidates.clone(), SourceCacheMode::Infinite).await;
-        assert_eq!(first.outcome, FdaOrphanOutcome::Data);
-        assert_eq!(state.bodies.lock().unwrap().len(), 1);
-        server.abort();
-        let second = fetch_with_mode(candidates, SourceCacheMode::Infinite).await;
-        assert_eq!(second, first);
-        assert_eq!(state.bodies.lock().unwrap().len(), 1);
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn health_uses_one_uncached_known_form_and_http_failures_are_unavailable() {
-        let (base, state, server) = fixture_server(StatusCode::OK).await;
-        let _base = EnvGuard::set(BASE_ENV, &base);
-        health_probe(reqwest::Client::new()).await.unwrap();
-        server.abort();
-        let bodies = state.bodies.lock().unwrap().clone();
-        assert_eq!(bodies.len(), 1);
-        assert_eq!(
-            bodies[0],
-            "Product_name=eflornithine+hydrochloride&sponsor_name=&Designation=&Designation_Start_Date=&Designation_End_Date=&Search_param=DESDATE&Output_Format=Excel&Sort_order=GENERIC_NAME&RecordsPerPage=25&newSearch=Run+Search"
-        );
-
-        let (base, _state, server) = fixture_server(StatusCode::FOUND).await;
-        let _base = EnvGuard::set(BASE_ENV, &base);
-        let value = fetch_with_mode(
-            vec!["eflornithine hydrochloride".into()],
-            SourceCacheMode::Off,
-        )
-        .await;
-        server.abort();
-        assert_eq!(value.outcome, FdaOrphanOutcome::Unavailable);
-        assert!(value.sources.is_empty());
-    }
-
-    #[test]
     fn parser_keeps_exact_alias_and_truth_semantics() {
         let html = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -805,42 +726,125 @@ mod tests {
         assert_eq!(rows[0].designation_date, "2024-03-11");
     }
 
-    #[test]
-    fn parser_rejects_prefix_and_bad_headers() {
-        let cells = [
-            "Eflornithine hydrochloride",
-            "",
-            "03/11/2024",
-            "Use",
-            "Designated",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "1",
-        ];
-        let html = fixture(&format!(
-            "<tr>{}</tr>",
-            cells
+    fn valid_cells(name: &str, trade: &str, key: &str) -> Vec<String> {
+        let mut cells = vec![String::new(); HEADERS.len()];
+        cells[0] = name.into();
+        cells[1] = trade.into();
+        cells[2] = "03/11/2024".into();
+        cells[3] = "Use".into();
+        cells[4] = "Designated".into();
+        cells[18] = key.into();
+        cells
+    }
+
+    fn html_rows(rows: &[Vec<String>]) -> String {
+        fixture(
+            &rows
                 .iter()
-                .map(|v| format!("<td>{v}</td>"))
-                .collect::<String>()
-        ));
+                .map(|cells| {
+                    format!(
+                        "<tr>{}</tr>",
+                        cells
+                            .iter()
+                            .map(|value| format!("<td>{value}</td>"))
+                            .collect::<String>()
+                    )
+                })
+                .collect::<String>(),
+        )
+    }
+
+    #[test]
+    fn parser_enforces_encoding_body_shape_and_header_contract() {
+        assert!(parse_response(&[0xff], &["drug".into()]).is_err());
+
+        let mut exact = html_rows(&[valid_cells("drug", "", "1")]);
+        exact.push_str(&" ".repeat(MAX_BODY - exact.len()));
+        assert_eq!(exact.len(), MAX_BODY);
+        assert_eq!(
+            parse_response(exact.as_bytes(), &["drug".into()])
+                .unwrap()
+                .len(),
+            1
+        );
+        exact.push(' ');
+        assert!(parse_response(exact.as_bytes(), &["drug".into()]).is_err());
+
+        let valid = html_rows(&[valid_cells("drug", "", "1")]);
         assert!(
-            parse_response(html.as_bytes(), &["eflornithine".into()])
+            parse_response(
+                format!("{valid}<table></table>").as_bytes(),
+                &["drug".into()]
+            )
+            .is_err()
+        );
+        assert!(
+            parse_response(
+                format!("<table><tr><td>{valid}</td></tr></table>").as_bytes(),
+                &["drug".into()]
+            )
+            .is_err()
+        );
+
+        let reordered = format!(
+            "<table><tr>{}</tr></table>",
+            HEADERS
+                .iter()
+                .rev()
+                .map(|value| format!("<th>{value}</th>"))
+                .collect::<String>()
+        );
+        assert!(parse_response(reordered.as_bytes(), &["drug".into()]).is_err());
+        let duplicated = format!(
+            "<table><tr>{}</tr></table>",
+            HEADERS
+                .iter()
+                .chain(std::iter::once(&HEADERS[0]))
+                .map(|value| format!("<th>{value}</th>"))
+                .collect::<String>()
+        );
+        assert!(parse_response(duplicated.as_bytes(), &["drug".into()]).is_err());
+    }
+
+    #[test]
+    fn parser_validates_only_exactly_admitted_generic_or_trade_rows() {
+        let mut malformed = valid_cells("other drug", "target trade", "not-decimal");
+        malformed[2] = "bad-date".into();
+        let html = html_rows(&[malformed]);
+        assert!(
+            parse_response(html.as_bytes(), &["unrelated".into()])
                 .unwrap()
                 .is_empty()
         );
-        assert!(parse_response(b"<table><tr><th>Wrong</th></tr></table>", &["x".into()]).is_err());
+        assert!(parse_response(html.as_bytes(), &["target trade".into()]).is_err());
+
+        let exact = html_rows(&[valid_cells("other drug", "Target Trade", "7")]);
+        assert_eq!(
+            parse_response(exact.as_bytes(), &[" target   trade ".into()]).unwrap()[0].record_id,
+            "7"
+        );
+        assert!(
+            parse_response(exact.as_bytes(), &["target".into()])
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn parser_accepts_five_hundred_rows_and_rejects_the_next_during_iteration() {
+        let five_hundred = (0..500)
+            .map(|index| valid_cells("drug", "", &index.to_string()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            parse_response(html_rows(&five_hundred).as_bytes(), &["drug".into()])
+                .unwrap()
+                .len(),
+            500
+        );
+        let five_hundred_one = (0..501)
+            .map(|index| valid_cells("drug", "", &index.to_string()))
+            .collect::<Vec<_>>();
+        assert!(parse_response(html_rows(&five_hundred_one).as_bytes(), &["drug".into()]).is_err());
     }
 
     fn record(id: &str, date: &str, designation: &str) -> FdaOrphanRecord {
