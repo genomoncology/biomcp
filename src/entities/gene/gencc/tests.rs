@@ -413,7 +413,7 @@ async fn post_rename_200_and_304_deadlines_return_committed_public_rows() {
         unsafe {
             std::env::remove_var("BIOMCP_GENCC_TEST_FAIL_AT");
             std::env::remove_var("BIOMCP_GENCC_TEST_NOW");
-            std::env::remove_var("BIOMCP_GENCC_TEST_BASE");
+            std::env::remove_var("BIOMCP_GENCC_BASE");
             std::env::remove_var("BIOMCP_GENCC_DIR");
         }
     }
