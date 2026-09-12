@@ -9,10 +9,10 @@ No diagnostic tests found.
 {% else -%}
 Found {{ count }} diagnostic test{% if count != 1 %}s{% endif %}{% if total %} (of {{ total }} total){% endif %}
 
-|Accession|Name|Type|Manufacturer / Lab|Source|Genes|Conditions|
-|---|---|---|---|---|---|---|
+|Accession|Name|Type|Manufacturer / Lab|Source|Genes|Conditions|{% if show_disease_match %}Disease match|{% endif %}
+|---|---|---|---|---|---|---|{% if show_disease_match %}---|{% endif %}
 {% for row in results -%}
-|{{ row.accession }}|{{ row.name }}|{{ row.test_type or "-" }}|{{ row.manufacturer_or_lab or "-" }}|{{ row.source_label }}|{{ row.genes_cell }}|{{ row.conditions_cell }}|
+|{{ row.accession }}|{{ row.name }}|{{ row.test_type or "-" }}|{{ row.manufacturer_or_lab or "-" }}|{{ row.source_label }}|{{ row.genes_cell }}|{{ row.conditions_cell }}|{% if show_disease_match %}{{ row.disease_match_cell or "-" }}|{% endif %}
 {% endfor %}
 
 Use `biomcp get diagnostic {{ top_accession }}` for details.

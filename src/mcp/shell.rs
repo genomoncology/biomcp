@@ -1006,34 +1006,34 @@ fn redact_mcp_text(mut text: String, value: &Value) -> String {
     text
 }
 
-fn redact_mcp_json_value(value: &mut Value) {
+fn redact_mcp_json_value(value: &mut Value) -> bool {
     match value {
-        Value::Array(values) => {
-            for value in values {
-                redact_mcp_json_value(value);
-            }
-        }
+        Value::Array(values) => values.iter_mut().fold(false, |changed, value| {
+            redact_mcp_json_value(value) || changed
+        }),
         Value::Object(map) => {
-            let full_text_available = map
-                .remove("full_text_path")
-                .is_some_and(|path| !path.is_null());
+            let removed_path = map.remove("full_text_path");
+            let removed_path_field = removed_path.is_some();
+            let full_text_available = removed_path.as_ref().is_some_and(Value::is_string);
             if full_text_available {
                 map.insert("full_text_available".to_string(), Value::Bool(true));
             }
-            for value in map.values_mut() {
-                redact_mcp_json_value(value);
-            }
+            map.values_mut().fold(removed_path_field, |changed, value| {
+                redact_mcp_json_value(value) || changed
+            })
         }
-        _ => {}
+        _ => false,
     }
 }
 
 fn redact_mcp_json_text(text: &str) -> Result<String, crate::error::BioMcpError> {
     let mut value: Value = serde_json::from_str(text)?;
-    redact_mcp_json_value(&mut value);
-    crate::render::json::to_pretty(&value)
+    if redact_mcp_json_value(&mut value) {
+        crate::render::json::to_pretty(&value)
+    } else {
+        Ok(text.to_string())
+    }
 }
-
 fn append_default_mcp_footer(text: String, json_text: &str) -> String {
     match mcp_meta_footer_from_json(json_text) {
         Some(footer) => format!("{text}\n\n{footer}"),

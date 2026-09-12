@@ -23,6 +23,7 @@ pub(crate) struct DiagnosticSearchRow<'a> {
     source_label: String,
     genes_cell: String,
     conditions_cell: String,
+    disease_match_cell: Option<String>,
 }
 
 pub fn diagnostic_markdown(
@@ -171,6 +172,7 @@ pub fn diagnostic_search_markdown_with_footer(
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("diagnostic_search.md.j2")?;
     let rendered_results = diagnostic_search_rows(results);
+    let show_disease_match = results.iter().any(|result| result.disease_match.is_some());
     let top_accession = results
         .first()
         .map(|result| result.accession.as_str())
@@ -192,6 +194,7 @@ pub fn diagnostic_search_markdown_with_footer(
         total => total,
         top_accession => crate::render::markdown::quote_arg(top_accession),
         results => &rendered_results,
+        show_disease_match => show_disease_match,
         recovery_block => recovery_block,
         pagination_footer => pagination_footer,
     })?;
@@ -213,6 +216,14 @@ pub(crate) fn diagnostic_search_rows(
                 .to_string(),
             genes_cell: capped_cell(&result.genes),
             conditions_cell: capped_cell(&result.conditions),
+            disease_match_cell: result.disease_match.as_ref().map(|matched| {
+                let label = match matched.kind {
+                    crate::entities::diagnostic::DiseaseMatchKind::Requested => "Requested",
+                    crate::entities::diagnostic::DiseaseMatchKind::Canonical => "Canonical",
+                    crate::entities::diagnostic::DiseaseMatchKind::Synonym => "Synonym",
+                };
+                markdown_cell(&format!("{label}: {}", matched.term))
+            }),
         })
         .collect()
 }

@@ -59,6 +59,7 @@ fn diagnostic_search_json_next_commands_parse() {
         manufacturer_or_lab: Some("InTec Products, Inc.".to_string()),
         genes: vec![],
         conditions: vec!["HIV".to_string()],
+        disease_match: None,
     }];
     let pagination = crate::cli::PaginationMeta::offset(0, 10, results.len(), Some(results.len()));
     let json = crate::cli::search_json_with_meta(

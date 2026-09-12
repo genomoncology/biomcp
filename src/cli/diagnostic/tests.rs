@@ -270,6 +270,7 @@ fn diagnostic_json_compacts_nested_lists_and_full_restores_them() {
         manufacturer_or_lab: None,
         genes: (0..7).map(|index| format!("G{index}")).collect(),
         conditions: (0..6).map(|index| format!("C{index}")).collect(),
+        disease_match: None,
     };
     let compact: serde_json::Value = serde_json::from_str(
         &super::dispatch::diagnostic_search_json(vec![row.clone()], Some(1), 5, 0, false).unwrap(),
@@ -278,6 +279,7 @@ fn diagnostic_json_compacts_nested_lists_and_full_restores_them() {
     assert_eq!(compact["results"][0]["genes"].as_array().unwrap().len(), 5);
     assert_eq!(compact["results"][0]["genes_total"], 7);
     assert_eq!(compact["results"][0]["genes_has_more"], true);
+    assert!(compact["results"][0].get("disease_match").is_none());
 
     let full: serde_json::Value = serde_json::from_str(
         &super::dispatch::diagnostic_search_json(vec![row], Some(1), 5, 0, true).unwrap(),
