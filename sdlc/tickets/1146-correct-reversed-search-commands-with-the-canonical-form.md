@@ -18,6 +18,14 @@ article` or `biomcp search trial`. The canonical grammar remains
 The original observation is preserved at commit `fe2f9fc1` in
 `sdlc/issues/reversed-search-grammar-suggests-an-unrelated-command.md`.
 
+## Complexity and implementation route
+
+Contract 2 + state/timing 0 + reach 1 + proof 2 + cost of error 2 = 7.
+This is Level 3 because a copy/paste shell-quoting defect would be a credible
+command-injection exposure across native CLI and raw MCP error surfaces. Use
+GPT-5.6 SOL Medium for implementation and GPT-5.6 SOL Medium for independent
+code review.
+
 ## Exact detector
 
 Own the recovery hook beside `build_cli` and `try_parse_cli` in
@@ -54,10 +62,20 @@ help. Global JSON selection recognizes `--json` or `-j` only before `--` for
 this correction; a token after `--` is candidate data and cannot change the
 error envelope.
 
-The classifier examines at most 256 argv entries and 16 KiB of UTF-8 argument
-data, and emits at most 32 KiB. Non-UTF-8 input, C0/C1 controls, or a breached
-bound keeps the original sanitized Clap error. These are recovery-output
-bounds, not new limits on valid canonical search commands.
+The classifier accepts at most 256 argv entries total, including argv[0]. The
+limit is inclusive. The UTF-8 input budget is the sum of the byte lengths of
+every argv entry, including argv[0] and with no separators added; it is at most
+16,384 bytes inclusive. Non-UTF-8 input, C0/C1 controls in any entry, or a
+breached entry/input bound keeps the original sanitized Clap error.
+
+After candidate validation and lossless shell rendering, build the shared
+diagnostic sentence including its adaptive Markdown code span. That complete
+sentence, from `reversed` through the closing code-span delimiter, must be at
+most 32,768 UTF-8 bytes inclusive. If quoting or code-span expansion makes it
+one byte larger, keep the original Clap error. The raw MCP `Error: ` prefix,
+fixed Clap usage/footer, and fixed JSON-envelope syntax are outside this
+variable-content measurement. These are bounded recovery-classification and
+diagnostic rules, not new limits on valid canonical search commands.
 
 ## Copyable command and error envelopes
 
@@ -68,8 +86,16 @@ must round-trip through `shlex::split` to the candidate argv. Quotes,
 backslashes, spaces, Unicode, `$`, backticks, semicolons, ampersands, pipes,
 redirections, parentheses, glob characters, and a leading dash after `--`
 remain inert data. The display program is always `biomcp`, regardless of the
-caller's argv[0]. Put the rendered command through the repository's adaptive
-Markdown code-span renderer, so embedded backticks cannot terminate the span.
+caller's argv[0]. Upgrade the shared adaptive Markdown code-span renderer in
+`src/render/markdown/support.rs`: use a delimiter one backtick longer than the
+longest run in the value, and add one ASCII padding space on both sides when
+the value begins or ends with an ASCII space or backtick. A nonempty value
+made entirely of ASCII spaces receives no added padding because CommonMark
+preserves all-space code-span content instead of stripping the padding.
+Ordinary values and ticket 1144's landed root-continuation rendering remain
+byte-for-byte unchanged. Put the rendered command through that helper, so
+embedded backticks cannot terminate the span.
+
 The exact diagnostic sentence for an ordinary command is:
 
 ```text
@@ -119,14 +145,23 @@ the seven-tool catalog remain byte-for-byte unchanged.
 ## No-work and ownership guarantees
 
 Detection, candidate parsing, quoting, and error rendering are pure preflight.
-They must not initialize an HTTP client, open or create the managed cache, read
-article session state, acquire a provider limiter, start a retry, dispatch an
-entity handler, or issue a provider request. Candidate validation constructs
-only a fresh Clap command.
+Their call chain may only inspect argv, construct a fresh Clap command, parse
+the candidate, and render the correction; code review must trace that chain
+and reject any route into runtime configuration, HTTP-client construction,
+managed cache or article-session access, provider limiting/retry, or entity
+dispatch. Candidate validation constructs only a fresh Clap command.
+
+The externally observable half of this invariant is executable: subprocess
+tests use poisoned provider bases, request logs, and absent temporary cache and
+session roots to prove that correction performs no provider request and creates
+no managed state. The ticket does not require test-only instrumentation for
+each unreachable in-memory event.
 
 Keep the small integration hook and global-flag/error-envelope ownership in
 `src/cli/shared.rs`, which must remain at or below the repository's 700-line CLI
-cap. Put matrix tests in the existing CLI test sidecars rather than inline.
+cap. The CommonMark-safe padding upgrade belongs in the existing shared
+`src/render/markdown/support.rs` helper, with focused tests beside its current
+owner. Put matrix tests in the existing CLI test sidecars rather than inline.
 Raw-MCP integration stays in `src/mcp/shell.rs`; do not raise its existing
 source-size allowance. If production logic cannot fit those rails, perform a
 package-neutral extraction/rename and lower the corresponding inventory rather
@@ -145,14 +180,20 @@ than increasing a ratchet. Add no dependency and keep the package at exactly
    `--version`, and `-V` after raw candidate validation.
 3. Candidate-invalid, unknown/case-varied entities, `search <entity>`, option
    values containing `search`, non-UTF-8/control input, and each classifier cap
-   preserve the baseline error. Existing `skill uninstall` recovery remains
-   unchanged.
+   preserve the baseline error. Tests pin exactly-at and one-over the 256-entry
+   and 16,384-byte input bounds, plus exactly-at and one-over the 32,768-byte
+   complete-sentence bound, including a case where shell quoting or Markdown
+   fencing—not raw input alone—causes output overflow. Existing `skill
+   uninstall` recovery remains unchanged.
 4. Process goldens pin complete human stderr/stdout/exit and JSON
    stdout/stderr/exit for article, trial, adverse-event, and one global/delimiter
    case. Poisoned provider bases plus an absent temporary cache root prove zero
    requests and no cache/session filesystem creation.
 5. Hostile-argument property tests render and `shlex::split` the correction and
-   recover the exact swapped candidate argv. A subprocess test parses but never
+   recover the exact swapped candidate argv. Focused shared-helper goldens pin
+   leading/trailing backticks, leading/trailing ASCII spaces, nonempty all-space
+   values, embedded backtick runs, unchanged ordinary values, and unchanged
+   ticket 1144 root-continuation output. A subprocess test parses but never
    executes the rendered command and proves filesystem sentinels named in `$()`,
    backticks, redirections, and semicolon payloads are not created.
 6. Raw stdio and Streamable HTTP MCP tests cover article/trial corrections,
@@ -164,12 +205,13 @@ than increasing a ratchet. Add no dependency and keep the package at exactly
 
 ## Dependencies and boundary
 
-This ticket has no dependency on 1147. That ticket changes valid article batch
-grammar; it does not change any `SearchEntity` spelling or this invalid-command
-recovery seam. Draft 1163 changes reserved-keyword validation prose after a
-canonical article search has parsed and is likewise independent. Whichever
-lands first must preserve the other's public contract; do not add either edge
-without new code evidence.
+Ticket 1147 is completed on this main. Its valid article batch grammar did not
+change any `SearchEntity` spelling or this invalid-command recovery seam, so no
+dependency edge is needed. Ticket 1163 now has an accepted living design on
+main; it changes reserved-keyword validation prose only after a canonical
+article search has parsed and is likewise independent. This implementation
+must preserve both contracts, and no edge should be added without new code
+evidence.
 
 This ticket does not add reversed aliases, change valid search arguments,
 rename `search|get|batch <entity>`, change provider behavior, redesign general
@@ -178,8 +220,13 @@ typed MCP, or update unrelated documentation.
 
 ## Review
 
-Accepted after independent design review. The reviewer confirmed the complete
-15-name detector, delimiter/global/help/version precedence, nonrecursive raw
-Clap validation, separate native/raw/typed MCP outcomes, lossless hostile-argv
-round trips, zero-work proof, ownership, and source/package limits. Code review
-must verify those same boundaries against the implementation diff.
+An earlier independent design review accepted the prior revision. A fresh SOL
+review against current main rejected missing CommonMark padding ownership,
+ambiguous resource-bound domains, overstated no-work proof, stale landed-state
+facts, and an understated implementation level. This revision addresses those
+findings and the same reviewer accepted it with no remaining material finding.
+Code review must verify the complete 15-name detector,
+delimiter/global/help/version precedence, nonrecursive raw Clap validation,
+separate native/raw/typed MCP outcomes, lossless hostile-argv round trips,
+observable zero-work proof, CommonMark padding, and source/package limits
+against the implementation diff.
