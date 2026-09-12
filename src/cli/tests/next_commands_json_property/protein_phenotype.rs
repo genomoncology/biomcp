@@ -12,7 +12,7 @@ fn protein_search_json_next_commands_parse() {
         species: Some("Homo sapiens".to_string()),
         reviewed: true,
     }];
-    let pagination = crate::cli::PaginationMeta::cursor(0, 1, results.len(), Some(1), None);
+    let pagination = crate::cli::PaginationMeta::offset(0, 1, results.len(), Some(1));
     let json = crate::cli::search_json_with_meta(
         results.clone(),
         pagination,

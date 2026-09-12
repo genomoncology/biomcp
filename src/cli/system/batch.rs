@@ -4,65 +4,6 @@ use futures::stream::{self, StreamExt};
 use super::{ArticleBatchMode, BatchArgs};
 
 pub(crate) const BATCH_MAX_IN_FLIGHT: usize = 10;
-
-pub(crate) struct PreparedBatch<'a> {
-    pub(crate) entity: String,
-    pub(crate) ids: Vec<&'a str>,
-    pub(crate) sections: Vec<String>,
-    pub(crate) trial_source: Option<crate::entities::trial::TrialSource>,
-}
-
-pub(crate) fn preflight_batch(
-    args: &BatchArgs,
-) -> Result<PreparedBatch<'_>, crate::error::BioMcpError> {
-    validate_batch_args(args)?;
-    let entity = args.entity.trim().to_ascii_lowercase();
-    let supported = matches!(
-        entity.as_str(),
-        "gene"
-            | "variant"
-            | "article"
-            | "trial"
-            | "drug"
-            | "disease"
-            | "pgx"
-            | "pathway"
-            | "protein"
-            | "adverse-event"
-            | "adverse_event"
-            | "adverseevent"
-    );
-    if !supported {
-        return Err(crate::error::BioMcpError::InvalidArgument(format!(
-            "Unknown batch entity '{entity}'. Expected one of: gene, variant, article, trial, drug, disease, pgx, pathway, protein, adverse-event"
-        )));
-    }
-    let ids = validate_batch_ids(args, &entity)?;
-    let sections = super::dispatch::parse_batch_sections(args.sections.as_deref());
-    if matches!(
-        entity.as_str(),
-        "adverse-event" | "adverse_event" | "adverseevent"
-    ) && !sections.is_empty()
-    {
-        return Err(crate::error::BioMcpError::InvalidArgument(
-            "Batch sections are not supported for adverse-event".into(),
-        ));
-    }
-    let trial_source = (entity == "trial")
-        .then(|| {
-            crate::entities::trial::TrialSource::from_flag(
-                args.source.as_deref().unwrap_or("ctgov"),
-            )
-        })
-        .transpose()?;
-    Ok(PreparedBatch {
-        entity,
-        ids,
-        sections,
-        trial_source,
-    })
-}
-
 pub(crate) fn validate_batch_args(args: &BatchArgs) -> Result<(), crate::error::BioMcpError> {
     let entity = args.entity.trim().to_ascii_lowercase();
     if entity != "trial" && args.source.is_some() {
@@ -606,9 +547,9 @@ mod tests {
                     let _ = stream.read(&mut request).await.expect("read request");
                     requests.fetch_add(1, Ordering::SeqCst);
                     stream
-                        .write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
-                        .await
-                        .expect("write retry response");
+                            .write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                            .await
+                            .expect("write retry response");
                     first_response.notify_one();
                 }
             }

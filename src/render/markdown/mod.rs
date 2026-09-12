@@ -619,12 +619,6 @@ pub(crate) fn variant_guidance_suggestion(
 
 static ENV: OnceLock<Environment<'static>> = OnceLock::new();
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PaginationFooterMode {
-    Offset,
-    Cursor,
-}
-
 fn offset_pagination_footer(
     offset: usize,
     limit: usize,
@@ -653,27 +647,12 @@ fn offset_pagination_footer(
 }
 
 pub fn pagination_footer(
-    mode: PaginationFooterMode,
     offset: usize,
     limit: usize,
     returned: usize,
     total: Option<usize>,
-    next_page_token: Option<&str>,
 ) -> String {
-    match mode {
-        PaginationFooterMode::Offset => offset_pagination_footer(offset, limit, returned, total),
-        PaginationFooterMode::Cursor => {
-            let mut footer = offset_pagination_footer(offset, limit, returned, total);
-            let has_token = next_page_token
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .is_some();
-            if has_token && footer.contains("Use --offset") {
-                footer.push_str(" (--next-page is also supported.)");
-            }
-            footer
-        }
-    }
+    offset_pagination_footer(offset, limit, returned, total)
 }
 
 fn with_pagination_footer(mut body: String, pagination_footer: &str) -> String {

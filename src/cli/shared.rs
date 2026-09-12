@@ -501,33 +501,6 @@ impl PaginationMeta {
             next_page_token: None,
         }
     }
-
-    // dead-code reason: retained for generic cursor pagination outside the typed trial contract
-    #[allow(dead_code)]
-    pub(super) fn cursor(
-        offset: usize,
-        limit: usize,
-        returned: usize,
-        total: Option<usize>,
-        next_page_token: Option<String>,
-    ) -> Self {
-        let has_token = next_page_token
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|value| !value.is_empty());
-        let has_more = match total {
-            Some(value) => has_token && offset.saturating_add(returned) < value,
-            None => has_token,
-        };
-        Self {
-            offset,
-            limit,
-            returned,
-            total,
-            has_more,
-            next_page_token: has_more.then_some(next_page_token).flatten(),
-        }
-    }
 }
 
 // dead-code reason: shared::SearchJsonResponse is exercised by binary dispatch or CLI contracts
@@ -676,25 +649,5 @@ pub(super) fn search_json_with_meta_and_suggestions<T: serde::Serialize>(
 }
 
 pub(super) fn pagination_footer_offset(meta: &PaginationMeta) -> String {
-    crate::render::markdown::pagination_footer(
-        crate::render::markdown::PaginationFooterMode::Offset,
-        meta.offset,
-        meta.limit,
-        meta.returned,
-        meta.total,
-        None,
-    )
-}
-
-// dead-code reason: retained for non-trial cursor-based entity pagination compatibility
-#[allow(dead_code)]
-pub(super) fn pagination_footer_cursor(meta: &PaginationMeta) -> String {
-    crate::render::markdown::pagination_footer(
-        crate::render::markdown::PaginationFooterMode::Cursor,
-        meta.offset,
-        meta.limit,
-        meta.returned,
-        meta.total,
-        meta.next_page_token.as_deref(),
-    )
+    crate::render::markdown::pagination_footer(meta.offset, meta.limit, meta.returned, meta.total)
 }

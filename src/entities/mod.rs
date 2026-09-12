@@ -43,18 +43,4 @@ impl<T> SearchPage<T> {
             next_page_token: None,
         }
     }
-
-    // dead-code reason: retained for generic provider cursors outside the typed trial contract
-    #[allow(dead_code)]
-    pub(crate) fn cursor(
-        results: Vec<T>,
-        total: Option<usize>,
-        next_page_token: Option<String>,
-    ) -> Self {
-        Self {
-            results,
-            total,
-            next_page_token,
-        }
-    }
 }

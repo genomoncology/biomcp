@@ -138,12 +138,10 @@ pub(in crate::cli) async fn handle_search(
         }))?
     } else {
         let footer = crate::render::markdown::pagination_footer(
-            crate::render::markdown::PaginationFooterMode::Offset,
             pagination.offset,
             pagination.limit,
             pagination.returned,
             pagination.total,
-            None,
         );
         crate::render::markdown::protein_search_markdown_with_footer(
             &query_summary,

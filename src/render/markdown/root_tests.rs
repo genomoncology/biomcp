@@ -465,36 +465,21 @@ fn markdown_detail_outputs_label_variant_protein_pgx_and_openfda_sources() {
 
 #[test]
 fn pagination_footer_offset_suppresses_more_when_complete_single_result() {
-    let footer = pagination_footer(PaginationFooterMode::Offset, 0, 10, 1, Some(1), None);
+    let footer = pagination_footer(0, 10, 1, Some(1));
     assert!(footer.contains("Showing 1 of 1 results."));
     assert!(!footer.contains("Use --offset"));
 }
 
 #[test]
 fn pagination_footer_offset_keeps_more_when_additional_rows_exist() {
-    let footer = pagination_footer(PaginationFooterMode::Offset, 0, 2, 2, Some(10), None);
+    let footer = pagination_footer(0, 2, 2, Some(10));
     assert!(footer.contains("Showing 1-2 of 10 results."));
     assert!(footer.contains("Use --offset 2 for more."));
 }
 
 #[test]
 fn pagination_footer_offset_suppresses_more_on_last_page() {
-    let footer = pagination_footer(PaginationFooterMode::Offset, 8, 2, 2, Some(10), None);
+    let footer = pagination_footer(8, 2, 2, Some(10));
     assert!(footer.contains("Showing 9-10 of 10 results."));
     assert!(!footer.contains("Use --offset"));
-}
-
-#[test]
-fn pagination_footer_cursor_prefers_offset_guidance_without_placeholder() {
-    let footer = pagination_footer(
-        PaginationFooterMode::Cursor,
-        0,
-        1,
-        1,
-        Some(20),
-        Some("abc123"),
-    );
-    assert!(footer.contains("Use --offset 1 for more."));
-    assert!(footer.contains("--next-page is also supported"));
-    assert!(!footer.contains("<TOKEN>"));
 }

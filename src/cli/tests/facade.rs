@@ -240,19 +240,6 @@ fn reversed_search_detector_preserves_baseline_boundaries() {
 
 #[test]
 fn shared_pagination_and_section_provenance_regressions() {
-    let total = super::super::shared::PaginationMeta::cursor(
-        4_000,
-        5,
-        0,
-        Some(3_738),
-        Some("stale".into()),
-    );
-    assert!(!total.has_more);
-    assert_eq!(total.next_page_token, None);
-    let without_token = super::super::shared::PaginationMeta::cursor(0, 5, 5, Some(10), None);
-    assert!(!without_token.has_more);
-    assert_eq!(without_token.next_page_token, None);
-
     let meta = super::super::shared::search_meta_with_section_sources(
         Vec::new(),
         vec![crate::render::provenance::SectionSource {
