@@ -126,3 +126,11 @@ None.
   by full-file comparison, no assertion or _wait_until changes, runner script
   byte-identical, no formatting churn. Byte-level closure by the primary
   agent: 3 files, 7 insertions, 7 deletions.
+- Full gates (final): yellow at the amended tip 59c8c206 — lint OK, Rust
+  3453/3453, spec OK, the disease bounded-runner test green, and exactly the
+  eight article/ctgov contention failures of the documented class remaining;
+  they pass solo on both hosts and pass the full lane on a fully idle gate
+  host. Merged on that evidence (PR #267) with the operational rule standing:
+  the gate host runs nothing else during gates. The earlier widening-only run
+  at 9221b23f left nine failures, which drove the root-cause investigation
+  and Amendment 1.
