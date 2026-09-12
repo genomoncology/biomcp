@@ -206,8 +206,9 @@ print("raw and typed article validation converges")
 PY
 ```
 
-Literal reserved-label prose keeps the same runtime quote byte through raw and
-typed MCP decoding and reaches exactly one selected Semantic Scholar request.
+Literal reserved-label prose keeps the same runtime quote byte through raw
+Markdown, raw JSON, and typed MCP decoding. Each reaches exactly one selected
+Semantic Scholar request.
 
 ```bash
 python3 - <<'PY' | mustmatch like 'raw and typed prose keyword propagation'
@@ -237,18 +238,27 @@ raw = call({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{
     "name":"biomcp","arguments":{
         "command":"biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1",
         "json":False}}})["result"]
-typed = call({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
+raw_json = call({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
+    "name":"biomcp","arguments":{
+        "command":"biomcp search article --source semanticscholar -k 'review of \"drug: safety\"' --limit 1",
+        "json":True}}})["result"]
+typed = call({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{
     "name":"search","arguments":{
         "entity":"article","keyword":["review of \"drug: safety\""],
         "source":"semanticscholar","limit":1,"json":False}}})["result"]
 for result in [raw, typed]:
-    assert result.get("isError") is not True
+    assert result.get("isError") is False
     assert len(result["content"]) == 1
     assert 'Review of "drug: safety" prose keyword fixture' in result["content"][0]["text"]
+assert raw_json.get("isError") is False
+assert len(raw_json["content"]) == 1
+raw_json_value = json.loads(raw_json["content"][0]["text"])
+assert raw_json_value["results"][0]["title"] == 'Review of "drug: safety" prose keyword fixture'
 proc.terminate()
 proc.wait(timeout=5)
 lines = request_log.read_text(encoding="utf-8").splitlines()
 assert lines == [
+    'search:semanticscholar:review of "drug: safety"',
     'search:semanticscholar:review of "drug: safety"',
     'search:semanticscholar:review of "drug: safety"',
 ]

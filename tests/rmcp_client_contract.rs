@@ -1163,6 +1163,39 @@ async fn raw_and_typed_article_query_validation_converges_before_provider_work()
         );
     }
 
+    let rejected_keyword = "gene:RB1-private-json-suffix";
+    let raw_json_rejection = biomcp_mcp_contract_client::call_biomcp_json(
+        &client,
+        &format!("biomcp search article -k {rejected_keyword}"),
+    )
+    .await?;
+    let typed_json_rejection = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("search").with_arguments(
+                BTreeMap::from([
+                    ("entity".to_string(), json!("article")),
+                    ("keyword".to_string(), json!([rejected_keyword])),
+                    ("json".to_string(), json!(true)),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await?;
+    for result in [&raw_json_rejection, &typed_json_rejection] {
+        assert_eq!(result.is_error, Some(true));
+        assert_eq!(result.content.len(), 1);
+        let text = biomcp_mcp_contract_client::first_text(&result.content);
+        assert_eq!(text, GENE);
+        assert!(
+            !text.contains(rejected_keyword),
+            "rejected input was reflected"
+        );
+    }
+    thread::sleep(Duration::from_millis(20));
+    assert_eq!(fixture.requests.load(Ordering::SeqCst), 0);
+
     let harmless = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
     assert_eq!(harmless.is_error, Some(false));
     thread::sleep(Duration::from_millis(20));
