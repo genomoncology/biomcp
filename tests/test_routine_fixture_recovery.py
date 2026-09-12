@@ -117,7 +117,7 @@ def test_cleanup_never_signals_an_unvalidated_ownership_record(
         [
             "bash",
             "-c",
-            'exec -a "$1" sleep 30',
+            'exec -a "$1" bash -c "sleep 30 & wait"',
             "fixture-owner",
             live_owner_arg,
         ],
@@ -688,7 +688,13 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         text=True,
     ).stdout.strip()
     active = subprocess.Popen(
-        ["bash", "-c", 'exec -a "$1" sleep 30', "fixture-owner", active_owner_arg],
+        [
+            "bash",
+            "-c",
+            'exec -a "$1" bash -c "sleep 30 & wait"',
+            "fixture-owner",
+            active_owner_arg,
+        ],
         start_new_session=True,
     )
     runner: subprocess.Popen[bytes] | None = None

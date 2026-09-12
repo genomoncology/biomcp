@@ -156,6 +156,7 @@ async fn fda_orphan_normal_cache_is_fresh_then_refreshes_when_expired() {
     let _env = EnvRestore::set(&[
         ("BIOMCP_FDA_ORPHAN_BASE", Some(&base)),
         ("BIOMCP_CACHE_DIR", Some(root.path().to_str().unwrap())),
+        ("BIOMCP_CACHE_MIN_DISK_FREE", Some("1B")),
     ]);
     let candidate = "eflornithine hydrochloride";
     let first = super::super::fda_orphan::fetch_with_mode(

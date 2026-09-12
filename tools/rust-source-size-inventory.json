@@ -264,6 +264,28 @@
       "authorized_increase": null
     },
     {
+      "path": "src/sources/gencc/store.rs",
+      "baseline_lines": 1039,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1187",
+        "delta": 39,
+        "reason": "Deadline semantics concentrate in the three bounded lock waits beside their helpers after post-lock budget checks were removed; rustfmt reflow widens the shortened signatures and cleanup bodies.",
+        "removal_condition": "Extract the lock-wait helpers or the cleanup passes when the GenCC store is next decomposed."
+      }
+    },
+    {
+      "path": "src/sources/gencc/tests.rs",
+      "baseline_lines": 1083,
+      "floor_lines": 982,
+      "authorized_increase": {
+        "ticket": "1187",
+        "delta": 101,
+        "reason": "The expired-budget and reopen-after-release regressions join the bounded-wait and lease-deferral proofs beside the store fixtures they exercise.",
+        "removal_condition": "Extract shared GenCC store test fixtures when the test module is next decomposed."
+      }
+    },
+    {
       "path": "src/sources/mod.rs",
       "baseline_lines": 2274,
       "floor_lines": 2274,
