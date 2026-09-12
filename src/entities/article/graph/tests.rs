@@ -1,11 +1,16 @@
 #[allow(unused_imports)]
 use super::super::test_support::*;
+use super::citation_evidence::citation_evidence;
+use super::citation_evidence::{
+    JatsEvidenceOutcome, install_jats_citation_seam, run_jats_extraction,
+};
 use super::*;
 use crate::sources::semantic_scholar::{
     SemanticScholarCitationEdge, SemanticScholarClient, SemanticScholarExternalIds,
     SemanticScholarGraphResponse, SemanticScholarPaper, SemanticScholarRecommendationsResponse,
     SemanticScholarReferenceEdge,
 };
+use crate::transform::article::{JatsCitationExtraction, JatsCitationTargetIds};
 use reqwest::StatusCode;
 
 fn semantic_paper(

@@ -116,7 +116,6 @@ struct TypedVariantArticles {
 fn default_typed_limit() -> usize {
     10
 }
-
 fn default_cspec_limit() -> usize {
     25
 }

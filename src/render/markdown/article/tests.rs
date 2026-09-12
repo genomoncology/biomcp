@@ -324,7 +324,6 @@ fn article_graph_markdown_renders_expected_table_headers() {
             next_commands: vec!["biomcp article citations 22663011 --limit 1 --offset 5".into()],
         },
     };
-
     let markdown = article_graph_markdown("Citations", &result).expect("graph markdown");
     assert!(markdown.contains("# Citations for PMID 22663011"));
     assert!(markdown.contains("| Identifier | Title | Intents | Influential | Context |"));

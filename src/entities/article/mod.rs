@@ -21,7 +21,8 @@ pub(crate) mod variant_search;
 pub use self::assets::{article_asset_bytes, article_assets_manifest};
 pub use self::batch::get_compact;
 pub use self::detail::get;
-pub use self::graph::{authors, citation_evidence, citations, recommendations, references};
+pub use self::graph::citation_evidence::citation_evidence;
+pub use self::graph::{authors, citations, recommendations, references};
 pub(crate) use self::identity_verification::VariantArticleVerificationOptions;
 #[allow(unused_imports)]
 pub(crate) use self::planner::{
