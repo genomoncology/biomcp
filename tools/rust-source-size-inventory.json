@@ -191,22 +191,22 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2161,
+      "baseline_lines": 2159,
       "floor_lines": 1956,
       "authorized_increase": {
         "ticket": "0127",
-        "delta": 205,
+        "delta": 203,
         "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract.",
         "removal_condition": "Extract trial paging and count schema transforms when the typed shell contract is decomposed."
       }
     },
     {
       "path": "src/mcp/shell/typed_get_tests.rs",
-      "baseline_lines": 1592,
+      "baseline_lines": 1575,
       "floor_lines": 1558,
       "authorized_increase": {
         "ticket": "0128",
-        "delta": 34,
+        "delta": 17,
         "reason": "Keep the private ClinVar cache fixture and its environment-restoration regression beside the typed MCP contract it isolates.",
         "removal_condition": "Extract typed MCP environment fixtures when this oversized test module is decomposed."
       }

@@ -355,23 +355,6 @@ impl BioMcpServer {
         args: Vec<String>,
         json: bool,
     ) -> Result<CallToolResult, McpError> {
-        if is_trial_document_download(&cli) {
-            return match crate::cli::run_outcome(cli).await {
-                Ok(outcome) if outcome.exit_code != 0 => Ok(Self::tool_error(outcome.text)),
-                Ok(outcome) => match outcome.bytes {
-                    Some(binary) => {
-                        let blob = base64::engine::general_purpose::STANDARD.encode(binary.bytes);
-                        Ok(CallToolResult::success(vec![Content::resource(
-                            ResourceContents::blob(blob, "biomcp://trial-document"),
-                        )]))
-                    }
-                    None => Ok(Self::tool_error(
-                        "Error: trial document bytes were unavailable",
-                    )),
-                },
-                Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
-            };
-        }
         if let Some(message) = binary_download_rejection(&cli, &args) {
             return Ok(Self::tool_error(message));
         }
@@ -437,17 +420,6 @@ impl BioMcpServer {
     }
 }
 
-fn is_trial_document_download(cli: &crate::cli::Cli) -> bool {
-    matches!(
-        &cli.command,
-        crate::cli::Commands::Get {
-            entity: crate::cli::GetEntity::Trial(args),
-        } if args.sections.first().is_some_and(|section| {
-            section.trim().eq_ignore_ascii_case("document")
-        })
-    )
-}
-
 fn binary_download_rejection(cli: &crate::cli::Cli, args: &[String]) -> Option<String> {
     let (entity, section) = match &cli.command {
         crate::cli::Commands::Get {
@@ -455,9 +427,18 @@ fn binary_download_rejection(cli: &crate::cli::Cli, args: &[String]) -> Option<S
         } if args
             .sections
             .first()
-            .is_some_and(|section| section == "asset") =>
+            .is_some_and(|section| section.trim().eq_ignore_ascii_case("asset")) =>
         {
             ("article", "asset")
+        }
+        crate::cli::Commands::Get {
+            entity: crate::cli::GetEntity::Trial(args),
+        } if args
+            .sections
+            .first()
+            .is_some_and(|section| section.trim().eq_ignore_ascii_case("document")) =>
+        {
+            ("trial", "document")
         }
         _ => return None,
     };
@@ -864,10 +845,10 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         .iter()
         .map(|section| checked_text(section, "section", 256))
         .collect::<Result<Vec<_>, _>>()?;
-    if matches!(
-        (entity.as_str(), sections.first().map(String::as_str)),
-        ("trial", Some("document")) | ("article", Some("asset"))
-    ) {
+    if sections.first().is_some_and(|section| {
+        (entity == "trial" && section.eq_ignore_ascii_case("document"))
+            || (entity == "article" && section.eq_ignore_ascii_case("asset"))
+    }) {
         let section = sections.first().expect("binary section").clone();
         args.extend(sections);
         return Err(McpError::invalid_params(
@@ -1512,14 +1493,14 @@ mod tests {
     mod ticket_1120;
 
     #[test]
-    fn article_binary_download_is_rejected_but_raw_trial_document_and_manifests_are_allowed() {
+    fn binary_download_rejection_covers_trial_article_and_keeps_manifests_available() {
         let article = [
             "biomcp",
             "get",
             "--no-cache",
             "article",
             "1",
-            "asset",
+            " \tAsSeT \n",
             "table.xlsx",
         ]
         .into_iter()
@@ -1531,8 +1512,17 @@ mod tests {
         assert!(message.contains("CLI-only"));
         assert!(message.contains("biomcp get"));
 
+        let trial = ["biomcp", "get", "trial", "NCT1", " \tDoCuMeNt \n", "x.pdf"]
+            .into_iter()
+            .map(String::from)
+            .collect::<Vec<_>>();
+        let message =
+            binary_download_rejection_for_args(&trial).expect("trial binary route is rejected");
+        assert!(message.contains("trial document"));
+        assert!(message.contains("CLI-only"));
+        assert!(message.contains("biomcp get"));
+
         for args in [
-            &["biomcp", "get", "trial", "NCT1", "document", "x.pdf"][..],
             &["biomcp", "get", "trial", "NCT1", "documents"][..],
             &["biomcp", "get", "article", "1", "assets"][..],
         ] {
@@ -1546,9 +1536,17 @@ mod tests {
         let error = get_args(TypedGet(json!({
             "entity": "article",
             "id": "22663011",
-            "sections": ["asset", "supplement.xlsx"]
+            "sections": ["AsSeT", "supplement.xlsx"]
         })))
         .expect_err("typed binary route is rejected before section validation");
+        assert!(error.to_string().contains("CLI-only"));
+
+        let error = get_args(TypedGet(json!({
+            "entity": "trial",
+            "id": "NCT1",
+            "sections": ["DoCuMeNt", "fixture.pdf"]
+        })))
+        .expect_err("typed trial binary route is rejected before section validation");
         assert!(error.to_string().contains("CLI-only"));
     }
 

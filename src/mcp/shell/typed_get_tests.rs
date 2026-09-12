@@ -173,7 +173,6 @@ async fn trial_json_channels(nct_id: &str, sections: &[&str]) -> [serde_json::Va
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn trial_artifacts_and_capture_match_across_cli_raw_typed_and_markdown() {
-    use base64::Engine as _;
     use sha2::{Digest, Sha256};
 
     let provider_bytes = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT03361748","briefTitle":"Synthetic artifact trial"},"statusModule":{"overallStatus":"RECRUITING"},"sponsorCollaboratorsModule":{"leadSponsor":{"name":"Example sponsor"}},"conditionsModule":{"conditions":["Example condition"]},"designModule":{"studyType":"INTERVENTIONAL"},"eligibilityModule":{"eligibilityCriteria":"Synthetic registry eligibility"}},"documentSection":{"largeDocumentModule":{"largeDocs":[{"typeAbbrev":"Prot_SAP","label":"  Synthetic protocol  ","date":"2026-09","uploadDate":"opaque","filename":"Protocol final.pdf","size":20,"hasProtocol":true,"hasSap":false,"hasIcf":null},{"filename":"../unsafe.pdf"}]}}}"#.to_vec();
@@ -298,28 +297,12 @@ async fn trial_artifacts_and_capture_match_across_cli_raw_typed_and_markdown() {
         .await
         .unwrap();
     let raw_document = serde_json::to_value(raw_document).unwrap();
-    let blob = raw_document["content"][0]["resource"]["blob"]
-        .as_str()
-        .unwrap();
-    assert_eq!(
-        base64::engine::general_purpose::STANDARD
-            .decode(blob)
-            .unwrap(),
-        document_bytes
-    );
-
-    const ERROR_SENTINEL: &str = "PUBLIC-MCP-FILENAME-SENTINEL-0116.pdf";
-    let not_advertised = BioMcpServer::new()
-        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
-            command: format!("biomcp get trial NCT03361748 document {ERROR_SENTINEL}"),
-            json: false,
-        }))
-        .await
-        .unwrap();
+    assert_eq!(raw_document["isError"], true);
     assert!(
-        !serde_json::to_string(&not_advertised)
+        raw_document["content"][0]["text"]
+            .as_str()
             .unwrap()
-            .contains(ERROR_SENTINEL)
+            .contains("CLI-only")
     );
 
     let mut mutated = provider_bytes;
@@ -837,8 +820,8 @@ fn typed_get_schema_and_mapper_match_independent_cli_catalog_oracle() {
     assert_eq!(assets, ["biomcp", "get", "article", "22663011", "assets"]);
 
     for (entity, section, filename) in [
-        ("article", "asset", "fixture.bin"),
-        ("trial", "document", "fixture.pdf"),
+        ("article", "AsSeT", "fixture.bin"),
+        ("trial", "DoCuMeNt", "fixture.pdf"),
     ] {
         let error = get_args(TypedGet(json!({
             "entity": entity,

@@ -622,25 +622,30 @@ where
         assert!(!text.contains('\u{fffd}'), "lossy binary text: {text}");
     }
 
-    let typed = client
-        .peer()
-        .call_tool(
-            CallToolRequestParams::new("get").with_arguments(
-                BTreeMap::from([
-                    ("entity".to_string(), json!("article")),
-                    ("id".to_string(), json!("22663011")),
-                    ("sections".to_string(), json!(["asset", "supplement.xlsx"])),
-                ])
-                .into_iter()
-                .collect(),
-            ),
-        )
-        .await
-        .expect_err("typed binary download must be rejected");
-    assert!(
-        typed.to_string().contains("CLI-only"),
-        "typed rejection: {typed}"
-    );
+    for (entity, id, sections) in [
+        ("article", "22663011", json!(["AsSeT", "supplement.xlsx"])),
+        ("trial", "NCT03361748", json!(["DoCuMeNt", "protocol.pdf"])),
+    ] {
+        let typed = client
+            .peer()
+            .call_tool(
+                CallToolRequestParams::new("get").with_arguments(
+                    BTreeMap::from([
+                        ("entity".to_string(), json!(entity)),
+                        ("id".to_string(), json!(id)),
+                        ("sections".to_string(), sections),
+                    ])
+                    .into_iter()
+                    .collect(),
+                ),
+            )
+            .await
+            .expect_err("typed binary download must be rejected");
+        assert!(
+            typed.to_string().contains("CLI-only"),
+            "typed {entity} rejection: {typed}"
+        );
+    }
     Ok(())
 }
 

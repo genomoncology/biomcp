@@ -516,8 +516,12 @@ where
             "server-local state",
         ),
         (
-            "biomcp get --no-cache article 22663011 asset supplement.xlsx".to_string(),
+            "biomcp get --no-cache article 22663011 AsSeT supplement.xlsx".to_string(),
             "Binary article asset downloads are CLI-only",
+        ),
+        (
+            "biomcp get trial NCT03361748 DoCuMeNt protocol.pdf".to_string(),
+            "Binary trial document downloads are CLI-only",
         ),
     ] {
         let result = biomcp_mcp_contract_client::call_biomcp(client, &command).await?;
@@ -1421,8 +1425,16 @@ async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> 
 #[tokio::test(flavor = "multi_thread")]
 async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Result<()> {
     let harness = harness();
-    let client = harness.spawn_stdio_client(&[]).await?;
+    let root = tempfile::tempdir_in(&harness.repo_root)?;
+    let cache = root.path().join("absent-cache");
+    let env = [
+        ("BIOMCP_CACHE_DIR", cache.display().to_string()),
+        ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_CTGOV_CDN_BASE", "http://127.0.0.1:9".to_string()),
+    ];
+    let client = harness.spawn_stdio_client(&env).await?;
     assert_explore_core_contract(&client).await?;
+    assert!(!cache.exists(), "core contract created cache state");
     client.cancel().await?;
     Ok(())
 }
@@ -1502,10 +1514,18 @@ async fn rmcp_child_process_client_verifies_stdio_chart_contract() -> anyhow::Re
 #[tokio::test(flavor = "multi_thread")]
 async fn rmcp_streamable_http_client_verifies_core_contract() -> anyhow::Result<()> {
     let harness = harness();
-    let (mut child, base_url) = harness.spawn_http_server(&[]).await?;
+    let root = tempfile::tempdir_in(&harness.repo_root)?;
+    let cache = root.path().join("absent-cache");
+    let env = [
+        ("BIOMCP_CACHE_DIR", cache.display().to_string()),
+        ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_CTGOV_CDN_BASE", "http://127.0.0.1:9".to_string()),
+    ];
+    let (mut child, base_url) = harness.spawn_http_server(&env).await?;
     let result = async {
         let client = harness.http_client(format!("{base_url}/mcp")).await?;
         assert_explore_core_contract(&client).await?;
+        assert!(!cache.exists(), "core contract created cache state");
         client.cancel().await?;
         Ok::<(), anyhow::Error>(())
     }
