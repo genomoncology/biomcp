@@ -2,6 +2,50 @@
 
 use super::{CliOutput, CommandOutcome, Commands, GetEntity, OutputStream, SearchEntity};
 
+pub(super) fn paged_fetch_limit(
+    limit: usize,
+    offset: usize,
+    max_limit: usize,
+) -> Result<usize, crate::error::BioMcpError> {
+    if limit == 0 || limit > max_limit {
+        return Err(crate::error::BioMcpError::InvalidArgument(format!(
+            "--limit must be between 1 and {max_limit}"
+        )));
+    }
+    Ok(limit.saturating_add(offset).min(max_limit))
+}
+
+pub(super) fn paged_fetch_limit_for(
+    command_name: &str,
+    limit: usize,
+    offset: usize,
+    max_limit: usize,
+) -> Result<usize, crate::error::BioMcpError> {
+    if limit == 0 || limit > max_limit {
+        return Err(crate::error::BioMcpError::InvalidArgument(format!(
+            "--limit for {command_name} must be 1-{max_limit}"
+        )));
+    }
+    Ok(limit.saturating_add(offset).min(max_limit))
+}
+
+pub(crate) fn paginate_results<T>(rows: Vec<T>, offset: usize, limit: usize) -> (Vec<T>, usize) {
+    let total = rows.len();
+    let paged = rows.into_iter().skip(offset).take(limit).collect();
+    (paged, total)
+}
+
+pub(super) fn log_pagination_truncation(observed_total: usize, offset: usize, returned: usize) {
+    if offset.saturating_add(returned) < observed_total {
+        tracing::debug!(
+            total = observed_total,
+            offset,
+            returned,
+            "Results truncated by --limit"
+        );
+    }
+}
+
 pub(super) fn outcome_to_mcp_output(outcome: CommandOutcome) -> anyhow::Result<CliOutput> {
     if outcome.bytes.is_some() {
         anyhow::bail!("binary downloads are CLI-only and cannot be returned as MCP text");

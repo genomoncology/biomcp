@@ -1073,22 +1073,22 @@ impl BioMcpServer {
         if command.len() > 1024 {
             return Ok(Self::tool_error("Error: command is too long"));
         }
-
         let split = match shlex::split(&command) {
             Some(args) => args,
             None => return Ok(Self::tool_error(GENERIC_MCP_REJECTION_MESSAGE)),
         };
-
         let mut args = vec!["biomcp".to_string()];
         if split.first().is_some_and(|s| s == "biomcp") {
             args.extend(split.into_iter().skip(1));
         } else {
             args.extend(split);
         }
+        if let Some(message) = crate::cli::reversed_search_correction(&args) {
+            return Ok(Self::tool_error(format!("Error: {message}")));
+        }
         if json {
             args = args_with_json(args);
         }
-
         let cli = match crate::cli::try_parse_cli(args.clone()) {
             Ok(cli) => cli,
             Err(_) => return Ok(Self::tool_error(GENERIC_MCP_REJECTION_MESSAGE)),

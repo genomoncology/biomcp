@@ -106,7 +106,11 @@ pub(super) fn markdown_code_span(value: &str) -> String {
         .max()
         .unwrap_or(0);
     let delimiter = "`".repeat(longest.saturating_add(1));
-    format!("{delimiter}{value}{delimiter}")
+    let needs_padding = !value.is_empty()
+        && !value.bytes().all(|byte| byte == b' ')
+        && (value.starts_with([' ', '`']) || value.ends_with([' ', '`']));
+    let padding = if needs_padding { " " } else { "" };
+    format!("{delimiter}{padding}{value}{padding}{delimiter}")
 }
 
 pub(super) fn discover_try_line(query: &str, description: &str) -> String {

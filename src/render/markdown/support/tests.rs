@@ -31,3 +31,18 @@ fn discover_try_line_quotes_shell_sensitive_queries() {
         "Try: biomcp discover \"BRAF V600E\"   - resolve abbreviations and synonyms"
     );
 }
+
+#[test]
+fn markdown_code_spans_follow_commonmark_padding_rules() {
+    for (value, expected) in [
+        ("ordinary value", "`ordinary value`"),
+        ("`leading", "`` `leading ``"),
+        ("trailing`", "`` trailing` ``"),
+        (" leading", "`  leading `"),
+        ("trailing ", "` trailing  `"),
+        ("   ", "`   `"),
+        ("a``b", "```a``b```"),
+    ] {
+        assert_eq!(markdown_code_span(value), expected, "value={value:?}");
+    }
+}
