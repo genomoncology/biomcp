@@ -60,6 +60,33 @@ Change, in `src/sources/gencc/store.rs` only:
   (`post_rename_200_and_304_deadlines_return_committed_public_rows`,
   src/entities/gene/gencc/tests.rs:340) unchanged. It has a safe, tested retry recovery, and removing
   it would require new fault-injection machinery outside this ticket's size.
+  Amendment 3, 2026-09-12: gate evidence falsified the keep decision. The
+  first full gate run at the fixed code (SHA 119a6853) still failed `make
+  test` under load: `crash_boundaries_preserve_one_complete_namespace_generation`
+  panicked at tests.rs:468 on `Err(PostRenameSync)` — the kept checkpoint is
+  itself a wall-clock check on work, and load exhausted the budget before the
+  post-rename step. The ticket now removes the wall-clock trigger
+  (`ensure_deadline(self.deadline, StoreError::PostRenameSync)` at store.rs:548
+  and its `BIOMCP_GENCC_TEST_EXPIRE_AT` spin hook at 547). No new machinery
+  is needed: `PostRenameSync` keeps its meaning — post-rename work failed —
+  through the real I/O sites (store.rs:501, 550, 551) and the existing
+  fault-injection point `injected("after-state-rename", ...)` at store.rs:546.
+  The dedicated test rewires from `BIOMCP_GENCC_TEST_EXPIRE_AT` to
+  `BIOMCP_GENCC_TEST_FAIL_AT=after-state-rename` and asserts the same
+  committed-rows recovery. After this amendment, zero wall-clock checks bound
+  work; every budget bounds a wait.
+  Review adjudication 2026-09-12: ACCEPT, with required follow-through folded
+  in here. (a) Rework `expired_open_budget_completes_reads_and_fails_only_after_the_state_rename`
+  (src/sources/gencc/tests.rs:626-676): with the checkpoint gone, an
+  expired-budget publish completes and commits rows, so assert that; this
+  supersedes the earlier Tests amendment of 2026-09-12 whose
+  `Err(PostRenameSync)` assertion was produced solely by the removed check —
+  the original Test 2 wording becomes both achievable and correct. (b) Delete
+  the orphaned `ensure_deadline` helper (store.rs:96) with the call site.
+  (c) Delete the stale `BIOMCP_GENCC_TEST_EXPIRE_AT` entry from
+  `PRODUCTION_READ_ENV_ALLOWLIST` in
+  tests/surface/test_source_configuration_docs_contract.py. (d) Regenerate the
+  exact line counts for both size-inventory entries, keeping the floors.
 - `StoreError::Deadline` narrows to: a lock wait timed out, or the publish was
   cancelled (the existing cancellation path in `publish_cancellable` returns
   `Deadline` and is untouched).
@@ -139,10 +166,20 @@ rerun on the same host from its updated branch.
   expired budget with missing or invalid state.json can now surface
   PostRenameSync from the recovery path instead of Deadline (a mechanical,
   recoverable consequence of the kept checkpoint); rustfmt reflow enlarged
-  the test diff cosmetically.
+  the test diff cosmetically. Amendment 3 delta at 86226cb2: ACCEPT with one
+  remediation (the rewired post-rename test cleaned up the wrong env-var
+  name and leaked `BIOMCP_GENCC_BASE` past the serial guard); remediated at
+  `0f1373de` (one word, verified by command: 1 file, 1 insertion,
+  1 deletion, focused test 1/1, clippy clean). Cosmetic report-only note
+  skipped: the test name still says "deadlines" though its trigger is now
+  fault injection.
 - Full gates: first gate run at 4c53c445 on the 4-core host failed make
   lint's size ratchet: src/sources/gencc/store.rs (1043 lines) and
   src/sources/gencc/tests.rs (1083 lines) crossed the 1000-line cap without
   baselines. Authorized both baselines in tools/rust-source-size-inventory.json
   (commit 1e36d138, deltas 43 and 101, floors 1000 and 982, with removal
-  conditions); ratchet passes locally. Final gates rerun at 1e36d138: pending.
+  conditions); ratchet passes locally. Second gate run at 119a6853: lint OK,
+  make spec OK (first full spec completion on the 4-core host), make test
+  failed under load on `Err(PostRenameSync)` from the kept post-rename
+  checkpoint — the falsification that drove Amendment 3. Final gates at the
+  branch tip: pending.
