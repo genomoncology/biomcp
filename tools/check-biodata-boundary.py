@@ -357,7 +357,7 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
     )
     deserialize_provenance = re.compile(
         r"#\[derive\([^\]]*\bDeserialize\b[^\]]*\)\]\s*"
-        r"pub(?:\([^)]*\))?\s+struct\s+\w*Provenance\b",
+        r"pub(?:\([^)]*\))?\s+struct\s+\w*Trial\w*Provenance\b",
         re.S,
     )
     for relative, source in sources:

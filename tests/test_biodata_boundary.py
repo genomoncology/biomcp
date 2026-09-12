@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -80,7 +81,18 @@ def _run(root: Path) -> subprocess.CompletedProcess[str]:
 
 
 def test_biodata_boundary_accepts_the_dedicated_1_0_line() -> None:
-    subprocess.run([sys.executable, CHECKER, "--root", ROOT], check=True)
+    for relative, neighbor in (
+        ("src/entities/article/mod.rs", "ArticleFulltextProvenance"),
+        ("src/entities/variant/normalization.rs", "CarProvenance"),
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        assert re.search(
+            rf"#\[derive\([^\]]*\bDeserialize\b[^\]]*\)\]"
+            rf"(?:\s*#\[[^\]]+\])*\s*pub struct {neighbor}\b",
+            source,
+        )
+    result = _run(ROOT)
+    assert result.returncode == 0, result.stderr
 
 
 def test_biodata_boundary_accepts_a_complete_minimal_fixture(tmp_path: Path) -> None:
