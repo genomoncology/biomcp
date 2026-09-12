@@ -52,7 +52,6 @@ use std::path::PathBuf;
 fn is_false(value: &bool) -> bool {
     !*value
 }
-
 pub(crate) const ARTICLE_OUTCOME_KEYS: &[&str] = &["fulltext", "indexing", "tldr"];
 
 fn default_article_section_outcomes() -> SectionOutcomes {
