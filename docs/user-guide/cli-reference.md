@@ -128,6 +128,8 @@ report before exiting 1 when its error count is nonzero. Full `biomcp health`
 also reports EMA, WHO Prequalification, and CDC CVX/MVX local data, GTR local data,
 WHO IVD local data, cache dir status, and cache-limit warnings when the
 managed HTTP cache is over size or below the configured disk-free floor.
+Use `biomcp health --api "FDA Orphan Drug Designations"` to probe the bounded
+FDA form search that affects `get drug regulatory --region us|all`.
 With `--json`, the health summary includes numeric `healthy`, `warning`,
 `excluded`, `error`, and `total` fields; the four status counts sum to `total`.
 Each row's `status` is one of `ok`, `error`, `excluded`, `available`,

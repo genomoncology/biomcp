@@ -146,6 +146,31 @@ pub(in crate::cli::health) async fn probe_source(
             outcome(row, ProbeClass::Excluded)
         }
         ProbeKind::VaersQuery => check_vaers_query(source.api, source.affects).await,
+        ProbeKind::FdaOrphan => {
+            let started = std::time::Instant::now();
+            match crate::sources::fda_orphan::health_probe(client).await {
+                Ok(()) => outcome(
+                    health_row(
+                        source.api,
+                        HealthStatus::Ok,
+                        format!("{}ms", started.elapsed().as_millis()),
+                        source.affects,
+                        None,
+                    ),
+                    ProbeClass::Healthy,
+                ),
+                Err(_) => outcome(
+                    health_row(
+                        source.api,
+                        HealthStatus::Error,
+                        format!("{}ms", started.elapsed().as_millis()),
+                        source.affects,
+                        None,
+                    ),
+                    ProbeClass::Error,
+                ),
+            }
+        }
         ProbeKind::GenCcHead => check_gencc_head(source.api, source.affects).await,
     }
 }
@@ -188,6 +213,7 @@ where
         ProbeKind::Get { .. }
         | ProbeKind::PostJson { .. }
         | ProbeKind::VaersQuery
+        | ProbeKind::FdaOrphan
         | ProbeKind::GenCcHead => None,
         #[cfg(not(feature = "alphagenome"))]
         ProbeKind::Unavailable => None,

@@ -17,8 +17,8 @@ use crate::transform;
 
 use super::label::{extract_inline_label, extract_label_set_id, extract_label_warnings_text};
 use super::metadata::{
-    apply_openfda_metadata, fetch_shortage_entries, fetch_top_adverse_events,
-    map_drugsfda_approvals,
+    apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
+    populate_top_adverse_event_preview,
 };
 use super::search::{search_page, search_results_from_openfda_label_response};
 use super::targets::{enrich_indications, enrich_targets};
@@ -255,6 +255,7 @@ pub(super) struct ResolvedDrugBase {
     pub(super) label_response: Option<serde_json::Value>,
     pub(super) label_attempt_failed: bool,
     trial_alias_candidates: Vec<TrialAlias>,
+    selected_hits: Vec<MyChemHit>,
 }
 
 enum SparseDrugDiscoverRescue {
@@ -715,6 +716,7 @@ pub(super) async fn resolve_drug_base(
         label_response: label_response_opt,
         label_attempt_failed,
         trial_alias_candidates,
+        selected_hits: selected.into_iter().cloned().collect(),
     })
 }
 
@@ -779,24 +781,10 @@ async fn populate_common_sections(
     Ok(())
 }
 
-async fn populate_top_adverse_event_preview(drug: &mut Drug) -> bool {
-    match tokio::time::timeout(
-        OPTIONAL_SAFETY_TIMEOUT,
-        fetch_top_adverse_events(&drug.name),
-    )
-    .await
-    {
-        Ok(Ok((events, faers_query))) => {
-            drug.top_adverse_events = events;
-            drug.faers_query = faers_query;
-            false
-        }
-        Ok(Err(_)) | Err(_) => true,
-    }
-}
-
 async fn populate_us_regional_sections(
+    requested_name: &str,
     drug: &mut Drug,
+    selected_hits: &[MyChemHit],
     label_response: Option<&serde_json::Value>,
     section_flags: &DrugSections,
 ) -> Result<(), BioMcpError> {
@@ -811,6 +799,15 @@ async fn populate_us_regional_sections(
     } else {
         drug.approvals = None;
     }
+
+    drug.fda_orphan_designations = if section_flags.include_regulatory {
+        Some(
+            crate::sources::fda_orphan::fetch(orphan_aliases(requested_name, drug, selected_hits))
+                .await,
+        )
+    } else {
+        None
+    };
 
     drug.us_safety_warnings = if section_flags.include_safety {
         label_response.and_then(extract_label_warnings_text)
@@ -996,7 +993,9 @@ async fn get_with_region_owned(
 
     if region.includes_us() {
         populate_us_regional_sections(
+            &name,
             &mut resolved.drug,
+            &resolved.selected_hits,
             resolved.label_response.as_ref(),
             &section_flags,
         )
@@ -1004,6 +1003,7 @@ async fn get_with_region_owned(
     } else {
         resolved.drug.shortage = None;
         resolved.drug.approvals = None;
+        resolved.drug.fda_orphan_designations = None;
         resolved.drug.us_safety_warnings = None;
     }
 

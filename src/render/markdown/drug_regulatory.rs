@@ -1,6 +1,83 @@
 //! Drug regulatory, safety, and shortage block renderers.
 
 use super::*;
+use crate::sources::fda_orphan::{FdaOrphanDesignations, FdaOrphanOutcome};
+
+fn orphan_text(value: &str) -> String {
+    let value = crate::render::human::sanitize_inline(value);
+    let value = value.split_whitespace().collect::<Vec<_>>().join(" ");
+    if value.is_empty() {
+        return "-".into();
+    }
+    value.chars().fold(String::new(), |mut out, ch| {
+        if matches!(
+            ch,
+            '\\' | '|' | '[' | ']' | '(' | ')' | '`' | '<' | '>' | '#'
+        ) {
+            out.push('\\');
+        }
+        out.push(ch);
+        out
+    })
+}
+
+fn orphan_value(value: Option<&str>) -> String {
+    value.map(orphan_text).unwrap_or_else(|| "-".into())
+}
+
+fn render_fda_orphan_block(name: &str, value: Option<&FdaOrphanDesignations>) -> String {
+    let Some(value) = value else {
+        return String::new();
+    };
+    let mut out = String::from("### FDA orphan designations\n\n");
+    if let Some(message) = value.message.as_deref() {
+        let _ = writeln!(out, "{}\n", orphan_text(message));
+    }
+    match value.outcome {
+        FdaOrphanOutcome::Empty => out.push_str("No matching FDA orphan designations found.\n"),
+        FdaOrphanOutcome::Unavailable => {
+            let command = format!(
+                "biomcp get drug {} regulatory --region us",
+                shell_quote_arg(name)
+            );
+            let _ = writeln!(out, "Retry: {}\n", markdown_code_span(&command));
+        }
+        FdaOrphanOutcome::Data | FdaOrphanOutcome::Degraded => {
+            for row in &value.records {
+                let _ = writeln!(out, "#### {}\n", orphan_text(&row.generic_name));
+                let _ = writeln!(out, "- Designated: {}", orphan_text(&row.designation_date));
+                let _ = writeln!(
+                    out,
+                    "- Designation status: {}",
+                    orphan_value(row.designation_status.as_deref())
+                );
+                let _ = writeln!(
+                    out,
+                    "- Orphan approval: {}",
+                    orphan_text(match row.orphan_approval {
+                        crate::sources::fda_orphan::OrphanApproval::Approved => "approved",
+                        crate::sources::fda_orphan::OrphanApproval::NotApproved => "not_approved",
+                        crate::sources::fda_orphan::OrphanApproval::Unknown => "unknown",
+                    })
+                );
+                let _ = writeln!(
+                    out,
+                    "- Marketing approval: {}",
+                    orphan_value(row.marketing_approval_date.as_deref())
+                );
+                let _ = writeln!(
+                    out,
+                    "- Exclusivity end: {}",
+                    orphan_value(row.exclusivity_end_date.as_deref())
+                );
+                let _ = writeln!(out, "- Sponsor: {}", orphan_value(row.sponsor.as_deref()));
+                let _ = writeln!(out, "- Indication: {}", orphan_text(&row.designation));
+                let _ = writeln!(out, "- FDA record: [FDA record]({})\n", row.source_url);
+            }
+        }
+    }
+    out
+}
 
 pub(super) fn render_us_approvals_block(
     heading: &str,
@@ -477,7 +554,14 @@ fn render_eu_shortage_block(heading: &str, shortage: Option<&[EmaShortageEntry]>
 pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String {
     match region {
         DrugRegion::Us => {
-            render_us_approvals_block("## Regulatory (US - Drugs@FDA)", drug.approvals.as_deref())
+            let approvals = render_us_approvals_block(
+                "## Regulatory (US - Drugs@FDA)",
+                drug.approvals.as_deref(),
+            );
+            format!(
+                "{approvals}\n{}",
+                render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_ref())
+            )
         }
         DrugRegion::Eu => {
             render_eu_regulatory_block("## Regulatory (EU - EMA)", drug.ema_regulatory.as_deref())
@@ -491,6 +575,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
                 "## Regulatory (US - Drugs@FDA)",
                 drug.approvals.as_deref(),
             );
+            let orphan = render_fda_orphan_block(&drug.name, drug.fda_orphan_designations.as_ref());
             let eu = render_eu_regulatory_block(
                 "## Regulatory (EU - EMA)",
                 drug.ema_regulatory.as_deref(),
@@ -499,7 +584,7 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
                 "## Regulatory (WHO Prequalification)",
                 drug.who_prequalification.as_deref(),
             );
-            [us, eu, who]
+            [us, orphan, eu, who]
                 .into_iter()
                 .filter(|block| !block.trim().is_empty())
                 .collect::<Vec<_>>()
@@ -569,5 +654,67 @@ pub(super) fn render_shortage_block(drug: &Drug, region: DrugRegion) -> String {
                 .collect::<Vec<_>>()
                 .join("\n")
         }
+    }
+}
+
+#[cfg(test)]
+mod fda_orphan_tests {
+    use super::*;
+    use crate::sources::fda_orphan::{FdaOrphanRecord, OrphanApproval};
+
+    fn designation(outcome: FdaOrphanOutcome) -> FdaOrphanDesignations {
+        FdaOrphanDesignations {
+            outcome,
+            sources: vec![crate::sources::fda_orphan::FDA_ORPHAN_SOURCE.into()],
+            records: vec![FdaOrphanRecord {
+                record_id: "992323".into(),
+                generic_name: "drug | [link](bad) `tick` <script>\nheading".into(),
+                trade_name: None,
+                designation_date: "2024-03-11".into(),
+                designation: "use | [bad](x) `code` <b>".into(),
+                designation_status: None,
+                designation_withdrawn_or_revoked_date: None,
+                orphan_approval: OrphanApproval::NotApproved,
+                orphan_approval_status_text: Some("Not FDA Approved for Orphan Indication".into()),
+                approved_labeled_indication: None,
+                marketing_approval_date: None,
+                exclusivity_end_date: None,
+                exclusivity_protected_indication: None,
+                sponsor: Some("sponsor\u{1b}[31m | # heading".into()),
+                source_url: "https://www.accessdata.fda.gov/scripts/opdlisting/oopd/detailedIndex.cfm?cfgridkey=992323".into(),
+            }],
+            message: None,
+            total_matching: Some(1),
+            truncated: false,
+        }
+    }
+
+    #[test]
+    fn hostile_provider_text_cannot_create_markdown_structure() {
+        let rendered =
+            render_fda_orphan_block("odd `name`", Some(&designation(FdaOrphanOutcome::Data)));
+        assert!(rendered.contains("drug \\| \\[link\\]\\(bad\\) \\`tick\\` \\<script\\> heading"));
+        assert!(!rendered.contains('\u{1b}'));
+        assert_eq!(rendered.matches("[FDA record](https://").count(), 1);
+    }
+
+    #[test]
+    fn empty_and_unavailable_have_truthful_recovery() {
+        let mut empty = designation(FdaOrphanOutcome::Empty);
+        empty.records.clear();
+        empty.total_matching = Some(0);
+        assert!(
+            render_fda_orphan_block("drug", Some(&empty))
+                .contains("No matching FDA orphan designations found.")
+        );
+        let mut unavailable = designation(FdaOrphanOutcome::Unavailable);
+        unavailable.sources.clear();
+        unavailable.records.clear();
+        unavailable.total_matching = None;
+        unavailable.message =
+            Some("FDA orphan-designation data is temporarily unavailable.".into());
+        let rendered = render_fda_orphan_block("odd `name`", Some(&unavailable));
+        assert!(rendered.contains("FDA orphan-designation data is temporarily unavailable."));
+        assert!(rendered.contains("Retry:"));
     }
 }

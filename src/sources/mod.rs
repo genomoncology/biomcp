@@ -16,7 +16,6 @@ use serde::de::DeserializeOwned;
 use tracing::warn;
 
 use crate::error::{BioMcpError, SourceContext};
-
 /// One monotonic ceiling shared by every provider operation in a variant-
 /// literature invocation. It is never retained by a global client.
 #[derive(Clone, Debug)]
@@ -279,6 +278,7 @@ pub(crate) mod disgenet;
 pub(crate) mod ema;
 pub(crate) mod enrichr;
 pub(crate) mod europepmc;
+pub(crate) mod fda_orphan;
 pub(crate) mod figshare;
 pub(crate) mod gencc;
 pub(crate) mod gnomad;

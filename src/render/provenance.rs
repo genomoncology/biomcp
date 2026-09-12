@@ -18,7 +18,6 @@ pub(crate) use self::adverse_event::{
     source_search_section_sources as adverse_event_source_search_section_sources,
     subset_section_sources as adverse_event_subset_section_sources,
 };
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SectionSource {
     pub key: String,
@@ -26,7 +25,6 @@ pub struct SectionSource {
     pub outcome: SectionOutcomeState,
     pub sources: Vec<String>,
 }
-
 impl SectionSource {
     pub(crate) fn normalized(self) -> Option<Self> {
         let key = self.key.trim();
@@ -53,15 +51,12 @@ impl SectionSource {
         })
     }
 }
-
 fn has_text(value: &str) -> bool {
     !value.trim().is_empty()
 }
-
 fn has_opt_text(value: &Option<String>) -> bool {
     value.as_deref().is_some_and(has_text)
 }
-
 fn normalize_sources<I, S>(sources: I) -> Vec<String>
 where
     I: IntoIterator<Item = S>,
@@ -80,7 +75,6 @@ where
     }
     out
 }
-
 fn push_section<I, S>(
     out: &mut Vec<SectionSource>,
     present: bool,
@@ -108,7 +102,6 @@ fn push_section<I, S>(
         out.push(section);
     }
 }
-
 fn outcome_section_sources(
     entity: &str,
     outcomes: &SectionOutcomes,
@@ -136,7 +129,6 @@ fn outcome_section_sources(
         })
         .collect()
 }
-
 pub(crate) fn discover_section_sources(result: &DiscoverResult) -> Vec<SectionSource> {
     let mut out = Vec::new();
     let structured_sources = result
@@ -160,7 +152,6 @@ pub(crate) fn discover_section_sources(result: &DiscoverResult) -> Vec<SectionSo
     );
     out
 }
-
 pub(crate) fn diagnostic_section_sources(diagnostic: &Diagnostic) -> Vec<SectionSource> {
     let mut out = Vec::new();
     let summary_present = has_text(&diagnostic.source)
@@ -216,7 +207,6 @@ pub(crate) fn diagnostic_section_sources(diagnostic: &Diagnostic) -> Vec<Section
     ));
     out
 }
-
 pub(crate) fn trial_source_label(source: Option<&str>) -> String {
     match source
         .map(str::trim)
@@ -409,6 +399,13 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         .is_some_and(|outcome| !outcome.sources().is_empty())
     {
         regulatory_sources.push("OpenFDA Drugs@FDA".to_string());
+    }
+    if drug
+        .fda_orphan_designations
+        .as_ref()
+        .is_some_and(|value| !value.sources.is_empty())
+    {
+        regulatory_sources.push("FDA Orphan Drug Designations and Approvals".to_string());
     }
     if drug.ema_regulatory.is_some() {
         regulatory_sources.push("EMA".to_string());
@@ -1042,6 +1039,7 @@ mod tests {
             label_set_id: None,
             shortage: None,
             approvals: None,
+            fda_orphan_designations: None,
             us_safety_warnings: None,
             ema_regulatory: None,
             ema_safety: None,
@@ -1091,6 +1089,7 @@ mod tests {
             label_set_id: None,
             shortage: None,
             approvals: None,
+            fda_orphan_designations: None,
             us_safety_warnings: None,
             ema_regulatory: None,
             ema_safety: None,
@@ -1161,6 +1160,7 @@ mod tests {
             label_set_id: None,
             shortage: None,
             approvals: None,
+            fda_orphan_designations: None,
             us_safety_warnings: None,
             ema_regulatory: None,
             ema_safety: None,

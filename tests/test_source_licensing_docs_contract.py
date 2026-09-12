@@ -33,6 +33,7 @@ DIRECT_SOURCE_MODULES = {
     "enrichr": "Enrichr",
     "europepmc": "Europe PMC",
     "figshare": "Figshare",
+    "fda_orphan": "FDA Orphan Drug Designations and Approvals",
     "gnomad": "gnomAD",
     "gprofiler": "g:Profiler",
     "gtex": "GTEx",

@@ -3,10 +3,111 @@
 use std::collections::HashSet;
 
 use crate::error::BioMcpError;
+use crate::sources::mychem::{MyChemHit, MyChemNdcField, MyChemUniiField};
 use crate::sources::openfda::{DrugsFdaResult, OpenFdaClient, OpenFdaResponse};
 
 use super::label::extract_openfda_values;
 use super::{Drug, DrugApproval, DrugApprovalProduct, DrugApprovalSubmission, DrugShortageEntry};
+
+fn same_populated_id(left: Option<&str>, right: Option<&str>) -> (bool, bool) {
+    match (
+        left.map(str::trim).filter(|value| !value.is_empty()),
+        right.map(str::trim).filter(|value| !value.is_empty()),
+    ) {
+        (Some(a), Some(b)) => (a.eq_ignore_ascii_case(b), !a.eq_ignore_ascii_case(b)),
+        _ => (false, false),
+    }
+}
+
+fn unii_anchor(resolved: Option<&str>, field: Option<&MyChemUniiField>) -> (bool, bool) {
+    let Some(resolved) = resolved.map(str::trim).filter(|value| !value.is_empty()) else {
+        return (false, false);
+    };
+    let values = match field {
+        Some(MyChemUniiField::One(value)) => vec![value.unii.as_deref()],
+        Some(MyChemUniiField::Many(values)) => {
+            values.iter().map(|value| value.unii.as_deref()).collect()
+        }
+        None => Vec::new(),
+    };
+    values
+        .into_iter()
+        .flatten()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .fold((false, false), |(matched, conflict), value| {
+            (
+                matched || resolved.eq_ignore_ascii_case(value),
+                conflict || !resolved.eq_ignore_ascii_case(value),
+            )
+        })
+}
+
+pub(super) fn orphan_aliases(requested_name: &str, drug: &Drug, hits: &[MyChemHit]) -> Vec<String> {
+    let mut values = vec![requested_name.to_string(), drug.name.clone()];
+    let anchored = drug.drugbank_id.is_some() || drug.chembl_id.is_some() || drug.unii.is_some();
+    if anchored {
+        for hit in hits {
+            let (db_match, db_conflict) = same_populated_id(
+                drug.drugbank_id.as_deref(),
+                hit.drugbank.as_ref().and_then(|value| value.id.as_deref()),
+            );
+            let (chembl_match, chembl_conflict) = same_populated_id(
+                drug.chembl_id.as_deref(),
+                hit.chembl
+                    .as_ref()
+                    .and_then(|value| value.molecule_chembl_id.as_deref()),
+            );
+            let (unii_match, unii_conflict) = unii_anchor(drug.unii.as_deref(), hit.unii.as_ref());
+            if !(db_match || chembl_match || unii_match)
+                || db_conflict
+                || chembl_conflict
+                || unii_conflict
+            {
+                continue;
+            }
+            if let Some(value) = hit.unii.as_ref().and_then(|value| value.display_name()) {
+                values.push(value.into());
+            }
+            if let Some(drugbank) = &hit.drugbank {
+                if let Some(value) = &drugbank.name {
+                    values.push(value.clone());
+                }
+                values.extend(drugbank.synonyms.iter().cloned());
+            }
+            if let Some(value) = hit
+                .chembl
+                .as_ref()
+                .and_then(|value| value.pref_name.as_ref())
+            {
+                values.push(value.clone());
+            }
+            if let Some(ndc) = &hit.ndc {
+                match ndc {
+                    MyChemNdcField::One(row) => {
+                        if let Some(value) = &row.nonproprietaryname {
+                            values.push(value.clone());
+                        }
+                    }
+                    MyChemNdcField::Many(rows) => {
+                        values.extend(rows.iter().filter_map(|row| row.nonproprietaryname.clone()))
+                    }
+                }
+            }
+            if let Some(openfda) = &hit.openfda {
+                values.extend(openfda.generic_name.clone().into_vec());
+                values.extend(openfda.brand_name.clone().into_vec());
+            }
+        }
+    }
+    let mut seen = HashSet::new();
+    values
+        .into_iter()
+        .map(|value| value.split_ascii_whitespace().collect::<Vec<_>>().join(" "))
+        .filter(|value| !value.is_empty() && seen.insert(value.to_ascii_lowercase()))
+        .take(6)
+        .collect()
+}
 
 fn normalize_date_yyyymmdd(value: Option<&str>) -> Option<String> {
     let v = value?.trim();
@@ -364,6 +465,22 @@ pub(super) async fn fetch_top_adverse_events(
         return Ok((Vec::new(), Some(q)));
     };
     Ok((extract_top_adverse_events(&resp), Some(q)))
+}
+
+pub(super) async fn populate_top_adverse_event_preview(drug: &mut Drug) -> bool {
+    match tokio::time::timeout(
+        super::OPTIONAL_SAFETY_TIMEOUT,
+        fetch_top_adverse_events(&drug.name),
+    )
+    .await
+    {
+        Ok(Ok((events, faers_query))) => {
+            drug.top_adverse_events = events;
+            drug.faers_query = faers_query;
+            false
+        }
+        Ok(Err(_)) | Err(_) => true,
+    }
 }
 
 pub(super) fn merge_unique_casefold(
