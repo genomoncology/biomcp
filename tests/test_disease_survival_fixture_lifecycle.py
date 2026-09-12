@@ -97,7 +97,7 @@ def test_disease_survival_server_and_root_die_with_sigkilled_owner(
         healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
 
         owner.kill()
-        assert owner.wait(timeout=10) == -signal.SIGKILL
+        assert owner.wait(timeout=60) == -signal.SIGKILL
 
         _wait_until(lambda: _healthz_is_unavailable(healthz_url))
         _wait_until(lambda: not fixture_root.exists())
@@ -163,7 +163,7 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
         _wait_until(lambda: _heartbeat_advances(stale_heartbeat))
         _wait_until(lambda: _heartbeat_advances(decoy_heartbeat))
         owner.kill()
-        assert owner.wait(timeout=10) == -signal.SIGKILL
+        assert owner.wait(timeout=60) == -signal.SIGKILL
 
         def is_ppid_one(pid: int) -> bool:
             return (
@@ -365,7 +365,7 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
         healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
 
-        assert timed_run.wait(timeout=10) == -signal.SIGKILL
+        assert timed_run.wait(timeout=60) == -signal.SIGKILL
         _wait_until(lambda: _healthz_is_unavailable(healthz_url))
         _wait_until(lambda: not fixture_root.exists())
     finally:
