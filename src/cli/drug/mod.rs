@@ -194,6 +194,7 @@ mod dispatch;
 mod render;
 mod workflow;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
+pub(crate) use self::render::batch_next_commands;
 #[cfg(test)]
 pub(crate) use self::render::render_loaded_card;
 

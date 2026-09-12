@@ -121,6 +121,15 @@ fn section_render_contexts(
     identity: &str,
     outcomes: &SectionOutcomes,
 ) -> BTreeMap<&'static str, SectionRenderContext> {
+    section_render_contexts_with_recovery(entity, identity, outcomes, None)
+}
+
+fn section_render_contexts_with_recovery(
+    entity: &str,
+    identity: &str,
+    outcomes: &SectionOutcomes,
+    recovery: Option<&[sections::DrugCommand]>,
+) -> BTreeMap<&'static str, SectionRenderContext> {
     SOURCE_STATE_ROWS
         .iter()
         .filter(|row| row.entity == entity)
@@ -139,8 +148,13 @@ fn section_render_contexts(
                 if matches!(
                     state,
                     SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
-                ) && let Some(command) = section_recovery_command(entity, identity, row.key)
-                {
+                ) && let Some(command) = match recovery {
+                    Some(entries) => entries
+                        .iter()
+                        .find(|entry| entry.section == row.key)
+                        .map(|entry| entry.command.clone()),
+                    None => section_recovery_command(entity, identity, row.key),
+                } {
                     let _ = write!(rendered, "\nRetry: {}", markdown_code_span(&command));
                 }
                 rendered
@@ -423,6 +437,14 @@ pub(crate) fn related_disease(disease: &Disease) -> Vec<String> {
 
 pub(crate) fn related_drug(drug: &Drug) -> Vec<String> {
     related::related_drug(drug)
+}
+
+pub(crate) fn drug_command_discovery(
+    drug: &Drug,
+    requested_sections: &[String],
+    effective_region: DrugRegion,
+) -> sections::DrugCommandDiscovery {
+    sections::drug_command_discovery(drug, requested_sections, effective_region)
 }
 
 pub(crate) fn related_drug_interactions(name: &str) -> Vec<String> {

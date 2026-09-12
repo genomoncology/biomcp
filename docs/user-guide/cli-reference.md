@@ -52,6 +52,14 @@ current response. `_meta.workflow`, `_meta.workflow_rationale`, and
 executable worked examples are not copied into entity responses because their
 example entities may be unrelated to the current request.
 
+For drug cards, the list is shared by single-card and batch JSON/Markdown
+renderers, capped at ten commands, and built from loaded-section recovery,
+unloaded section discovery, an optional regional `all` command, and related
+commands. A default card has `targets` loaded; section tokens load only the
+named sections, and `all` follows the parser's existing expansion. Regional
+follow-ups carry the resolved `--region` (WHO omits standalone safety and
+shortage commands).
+
 Examples:
 
 ```bash
