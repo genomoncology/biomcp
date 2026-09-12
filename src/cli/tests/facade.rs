@@ -344,6 +344,9 @@ fn reversed_search_global_delimiter_and_display_precedence_matrix() {
         vec!["biomcp", "article", "--help"],
         vec!["biomcp", "--version"],
         vec!["biomcp", "-V"],
+        vec!["biomcp", "gene", "--help"],
+        vec!["biomcp", "drug", "--version"],
+        vec!["biomcp", "variant", "-V"],
     ] {
         let expected = super::super::build_cli()
             .try_get_matches_from(args.clone())
@@ -376,6 +379,31 @@ fn reversed_search_global_delimiter_and_display_precedence_matrix() {
 
 #[test]
 fn reversed_search_candidate_errors_and_byte_caps_preserve_baseline() {
+    for entity in [
+        "all",
+        "author",
+        "disease",
+        "diagnostic",
+        "pgx",
+        "phenotype",
+        "gwas",
+        "article",
+        "trial",
+        "pathway",
+        "protein",
+        "adverse-event",
+    ] {
+        let args = vec!["biomcp", entity, "search", "--not-a-search-flag"];
+        let expected = super::super::build_cli()
+            .try_get_matches_from(args.clone())
+            .expect_err("baseline parse error")
+            .to_string();
+        assert_eq!(
+            super::super::try_parse_cli(args).unwrap_err().to_string(),
+            expected,
+            "entity={entity}"
+        );
+    }
     for args in [
         vec!["biomcp", "article", "search", "--limit", "not-a-number"],
         vec!["biomcp", "unknown", "search"],
@@ -406,6 +434,76 @@ fn reversed_search_candidate_errors_and_byte_caps_preserve_baseline() {
     let control = ["biomcp", "article", "search", "--keyword", "bad\u{85}value"]
         .map(std::ffi::OsString::from);
     assert!(super::super::reversed_search_correction(&control).is_none());
+}
+
+#[test]
+fn reversed_search_catchalls_fall_back_without_echo_when_correction_is_suppressed() {
+    fn assert_fallback(
+        args: impl IntoIterator<Item = impl Into<std::ffi::OsString> + Clone>,
+        entity: &str,
+    ) {
+        let error = super::super::try_parse_cli(args).expect_err("catchall reversal must stop");
+        assert_eq!(
+            error.to_string(),
+            format!(
+                "error: reversed search syntax; use `biomcp search {entity}`; the supplied search arguments were not accepted\n\nUsage: biomcp [OPTIONS] <COMMAND>\n\nFor more information, try '--help'.\n"
+            )
+        );
+    }
+
+    for entity in ["gene", "drug", "variant"] {
+        assert!(
+            super::super::build_cli()
+                .try_get_matches_from(["biomcp", entity, "search", "--not-a-search-flag", "secret"])
+                .is_ok(),
+            "the original catchall parse must be the success being intercepted"
+        );
+        assert_fallback(
+            ["biomcp", entity, "search", "--not-a-search-flag", "secret"],
+            entity,
+        );
+    }
+
+    let over_entries = std::iter::once("biomcp".to_string())
+        .chain(["gene".into(), "search".into()])
+        .chain(std::iter::repeat_n("secret".into(), 254))
+        .collect::<Vec<_>>();
+    assert_eq!(over_entries.len(), 257);
+    assert_fallback(over_entries, "gene");
+
+    let fixed_bytes = ["biomcp", "drug", "search", "--query"]
+        .iter()
+        .map(|value| value.len())
+        .sum::<usize>();
+    let over_bytes = "x".repeat(16_385 - fixed_bytes);
+    assert_fallback(["biomcp", "drug", "search", "--query", &over_bytes], "drug");
+    assert_fallback(
+        ["biomcp", "variant", "search", "bad\u{85}secret"],
+        "variant",
+    );
+
+    let output_overflow = "'$".repeat(5_453);
+    assert!(output_overflow.len() < 16_384);
+    assert_fallback(
+        ["biomcp", "gene", "search", "--query", &output_overflow],
+        "gene",
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn reversed_search_catchall_non_utf8_uses_safe_fallback() {
+    use std::os::unix::ffi::OsStringExt;
+    let args = vec![
+        std::ffi::OsString::from("biomcp"),
+        std::ffi::OsString::from("variant"),
+        std::ffi::OsString::from("search"),
+        std::ffi::OsString::from_vec(vec![0xff]),
+    ];
+    let error = super::super::try_parse_cli(args).expect_err("non-UTF-8 catchall reversal");
+    assert!(error.to_string().contains(
+        "reversed search syntax; use `biomcp search variant`; the supplied search arguments were not accepted"
+    ));
 }
 
 #[cfg(unix)]

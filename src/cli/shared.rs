@@ -2,7 +2,7 @@ use std::ffi::{OsStr, OsString};
 use std::io::Write;
 
 use clap::{CommandFactory, FromArgMatches, error::ErrorKind};
-use tracing::{debug, warn};
+use tracing::warn;
 
 use super::commands::Commands;
 use super::types::{Cli, CommandOutcome};
@@ -26,9 +26,8 @@ const SEARCH_ENTITY_NAMES: [&str; 15] = [
     "protein",
     "adverse-event",
 ];
-const RECOVERY_ARG_LIMIT: usize = 256;
-const RECOVERY_INPUT_BYTE_LIMIT: usize = 16_384;
-const RECOVERY_SENTENCE_BYTE_LIMIT: usize = 32_768;
+const SEARCH_CATCHALL_NAMES: [&str; 3] = ["gene", "drug", "variant"];
+const RECOVERY_LIMITS: (usize, usize, usize) = (256, 16_384, 32_768);
 
 fn hide_runtime_help_globals(
     command: clap::Command,
@@ -111,70 +110,123 @@ where
     Cli::from_arg_matches(&matches)
 }
 
-pub(crate) fn reversed_search_correction<T: AsRef<OsStr>>(args: &[T]) -> Option<String> {
-    if args.len() > RECOVERY_ARG_LIMIT {
-        return None;
-    }
-    let values = args
-        .iter()
-        .map(|arg| arg.as_ref().to_str())
-        .collect::<Option<Vec<_>>>()?;
-    let input_bytes = values
-        .iter()
-        .try_fold(0usize, |total, value| total.checked_add(value.len()))?;
-    if input_bytes > RECOVERY_INPUT_BYTE_LIMIT
-        || values.iter().any(|value| {
-            value
-                .chars()
-                .any(|ch| ('\u{0}'..='\u{1f}').contains(&ch) || ('\u{7f}'..='\u{9f}').contains(&ch))
-        })
-    {
-        return None;
-    }
-    let positions = values
+enum ReversedSearch {
+    NotReversed,
+    Complete(String),
+    Suppressed {
+        entity: &'static str,
+        reason: Suppression,
+    },
+}
+
+#[derive(Clone, Copy)]
+enum Suppression {
+    UnsafeInput,
+    InvalidCandidate,
+}
+
+fn classify_reversed_search<T: AsRef<OsStr>>(args: &[T]) -> ReversedSearch {
+    let mut commands = args
         .iter()
         .enumerate()
         .skip(1)
-        .take_while(|(_, value)| **value != "--")
-        .filter(|(_, value)| !HIDDEN_GLOBAL_FLAGS.contains(value))
-        .take(2)
-        .map(|(index, _)| index)
-        .collect::<Vec<_>>();
-    if positions.len() != 2
-        || !SEARCH_ENTITY_NAMES.contains(&values[positions[0]])
-        || values[positions[1]] != "search"
-    {
-        return None;
-    }
-
-    let mut candidate = args
-        .iter()
-        .map(|arg| arg.as_ref().to_os_string())
-        .collect::<Vec<_>>();
-    candidate.swap(positions[0], positions[1]);
-    match build_cli().try_get_matches_from(candidate.clone()) {
-        Ok(_) => {}
-        Err(error)
-            if matches!(
-                error.kind(),
-                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
-            ) => {}
-        Err(_) => return None,
-    }
-    let rendered = shlex::try_join(
-        std::iter::once("biomcp").chain(
-            candidate
+        .take_while(|(_, value)| value.as_ref() != "--")
+        .filter(|(_, value)| {
+            !HIDDEN_GLOBAL_FLAGS
                 .iter()
-                .skip(1)
-                .map(|arg| arg.to_str().expect("argv was validated as UTF-8")),
-        ),
-    )
-    .ok()?;
-    let sentence = format!(
-        "reversed search syntax; use {}",
-        crate::render::markdown::markdown_command_code_span(&rendered)
-    );
-    (sentence.len() <= RECOVERY_SENTENCE_BYTE_LIMIT).then_some(sentence)
+                .any(|flag| value.as_ref() == *flag)
+        });
+    let (Some((first, entity_arg)), Some((second, search_arg))) =
+        (commands.next(), commands.next())
+    else {
+        return ReversedSearch::NotReversed;
+    };
+    let Some(entity) = SEARCH_ENTITY_NAMES
+        .iter()
+        .copied()
+        .find(|name| entity_arg.as_ref() == OsStr::new(name))
+    else {
+        return ReversedSearch::NotReversed;
+    };
+    if search_arg.as_ref() != "search" {
+        return ReversedSearch::NotReversed;
+    }
+    let complete = (|| -> Result<String, Suppression> {
+        if args.len() > RECOVERY_LIMITS.0 {
+            return Err(Suppression::UnsafeInput);
+        }
+        let values = args
+            .iter()
+            .map(|arg| arg.as_ref().to_str())
+            .collect::<Option<Vec<_>>>()
+            .ok_or(Suppression::UnsafeInput)?;
+        let input_bytes = values
+            .iter()
+            .try_fold(0usize, |total, value| total.checked_add(value.len()))
+            .ok_or(Suppression::UnsafeInput)?;
+        if input_bytes > RECOVERY_LIMITS.1
+            || values.iter().any(|value| {
+                value.chars().any(|ch| {
+                    ('\u{0}'..='\u{1f}').contains(&ch) || ('\u{7f}'..='\u{9f}').contains(&ch)
+                })
+            })
+        {
+            return Err(Suppression::UnsafeInput);
+        }
+        let mut candidate = args
+            .iter()
+            .map(|arg| arg.as_ref().to_os_string())
+            .collect::<Vec<_>>();
+        candidate.swap(first, second);
+        match build_cli().try_get_matches_from(candidate.clone()) {
+            Ok(_) => {}
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+                ) => {}
+            Err(_) => return Err(Suppression::InvalidCandidate),
+        }
+        let rendered = shlex::try_join(
+            std::iter::once("biomcp").chain(
+                candidate
+                    .iter()
+                    .skip(1)
+                    .map(|arg| arg.to_str().expect("argv was validated as UTF-8")),
+            ),
+        )
+        .map_err(|_| Suppression::UnsafeInput)?;
+        let sentence = format!(
+            "reversed search syntax; use {}",
+            crate::render::markdown::markdown_command_code_span(&rendered)
+        );
+        (sentence.len() <= RECOVERY_LIMITS.2)
+            .then_some(sentence)
+            .ok_or(Suppression::UnsafeInput)
+    })();
+    match complete {
+        Ok(sentence) => ReversedSearch::Complete(sentence),
+        Err(reason) => ReversedSearch::Suppressed { entity, reason },
+    }
+}
+
+pub(crate) fn reversed_search_correction<T: AsRef<OsStr>>(args: &[T]) -> Option<String> {
+    match classify_reversed_search(args) {
+        ReversedSearch::Complete(sentence) => Some(sentence),
+        ReversedSearch::Suppressed { entity, reason }
+            if SEARCH_CATCHALL_NAMES.contains(&entity)
+                && (!matches!(reason, Suppression::InvalidCandidate)
+                    || build_cli()
+                        .try_get_matches_from(args)
+                        .and_then(|matches| Cli::from_arg_matches(&matches))
+                        .is_ok()) =>
+        {
+            Some(format!(
+                "reversed search syntax; use `biomcp search {entity}`; the supplied search arguments were not accepted"
+            ))
+        }
+        ReversedSearch::NotReversed | ReversedSearch::Suppressed { .. } => None,
+    }
 }
 
 fn args_request_json(args: &[OsString]) -> bool {
@@ -641,46 +693,4 @@ pub(super) fn pagination_footer_cursor(meta: &PaginationMeta) -> String {
         meta.total,
         meta.next_page_token.as_deref(),
     )
-}
-
-pub(super) fn paged_fetch_limit(
-    limit: usize,
-    offset: usize,
-    max_limit: usize,
-) -> Result<usize, crate::error::BioMcpError> {
-    if limit == 0 || limit > max_limit {
-        return Err(crate::error::BioMcpError::InvalidArgument(format!(
-            "--limit must be between 1 and {max_limit}"
-        )));
-    }
-    Ok(limit.saturating_add(offset).min(max_limit))
-}
-
-pub(super) fn paged_fetch_limit_for(
-    command_name: &str,
-    limit: usize,
-    offset: usize,
-    max_limit: usize,
-) -> Result<usize, crate::error::BioMcpError> {
-    if limit == 0 || limit > max_limit {
-        return Err(crate::error::BioMcpError::InvalidArgument(format!(
-            "--limit for {command_name} must be 1-{max_limit}"
-        )));
-    }
-    Ok(limit.saturating_add(offset).min(max_limit))
-}
-
-pub(crate) fn paginate_results<T>(rows: Vec<T>, offset: usize, limit: usize) -> (Vec<T>, usize) {
-    let total = rows.len();
-    let paged = rows.into_iter().skip(offset).take(limit).collect();
-    (paged, total)
-}
-
-pub(super) fn log_pagination_truncation(observed_total: usize, offset: usize, returned: usize) {
-    if offset.saturating_add(returned) < observed_total {
-        debug!(
-            total = observed_total,
-            offset, returned, "Results truncated by --limit"
-        );
-    }
 }

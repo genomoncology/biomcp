@@ -579,6 +579,43 @@ where
         );
     }
 
+    for (command, tool_json, entity) in [
+        (
+            "biomcp gene search --not-a-search-flag secret-value",
+            false,
+            "gene",
+        ),
+        ("drug search --not-a-search-flag secret-value", true, "drug"),
+        (
+            "variant search --json --not-a-search-flag secret-value",
+            false,
+            "variant",
+        ),
+    ] {
+        let result = if tool_json {
+            biomcp_mcp_contract_client::call_biomcp_json(client, command).await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(client, command).await?
+        };
+        assert_eq!(result.is_error, Some(true));
+        assert_eq!(result.content.len(), 1);
+        assert_eq!(
+            biomcp_mcp_contract_client::first_text(&result.content),
+            format!(
+                "Error: reversed search syntax; use `biomcp search {entity}`; the supplied search arguments were not accepted"
+            )
+        );
+    }
+
+    let bounded = format!("gene search {}", "x ".repeat(254));
+    let bounded = biomcp_mcp_contract_client::call_biomcp(client, &bounded).await?;
+    assert_eq!(bounded.is_error, Some(true));
+    assert_eq!(bounded.content.len(), 1);
+    assert_eq!(
+        biomcp_mcp_contract_client::first_text(&bounded.content),
+        "Error: reversed search syntax; use `biomcp search gene`; the supplied search arguments were not accepted"
+    );
+
     let hostile_command = format!(
         "biomcp article search --keyword '$(touch {}) `touch {}`; x>y'",
         sentinel.display(),
@@ -901,6 +938,11 @@ async fn raw_reversed_search_is_pure_preflight_over_stdio() -> anyhow::Result<()
         ("BIOMCP_CACHE_DIR", cache.display().to_string()),
         ("BIOMCP_PUBMED_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYCHEM_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_DBSNP_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_GNOMAD_BASE", "http://127.0.0.1:9".to_string()),
     ];
     let client = harness.spawn_stdio_client(&env).await?;
     assert_raw_reversed_search_is_pure_preflight(&client, &sentinel).await?;
@@ -949,6 +991,11 @@ async fn raw_reversed_search_is_pure_preflight_over_http() -> anyhow::Result<()>
         ("BIOMCP_CACHE_DIR", cache.display().to_string()),
         ("BIOMCP_PUBMED_BASE", "http://127.0.0.1:9".to_string()),
         ("BIOMCP_CTGOV_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYCHEM_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_DBSNP_BASE", "http://127.0.0.1:9".to_string()),
+        ("BIOMCP_GNOMAD_BASE", "http://127.0.0.1:9".to_string()),
     ];
     let (mut child, base_url) = harness.spawn_http_server(&env).await?;
     let result = async {

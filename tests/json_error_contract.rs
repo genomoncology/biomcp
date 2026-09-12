@@ -907,6 +907,11 @@ fn reversed_search_process_errors_are_golden_and_do_no_work() {
         ("BIOMCP_PUBMED_BASE", fixture.base_url.as_str()),
         ("BIOMCP_CTGOV_BASE", fixture.base_url.as_str()),
         ("BIOMCP_OPENFDA_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_MYGENE_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_MYCHEM_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_MYVARIANT_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_DBSNP_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_GNOMAD_BASE", fixture.base_url.as_str()),
     ];
     for (entity, expected) in [
         ("article", "biomcp search article"),
@@ -946,6 +951,66 @@ fn reversed_search_process_errors_are_golden_and_do_no_work() {
         fixture.assert_no_request();
         assert!(!cache.exists());
     }
+
+    for entity in ["gene", "drug", "variant"] {
+        let sentence = format!(
+            "reversed search syntax; use `biomcp search {entity}`; the supplied search arguments were not accepted"
+        );
+        let message = format!(
+            "error: {sentence}\n\nUsage: biomcp [OPTIONS] <COMMAND>\n\nFor more information, try '--help'.\n"
+        );
+        for args in [
+            vec![entity, "search", "--not-a-search-flag", "secret-value"],
+            vec![
+                entity,
+                "search",
+                "--not-a-search-flag",
+                "--",
+                "--json",
+                "secret-value",
+            ],
+        ] {
+            let result = run_biomcp_with_env(&args, &providers);
+            assert_eq!(result.code, Some(2));
+            assert!(result.stdout.is_empty());
+            assert_eq!(result.stderr, message);
+            assert!(!result.stderr.contains("secret-value"));
+        }
+
+        let result = run_biomcp_with_env(
+            &[
+                "--json",
+                entity,
+                "search",
+                "--not-a-search-flag",
+                "secret-value",
+            ],
+            &providers,
+        );
+        assert_eq!(result.code, Some(2));
+        assert!(result.stderr.is_empty());
+        let encoded_message =
+            serde_json::to_string(&format!("Invalid argument: {message}")).unwrap();
+        let expected = format!(
+            "{{\n  \"error\": {{\n    \"code\": \"invalid_argument\",\n    \"message\": {encoded_message}\n  }},\n  \"_meta\": {{\n    \"not_found\": false\n  }}\n}}\n"
+        );
+        assert_eq!(result.stdout, expected);
+        assert!(!result.stdout.contains("secret-value"));
+        fixture.assert_no_request();
+        assert!(!cache.exists());
+    }
+
+    let mut bounded = vec!["gene", "search"];
+    bounded.extend(std::iter::repeat_n("secret-value", 255));
+    let bounded = run_biomcp_with_env(&bounded, &providers);
+    assert_eq!(bounded.code, Some(2));
+    assert!(bounded.stdout.is_empty());
+    assert!(bounded.stderr.contains(
+        "reversed search syntax; use `biomcp search gene`; the supplied search arguments were not accepted"
+    ));
+    assert!(!bounded.stderr.contains("secret-value"));
+    fixture.assert_no_request();
+    assert!(!cache.exists());
 
     let after_delimiter = run_biomcp_with_env(&["article", "search", "--", "--json"], &providers);
     assert_eq!(after_delimiter.code, Some(2));
