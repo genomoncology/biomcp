@@ -76,4 +76,9 @@ None.
   Byte-level confirmation (`git show --stat`: one file, one insertion) done by
   the primary agent. Follow-up recorded: pin the sibling infinite-cache test
   the same way.
-- Full gates: pending on the 4-core gate host at 8e39e153
+- Full gates (final): merged as PR #265. Lint, spec, and the full Rust suite
+  (3451/3451, with the pin live under the dev host's real 7-percent-free disk
+  pressure) passed at the stack tip 38c56af2; the only pytest failures on
+  either host are the pre-existing runner-timeout class recorded in
+  sdlc/issues/2026-09-12-spec-fixture-lifecycle-runner-tests-time-out-under-host-pressure.md.
+  Earlier: pending on the 4-core gate host at 8e39e153

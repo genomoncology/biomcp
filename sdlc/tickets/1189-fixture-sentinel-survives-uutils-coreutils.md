@@ -84,5 +84,7 @@ None. Lands after ticket 1188 merges; stacked on 1187 in the meantime.
   main); the line was split across lines in a follow-up commit. Full-file
   proof 61/61 on the GNU host; whole-file proof on the uutils gate host runs
   with the combined gates.
-- Full gates: pending on both hosts at the branch tip (combined stack with
-  1187)
+- Full gates (final): merged as PR #264. At the stack tip 38c56af2: lint OK
+  and spec OK on the 16-core host, Rust 3451/3451 twice on the 4-core host;
+  this file's lane failures on the uutils host dropped from 34 to 0. Earlier:
+  pending on both hosts at the branch tip (combined stack with 1187)

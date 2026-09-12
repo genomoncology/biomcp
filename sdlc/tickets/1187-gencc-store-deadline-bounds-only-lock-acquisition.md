@@ -173,7 +173,10 @@ rerun on the same host from its updated branch.
   1 deletion, focused test 1/1, clippy clean). Cosmetic report-only note
   skipped: the test name still says "deadlines" though its trigger is now
   fault injection.
-- Full gates: first gate run at 4c53c445 on the 4-core host failed make
+- Full gates (final): merged as PR #263. Lint OK, spec OK, and Rust 3451/3451 on the
+  4-core host at the stack tip; the residual pytest reds on both hosts are
+  the pre-existing classes recorded in sdlc/issues (runner timeouts, GenCC
+  projection reserve). First gate run at 4c53c445 on the 4-core host failed make
   lint's size ratchet: src/sources/gencc/store.rs (1043 lines) and
   src/sources/gencc/tests.rs (1083 lines) crossed the 1000-line cap without
   baselines. Authorized both baselines in tools/rust-source-size-inventory.json
