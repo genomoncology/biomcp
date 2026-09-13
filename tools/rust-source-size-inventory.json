@@ -82,6 +82,17 @@
       }
     },
     {
+      "path": "src/entities/author/papers.rs",
+      "baseline_lines": 1255,
+      "floor_lines": 931,
+      "authorized_increase": {
+        "ticket": "1142",
+        "delta": 324,
+        "reason": "The claimed-works algorithm joins the existing Semantic Scholar paging and projection: group mapping, representative selection handoff, identifier canonicalization, stable deduplication, local slicing, and the author-owned compact paper type with its ORCID-only fields.",
+        "removal_condition": "Extract the ORCID claimed-works mapping into its own module when the author papers surface is next decomposed."
+      }
+    },
+    {
       "path": "src/entities/discover.rs",
       "baseline_lines": 4012,
       "floor_lines": 3694,

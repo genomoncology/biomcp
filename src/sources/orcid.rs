@@ -1,14 +1,7 @@
-// Temporary until the entity surface lands in the next commit.
-#![allow(dead_code)]
-
-//! Bounded ORCID v3.0 Public API client for exact author records.
-//!
-//! One feature surface: the authenticated `GET /<id>/person` and
-//! `GET /<id>/works` reads behind `biomcp get author orcid:<id>` and
-//! `biomcp author papers orcid:<id>`. Credentials are a pre-issued
-//! public-read bearer token in `ORCID_ACCESS_TOKEN`; nothing here performs
-//! OAuth, refresh, or persistence, and no request value ever formats the
-//! token.
+//! Bounded ORCID v3.0 Public API client for exact author records: the
+//! authenticated `GET /<id>/person` and `GET /<id>/works` reads. Credentials
+//! are a pre-issued public-read bearer token in `ORCID_ACCESS_TOKEN`; no
+//! OAuth, refresh, persistence, or formatting of the token anywhere.
 
 use crate::error::{BioMcpError, SourceContext, SourceProvider};
 use crate::sources::{RequestBuilderSourceContextExt, RequestPlan};
@@ -24,6 +17,7 @@ const ORCID_BASE_ENV: &str = "BIOMCP_ORCID_BASE";
 const ORCID_TOKEN_ENV: &str = "ORCID_ACCESS_TOKEN";
 const ORCID_TOKEN_MAX_BYTES: usize = 4096;
 const ORCID_ACCEPT: &str = "application/vnd.orcid+json";
+const ORCID_DOCS_URL: &str = "https://info.orcid.org/documentation/features/public-api/";
 const ORCID_PERSON_BODY_LIMIT: usize = 512 * 1024;
 const ORCID_WORKS_BODY_LIMIT: usize = 8 * 1024 * 1024;
 /// One initial GET plus at most three retries.
@@ -71,21 +65,15 @@ fn classify_token(raw: Option<String>) -> OrcidToken {
     }
 }
 
-pub(crate) enum OrcidCredential {
-    Required,
-    Invalid,
-    Token(String),
-}
-
-fn credential_error(state: &OrcidCredential) -> Option<BioMcpError> {
-    match state {
-        OrcidCredential::Token(_) => None,
-        OrcidCredential::Required => Some(BioMcpError::ApiKeyRequired {
+fn credential_error(token: &OrcidToken) -> Option<BioMcpError> {
+    match token {
+        OrcidToken::Valid(_) => None,
+        OrcidToken::Missing => Some(BioMcpError::ApiKeyRequired {
             api: "ORCID".into(),
             env_var: ORCID_TOKEN_ENV.into(),
-            docs_url: "https://info.orcid.org/documentation/features/public-api/".into(),
+            docs_url: ORCID_DOCS_URL.into(),
         }),
-        OrcidCredential::Invalid => Some(BioMcpError::ApiCredentialInvalid {
+        OrcidToken::Invalid => Some(BioMcpError::ApiCredentialInvalid {
             api: "ORCID".into(),
             env_var: ORCID_TOKEN_ENV.into(),
         }),
@@ -100,31 +88,23 @@ pub(crate) enum OrcidRequest {
 
 impl OrcidRequest {
     pub(crate) fn plan(&self) -> RequestPlan {
-        match self {
-            Self::Person { id } => {
-                RequestPlan::get(format!("{id}/person")).header("Accept", ORCID_ACCEPT)
-            }
-            Self::Works { id } => {
-                RequestPlan::get(format!("{id}/works")).header("Accept", ORCID_ACCEPT)
-            }
-        }
-    }
-
-    pub(crate) fn auth_mode(&self) -> &'static str {
-        "bearer_env"
+        let (path, accept) = match self {
+            Self::Person { id } => (format!("{id}/person"), ORCID_ACCEPT),
+            Self::Works { id } => (format!("{id}/works"), ORCID_ACCEPT),
+        };
+        RequestPlan::get(path).header("Accept", accept)
     }
 }
 
 pub(crate) struct OrcidClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
-    credential: OrcidCredential,
+    credential: OrcidToken,
 }
 
-/// Middleware stack for ORCID: ordinary URL policy admission, the shared
-/// per-process rate limiter, and the streamed body limit — but not the shared
-/// retry middleware, because the bounded attempt loop in this module owns
-/// every physical GET and its pacing.
+/// ORCID middleware stack: URL policy admission, the shared per-process rate
+/// limiter, and the streamed body limit — but not the shared retry
+/// middleware, because this module's attempt loop owns every physical GET.
 fn orcid_http_client(base: &str) -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
     let url: reqwest::Url = base.parse().map_err(|_| BioMcpError::Api {
         api: "orcid".into(),
@@ -165,11 +145,7 @@ fn last_attempt() -> &'static Mutex<Option<Instant>> {
 impl OrcidClient {
     pub fn new() -> Result<Self, BioMcpError> {
         let token_env = std::env::var(ORCID_TOKEN_ENV).ok();
-        let credential = match classify_token(token_env) {
-            OrcidToken::Missing => OrcidCredential::Required,
-            OrcidToken::Invalid => OrcidCredential::Invalid,
-            OrcidToken::Valid(value) => OrcidCredential::Token(value),
-        };
+        let credential = classify_token(token_env);
         let base = crate::sources::env_base(ORCID_PROD_BASE, ORCID_BASE_ENV);
         Ok(Self {
             client: orcid_http_client(&base)?,
@@ -228,15 +204,14 @@ impl OrcidClient {
         if let Some(error) = credential_error(&self.credential) {
             return Err(error);
         }
-        let token = match &self.credential {
-            OrcidCredential::Token(token) => token.clone(),
-            _ => unreachable!("credential_error returned None"),
+        let OrcidToken::Valid(token) = &self.credential else {
+            unreachable!("credential_error returned None above");
         };
         let _permit = tokio::time::timeout_at(deadline, permits().acquire())
             .await
             .map_err(|_| sanitized("ORCID is unavailable; retry later"))?
             .map_err(|_| sanitized("ORCID is unavailable; retry later"))?;
-        self.attempt_loop(&request, &token, body_limit, deadline)
+        self.attempt_loop(&request, token, body_limit, deadline)
             .await
     }
 
@@ -312,7 +287,7 @@ impl OrcidClient {
             return Attempt::Fail(BioMcpError::ApiKeyRejected {
                 api: "ORCID".into(),
                 env_var: ORCID_TOKEN_ENV.into(),
-                docs_url: "https://info.orcid.org/documentation/features/public-api/".into(),
+                docs_url: ORCID_DOCS_URL.into(),
             });
         }
         if status.as_u16() == 404 {
@@ -353,13 +328,6 @@ enum Attempt {
     Done(Vec<u8>),
     Retry { after: Option<u64> },
     Fail(BioMcpError),
-}
-
-fn retry_delay(_error: &BioMcpError) -> Duration {
-    // The shared policy honors Retry-After when present, capped at 15s; the
-    // sanitized transport error does not carry provider headers, so the
-    // default one-second backoff applies.
-    Duration::from_secs(1)
 }
 
 fn ensure_orcid_content_type(
@@ -431,7 +399,7 @@ impl OrcidPersonResponse {
             value
                 .as_ref()
                 .and_then(|v| v.value.as_deref())
-                .and_then(usable_name)
+                .and_then(|value| usable_text(value, 1024))
         }
         if let Some(credit) = field(&name.credit_name) {
             return Ok(credit.to_string());
@@ -449,10 +417,6 @@ impl OrcidName {
     fn visibility(&self) -> Option<&str> {
         self.visibility.as_deref()
     }
-}
-
-fn usable_name(value: &str) -> Option<&str> {
-    usable_text(value, 1024)
 }
 
 fn contract() -> BioMcpError {
@@ -682,4 +646,105 @@ fn usable_text(value: &str, max_bytes: usize) -> Option<&str> {
 
 fn works_contract() -> BioMcpError {
     sanitized("works response is unavailable; retry later")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_plans_carry_exact_paths_headers_and_bearer_mode_only() {
+        let person = OrcidRequest::Person {
+            id: "0000-0002-1825-0097".into(),
+        };
+        let works = OrcidRequest::Works {
+            id: "0000-0002-1825-0097".into(),
+        };
+        let plan = person.plan();
+        assert_eq!(plan.path, "0000-0002-1825-0097/person");
+        assert_eq!(plan.header_value("Accept"), Some(ORCID_ACCEPT));
+        assert!(
+            !plan
+                .headers
+                .iter()
+                .any(|(k, _)| k.eq_ignore_ascii_case("authorization"))
+        );
+        let plan = works.plan();
+        assert_eq!(plan.path, "0000-0002-1825-0097/works");
+    }
+
+    #[test]
+    fn token_classification_matches_the_frozen_three_states() {
+        assert_eq!(classify_token(None), OrcidToken::Missing);
+        assert_eq!(classify_token(Some("   ".into())), OrcidToken::Missing);
+        assert_eq!(
+            classify_token(Some("secret-token".into())),
+            OrcidToken::Valid("secret-token".into())
+        );
+        assert_eq!(
+            classify_token(Some(" bad token".into())),
+            OrcidToken::Invalid
+        );
+        assert_eq!(
+            classify_token(Some("tab\ttoken".into())),
+            OrcidToken::Invalid
+        );
+        assert_eq!(classify_token(Some("é".into())), OrcidToken::Invalid);
+        assert_eq!(classify_token(Some("x".repeat(4097))), OrcidToken::Invalid);
+        assert_eq!(
+            classify_token(Some("x".repeat(4096))),
+            OrcidToken::Valid("x".repeat(4096))
+        );
+    }
+
+    #[test]
+    fn person_path_and_public_name_precedence() {
+        let response: OrcidPersonResponse = serde_json::from_str(
+            r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"PUBLIC","given-names":{"value":" Josiah "},"family-name":{"value":"Carberry"}}}"#,
+        )
+        .unwrap();
+        let response = response.validate("0000-0002-1825-0097").unwrap();
+        assert_eq!(response.public_display_name().unwrap(), "Josiah Carberry");
+        let wrong: OrcidPersonResponse =
+            serde_json::from_str(r#"{"path":"/other/person","name":null}"#).unwrap();
+        assert!(wrong.validate("0000-0002-1825-0097").is_err());
+    }
+
+    #[test]
+    fn works_validation_selects_representatives_and_rejects_bad_shapes() {
+        let body = r#"{"path":"/i/works","group":[{"work-summary":[
+            {"visibility":"PUBLIC","put-code":7,"display-index":"2","title":{"title":{"value":"Second"}}},
+            {"visibility":"PUBLIC","put-code":9,"display-index":"10","title":{"title":{"value":"First"}}},
+            {"visibility":"PRIVATE","put-code":99,"display-index":"99","title":{"title":{"value":"private"}}}
+        ]}]}"#;
+        let response: OrcidWorksResponse = serde_json::from_str(body).unwrap();
+        let selected = response.validate("i").unwrap().selected_works().unwrap();
+        assert_eq!(selected.len(), 1);
+        assert_eq!(selected[0].put_code, 9, "greatest display-index wins");
+        assert_eq!(selected[0].title, "First");
+
+        let zero_code = r#"{"path":"/i/works","group":[{"work-summary":[
+            {"visibility":"PUBLIC","put-code":0,"display-index":"1","title":{"title":{"value":"x"}}}
+        ]}]}"#;
+        let response: OrcidWorksResponse = serde_json::from_str(zero_code).unwrap();
+        assert!(response.validate("i").unwrap().selected_works().is_err());
+
+        let leading_zero_index = r#"{"path":"/i/works","group":[{"work-summary":[
+            {"visibility":"PUBLIC","put-code":1,"display-index":"01","title":{"title":{"value":"x"}}}
+        ]}]}"#;
+        let response: OrcidWorksResponse = serde_json::from_str(leading_zero_index).unwrap();
+        assert!(response.validate("i").unwrap().selected_works().is_err());
+    }
+
+    #[test]
+    fn content_type_gate_accepts_only_the_two_orcid_media_types() {
+        let header = |raw: &str| reqwest::header::HeaderValue::from_str(raw).unwrap();
+        assert!(ensure_orcid_content_type(Some(&header("application/vnd.orcid+json"))).is_ok());
+        assert!(
+            ensure_orcid_content_type(Some(&header("application/json; charset=utf-8"))).is_ok()
+        );
+        assert!(ensure_orcid_content_type(Some(&header("APPLICATION/JSON"))).is_ok());
+        assert!(ensure_orcid_content_type(Some(&header("text/html"))).is_err());
+        assert!(ensure_orcid_content_type(None).is_err());
+    }
 }
