@@ -3,6 +3,15 @@
 Source: https://biomcp.org/biodata/models/clinical-trial/
 Raw: https://biomcp.org/biodata/models/clinical-trial.md
 
+- [Html](https://biomcp.org/biodata/models/clinical-trial/)
+- [Raw Markdown](https://biomcp.org/biodata/models/clinical-trial.md)
+- [Diagram](https://biomcp.org/downloads/biodata/clinical-trial-relationships.svg)
+- [Recorded Input](https://biomcp.org/downloads/biodata/nct02576665-provider-types.json)
+- [Expected Projection](https://biomcp.org/downloads/biodata/ctgov-clinical-trial-projection.json)
+- [Schema](https://biomcp.org/downloads/biodata/clinical-trial.schema.json)
+- [Projection Schema](https://biomcp.org/downloads/biodata/clinical-trial-projection.schema.json)
+- [Catalog](https://biomcp.org/downloads/biodata/clinical-trial-v1.bundle.json)
+
 # ClinicalTrial
 
 One shared trial value with source\-stated study definition facts\.
@@ -254,6 +263,27 @@ One source\-to\-model conversion accounting occurrence\.
 | `target\_locator` | `required\_member\_non\_null\_value` | Locator in the target contract\. | `\{&quot;description&quot;:&quot;Locator in the target contract\.&quot;,&quot;minLength&quot;:1,&quot;type&quot;:&quot;string&quot;\}` |
 | `target\_version` | `required\_member\_non\_null\_value` | Target contract version\. | `\{&quot;description&quot;:&quot;Target contract version\.&quot;,&quot;minLength&quot;:1,&quot;type&quot;:&quot;string&quot;\}` |
 
+## Direct relationship diagram
+
+![ClinicalTrial fields connect to ten component models in adopted catalog order.](/downloads/biodata/clinical-trial-relationships.svg)
+
+[Download the accessible relationship diagram](/downloads/biodata/clinical-trial-relationships.svg).
+
+## Direct relationship text
+
+This text is equivalent to the diagram and remains available without images.
+
+- `trial\-identities`: `model:ClinicalTrial/field:identities` contains `model:AuthorityScopedReference`. The trial retains every authority\-qualified identity in source order\.
+- `trial\-status\-code`: `model:ClinicalTrial/field:overall\_status` contains `model:ExtensibleCode`. The trial preserves the source status code\.
+- `trial\-arms`: `model:ClinicalTrial/field:arms` contains `model:ClinicalTrialArm`. The optional arm collection retains source order\.
+- `trial\-interventions`: `model:ClinicalTrial/field:interventions` contains `model:ClinicalTrialIntervention`. The optional intervention collection retains source order\.
+- `trial\-assignments`: `model:ClinicalTrial/field:arm\_intervention\_assignments` contains `model:ClinicalTrialArmInterventionAssignment`. Typed assignments connect local arm and intervention identities\.
+- `trial\-references`: `model:ClinicalTrial/field:references` contains `model:ClinicalTrialReference`. The optional reference collection retains source order\.
+- `trial\-outcomes`: `model:ClinicalTrial/field:planned\_outcomes` contains `model:ClinicalTrialPlannedOutcome`. The optional planned\-outcome collection retains source order\.
+- `trial\-artifacts`: `model:ClinicalTrial/field:artifacts` contains `model:ClinicalTrialArtifactDescriptor`. The optional artifact collection describes source documents\.
+- `trial\-sites`: `model:ClinicalTrial/field:site\_directory` contains `model:ClinicalTrialSiteDirectory`. The optional directory keeps central contacts and sites distinct\.
+- `trial\-eligibility`: `model:ClinicalTrial/field:eligibility` contains `model:ClinicalTrialEligibility`. The optional aggregate preserves eligibility facts together\.
+
 ## Component relationships
 
 - `trial\-identities`: `model:ClinicalTrial/field:identities` contains `model:AuthorityScopedReference`. The trial retains every authority\-qualified identity in source order\.
@@ -281,27 +311,54 @@ One source\-to\-model conversion accounting occurrence\.
 
 This reference comes from catalog format 1 and the recorded example `nct02576665\-provider\-types\.json`. ClinicalTrials\.gov, U\.S\. National Library of Medicine.
 
+## Reproduce the recorded ClinicalTrials.gov conversion
+
+The downloadable input is **transformed historical offline evidence**. It does not present current clinical information and it is not pristine live\-provider bytes. Its recorded time describes capture rather than provider processing. Consult ClinicalTrials.gov for current information.
+
+The [pinned fixture receipt](<https://github.com/genomoncology/biodata/blob/991f9fe16b14208e184a6a9a370d5ed7b708dfae/tests/fixtures/clinicaltrials-gov-v2/manifest.json>) records `Transport decoding and per\-file contact removal are recorded by this receipt` under `ClinicalTrials\.gov Terms and Conditions` with attribution to ClinicalTrials\.gov, U\.S\. National Library of Medicine. The request was `https://clinicaltrials\.gov/api/v2/studies/NCT02576665`.
+
+The receipt records capture at `2026-09-02T22:50:57.882811Z`. The provider processing date is not recorded. Transport decoding and removal of `/protocolSection/contactsLocationsModule/overallOfficials` produced this admitted fixture. ClinicalTrials.gov updates daily.
+
+The recorded input SHA\-256 is `b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e`. The adapter and catalog are pinned to BioData revision `991f9fe16b14208e184a6a9a370d5ed7b708dfae`.
+
+Run the complete offline example after normal locked dependency preparation:
+
+```console
+cargo run --locked --no-default-features --example biodata-clinical-trial-recorded -- --check
+```
+
+The example executes `ClinicalTrialsGovApiV2::parse`, `project_clinical_trial`, `into_digest_assertion`, and `Document::ClinicalTrialProjection`. It compares strict document encoding with the expected projection download. The projection preserves the trial identity, brief title, official title, source status, study type, phases, conditions, arms, interventions, planned outcome, sites, and other admitted fields. Its capture digest binds the converted result to the recorded bytes. Its conversion report states field preservation and conversion loss.
+
 ## Reviewed crosswalks
 
 Crosswalk review and adapter support are separate facts. Rows without implementation evidence describe **correspondence only**, not executable conversion.
 
-| External contract | Direction | Relationship | Local path | Qualification | Conversion |
-| --- | --- | --- | --- | --- | --- |
-| [ClinicalTrials\.gov API v2 2\.0\.5 /protocolSection/identificationModule/nctId](<https://clinicaltrials.gov/data-api/about-api/study-data-structure>) | `external\_to\_biodata` | `equivalent` | `model:ClinicalTrial/field:identities → model:AuthorityScopedReference/field:identifier` | Equivalent only to the identity whose authority is clinicaltrials\.gov, not to the complete identities collection\. | implemented: clinicaltrials\-gov\-api\-v2 source\-to\-hub |
-| [ClinicalTrials\.gov API v2 2\.0\.5 /protocolSection/identificationModule/briefTitle](<https://clinicaltrials.gov/data-api/about-api/study-data-structure>) | `external\_to\_biodata` | `equivalent` | `model:ClinicalTrial/field:brief\_title` | Equivalent within the captured ClinicalTrials\.gov record\. | implemented: clinicaltrials\-gov\-api\-v2 source\-to\-hub |
-| [ClinicalTrials\.gov API v2 2\.0\.5 /protocolSection/statusModule/overallStatus](<https://clinicaltrials.gov/data-api/about-api/study-data-structure>) | `external\_to\_biodata` | `equivalent` | `model:ClinicalTrial/field:overall\_status` | Equivalent source\-code preservation within the captured record\. | implemented: clinicaltrials\-gov\-api\-v2 source\-to\-hub |
-| [FHIR ResearchStudy 4\.0\.1 ResearchStudy\.identifier](<https://hl7.org/fhir/R4/researchstudy-definitions.html#ResearchStudy.identifier>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:identities → model:AuthorityScopedReference/field:identifier` | Each authority\-qualified BioData identity can correspond to one FHIR identifier; FHIR permits other identifiers and additional structure\. | correspondence only; no executable conversion |
-| [FHIR ResearchStudy 4\.0\.1 ResearchStudy\.title](<https://hl7.org/fhir/R4/researchstudy-definitions.html#ResearchStudy.title>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:brief\_title` | Neither contract establishes title\-category equivalence\. | correspondence only; no executable conversion |
-| [FHIR ResearchStudy 4\.0\.1 ResearchStudy\.status](<https://hl7.org/fhir/R4/researchstudy-definitions.html#ResearchStudy.status>) | `biodata\_to\_external` | `related` | `model:ClinicalTrial/field:overall\_status` | The code systems and lifecycle meanings differ\. | correspondence only; no executable conversion |
-| [CDISC USDM 4\.0\.0 StudyIdentifier\-Output/text](<https://github.com/cdisc-org/DDF-RA/blob/v4.0.0/Deliverables/API/USDM_API.json>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:identities → model:AuthorityScopedReference/field:identifier` | USDM identity context requires fields beyond identifier text\. | correspondence only; no executable conversion |
-| [CDISC USDM 4\.0\.0 StudyTitle\-Output/text](<https://github.com/cdisc-org/DDF-RA/blob/v4.0.0/Deliverables/API/USDM_API.json>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:brief\_title` | USDM title type and context are outside the BioData scalar\. | correspondence only; no executable conversion |
+| Crosswalk | External contract | Direction | Relationship | Local path | Qualification | Conversion |
+| --- | --- | --- | --- | --- | --- | --- |
+| `ctgov\-identity` | [ClinicalTrials\.gov API v2 2\.0\.5 /protocolSection/identificationModule/nctId](<https://clinicaltrials.gov/data-api/about-api/study-data-structure>) | `external\_to\_biodata` | `equivalent` | `model:ClinicalTrial/field:identities → model:AuthorityScopedReference/field:identifier` | Equivalent only to the identity whose authority is clinicaltrials\.gov, not to the complete identities collection\. | implemented: clinicaltrials\-gov\-api\-v2 source\-to\-hub |
+| `ctgov\-brief\-title` | [ClinicalTrials\.gov API v2 2\.0\.5 /protocolSection/identificationModule/briefTitle](<https://clinicaltrials.gov/data-api/about-api/study-data-structure>) | `external\_to\_biodata` | `equivalent` | `model:ClinicalTrial/field:brief\_title` | Equivalent within the captured ClinicalTrials\.gov record\. | implemented: clinicaltrials\-gov\-api\-v2 source\-to\-hub |
+| `ctgov\-overall\-status` | [ClinicalTrials\.gov API v2 2\.0\.5 /protocolSection/statusModule/overallStatus](<https://clinicaltrials.gov/data-api/about-api/study-data-structure>) | `external\_to\_biodata` | `equivalent` | `model:ClinicalTrial/field:overall\_status` | Equivalent source\-code preservation within the captured record\. | implemented: clinicaltrials\-gov\-api\-v2 source\-to\-hub |
+| `fhir\-identity` | [FHIR ResearchStudy 4\.0\.1 ResearchStudy\.identifier](<https://hl7.org/fhir/R4/researchstudy-definitions.html#ResearchStudy.identifier>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:identities → model:AuthorityScopedReference/field:identifier` | Each authority\-qualified BioData identity can correspond to one FHIR identifier; FHIR permits other identifiers and additional structure\. | correspondence only; no executable conversion |
+| `fhir\-title` | [FHIR ResearchStudy 4\.0\.1 ResearchStudy\.title](<https://hl7.org/fhir/R4/researchstudy-definitions.html#ResearchStudy.title>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:brief\_title` | Neither contract establishes title\-category equivalence\. | correspondence only; no executable conversion |
+| `fhir\-status` | [FHIR ResearchStudy 4\.0\.1 ResearchStudy\.status](<https://hl7.org/fhir/R4/researchstudy-definitions.html#ResearchStudy.status>) | `biodata\_to\_external` | `related` | `model:ClinicalTrial/field:overall\_status` | The code systems and lifecycle meanings differ\. | correspondence only; no executable conversion |
+| `usdm\-identity` | [CDISC USDM 4\.0\.0 StudyIdentifier\-Output/text](<https://github.com/cdisc-org/DDF-RA/blob/v4.0.0/Deliverables/API/USDM_API.json>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:identities → model:AuthorityScopedReference/field:identifier` | USDM identity context requires fields beyond identifier text\. | correspondence only; no executable conversion |
+| `usdm\-title` | [CDISC USDM 4\.0\.0 StudyTitle\-Output/text](<https://github.com/cdisc-org/DDF-RA/blob/v4.0.0/Deliverables/API/USDM_API.json>) | `biodata\_to\_external` | `partial` | `model:ClinicalTrial/field:brief\_title` | USDM title type and context are outside the BioData scalar\. | correspondence only; no executable conversion |
 
 ## Downloads
 
 - [ClinicalTrial schema](/downloads/biodata/clinical-trial.schema.json)
 - [ClinicalTrialProjection schema](/downloads/biodata/clinical-trial-projection.schema.json)
+- [ClinicalTrial relationship diagram](/downloads/biodata/clinical-trial-relationships.svg)
+- [Recorded transformed ClinicalTrials.gov input](/downloads/biodata/nct02576665-provider-types.json)
 - [Recorded ClinicalTrials.gov projection](/downloads/biodata/ctgov-clinical-trial-projection.json)
 - [Adopted catalog bundle](/downloads/biodata/clinical-trial-v1.bundle.json)
+- [ClinicalTrial discovery contract](/biodata/discovery/clinical-trial.json)
+
+Artifact digests from the adopted catalog:
+
+- `schema:clinical\-trial`: `sha256:73d85d51fc96dac359eb917c0ccc58611db190bbb9af132355565899bfd2e58f`
+- `schema:clinical\-trial\-projection`: `sha256:e509e532961a6d1485cc033eb705aae08d4ff0a4e0d313a099498e3a74fc1880`
+- `example:ctgov\-clinical\-trial\-projection`: `sha256:9fbb841d131e71178dc2e2eccf7314630d7de8022078c2b0851392b42500c270`
 
 ## Scope
 

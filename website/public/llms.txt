@@ -2,3 +2,11 @@
 
 - [ClinicalTrial](https://biomcp.org/biodata/models/clinical-trial/)
 - [ClinicalTrial raw Markdown](https://biomcp.org/biodata/models/clinical-trial.md)
+- [Html](https://biomcp.org/biodata/models/clinical-trial/)
+- [Raw Markdown](https://biomcp.org/biodata/models/clinical-trial.md)
+- [Diagram](https://biomcp.org/downloads/biodata/clinical-trial-relationships.svg)
+- [Recorded Input](https://biomcp.org/downloads/biodata/nct02576665-provider-types.json)
+- [Expected Projection](https://biomcp.org/downloads/biodata/ctgov-clinical-trial-projection.json)
+- [Schema](https://biomcp.org/downloads/biodata/clinical-trial.schema.json)
+- [Projection Schema](https://biomcp.org/downloads/biodata/clinical-trial-projection.schema.json)
+- [Catalog](https://biomcp.org/downloads/biodata/clinical-trial-v1.bundle.json)

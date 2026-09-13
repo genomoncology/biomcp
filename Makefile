@@ -48,6 +48,7 @@ test-contracts: prepare-test-contracts
 
 test-contracts-prepared:
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS)
+	tools/run-offline -- cargo run --locked --no-default-features --example biodata-clinical-trial-recorded -- --check
 	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 	tools/run-offline -- website/check
 
