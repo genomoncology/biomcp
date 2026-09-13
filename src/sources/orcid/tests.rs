@@ -86,6 +86,25 @@ fn works_validation_selects_representatives_and_rejects_bad_shapes() {
     assert!(response.validate("i").unwrap().selected_works().is_err());
 }
 
+#[test]
+fn works_root_path_mismatch_fails_the_contract() {
+    // A works document rooted at another ORCID record must never project: the
+    // root path is part of the identity contract.
+    let body = r#"{"path":"/0000-0002-1825-0097/works","group":[]}"#;
+    let response: OrcidWorksResponse = serde_json::from_str(body).unwrap();
+    assert!(
+        response.validate("0000-0002-1825-0098").is_err(),
+        "a mismatched works root must fail"
+    );
+}
+
+#[test]
+fn an_absent_group_key_fails_decoding() {
+    // A present `group` array is required: absence is malformed, not empty.
+    let body = r#"{"path":"/0000-0002-1825-0097/works"}"#;
+    assert!(serde_json::from_str::<OrcidWorksResponse>(body).is_err());
+}
+
 // ---- Ticket 1142 closing pass: loopback transport and works bounds ----
 
 mod closing {
@@ -232,6 +251,99 @@ mod closing {
         assert_eq!(error.code(), "api");
         let logged = requests.lock().unwrap().clone();
         assert_eq!(logged.len(), 4, "exactly four physical GETs");
+    }
+
+    /// Raw scripted loopback: each connection writes the exact response
+    /// bytes supplied, so headers can lie about the body the way hostile or
+    /// buggy servers do.
+    async fn spawn_raw_orcid(responses: Vec<String>) -> (String, Arc<StdMutex<Vec<String>>>) {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        let requests = Arc::new(StdMutex::new(Vec::new()));
+        let logged = requests.clone();
+        let counter = Arc::new(StdMutex::new(0usize));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind orcid raw fixture");
+        let address = listener.local_addr().expect("orcid raw fixture address");
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let logged = logged.clone();
+                let responses = responses.clone();
+                let counter = counter.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    if let Some(target) = request.split_whitespace().nth(1) {
+                        logged.lock().unwrap().push(target.to_string());
+                    }
+                    let index = {
+                        let mut guard = counter.lock().unwrap();
+                        let index = *guard;
+                        *guard += 1;
+                        index
+                    };
+                    if let Some(response) = responses.get(index) {
+                        let _ = stream.write_all(response.as_bytes()).await;
+                    }
+                });
+            }
+        });
+        (format!("http://{address}"), requests)
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn a_declared_oversize_person_body_fails_the_pre_read_check_in_one_get() {
+        // Content-Length declares 600 KiB, above the 512 KiB person cap: the
+        // response-body policy rejects it before any body byte is read, as a
+        // bounded hard failure rather than a retry that burns the budget.
+        let response = format!(
+            "HTTP/1.1 200 X\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            600 * 1024
+        );
+        let (base, requests) = spawn_raw_orcid(vec![response]).await;
+        let _env = OrcidEnv::new(&base);
+        let error = OrcidClient::new()
+            .expect("client")
+            .person(VALID_ID, deadline(30))
+            .await
+            .expect_err("declared oversize body");
+        assert!(is_body_limit(&error), "{error:?}");
+        assert_eq!(
+            requests.lock().unwrap().len(),
+            1,
+            "an oversize body is never retried"
+        );
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn a_streamed_oversize_person_body_fails_once_without_retry() {
+        // The declared length sits exactly at the cap, but the stream
+        // continues past it: the read-side limit fires mid-body as the same
+        // bounded hard failure.
+        let declared = ORCID_PERSON_BODY_LIMIT;
+        let mut body = String::new();
+        body.push_str(r#"{"pad":""#);
+        for _ in 0..(declared + 64 * 1024) {
+            body.push('x');
+        }
+        body.push('}');
+        let response = format!(
+            "HTTP/1.1 200 X\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            body.len(),
+            body
+        );
+        let (base, requests) = spawn_raw_orcid(vec![response]).await;
+        let _env = OrcidEnv::new(&base);
+        let error = OrcidClient::new()
+            .expect("client")
+            .person(VALID_ID, deadline(30))
+            .await
+            .expect_err("streamed oversize body");
+        assert!(is_body_limit(&error), "{error:?}");
+        assert_eq!(requests.lock().unwrap().len(), 1);
     }
 
     #[tokio::test]

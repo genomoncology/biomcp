@@ -31,6 +31,16 @@ fn context() -> SourceContext {
     SourceContext::retry(SourceProvider::ORCID)
 }
 
+/// True when the error is a body-limit failure, peeling the source-context
+/// wrapper the send path applies.
+fn is_body_limit(error: &BioMcpError) -> bool {
+    match error {
+        BioMcpError::BodyLimit { .. } => true,
+        BioMcpError::WithSourceContext { source, .. } => is_body_limit(source),
+        _ => false,
+    }
+}
+
 fn sanitized(message: &'static str) -> BioMcpError {
     BioMcpError::Api {
         api: "orcid".into(),
@@ -290,7 +300,7 @@ impl OrcidClient {
             Err(error) => {
                 // A declared oversize body is a bounded hard failure, never a
                 // retry that burns the four-GET budget streaming it again.
-                if matches!(error, BioMcpError::BodyLimit { .. }) {
+                if is_body_limit(&error) {
                     return Attempt::Fail(error);
                 }
                 return Attempt::Retry { after: None };
@@ -323,7 +333,7 @@ impl OrcidClient {
             Ok(bytes) => bytes,
             Err(error) => {
                 // A streamed oversize body is the same bounded hard failure.
-                if matches!(error, BioMcpError::BodyLimit { .. }) {
+                if is_body_limit(&error) {
                     return Attempt::Fail(error);
                 }
                 return Attempt::Retry { after: None };

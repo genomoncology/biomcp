@@ -204,17 +204,14 @@ async fn orcid_papers(
         .await?;
     let selected = works.selected_works()?;
     let retained = retain_deduplicated(&selected);
-    let total = retained.len() as u64;
-    let start = offset.min(retained.len());
-    let end = start.saturating_add(limit).min(retained.len());
+    let (start, end, next, total) = orcid_page_bounds(retained.len(), offset, limit);
     let mut next_commands = Vec::new();
     let mut evidence_urls = Vec::new();
     let papers: Vec<AuthorPaper> = retained[start..end]
         .iter()
         .map(|work| orcid_paper(requested, work, &mut next_commands, &mut evidence_urls))
         .collect();
-    let next = (start + papers.len()) as u64;
-    if next < total {
+    if let Some(next) = next {
         next_commands.push(format!(
             "biomcp author papers {requested} --limit {limit} --offset {next}"
         ));
@@ -226,7 +223,7 @@ async fn orcid_papers(
         pagination: AuthorPapersPagination {
             offset: offset as u64,
             limit,
-            next: (next < total).then_some(next),
+            next,
             total: Some(total),
             truncated: Some(false),
         },
@@ -270,6 +267,22 @@ fn retain_deduplicated(
         retained.push(work);
     }
     retained
+}
+
+/// Ticket 1142 local pagination: slice the retained works by the caller's
+/// offset and limit, with `next` exactly when more retained works remain.
+#[allow(clippy::type_complexity)]
+fn orcid_page_bounds(
+    retained: usize,
+    offset: usize,
+    limit: usize,
+) -> (usize, usize, Option<u64>, u64) {
+    let total = retained as u64;
+    let start = offset.min(retained);
+    let end = start.saturating_add(limit).min(retained);
+    let returned = (start + (end - start)) as u64;
+    let next = (returned < total).then_some(returned);
+    (start, end, next, total)
 }
 
 /// Canonicalize the recognized identifier kinds and keep the full normalized
@@ -1407,6 +1420,128 @@ mod orcid_works_tests {
         assert!(
             requests.lock().unwrap().is_empty(),
             "no provider request may be made"
+        );
+    }
+
+    #[test]
+    fn cross_group_dedupe_drops_only_on_recognized_identity() {
+        let selected = vec![
+            work(1, &[("doi", "10.1/a"), ("grant", "g1")]),
+            // Shares only the preserved unrecognized grant with work 1.
+            work(2, &[("pmid", "100"), ("grant", "g1")]),
+            // Shares the recognized DOI with work 1: dropped.
+            work(3, &[("doi", "10.1/a")]),
+            // No recognized IDs at all: never dropped.
+            work(4, &[("grant", "g2")]),
+            // No identifiers at all: never dropped.
+            work(5, &[]),
+        ];
+        let retained = retain_deduplicated(&selected);
+        assert_eq!(
+            retained.iter().map(|w| w.put_code).collect::<Vec<_>>(),
+            [1, 2, 4, 5],
+            "only recognized canonical identity may drop a group"
+        );
+    }
+
+    #[test]
+    fn lexical_first_normalized_value_wins_the_flattened_slot() {
+        // Provider order carries 10.1/z first, but the flattened slot takes
+        // the lexically first normalized value.
+        let requested: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
+        let selected = work(7, &[("doi", "10.1/z"), ("doi", "10.1/a")]);
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+        let paper = orcid_paper(&requested, &selected, &mut commands, &mut evidence);
+        assert_eq!(paper.doi.as_deref(), Some("10.1/a"));
+    }
+
+    #[test]
+    fn orcid_page_bounds_pin_first_middle_terminal_and_beyond_total() {
+        // 25 retained works, limit 10.
+        assert_eq!(orcid_page_bounds(25, 0, 10), (0, 10, Some(10), 25));
+        assert_eq!(orcid_page_bounds(25, 10, 10), (10, 20, Some(20), 25));
+        // Terminal page: 5 returned, 25 is not below total, so no next.
+        assert_eq!(orcid_page_bounds(25, 20, 10), (20, 25, None, 25));
+        // Offset exactly at total: a successful empty page.
+        assert_eq!(orcid_page_bounds(25, 25, 10), (25, 25, None, 25));
+        // Offset beyond total but within the static cap: still empty.
+        assert_eq!(orcid_page_bounds(25, 30, 10), (25, 25, None, 25));
+        // A single-work terminal page has no next.
+        assert_eq!(orcid_page_bounds(1, 0, 10), (0, 1, None, 1));
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn an_orcid_offset_above_ten_thousand_is_a_static_rejection() {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let logged = requests.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind offset fixture");
+        let address = listener.local_addr().expect("offset fixture address");
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let logged = logged.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    if let Some(target) = request.split_whitespace().nth(1) {
+                        logged.lock().unwrap().push(target.to_string());
+                    }
+                    let _ = stream
+                        .write_all(
+                            b"HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                        )
+                        .await;
+                });
+            }
+        });
+        let base = format!("http://{address}");
+        struct EnvRestore {
+            previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+        }
+        impl EnvRestore {
+            fn set(&mut self, key: &'static str, value: &str) {
+                self.previous.push((key, std::env::var_os(key)));
+                // SAFETY: serial-guarded test environment mutation.
+                unsafe { std::env::set_var(key, value) };
+            }
+        }
+        impl Drop for EnvRestore {
+            fn drop(&mut self) {
+                for (key, value) in self.previous.drain(..) {
+                    // SAFETY: restoring the serial-guarded environment.
+                    unsafe {
+                        match value {
+                            Some(value) => std::env::set_var(key, value),
+                            None => std::env::remove_var(key),
+                        }
+                    }
+                }
+            }
+        }
+        let mut env = EnvRestore {
+            previous: Vec::new(),
+        };
+        env.set("BIOMCP_ORCID_BASE", &base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set("ORCID_ACCESS_TOKEN", "fixture-public-read-token");
+        let error = papers("orcid:0000-0002-1825-0097", 10_001, 10)
+            .await
+            .expect_err("static rejection");
+        match error {
+            BioMcpError::InvalidArgument(message) => assert_eq!(
+                message,
+                "--offset must be at most 10000 for orcid: author claimed works"
+            ),
+            other => panic!("wrong error: {other:?}"),
+        }
+        assert!(
+            requests.lock().unwrap().is_empty(),
+            "no provider request may be planned or sent"
         );
     }
 
