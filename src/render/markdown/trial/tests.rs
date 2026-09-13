@@ -1,5 +1,92 @@
 use super::*;
 
+fn preselected_trial_with_25_locations() -> TrialResponse {
+    let locations = (1..=25)
+        .map(|number| {
+            serde_json::json!({
+                "facility": format!("Fixture Site {number:02}"),
+                "city": format!("Fixture City {number:02}"),
+                "state": "Michigan",
+                "country": "United States",
+                "status": "RECRUITING"
+            })
+        })
+        .collect::<Vec<_>>();
+    let input = serde_json::json!({
+        "protocolSection": {
+            "identificationModule": {
+                "nctId": "NCT41300001",
+                "briefTitle": "Location renderer fixture"
+            },
+            "statusModule": {"overallStatus": "RECRUITING"},
+            "sponsorCollaboratorsModule": {
+                "leadSponsor": {"name": "Fixture Sponsor"}
+            },
+            "conditionsModule": {"conditions": ["Renderer Fixture"]},
+            "designModule": {"studyType": "INTERVENTIONAL"},
+            "contactsLocationsModule": {"locations": locations}
+        }
+    })
+    .to_string();
+    let plan = biodata::ClinicalTrialsGovApiV2DetailPlan::new("NCT41300001", false)
+        .expect("test plan")
+        .with_locations();
+    let response = biodata::ClinicalTrialsGovApiV2Response::parse(
+        &plan,
+        input.as_bytes(),
+        &Default::default(),
+    )
+    .expect("test response");
+    let mut trial = TrialResponse::new(
+        response.into_projection().expect("test projection"),
+        "ClinicalTrials.gov",
+        None,
+        crate::entities::trial::TrialSectionStates {
+            arms: crate::entities::trial::TrialSectionState::NotRequested,
+            eligibility: crate::entities::trial::TrialSectionState::NotRequested,
+            outcomes: crate::entities::trial::TrialSectionState::NotRequested,
+            references: crate::entities::trial::TrialSectionState::NotRequested,
+            contacts: crate::entities::trial::TrialSectionState::NotRequested,
+            locations: crate::entities::trial::TrialSectionState::Present,
+        },
+    );
+    trial.set_site_page(0, 25);
+    trial
+}
+
+fn rendered_location_row_count(markdown: &str) -> usize {
+    markdown
+        .lines()
+        .filter(|line| line.starts_with("| Fixture Site "))
+        .count()
+}
+
+#[test]
+fn explicit_preselected_trial_page_renders_all_25_without_cap_disclosure() {
+    let markdown = trial_response_page_markdown(
+        &preselected_trial_with_25_locations(),
+        &["locations".into()],
+    )
+    .expect("explicit page markdown");
+
+    assert_eq!(rendered_location_row_count(&markdown), 25);
+    assert!(markdown.contains("| Fixture Site 25 |"));
+    assert!(!markdown.contains("display cap"));
+}
+
+#[test]
+fn ordinary_trial_response_rendering_keeps_20_location_cap() {
+    let markdown = trial_response_markdown(
+        &preselected_trial_with_25_locations(),
+        &["locations".into()],
+    )
+    .expect("ordinary trial markdown");
+
+    assert_eq!(rendered_location_row_count(&markdown), 20);
+    assert!(markdown.contains("Locations: showing 20 of 25 (display cap 20)."));
+    assert!(!markdown.contains("| Fixture Site 21 |"));
+}
+
 fn criterion(
     id: u64,
     description: &str,

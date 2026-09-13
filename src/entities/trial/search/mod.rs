@@ -191,15 +191,15 @@ pub(super) fn biodata_plan_error(
     context: &str,
     error: biodata::ClinicalTrialSearchPlanError,
 ) -> BioMcpError {
+    let field = match error.field() {
+        "geography" => "--lat, --lon, and --distance",
+        field => field,
+    };
     let correction = error
         .correction()
         .map(|value| format!("; {value}"))
         .unwrap_or_default();
-    BioMcpError::InvalidArgument(format!(
-        "{context} {}: {}{correction}",
-        error.field(),
-        error.code()
-    ))
+    BioMcpError::InvalidArgument(format!("{context} {}: {}{correction}", field, error.code()))
 }
 
 // This exceeds practical single-condition result sets while bounding abusive provider requests.

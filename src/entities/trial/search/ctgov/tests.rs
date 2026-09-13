@@ -191,6 +191,7 @@ fn trial_location_requires_a_positive_distance() {
     let err = super::super::biodata_filters(&zero_distance, None)
         .expect_err("zero distance must fail before any provider work");
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    assert!(err.to_string().contains("--distance"));
 }
 
 #[test]
@@ -270,7 +271,10 @@ fn trial_numeric_filters_are_validated_before_request_construction() {
         })
         .err()
         .expect("standalone invalid coordinate should report its numeric domain");
-        assert!(err.to_string().contains("geography"));
+        let message = err.to_string();
+        for flag in ["--lat", "--lon", "--distance"] {
+            assert!(message.contains(flag), "missing {flag}: {message}");
+        }
     }
 
     let nci_invalid_coordinates = TrialSearchFilters {

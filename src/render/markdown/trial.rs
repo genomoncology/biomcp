@@ -254,6 +254,18 @@ pub(crate) fn trial_response_markdown(
     trial_markdown_with_states(response, Some(&response.section_states), requested_sections)
 }
 
+pub(crate) fn trial_response_page_markdown(
+    response: &crate::entities::trial::TrialResponse,
+    requested_sections: &[String],
+) -> Result<String, BioMcpError> {
+    render_trial_markdown(
+        response,
+        Some(&response.section_states),
+        requested_sections,
+        None,
+    )
+}
+
 fn trial_markdown_with_states(
     trial: &TrialResponse,
     section_states: Option<&crate::entities::trial::TrialSectionStates>,

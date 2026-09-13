@@ -128,6 +128,7 @@ pub(in crate::cli) async fn handle_get(
     }
     let location_offset = args.offset.or(legacy_offset);
     let location_limit = args.limit.or(legacy_limit);
+    let explicit_location_pagination = location_offset.is_some() || location_limit.is_some();
     if location_limit.is_some_and(|value| value == 0) {
         return Err(crate::error::BioMcpError::InvalidArgument(
             "--limit must be >= 1 for trial location pagination".into(),
@@ -157,7 +158,11 @@ pub(in crate::cli) async fn handle_get(
     let text = match (json_output, location_pagination) {
         (true, Some(loc_page)) => trial_response_locations_json(&trial, loc_page)?,
         (false, Some(loc_page)) => {
-            let mut md = crate::render::markdown::trial_response_markdown(&trial, &sections)?;
+            let mut md = if explicit_location_pagination {
+                crate::render::markdown::trial_response_page_markdown(&trial, &sections)?
+            } else {
+                crate::render::markdown::trial_response_markdown(&trial, &sections)?
+            };
             md.push_str(&format!(
                 "\n\n---\n*Locations: showing {} of {} (offset {}, limit {}{})*",
                 trial.returned_location_count(),

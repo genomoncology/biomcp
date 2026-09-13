@@ -86,7 +86,9 @@ pub use self::study::{
 };
 #[cfg(test)]
 pub use self::trial::trial_markdown;
-pub(crate) use self::trial::{trial_location_continuation_command, trial_response_markdown};
+pub(crate) use self::trial::{
+    trial_location_continuation_command, trial_response_markdown, trial_response_page_markdown,
+};
 #[allow(unused_imports)]
 pub use self::trial::{
     trial_search_markdown, trial_search_markdown_with_footer,

@@ -157,7 +157,7 @@ The fast count path cannot fully apply age filtering upstream, so BioMCP should
 stay explicit that the returned total is approximate.
 
 ```bash
-../../tools/biomcp-ci search trial --age 0.5 --count-only | mustmatch '/^Total: .* [(]approximate, age post-filtered[)]$/'
+../../tools/biomcp-ci search trial --age 0.5 --count-only | mustmatch '/^Total: .* [(]approximate: before_local_filtering[)]$/'
 ```
 
 ## Canonical Trial Age Bounds
@@ -221,8 +221,8 @@ sections directly instead of forcing a second fetch or a hidden pagination path.
 ```bash
 ../../tools/biomcp-ci get trial NCT02576665 eligibility locations | mustmatch like '## Eligibility (ClinicalTrials.gov)
 ## Locations (ClinicalTrials.gov)
-| Facility | City | Postal code | Country | Status | Contact |
-| Sarah Cannon Research Institute | Denver, Colorado | 80218 | United States | - | - |'
+| Facility | City | Postal code | Country | Status | Latitude | Longitude | Contact |
+| Sarah Cannon Research Institute | Denver, Colorado | 80218 | United States | - | 39.73915 | -104.9847 | - |'
 ../../tools/biomcp-ci --json get trial NCT02576665 locations \
   | jq -r '.locations[] | select(.facility == "Sarah Cannon Research Institute") | .postal_code' \
   | mustmatch '80218'
@@ -262,7 +262,7 @@ Eligible Ages: 2 Years to 18 Years
 Key inclusion: confirmed SHANK3-related neurodevelopmental disorder.'
 ../../tools/biomcp-ci get trial NCT41300001 contacts eligibility locations \
   | awk '/^## Locations/{inside=1} inside && /^## / && !/^## Locations/{exit} inside' \
-  | mustmatch like '| Rare Disease Center | Ann Arbor, Michigan | - | United States | RECRUITING | Site Coordinator (CONTACT) 555-0199 site@example.test |'
+  | mustmatch like '| Rare Disease Center | Ann Arbor, Michigan | - | United States | RECRUITING | 42.2808 | -83.743 | Site Coordinator (CONTACT) 555-0199 site@example.test |'
 ```
 
 The `contacts` section needs site context to label site contacts, but JSON should
@@ -300,14 +300,18 @@ bash -c 'set -eu; eval "set -- $1"; "$@"' _ "$next_locations" \
   | mustmatch not like 'site@example.test'
 ```
 
-An explicit locations page is rendered in full, even above the default
-20-site page size. Generic `all` Markdown keeps its disclosed display cap and
-does not show a top-level contact for a hidden site.
+An explicitly selected 25-location page renders every selected row and retains
+its complete pagination facts. Generic `all` Markdown keeps the disclosed
+20-site display cap and does not show a top-level contact for a hidden site.
 
 ```bash
-../../tools/biomcp-ci get trial NCT41300001 --limit 25 contacts locations \
-  | awk '/^## Locations/{inside=1} inside{print}' \
-  | mustmatch like '| Fixture Site 25 | Fixture City 25, Michigan | - | United States | RECRUITING | Site Coordinator 25 (CONTACT) 555-0025 site-25@example.test |
+explicit_locations="$(../../tools/biomcp-ci get trial NCT41300001 --limit 25 contacts locations)"
+printf '%s\n' "$explicit_locations" \
+  | awk '/^## Locations/{inside=1; next} inside && /^\| (Rare Disease Center|Fixture Site)/{count++} END{print count}' \
+  | mustmatch '25'
+printf '%s\n' "$explicit_locations" | mustmatch not like 'display cap'
+printf '%s\n' "$explicit_locations" \
+  | mustmatch like '| Fixture Site 25 | Fixture City 25, Michigan | - | United States | RECRUITING |  |  | Site Coordinator 25 (CONTACT) 555-0025 site-25@example.test |
 *Locations: showing 25 of 25 (offset 0, limit 25)*'
 ../../tools/biomcp-ci get trial NCT41300001 all \
   | mustmatch like 'Locations: showing 20 of 25 (display cap 20).'
@@ -320,15 +324,15 @@ does not show a top-level contact for a hidden site.
 
 ## Every Named Site Contact Reaches Its Location
 
-Location JSON preserves every named site contact in provider order while the
-legacy scalar aliases continue to describe the literal first source contact.
+Location JSON preserves every named site contact in provider order in the
+nested contact collection while the selected page also feeds top-level contacts.
 
 ```bash
 ../../tools/biomcp-ci --json get trial NCT00000000 contacts locations \
-  | jq -e '([.locations[0].contacts[] | [.name, .role]] == [["First Synthetic Contact", "CONTACT"], ["Second Synthetic Contact", "BACKUP"]]) and ([.contacts[] | select(.level == "site") | [.name, .role]] == [["First Synthetic Contact", "CONTACT"], ["Second Synthetic Contact", "BACKUP"]]) and (.locations[0].contacts | length == 2) and ([.contacts[] | select(.level == "site")] | length == 2) and (.locations[0].contact_name == "First Synthetic Contact")' \
+  | jq -e '([.locations[0].contacts[] | [.name, .role]] == [["First Synthetic Contact", "CONTACT"], ["Second Synthetic Contact", "BACKUP"]]) and ([.contacts[] | select(.level == "site") | [.name, .role]] == [["First Synthetic Contact", "CONTACT"], ["Second Synthetic Contact", "BACKUP"]]) and (.locations[0].contacts | length == 2) and ([.contacts[] | select(.level == "site")] | length == 2) and (.locations[0] | has("contact_name") | not)' \
   | mustmatch 'true'
 ../../tools/biomcp-ci get trial NCT00000000 contacts locations \
-  | grep -F '| Synthetic Research Site | Example City | - | United States | RECRUITING | First Synthetic Contact (CONTACT)<br>Second Synthetic Contact (BACKUP) |' \
+  | grep -F '| Synthetic Research Site | Example City | - | United States | RECRUITING |  |  | First Synthetic Contact (CONTACT)<br>Second Synthetic Contact (BACKUP) |' \
   | mustmatch like 'First Synthetic Contact (CONTACT)<br>Second Synthetic Contact (BACKUP)'
 ```
 
@@ -443,7 +447,7 @@ detail, mutation, and NCI routes.
 grep -F 'query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=50' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like 'fields=NCTId%2CBriefTitle'
 grep -F 'query.cond=non-small+cell+lung+cancer' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | grep -F 'pageSize=50' | mustmatch like 'EGFR+L858R'
 grep -F '/api/v2/studies/NCT02576665?fields=' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | grep -F 'LocationFacility' | mustmatch like 'EligibilityCriteria'
-grep -F '/api/v2/studies/NCT00791778?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00791778?fields='
-grep -F '/api/v2/studies/NCT00000000?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00000000?fields='
-grep -F 'GET /nci/api/v2/trials?keyword=melanoma&size=1&from=0' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'keyword=melanoma'
+grep -F '/api/v2/studies/NCT00791778?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactPhoneExt%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COfficialTitle%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00791778?fields='
+grep -F '/api/v2/studies/NCT00000000?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactPhoneExt%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactPhoneExt%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COfficialTitle%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00000000?fields='
+grep -Fx 'GET /nci/api/v2/trials?keyword=melanoma&include=nct_id&include=nci_id&include=brief_title&include=current_trial_status&include=phase&include=diseases&include=lead_org&include=eligibility&size=1&from=0' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'keyword=melanoma'
 ```

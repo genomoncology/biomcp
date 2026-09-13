@@ -91,6 +91,7 @@ NCT02136914_STUDY = {
             "briefTitle": "ADS-5102 for Levodopa Induced Dyskinesia",
         },
         "statusModule": {"overallStatus": "COMPLETED"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
         "descriptionModule": {
             "briefSummary": "A study of investigational extended-release capsules for levodopa induced dyskinesia."
         },
@@ -129,6 +130,7 @@ SHELL_SAFE_STUDY = {
             "briefTitle": "Alpha\\path's $(touch /tmp/biomcp-trial-title-expanded) \"quoted\" $HOME; `uname` tail",
         },
         "statusModule": {"overallStatus": "COMPLETED"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
         "descriptionModule": {"briefSummary": "Fixture study for source-derived command text."},
         "conditionsModule": {
             "conditions": ["quoted $(touch /tmp/biomcp-357-pwned) \"condition\""]
@@ -160,6 +162,7 @@ VENETOCLAX_STUDY = {
             "briefTitle": "Literal Venetoclax Trial",
         },
         "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
         "descriptionModule": {"briefSummary": "Fixture result for the requested intervention."},
         "conditionsModule": {"conditions": ["Chronic Lymphocytic Leukemia"]},
         "designModule": {
@@ -184,6 +187,7 @@ VENCLEXTA_STUDY = {
             "briefTitle": "Venclexta Alias Trial",
         },
         "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
         "descriptionModule": {"briefSummary": "Fixture result for a plausible trade alias."},
         "conditionsModule": {"conditions": ["Acute Myeloid Leukemia"]},
         "designModule": {
@@ -205,6 +209,9 @@ CONTINUATION_REJECTED_STUDY = {
     "protocolSection": {
         "identificationModule": {"nctId": "NCT51000003", "briefTitle": "Rejected Fanout Page Fixture"},
         "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
+        "conditionsModule": {"conditions": ["Continuation Proof Fixture"]},
+        "designModule": {"studyType": "Interventional"},
         "eligibilityModule": {"eligibilityCriteria": "Exclusion Criteria: nextpageproof"},
     }
 }
@@ -213,6 +220,9 @@ CONTINUATION_QUALIFYING_STUDY = {
     "protocolSection": {
         "identificationModule": {"nctId": "NCT51000004", "briefTitle": "Qualifying Continuation Fixture"},
         "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
+        "conditionsModule": {"conditions": ["Continuation Proof Fixture"]},
+        "designModule": {"studyType": "Interventional"},
         "eligibilityModule": {"eligibilityCriteria": "Inclusion Criteria: nextpageproof"},
     }
 }
@@ -251,6 +261,7 @@ KARMMA_STUDY = {
             "briefTitle": "KarMMa-1 Document Fixture",
         },
         "statusModule": {"overallStatus": "COMPLETED"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
         "conditionsModule": {"conditions": ["Multiple Myeloma"]},
         "designModule": {
             "phases": ["PHASE2"],
@@ -290,6 +301,7 @@ CONTACTS_ELIGIBILITY_STUDY = {
             "briefTitle": "Central and Site Contact Fixture",
         },
         "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
         "descriptionModule": {
             "briefSummary": "Fixture study for trial contact and eligibility detail."
         },
@@ -361,7 +373,9 @@ CANONICAL_AGE_STUDY = {
             "briefTitle": "Canonical Age Contract Fixture",
         },
         "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
         "conditionsModule": {"conditions": ["Canonical Age Fixture"]},
+        "designModule": {"studyType": "Interventional"},
         "eligibilityModule": {
             "minimumAge": "6 Months",
             "sex": "ALL",

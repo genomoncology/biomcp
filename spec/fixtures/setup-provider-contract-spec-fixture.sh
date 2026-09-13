@@ -475,8 +475,20 @@ class Handler(BaseHTTPRequestHandler):
             send(self, 200, WIKIPATHWAYS_SEARCH)
             return
         if parsed.path == "/nci/api/v2/trials":
-            query = parse_qs(parsed.query)
-            if query == {"keyword": ["melanoma"], "size": ["1"], "from": ["0"]}:
+            query = parse_qsl(parsed.query, keep_blank_values=True)
+            if query == [
+                ("keyword", "melanoma"),
+                ("include", "nct_id"),
+                ("include", "nci_id"),
+                ("include", "brief_title"),
+                ("include", "current_trial_status"),
+                ("include", "phase"),
+                ("include", "diseases"),
+                ("include", "lead_org"),
+                ("include", "eligibility"),
+                ("size", "1"),
+                ("from", "0"),
+            ]:
                 send(self, 200, NCI_MELANOMA)
                 return
 
