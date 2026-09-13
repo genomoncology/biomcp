@@ -1,11 +1,14 @@
 use crate::entities::author::{
-    ArticleAuthorsResult, AuthorDetail, AuthorIdentity, AuthorPaperFull, AuthorPapersFullResult,
-    AuthorPapersResult, AuthorSearchResponse, ProviderStatus,
+    ArticleAuthorsResult, AuthorDetail, AuthorIdProvider, AuthorIdentity, AuthorPaperFull,
+    AuthorPapersFullResult, AuthorPapersResult, AuthorSearchResponse, ProviderStatus,
 };
 use std::fmt::Write as _;
 
 pub fn author_papers_markdown(response: &AuthorPapersResult) -> String {
     let AuthorIdentity::ExactProvider { id } = &response.author;
+    if id.provider == AuthorIdProvider::Orcid {
+        return orcid_papers_markdown(id, response);
+    }
     let mut out = format!("# Papers for `{id}`\n\n");
     for paper in &response.papers {
         let identifier = paper
@@ -21,6 +24,75 @@ pub fn author_papers_markdown(response: &AuthorPapersResult) -> String {
         }
         if let Some(year) = paper.year {
             let _ = writeln!(out, "- Year: {year}");
+        }
+        out.push('\n');
+    }
+    out
+}
+
+fn provider_inline(value: &str) -> String {
+    crate::render::human::sanitize_provider_inline(value)
+}
+
+fn orcid_papers_markdown(
+    id: &crate::entities::author::ProviderAuthorId,
+    response: &AuthorPapersResult,
+) -> String {
+    let pagination = &response.pagination;
+    let has_more = pagination.next.is_some();
+    let mut out = format!(
+        "# Papers for {}\n\nSource: ORCID\n\nIdentity: exact provider\n\nStatus: available\nTotal: {}; offset: {}; returned: {}; has more: {}; truncated: {}\n",
+        code_span(&safe_inline(&id.to_string())),
+        pagination.total.unwrap_or(0),
+        pagination.offset,
+        response.papers.len(),
+        has_more,
+        pagination.truncated.unwrap_or(false),
+    );
+    for (index, paper) in response.papers.iter().enumerate() {
+        let _ = write!(out, "\n## Work {}\n\n", index + 1);
+        let _ = writeln!(out, "- Title: {}", provider_inline(&paper.title));
+        if let Some(work_id) = &paper.work_id {
+            let _ = writeln!(out, "- Work ID: {}", code_span(&safe_inline(work_id)));
+        }
+        if let Some(journal) = &paper.journal {
+            let _ = writeln!(out, "- Journal: {}", provider_inline(journal));
+        }
+        if let Some(year) = paper.year {
+            let _ = writeln!(out, "- Year: {year}");
+        }
+        if let Some(pmid) = &paper.pmid {
+            let _ = writeln!(out, "- PMID: {}", code_span(&safe_inline(pmid)));
+        }
+        if let Some(pmcid) = &paper.pmcid {
+            let _ = writeln!(out, "- PMCID: {}", code_span(&safe_inline(pmcid)));
+        }
+        if let Some(doi) = &paper.doi {
+            let _ = writeln!(out, "- DOI: {}", code_span(&safe_inline(doi)));
+        }
+        if let Some(arxiv_id) = &paper.arxiv_id {
+            let _ = writeln!(out, "- arXiv ID: {}", code_span(&safe_inline(arxiv_id)));
+        }
+        for identifier in &paper.identifiers {
+            let _ = writeln!(
+                out,
+                "- Identifier: {}:{}",
+                provider_inline(&identifier.kind),
+                provider_inline(&identifier.value)
+            );
+        }
+    }
+    let commands: Vec<String> = response
+        ._meta
+        .next_commands
+        .iter()
+        .map(|command| command.trim().to_string())
+        .filter(|command| !command.is_empty())
+        .collect();
+    if !commands.is_empty() {
+        out.push_str("\nSee also:");
+        for command in commands {
+            let _ = write!(out, "\n  {command}");
         }
         out.push('\n');
     }
@@ -280,6 +352,28 @@ fn truncate_affiliation(value: &str) -> String {
 }
 pub fn author_detail_markdown(author: &AuthorDetail) -> String {
     let AuthorIdentity::ExactProvider { id } = &author.identity;
+    if id.provider == AuthorIdProvider::Orcid {
+        let mut out = format!(
+            "# {}\n\nSource: ORCID\n\nIdentity: exact provider\n\n- ID: {}\n- Status: available\n",
+            provider_inline(&author.display_name),
+            code_span(&safe_inline(&id.to_string())),
+        );
+        let commands: Vec<String> = author
+            ._meta
+            .next_commands
+            .iter()
+            .map(|command| command.trim().to_string())
+            .filter(|command| !command.is_empty())
+            .collect();
+        if !commands.is_empty() {
+            out.push_str("\nSee also:");
+            for command in commands {
+                let _ = write!(out, "\n  {command}");
+            }
+            out.push('\n');
+        }
+        return out;
+    }
     let mut out = format!(
         "# {}\n\nSource: Semantic Scholar\n\nIdentity: exact provider\n\n- ID: `{id}`\n- Status: available\n- ORCID link: not established by BioMCP in this release.\n",
         author.display_name
@@ -407,6 +501,8 @@ mod full_page_tests {
                 offset: 0,
                 limit: 10,
                 next,
+                total: None,
+                truncated: None,
             },
             _meta: AuthorMeta {
                 source_status: vec![AuthorSourceStatus {
