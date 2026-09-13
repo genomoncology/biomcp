@@ -5,8 +5,9 @@ mod search;
 
 #[allow(unused_imports)]
 pub use papers::{
-    AuthorPaperFull, AuthorPaperFullAuthor, AuthorPaperOpenAccessPdf, AuthorPapersFullResult,
-    AuthorPapersPagination, AuthorPapersResult, papers, papers_full,
+    AuthorPaper, AuthorPaperFull, AuthorPaperFullAuthor, AuthorPaperIdentifier,
+    AuthorPaperOpenAccessPdf, AuthorPapersFullResult, AuthorPapersPagination, AuthorPapersResult,
+    papers, papers_full,
 };
 pub use search::{AuthorSearchResponse, search};
 

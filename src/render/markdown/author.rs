@@ -705,3 +705,169 @@ mod full_page_tests {
         assert!(markdown.ends_with('\n'));
     }
 }
+
+#[cfg(test)]
+mod orcid_render_tests {
+    use super::*;
+    use crate::entities::author::{
+        AuthorEvidenceUrl, AuthorMeta, AuthorPaper, AuthorPaperIdentifier, AuthorPapersPagination,
+        AuthorPapersResult, AuthorSourceStatus, ProviderAuthorId, ProviderAuthorRecord,
+    };
+
+    fn orcid_detail(display_name: &str) -> AuthorDetail {
+        let id: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
+        AuthorDetail {
+            identity: AuthorIdentity::ExactProvider { id: id.clone() },
+            display_name: display_name.to_string(),
+            provider_records: vec![ProviderAuthorRecord {
+                id,
+                source: "orcid",
+                status: ProviderStatus::Available,
+            }],
+            affiliations: vec![],
+            paper_count: None,
+            citation_count: None,
+            h_index: None,
+            conflicts: vec![],
+            warnings: vec![],
+            _meta: AuthorMeta {
+                source_status: vec![AuthorSourceStatus {
+                    source: "orcid",
+                    status: ProviderStatus::Available,
+                }],
+                evidence_urls: vec![AuthorEvidenceUrl {
+                    source: "orcid",
+                    url: "https://orcid.org/0000-0002-1825-0097".into(),
+                }],
+                next_commands: vec!["biomcp author papers orcid:0000-0002-1825-0097".into()],
+            },
+        }
+    }
+
+    #[test]
+    fn orcid_detail_markdown_is_the_frozen_template() {
+        let output = author_detail_markdown(&orcid_detail("Josiah Carberry"));
+        assert_eq!(
+            output,
+            "# Josiah Carberry\n\nSource: ORCID\n\nIdentity: exact provider\n\n- ID: `orcid:0000-0002-1825-0097`\n- Status: available\n\nSee also:\n  biomcp author papers orcid:0000-0002-1825-0097\n"
+        );
+    }
+
+    #[test]
+    fn orcid_detail_markdown_sanitizes_the_provider_display_name() {
+        let output = author_detail_markdown(&orcid_detail("Josiah |<b>`Car$berry`"));
+        assert!(output.starts_with("# Josiah"));
+        assert!(!output.contains("<b>"));
+        assert!(!output.contains("|<"));
+        assert!(output.contains("See also:\n  biomcp author papers orcid:0000-0002-1825-0097\n"));
+    }
+
+    fn orcid_papers(
+        papers: Vec<AuthorPaper>,
+        next: Option<u64>,
+        total: u64,
+        commands: Vec<String>,
+    ) -> AuthorPapersResult {
+        let id: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
+        AuthorPapersResult {
+            author: AuthorIdentity::ExactProvider { id: id.clone() },
+            papers,
+            pagination: AuthorPapersPagination {
+                offset: 0,
+                limit: 1,
+                next,
+                total: Some(total),
+                truncated: Some(false),
+            },
+            _meta: AuthorMeta {
+                source_status: vec![AuthorSourceStatus {
+                    source: "orcid",
+                    status: ProviderStatus::Available,
+                }],
+                evidence_urls: vec![AuthorEvidenceUrl {
+                    source: "orcid",
+                    url: "https://orcid.org/0000-0002-1825-0097/work/42".into(),
+                }],
+                next_commands: commands,
+            },
+        }
+    }
+
+    #[test]
+    fn orcid_papers_markdown_is_the_frozen_nonterminal_template() {
+        let paper = AuthorPaper {
+            paper_id: None,
+            pmid: Some("123".into()),
+            doi: Some("10.1/example".into()),
+            arxiv_id: None,
+            title: "A claimed work".into(),
+            journal: Some("A Journal".into()),
+            year: Some(2024),
+            work_id: Some("orcid:0000-0002-1825-0097/work:42".into()),
+            pmcid: Some("PMC456".into()),
+            identifiers: vec![
+                AuthorPaperIdentifier {
+                    kind: "pmid".into(),
+                    value: "123".into(),
+                },
+                AuthorPaperIdentifier {
+                    kind: "doi".into(),
+                    value: "10.1/example".into(),
+                },
+                AuthorPaperIdentifier {
+                    kind: "pmcid".into(),
+                    value: "PMC456".into(),
+                },
+            ],
+        };
+        let response = orcid_papers(
+            vec![paper],
+            Some(1),
+            2,
+            vec![
+                "biomcp get article 123".into(),
+                "biomcp author papers orcid:0000-0002-1825-0097 --limit 1 --offset 1".into(),
+            ],
+        );
+        let output = author_papers_markdown(&response);
+        assert_eq!(
+            output,
+            "# Papers for `orcid:0000-0002-1825-0097`\n\nSource: ORCID\n\nIdentity: exact provider\n\nStatus: available\nTotal: 2; offset: 0; returned: 1; has more: true; truncated: false\n\n## Work 1\n\n- Title: A claimed work\n- Work ID: `orcid:0000-0002-1825-0097/work:42`\n- Journal: A Journal\n- Year: 2024\n- PMID: `123`\n- PMCID: `PMC456`\n- DOI: `10.1/example`\n- Identifier: pmid:123\n- Identifier: doi:10&#46;1&#47;example\n- Identifier: pmcid:PMC456\n\nSee also:\n  biomcp get article 123\n  biomcp author papers orcid:0000-0002-1825-0097 --limit 1 --offset 1\n"
+        );
+    }
+
+    #[test]
+    fn orcid_papers_markdown_empty_page_has_no_work_block_or_see_also() {
+        let response = orcid_papers(vec![], None, 0, vec![]);
+        let output = author_papers_markdown(&response);
+        assert_eq!(
+            output,
+            "# Papers for `orcid:0000-0002-1825-0097`\n\nSource: ORCID\n\nIdentity: exact provider\n\nStatus: available\nTotal: 0; offset: 0; returned: 0; has more: false; truncated: false\n"
+        );
+    }
+
+    #[test]
+    fn orcid_papers_markdown_sanitizes_provider_text() {
+        let paper = AuthorPaper {
+            paper_id: None,
+            pmid: None,
+            doi: None,
+            arxiv_id: None,
+            title: "Hostile |<b>`Title$()".into(),
+            journal: Some("J|ournal\nLine".into()),
+            year: None,
+            work_id: Some("orcid:0000-0002-1825-0097/work:7".into()),
+            pmcid: None,
+            identifiers: vec![AuthorPaperIdentifier {
+                kind: "grant".into(),
+                value: "A|B".into(),
+            }],
+        };
+        let response = orcid_papers(vec![paper], None, 1, vec![]);
+        let output = author_papers_markdown(&response);
+        assert!(!output.contains("<b>"));
+        assert!(!output.contains("Hostile |"));
+        assert!(output.contains("- Journal: J&#124;ournal Line"));
+        assert!(output.contains("- Identifier: grant:A&#124;B"));
+    }
+}
