@@ -85,6 +85,13 @@ REQUIRED_AREA_ROOTS = {
     "tools": "tools",
     "tests": "tests",
 }
+ZERO_COUPLING_CHECKER = ROOT / "tools/check-zero-coupling.py"
+OFFLINE = ROOT / "tools/run-offline"
+# Ticket 1145 raised the package by five authorized module paths:
+# citation evidence traversal, its admission proof, the pure JATS citation
+# extractor, its tests, and the article CLI citation test sidecar.
+MAX_PACKAGE_FILES = 1_305
+REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
 def _rust_function(source: str, signature: str) -> str:

@@ -511,3 +511,10 @@ fn join_reference_parts(parts: Vec<String>) -> String {
 
     out
 }
+
+// --- Ticket 1145: pure structural citation-evidence extraction ---
+pub(super) mod citation;
+
+pub(crate) use citation::{
+    JatsCitationExtraction, JatsCitationTargetIds, extract_citation_evidence,
+};

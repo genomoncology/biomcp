@@ -433,3 +433,6 @@ fn entity_bearing_jats_is_not_rendered_through_fallback() {
     assert!(extract_text_from_xml(xml).is_empty());
     assert!(classify_jats_document(xml).is_err());
 }
+
+// --- Ticket 1145: citation-evidence extractor ---
+mod citation_evidence;

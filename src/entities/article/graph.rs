@@ -157,6 +157,7 @@ fn graph_edge_from_citation(edge: SemanticScholarCitationEdge) -> ArticleGraphEd
         intents: edge.intents,
         contexts: edge.contexts,
         is_influential: edge.is_influential.unwrap_or(false),
+        _meta: None,
     }
 }
 
@@ -166,6 +167,17 @@ fn graph_edge_from_reference(edge: SemanticScholarReferenceEdge) -> ArticleGraph
         intents: edge.intents,
         contexts: edge.contexts,
         is_influential: edge.is_influential.unwrap_or(false),
+        _meta: None,
+    }
+}
+
+fn attach_edge_evidence_meta(
+    result: &mut ArticleGraphResult,
+    direction: GraphDirection,
+    caller_id: &str,
+) {
+    for edge in &mut result.edges {
+        edge._meta = graph_edge_evidence_meta(edge, direction, caller_id);
     }
 }
 
@@ -262,7 +274,7 @@ fn article_graph_from_citations(
         caller_id,
         GraphDirection::Citations,
     )?;
-    Ok(ArticleGraphResult {
+    let mut result = ArticleGraphResult {
         article,
         edges: response
             .data
@@ -271,7 +283,9 @@ fn article_graph_from_citations(
             .collect(),
         pagination,
         _meta,
-    })
+    };
+    attach_edge_evidence_meta(&mut result, GraphDirection::Citations, caller_id);
+    Ok(result)
 }
 
 fn article_graph_from_references(
@@ -290,7 +304,7 @@ fn article_graph_from_references(
         caller_id,
         GraphDirection::References,
     )?;
-    Ok(ArticleGraphResult {
+    let mut result = ArticleGraphResult {
         article,
         edges: response
             .data
@@ -299,7 +313,9 @@ fn article_graph_from_references(
             .collect(),
         pagination,
         _meta,
-    })
+    };
+    attach_edge_evidence_meta(&mut result, GraphDirection::References, caller_id);
+    Ok(result)
 }
 
 fn article_recommendations_from_response(
@@ -479,3 +495,9 @@ pub async fn recommendations(
 
 #[cfg(test)]
 mod tests;
+
+pub(crate) mod citation_evidence;
+
+pub(crate) use citation_evidence::ArticleCitationEvidenceResult;
+pub(crate) use citation_evidence::GraphEdgeMeta;
+use citation_evidence::graph_edge_evidence_meta;

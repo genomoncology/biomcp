@@ -37,6 +37,8 @@ PRODUCTION_READ_ENV_ALLOWLIST = {
     "BIOMCP_GENCC_TEST_FAIL_AT": "debug-only failure injection, not operator configuration",
     "BIOMCP_GENCC_TEST_NOW": "debug-only clock injection, not operator configuration",
     "BIOMCP_TEST_UNPACED_ORIGIN": "fixture-only signal, not operator configuration",
+    "BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS": "debug-only citation command deadline seam, not operator configuration",
+    "BIOMCP_TEST_CITATION_GRAPH_DEADLINE_MS": "debug-only citation graph deadline seam, not operator configuration",
     "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": "fixture-only signal, not operator configuration",
     "BIOMCP_BUILD_DATE": "compile-time build metadata, not runtime operator configuration",
     "BIOMCP_BUILD_GIT_SHA": "compile-time build metadata, not runtime operator configuration",

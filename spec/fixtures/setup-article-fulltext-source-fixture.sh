@@ -69,6 +69,109 @@ SEMANTIC_SCHOLAR_20516115_BATCH = source_bytes("semantic_scholar/pmid20516115-ba
 SEMANTIC_SCHOLAR_20516115_CITATIONS = source_bytes("semantic_scholar/pmid20516115-citations.json")
 SEMANTIC_SCHOLAR_20516115_REFERENCES = source_bytes("semantic_scholar/pmid20516115-references.json")
 SEMANTIC_SCHOLAR_20516115_RECOMMENDATIONS = source_bytes("semantic_scholar/pmid20516115-recommendations.json")
+
+# Ticket 1145 citation-evidence fixtures. Deterministic 40-hex paper IDs,
+# one batch row per seed, directed reference pages, and the JATS documents
+# reproducing the two verified examples plus the resolved/unresolved and
+# unlinked shapes.
+CITING_A1 = "a1c1" * 10
+CITING_A2 = "a2c2" * 10
+CITING_A3 = "a3c3" * 10
+CITING_A4 = "a4c4" * 10
+CITING_A5 = "a5c5" * 10
+CITING_A6 = "a6c6" * 10
+CITING_A7 = "a7c7" * 10
+CITED_T1 = "b1d1" * 10
+CITED_T2 = "b2d2" * 10
+CITED_T4 = "b4d4" * 10
+CITED_T9 = "b9e9" * 10
+DECOY_X1 = "c3e5" * 10
+HOSTILE_XH = "d4f6" * 10
+HOSTILE_DOI = "10.1093/host'ile`dollar;$x\\&y"
+
+
+def _citation_paper(paper_id, title, ext=None, venue="Citation Evidence Journal", year=2024):
+    row = {"paperId": paper_id, "title": title, "venue": venue, "year": year}
+    if ext:
+        row["externalIds"] = ext
+    return row
+
+
+def _citation_edge(cited_row, contexts, intents=None, influential=False):
+    return {
+        "contexts": list(contexts),
+        "intents": list(intents or ["background"]),
+        "isInfluential": influential,
+        "citedPaper": cited_row,
+    }
+
+
+CITATION_BATCH_ROWS = {
+    seed: [_citation_paper(paper_id, title, ext)]
+    for seed, paper_id, title, ext in (
+        ("PMID:39991290", CITING_A1, "ETP-ALL cohort analysis", {"PubMed": "39991290", "PubMedCentral": "PMC12923956"}),
+        ("PMID:40001001", CITING_A2, "Model life-cycle expertise study", {"PubMed": "40001001"}),
+        ("PMID:40001002", CITING_A3, "Forced full-text failure carrier", {"PubMed": "40001002", "PubMedCentral": "PMC123459"}),
+        ("PMID:40001003", CITING_A4, "Ambiguous reference document", {"PubMed": "40001003", "PubMedCentral": "PMC12923960"}),
+        ("PMID:40001004", CITING_A5, "Grouped marker document", {"PubMed": "40001004", "PubMedCentral": "PMC12923961"}),
+        ("PMID:40001005", CITING_A6, "Three-page bound traversal", {"PubMed": "40001005"}),
+        ("PMID:40001006", CITING_A7, "Missing open-access carrier", {"PubMed": "40001006"}),
+        ("DOI:10.1038/nature10725", CITED_T1, "Nature reference target", {"DOI": "10.1038/nature10725"}),
+        ("DOI:10.1016/j.artmed.2020.101822", CITED_T2, "Artificial intelligence in medicine target", {"DOI": "10.1016/j.artmed.2020.101822"}),
+        ("DOI:10.1099/unresolved-fixture", CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}),
+        ("DOI:10.1093/absent-target", CITED_T9, "Absent directed target", {"DOI": "10.1093/absent-target"}),
+        (f"DOI:{HOSTILE_DOI}", HOSTILE_XH, "Hostile identifier carrier", {"DOI": HOSTILE_DOI}),
+        ("1640a8f64efa15c8fc94e5a8e9c96521e50b8211", "1640a8f64efa15c8fc94e5a8e9c96521e50b8211", "Captured reference edge target", {"DOI": "10.1002/prot.22460", "PubMed": "19452558"}),
+    )
+}
+CITATION_BATCH_BODIES = {
+    json.dumps({"ids": [seed]}, separators=(",", ":")).encode(): rows
+    for seed, rows in CITATION_BATCH_ROWS.items()
+}
+
+CITING_PAPER_TITLES = {
+    CITING_A1: "ETP-ALL cohort analysis",
+    CITING_A2: "Model life-cycle expertise study",
+    CITING_A3: "Forced full-text failure carrier",
+    CITING_A4: "Ambiguous reference document",
+    CITING_A5: "Grouped marker document",
+    CITING_A6: "Three-page bound traversal",
+}
+
+CITATION_GRAPH_BODIES = {
+    "references": {
+        CITING_A1: [_citation_edge(_citation_paper(CITED_T1, "Nature reference target", {"DOI": "10.1038/nature10725"}), ["", "  "]), _citation_edge(_citation_paper(DECOY_X1, "Contextual decoy target", {"PubMed": "39991291"}), ["Grouped decoy context."]), _citation_edge(_citation_paper(HOSTILE_XH, "Hostile identifier carrier", {"DOI": HOSTILE_DOI}), [])],
+        CITING_A2: [_citation_edge(_citation_paper(CITED_T2, "Artificial intelligence in medicine target", {"DOI": "10.1016/j.artmed.2020.101822"}), [])],
+        CITING_A3: [_citation_edge(_citation_paper(CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}), ["Retained provider context survives a forced full-text failure."])],
+        CITING_A4: [_citation_edge(_citation_paper(CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}), [])],
+        CITING_A5: [_citation_edge(_citation_paper(CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}), [])],
+        CITING_A6: {"data": [_citation_edge(_citation_paper(f"ca{i:038x}", f"Cap filler {i}", {"DOI": f"10.1093/cap.{i:03d}"}), []) for i in range(300)], "next": 300},
+        CITING_A7: [_citation_edge(_citation_paper(CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}), [])],
+        HOSTILE_XH: [],
+    },
+}
+def _citation_graph_body(value):
+    if isinstance(value, dict):
+        return json.dumps(value, separators=(",", ":")).encode()
+    return json.dumps({"data": value}, separators=(",", ":")).encode()
+
+
+CITATION_GRAPH_BODIES_BYTES = {
+    direction: {pid: _citation_graph_body(rows) for pid, rows in pages.items()}
+    for direction, pages in CITATION_GRAPH_BODIES.items()
+}
+
+CITATION_JATS_PMC12923956 = """<?xml version="1.0" encoding="UTF-8"?>
+<article><front><article-meta><article-title>Cohort analysis</article-title></article-meta></front><body><sec><title>Results</title><p>The later team analyzed 12 ETP-ALL cases and 40 non-ETP T-ALL cases from the referenced cohort <xref ref-type="bibr" rid="bib7">7</xref> before comparing outcomes.</p><p>A second paragraph repeats the marker <xref ref-type="bibr" rid="bib7">7</xref> for the same reference.</p><sec><title>Subgroup analysis</title><p>A nested section contributes a third linked paragraph <xref ref-type="bibr" rid="bib7">7</xref> with its own section path.</p></sec></sec><sec><title>Methods</title><p>An unlinked paragraph cites a different reference <xref ref-type="bibr" rid="bib8">8</xref>.</p></sec></body><back><ref-list><ref id="bib7"><element-citation><pub-id pub-id-type="doi">10.1038/nature10725</pub-id></element-citation></ref><ref id="bib8"><element-citation><pub-id pub-id-type="doi">10.1158/0008-5472.CAN-09-4563</pub-id></element-citation></ref></ref-list></back></article>"""
+
+CITATION_JATS_PMC13200738 = """<?xml version="1.0" encoding="UTF-8"?>
+<article><front><article-meta><article-title>Model life-cycle management</article-title></article-meta></front><body><sec><title>Discussion</title><p>Expertise and model life-cycle management both appear in this linked paragraph <xref ref-type="bibr" rid="ooag047-B11">11</xref>.</p><p>A grouped marker names two references at once <xref ref-type="bibr" rid="ooag047-B11 ooag047-B12">11,12</xref> and is ineligible.</p><p>An empty marker element <xref ref-type="bibr" rid="ooag047-B11"></xref> supplies no insertion point.</p></sec></body><back><ref-list><ref id="ooag047-B11"><element-citation><pub-id pub-id-type="doi">10.1016/j.artmed.2020.101822</pub-id></element-citation></ref><ref id="ooag047-B12"><element-citation><pub-id pub-id-type="doi">10.1016/j.artmed.2020.101823</pub-id></element-citation></ref></ref-list></back></article>"""
+
+CITATION_JATS_PMC12923960 = """<?xml version="1.0" encoding="UTF-8"?>
+<article><front><article-meta><article-title>Ambiguous reference document</article-title></article-meta></front><body><sec><title>Results</title><p>One marker <xref ref-type="bibr" rid="r1">1</xref> cannot disambiguate two identical references.</p></sec></body><back><ref-list><ref id="r1"><element-citation><pub-id pub-id-type="doi">10.1099/unresolved-fixture</pub-id></element-citation></ref><ref id="r2"><element-citation><pub-id pub-id-type="doi">10.1099/unresolved-fixture</pub-id></element-citation></ref></ref-list></back></article>"""
+
+CITATION_JATS_PMC12923961 = """<?xml version="1.0" encoding="UTF-8"?>
+<article><front><article-meta><article-title>Grouped marker document</article-title></article-meta></front><body><sec><title>Results</title><p>A grouped marker <xref ref-type="bibr" rid="only1 extra9">1,9</xref> never links alone.</p><p>An empty-text marker <xref ref-type="bibr" rid="only1"> </xref> is ineligible here.</p></sec></body><back><ref-list><ref id="only1"><element-citation><pub-id pub-id-type="doi">10.1099/unresolved-fixture</pub-id></element-citation></ref><ref id="extra9"><element-citation><pub-id pub-id-type="doi">10.1093/other.9</pub-id></element-citation></ref></ref-list></back></article>"""
 HTML_FALLBACK = (
     FIXTURE_DIR / "html" / "pmc_article_page.html"
 ).read_text(encoding="utf-8")
@@ -623,6 +726,13 @@ class Handler(BaseHTTPRequestHandler):
             }])
             return
 
+        if decoded_path == "/graph/v1/paper/batch" and body in CITATION_BATCH_BODIES:
+            append_request_log(
+                "s2:seed:x-api-key:" + ("present" if self.headers.get("x-api-key") else "absent")
+            )
+            send_json(self, 200, CITATION_BATCH_BODIES[body])
+            return
+
         if decoded_path == "/v2/articles/search":
             send_json(self, 200, [
                 {
@@ -716,6 +826,36 @@ class Handler(BaseHTTPRequestHandler):
             and query.get("rettype") == ["xml"]
         ):
             send_bytes(self, 200, NCBI_EFETCH_3040717, "application/xml")
+            return
+
+        citation_graph_pid = None
+        citation_graph_direction = None
+        for direction, pages in CITATION_GRAPH_BODIES_BYTES.items():
+            for pid in pages:
+                if decoded_path == f"/graph/v1/paper/{pid}/{direction}":
+                    citation_graph_pid = pid
+                    citation_graph_direction = direction
+        if citation_graph_pid is not None:
+            body = CITATION_GRAPH_BODIES_BYTES[citation_graph_direction][citation_graph_pid]
+            expected_fields = (
+                "contexts,intents,isInfluential,citedPaper.paperId,citedPaper.externalIds,citedPaper.title,citedPaper.venue,citedPaper.year"
+                if citation_graph_direction == "references"
+                else "contexts,intents,isInfluential,citingPaper.paperId,citingPaper.externalIds,citingPaper.title,citingPaper.venue,citingPaper.year"
+            )
+            if query.get("fields") != [expected_fields] or len(query.get("limit", [])) != 1 or len(query.get("offset", [])) != 1:
+                send_json(self, 400, {"error": "unexpected graph query"})
+                return
+            try:
+                limit = int(query["limit"][0])
+                offset = int(query["offset"][0])
+            except ValueError:
+                send_json(self, 400, {"error": "invalid graph pagination"})
+                return
+            append_request_log(
+                f"s2:graph:{citation_graph_direction}:limit={limit}:offset={offset}:x-api-key:"
+                + ("present" if self.headers.get("x-api-key") else "absent")
+            )
+            send_json(self, 200, graph_page_payload(body, offset, limit))
             return
 
         if decoded_path in {
@@ -933,7 +1073,16 @@ class Handler(BaseHTTPRequestHandler):
         if (
             decoded_path == "/"
             and query.get("idtype") == ["pmid"]
-            and query.get("ids") in (["22663015"], ["22663017"])
+            and query.get("ids") == ["40001001"]
+        ):
+            append_request_log("fulltext:identity:ncbi-idconv")
+            send_json(self, 200, {"records": [{"pmid": 40001001, "pmcid": "PMC13200738"}]})
+            return
+
+        if (
+            decoded_path == "/"
+            and query.get("idtype") == ["pmid"]
+            and query.get("ids") in (["22663015"], ["22663017"], ["40001006"])
         ):
             send_json(self, 200, {"records": [{"pmid": int(query.get("ids")[0])}]})
             return
@@ -957,6 +1106,31 @@ class Handler(BaseHTTPRequestHandler):
         if decoded_path == "/PMC123459/fullTextXML":
             append_request_log("fulltext:xml:europepmc-pmc")
             send_text(self, 404, "not found", "text/plain")
+            return
+
+        if decoded_path == "/PMC3040717/fullTextXML":
+            append_request_log("fulltext:xml:europepmc-pmc")
+            send_text(self, 404, "not found", "text/plain")
+            return
+
+        if decoded_path == "/PMC12923956/fullTextXML":
+            append_request_log("fulltext:xml:europepmc-pmc")
+            send_text(self, 200, CITATION_JATS_PMC12923956, "application/xml")
+            return
+
+        if decoded_path == "/PMC13200738/fullTextXML":
+            append_request_log("fulltext:xml:europepmc-pmc")
+            send_text(self, 200, CITATION_JATS_PMC13200738, "application/xml")
+            return
+
+        if decoded_path == "/PMC12923960/fullTextXML":
+            append_request_log("fulltext:xml:europepmc-pmc")
+            send_text(self, 200, CITATION_JATS_PMC12923960, "application/xml")
+            return
+
+        if decoded_path == "/PMC12923961/fullTextXML":
+            append_request_log("fulltext:xml:europepmc-pmc")
+            send_text(self, 200, CITATION_JATS_PMC12923961, "application/xml")
             return
 
         if decoded_path == "/PMC123462/fullTextXML":

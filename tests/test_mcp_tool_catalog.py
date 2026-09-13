@@ -95,6 +95,15 @@ def test_public_inventory_matches_typed_catalog() -> None:
     names = re.findall(r'name:\s*"([a-z_]+)"', catalog)
     assert names == TOOLS
 
+    # Ticket 1145: citation evidence is a CLI/raw-MCP surface only. The typed
+    # catalog keeps exactly these seven tools and gains no citation-evidence,
+    # citation, or reference tool.
+    assert len(TOOLS) == 7
+    assert "citation_evidence" not in names
+    assert "citation" not in names
+    assert "reference" not in names
+    assert "citation-evidence" not in catalog
+
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     assert [tool["name"] for tool in manifest["tools"]] == TOOLS
     catalog_descriptions = dict(

@@ -392,6 +392,26 @@ See also: biomcp list article")]
         #[arg(long, default_value = "0")]
         offset: u64,
     },
+    /// Recover the passage connecting a citing paper to a cited paper
+    #[command(after_help = "EXAMPLES:
+  biomcp article citation-evidence 22663011 10.1038/nature10725
+  biomcp article citation-evidence PMC9984800 24200969 --fulltext
+
+Semantic Scholar context wins by default. When the edge has no context,
+BioMCP inspects open Europe PMC JATS and returns the paragraphs whose
+unambiguous bibliographic markers link to the cited reference. The result is
+evidence only: BioMCP does not summarize the passage or interpret how the
+cited work was used.
+See also: biomcp list article")]
+    CitationEvidence {
+        /// Citing PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
+        citing: String,
+        /// Cited PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
+        cited: String,
+        /// Force the open-access JATS path even when provider context exists
+        #[arg(long)]
+        fulltext: bool,
+    },
     /// Find related papers from one or more positive seeds
     #[command(after_help = "\
 EXAMPLES:
@@ -412,6 +432,65 @@ See also: biomcp list article")]
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
+}
+
+pub(super) fn article_query_summary(
+    filters: &crate::entities::article::ArticleSearchFilters,
+    source_filter: crate::entities::article::ArticleSourceFilter,
+    include_retracted: bool,
+    limit: usize,
+    offset: usize,
+) -> String {
+    let mut query = vec![
+        filters.gene.as_deref().map(|v| format!("gene={v}")),
+        filters.disease.as_deref().map(|v| format!("disease={v}")),
+        filters.drug.as_deref().map(|v| format!("drug={v}")),
+        filters.author.as_deref().map(|v| format!("author={v}")),
+        filters.keyword.as_deref().map(|v| format!("keyword={v}")),
+        filters.article_type.as_deref().map(|v| format!("type={v}")),
+        filters
+            .date_from
+            .as_deref()
+            .map(|v| format!("date_from={v}")),
+        filters.date_to.as_deref().map(|v| format!("date_to={v}")),
+        filters.journal.as_deref().map(|v| format!("journal={v}")),
+        filters.open_access.then(|| "open_access=true".to_string()),
+        filters
+            .no_preprints
+            .then(|| "no_preprints=true".to_string()),
+        if include_retracted {
+            Some("include_retracted=true".to_string())
+        } else {
+            filters
+                .exclude_retracted
+                .then(|| "exclude_retracted=true".to_string())
+        },
+        Some(format!("sort={}", filters.sort.as_str())),
+        (source_filter != crate::entities::article::ArticleSourceFilter::All)
+            .then(|| format!("source={}", source_filter.as_str())),
+        article_max_per_source_summary(filters.max_per_source, limit),
+        (offset > 0).then(|| format!("offset={offset}")),
+    ];
+    if let Some(mode) = crate::entities::article::article_effective_ranking_mode(filters) {
+        query.push(Some(format!("ranking_mode={}", mode.as_str())));
+        query.push(
+            crate::entities::article::article_relevance_ranking_policy(filters)
+                .map(|policy| format!("ranking_policy={policy}")),
+        );
+    }
+    query.into_iter().flatten().collect::<Vec<_>>().join(", ")
+}
+
+pub(super) fn article_max_per_source_summary(
+    max_per_source: Option<usize>,
+    limit: usize,
+) -> Option<String> {
+    match max_per_source {
+        None => None,
+        Some(0) => Some("max_per_source=default".to_string()),
+        Some(value) if value == limit => Some("max_per_source=disabled".to_string()),
+        Some(value) => Some(format!("max_per_source={value}")),
+    }
 }
 
 mod assets;

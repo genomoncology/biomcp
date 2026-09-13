@@ -472,6 +472,7 @@ fn list_trial_and_article_include_missing_flags() {
     assert!(article.contains("Prefer `--type review`"));
     assert!(article.contains("article citations <id>"));
     assert!(article.contains("article recommendations <id>"));
+    assert!(article.contains("article citation-evidence <citing-id> <cited-id>"));
     assert!(article.contains("--date-from <YYYY|YYYY-MM|YYYY-MM-DD>"));
     assert!(article.contains("--date-to <YYYY|YYYY-MM|YYYY-MM-DD>"));
     assert!(article.contains("--since <YYYY|YYYY-MM|YYYY-MM-DD>"));

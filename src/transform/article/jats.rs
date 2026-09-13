@@ -15,6 +15,9 @@ mod refs;
 mod supplements;
 mod tables;
 use self::refs::render_references;
+pub(crate) use self::refs::{
+    JatsCitationExtraction, JatsCitationTargetIds, extract_citation_evidence,
+};
 pub(crate) use self::supplements::extract_jats_supplement_links;
 use self::tables::{convert_complex_table, convert_regular_table};
 

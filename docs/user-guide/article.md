@@ -400,6 +400,7 @@ biomcp batch article 22663011,24200969                 # detail records (default
 biomcp article citations 22663011 --limit 3 --offset 0   # one Semantic Scholar citation page
 biomcp article references 22663011 --limit 3 --offset 0  # one Semantic Scholar reference page
 biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related papers
+biomcp article citation-evidence 22663011 10.1038/nature10725  # passage for one directed citation
 ```
 
 `batch article --mode compact` works without `S2_API_KEY` and returns the
@@ -427,6 +428,17 @@ Each citation/reference invocation returns exactly one requested `--offset`
 page. Follow only the provider-authored command in `_meta.next_commands` or the
 Markdown `Next:` line; `coverage_status: exhausted` means that response omitted
 a continuation, not that BioMCP calculated a total.
+
+`article citation-evidence <citing-id> <cited-id>` returns bounded source text
+for one directed citation pair: Semantic Scholar context by default, and when
+the edge carries no context, the paragraphs of the citing paper's open
+Europe PMC JATS full text whose unambiguous bibliographic markers link to the
+cited reference. Pass `--fulltext` to force the JATS path even when provider
+context exists. The response is a closed five-status evidence object
+(`context_from_provider`, `context_from_fulltext`, `fulltext_unavailable`,
+`reference_unresolved`, `citation_marker_unlinked`) with per-passage locators
+and evidence URLs. It retrieves evidence only: BioMCP does not summarize the
+passage or interpret how the cited work was used.
 
 ## Caching behavior
 
