@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Enforce BioMCP's declared BioData 1.0 ownership boundary."""
+"""Enforce BioMCP's declared BioData 1.0 ownership boundary.
+
+Name-based checks are a regression ratchet and do not provide semantic proof.
+"""
 
 from __future__ import annotations
 

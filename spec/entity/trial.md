@@ -38,7 +38,8 @@ later cursor request. The opaque token must remain usable in that case rather
 than treating the size of the returned page as a terminal total.
 
 ```bash run id=trial-cursor-first
-../../tools/biomcp-ci --json search trial -c "Phelan-McDermid Syndrome" --limit 5
+../../tools/biomcp-ci --json search trial -c "Phelan-McDermid Syndrome" --limit 5 \
+  | jq -e '{pagination}'
 ```
 
 ```json expect=trial-cursor-first contains
