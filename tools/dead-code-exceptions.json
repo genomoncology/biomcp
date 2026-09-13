@@ -1092,6 +1092,15 @@
       "owner": "source-contracts",
       "reason": "semantic_scholar::author_batch preserves the provider shape used by source contract fixtures",
       "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
+    },
+    {
+      "path": "src/render/human.rs",
+      "scope": "item",
+      "item": "pub(crate) fn sanitize_provider_inline(value: &str) -> String {",
+      "occurrence": 1,
+      "owner": "render-contracts",
+      "reason": "Ticket 1186 freezes the Unicode-16 provider sanitizer; ticket 1142 is the first consumer.",
+      "removal_condition": "Remove when a Markdown renderer consumes sanitize_provider_inline."
     }
   ]
 }

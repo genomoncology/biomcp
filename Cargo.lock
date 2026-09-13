@@ -364,6 +364,7 @@ dependencies = [
  "tonic",
  "tracing",
  "tracing-subscriber",
+ "unicode-normalization",
  "unpdf",
  "windows-sys 0.61.2",
  "zip",

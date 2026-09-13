@@ -128,6 +128,9 @@ readability-rust = "0.1.0"
 htmd = "0.5.4"
 unpdf = "0.4.5"
 
+# Unicode normalization (provider display text)
+unicode-normalization = "0.1.25"
+
 [features]
 default = ["alphagenome", "charts-png"]
 alphagenome = ["dep:tonic", "dep:prost", "dep:zstd"]

@@ -68,9 +68,28 @@ JSON values: both control fixtures byte-for-byte, plus predicate boundary tests
 for `Default_Ignorable_Code_Point`, General_Category `Cf`, and canonical
 combining class behavior. No other render behavior changes. `make lint`,
 `make test`, and `make spec` pass, and the package path count stays exactly
-1,300.
+1,305 (1,300 plus ticket 1145's authorized five modules).
 
 ## Boundaries
 
 No ORCID knowledge. No CLI or MCP surface change. JSON values are untouched;
 only Markdown leaf output changes.
+
+## Review Record
+
+- Code review: ACCEPT 2026-09-13 (one commit, 119fdd0b). The mixed-table
+  judgment was confirmed: pinning the crate by locked version while freezing
+  the DI/Cf predicates in checked-in Unicode 16 tables is the ticket's own
+  wording, and no fixture depends on the crate's Unicode 17 NFC differences.
+- Remediation: three P2 fixes recorded. (a) Twelve negative boundary pairs
+  added immediately after each single-point range's upper edge; (b) the
+  step-3 interpretation that an inserted U+FFFD counts as a retained base is
+  now frozen by a dedicated test ("A\u200B\u0301" yields "A\uFFFD\u0301", no
+  dotted circle) with the implementation unchanged; (c) the stale package
+  path count corrected to the enforced 1,305.
+
+- Full gates (final): merged as PR #270. At a186340f: lint OK, Rust 3525/3525,
+  spec OK; pytest failures exactly the eight documented contention tests.
+  Code review ACCEPT with the Unicode 17 NFC / Unicode 16 predicate split
+  confirmed as the ticket's intended reading; remediation added twelve
+  boundary negatives and froze the replacement-character-as-base rule.
