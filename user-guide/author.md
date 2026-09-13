@@ -16,7 +16,15 @@ Results use provider-qualified IDs such as `semanticscholar:2269573451`. Use a r
 ```bash
 biomcp get author semanticscholar:1716151
 biomcp author papers semanticscholar:1716151 --limit 10 --offset 0
+biomcp author papers semanticscholar:1716151 --full
 ```
+
+The default page stays compact. `--full` returns the same page with source
+metadata per paper: abstract, publication date, citation and reference
+counts, open-access data, fields of study, publication types, and the full
+byline. Both modes use one bounded Semantic Scholar page (at most 100 rows)
+and never fetch a second page. The rich projection is source-exact: it does
+not infer affiliations, resolve ORCID, or merge byline records.
 
 The ID prefix is case-sensitive and the value must be numeric. Unqualified IDs, `pubmed:` IDs, and `orcid:` IDs are not accepted. BioMCP does not establish ORCID links in this release. Paper pages preserve Semantic Scholar order and provider pagination.
 

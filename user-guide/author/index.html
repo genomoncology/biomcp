@@ -4188,7 +4188,14 @@
 <h2 id="detail-and-papers">Detail and papers<a class="headerlink" href="#detail-and-papers" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>author<span class="w"> </span>semanticscholar:1716151
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>author<span class="w"> </span>papers<span class="w"> </span>semanticscholar:1716151<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp<span class="w"> </span>author<span class="w"> </span>papers<span class="w"> </span>semanticscholar:1716151<span class="w"> </span>--full
 </code></pre></div>
+<p>The default page stays compact. <code>--full</code> returns the same page with source
+metadata per paper: abstract, publication date, citation and reference
+counts, open-access data, fields of study, publication types, and the full
+byline. Both modes use one bounded Semantic Scholar page (at most 100 rows)
+and never fetch a second page. The rich projection is source-exact: it does
+not infer affiliations, resolve ORCID, or merge byline records.</p>
 <p>The ID prefix is case-sensitive and the value must be numeric. Unqualified IDs, <code>pubmed:</code> IDs, and <code>orcid:</code> IDs are not accepted. BioMCP does not establish ORCID links in this release. Paper pages preserve Semantic Scholar order and provider pagination.</p>
 <p>Use <code>biomcp article authors &lt;id&gt;</code> to pivot from a PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID to separate provider-qualified byline records with sourced affiliations.</p>
 <p>Affiliations and counts are source assertions, not a current profile. Coauthor aggregation, topics, affiliation filtering, PubMed candidates, and cross-provider merging are future work.</p>
