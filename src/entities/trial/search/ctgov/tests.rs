@@ -183,7 +183,6 @@ fn trial_location_requires_a_positive_distance() {
     };
     super::super::biodata_filters(&valid, None)
         .expect("a positive distance should validate locally");
-
     let zero_distance = TrialSearchFilters {
         distance: Some(0),
         ..valid
@@ -271,12 +270,10 @@ fn trial_numeric_filters_are_validated_before_request_construction() {
         })
         .err()
         .expect("standalone invalid coordinate should report its numeric domain");
-        let message = err.to_string();
-        for flag in ["--lat", "--lon", "--distance"] {
-            assert!(message.contains(flag), "missing {flag}: {message}");
-        }
+        assert!(err.to_string().contains("--lat"));
+        assert!(err.to_string().contains("--lon"));
+        assert!(err.to_string().contains("--distance"));
     }
-
     let nci_invalid_coordinates = TrialSearchFilters {
         lat: Some(91.0),
         lon: Some(0.0),
