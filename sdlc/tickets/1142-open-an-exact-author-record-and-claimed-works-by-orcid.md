@@ -530,3 +530,34 @@ surface, whole-corpus export/local index, per-work detail fetch, paper metadata
 enrichment, citation/full-text/JATS traversal, or claim that ORCID authorship is
 independent proof of identity. The output reports a public claim from one exact
 provider and nothing more.
+
+## Review
+
+- Design review: accepted in the frozen ticket text above; ADR 0001 records
+  the approved boundary reversal of 2026-09-07.
+- Code review 2026-09-13: REJECT with findings — (P1) ORCID body-limit
+  overruns retried instead of failing; api_credential_invalid projected the
+  Display recovery sentence inside the JSON message; the works dedupe
+  deduplicated on unrecognized identifier types; `--offset` above 10,000 on
+  the ORCID path was not statically rejected. Plus missing suites for
+  credential states across surfaces, cross-group dedupe, page-slice goldens,
+  the works-root path mismatch, and `--full` rejection through every surface.
+  Architecture, boundary decision, transport containment, renderer, health
+  row, and documentation stood as landed.
+- Remediation 2026-09-13 (6717203a, 31013688, 1897f425, f7d79702): the four
+  contract fixes landed with their proof tests (body-limit fail-close without
+  retry-burn, bare JSON projection message with the human Display intact,
+  dedupe restricted to recognized canonical IDs, static offset rejection with
+  zero requests); the five suites landed across the ORCID fixture families and
+  the author surface docs module, including the credential-state flow through
+  human CLI, JSON CLI, raw MCP, and typed detail with request-log bounds, the
+  invalid-checksum static rejection, rejected-then-healthy recovery, and the
+  first/terminal page continuation contract; ORCID_ACCESS_TOKEN classified in
+  the env-docs contract and the ORCID row added to source-versioning coverage.
+  The gate-caught health-inventory expectation (ORCID in the catalog list) was
+  fixed at e68ddb68.
+- Close record: this ticket supersedes record 0581's "no ORCID API calls;
+  citation-supplied evidence only" prohibition. It does not reinstate the
+  deleted orphan client and does not supersede record 0581's dead-code cleanup
+  policy; the client here is newly reviewed with bounded public surfaces.
+  Full gates at the final tip run on the gate host before merge.
