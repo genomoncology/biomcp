@@ -309,7 +309,8 @@ explicit_locations="$(../../tools/biomcp-ci get trial NCT41300001 --limit 25 con
 printf '%s\n' "$explicit_locations" \
   | awk '/^## Locations/{inside=1; next} inside && /^\| (Rare Disease Center|Fixture Site)/{count++} END{print count}' \
   | mustmatch '25'
-printf '%s\n' "$explicit_locations" | mustmatch not like 'display cap'
+../../tools/biomcp-ci get trial NCT41300001 --limit 25 contacts locations \
+  | mustmatch not like 'display cap'
 printf '%s\n' "$explicit_locations" \
   | mustmatch like '| Fixture Site 25 | Fixture City 25, Michigan | - | United States | RECRUITING |  |  | Site Coordinator 25 (CONTACT) 555-0025 site-25@example.test |
 *Locations: showing 25 of 25 (offset 0, limit 25)*'
