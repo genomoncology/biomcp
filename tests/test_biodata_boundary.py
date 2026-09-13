@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "4f53541dd8c27ffed9cb0bfdfc240c31e0fa698e"
+REVISION = "a0c77911d766e9f4ef5b367d2b41e3b2173dfb34"
 
 
 def _write(path: Path, content: str) -> None:

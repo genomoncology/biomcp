@@ -17,7 +17,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-BIODATA_REVISION = "4f53541dd8c27ffed9cb0bfdfc240c31e0fa698e"
+BIODATA_REVISION = "a0c77911d766e9f4ef5b367d2b41e3b2173dfb34"
 REVIEWED_TOP_LEVEL_DIRECTORIES = {
     ".claude-plugin",
     ".github",
