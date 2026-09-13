@@ -18,10 +18,14 @@ use crate::error::BioMcpError;
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
+/// Exact static error for every malformed `orcid:` author ID. Never echoes input.
+pub(crate) const ORCID_ID_ERROR: &str = "author ID must use the exact form orcid:dddd-dddd-dddd-dddC with a valid ISO/IEC 7064 MOD 11-2 checksum.";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthorIdProvider {
     SemanticScholar,
+    Orcid,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,6 +37,15 @@ pub struct ProviderAuthorId {
 impl FromStr for ProviderAuthorId {
     type Err = BioMcpError;
     fn from_str(raw: &str) -> Result<Self, Self::Err> {
+        if let Some(value) = raw.strip_prefix("orcid:") {
+            return parse_orcid_value(value).map(|value| Self {
+                provider: AuthorIdProvider::Orcid,
+                value,
+            });
+        }
+        if is_orcid_shaped(raw) {
+            return Err(BioMcpError::InvalidArgument(ORCID_ID_ERROR.into()));
+        }
         let Some(value) = raw.strip_prefix("semanticscholar:") else {
             return Err(BioMcpError::InvalidArgument("author ID must use the exact form semanticscholar:<numeric-id>; PubMed and ORCID author IDs are not supported in this release".into()));
         };
@@ -51,7 +64,10 @@ impl FromStr for ProviderAuthorId {
 
 impl fmt::Display for ProviderAuthorId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "semanticscholar:{}", self.value)
+        match self.provider {
+            AuthorIdProvider::SemanticScholar => write!(f, "semanticscholar:{}", self.value),
+            AuthorIdProvider::Orcid => write!(f, "orcid:{}", self.value),
+        }
     }
 }
 impl Serialize for ProviderAuthorId {
@@ -162,6 +178,64 @@ pub(crate) fn provider_id(value: String) -> ProviderAuthorId {
         value,
     }
 }
+
+/// Validate `dddd-dddd-dddd-dddC` and return the canonical 19-byte value.
+fn parse_orcid_value(raw: &str) -> Result<String, BioMcpError> {
+    let invalid = || BioMcpError::InvalidArgument(ORCID_ID_ERROR.into());
+    let bytes = raw.as_bytes();
+    if bytes.len() != 19 || bytes[4] != b'-' || bytes[9] != b'-' || bytes[14] != b'-' {
+        return Err(invalid());
+    }
+    let mut digits = [0u8; 15];
+    let mut index = 0;
+    for &byte in bytes[..18].iter().filter(|b| **b != b'-') {
+        if !byte.is_ascii_digit() {
+            return Err(invalid());
+        }
+        digits[index] = byte;
+        index += 1;
+    }
+    let check = bytes[18];
+    if index != 15 || (check != b'X' && !check.is_ascii_digit()) {
+        return Err(invalid());
+    }
+    if check != orcid_check_digit(&digits) {
+        return Err(invalid());
+    }
+    Ok(raw.to_string())
+}
+
+fn orcid_check_digit(digits: &[u8; 15]) -> u8 {
+    let mut total: u32 = 0;
+    for &digit in digits {
+        total = (total + u32::from(digit - b'0')) * 2;
+    }
+    let remainder = (12 - (total % 11)) % 11;
+    if remainder == 10 {
+        b'X'
+    } else {
+        b'0' + remainder as u8
+    }
+}
+
+/// True for every input the ticket routes to the static ORCID rejection even
+/// though it lacks the exact lowercase prefix: uppercase/mixed prefixes,
+/// whitespace-padded `orcid:` forms, ORCID URL spellings, and bare
+/// hyphen-shaped IDs (missing prefix). Unrelated IDs stay on the
+/// Semantic Scholar guidance.
+fn is_orcid_shaped(raw: &str) -> bool {
+    for prefix in ["ORCID:", "Orcid:", "https://orcid.org/", "www.orcid.org/"] {
+        if raw.starts_with(prefix) {
+            return true;
+        }
+    }
+    let trimmed = raw.trim();
+    if trimmed != raw && trimmed.starts_with("orcid:") {
+        return true;
+    }
+    let bytes = trimmed.as_bytes();
+    bytes.len() == 19 && bytes[4] == b'-' && bytes[9] == b'-' && bytes[14] == b'-'
+}
 pub(crate) fn valid_wire_id(value: Option<String>) -> Option<String> {
     value
         .map(|v| v.trim().to_string())
@@ -215,7 +289,6 @@ mod tests {
         for invalid in [
             "1716151",
             "pubmed:1716151",
-            "orcid:0000-0000",
             "SemanticScholar:1",
             "semanticscholar:",
             "semanticscholar:..",
@@ -251,5 +324,51 @@ mod tests {
         let json = serde_json::to_string(&result).unwrap();
         assert!(!json.contains("external_ids"));
         assert!(!json.contains("private"));
+    }
+    #[test]
+    fn orcid_ids_accept_exact_checksummed_forms_and_round_trip() {
+        for valid in ["orcid:0000-0002-1825-0097", "orcid:0000-0002-1694-233X"] {
+            let id: ProviderAuthorId = valid.parse().unwrap_or_else(|e| panic!("{valid}: {e}"));
+            assert_eq!(id.to_string(), valid);
+            assert_eq!(id.provider, AuthorIdProvider::Orcid);
+        }
+    }
+    #[test]
+    fn orcid_ids_reject_every_malformed_category_with_one_static_message() {
+        for invalid in [
+            "orcid:0000-0002-1825-0098",  // wrong checksum
+            "orcid:0000-0002-1694-233x",  // lowercase x
+            "orcid:0000-0002-1694-233",   // too short
+            "orcid:00000-002-1694-233X",  // wrong hyphen position
+            "orcid:00000002-1694-233X",   // missing hyphen
+            "orcid:0000-0002-1694--233X", // extra hyphen
+            " orcid:0000-0002-1825-0097", // leading space
+            "orcid:0000-0002-1825-0097 ", // trailing space
+            "0000-0002-1825-0097",        // bare ID
+            "ORCID:0000-0002-1825-0097",  // uppercase prefix
+            "Orcid:0000-0002-1825-0097",
+            "orcid:0000-0002-1825-0097/works",       // path suffix
+            "orcid:0000-0002-1825-0097?x=1",         // query
+            "orcid:0000-0002-1825-0097\u{1}",        // control
+            "orcid:0000-0002-1825-00977",            // overlong
+            "https://orcid.org/0000-0002-1825-0097", // URL form
+            "orcid:0000-0002-1825-009７",            // Unicode digit
+        ] {
+            let error = invalid
+                .parse::<ProviderAuthorId>()
+                .expect_err("malformed ORCID ID should fail");
+            let BioMcpError::InvalidArgument(message) = &error else {
+                panic!("wrong variant for {invalid:?}: {error}");
+            };
+            assert_eq!(message, ORCID_ID_ERROR, "must not echo {invalid:?}");
+            assert!(!format!("{error}").contains(invalid));
+        }
+        assert_eq!(
+            "orcid:0000-0002-1825-0097"
+                .parse::<ProviderAuthorId>()
+                .unwrap()
+                .to_string(),
+            "orcid:0000-0002-1825-0097"
+        );
     }
 }
