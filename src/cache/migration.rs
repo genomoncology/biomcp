@@ -209,7 +209,11 @@ async fn deadline_io<T>(
     deadline.ensure_time_io()?;
     tokio::pin!(operation);
     match deadline.run(&mut operation).await {
-        Ok(result) => result,
+        Ok(Ok(value)) => {
+            deadline.ensure_time_io()?;
+            Ok(value)
+        }
+        Ok(Err(error)) => Err(error),
         Err(_) => {
             // Tokio filesystem futures can own a blocking syscall. Settle the
             // admitted atomic operation before returning and before releasing
@@ -860,35 +864,86 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
-    async fn async_io_crossing_expiry_settles_without_admitting_a_mutation() {
-        let root = TempDirGuard::new("epoch-io-crossing-deadline");
-        let source = root.path().join("source");
-        let untouched = root.path().join("untouched");
-        fs::write(&source, b"read-only").unwrap();
-        fs::write(&untouched, b"preserve").unwrap();
-        let entered = std::sync::Arc::new(tokio::sync::Notify::new());
-        let release = std::sync::Arc::new(tokio::sync::Notify::new());
+    async fn deadline_io_returns_a_timely_success() {
         let deadline =
             crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
-        let io = deadline_io(&deadline, {
+
+        let value = deadline_io(&deadline, async { Ok::<_, io::Error>("timely") })
+            .await
+            .unwrap();
+
+        assert_eq!(value, "timely");
+    }
+
+    #[tokio::test]
+    async fn deadline_io_converts_an_admitted_late_success_to_timed_out() {
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(5));
+
+        let error = deadline_io(&deadline, async {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            Ok(())
+        })
+        .await
+        .unwrap_err();
+
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+    }
+
+    #[tokio::test]
+    async fn deadline_io_preserves_an_admitted_late_io_error() {
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(5));
+
+        let error = deadline_io(&deadline, async {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            Err::<(), _>(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "admitted file operation failed",
+            ))
+        })
+        .await
+        .unwrap_err();
+
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+        assert_eq!(error.to_string(), "admitted file operation failed");
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn deadline_io_timeout_settles_before_return_and_cannot_mutate_later() {
+        let entered = std::sync::Arc::new(tokio::sync::Notify::new());
+        let release = std::sync::Arc::new(tokio::sync::Notify::new());
+        let mutations = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+        let task = tokio::spawn({
             let entered = std::sync::Arc::clone(&entered);
             let release = std::sync::Arc::clone(&release);
+            let mutations = std::sync::Arc::clone(&mutations);
             async move {
-                entered.notify_one();
-                release.notified().await;
-                tokio::fs::read(source).await.map(|_| ())
+                deadline_io(&deadline, async move {
+                    entered.notify_one();
+                    release.notified().await;
+                    mutations.fetch_add(1, Ordering::SeqCst);
+                    Ok(())
+                })
+                .await
             }
         });
-        tokio::pin!(io);
-        tokio::select! {
-            () = entered.notified() => {}
-            result = &mut io => panic!("I/O settled before injected pause: {result:?}"),
-        }
+        entered.notified().await;
         tokio::time::advance(std::time::Duration::from_secs(11)).await;
+        tokio::task::yield_now().await;
+        assert!(!task.is_finished(), "timeout must settle admitted I/O");
+        assert_eq!(mutations.load(Ordering::SeqCst), 0);
+
         release.notify_one();
-        assert_eq!(io.await.unwrap_err().kind(), io::ErrorKind::TimedOut);
-        assert_eq!(fs::read(&untouched).unwrap(), b"preserve");
-        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+        assert_eq!(
+            task.await.unwrap().unwrap_err().kind(),
+            io::ErrorKind::TimedOut
+        );
+        assert_eq!(mutations.load(Ordering::SeqCst), 1);
+        tokio::task::yield_now().await;
+        assert_eq!(mutations.load(Ordering::SeqCst), 1);
     }
 
     #[cfg(unix)]
