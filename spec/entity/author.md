@@ -292,3 +292,107 @@ semanticscholar:1716151"
 get author semanticscholar:<id>
 --source semanticscholar"
 ```
+
+## ORCID exact records open the public claim
+
+An `orcid:` author ID opens one public ORCID person record, and its papers command pages the works claimed on that record. The ORCID record stays provider-exact: BioMCP never treats an ORCID as a resolved person or links it to a Semantic Scholar author, and the ORCID surfaces never request Semantic Scholar routes.
+
+<!-- mustmatch-lint: skip -->
+
+```bash run id=orcid-detail exit=0
+../../tools/biomcp-ci --json get author orcid:0000-0002-1825-0097
+```
+
+```json expect=orcid-detail contains
+{
+  "identity": {"kind": "exact_provider", "id": "orcid:0000-0002-1825-0097"},
+  "display_name": "Josiah Carberry",
+  "provider_records": [{"id": "orcid:0000-0002-1825-0097", "source": "orcid", "status": "available"}],
+  "_meta": {
+    "source_status": [{"source": "orcid", "status": "available"}],
+    "evidence_urls": [{"source": "orcid", "url": "https://orcid.org/0000-0002-1825-0097"}],
+    "next_commands": ["biomcp author papers orcid:0000-0002-1825-0097"]
+  }
+}
+```
+
+The ORCID fixture carries private biography, email, and researcher-URL fields; the public projection never exposes them.
+
+```text expect=orcid-detail not-contains
+"email":
+"biography":
+"researcher-urls":
+private-orcid-biography-sentinel
+private-orcid@example.invalid
+https://private.example.invalid/orcid
+"orcid_link_not_established"
+```
+
+```bash run id=orcid-detail-md exit=0
+../../tools/biomcp-ci get author orcid:0000-0002-1825-0097
+```
+
+```text expect=orcid-detail-md like "# Josiah Carberry
+Source: ORCID
+Identity: exact provider
+- ID: \`orcid:0000-0002-1825-0097\`
+biomcp author papers orcid:0000-0002-1825-0097"
+```
+
+The claimed-works page slices the public record by offset and limit, preserves provider order, and emits both the article follow-up and the page continuation.
+
+```bash run id=orcid-works exit=0
+../../tools/biomcp-ci --json author papers orcid:0000-0002-1825-0097 --limit 1 --offset 0
+```
+
+```json expect=orcid-works contains
+{
+  "author": {"kind": "exact_provider", "id": "orcid:0000-0002-1825-0097"},
+  "papers": [{
+    "pmid": "123",
+    "doi": "10.1/example",
+    "title": "A claimed work | `with markup` <b>and html</b>",
+    "work_id": "orcid:0000-0002-1825-0097/work:42",
+    "identifiers": [{"type": "pmid", "value": "123"}, {"type": "doi", "value": "10.1/example"}]
+  }],
+  "pagination": {"offset": 0, "limit": 1, "next": 1, "total": 2, "truncated": false},
+  "_meta": {
+    "source_status": [{"source": "orcid", "status": "available"}],
+    "evidence_urls": [{"source": "orcid", "url": "https://orcid.org/0000-0002-1825-0097/work/42"}],
+    "next_commands": ["biomcp get article 123", "biomcp author papers orcid:0000-0002-1825-0097 --limit 1 --offset 1"]
+  }
+}
+```
+
+```text expect=orcid-works not-contains
+Second claimed work
+semanticscholar.org
+/graph/
+"orcid_link_not_established"
+private-orcid-biography-sentinel
+```
+
+```bash run id=orcid-works-md exit=0
+../../tools/biomcp-ci author papers orcid:0000-0002-1825-0097 --limit 1 --offset 0
+```
+
+```text expect=orcid-works-md like "# Papers for \`orcid:0000-0002-1825-0097\`
+Source: ORCID
+Identity: exact provider
+
+## Work 1
+
+- Title: A claimed work &#124; &#96;with markup&#96; &#60;b&#62;and html&#60;&#47;b&#62;
+- Work ID: \`orcid:0000-0002-1825-0097/work:42\`
+- PMID: \`123\`
+- DOI: \`10.1/example\`
+
+  biomcp get article 123
+  biomcp author papers orcid:0000-0002-1825-0097 --limit 1 --offset 1"
+```
+
+```text expect=orcid-works-md not-contains
+Second claimed work
+|
+<b>
+```
