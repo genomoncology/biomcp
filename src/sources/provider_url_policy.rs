@@ -150,7 +150,10 @@ impl ProviderUrlPolicy {
             provider: SourceProvider::ORCID,
             allowed_origins,
             credential_origins: vec![canonical],
-            unsafe_test_origin: None,
+            // The exact loopback test origin selected through the shared
+            // fixture signal may serve plain HTTP and receive credentials;
+            // every other origin stays HTTPS and canonical-only.
+            unsafe_test_origin: unsafe_test_origin(),
             pmc_linked_numeric_id: None,
         };
         policy.validate_url(base)?;

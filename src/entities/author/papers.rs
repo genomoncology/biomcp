@@ -1219,6 +1219,132 @@ mod orcid_works_tests {
         );
     }
 
+    /// Ticket 1142: identifiers that exist only in excluded locations —
+    /// group level, a PRIVATE summary, or a nonselected PUBLIC summary —
+    /// never reach the projected paper, its commands, or its evidence.
+    #[test]
+    fn excluded_location_identifiers_never_reach_the_projected_paper() {
+        let hostile = serde_json::json!({
+            "path": "/0000-0002-1825-0097/works",
+            "group": [{
+                "external-ids": {"external-id": [
+                    {"external-id-type": "pmid", "external-id-value": "9991", "external-id-relationship": "SELF"}
+                ]},
+                "work-summary": [
+                    {"visibility": "PRIVATE", "put-code": 91, "display-index": "50",
+                     "title": {"title": {"value": "Private summary"}},
+                     "external-ids": {"external-id": [
+                        {"external-id-type": "pmid", "external-id-value": "9992", "external-id-relationship": "SELF"}
+                     ]}},
+                    {"visibility": "PUBLIC", "put-code": 92, "display-index": "1",
+                     "title": {"title": {"value": "Public but not selected"}},
+                     "external-ids": {"external-id": [
+                        {"external-id-type": "pmid", "external-id-value": "9993", "external-id-relationship": "SELF"}
+                     ]}},
+                    {"visibility": "PUBLIC", "put-code": 42, "display-index": "2",
+                     "title": {"title": {"value": "Selected representative"}},
+                     "external-ids": {"external-id": [
+                        {"external-id-type": "pmid", "external-id-value": "42", "external-id-relationship": "SELF"}
+                     ]}}
+                ]
+            }]
+        })
+        .to_string();
+        let response: crate::sources::orcid::OrcidWorksResponse =
+            serde_json::from_str(&hostile).expect("valid wire body");
+        let selected = response.selected_works().expect("one representative");
+        assert_eq!(selected.len(), 1);
+        assert_eq!(selected[0].put_code, 42);
+        let requested: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+        let paper = orcid_paper(&requested, &selected[0], &mut commands, &mut evidence);
+        assert_eq!(paper.pmid.as_deref(), Some("42"));
+        let rendered = serde_json::to_string(&paper).unwrap();
+        for forbidden in ["9991", "9992", "9993"] {
+            assert!(
+                !rendered.contains(forbidden),
+                "{forbidden} leaked: {rendered}"
+            );
+        }
+        assert_eq!(commands, ["biomcp get article 42".to_string()]);
+    }
+
+    /// Ticket 1142: `--full` on an ORCID ID is rejected statically, before
+    /// any client construction, with zero provider requests of any kind.
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn full_mode_on_an_orcid_id_is_rejected_with_zero_requests() {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let logged = requests.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind author orcid fixture");
+        let address = listener.local_addr().expect("fixture address");
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let logged = logged.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    if let Some(target) = request.split_whitespace().nth(1) {
+                        logged.lock().unwrap().push(target.to_string());
+                    }
+                    let response =
+                        "HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                    let _ = stream.write_all(response.as_bytes()).await;
+                });
+            }
+        });
+        let base = format!("http://{address}");
+        struct EnvRestore {
+            previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+        }
+        impl EnvRestore {
+            fn set(&mut self, key: &'static str, value: &str) {
+                self.previous.push((key, std::env::var_os(key)));
+                // SAFETY: serial-guarded test environment mutation.
+                unsafe { std::env::set_var(key, value) };
+            }
+        }
+        impl Drop for EnvRestore {
+            fn drop(&mut self) {
+                for (key, value) in self.previous.drain(..) {
+                    // SAFETY: restoring the serial-guarded environment.
+                    unsafe {
+                        match value {
+                            Some(value) => std::env::set_var(key, value),
+                            None => std::env::remove_var(key),
+                        }
+                    }
+                }
+            }
+        }
+        let mut env = EnvRestore {
+            previous: Vec::new(),
+        };
+        env.set("BIOMCP_S2_BASE", &base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set("BIOMCP_ORCID_BASE", &base);
+        env.set("ORCID_ACCESS_TOKEN", "fixture-public-read-token");
+        let error = papers_full("orcid:0000-0002-1825-0097", 0, 10)
+            .await
+            .expect_err("static rejection");
+        match error {
+            BioMcpError::InvalidArgument(message) => assert_eq!(
+                message,
+                "--full is available only for semanticscholar: author IDs; omit --full for ORCID claimed works"
+            ),
+            other => panic!("wrong error: {other:?}"),
+        }
+        assert!(
+            requests.lock().unwrap().is_empty(),
+            "no provider request may be made"
+        );
+    }
+
     #[test]
     fn orcid_paper_projects_the_frozen_shape_with_row_command_priority() {
         let requested: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
