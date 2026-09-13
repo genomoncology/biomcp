@@ -12,6 +12,10 @@ pub(in crate::cli::health) enum ProbeKind {
     Get {
         url: &'static str,
     },
+    OrcidGet {
+        url: &'static str,
+        env_var: &'static str,
+    },
     PostJson {
         url: &'static str,
         payload: &'static str,
@@ -221,6 +225,14 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
             env_var: "S2_API_KEY",
             header_name: "x-api-key",
             header_value_prefix: "",
+        },
+    },
+    SourceDescriptor {
+        api: "ORCID",
+        affects: Some("get author and author papers for ORCID IDs"),
+        probe: ProbeKind::OrcidGet {
+            url: "https://pub.orcid.org/v3.0/0000-0002-1825-0097/person",
+            env_var: "ORCID_ACCESS_TOKEN",
         },
     },
     SourceDescriptor {
