@@ -281,9 +281,20 @@ impl OrcidClient {
         let req = crate::sources::request_from_plan(&self.client, self.base.as_ref(), &plan)
             .header("Authorization", format!("Bearer {token}"))
             .header("Cache-Control", "no-store");
+        // The policy middleware rejects a declared Content-Length above the
+        // feature body cap before any bytes are read, so an oversized person
+        // or works body fails the pre-read check instead of streaming first.
+        let req = crate::sources::with_response_body_limit(req, body_limit, "ORCID");
         let resp = match req.send_with_source_context(context()).await {
             Ok(resp) => resp,
-            Err(_) => return Attempt::Retry { after: None },
+            Err(error) => {
+                // A declared oversize body is a bounded hard failure, never a
+                // retry that burns the four-GET budget streaming it again.
+                if matches!(error, BioMcpError::BodyLimit { .. }) {
+                    return Attempt::Fail(error);
+                }
+                return Attempt::Retry { after: None };
+            }
         };
         let status = resp.status();
         if status.as_u16() == 401 || status.as_u16() == 403 {
@@ -310,7 +321,13 @@ impl OrcidClient {
         .await
         {
             Ok(bytes) => bytes,
-            Err(_) => return Attempt::Retry { after: None },
+            Err(error) => {
+                // A streamed oversize body is the same bounded hard failure.
+                if matches!(error, BioMcpError::BodyLimit { .. }) {
+                    return Attempt::Fail(error);
+                }
+                return Attempt::Retry { after: None };
+            }
         };
         if status.as_u16() == 429 || status.is_server_error() {
             return Attempt::Retry {
@@ -433,7 +450,8 @@ const ORCID_MAX_GROUPS: usize = 10_000;
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct OrcidWorksResponse {
     path: String,
-    #[serde(default)]
+    // A present `group` array is part of the works contract; an absent key is
+    // a malformed response and fails rather than reading as empty.
     group: Vec<OrcidWorkGroup>,
 }
 

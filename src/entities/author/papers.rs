@@ -9,6 +9,9 @@ use serde::Serialize;
 use std::time::Duration;
 
 const AUTHOR_PAPERS_COMMAND_DEADLINE: Duration = Duration::from_secs(35);
+/// Ticket 1142: the ORCID works slice is local, and `--offset` beyond the
+/// maximum retained group count is a static invalid argument.
+const ORCID_MAX_OFFSET: usize = 10_000;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AuthorPapersPagination {
@@ -113,6 +116,13 @@ pub async fn papers(
 ) -> Result<AuthorPapersResult, BioMcpError> {
     let requested: ProviderAuthorId = raw_id.parse()?;
     if requested.provider == AuthorIdProvider::Orcid {
+        // Static bound: a caller offset beyond the maximum possible retained
+        // group count is rejected before any request is planned or sent.
+        if offset > ORCID_MAX_OFFSET {
+            return Err(BioMcpError::InvalidArgument(
+                "--offset must be at most 10000 for orcid: author claimed works".to_string(),
+            ));
+        }
         return orcid_papers(&requested, offset, limit).await;
     }
     let mut page = fetch_author_papers_page(&requested, offset, limit, false).await?;
@@ -193,19 +203,7 @@ async fn orcid_papers(
         .works(&requested.value, deadline)
         .await?;
     let selected = works.selected_works()?;
-    let mut seen: Vec<(String, String)> = Vec::new();
-    let mut retained: Vec<&crate::sources::orcid::OrcidSelectedWork> = Vec::new();
-    for work in &selected {
-        let ids = canonical_identifiers(work);
-        if ids
-            .iter()
-            .any(|(kind, value)| seen.contains(&(kind.clone(), value.clone())))
-        {
-            continue;
-        }
-        seen.extend(ids.iter().cloned());
-        retained.push(work);
-    }
+    let retained = retain_deduplicated(&selected);
     let total = retained.len() as u64;
     let start = offset.min(retained.len());
     let end = start.saturating_add(limit).min(retained.len());
@@ -225,7 +223,6 @@ async fn orcid_papers(
         author: AuthorIdentity::ExactProvider {
             id: requested.clone(),
         },
-        papers,
         pagination: AuthorPapersPagination {
             offset: offset as u64,
             limit,
@@ -233,15 +230,46 @@ async fn orcid_papers(
             total: Some(total),
             truncated: Some(false),
         },
+        papers,
         _meta: AuthorMeta {
             source_status: vec![AuthorSourceStatus {
                 source: "orcid",
-                status: ProviderStatus::Available,
+                status: crate::entities::author::ProviderStatus::Available,
             }],
             evidence_urls,
             next_commands,
         },
     })
+}
+
+/// Ticket 1142: stable cross-group deduplication on recognized canonical
+/// identifiers only. Preserved unrecognized types never drop a group,
+/// including groups whose only identifiers are unrecognized or absent.
+fn retain_deduplicated(
+    selected: &[crate::sources::orcid::OrcidSelectedWork],
+) -> Vec<&crate::sources::orcid::OrcidSelectedWork> {
+    let mut seen: Vec<(String, String)> = Vec::new();
+    let mut retained: Vec<&crate::sources::orcid::OrcidSelectedWork> = Vec::new();
+    for work in selected {
+        let ids = canonical_identifiers(work);
+        // Deduplicate on recognized canonical kinds only: preserved
+        // unrecognized types never drop a group, including groups whose only
+        // identifiers are unrecognized or absent.
+        let recognized: Vec<(String, String)> = ids
+            .iter()
+            .filter(|(kind, _)| is_recognized_kind(kind))
+            .cloned()
+            .collect();
+        if recognized
+            .iter()
+            .any(|(kind, value)| seen.contains(&(kind.clone(), value.clone())))
+        {
+            continue;
+        }
+        seen.extend(recognized);
+        retained.push(work);
+    }
+    retained
 }
 
 /// Canonicalize the recognized identifier kinds and keep the full normalized
@@ -297,7 +325,13 @@ fn canonical_identifier(kind: &str, value: &str) -> Option<(String, String)> {
             ))
         }
         "arxiv" => {
-            let value = value.trim().strip_prefix("arxiv:").unwrap_or(value.trim());
+            let trimmed = value.trim();
+            // Remove one case-insensitive `arxiv:` prefix so `ARXIV:2103.0001`
+            // normalizes instead of being dropped.
+            let value = trimmed
+                .strip_prefix_insensitive("arxiv:")
+                .map(str::trim)
+                .unwrap_or(trimmed);
             (!value.is_empty()
                 && value.len() <= 64
                 && value
@@ -306,6 +340,30 @@ fn canonical_identifier(kind: &str, value: &str) -> Option<(String, String)> {
             .then(|| ("arxiv".into(), value.to_string()))
         }
         _ => None,
+    }
+}
+
+/// The recognized canonical identifier kinds that participate in flattening
+/// and cross-group deduplication.
+fn is_recognized_kind(kind: &str) -> bool {
+    matches!(kind, "doi" | "pmid" | "pmcid" | "arxiv")
+}
+
+/// Strip one prefix matching `prefix` ASCII-case-insensitively.
+trait StripPrefixInsensitive {
+    fn strip_prefix_insensitive(&self, prefix: &str) -> Option<&str>;
+}
+
+impl StripPrefixInsensitive for str {
+    fn strip_prefix_insensitive(&self, prefix: &str) -> Option<&str> {
+        if self.len() >= prefix.len()
+            && self.is_char_boundary(prefix.len())
+            && self[..prefix.len()].eq_ignore_ascii_case(prefix)
+        {
+            Some(&self[prefix.len()..])
+        } else {
+            None
+        }
     }
 }
 
@@ -321,7 +379,14 @@ fn orcid_paper(
     evidence_urls: &mut Vec<AuthorEvidenceUrl>,
 ) -> AuthorPaper {
     let ids = canonical_identifiers(work);
-    let first = |kind: &str| ids.iter().find(|(k, _)| k == kind).map(|(_, v)| v.clone());
+    // Flatten the lexically first normalized value of each recognized kind,
+    // not the first occurrence in provider order.
+    let first = |kind: &str| {
+        ids.iter()
+            .filter(|(k, _)| k == kind)
+            .map(|(_, v)| v.clone())
+            .min()
+    };
     let pmid = first("pmid");
     let pmcid = first("pmcid");
     let doi = first("doi");

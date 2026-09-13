@@ -618,13 +618,19 @@ impl BioMcpError {
                 recovery: Some(context.recovery().message()),
             },
             None => match self {
-                Self::ApiCredentialInvalid { api, .. } if api == "ORCID" => PublicErrorProjection {
-                    message: self.non_source_message(),
-                    source: Some("ORCID"),
-                    recovery: Some(
-                        "Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry.",
-                    ),
-                },
+                Self::ApiCredentialInvalid { api, env_var } if api == "ORCID" => {
+                    PublicErrorProjection {
+                        // The projection message carries the fact only; the
+                        // recovery sentence lives in the separate recovery
+                        // field so structured surfaces state it once. The
+                        // human Display concatenation is unchanged.
+                        message: format!("{api} credential in {env_var} is invalid."),
+                        source: Some("ORCID"),
+                        recovery: Some(
+                            "Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry.",
+                        ),
+                    }
+                }
                 _ => PublicErrorProjection {
                     message: self.non_source_message(),
                     source: None,

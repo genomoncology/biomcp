@@ -300,6 +300,16 @@ pub async fn detail(raw_id: &str) -> Result<AuthorDetail, crate::error::BioMcpEr
     }
 }
 
+fn orcid_unavailable() -> crate::error::BioMcpError {
+    crate::error::BioMcpError::Api {
+        api: "orcid".into(),
+        message: "ORCID is unavailable; retry later".into(),
+    }
+    .with_source_context(crate::error::SourceContext::retry(
+        crate::error::SourceProvider::ORCID,
+    ))
+}
+
 fn orcid_command_deadline() -> std::time::Duration {
     #[cfg(debug_assertions)]
     if let Ok(value) = std::env::var("BIOMCP_TEST_AUTHOR_PAPERS_DEADLINE_MS")
@@ -314,6 +324,18 @@ async fn orcid_detail(
     requested: &ProviderAuthorId,
 ) -> Result<AuthorDetail, crate::error::BioMcpError> {
     let deadline = tokio::time::Instant::now() + orcid_command_deadline();
+    // The absolute deadline covers admission, attempts, body read, decode,
+    // and projection; the synchronous renderer runs on bounded output
+    // afterward, the same accepted pattern as the papers command.
+    tokio::time::timeout_at(deadline, orcid_detail_work(requested, deadline))
+        .await
+        .map_err(|_| orcid_unavailable())?
+}
+
+async fn orcid_detail_work(
+    requested: &ProviderAuthorId,
+    deadline: tokio::time::Instant,
+) -> Result<AuthorDetail, crate::error::BioMcpError> {
     let client = crate::sources::orcid::OrcidClient::new()?;
     let person = client.person(&requested.value, deadline).await?;
     let display_name = person.public_display_name()?;
