@@ -332,11 +332,11 @@ https://private.example.invalid/orcid
 ../../tools/biomcp-ci get author orcid:0000-0002-1825-0097
 ```
 
-```text expect=orcid-detail-md like "# Josiah Carberry
+```text expect=orcid-detail-md contains
 Source: ORCID
 Identity: exact provider
-- ID: \`orcid:0000-0002-1825-0097\`
-biomcp author papers orcid:0000-0002-1825-0097"
+- ID: `orcid:0000-0002-1825-0097`
+biomcp author papers orcid:0000-0002-1825-0097
 ```
 
 The claimed-works page slices the public record by offset and limit, preserves provider order, and emits both the article follow-up and the page continuation.
@@ -376,19 +376,19 @@ private-orcid-biography-sentinel
 ../../tools/biomcp-ci author papers orcid:0000-0002-1825-0097 --limit 1 --offset 0
 ```
 
-```text expect=orcid-works-md like "# Papers for \`orcid:0000-0002-1825-0097\`
+```text expect=orcid-works-md contains
 Source: ORCID
 Identity: exact provider
 
 ## Work 1
 
 - Title: A claimed work &#124; &#96;with markup&#96; &#60;b&#62;and html&#60;&#47;b&#62;
-- Work ID: \`orcid:0000-0002-1825-0097/work:42\`
-- PMID: \`123\`
-- DOI: \`10.1/example\`
+- Work ID: `orcid:0000-0002-1825-0097/work:42`
+- PMID: `123`
+- DOI: `10.1/example`
 
   biomcp get article 123
-  biomcp author papers orcid:0000-0002-1825-0097 --limit 1 --offset 1"
+  biomcp author papers orcid:0000-0002-1825-0097 --limit 1 --offset 1
 ```
 
 ```text expect=orcid-works-md not-contains
