@@ -151,9 +151,23 @@ class _RecordingHandler(BaseHTTPRequestHandler):
             body = json.dumps(HOSTILE_PAPERS_BODY).encode("utf-8")
             content_type = "application/json"
         elif parsed.path == f"/{ORCID_ID}/person":
+            bearer = self.headers.get("Authorization", "")
+            if bearer.endswith("rejected-fixture-token"):
+                self.send_response(401)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             body = json.dumps(ORCID_PERSON_BODY).encode("utf-8")
             content_type = "application/vnd.orcid+json"
         elif parsed.path == f"/{ORCID_ID}/works":
+            bearer = self.headers.get("Authorization", "")
+            if bearer.endswith("rejected-fixture-token"):
+                self.send_response(401)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             body = json.dumps(ORCID_WORKS_BODY).encode("utf-8")
             content_type = "application/vnd.orcid+json"
         else:
@@ -212,20 +226,25 @@ def fixture() -> _FixtureServer:
         server.close()
 
 
-def _env_with_orcid(base: str) -> dict[str, str]:
+def _env_with_orcid(base: str, token: str | None = "fixture-public-read-token") -> dict[str, str]:
     env = _env_with_base(base)
     env["BIOMCP_ORCID_BASE"] = base
     env["BIOMCP_TEST_UNPACED_ORIGIN"] = base
-    env["ORCID_ACCESS_TOKEN"] = "fixture-public-read-token"
+    if token is None:
+        env.pop("ORCID_ACCESS_TOKEN", None)
+    else:
+        env["ORCID_ACCESS_TOKEN"] = token
     return env
 
 
-def _run_orcid_cli(args: list[str], base: str) -> subprocess.CompletedProcess[str]:
+def _run_orcid_cli(
+    args: list[str], base: str, token: str | None = "fixture-public-read-token"
+) -> subprocess.CompletedProcess[str]:
     assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
     return subprocess.run(
         [str(RELEASE_BIN), *args],
         cwd=ROOT,
-        env=_env_with_orcid(base),
+        env=_env_with_orcid(base, token),
         capture_output=True,
         text=True,
         timeout=60,
@@ -309,12 +328,12 @@ class _StdioMcp:
 
 
 class _OrcidStdioMcp(_StdioMcp):
-    def __init__(self, base: str) -> None:
+    def __init__(self, base: str, token: str | None = "fixture-public-read-token") -> None:
         assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
         self.process = subprocess.Popen(
             [str(RELEASE_BIN), "serve"],
             cwd=ROOT,
-            env=_env_with_orcid(base),
+            env=_env_with_orcid(base, token),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -618,3 +637,205 @@ def test_orcid_works_markdown_matches_raw_mcp_byte_for_byte(fixture: _FixtureSer
         assert result["content"][0]["text"].rstrip("\n") == cli.stdout.rstrip("\n")
     finally:
         raw.close()
+
+
+def test_orcid_credential_states_flow_identically_through_every_surface(
+    fixture: _FixtureServer,
+) -> None:
+    """Ticket 1142: absent, invalid-format, and rejected credentials produce
+    the frozen sanitized errors through human CLI, JSON CLI, raw MCP, and
+    typed detail, with zero provider requests for the client-side states and
+    exactly one person GET for the rejected state."""
+    surfaces: dict[str, str] = {}
+    json_surfaces: dict[str, str] = {}
+
+    # Absent token: the client-side guard rejects before any request.
+    missing = _run_orcid_cli(["get", "author", f"orcid:{ORCID_ID}"], fixture.base, token=None)
+    assert missing.returncode == 1, missing.stderr
+    assert "API key required: ORCID requires ORCID_ACCESS_TOKEN" in missing.stderr, missing.stderr
+    missing_json = _run_orcid_cli(
+        ["--json", "get", "author", f"orcid:{ORCID_ID}"], fixture.base, token=None
+    )
+    assert missing_json.returncode == 1, missing_json.stderr
+    assert '"code": "api_key_required"' in missing_json.stdout, missing_json.stdout
+    surfaces["missing"] = missing.stderr
+    json_surfaces["missing"] = missing_json.stdout
+
+    # Invalid-format token: 5000 visible ASCII bytes exceeds the 4096 bound.
+    invalid = _run_orcid_cli(
+        ["get", "author", f"orcid:{ORCID_ID}"], fixture.base, token="x" * 5000
+    )
+    assert invalid.returncode == 1, invalid.stderr
+    assert (
+        "ORCID credential in ORCID_ACCESS_TOKEN is invalid. Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry."
+        in invalid.stderr
+    ), invalid.stderr
+    invalid_json = _run_orcid_cli(
+        ["--json", "get", "author", f"orcid:{ORCID_ID}"], fixture.base, token="x" * 5000
+    )
+    assert invalid_json.returncode == 1, invalid_json.stderr
+    assert '"code": "api_credential_invalid"' in invalid_json.stdout, invalid_json.stdout
+    # The projection message states the fact and the recovery exactly once
+    # each; the human Display concatenation stays intact on stderr.
+    assert (
+        '"message": "ORCID credential in ORCID_ACCESS_TOKEN is invalid."' in invalid_json.stdout
+    ), invalid_json.stdout
+    assert invalid_json.stdout.count("Set ORCID_ACCESS_TOKEN to 1-4096") == 1, invalid_json.stdout
+    surfaces["invalid"] = invalid.stderr
+    json_surfaces["invalid"] = invalid_json.stdout
+
+    # Rejected token: one person GET, then the frozen sanitized rejection.
+    fixture.requests.clear()
+    rejected = _run_orcid_cli(
+        ["get", "author", f"orcid:{ORCID_ID}"], fixture.base, token="rejected-fixture-token"
+    )
+    assert rejected.returncode == 1, rejected.stderr
+    assert "API key rejected: ORCID rejected the configured ORCID_ACCESS_TOKEN" in rejected.stderr
+    rejected_json = _run_orcid_cli(
+        ["--json", "author", "papers", f"orcid:{ORCID_ID}", "--limit", "1"],
+        fixture.base,
+        token="rejected-fixture-token",
+    )
+    assert rejected_json.returncode == 1, rejected_json.stderr
+    assert '"code": "api_key_rejected"' in rejected_json.stdout, rejected_json.stdout
+    assert rejected_json.stdout.count("/person") + rejected_json.stdout.count("/works") == 0
+    paths = [path for path, _ in fixture.requests]
+    assert paths.count(f"/{ORCID_ID}/person") == 1, fixture.requests
+    assert paths.count(f"/{ORCID_ID}/works") == 1, fixture.requests
+    surfaces["rejected"] = rejected.stderr
+    json_surfaces["rejected"] = rejected_json.stdout
+
+    # Raw MCP and typed detail surface the identical sanitized errors.
+    raw = _OrcidStdioMcp(fixture.base, token="x" * 5000)
+    try:
+        raw.call(
+            {
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-03-26",
+                    "capabilities": {},
+                    "clientInfo": {"name": "credential-state", "version": "0"},
+                },
+            }
+        )
+        raw.notify({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+        # A failing command surfaces through MCP's error envelope in the
+        # sanitized human form, never a successful empty page or provider
+        # detail.
+        result = raw.tool(f"biomcp --json get author orcid:{ORCID_ID}")
+        assert result.get("isError"), result
+        text = result["content"][0]["text"]
+        expected_mcp = "Error: ORCID credential in ORCID_ACCESS_TOKEN is invalid. Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry."
+        assert text == expected_mcp, text
+        typed = raw.call(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {
+                    "name": "get",
+                    "arguments": {"entity": "author", "id": f"orcid:{ORCID_ID}", "json": True},
+                },
+            }
+        )["result"]
+        assert typed.get("isError"), typed
+        assert typed["content"][0]["text"] == text, typed
+    finally:
+        raw.close()
+
+    # No credential-state output leaks provider bodies, URLs, or the token.
+    for surface in (surfaces["missing"], surfaces["invalid"], surfaces["rejected"]):
+        assert "rejected-fixture-token" not in surface
+        assert "http://" not in surface
+
+
+def test_orcid_invalid_id_grammar_is_rejected_statically_on_both_commands(
+    fixture: _FixtureServer,
+) -> None:
+    """A bad checksum never plans a request on either feature command."""
+    bad = "orcid:0000-0002-1825-009X"
+    detail = _run_orcid_cli(["get", "author", bad], fixture.base)
+    assert detail.returncode == 2, detail.stderr
+    works = _run_orcid_cli(["author", "papers", bad, "--limit", "1"], fixture.base)
+    assert works.returncode == 2, works.stderr
+    assert "author ID must use the exact form orcid:dddd-dddd-dddd-dddC" in works.stderr
+    assert not fixture.requests, fixture.requests
+
+
+def test_orcid_rejected_credential_recovers_when_a_valid_token_returns(
+    fixture: _FixtureServer,
+) -> None:
+    """One healthy call after a rejected call succeeds against the same
+    fixture, proving the failure path leaves no lingering state."""
+    rejected = _run_orcid_cli(
+        ["get", "author", f"orcid:{ORCID_ID}"], fixture.base, token="rejected-fixture-token"
+    )
+    assert rejected.returncode == 1, rejected.stderr
+    healthy = _run_orcid_cli(["get", "author", f"orcid:{ORCID_ID}"], fixture.base)
+    assert healthy.returncode == 0, healthy.stderr
+    assert "Josiah Carberry" in healthy.stdout, healthy.stdout
+
+
+def test_orcid_works_first_page_keeps_continuation_and_terminal_page_has_none(
+    fixture: _FixtureServer,
+) -> None:
+    """Ticket 1142: the ORCID claimed-works renderer pins the continuation
+    command in the See-also block on a continuing page and omits it on the
+    terminal page; work blocks render on both."""
+    first = _run_orcid_cli(
+        ["author", "papers", f"orcid:{ORCID_ID}", "--limit", "1", "--offset", "0"],
+        fixture.base,
+    )
+    assert first.returncode == 0, first.stderr
+    assert "## Work 1" in first.stdout, first.stdout
+    assert "See also:" in first.stdout, first.stdout
+    continuation = f"biomcp author papers orcid:{ORCID_ID} --limit 1 --offset 1"
+    assert continuation in first.stdout, first.stdout
+
+    terminal = _run_orcid_cli(
+        ["author", "papers", f"orcid:{ORCID_ID}", "--limit", "1", "--offset", "1"],
+        fixture.base,
+    )
+    assert terminal.returncode == 0, terminal.stderr
+    assert "## Work 1" in terminal.stdout, terminal.stdout
+    assert f"biomcp author papers orcid:{ORCID_ID}" not in terminal.stdout, terminal.stdout
+
+
+def test_orcid_full_flag_is_rejected_across_cli_mcp_and_request_logs(
+    fixture: _FixtureServer,
+) -> None:
+    """Ticket 1142: `--full` on an ORCID ID is a static rejection on every
+    surface, with zero provider requests of any kind."""
+    fixture.requests.clear()
+    cli = _run_orcid_cli(
+        ["author", "papers", f"orcid:{ORCID_ID}", "--full", "--limit", "1"], fixture.base
+    )
+    assert cli.returncode == 2, cli.stderr
+    assert "--full is available only for semanticscholar: author IDs" in cli.stderr
+
+    raw = _OrcidStdioMcp(fixture.base)
+    try:
+        raw.call(
+            {
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-03-26",
+                    "capabilities": {},
+                    "clientInfo": {"name": "full-rejection", "version": "0"},
+                },
+            }
+        )
+        raw.notify({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+        result = raw.tool(f"biomcp author papers orcid:{ORCID_ID} --full --limit 1")
+        assert result.get("isError"), result
+        assert "--full is available only for semanticscholar: author IDs" in result["content"][0][
+            "text"
+        ]
+    finally:
+        raw.close()
+
+    assert not fixture.requests, fixture.requests
