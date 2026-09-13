@@ -76,6 +76,69 @@ HOSTILE_PAPERS_BODY = {"offset": 0, "next": None, "data": [HOSTILE_ROW]}
 HOSTILE_AUTHOR_ID = "semanticscholar:9999999"
 
 
+ORCID_ID = "0000-0002-1825-0097"
+
+ORCID_PERSON_BODY = {
+    "path": f"/{ORCID_ID}/person",
+    "name": {
+        "visibility": "PUBLIC",
+        "given-names": {"value": "Josiah"},
+        "family-name": {"value": "Carberry"},
+    },
+}
+
+ORCID_WORKS_BODY = {
+    "path": f"/{ORCID_ID}/works",
+    "group": [
+        {
+            "work-summary": [
+                {
+                    "visibility": "PUBLIC",
+                    "put-code": 42,
+                    "display-index": "2",
+                    "title": {"title": {"value": "A claimed work"}},
+                    "journal-title": {"value": "A Journal"},
+                    "publication-date": {"year": {"value": "2024"}},
+                    "external-ids": {
+                        "external-id": [
+                            {
+                                "external-id-type": "pmid",
+                                "external-id-value": "123",
+                                "external-id-relationship": "SELF",
+                            },
+                            {
+                                "external-id-type": "doi",
+                                "external-id-value": "10.1/example",
+                                "external-id-relationship": "SELF",
+                            },
+                        ]
+                    },
+                }
+            ]
+        },
+        {
+            "work-summary": [
+                {
+                    "visibility": "PUBLIC",
+                    "put-code": 43,
+                    "display-index": "1",
+                    "title": {"title": {"value": "Second claimed work"}},
+                    "external-ids": {
+                        "external-id": [
+                            {
+                                "external-id-type": "pmid",
+                                "external-id-value": "124",
+                                "external-id-relationship": "SELF",
+                            }
+                        ]
+                    },
+                }
+            ]
+        },
+    ],
+}
+
+
 class _RecordingHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - http.server naming
         parsed = urlparse(self.path)
@@ -83,12 +146,21 @@ class _RecordingHandler(BaseHTTPRequestHandler):
         self.server.requests.append((parsed.path, query))  # type: ignore[attr-defined]
         if parsed.path == "/graph/v1/author/1716151/papers":
             body = json.dumps(PAPERS_BODY).encode("utf-8")
+            content_type = "application/json"
         elif parsed.path == "/graph/v1/author/9999999/papers":
             body = json.dumps(HOSTILE_PAPERS_BODY).encode("utf-8")
+            content_type = "application/json"
+        elif parsed.path == f"/{ORCID_ID}/person":
+            body = json.dumps(ORCID_PERSON_BODY).encode("utf-8")
+            content_type = "application/vnd.orcid+json"
+        elif parsed.path == f"/{ORCID_ID}/works":
+            body = json.dumps(ORCID_WORKS_BODY).encode("utf-8")
+            content_type = "application/vnd.orcid+json"
         else:
             body = json.dumps({"error": f"unexpected path {parsed.path}"}).encode("utf-8")
+            content_type = "application/json"
         self.send_response(200)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -138,6 +210,26 @@ def fixture() -> _FixtureServer:
         yield server
     finally:
         server.close()
+
+
+def _env_with_orcid(base: str) -> dict[str, str]:
+    env = _env_with_base(base)
+    env["BIOMCP_ORCID_BASE"] = base
+    env["BIOMCP_TEST_UNPACED_ORIGIN"] = base
+    env["ORCID_ACCESS_TOKEN"] = "fixture-public-read-token"
+    return env
+
+
+def _run_orcid_cli(args: list[str], base: str) -> subprocess.CompletedProcess[str]:
+    assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
+    return subprocess.run(
+        [str(RELEASE_BIN), *args],
+        cwd=ROOT,
+        env=_env_with_orcid(base),
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
 
 
 def _env_with_base(base: str) -> dict[str, str]:
@@ -214,6 +306,21 @@ class _StdioMcp:
         if self.process.poll() is None:
             self.process.terminate()
             self.process.wait(timeout=5)
+
+
+class _OrcidStdioMcp(_StdioMcp):
+    def __init__(self, base: str) -> None:
+        assert RELEASE_BIN.exists(), f"missing BioMCP binary: {RELEASE_BIN}"
+        self.process = subprocess.Popen(
+            [str(RELEASE_BIN), "serve"],
+            cwd=ROOT,
+            env=_env_with_orcid(base),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
 
 
 RICH_COMMAND = "biomcp --json author papers semanticscholar:1716151 --full"
@@ -383,3 +490,131 @@ def test_rich_hostile_paper_id_is_contained_and_never_a_command(
 
     paths = [path for path, _ in fixture.requests]
     assert paths == ["/graph/v1/author/9999999/papers"] * 4, fixture.requests
+
+
+def _orcid_paths(fixture: _FixtureServer) -> list[str]:
+    return [path for path, _ in fixture.requests]
+
+
+def test_orcid_detail_json_is_identical_across_cli_raw_mcp_and_typed_get(
+    fixture: _FixtureServer,
+) -> None:
+    cli = _run_orcid_cli(
+        ["--json", "get", "author", f"orcid:{ORCID_ID}"],
+        fixture.base,
+    )
+    assert cli.returncode == 0, cli.stderr
+    expected = cli.stdout.rstrip("\n")
+
+    raw = _OrcidStdioMcp(fixture.base)
+    try:
+        raw.call(
+            {
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-03-26",
+                    "capabilities": {},
+                    "clientInfo": {"name": "parity-test", "version": "0"},
+                },
+            }
+        )
+        raw.notify(
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
+        )
+        result = raw.tool(f"biomcp --json get author orcid:{ORCID_ID}")
+        assert not result.get("isError"), result
+        assert result["content"][0]["text"] == expected
+
+        typed = raw.call(
+            {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/call",
+                "params": {
+                    "name": "get",
+                    "arguments": {"entity": "author", "id": f"orcid:{ORCID_ID}", "json": True},
+                },
+            }
+        )["result"]
+        assert not typed.get("isError"), typed
+        assert typed["content"][0]["text"] == expected
+    finally:
+        raw.close()
+
+    paths = _orcid_paths(fixture)
+    assert paths.count(f"/{ORCID_ID}/person") == 3, paths
+    assert all("/graph/" not in path and "/works" not in path for path in paths), paths
+
+
+def test_orcid_works_json_matches_raw_mcp_and_never_touches_person(fixture: _FixtureServer) -> None:
+    cli = _run_orcid_cli(
+        ["--json", "author", "papers", f"orcid:{ORCID_ID}", "--limit", "1", "--offset", "0"],
+        fixture.base,
+    )
+    assert cli.returncode == 0, cli.stderr
+    page = json.loads(cli.stdout)
+    assert page["pagination"]["total"] == 2
+    assert page["papers"][0]["work_id"] == f"orcid:{ORCID_ID}/work:42"
+
+    raw = _OrcidStdioMcp(fixture.base)
+    try:
+        raw.call(
+            {
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-03-26",
+                    "capabilities": {},
+                    "clientInfo": {"name": "parity-test", "version": "0"},
+                },
+            }
+        )
+        raw.notify(
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
+        )
+        result = raw.tool(
+            f"biomcp --json author papers orcid:{ORCID_ID} --limit 1 --offset 0"
+        )
+        assert not result.get("isError"), result
+        assert result["content"][0]["text"] == cli.stdout.rstrip("\n")
+    finally:
+        raw.close()
+
+    paths = _orcid_paths(fixture)
+    assert paths.count(f"/{ORCID_ID}/works") == 2, paths
+    assert f"/{ORCID_ID}/person" not in paths, paths
+
+
+def test_orcid_works_markdown_matches_raw_mcp_byte_for_byte(fixture: _FixtureServer) -> None:
+    cli = _run_orcid_cli(
+        ["author", "papers", f"orcid:{ORCID_ID}", "--limit", "1", "--offset", "0"],
+        fixture.base,
+    )
+    assert cli.returncode == 0, cli.stderr
+    assert cli.stdout.startswith("# Papers for `orcid:" + ORCID_ID + "`")
+
+    raw = _OrcidStdioMcp(fixture.base)
+    try:
+        raw.call(
+            {
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-03-26",
+                    "capabilities": {},
+                    "clientInfo": {"name": "parity-test", "version": "0"},
+                },
+            }
+        )
+        raw.notify(
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
+        )
+        result = raw.tool(f"biomcp author papers orcid:{ORCID_ID} --limit 1 --offset 0")
+        assert not result.get("isError"), result
+        assert result["content"][0]["text"].rstrip("\n") == cli.stdout.rstrip("\n")
+    finally:
+        raw.close()
