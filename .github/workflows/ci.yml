@@ -21,6 +21,7 @@ env:
   BUBBLEWRAP_VERSION: 0.9.0-1ubuntu0.1
   APPARMOR_VERSION: 4.0.1really4.0.1-0ubuntu0.24.04.7
   RIPGREP_VERSION: 14.1.0-1
+  NODE_VERSION: 22.22.3
 
 jobs:
   canonical-gates:
@@ -45,6 +46,14 @@ jobs:
         uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
         with:
           version: 0.8.0
+      - name: Install pinned Node
+        uses: actions/setup-node@1e60f620b9541d33f31e4d850c561a0a7a76a4f4 # v4.0.3
+        with:
+          node-version: 22.22.3
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Install locked website dependencies
+        run: make prepare-website
       - name: Install pinned protoc
         uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
         with:

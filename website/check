@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+expected_node="v$(<"$root/../.node-version")"
+[[ "$(node --version)" == "$expected_node" ]] || {
+  echo "website requires Node $expected_node" >&2
+  exit 1
+}
+python3 "$root/generate.py" --check
+(cd "$root" && node node_modules/astro/bin/astro.mjs build)
+python3 "$root/verify-built-site.py"

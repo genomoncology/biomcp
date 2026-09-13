@@ -32,8 +32,26 @@ def test_prepared_contracts_leave_tmpdir_to_the_offline_runner() -> None:
     assert "TMPDIR" not in prepared
     assert "--basetemp" not in prepared
     recipe_lines = [line for line in prepared.splitlines() if line.strip()]
-    assert len(recipe_lines) == 2
-    assert all(line.startswith("\ttools/run-offline -- env ") for line in recipe_lines)
+    assert len(recipe_lines) == 3
+    assert all(
+        line.startswith("\ttools/run-offline -- env ") for line in recipe_lines[:2]
+    )
+    assert recipe_lines[2] == "\ttools/run-offline -- website/check"
+
+
+def test_website_dependencies_prepare_once_before_network_isolation() -> None:
+    prepare = MAKEFILE.split("prepare-website:\n", 1)[1].split("\n\n", 1)[0]
+    contracts = MAKEFILE.split("prepare-test-contracts:", 1)[1].split("\n\n", 1)[0]
+    assert prepare == "\twebsite/prepare"
+    assert "prepare-website" in contracts.splitlines()[0]
+    website_check = (ROOT / "website/check").read_text(encoding="utf-8")
+    website_prepare = (ROOT / "website/prepare").read_text(encoding="utf-8")
+    assert "npm" not in website_check
+    assert 'npm --prefix "$root" ci --ignore-scripts' in website_prepare
+    canonical = WORKFLOW.split("  canonical-gates:\n", 1)[1].split(
+        "\n  full-features:", 1
+    )[0]
+    assert canonical.index("make prepare-website") < canonical.index("make test")
 
     runner = (ROOT / "tools/run-offline").read_text(encoding="utf-8")
     assert '--bind "$sandbox_tmp" /tmp' in runner

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+expected_node="v$(<"$root/../.node-version")"
+[[ "$(node --version)" == "$expected_node" ]] || {
+  echo "website requires Node $expected_node" >&2
+  exit 1
+}
+[[ "$(npm --version)" == 10.* ]] || {
+  echo "website requires npm 10" >&2
+  exit 1
+}
+
+lock_digest="$(sha256sum "$root/package-lock.json" | cut -d ' ' -f 1)"
+state="$expected_node npm:$(npm --version) lock:$lock_digest"
+marker="$root/node_modules/.biomcp-prepared"
+if [[ -f "$root/node_modules/astro/bin/astro.mjs" \
+    && -f "$root/node_modules/@astrojs/starlight/package.json" \
+    && -f "$marker" \
+    && "$(<"$marker")" == "$state" ]]; then
+  exit 0
+fi
+
+npm --prefix "$root" ci --ignore-scripts
+printf '%s\n' "$state" > "$marker"
