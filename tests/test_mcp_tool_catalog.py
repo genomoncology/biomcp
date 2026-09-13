@@ -104,6 +104,15 @@ def test_public_inventory_matches_typed_catalog() -> None:
     assert "reference" not in names
     assert "citation-evidence" not in catalog
 
+    # Ticket 1143: the rich author papers mode is a CLI/raw-MPC flag only.
+    # The typed catalog gains no author_papers tool and the typed get tool's
+    # schema gains no full field for authors.
+    assert "author_papers" not in names
+    assert "author-papers" not in catalog
+    typed_get_schema = (ROOT / "src/mcp/shell/typed_get.rs").read_text(encoding="utf-8")
+    assert "author_papers_full" not in typed_get_schema
+    assert "\"full\"" not in typed_get_schema
+
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     assert [tool["name"] for tool in manifest["tools"]] == TOOLS
     catalog_descriptions = dict(

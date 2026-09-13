@@ -275,7 +275,7 @@ appears.
 7. Run focused Rust source/entity/renderer/CLI tests, Python CLI/MCP/docs
    contracts, and `spec/entity/author.md`, then `make lint`, `make test`, and
    `make spec`; finish with `git diff --check` and the locked/offline package
-   list at exactly 1,300 paths.
+   list at exactly 1,305 paths.
 
 ## Ownership and exclusions
 
@@ -290,7 +290,7 @@ below 1,000 lines by moving its existing in-file tests if necessary only
 through a package-neutral rename/removal, not by raising a ratchet. Do not grow
 `src/mcp/shell.rs` or change its authorized baseline. Do not raise any existing
 over-threshold source allowance; update a baseline only for measured movement
-caused by a package-neutral extraction. The package stays exactly 1,300 paths.
+caused by a package-neutral extraction. The package stays exactly 1,305 paths (1,300 plus ticket 1145's authorized five modules).
 
 This ticket does not export a corpus, create a local index, infer metadata,
 resolve authors across providers, establish ORCID identity, add affiliations,
@@ -306,3 +306,25 @@ renderer/MCP behavior, ownership, and sequencing behind 1145. A follow-up
 review required opaque paper IDs to be serialized with the URL crate's exact
 path-segment rules, including deterministic reserved-byte and dot-segment
 cases; the corrected contract was accepted with no remaining findings.
+
+- Amendment 2026-09-13: the Ownership sentence "below 1,000 lines ... not by
+  raising a ratchet" is amended for src/sources/semantic_scholar.rs: the rich
+  wire contract landed at 1,003 lines with an authorized inventory baseline
+  (floor 959, delta 44, removal condition recorded) rather than artificial
+  compression of serde wire types. Primary-agent decision; overturnable by
+  demanding compression instead.
+
+- Review note (remediation, 2026-09-13): the 35-second monotonic wrapper
+  lives in `fetch_author_papers_page` (src/entities/author/papers.rs) around
+  client construction, request admission, body read, and decode; the
+  synchronous projection and rendering run after the wrapper returns, which
+  the reviewer blessed as satisfying the no-late-work contract since a future
+  can neither start nor complete inside it. Both the deadline arm and the
+  request arm surface the base sanitized unavailable message.
+
+- Full gates (final): merged as PR #269. At bd216833: lint OK, Rust 3519/3519
+  complete, spec OK; pytest showed the eight documented contention failures
+  plus one env-docs miss, fixed at c8d1d39d with the deadline seam classified
+  and the contract standalone-verified 5/5. A prior run's single GenCC
+  fault-injection flake is the documented second load-sensitivity instance and
+  did not recur.

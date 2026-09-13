@@ -4,6 +4,7 @@
 use super::super::*;
 use crate::error::BioMcpError;
 use crate::sources::{HttpMethod, RequestBody};
+use reqwest::StatusCode;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn client_with_api_key(api_key: Option<&str>) -> SemanticScholarClient {
@@ -237,7 +238,8 @@ fn author_detail_and_papers_plans_encode_ids_and_preserve_continuation() {
     assert_eq!(detail.header_value("x-api-key"), None);
 
     let papers =
-        SemanticScholarClient::author_papers_plan("author/id", 100, 1, Some("paper-key")).unwrap();
+        SemanticScholarClient::author_papers_plan("author/id", 100, 1, Some("paper-key"), false)
+            .unwrap();
     assert_eq!(papers.method, HttpMethod::Get);
     assert_eq!(papers.path, "graph/v1/author/author%2Fid/papers");
     assert_eq!(papers.query_value("fields"), Some(AUTHOR_PAPER_FIELDS));
@@ -254,7 +256,7 @@ fn author_id_dot_segments_are_rejected_before_request_construction() {
             Err(BioMcpError::InvalidArgument(_))
         ));
         assert!(matches!(
-            SemanticScholarClient::author_papers_plan(author_id, 0, 1, None),
+            SemanticScholarClient::author_papers_plan(author_id, 0, 1, None, false),
             Err(BioMcpError::InvalidArgument(_))
         ));
         assert!(matches!(
@@ -321,15 +323,15 @@ fn author_plans_validate_required_input_and_endpoint_boundaries() {
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        SemanticScholarClient::author_papers_plan(" ", 0, 1, None),
+        SemanticScholarClient::author_papers_plan(" ", 0, 1, None, false),
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        SemanticScholarClient::author_papers_plan(&too_long_id, 0, 1, None),
+        SemanticScholarClient::author_papers_plan(&too_long_id, 0, 1, None, false),
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        SemanticScholarClient::author_papers_plan("author-1", 0, 0, None),
+        SemanticScholarClient::author_papers_plan("author-1", 0, 0, None, false),
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(
@@ -338,6 +340,7 @@ fn author_plans_validate_required_input_and_endpoint_boundaries() {
             usize::MAX,
             SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX,
             None,
+            false,
         )
         .is_ok()
     );
@@ -347,6 +350,7 @@ fn author_plans_validate_required_input_and_endpoint_boundaries() {
             0,
             SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX + 1,
             None,
+            false,
         ),
         Err(BioMcpError::InvalidArgument(_))
     ));
@@ -380,6 +384,7 @@ async fn author_execution_methods_send_plans_and_decode_typed_responses() {
         r#"{"authorId":"detail-id"}"#,
         r#"[{"authorId":"batch-id"}]"#,
         r#"{"offset":0,"next":null,"data":[{"paperId":"paper-id"}]}"#,
+        r#"{"offset":0,"next":null,"data":[{"paperId":"paper-id"}]}"#,
     ])
     .await;
 
@@ -394,8 +399,13 @@ async fn author_execution_methods_send_plans_and_decode_typed_responses() {
             .and_then(|author| author.author_id.as_deref()),
         Some("batch-id")
     );
-    let papers = client.author_papers("detail-id", 0, 1).await.unwrap();
+    let papers = client
+        .author_papers("detail-id", 0, 1, false)
+        .await
+        .unwrap();
     assert_eq!(papers.data[0].paper_id.as_deref(), Some("paper-id"));
+    let full = client.author_papers("detail-id", 0, 1, true).await.unwrap();
+    assert_eq!(full.data[0].paper_id.as_deref(), Some("paper-id"));
 
     let requests = tokio::time::timeout(std::time::Duration::from_secs(5), server)
         .await
@@ -406,6 +416,8 @@ async fn author_execution_methods_send_plans_and_decode_typed_responses() {
     assert!(requests[2].starts_with("POST /graph/v1/author/batch?"));
     assert!(requests[2].contains(r#"{"ids":["batch-id"]}"#));
     assert!(requests[3].starts_with("GET /graph/v1/author/detail-id/papers?"));
+    assert!(requests[4].starts_with("GET /graph/v1/author/detail-id/papers?"));
+    assert!(requests[4].contains("fields=paperId%2CcorpusId%2CexternalIds%2Ctitle%2Cabstract%2C"));
 }
 
 #[test]
@@ -502,4 +514,120 @@ fn recommendations_plan_posts_positive_and_negative_ids() {
         SemanticScholarClient::recommendations_plan(&[], &negatives, 2, None),
         Err(BioMcpError::InvalidArgument(_))
     ));
+}
+
+#[test]
+fn author_papers_full_plan_uses_the_frozen_rich_field_list() {
+    let plan = SemanticScholarClient::author_papers_plan("author-1", 25, 50, None, true).unwrap();
+    assert_eq!(plan.path, "graph/v1/author/author-1/papers");
+    assert_eq!(
+        plan.query_value("fields"),
+        Some(
+            "paperId,corpusId,externalIds,title,abstract,venue,year,publicationDate,citationCount,referenceCount,influentialCitationCount,isOpenAccess,openAccessPdf,fieldsOfStudy,publicationTypes,authors.authorId,authors.name"
+        )
+    );
+    assert_eq!(plan.query_value("offset"), Some("25"));
+    assert_eq!(plan.query_value("limit"), Some("50"));
+}
+
+fn papers_page(offset: serde_json::Value, next: serde_json::Value, rows: usize) -> String {
+    let data: Vec<serde_json::Value> = (0..rows)
+        .map(|index| serde_json::json!({"paperId": format!("p{index}"), "title": "T"}))
+        .collect();
+    serde_json::json!({"offset": offset, "next": next, "data": data}).to_string()
+}
+
+fn decoded_page(body: &str) -> SemanticScholarAuthorPapersResponse {
+    SemanticScholarClient::decode_json_response(StatusCode::OK, body.as_bytes(), false).unwrap()
+}
+
+#[test]
+fn author_papers_page_validation_accepts_terminal_continuing_and_empty_pages() {
+    for (offset, next, rows) in [
+        (0_u64, serde_json::json!(null), 3),
+        (100, serde_json::json!(101), 1),
+        (50, serde_json::json!(null), 0),
+    ] {
+        let page = decoded_page(&papers_page(serde_json::json!(offset), next.clone(), rows));
+        let validated = validate_author_papers_page(&page, offset, 100);
+        let expected_next = next.as_u64();
+        assert_eq!(validated.unwrap(), expected_next);
+    }
+    let page = decoded_page(&serde_json::json!({"next": null, "data": []}).to_string());
+    let error = validate_author_papers_page(&page, 0, 100).unwrap_err();
+    assert!(format!("{error:?}").contains("omitted its required offset"));
+}
+
+#[test]
+fn author_papers_page_validation_fails_closed_for_every_malformed_shape() {
+    let missing = papers_page(serde_json::json!(null), serde_json::json!(null), 1);
+    for (body, requested) in [
+        (missing, 0_u64),
+        (
+            papers_page(serde_json::json!(1), serde_json::json!(null), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(0), serde_json::json!(0), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(0), serde_json::json!(-1), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(0), serde_json::json!(0.5), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(0), serde_json::json!("5"), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!("0"), serde_json::json!(null), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(-3), serde_json::json!(null), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(1.5), serde_json::json!(null), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(1.8e19), serde_json::json!(null), 1),
+            0,
+        ),
+        (
+            papers_page(serde_json::json!(0), serde_json::json!(null), 3),
+            2,
+        ),
+    ] {
+        match SemanticScholarClient::decode_json_response::<SemanticScholarAuthorPapersResponse>(
+            StatusCode::OK,
+            body.as_bytes(),
+            false,
+        ) {
+            Err(decode) => {
+                let rendered = format!("{decode:?}");
+                assert!(
+                    rendered.contains("semantic_scholar") || rendered.contains("Semantic Scholar"),
+                    "sanitized decode failure for {body}: {rendered}"
+                );
+            }
+            Ok(page) => assert!(
+                validate_author_papers_page(&page, requested, 2).is_err(),
+                "expected failure for {body}"
+            ),
+        }
+    }
+    let oversized = papers_page(serde_json::json!(0), serde_json::json!(null), 3);
+    let page = decoded_page(&oversized);
+    let error = validate_author_papers_page(&page, 0, 2).unwrap_err();
+    assert!(format!("{error:?}").contains("more rows than the page size"));
+    let decreasing = papers_page(serde_json::json!(10), serde_json::json!(9), 1);
+    let page = decoded_page(&decreasing);
+    let error = validate_author_papers_page(&page, 10, 2).unwrap_err();
+    assert!(format!("{error:?}").contains("continuation did not advance"));
 }

@@ -2,8 +2,14 @@ use super::*;
 use crate::entities::article::ArticleRelatedPaper;
 use crate::error::BioMcpError;
 use crate::next_command::NextCommand;
-use crate::sources::semantic_scholar::SemanticScholarAuthorPaper;
+use crate::sources::semantic_scholar::{
+    SemanticScholarAuthorPaper, SemanticScholarAuthorPaperAuthor, SemanticScholarClient,
+    SemanticScholarOpenAccessPdf,
+};
 use serde::Serialize;
+use std::time::Duration;
+
+const AUTHOR_PAPERS_COMMAND_DEADLINE: Duration = Duration::from_secs(35);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AuthorPapersPagination {
@@ -20,30 +26,131 @@ pub struct AuthorPapersResult {
     pub _meta: AuthorMeta,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AuthorPaperOpenAccessPdf {
+    pub url: Option<String>,
+    pub status: Option<String>,
+    pub license: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AuthorPaperFullAuthor {
+    pub identity: Option<AuthorIdentity>,
+    pub display_name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AuthorPaperFull {
+    pub paper_id: String,
+    pub corpus_id: Option<u64>,
+    pub pmid: Option<String>,
+    pub pmcid: Option<String>,
+    pub doi: Option<String>,
+    pub arxiv_id: Option<String>,
+    pub title: String,
+    #[serde(rename = "abstract")]
+    pub abstract_text: Option<String>,
+    pub journal: Option<String>,
+    pub year: Option<u32>,
+    pub publication_date: Option<String>,
+    pub citation_count: Option<u64>,
+    pub reference_count: Option<u64>,
+    pub influential_citation_count: Option<u64>,
+    pub is_open_access: Option<bool>,
+    pub open_access_pdf: Option<AuthorPaperOpenAccessPdf>,
+    pub fields_of_study: Option<Vec<String>>,
+    pub publication_types: Option<Vec<String>>,
+    pub authors: Option<Vec<AuthorPaperFullAuthor>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AuthorPapersFullResult {
+    pub author: AuthorIdentity,
+    pub papers: Vec<AuthorPaperFull>,
+    pub pagination: AuthorPapersPagination,
+    pub _meta: AuthorMeta,
+}
+
 pub async fn papers(
     raw_id: &str,
     offset: usize,
     limit: usize,
 ) -> Result<AuthorPapersResult, BioMcpError> {
     let requested: ProviderAuthorId = raw_id.parse()?;
-    let page = crate::sources::semantic_scholar::SemanticScholarClient::new()?
-        .author_papers(&requested.value, offset, limit)
-        .await
-        .map_err(sanitized_provider_error)?;
-
+    let mut page = fetch_author_papers_page(&requested, offset, limit, false).await?;
     let mut next_commands = Vec::new();
     let mut evidence_urls = Vec::new();
-    let papers = page
-        .data
+    let data = std::mem::take(&mut page.data);
+    let papers = data
         .into_iter()
         .filter_map(|paper| map_paper(paper, &mut next_commands, &mut evidence_urls))
         .collect();
+    finish_compact(
+        requested,
+        offset,
+        limit,
+        page,
+        papers,
+        next_commands,
+        evidence_urls,
+    )
+}
+
+pub async fn papers_full(
+    raw_id: &str,
+    offset: usize,
+    limit: usize,
+) -> Result<AuthorPapersFullResult, BioMcpError> {
+    let requested: ProviderAuthorId = raw_id.parse()?;
+    let page = fetch_author_papers_page(&requested, offset, limit, true).await?;
+    let mut next_commands = Vec::new();
+    let mut evidence_urls = Vec::new();
+    let papers: Vec<AuthorPaperFull> = page
+        .data
+        .iter()
+        .filter(|paper| admitted(paper))
+        .map(|paper| map_paper_full(paper, &mut next_commands, &mut evidence_urls))
+        .collect::<Result<Vec<_>, _>>()?;
+    let pagination = AuthorPapersPagination {
+        offset: page.offset.unwrap_or(offset as u64),
+        limit,
+        next: page.next,
+    };
+    if let Some(next) = page.next {
+        next_commands.push(format!(
+            "biomcp author papers {requested} --full --limit {limit} --offset {next}"
+        ));
+    }
+    Ok(AuthorPapersFullResult {
+        author: AuthorIdentity::ExactProvider { id: requested },
+        papers,
+        pagination,
+        _meta: AuthorMeta {
+            source_status: vec![AuthorSourceStatus {
+                source: "semantic_scholar",
+                status: ProviderStatus::Available,
+            }],
+            evidence_urls,
+            next_commands,
+        },
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn finish_compact(
+    requested: ProviderAuthorId,
+    offset: usize,
+    limit: usize,
+    page: crate::sources::semantic_scholar::SemanticScholarAuthorPapersResponse,
+    papers: Vec<ArticleRelatedPaper>,
+    mut next_commands: Vec<String>,
+    evidence_urls: Vec<AuthorEvidenceUrl>,
+) -> Result<AuthorPapersResult, BioMcpError> {
     if let Some(next) = page.next {
         next_commands.push(format!(
             "biomcp author papers {requested} --limit {limit} --offset {next}"
         ));
     }
-
     Ok(AuthorPapersResult {
         author: AuthorIdentity::ExactProvider { id: requested },
         papers,
@@ -63,6 +170,45 @@ pub async fn papers(
     })
 }
 
+fn command_deadline_budget() -> Duration {
+    #[cfg(debug_assertions)]
+    if let Ok(value) = std::env::var("BIOMCP_TEST_AUTHOR_PAPERS_DEADLINE_MS")
+        && let Ok(millis) = value.trim().parse::<u64>()
+    {
+        return Duration::from_millis(millis);
+    }
+    AUTHOR_PAPERS_COMMAND_DEADLINE
+}
+
+async fn fetch_author_papers_page(
+    requested: &ProviderAuthorId,
+    offset: usize,
+    limit: usize,
+    full: bool,
+) -> Result<crate::sources::semantic_scholar::SemanticScholarAuthorPapersResponse, BioMcpError> {
+    let deadline = tokio::time::Instant::now() + command_deadline_budget();
+    let request = async {
+        SemanticScholarClient::new()?
+            .author_papers(&requested.value, offset, limit, full)
+            .await
+            .map_err(sanitized_provider_error)
+    };
+    tokio::time::timeout_at(deadline, request)
+        .await
+        // The carrier is discarded; the helper supplies the pinned sanitized
+        // unavailable message for the deadline arm, matching the request arm.
+        .map_err(|_| {
+            sanitized_provider_error(BioMcpError::Api {
+                api: "".to_string(),
+                message: "".into(),
+            })
+        })?
+}
+
+fn admitted(paper: &SemanticScholarAuthorPaper) -> bool {
+    nonblank(paper.paper_id.clone()).is_some() && nonblank(paper.title.clone()).is_some()
+}
+
 fn external_id(paper: &SemanticScholarAuthorPaper, key: &str) -> Option<String> {
     paper
         .external_ids
@@ -72,6 +218,70 @@ fn external_id(paper: &SemanticScholarAuthorPaper, key: &str) -> Option<String> 
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(str::to_string)
+}
+
+/// WHATWG special-URL path-segment encoding for one evidence-URL segment.
+/// C0 controls, space, and `"#<>?`{}%\\` are uppercase `%HH`; every other
+/// ASCII byte stays literal; non-ASCII scalars become their UTF-8 bytes.
+/// A segment that is exactly `.` or `..` encodes each dot so URL dot-segment
+/// normalization can never consume provider data.
+pub(crate) fn encode_paper_url_segment(value: &str) -> String {
+    let mut out = String::new();
+    let dotted = value == "." || value == "..";
+    for ch in value.chars() {
+        let mut buffer = [0u8; 4];
+        for byte in ch.encode_utf8(&mut buffer).as_bytes() {
+            let byte = *byte;
+            let needs_encoding = !byte.is_ascii()
+                || byte < 0x21
+                || byte == 0x7f
+                || matches!(
+                    byte,
+                    b'"' | b'#' | b'<' | b'>' | b'?' | b'`' | b'{' | b'}' | b'/' | b'%' | b'\\'
+                )
+                || (dotted && byte == b'.');
+            if needs_encoding {
+                out.push_str(&format!("%{byte:02X}"));
+            } else {
+                out.push(byte as char);
+            }
+        }
+    }
+    out
+}
+
+pub(crate) fn paper_evidence_url(paper_id: &str) -> String {
+    format!(
+        "https://www.semanticscholar.org/paper/{}",
+        encode_paper_url_segment(paper_id)
+    )
+}
+
+fn article_follow_up_command(
+    pmid: &Option<String>,
+    doi: &Option<String>,
+    arxiv_id: &Option<String>,
+    paper_id: &str,
+) -> Option<String> {
+    let id = pmid
+        .as_deref()
+        .or(doi.as_deref())
+        .or(arxiv_id.as_deref())
+        .or_else(|| {
+            (paper_id.len() == 40 && paper_id.bytes().all(|b| b.is_ascii_hexdigit()))
+                .then_some(paper_id)
+        })?;
+    let id = if pmid.is_none() && doi.is_none() && arxiv_id.as_deref() == Some(id) {
+        format!("arXiv:{id}")
+    } else {
+        id.to_string()
+    };
+    Some(
+        NextCommand::biomcp()
+            .args(["get", "article"])
+            .arg(id)
+            .render_shell(),
+    )
 }
 
 fn map_paper(
@@ -88,26 +298,8 @@ fn map_paper(
         source: "semantic_scholar",
         url: format!("https://www.semanticscholar.org/paper/{paper_id}"),
     });
-    if let Some(id) = pmid
-        .as_deref()
-        .or(doi.as_deref())
-        .or(arxiv_id.as_deref())
-        .or_else(|| {
-            (paper_id.len() == 40 && paper_id.bytes().all(|b| b.is_ascii_hexdigit()))
-                .then_some(paper_id.as_str())
-        })
-    {
-        let id = if pmid.is_none() && doi.is_none() && arxiv_id.as_deref() == Some(id) {
-            format!("arXiv:{id}")
-        } else {
-            id.to_string()
-        };
-        next_commands.push(
-            NextCommand::biomcp()
-                .args(["get", "article"])
-                .arg(id)
-                .render_shell(),
-        );
+    if let Some(command) = article_follow_up_command(&pmid, &doi, &arxiv_id, &paper_id) {
+        next_commands.push(command);
     }
     Some(ArticleRelatedPaper {
         paper_id: Some(paper_id),
@@ -117,6 +309,103 @@ fn map_paper(
         title,
         journal: nonblank(paper.venue),
         year: paper.year,
+    })
+}
+
+fn rich_external_id(
+    paper: &SemanticScholarAuthorPaper,
+    key: &str,
+) -> Result<Option<String>, BioMcpError> {
+    match paper.external_ids.as_ref().and_then(|ids| ids.get(key)) {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(serde_json::Value::String(value)) => Ok(Some(value.trim().to_string())),
+        Some(_) => Err(BioMcpError::Api {
+            api: "semantic-scholar".into(),
+            message: format!("author paper external ID {key} had an unexpected type"),
+        }),
+    }
+}
+
+fn trim_only(value: Option<String>) -> Option<String> {
+    Some(value?.trim().to_string())
+}
+
+fn trim_list(value: Option<Vec<String>>) -> Option<Vec<String>> {
+    value.map(|list| list.iter().map(|item| item.trim().to_string()).collect())
+}
+
+fn map_open_access_pdf(
+    value: Option<SemanticScholarOpenAccessPdf>,
+) -> Option<AuthorPaperOpenAccessPdf> {
+    value.map(|pdf| AuthorPaperOpenAccessPdf {
+        url: trim_only(pdf.url),
+        status: trim_only(pdf.status),
+        license: trim_only(pdf.license),
+    })
+}
+
+fn map_full_author(
+    author: &SemanticScholarAuthorPaperAuthor,
+) -> Result<AuthorPaperFullAuthor, BioMcpError> {
+    let identity =
+        valid_wire_id(author.author_id.clone()).map(|value| AuthorIdentity::ExactProvider {
+            id: ProviderAuthorId {
+                provider: AuthorIdProvider::SemanticScholar,
+                value,
+            },
+        });
+    Ok(AuthorPaperFullAuthor {
+        identity,
+        display_name: trim_only(author.name.clone()),
+    })
+}
+
+fn map_paper_full(
+    paper: &SemanticScholarAuthorPaper,
+    next_commands: &mut Vec<String>,
+    evidence_urls: &mut Vec<AuthorEvidenceUrl>,
+) -> Result<AuthorPaperFull, BioMcpError> {
+    let paper_id = nonblank(paper.paper_id.clone()).expect("admitted row");
+    let pmid = rich_external_id(paper, "PubMed")?;
+    let pmcid = rich_external_id(paper, "PubMedCentral")?;
+    let doi = rich_external_id(paper, "DOI")?;
+    let arxiv_id = rich_external_id(paper, "ArXiv")?;
+    evidence_urls.push(AuthorEvidenceUrl {
+        source: "semantic_scholar",
+        url: paper_evidence_url(&paper_id),
+    });
+    if let Some(command) = article_follow_up_command(&pmid, &doi, &arxiv_id, &paper_id) {
+        next_commands.push(command);
+    }
+    Ok(AuthorPaperFull {
+        paper_id,
+        corpus_id: paper.corpus_id,
+        pmid,
+        pmcid,
+        doi,
+        arxiv_id,
+        title: nonblank(paper.title.clone()).expect("admitted row"),
+        abstract_text: trim_only(paper.abstract_text.clone()),
+        journal: trim_only(paper.venue.clone()),
+        year: paper.year,
+        publication_date: trim_only(paper.publication_date.clone()),
+        citation_count: paper.citation_count,
+        reference_count: paper.reference_count,
+        influential_citation_count: paper.influential_citation_count,
+        is_open_access: paper.is_open_access,
+        open_access_pdf: map_open_access_pdf(paper.open_access_pdf.clone()),
+        fields_of_study: trim_list(paper.fields_of_study.clone()),
+        publication_types: trim_list(paper.publication_types.clone()),
+        authors: paper
+            .authors
+            .as_ref()
+            .map(|byline| {
+                byline
+                    .iter()
+                    .map(map_full_author)
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .transpose()?,
     })
 }
 
@@ -141,5 +430,502 @@ mod tests {
         map_paper(paper, &mut commands, &mut evidence).expect("valid paper");
 
         assert_eq!(commands, ["biomcp get article \"10/example;echo unsafe\""]);
+    }
+}
+
+#[cfg(test)]
+mod full_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn rich_row() -> serde_json::Value {
+        json!({
+            "paperId": "0123456789abcdef0123456789abcdef01234567",
+            "corpusId": 277710284,
+            "externalIds": {"PubMed": "40215974", "PubMedCentral": null, "DOI": "10.1016/j.fixture.2024.01.001", "ArXiv": null, "ORCID": "0000-0002-7433-2740"},
+            "title": "  A rich author paper fixture  ",
+            "abstract": "Source abstract.",
+            "venue": "Fixture Medicine",
+            "year": 2024,
+            "publicationDate": "2024-01-31",
+            "citationCount": 17,
+            "referenceCount": 23,
+            "influentialCitationCount": 2,
+            "isOpenAccess": false,
+            "openAccessPdf": {"url": "https://example.invalid/paper.pdf", "status": "HYBRID", "license": null},
+            "fieldsOfStudy": ["Medicine", "Medicine"],
+            "publicationTypes": ["JournalArticle"],
+            "authors": [
+                {"authorId": "2059910739", "name": "First Author"},
+                {"authorId": "not-numeric", "name": null},
+                {"authorId": null, "name": "  Third Author  "}
+            ]
+        })
+    }
+
+    #[test]
+    fn frozen_rich_object_has_exactly_the_contract_keys_and_values() {
+        let wire: SemanticScholarAuthorPaper = serde_json::from_value(rich_row()).unwrap();
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+        let rich = map_paper_full(&wire, &mut commands, &mut evidence).unwrap();
+        let rendered = serde_json::to_value(&rich).unwrap();
+        assert_eq!(
+            rendered,
+            json!({
+                "paper_id": "0123456789abcdef0123456789abcdef01234567",
+                "corpus_id": 277710284,
+                "pmid": "40215974",
+                "pmcid": null,
+                "doi": "10.1016/j.fixture.2024.01.001",
+                "arxiv_id": null,
+                "title": "A rich author paper fixture",
+                "abstract": "Source abstract.",
+                "journal": "Fixture Medicine",
+                "year": 2024,
+                "publication_date": "2024-01-31",
+                "citation_count": 17,
+                "reference_count": 23,
+                "influential_citation_count": 2,
+                "is_open_access": false,
+                "open_access_pdf": {"url": "https://example.invalid/paper.pdf", "status": "HYBRID", "license": null},
+                "fields_of_study": ["Medicine", "Medicine"],
+                "publication_types": ["JournalArticle"],
+                "authors": [
+                    {"identity": {"kind": "exact_provider", "id": "semanticscholar:2059910739"}, "display_name": "First Author"},
+                    {"identity": null, "display_name": null},
+                    {"identity": null, "display_name": "Third Author"}
+                ]
+            })
+        );
+        assert_eq!(
+            commands,
+            ["biomcp get article 40215974"],
+            "PMID wins the article follow-up preference"
+        );
+    }
+
+    #[test]
+    fn nullability_matrix_preserves_empty_false_zero_and_list_distinctions() {
+        let wire: SemanticScholarAuthorPaper = serde_json::from_value(json!({
+            "paperId": "opaque-id",
+            "corpusId": 0,
+            "externalIds": {"PubMed": "  ", "PubMedCentral": "", "ArXiv": null},
+            "title": "Nullability fixture",
+            "abstract": null,
+            "venue": "  ",
+            "year": null,
+            "publicationDate": "",
+            "citationCount": 0,
+            "referenceCount": null,
+            "influentialCitationCount": 0,
+            "isOpenAccess": false,
+            "openAccessPdf": {"url": null, "status": null, "license": null},
+            "fieldsOfStudy": [],
+            "publicationTypes": null,
+            "authors": []
+        }))
+        .unwrap();
+        let rich = map_paper_full(&wire, &mut Vec::new(), &mut Vec::new()).unwrap();
+        let rendered = serde_json::to_value(&rich).unwrap();
+        assert_eq!(
+            rendered["pmid"],
+            json!(""),
+            "present-blank trims to empty string"
+        );
+        assert_eq!(rendered["pmcid"], json!(""));
+        assert_eq!(rendered["doi"], json!(null), "absent key stays null");
+        assert_eq!(rendered["arxiv_id"], json!(null), "null value stays null");
+        assert_eq!(rendered["corpus_id"], json!(0));
+        assert_eq!(rendered["citation_count"], json!(0));
+        assert_eq!(rendered["reference_count"], json!(null));
+        assert_eq!(rendered["influential_citation_count"], json!(0));
+        assert_eq!(rendered["is_open_access"], json!(false));
+        assert_eq!(rendered["abstract"], json!(null));
+        assert_eq!(
+            rendered["journal"],
+            json!(""),
+            "present venue trims to empty string"
+        );
+        assert_eq!(rendered["publication_date"], json!(""));
+        assert_eq!(
+            rendered["open_access_pdf"],
+            json!({"url": null, "status": null, "license": null}),
+            "all-null PDF object stays an object"
+        );
+        assert_eq!(rendered["fields_of_study"], json!([]));
+        assert_eq!(rendered["publication_types"], json!(null));
+        assert_eq!(rendered["authors"], json!([]));
+    }
+
+    #[test]
+    fn wrong_typed_external_ids_fail_the_complete_command() {
+        let wire: SemanticScholarAuthorPaper = serde_json::from_value(json!({
+            "paperId": "opaque",
+            "title": "T",
+            "externalIds": {"PubMed": {"nested": true}}
+        }))
+        .unwrap();
+        let error = map_paper_full(&wire, &mut Vec::new(), &mut Vec::new()).unwrap_err();
+        assert!(format!("{error:?}").contains("unexpected type"));
+    }
+
+    #[test]
+    fn admission_is_shared_between_compact_and_rich_views() {
+        let mut wire = rich_row();
+        wire["paperId"] = json!("  ");
+        let parsed: SemanticScholarAuthorPaper = serde_json::from_value(wire).unwrap();
+        assert!(!admitted(&parsed));
+        let mut wire = rich_row();
+        wire["title"] = json!("");
+        let parsed: SemanticScholarAuthorPaper = serde_json::from_value(wire).unwrap();
+        assert!(!admitted(&parsed));
+        let mut wire = rich_row();
+        wire["isOpenAccess"] = json!("maybe");
+        assert!(serde_json::from_value::<SemanticScholarAuthorPaper>(wire).is_err());
+    }
+
+    #[test]
+    fn evidence_url_encoder_matches_the_frozen_url_contract() {
+        assert_eq!(
+            paper_evidence_url("A/?#% \n雪"),
+            "https://www.semanticscholar.org/paper/A%2F%3F%23%25%20%0A%E9%9B%AA"
+        );
+        assert_eq!(
+            paper_evidence_url("$&;+, :=@"),
+            "https://www.semanticscholar.org/paper/$&;+,%20:=@"
+        );
+        assert_eq!(
+            paper_evidence_url("."),
+            "https://www.semanticscholar.org/paper/%2E"
+        );
+        assert_eq!(
+            paper_evidence_url(".."),
+            "https://www.semanticscholar.org/paper/%2E%2E"
+        );
+        assert_eq!(
+            paper_evidence_url("0123456789abcdef0123456789abcdef01234567"),
+            "https://www.semanticscholar.org/paper/0123456789abcdef0123456789abcdef01234567"
+        );
+    }
+
+    #[test]
+    fn opaque_ids_get_urls_but_never_article_follow_ups() {
+        let wire: SemanticScholarAuthorPaper = serde_json::from_value(json!({
+            "paperId": "A/?#% \n雪",
+            "title": "Hostile identifier fixture",
+            "externalIds": {}
+        }))
+        .unwrap();
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+        let rich = map_paper_full(&wire, &mut commands, &mut evidence).unwrap();
+        assert!(commands.is_empty(), "no follow-up for an opaque ID");
+        assert_eq!(evidence.len(), 1);
+        assert_eq!(
+            evidence[0].url,
+            "https://www.semanticscholar.org/paper/A%2F%3F%23%25%20%0A%E9%9B%AA"
+        );
+        assert_eq!(rich.paper_id, "A/?#% \n雪", "JSON preserves the raw ID");
+    }
+
+    #[test]
+    fn rich_follow_ups_prefer_pmid_doi_arxiv_then_hex_paper_id() {
+        for (external, expected) in [
+            (json!({"PubMed": "3170"}), "biomcp get article 3170"),
+            (json!({"DOI": "10.5555/x"}), "biomcp get article 10.5555/x"),
+            (
+                json!({"ArXiv": "2110.01406"}),
+                "biomcp get article arXiv:2110.01406",
+            ),
+        ] {
+            let wire: SemanticScholarAuthorPaper = serde_json::from_value(json!({
+                "paperId": "0123456789abcdef0123456789abcdef01234567",
+                "title": "Preference fixture",
+                "externalIds": external
+            }))
+            .unwrap();
+            let mut commands = Vec::new();
+            map_paper_full(&wire, &mut commands, &mut Vec::new()).unwrap();
+            assert_eq!(commands, [expected.to_string()]);
+        }
+        let wire: SemanticScholarAuthorPaper = serde_json::from_value(json!({
+            "paperId": "0123456789abcdef0123456789abcdef01234567",
+            "title": "Hex fallback fixture",
+            "externalIds": {}
+        }))
+        .unwrap();
+        let mut commands = Vec::new();
+        map_paper_full(&wire, &mut commands, &mut Vec::new()).unwrap();
+        assert_eq!(
+            commands,
+            ["biomcp get article 0123456789abcdef0123456789abcdef01234567"]
+        );
+    }
+}
+
+#[cfg(test)]
+mod wire_tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    struct AuthorEnv {
+        previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    }
+
+    impl AuthorEnv {
+        fn new() -> Self {
+            Self {
+                previous: Vec::new(),
+            }
+        }
+        fn set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
+            self.previous.push((key, std::env::var_os(key)));
+            // SAFETY: author tests that mutate provider variables use the
+            // same serial-test key as the article test environment.
+            unsafe { std::env::set_var(key, value) };
+        }
+    }
+
+    impl Drop for AuthorEnv {
+        fn drop(&mut self) {
+            for (key, previous) in self.previous.drain(..).rev() {
+                // SAFETY: restoring under the same serial guard.
+                unsafe {
+                    if let Some(value) = previous {
+                        std::env::set_var(key, value);
+                    } else {
+                        std::env::remove_var(key);
+                    }
+                }
+            }
+        }
+    }
+
+    async fn spawn_papers_fixture(status: &str, body: String) -> (String, Arc<Mutex<Vec<String>>>) {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let logged = requests.clone();
+        let status = status.to_string();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind author fixture");
+        let address = listener.local_addr().expect("author fixture address");
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let logged = logged.clone();
+                let body = body.clone();
+                let status = status.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    if let Some(target) = request.split_whitespace().nth(1) {
+                        logged.lock().unwrap().push(target.to_string());
+                    }
+                    let response = format!(
+                        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    let _ = stream.write_all(response.as_bytes()).await;
+                });
+            }
+        });
+        (format!("http://{address}"), requests)
+    }
+
+    fn page_body(offset: u64, next: Option<u64>, rows: &[serde_json::Value]) -> String {
+        serde_json::json!({"offset": offset, "next": next, "data": rows}).to_string()
+    }
+
+    async fn fixture_client(base: &str) -> SemanticScholarClient {
+        SemanticScholarClient::new_with_cache_observers(base, |_, _| {}, |_, _| {}).unwrap()
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn compact_and_rich_request_exactly_one_page_and_never_prefetch_next() {
+        let rows = vec![
+            serde_json::json!({"paperId": "alpha", "title": "Alpha", "corpusId": 1, "abstract": "a"}),
+            serde_json::json!({"paperId": "", "title": "Dropped", "paperIdIsBlank": true}),
+            serde_json::json!({"paperId": "beta", "title": "Beta"}),
+            serde_json::json!({"paperId": "alpha", "title": "Alpha duplicate", "abstract": "dup"}),
+        ];
+        let (base, requests) = spawn_papers_fixture("200 OK", page_body(0, Some(1), &rows)).await;
+        for (full, fields) in [
+            (
+                false,
+                "paperId%2CcorpusId%2CexternalIds%2Ctitle%2Cvenue%2Cyear%2C",
+            ),
+            (
+                true,
+                "paperId%2CcorpusId%2CexternalIds%2Ctitle%2Cabstract%2C",
+            ),
+        ] {
+            let mut env = AuthorEnv::new();
+            let cache = crate::test_support::TempDirGuard::new("author-papers-one-page");
+            env.set("BIOMCP_CACHE_DIR", cache.path());
+            env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+            let client = fixture_client(&base).await;
+            let before = requests.lock().unwrap().len();
+            if full {
+                let result = crate::sources::semantic_scholar::with_test_client(
+                    client,
+                    papers_full("semanticscholar:1716151", 0, 10),
+                )
+                .await
+                .unwrap();
+                assert_eq!(result.papers.len(), 3);
+                assert_eq!(result.papers[0].paper_id, "alpha");
+                assert_eq!(result.papers[2].paper_id, "alpha");
+                assert_eq!(result.papers[2].title, "Alpha duplicate");
+                assert_eq!(
+                    result._meta.next_commands.last().unwrap(),
+                    "biomcp author papers semanticscholar:1716151 --full --limit 10 --offset 1"
+                );
+            } else {
+                let result = crate::sources::semantic_scholar::with_test_client(
+                    client,
+                    papers("semanticscholar:1716151", 0, 10),
+                )
+                .await
+                .unwrap();
+                assert_eq!(result.papers.len(), 3);
+                assert_eq!(
+                    result
+                        .papers
+                        .iter()
+                        .map(|paper| paper.paper_id.clone())
+                        .collect::<Vec<_>>(),
+                    vec![
+                        Some("alpha".into()),
+                        Some("beta".into()),
+                        Some("alpha".into())
+                    ],
+                    "compact and rich retain identical admitted identity and order"
+                );
+                assert_eq!(
+                    result._meta.next_commands.last().unwrap(),
+                    "biomcp author papers semanticscholar:1716151 --limit 10 --offset 1"
+                );
+            }
+            let after = requests.lock().unwrap().len();
+            assert_eq!(after, before + 1, "exactly one page per call");
+            let request = requests.lock().unwrap()[before].clone();
+            assert!(
+                request.starts_with("/graph/v1/author/1716151/papers?"),
+                "{request}"
+            );
+            assert!(request.contains(&format!("fields={fields}")), "{request}");
+            assert!(request.contains("offset=0"), "{request}");
+            assert!(request.contains("limit=10"), "{request}");
+        }
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn malformed_pages_fail_the_complete_command_with_no_partial_output() {
+        for body in [
+            page_body(
+                7,
+                None,
+                &[serde_json::json!({"paperId": "x", "title": "T"})],
+            ),
+            serde_json::json!({"next": null, "data": []}).to_string(),
+            page_body(
+                0,
+                Some(0),
+                &[serde_json::json!({"paperId": "x", "title": "T"})],
+            ),
+            "{\"offset\":0,\"next\":null,\"data\":[{\"paperId\":\"x\",\"title\":\"T\",\"corpusId\":\"not-a-number\"}]}".to_string(),
+        ] {
+            let (base, _requests) = spawn_papers_fixture("200 OK", body).await;
+            let mut env = AuthorEnv::new();
+            let cache = crate::test_support::TempDirGuard::new("author-papers-malformed");
+            env.set("BIOMCP_CACHE_DIR", cache.path());
+            env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+            let client = fixture_client(&base).await;
+            let error = crate::sources::semantic_scholar::with_test_client(
+                client,
+                papers_full("semanticscholar:1716151", 0, 10),
+            )
+            .await
+            .unwrap_err();
+            let message = format!("{error:?}");
+            assert!(
+                message.contains("semantic_scholar") || message.contains("Semantic Scholar"),
+                "{message}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn sanitized_errors_do_not_leak_provider_bodies_urls_or_credentials() {
+        let (base, _requests) =
+            spawn_papers_fixture("503 Service Unavailable", "secret-provider-body".into()).await;
+        let mut env = AuthorEnv::new();
+        let cache = crate::test_support::TempDirGuard::new("author-papers-unavailable");
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        let client = fixture_client(&base).await;
+        let error = crate::sources::semantic_scholar::with_test_client(
+            client,
+            papers_full("semanticscholar:1716151", 0, 10),
+        )
+        .await
+        .unwrap_err();
+        let message = format!("{error:?}");
+        assert!(!message.contains("secret-provider-body"), "{message}");
+        assert!(!message.contains(&base), "{message}");
+    }
+
+    #[test]
+    fn command_deadline_is_thirty_five_seconds() {
+        assert_eq!(AUTHOR_PAPERS_COMMAND_DEADLINE, Duration::from_secs(35));
+    }
+
+    #[tokio::test(start_paused = true)]
+    #[serial_test::serial(source_env)]
+    async fn stalled_request_future_fails_at_the_absolute_deadline_without_late_output() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let stalled = tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let mut sink = vec![0_u8; 1024];
+                use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+                let _ = stream.read(&mut sink).await;
+                let _ = stream.write_all(&[]).await;
+                std::future::pending::<()>().await;
+            }
+        });
+        let mut env = AuthorEnv::new();
+        let cache = crate::test_support::TempDirGuard::new("author-papers-stalled");
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        let stalled_base = format!("http://{address}");
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &stalled_base);
+        env.set("BIOMCP_TEST_AUTHOR_PAPERS_DEADLINE_MS", "300");
+        let client =
+            SemanticScholarClient::new_with_cache_observers(&stalled_base, |_, _| {}, |_, _| {})
+                .unwrap();
+        let started = tokio::time::Instant::now();
+        let error = crate::sources::semantic_scholar::with_test_client(
+            client,
+            papers_full("semanticscholar:1716151", 0, 10),
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            tokio::time::Instant::now() - started >= Duration::from_millis(300),
+            "the real request future is held across the boundary"
+        );
+        let message = format!("{error:?}");
+        assert!(
+            message.contains("unavailable") || message.contains("deadline"),
+            "{message}"
+        );
+        assert!(!message.contains("http://"), "{message}");
+        stalled.abort();
     }
 }

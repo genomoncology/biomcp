@@ -25,3 +25,14 @@ instead of routing through the outer projection deadline, or enlarging the
 projection reserve for this test. Deterministic repro for whoever takes it:
 set the reserve locally to 1 ms at `gencc.rs:92` and the focused test fails
 with exactly this tuple on every run and host; revert and it passes.
+
+Second instance in the same family, 2026-09-13: during full-lane load,
+`post_rename_200_and_304_deadlines_return_committed_public_rows` failed once
+at tests.rs:401 (0 committed rows where 3 were expected) after an 11-second
+runtime; it passes solo in about 0.03 seconds and had passed in every prior
+full run since ticket 1187 rewired it to fault injection. Same shape as the
+first instance: a GenCC fixture whose expectations shift when sustained load
+stalls the store's synchronous work past the window the fixture assumes.
+Worth considering alongside the first: both tests share the gencc_env serial
+family, and both would benefit from asserting outcomes that do not depend on
+wall-clock windows.

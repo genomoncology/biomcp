@@ -7,7 +7,11 @@ mod search;
 #[cfg(test)]
 pub(crate) use detail::ProviderAuthorRecord;
 pub use detail::{AuthorDetail, detail};
-pub use papers::{AuthorPapersResult, papers};
+#[allow(unused_imports)]
+pub use papers::{
+    AuthorPaperFull, AuthorPaperFullAuthor, AuthorPaperOpenAccessPdf, AuthorPapersFullResult,
+    AuthorPapersPagination, AuthorPapersResult, papers, papers_full,
+};
 pub use search::{AuthorSearchResponse, search};
 
 use crate::error::BioMcpError;

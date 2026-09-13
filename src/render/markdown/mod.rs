@@ -47,8 +47,8 @@ pub use self::article::{
 };
 #[allow(unused_imports)]
 pub use self::author::{
-    article_authors_markdown, author_detail_markdown, author_papers_markdown,
-    author_search_markdown,
+    article_authors_markdown, author_detail_markdown, author_papers_full_markdown,
+    author_papers_markdown, author_search_markdown,
 };
 #[allow(unused_imports)]
 pub use self::diagnostic::{

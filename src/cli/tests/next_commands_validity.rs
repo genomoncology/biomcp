@@ -257,3 +257,45 @@ fn discover_next_commands_parse() {
     assert_parses(r#"biomcp search trial -c "Breast Cancer" --limit 5"#);
     assert_parses(r#"biomcp search article -k "Breast Cancer" --limit 5"#);
 }
+
+#[test]
+fn author_papers_rich_continuation_parses_with_original_arguments() {
+    let cli = Cli::try_parse_from(parse_cmd(
+        "biomcp author papers semanticscholar:1716151 --full --limit 1 --offset 1",
+    ))
+    .unwrap();
+    let crate::cli::Cli { command, .. } = cli;
+    match command {
+        crate::cli::Commands::Author {
+            cmd:
+                crate::cli::AuthorCommand::Papers {
+                    id,
+                    limit,
+                    offset,
+                    full,
+                },
+        } => {
+            assert_eq!(id, "semanticscholar:1716151");
+            assert_eq!(limit, 1);
+            assert_eq!(offset, 1);
+            assert!(full, "the rich continuation carries --full");
+        }
+        other => panic!("unexpected command: {other:?}"),
+    }
+}
+
+#[test]
+fn hostile_quoted_article_follow_up_parses_to_one_argument() {
+    let cli =
+        Cli::try_parse_from(parse_cmd(r#"biomcp get article "10/example;echo unsafe""#)).unwrap();
+    let crate::cli::Cli { command, .. } = cli;
+    match command {
+        crate::cli::Commands::Get {
+            entity: crate::cli::GetEntity::Article(args),
+        } => {
+            assert_eq!(args.id, "10/example;echo unsafe");
+            assert!(!args.pdf);
+        }
+        other => panic!("unexpected command: {other:?}"),
+    }
+}

@@ -200,6 +200,59 @@ fixture-long-abstract-sentinel
 0000-0002-7433-2740
 ```
 
+The rich mode opts into the same provider page with source metadata. One
+request returns abstract, dates, counts, open-access data, fields, types,
+and the byline — with no second page, no enrichment, and no inferred fields.
+
+<!-- mustmatch-lint: skip -->
+
+```bash run id=author-papers-rich exit=0
+../../tools/biomcp-ci --json author papers semanticscholar:1716151 --full --limit 1
+```
+
+```json expect=author-papers-rich contains
+{
+  "papers": [{
+    "paper_id": "paper-identity-1",
+    "corpus_id": 277710284,
+    "pmid": "40215974",
+    "doi": "10.1016/j.fixture.2024.01.001",
+    "title": "A compact author paper fixture",
+    "abstract": "fixture-long-abstract-sentinel",
+    "journal": "Fixture Medicine",
+    "year": 2024,
+    "publication_date": "2024-01-31",
+    "citation_count": 17,
+    "reference_count": 23,
+    "influential_citation_count": 2,
+    "is_open_access": false,
+    "open_access_pdf": {"url": "https://example.invalid/paper.pdf", "status": "HYBRID", "license": null},
+    "fields_of_study": ["Medicine"],
+    "publication_types": ["JournalArticle"],
+    "authors": [{"identity": {"kind": "exact_provider", "id": "semanticscholar:1716151"}, "display_name": "A. Butte"}]
+  }],
+  "pagination": {"offset": 0, "limit": 1, "next": 1}
+}
+```
+
+The rich continuation carries `--full` and the compact one does not.
+
+```text expect=author-papers-rich not-contains
+"email":
+"homepage":
+"private_profile":
+"gender":
+"race":
+"ethnicity":
+"ORCID":
+"affiliations":
+private-author@example.invalid
+```
+
+```text expect=author-papers-rich contains
+biomcp author papers semanticscholar:1716151 --full --limit 1 --offset 1
+```
+
 ```text expect=article-authors not-contains
 "email":
 "homepage":

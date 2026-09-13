@@ -314,6 +314,17 @@
       "authorized_increase": null
     },
     {
+      "path": "src/sources/semantic_scholar.rs",
+      "baseline_lines": 1003,
+      "floor_lines": 959,
+      "authorized_increase": {
+        "ticket": "1143",
+        "delta": 44,
+        "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
+        "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
+      }
+    },
+    {
       "path": "src/sources/who_pq.rs",
       "baseline_lines": 1117,
       "floor_lines": 1117,

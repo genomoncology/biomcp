@@ -970,96 +970,6 @@
     {
       "path": "src/sources/semantic_scholar.rs",
       "scope": "item",
-      "item": "const AUTHOR_FIELDS: &str =",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::AUTHOR_FIELDS preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `const AUTHOR_FIELDS: &str =` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "const AUTHOR_PAPER_FIELDS: &str =",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::AUTHOR_PAPER_FIELDS preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `const AUTHOR_PAPER_FIELDS: &str =` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "const SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX: usize = 1_000;",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `const SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX: usize = 1_000;` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "pub struct SemanticScholarPaperSearchRequestPlan {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::SemanticScholarPaperSearchRequestPlan preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub struct SemanticScholarPaperSearchRequestPlan {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "impl SemanticScholarClient {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::SemanticScholarClient preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `impl SemanticScholarClient {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "pub fn paper_search_request_plan(",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::paper_search_request_plan preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub fn paper_search_request_plan(` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "fn semantic_scholar_query_key(key: &str) -> &'static str {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::semantic_scholar_query_key preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `fn semantic_scholar_query_key(key: &str) -> &'static str {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::validate_author_id preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "fn validate_author_page_limit(limit: usize) -> Result<usize, BioMcpError> {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::validate_author_page_limit preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `fn validate_author_page_limit(limit: usize) -> Result<usize, BioMcpError> {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
       "item": "pub struct SemanticScholarAuthor {",
       "occurrence": 1,
       "owner": "source-contracts",
@@ -1069,38 +979,11 @@
     {
       "path": "src/sources/semantic_scholar.rs",
       "scope": "item",
-      "item": "pub struct SemanticScholarAuthorPaper {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::SemanticScholarAuthorPaper preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub struct SemanticScholarAuthorPaper {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "pub struct SemanticScholarAuthorPaperAuthor {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::SemanticScholarAuthorPaperAuthor preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub struct SemanticScholarAuthorPaperAuthor {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
       "item": "pub struct SemanticScholarAuthorSearchResponse {",
       "occurrence": 1,
       "owner": "source-contracts",
       "reason": "semantic_scholar::SemanticScholarAuthorSearchResponse preserves the provider shape used by source contract fixtures",
       "removal_condition": "Remove when `pub struct SemanticScholarAuthorSearchResponse {` is used by every compiled target or deleted."
-    },
-    {
-      "path": "src/sources/semantic_scholar.rs",
-      "scope": "item",
-      "item": "pub struct SemanticScholarAuthorPapersResponse {",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "semantic_scholar::SemanticScholarAuthorPapersResponse preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub struct SemanticScholarAuthorPapersResponse {` is used by every compiled target or deleted."
     },
     {
       "path": "src/sources/umls.rs",
@@ -1146,6 +1029,69 @@
       "owner": "build-contracts",
       "reason": "Cargo also compiles this shared integration helper as a standalone target",
       "removal_condition": "Remove when `use std::path::Path;` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "const SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX: usize = 1_000;",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub struct SemanticScholarPaperSearchRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarPaperSearchRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub fn paper_search_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::paper_search_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "fn semantic_scholar_query_key(key: &str) -> &'static str {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::semantic_scholar_query_key preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub(crate) fn author_batch_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::author_batch_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub async fn author_batch(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::author_batch preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when the author batch or paper search plan gains a production caller."
     }
   ]
 }

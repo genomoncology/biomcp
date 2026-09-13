@@ -1,6 +1,6 @@
 use crate::entities::author::{
-    ArticleAuthorsResult, AuthorDetail, AuthorIdentity, AuthorPapersResult, AuthorSearchResponse,
-    ProviderStatus,
+    ArticleAuthorsResult, AuthorDetail, AuthorIdentity, AuthorPaperFull, AuthorPapersFullResult,
+    AuthorPapersResult, AuthorSearchResponse, ProviderStatus,
 };
 use std::fmt::Write as _;
 
@@ -24,6 +24,171 @@ pub fn author_papers_markdown(response: &AuthorPapersResult) -> String {
         }
         out.push('\n');
     }
+    out
+}
+
+fn safe_inline(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for ch in crate::render::human::sanitize_inline(value).chars() {
+        match ch {
+            '\\' => escaped.push_str("\\\\"),
+            '|' => escaped.push_str("\\|"),
+            '<' => escaped.push_str("\\<"),
+            '>' => escaped.push_str("\\>"),
+            '[' => escaped.push_str("\\["),
+            ']' => escaped.push_str("\\]"),
+            '`' => escaped.push_str("\\`"),
+            _ => escaped.push(ch),
+        }
+    }
+    escaped
+}
+
+fn code_span(value: &str) -> String {
+    super::support::markdown_code_span(value)
+}
+
+fn code_span_slot(value: Option<&str>) -> String {
+    match value {
+        None => "unknown".to_string(),
+        Some(value) => code_span(&safe_inline(value)),
+    }
+}
+
+fn number_slot<T: std::fmt::Display>(value: Option<T>) -> String {
+    value
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "unknown".into())
+}
+
+fn inline_slot(value: Option<&str>) -> String {
+    value.map(safe_inline).unwrap_or_else(|| "unknown".into())
+}
+
+fn list_slot(value: Option<&Vec<String>>) -> String {
+    match value {
+        None => "unknown".into(),
+        Some(items) if items.is_empty() => "none".into(),
+        Some(items) => items
+            .iter()
+            .map(|item| safe_inline(item))
+            .collect::<Vec<_>>()
+            .join(", "),
+    }
+}
+
+pub fn author_papers_full_markdown(response: &AuthorPapersFullResult) -> String {
+    let AuthorIdentity::ExactProvider { id } = &response.author;
+    let mut out = format!("# Papers for {}\n\n", code_span(&id.to_string()));
+    for (index, paper) in response.papers.iter().enumerate() {
+        if index > 0 {
+            out.push('\n');
+        }
+        out.push_str(&paper_block(paper));
+    }
+    if let Some(next) = response.pagination.next {
+        let _ = writeln!(
+            out,
+            "\nNext: {}",
+            code_span(&format!(
+                "biomcp author papers {id} --full --limit {} --offset {next}",
+                response.pagination.limit
+            ))
+        );
+    }
+    out
+}
+
+fn paper_block(paper: &AuthorPaperFull) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "## {}\n", safe_inline(&paper.title));
+    let _ = writeln!(
+        out,
+        "- Paper ID: {}",
+        code_span(&safe_inline(&paper.paper_id))
+    );
+    let _ = writeln!(out, "- Corpus ID: {}", number_slot(paper.corpus_id));
+    let _ = writeln!(out, "- PMID: {}", code_span_slot(paper.pmid.as_deref()));
+    let _ = writeln!(out, "- PMCID: {}", code_span_slot(paper.pmcid.as_deref()));
+    let _ = writeln!(out, "- DOI: {}", code_span_slot(paper.doi.as_deref()));
+    let _ = writeln!(
+        out,
+        "- arXiv ID: {}",
+        code_span_slot(paper.arxiv_id.as_deref())
+    );
+    let _ = writeln!(out, "- Journal: {}", inline_slot(paper.journal.as_deref()));
+    let _ = writeln!(out, "- Year: {}", number_slot(paper.year));
+    let _ = writeln!(
+        out,
+        "- Publication date: {}",
+        code_span_slot(paper.publication_date.as_deref())
+    );
+    let _ = writeln!(out, "- Citations: {}", number_slot(paper.citation_count));
+    let _ = writeln!(out, "- References: {}", number_slot(paper.reference_count));
+    let _ = writeln!(
+        out,
+        "- Influential citations: {}",
+        number_slot(paper.influential_citation_count)
+    );
+    let _ = writeln!(
+        out,
+        "- Open access: {}",
+        paper
+            .is_open_access
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "unknown".into())
+    );
+    let pdf = paper.open_access_pdf.as_ref();
+    let pdf_slot = |value: Option<&str>| match (pdf, value) {
+        (Some(_), Some(value)) => code_span(&safe_inline(value)),
+        _ => "unknown".to_string(),
+    };
+    let _ = writeln!(
+        out,
+        "- Open-access PDF URL: {}",
+        pdf_slot(pdf.and_then(|pdf| pdf.url.as_deref()))
+    );
+    let _ = writeln!(
+        out,
+        "- Open-access PDF status: {}",
+        pdf_slot(pdf.and_then(|pdf| pdf.status.as_deref()))
+    );
+    let _ = writeln!(
+        out,
+        "- Open-access PDF license: {}",
+        pdf_slot(pdf.and_then(|pdf| pdf.license.as_deref()))
+    );
+    let _ = writeln!(
+        out,
+        "- Fields of study: {}",
+        list_slot(paper.fields_of_study.as_ref())
+    );
+    let _ = writeln!(
+        out,
+        "- Publication types: {}",
+        list_slot(paper.publication_types.as_ref())
+    );
+    out.push_str("\n### Authors\n\n");
+    match paper.authors.as_ref() {
+        None => out.push_str("- unknown\n"),
+        Some(byline) if byline.is_empty() => out.push_str("- none\n"),
+        Some(byline) => {
+            for (index, author) in byline.iter().enumerate() {
+                let name = author
+                    .display_name
+                    .as_deref()
+                    .map(safe_inline)
+                    .unwrap_or_else(|| "unknown".into());
+                let id = match &author.identity {
+                    Some(AuthorIdentity::ExactProvider { id }) => code_span(&id.to_string()),
+                    None => "unknown".to_string(),
+                };
+                let _ = writeln!(out, "{}. {} ({})", index + 1, name, id);
+            }
+        }
+    }
+    out.push_str("\n### Abstract\n\n");
+    let _ = writeln!(out, "{}", inline_slot(paper.abstract_text.as_deref()));
     out
 }
 
@@ -220,5 +385,227 @@ mod tests {
         assert!(shortened.is_char_boundary(shortened.len()));
         assert_eq!(metric(None), "unknown");
         assert_eq!(metric(Some(0)), "0");
+    }
+}
+
+#[cfg(test)]
+mod full_page_tests {
+    use super::*;
+    use crate::entities::author::{
+        AuthorEvidenceUrl, AuthorMeta, AuthorPaperFull, AuthorPaperFullAuthor,
+        AuthorPaperOpenAccessPdf, AuthorPapersFullResult, AuthorPapersPagination,
+        AuthorSourceStatus, ProviderStatus,
+    };
+
+    fn full_result(papers: Vec<AuthorPaperFull>, next: Option<u64>) -> AuthorPapersFullResult {
+        AuthorPapersFullResult {
+            author: AuthorIdentity::ExactProvider {
+                id: "semanticscholar:1716151".parse().unwrap(),
+            },
+            papers,
+            pagination: AuthorPapersPagination {
+                offset: 0,
+                limit: 10,
+                next,
+            },
+            _meta: AuthorMeta {
+                source_status: vec![AuthorSourceStatus {
+                    source: "semantic_scholar",
+                    status: ProviderStatus::Available,
+                }],
+                evidence_urls: vec![AuthorEvidenceUrl {
+                    source: "semantic_scholar",
+                    url: "https://www.semanticscholar.org/paper/paper-identity-1".into(),
+                }],
+                next_commands: Vec::new(),
+            },
+        }
+    }
+
+    #[test]
+    fn rich_markdown_pins_the_exact_template_for_a_complete_paper() {
+        let paper = AuthorPaperFull {
+            paper_id: "0123456789abcdef0123456789abcdef01234567".into(),
+            corpus_id: Some(277710284),
+            pmid: Some("40215974".into()),
+            pmcid: Some("".into()),
+            doi: Some("10.1016/j.fixture.2024.01.001".into()),
+            arxiv_id: None,
+            title: "A rich author paper fixture".into(),
+            abstract_text: Some("Source abstract.".into()),
+            journal: Some("Fixture Medicine".into()),
+            year: Some(2024),
+            publication_date: Some("2024-01-31".into()),
+            citation_count: Some(17),
+            reference_count: Some(0),
+            influential_citation_count: Some(2),
+            is_open_access: Some(false),
+            open_access_pdf: Some(AuthorPaperOpenAccessPdf {
+                url: Some("https://example.invalid/paper.pdf".into()),
+                status: Some("HYBRID".into()),
+                license: None,
+            }),
+            fields_of_study: Some(vec!["Medicine".into()]),
+            publication_types: Some(vec!["JournalArticle".into()]),
+            authors: Some(vec![AuthorPaperFullAuthor {
+                identity: Some(AuthorIdentity::ExactProvider {
+                    id: "semanticscholar:2059910739".parse().unwrap(),
+                }),
+                display_name: Some("First Author".into()),
+            }]),
+        };
+        let markdown = author_papers_full_markdown(&full_result(vec![paper], None));
+        assert_eq!(
+            markdown,
+            "# Papers for `semanticscholar:1716151`\n\
+             \n\
+             ## A rich author paper fixture\n\
+             \n\
+             - Paper ID: `0123456789abcdef0123456789abcdef01234567`\n\
+             - Corpus ID: 277710284\n\
+             - PMID: `40215974`\n\
+             - PMCID: ``\n\
+             - DOI: `10.1016/j.fixture.2024.01.001`\n\
+             - arXiv ID: unknown\n\
+             - Journal: Fixture Medicine\n\
+             - Year: 2024\n\
+             - Publication date: `2024-01-31`\n\
+             - Citations: 17\n\
+             - References: 0\n\
+             - Influential citations: 2\n\
+             - Open access: false\n\
+             - Open-access PDF URL: `https://example.invalid/paper.pdf`\n\
+             - Open-access PDF status: `HYBRID`\n\
+             - Open-access PDF license: unknown\n\
+             - Fields of study: Medicine\n\
+             - Publication types: JournalArticle\n\
+             \n\
+             ### Authors\n\
+             \n\
+             1. First Author (`semanticscholar:2059910739`)\n\
+             \n\
+             ### Abstract\n\
+             \n\
+             Source abstract.\n"
+        );
+    }
+
+    #[test]
+    fn rich_markdown_sentinels_and_two_blocks_with_continuation() {
+        let unknowns = AuthorPaperFull {
+            paper_id: "opaque".into(),
+            corpus_id: None,
+            pmid: None,
+            pmcid: None,
+            doi: None,
+            arxiv_id: None,
+            title: "All unknown".into(),
+            abstract_text: None,
+            journal: None,
+            year: None,
+            publication_date: None,
+            citation_count: None,
+            reference_count: None,
+            influential_citation_count: None,
+            is_open_access: None,
+            open_access_pdf: None,
+            fields_of_study: None,
+            publication_types: None,
+            authors: None,
+        };
+        let empties = AuthorPaperFull {
+            paper_id: "opaque2".into(),
+            title: "All empty".into(),
+            abstract_text: Some("".into()),
+            journal: Some("".into()),
+            fields_of_study: Some(Vec::new()),
+            publication_types: Some(Vec::new()),
+            authors: Some(Vec::new()),
+            open_access_pdf: Some(AuthorPaperOpenAccessPdf {
+                url: None,
+                status: None,
+                license: None,
+            }),
+            corpus_id: Some(0),
+            citation_count: Some(0),
+            reference_count: Some(0),
+            influential_citation_count: Some(0),
+            is_open_access: Some(false),
+            ..unknowns.clone()
+        };
+        let markdown = author_papers_full_markdown(&full_result(vec![unknowns, empties], Some(11)));
+        assert!(markdown.contains("- Corpus ID: unknown\n"));
+        assert!(markdown.contains("- Open access: unknown\n"));
+        assert!(markdown.contains("- Open-access PDF URL: unknown\n"));
+        assert!(markdown.contains("- Fields of study: unknown\n"));
+        assert!(markdown.contains("- Publication types: unknown\n"));
+        assert!(markdown.contains("### Authors\n\n- unknown\n"));
+        assert!(markdown.contains("- Publication types: none\n"));
+        assert!(markdown.contains("### Authors\n\n- none\n"));
+        assert!(markdown.contains("- Corpus ID: 0\n"));
+        assert!(markdown.contains("- Open access: false\n"));
+        assert_eq!(markdown.matches("\n## ").count(), 2, "two paper blocks");
+        assert!(
+            markdown.contains("unknown\n\n## All empty"),
+            "one blank line separates blocks"
+        );
+        assert!(markdown.ends_with("\n") && !markdown.ends_with("\n\n"));
+        assert!(markdown.ends_with(
+            "Next: `biomcp author papers semanticscholar:1716151 --full --limit 10 --offset 11`\n"
+        ));
+        assert!(markdown.contains("### Abstract\n\nunknown\n"));
+        assert!(
+            markdown.matches("### Abstract").count() == 2,
+            "abstract slot per block"
+        );
+    }
+
+    #[test]
+    fn hostile_provider_values_cannot_inject_markdown_structure() {
+        let hostile = AuthorPaperFull {
+            paper_id: "A/?#% \n雪".into(),
+            title: "Title | with pipes <b> `code`".into(),
+            journal: Some("J | rnal\n# Heading".into()),
+            abstract_text: Some("[link](https://evil.invalid) <script>x</script>".into()),
+            fields_of_study: Some(vec!["A | B".into(), "`` C".into()]),
+            authors: Some(vec![AuthorPaperFullAuthor {
+                identity: None,
+                display_name: Some("Name | `x` #h".into()),
+            }]),
+            ..crate::entities::author::AuthorPaperFull {
+                paper_id: String::new(),
+                title: String::new(),
+                corpus_id: None,
+                pmid: None,
+                pmcid: None,
+                doi: None,
+                arxiv_id: None,
+                abstract_text: None,
+                journal: None,
+                year: None,
+                publication_date: None,
+                citation_count: None,
+                reference_count: None,
+                influential_citation_count: None,
+                is_open_access: None,
+                open_access_pdf: None,
+                fields_of_study: None,
+                publication_types: None,
+                authors: None,
+            }
+        };
+        let markdown = author_papers_full_markdown(&full_result(vec![hostile], None));
+        assert!(
+            markdown.contains("- Paper ID: `A/?#% 雪`"),
+            "control newline coalesces with the adjacent space: {markdown}"
+        );
+        assert!(!markdown.contains("<script>"));
+        assert!(
+            !markdown.contains("[link](https"),
+            "markdown link syntax is escaped"
+        );
+        assert!(!markdown.contains("<b>"));
+        assert!(!markdown.contains("\n# Heading"));
+        assert!(markdown.ends_with('\n'));
     }
 }
