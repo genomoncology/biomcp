@@ -2,12 +2,5 @@
   "cap": 700,
   "created": "2026-04-28",
   "scope": "tracked Rust files under src/cli",
-  "entries": [
-    {
-      "path": "src/cli/article/tests/json.rs",
-      "lines": 764,
-      "date": "2026-09-12",
-      "follow_up_ticket": "1145"
-    }
-  ]
+  "entries": []
 }
