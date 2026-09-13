@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://genomoncology.github.io/biodata/schemas/clinical-trial-projection.schema.json",
+  "title": "BioData Clinical Trial Projection (provisional and unreleased)",
+  "description": "Structural schema for shared trial meaning, asserted capture evidence, and conversion accounting. Rust semantic validation remains authoritative.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "biodata/clinical-trial-projection"
+    },
+    "value": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "$ref": "clinical-trial.schema.json#/properties/value"
+        },
+        "capture": {
+          "type": "object",
+          "properties": {
+            "source_authority": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Authority that supplied the captured record."
+            },
+            "provider_record_identity": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provider identity for the captured record."
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "description": "Unverified assertion of the captured content digest."
+            }
+          },
+          "required": [
+            "source_authority",
+            "provider_record_identity",
+            "digest"
+          ],
+          "additionalProperties": false
+        },
+        "report": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source_contract": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Source contract identity."
+              },
+              "source_version": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Source contract version."
+              },
+              "target_contract": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Target contract identity."
+              },
+              "target_version": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Target contract version."
+              },
+              "direction": {
+                "enum": [
+                  "source_to_hub",
+                  "hub_to_target"
+                ]
+              },
+              "source_locator": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Locator in the source contract."
+              },
+              "target_locator": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Locator in the target contract."
+              },
+              "occurrence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "adapter_rule": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Adapter rule identity."
+              },
+              "adapter_rule_version": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Adapter rule version."
+              },
+              "disposition": {
+                "enum": [
+                  "exact_semantic_preservation",
+                  "exact_lexical_preservation",
+                  "absence",
+                  "unsupported_meaning",
+                  "source_only_meaning",
+                  "context_required",
+                  "lossy_transformation",
+                  "rejected_source_shape"
+                ]
+              },
+              "reason_code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Stable conversion reason code."
+              },
+              "required_context": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "capture": {
+                "type": "object",
+                "properties": {
+                  "source_authority": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Authority that supplied the captured record."
+                  },
+                  "provider_record_identity": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Provider identity for the captured record."
+                  },
+                  "digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$",
+                    "description": "Unverified assertion of the captured content digest."
+                  }
+                },
+                "required": [
+                  "source_authority",
+                  "provider_record_identity",
+                  "digest"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "source_contract",
+              "source_version",
+              "target_contract",
+              "target_version",
+              "direction",
+              "source_locator",
+              "target_locator",
+              "occurrence",
+              "adapter_rule",
+              "adapter_rule_version",
+              "disposition",
+              "reason_code",
+              "required_context",
+              "capture"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "value",
+        "capture",
+        "report"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "type",
+    "value"
+  ],
+  "additionalProperties": false
+}

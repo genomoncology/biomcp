@@ -1,0 +1,1960 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://genomoncology.github.io/biodata/schemas/clinical-trial.schema.json",
+  "title": "BioData Clinical Trial (provisional and unreleased)",
+  "description": "Structural schema for one provisional shared clinical trial. Rust semantic validation remains authoritative.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "biodata/clinical-trial"
+    },
+    "value": {
+      "type": "object",
+      "description": "All fields are provisional and unreleased.",
+      "properties": {
+        "identities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "authority": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Authority assigning the trial identifier."
+              },
+              "identifier": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Authority-owned trial identifier."
+              }
+            },
+            "required": [
+              "authority",
+              "identifier"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "description": "Provisional authority-scoped trial identities."
+        },
+        "brief_title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Provisional source brief title."
+        },
+        "official_title": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional optional source official title."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Provisional optional source official title."
+        },
+        "overall_status": {
+          "type": "object",
+          "description": "Provisional open source-owned code; Rust validation is authoritative.",
+          "properties": {
+            "authority": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional source vocabulary authority."
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional original source code."
+            },
+            "display": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Provisional optional source display."
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Provisional optional source display."
+            },
+            "vocabulary_version": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Provisional optional source-supplied vocabulary version."
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Provisional optional source-supplied vocabulary version."
+            },
+            "recognized_meaning": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Provisional optional recognized shared meaning."
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Provisional optional recognized shared meaning."
+            }
+          },
+          "required": [
+            "authority",
+            "code",
+            "display",
+            "vocabulary_version",
+            "recognized_meaning"
+          ],
+          "additionalProperties": false
+        },
+        "stop_reason": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "Optional source-stated reason the trial stopped."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional source-stated reason the trial stopped."
+        },
+        "study_type": {
+          "type": "object",
+          "description": "Provisional open source-owned code; Rust validation is authoritative.",
+          "properties": {
+            "authority": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional source vocabulary authority."
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional original source code."
+            },
+            "display": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Provisional optional source display."
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Provisional optional source display."
+            },
+            "vocabulary_version": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Provisional optional source-supplied vocabulary version."
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Provisional optional source-supplied vocabulary version."
+            },
+            "recognized_meaning": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Provisional optional recognized shared meaning."
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Provisional optional recognized shared meaning."
+            }
+          },
+          "required": [
+            "authority",
+            "code",
+            "display",
+            "vocabulary_version",
+            "recognized_meaning"
+          ],
+          "additionalProperties": false
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "Provisional open source-owned code; Rust validation is authoritative.",
+            "properties": {
+              "authority": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Provisional source vocabulary authority."
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Provisional original source code."
+              },
+              "display": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Provisional optional source display."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Provisional optional source display."
+              },
+              "vocabulary_version": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Provisional optional source-supplied vocabulary version."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Provisional optional source-supplied vocabulary version."
+              },
+              "recognized_meaning": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Provisional optional recognized shared meaning."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Provisional optional recognized shared meaning."
+              }
+            },
+            "required": [
+              "authority",
+              "code",
+              "display",
+              "vocabulary_version",
+              "recognized_meaning"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Provisional source phases."
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Provisional source conditions."
+          },
+          "minItems": 1,
+          "description": "Provisional source conditions."
+        },
+        "lead_sponsor_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Provisional source lead sponsor name."
+        },
+        "enrollment_count": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Provisional optional portable source enrollment count."
+        },
+        "brief_summary": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional optional full source brief summary."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Provisional optional full source brief summary."
+        },
+        "start_date": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional opaque source lexical start date."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Provisional opaque source lexical start date."
+        },
+        "completion_date": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "Provisional opaque source lexical completion date."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Provisional opaque source lexical completion date."
+        },
+        "arms": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Source-stated arm name."
+                  },
+                  "source_type": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                        "properties": {
+                          "authority": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional source vocabulary authority."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional original source code."
+                          },
+                          "display": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source display."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source display."
+                          },
+                          "vocabulary_version": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source-supplied vocabulary version."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source-supplied vocabulary version."
+                          },
+                          "recognized_meaning": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional recognized shared meaning."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional recognized shared meaning."
+                          }
+                        },
+                        "required": [
+                          "authority",
+                          "code",
+                          "display",
+                          "vocabulary_version",
+                          "recognized_meaning"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional source-stated arm description."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional source-stated arm description."
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "source_type",
+                  "description"
+                ],
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "interventions": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Source-stated intervention name."
+                  },
+                  "source_type": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                        "properties": {
+                          "authority": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional source vocabulary authority."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional original source code."
+                          },
+                          "display": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source display."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source display."
+                          },
+                          "vocabulary_version": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source-supplied vocabulary version."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source-supplied vocabulary version."
+                          },
+                          "recognized_meaning": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional recognized shared meaning."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional recognized shared meaning."
+                          }
+                        },
+                        "required": [
+                          "authority",
+                          "code",
+                          "display",
+                          "vocabulary_version",
+                          "recognized_meaning"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional source-stated intervention description."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional source-stated intervention description."
+                  },
+                  "other_names": {
+                    "oneOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Source-stated intervention other names."
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "source_type",
+                  "description",
+                  "other_names"
+                ],
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "arm_intervention_assignments": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "arm_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "intervention_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "arm_id",
+                  "intervention_id"
+                ],
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "references": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pmid": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional source-stated PubMed identifier."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional source-stated PubMed identifier."
+                  },
+                  "citation": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional source-stated citation."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional source-stated citation."
+                  },
+                  "source_type": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                        "properties": {
+                          "authority": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional source vocabulary authority."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional original source code."
+                          },
+                          "display": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source display."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source display."
+                          },
+                          "vocabulary_version": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source-supplied vocabulary version."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source-supplied vocabulary version."
+                          },
+                          "recognized_meaning": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional recognized shared meaning."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional recognized shared meaning."
+                          }
+                        },
+                        "required": [
+                          "authority",
+                          "code",
+                          "display",
+                          "vocabulary_version",
+                          "recognized_meaning"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "pmid",
+                  "citation",
+                  "source_type"
+                ],
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "planned_outcomes": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "measure": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Required source-stated planned outcome measure."
+                  },
+                  "description": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional source-stated planned outcome description."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional source-stated planned outcome description."
+                  },
+                  "time_frame": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional opaque source-stated time frame."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional opaque source-stated time frame."
+                  },
+                  "source_classification": {
+                    "type": "object",
+                    "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                    "properties": {
+                      "authority": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Provisional source vocabulary authority."
+                      },
+                      "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Provisional original source code."
+                      },
+                      "display": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional optional source display."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "Provisional optional source display."
+                      },
+                      "vocabulary_version": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional optional source-supplied vocabulary version."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "Provisional optional source-supplied vocabulary version."
+                      },
+                      "recognized_meaning": {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional optional recognized shared meaning."
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "Provisional optional recognized shared meaning."
+                      }
+                    },
+                    "required": [
+                      "authority",
+                      "code",
+                      "display",
+                      "vocabulary_version",
+                      "recognized_meaning"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "measure",
+                  "description",
+                  "time_frame",
+                  "source_classification"
+                ],
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifacts": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "document_type": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                        "properties": {
+                          "authority": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional source vocabulary authority."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional original source code."
+                          },
+                          "display": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source display."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source display."
+                          },
+                          "vocabulary_version": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source-supplied vocabulary version."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source-supplied vocabulary version."
+                          },
+                          "recognized_meaning": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional recognized shared meaning."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional recognized shared meaning."
+                          }
+                        },
+                        "required": [
+                          "authority",
+                          "code",
+                          "display",
+                          "vocabulary_version",
+                          "recognized_meaning"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "label": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional source-stated artifact label."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional source-stated artifact label."
+                  },
+                  "document_date": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional opaque source document date."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional opaque source document date."
+                  },
+                  "upload_date": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Optional opaque source upload date."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional opaque source upload date."
+                  },
+                  "size_bytes": {
+                    "oneOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Optional portable source byte size."
+                  },
+                  "has_protocol": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "has_statistical_analysis_plan": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "has_informed_consent_form": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "document_type",
+                  "label",
+                  "document_date",
+                  "upload_date",
+                  "size_bytes",
+                  "has_protocol",
+                  "has_statistical_analysis_plan",
+                  "has_informed_consent_form"
+                ],
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "site_directory": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "central_contacts": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated contact name."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated contact name."
+                          },
+                          "role": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                                "properties": {
+                                  "authority": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "description": "Provisional source vocabulary authority."
+                                  },
+                                  "code": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "description": "Provisional original source code."
+                                  },
+                                  "display": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional optional source display."
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "Provisional optional source display."
+                                  },
+                                  "vocabulary_version": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional optional source-supplied vocabulary version."
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "Provisional optional source-supplied vocabulary version."
+                                  },
+                                  "recognized_meaning": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional optional recognized shared meaning."
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "Provisional optional recognized shared meaning."
+                                  }
+                                },
+                                "required": [
+                                  "authority",
+                                  "code",
+                                  "display",
+                                  "vocabulary_version",
+                                  "recognized_meaning"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "phone": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated phone number."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated phone number."
+                          },
+                          "phone_extension": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated phone extension."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated phone extension."
+                          },
+                          "email": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated email address."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated email address."
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "role",
+                          "phone",
+                          "phone_extension",
+                          "email"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sites": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facility": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated facility."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated facility."
+                          },
+                          "status": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                                "properties": {
+                                  "authority": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "description": "Provisional source vocabulary authority."
+                                  },
+                                  "code": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "description": "Provisional original source code."
+                                  },
+                                  "display": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional optional source display."
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "Provisional optional source display."
+                                  },
+                                  "vocabulary_version": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional optional source-supplied vocabulary version."
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "Provisional optional source-supplied vocabulary version."
+                                  },
+                                  "recognized_meaning": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional optional recognized shared meaning."
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "Provisional optional recognized shared meaning."
+                                  }
+                                },
+                                "required": [
+                                  "authority",
+                                  "code",
+                                  "display",
+                                  "vocabulary_version",
+                                  "recognized_meaning"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "city": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated city."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated city."
+                          },
+                          "state": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated state or province."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated state or province."
+                          },
+                          "postal_code": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated postal code."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated postal code."
+                          },
+                          "country": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Optional source-stated country."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Optional source-stated country."
+                          },
+                          "coordinates": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "latitude": {
+                                    "type": "number",
+                                    "minimum": -90,
+                                    "maximum": 90
+                                  },
+                                  "longitude": {
+                                    "type": "number",
+                                    "minimum": -180,
+                                    "maximum": 180
+                                  }
+                                },
+                                "required": [
+                                  "latitude",
+                                  "longitude"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "contacts": {
+                            "oneOf": [
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "description": "Optional source-stated contact name."
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "description": "Optional source-stated contact name."
+                                    },
+                                    "role": {
+                                      "oneOf": [
+                                        {
+                                          "type": "object",
+                                          "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                                          "properties": {
+                                            "authority": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "description": "Provisional source vocabulary authority."
+                                            },
+                                            "code": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "description": "Provisional original source code."
+                                            },
+                                            "display": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "description": "Provisional optional source display."
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ],
+                                              "description": "Provisional optional source display."
+                                            },
+                                            "vocabulary_version": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "description": "Provisional optional source-supplied vocabulary version."
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ],
+                                              "description": "Provisional optional source-supplied vocabulary version."
+                                            },
+                                            "recognized_meaning": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "description": "Provisional optional recognized shared meaning."
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ],
+                                              "description": "Provisional optional recognized shared meaning."
+                                            }
+                                          },
+                                          "required": [
+                                            "authority",
+                                            "code",
+                                            "display",
+                                            "vocabulary_version",
+                                            "recognized_meaning"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "phone": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "description": "Optional source-stated phone number."
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "description": "Optional source-stated phone number."
+                                    },
+                                    "phone_extension": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "description": "Optional source-stated phone extension."
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "description": "Optional source-stated phone extension."
+                                    },
+                                    "email": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "description": "Optional source-stated email address."
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "description": "Optional source-stated email address."
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "role",
+                                    "phone",
+                                    "phone_extension",
+                                    "email"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "facility",
+                          "status",
+                          "city",
+                          "state",
+                          "postal_code",
+                          "country",
+                          "coordinates",
+                          "contacts"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "central_contacts",
+                "sites"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "eligibility": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "registry_text": {
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Exact nonblank source registry eligibility text."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Exact nonblank source registry eligibility text."
+                },
+                "age_range": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "minimum": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "const": "limited"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "source_quantity": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "source_unit": {
+                                  "enum": [
+                                    "years",
+                                    "months",
+                                    "weeks",
+                                    "days"
+                                  ]
+                                },
+                                "bound": {
+                                  "const": "minimum"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "source",
+                                "source_quantity",
+                                "source_unit",
+                                "bound"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "maximum": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "const": "limited"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "source_quantity": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "source_unit": {
+                                  "enum": [
+                                    "years",
+                                    "months",
+                                    "weeks",
+                                    "days"
+                                  ]
+                                },
+                                "bound": {
+                                  "const": "maximum"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "source",
+                                "source_quantity",
+                                "source_unit",
+                                "bound"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "const": "source_stated_no_limit"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "source_quantity": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "source_unit": {
+                                  "enum": [
+                                    "years",
+                                    "months",
+                                    "weeks",
+                                    "days"
+                                  ]
+                                },
+                                "bound": {
+                                  "const": "maximum"
+                                },
+                                "rule": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "const": "nci-cts-v2-999-years-no-upper-bound"
+                                    },
+                                    "version": {
+                                      "const": "1"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "version"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "source",
+                                "source_quantity",
+                                "source_unit",
+                                "bound",
+                                "rule"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "minimum",
+                        "maximum"
+                      ],
+                      "additionalProperties": false,
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "minimum": {
+                              "not": {
+                                "type": "null"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "properties": {
+                            "maximum": {
+                              "not": {
+                                "type": "null"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sexes": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                        "properties": {
+                          "authority": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional source vocabulary authority."
+                          },
+                          "code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Provisional original source code."
+                          },
+                          "display": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source display."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source display."
+                          },
+                          "vocabulary_version": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional source-supplied vocabulary version."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional source-supplied vocabulary version."
+                          },
+                          "recognized_meaning": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Provisional optional recognized shared meaning."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ],
+                            "description": "Provisional optional recognized shared meaning."
+                          }
+                        },
+                        "required": [
+                          "authority",
+                          "code",
+                          "display",
+                          "vocabulary_version",
+                          "recognized_meaning"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "Source-coded values."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "includes_healthy_subjects": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "criteria": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "description": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Exact nonblank source criterion description."
+                          },
+                          "classification": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "inclusion"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "exclusion"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "other"
+                                  },
+                                  "source": {
+                                    "type": "object",
+                                    "description": "Provisional open source-owned code; Rust validation is authoritative.",
+                                    "properties": {
+                                      "authority": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional source vocabulary authority."
+                                      },
+                                      "code": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Provisional original source code."
+                                      },
+                                      "display": {
+                                        "oneOf": [
+                                          {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "description": "Provisional optional source display."
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ],
+                                        "description": "Provisional optional source display."
+                                      },
+                                      "vocabulary_version": {
+                                        "oneOf": [
+                                          {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "description": "Provisional optional source-supplied vocabulary version."
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ],
+                                        "description": "Provisional optional source-supplied vocabulary version."
+                                      },
+                                      "recognized_meaning": {
+                                        "oneOf": [
+                                          {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "description": "Provisional optional recognized shared meaning."
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ],
+                                        "description": "Provisional optional recognized shared meaning."
+                                      }
+                                    },
+                                    "required": [
+                                      "authority",
+                                      "code",
+                                      "display",
+                                      "vocabulary_version",
+                                      "recognized_meaning"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "source"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "description",
+                          "classification"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "registry_text",
+                "age_range",
+                "sexes",
+                "includes_healthy_subjects",
+                "criteria"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "identities",
+        "brief_title",
+        "official_title",
+        "overall_status",
+        "stop_reason",
+        "study_type",
+        "phases",
+        "conditions",
+        "lead_sponsor_name",
+        "enrollment_count",
+        "brief_summary",
+        "start_date",
+        "completion_date",
+        "arms",
+        "interventions",
+        "arm_intervention_assignments",
+        "references",
+        "planned_outcomes",
+        "artifacts",
+        "site_directory",
+        "eligibility"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "type",
+    "value"
+  ],
+  "additionalProperties": false
+}

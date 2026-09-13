@@ -17,7 +17,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-BIODATA_REVISION = "a0c77911d766e9f4ef5b367d2b41e3b2173dfb34"
+BIODATA_REVISION = "991f9fe16b14208e184a6a9a370d5ed7b708dfae"
 REVIEWED_TOP_LEVEL_DIRECTORIES = {
     ".claude-plugin",
     ".github",
@@ -34,6 +34,7 @@ REVIEWED_TOP_LEVEL_DIRECTORIES = {
     "templates",
     "tests",
     "tools",
+    "website",
 }
 REQUIRED_ROOT_ENTRIES = {
     ".cargo_vcs_info.json",
@@ -41,6 +42,7 @@ REQUIRED_ROOT_ENTRIES = {
     ".gitattributes",
     ".gitignore",
     ".mcpbignore",
+    ".node-version",
     ".rustfmt.toml",
     ".zenodo.json",
     "AGENTS.md",
@@ -75,6 +77,26 @@ REQUIRED_PACKAGE_MEMBERS = {
     "src/sources/gencc/tests.rs",
     "src/sources/mygene/tests/live.rs",
     "tests/test_gencc_docs_contract.py",
+    "tests/test_biodata_model_reference.py",
+    "website/astro.config.mjs",
+    "website/biodata-adoption.json",
+    "website/catalog/v1/clinical-trial.bundle.json",
+    "website/check",
+    "website/generate.py",
+    "website/package-lock.json",
+    "website/package.json",
+    "website/prepare",
+    "website/public/biodata/models/clinical-trial.md",
+    "website/public/downloads/biodata/clinical-trial-projection.schema.json",
+    "website/public/downloads/biodata/clinical-trial-v1.bundle.json",
+    "website/public/downloads/biodata/clinical-trial.schema.json",
+    "website/public/downloads/biodata/ctgov-clinical-trial-projection.json",
+    "website/public/llms-full.txt",
+    "website/public/llms.txt",
+    "website/src/content.config.ts",
+    "website/src/content/docs/biodata/models/clinical-trial.md",
+    "website/src/content/docs/index.md",
+    "website/verify-built-site.py",
 }
 REQUIRED_AREA_ROOTS = {
     "documentation": "docs",
@@ -84,7 +106,10 @@ REQUIRED_AREA_ROOTS = {
     "scripts": "scripts",
     "tools": "tools",
     "tests": "tests",
+    "model reference website": "website",
 }
+
+
 def _rust_function(source: str, signature: str) -> str:
     start = source.index(signature)
     opening = source.index("{", start)
@@ -198,7 +223,9 @@ def _validate_source_package(
         if payload is None:
             continue
         if payload_digest(payload) in forbidden:
-            raise AssertionError(f"package member matches captured fixture bytes: {path}")
+            raise AssertionError(
+                f"package member matches captured fixture bytes: {path}"
+            )
         if not path.endswith(".rs"):
             continue
         source = payload.decode("utf-8")
@@ -213,9 +240,7 @@ def _validate_real_source_package(paths: Collection[str]) -> None:
     tracked_templates = _tracked_paths_under("templates")
     digest, forbidden_fixture_digests = _artifact_fixture_contract()
     member_payloads = {
-        path: (ROOT / path).read_bytes()
-        for path in paths
-        if (ROOT / path).is_file()
+        path: (ROOT / path).read_bytes() for path in paths if (ROOT / path).is_file()
     }
     _validate_source_package(
         paths,
@@ -268,9 +293,7 @@ def _validator_fixture() -> tuple[set[str], dict[str, object]]:
 
 def test_package_validator_allows_an_additional_source_member() -> None:
     paths, arguments = _validator_fixture()
-    arguments["member_payloads"] = {
-        "src/new_module.rs": b"pub fn new_module() {}"
-    }
+    arguments["member_payloads"] = {"src/new_module.rs": b"pub fn new_module() {}"}
     _validate_source_package(paths | {"src/new_module.rs"}, **arguments)
 
 
@@ -285,7 +308,9 @@ def test_package_validator_requires_each_cargo_generated_root_entry() -> None:
 
 def test_package_validator_rejects_missing_required_root_entry() -> None:
     paths, arguments = _validator_fixture()
-    with pytest.raises(AssertionError, match="missing required root entries: Cargo.toml"):
+    with pytest.raises(
+        AssertionError, match="missing required root entries: Cargo.toml"
+    ):
         _validate_source_package(paths - {"Cargo.toml"}, **arguments)
 
 
@@ -313,7 +338,9 @@ def test_package_validator_rejects_missing_external_compile_time_input() -> None
 
 def test_package_validator_rejects_private_roots_and_nested_testdata() -> None:
     paths, arguments = _validator_fixture()
-    with pytest.raises(AssertionError, match="package contains private root: sdlc/note.md"):
+    with pytest.raises(
+        AssertionError, match="package contains private root: sdlc/note.md"
+    ):
         _validate_source_package(paths | {"sdlc/note.md"}, **arguments)
     with pytest.raises(
         AssertionError,
@@ -401,6 +428,7 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
+    assert len(paths) == 1327
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
@@ -533,9 +561,9 @@ def test_biodata_owns_trial_document_detail_manifest_and_provenance_paths() -> N
         assert "decode_get_response" not in body
         assert "client.get(" not in body
     product_get = _rust_function(detail, "pub async fn get(")
-    ctgov_get = product_get.split("TrialSource::ClinicalTrialsGov =>", maxsplit=1)[1].split(
-        "TrialSource::NciCts =>", maxsplit=1
-    )[0]
+    ctgov_get = product_get.split("TrialSource::ClinicalTrialsGov =>", maxsplit=1)[
+        1
+    ].split("TrialSource::NciCts =>", maxsplit=1)[0]
     assert "decode_get_response" not in ctgov_get
     assert "client.get(" not in ctgov_get
     assert ".get_biodata_detail(" in ctgov_get
@@ -548,7 +576,9 @@ def test_biodata_owns_trial_document_detail_manifest_and_provenance_paths() -> N
     eligibility = (ROOT / "src/entities/trial/search/eligibility.rs").read_text(
         encoding="utf-8"
     )
-    adverse_events = (ROOT / "src/entities/adverse_event.rs").read_text(encoding="utf-8")
+    adverse_events = (ROOT / "src/entities/adverse_event.rs").read_text(
+        encoding="utf-8"
+    )
     transform = (ROOT / "src/transform/trial.rs").read_text(encoding="utf-8")
     verifier = _rust_function(eligibility, "pub(super) async fn verify_detail_filters")
     assert verifier.count("client.get_biodata_detail(&nct_id, &sections).await") == 1
@@ -562,10 +592,14 @@ def test_biodata_owns_trial_document_detail_manifest_and_provenance_paths() -> N
     assert "client: &ClinicalTrialsClient" in fetch
     assert ".search_adverse_events(" in fetch
     assert "response.studies" in fetch
-    aggregate = _rust_function(adverse_events, "fn trial_adverse_events_from_study_batches")
+    aggregate = _rust_function(
+        adverse_events, "fn trial_adverse_events_from_study_batches"
+    )
     assert aggregate.count("CtGovAdverseEventStudy") >= 2
     adverse_production = adverse_events.split("#[cfg(test)]", maxsplit=1)[0]
-    outside_named_consumers = adverse_production.replace(fetch, "").replace(aggregate, "")
+    outside_named_consumers = adverse_production.replace(fetch, "").replace(
+        aggregate, ""
+    )
     outside_named_consumers = outside_named_consumers.replace(
         "CtGovAdverseEventStudy,", ""
     )

@@ -9,6 +9,10 @@ dist/
 /server/
 *.egg-info/
 site/
+/.astro/
+website/node_modules/
+website/dist/
+website/.astro/
 .climb/
 .climb-test-vault/
 .march/*

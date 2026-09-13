@@ -1,6 +1,6 @@
 .PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
 .PHONY: output-footprint
-.PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
+.PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp prepare-website test-contracts-prepared prepare-spec
 
 SPEC_PROFILE ?= spec
 ROUTINE_CARGO_FEATURES ?= --no-default-features
@@ -36,7 +36,10 @@ test:
 	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)"
 	$(MAKE) test-contracts-prepared
 
-prepare-test-contracts:
+prepare-website:
+	website/prepare
+
+prepare-test-contracts: prepare-website
 	$(SPEC_BUILD)
 	$(MAKE) sync-python-dev
 
@@ -46,6 +49,7 @@ test-contracts: prepare-test-contracts
 test-contracts-prepared:
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS)
 	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
+	tools/run-offline -- website/check
 
 lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \

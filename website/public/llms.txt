@@ -1,0 +1,4 @@
+# BioMCP
+
+- [ClinicalTrial](https://biomcp.org/biodata/models/clinical-trial/)
+- [ClinicalTrial raw Markdown](https://biomcp.org/biodata/models/clinical-trial.md)
