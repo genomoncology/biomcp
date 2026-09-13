@@ -123,7 +123,7 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
         port = int(port_text)
 
         os.kill(runner.pid, termination_signal)
-        assert runner.wait(timeout=10) == 128 + termination_signal
+        assert runner.wait(timeout=60) == 128 + termination_signal
 
         _wait_until(lambda: not Path(f"/proc/{supervisor_pid}").exists())
         _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())

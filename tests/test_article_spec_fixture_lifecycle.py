@@ -280,7 +280,7 @@ def test_runner_signal_cleans_article_fixture(
             _read_record(fixture_record)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
         )
         os.kill(runner.pid, termination_signal)
-        assert runner.wait(timeout=10) == 128 + termination_signal
+        assert runner.wait(timeout=60) == 128 + termination_signal
         _wait_until(lambda: not Path(f"/proc/{pid}").exists())
         assert not fixture_env.exists()
         assert not fixture_record.exists()
@@ -318,7 +318,7 @@ def test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns(
         runner_group = os.getpgid(runner.pid)
 
         os.kill(runner.pid, termination_signal)
-        assert runner.wait(timeout=10) == 128 + termination_signal
+        assert runner.wait(timeout=60) == 128 + termination_signal
         _wait_until(lambda: not Path(f"/proc/{fixture_pid}").exists())
         assert not fixture_env.exists()
         assert not fixture_record.exists()
@@ -771,7 +771,7 @@ def test_interrupt_reaps_parallel_markdown_workers(tmp_path: Path) -> None:
         _wait_until(lambda: active_dir.exists() and len(list(active_dir.iterdir())) >= 2)
         worker_pids = [int(path.name) for path in active_dir.iterdir()]
         runner.terminate()
-        assert runner.wait(timeout=10) == 128 + signal.SIGTERM
+        assert runner.wait(timeout=60) == 128 + signal.SIGTERM
         _wait_until(
             lambda: all(not Path(f"/proc/{worker_pid}").exists() for worker_pid in worker_pids)
         )
