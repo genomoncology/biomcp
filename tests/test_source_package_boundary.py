@@ -78,19 +78,25 @@ REQUIRED_PACKAGE_MEMBERS = {
     "src/sources/mygene/tests/live.rs",
     "tests/test_gencc_docs_contract.py",
     "tests/test_biodata_model_reference.py",
+    "tests/test_biodata_model_reference_surfaces.py",
+    "examples/biodata-clinical-trial-recorded.rs",
     "website/astro.config.mjs",
     "website/biodata-adoption.json",
     "website/catalog/v1/clinical-trial.bundle.json",
     "website/check",
     "website/generate.py",
+    "website/model_reference.py",
     "website/package-lock.json",
     "website/package.json",
     "website/prepare",
+    "website/public/biodata/discovery/clinical-trial.json",
     "website/public/biodata/models/clinical-trial.md",
     "website/public/downloads/biodata/clinical-trial-projection.schema.json",
+    "website/public/downloads/biodata/clinical-trial-relationships.svg",
     "website/public/downloads/biodata/clinical-trial-v1.bundle.json",
     "website/public/downloads/biodata/clinical-trial.schema.json",
     "website/public/downloads/biodata/ctgov-clinical-trial-projection.json",
+    "website/public/downloads/biodata/nct02576665-provider-types.json",
     "website/public/llms-full.txt",
     "website/public/llms.txt",
     "website/src/content.config.ts",
@@ -170,6 +176,7 @@ def _validate_source_package(
     package_paths: Collection[str],
     *,
     required_root_entries: Collection[str],
+    required_package_members: Collection[str],
     tracked_source_paths: Collection[str],
     production_compile_time_inputs: Collection[str],
     tracked_skill_paths: Collection[str],
@@ -200,7 +207,7 @@ def _validate_source_package(
             )
 
     _require_package_members(paths, reviewed_roots, "required root entries")
-    _require_package_members(paths, REQUIRED_PACKAGE_MEMBERS, "named package members")
+    _require_package_members(paths, required_package_members, "named package members")
     _require_package_members(
         paths, production_compile_time_inputs, "production compile-time inputs"
     )
@@ -245,6 +252,7 @@ def _validate_real_source_package(paths: Collection[str]) -> None:
     _validate_source_package(
         paths,
         required_root_entries=REQUIRED_ROOT_ENTRIES,
+        required_package_members=REQUIRED_PACKAGE_MEMBERS,
         tracked_source_paths=_tracked_paths_under("src"),
         production_compile_time_inputs={
             "src/cli/list_reference.md",
@@ -279,6 +287,7 @@ def _validator_fixture() -> tuple[set[str], dict[str, object]]:
     )
     arguments: dict[str, object] = {
         "required_root_entries": REQUIRED_ROOT_ENTRIES,
+        "required_package_members": REQUIRED_PACKAGE_MEMBERS,
         "tracked_source_paths": tracked_source_paths,
         "production_compile_time_inputs": production_inputs,
         "tracked_skill_paths": tracked_skills,
@@ -369,7 +378,13 @@ def test_package_validator_requires_tracked_skills_and_reviewed_areas() -> None:
     ):
         _validate_source_package(paths - {"skills/SKILL.md"}, **arguments)
     with pytest.raises(AssertionError, match="missing required package area: examples"):
-        _validate_source_package(paths - {"examples/member"}, **arguments)
+        without_examples = {path for path in paths if not path.startswith("examples/")}
+        arguments["required_package_members"] = {
+            path
+            for path in REQUIRED_PACKAGE_MEMBERS
+            if not path.startswith("examples/")
+        }
+        _validate_source_package(without_examples, **arguments)
 
 
 def test_package_validator_rejects_private_rust_compile_time_include() -> None:
@@ -428,7 +443,7 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
-    assert len(paths) == 1327
+    assert len(paths) == 1333
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

@@ -17,6 +17,10 @@ EXPECTED_REVISION = "991f9fe16b14208e184a6a9a370d5ed7b708dfae"
 EXPECTED_BUNDLE_SHA256 = (
     "874989aa405aae4b505f74e13d0f85189692f526e84c84fc29a45e8bc2690854"
 )
+EXPECTED_INPUT_SHA256 = (
+    "b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e"
+)
+DIRECT_RELATIONSHIP_COUNT = 10
 
 
 def _module():
@@ -52,6 +56,22 @@ def test_generated_outputs_are_current_and_cover_the_catalog() -> None:
     bundle = json.loads((WEBSITE / "catalog/v1/clinical-trial.bundle.json").read_text())
     page = (WEBSITE / "src/content/docs/biodata/models/clinical-trial.md").read_text()
     module = _module()
+    loaded_catalog, bundle_bytes, recorded_input = module.load()
+    assert loaded_catalog == bundle
+    generated = module.outputs(bundle, bundle_bytes, recorded_input)
+    assert {path.relative_to(WEBSITE).as_posix() for path in generated} == {
+        "src/content/docs/biodata/models/clinical-trial.md",
+        "public/biodata/models/clinical-trial.md",
+        "public/biodata/discovery/clinical-trial.json",
+        "public/llms.txt",
+        "public/llms-full.txt",
+        "public/downloads/biodata/clinical-trial.schema.json",
+        "public/downloads/biodata/clinical-trial-projection.schema.json",
+        "public/downloads/biodata/clinical-trial-relationships.svg",
+        "public/downloads/biodata/nct02576665-provider-types.json",
+        "public/downloads/biodata/ctgov-clinical-trial-projection.json",
+        "public/downloads/biodata/clinical-trial-v1.bundle.json",
+    }
     assert all(
         module.safe_text(field["name"]) in page
         for model in bundle["models"]
@@ -68,23 +88,30 @@ def test_generated_outputs_are_current_and_cover_the_catalog() -> None:
     assert "correspondence only" in page
     for label in ("provisional", "implemented", "unsupported"):
         assert f"**{label}**" in page
-
-
-def test_raw_markdown_indexes_downloads_and_routes_share_one_identity() -> None:
-    source = (WEBSITE / "src/content/docs/biodata/models/clinical-trial.md").read_text()
-    raw = (WEBSITE / "public/biodata/models/clinical-trial.md").read_text()
-    assert raw == source.split("---\n", 2)[2].lstrip("\n")
-    for name in ("llms.txt", "llms-full.txt"):
-        index = (WEBSITE / "public" / name).read_text()
-        assert "https://biomcp.org/biodata/models/clinical-trial/" in index
-        assert "https://biomcp.org/biodata/models/clinical-trial.md" in index
-    for relative in (
-        "downloads/biodata/clinical-trial.schema.json",
-        "downloads/biodata/clinical-trial-projection.schema.json",
-        "downloads/biodata/ctgov-clinical-trial-projection.json",
-        "downloads/biodata/clinical-trial-v1.bundle.json",
-    ):
-        assert (WEBSITE / "public" / relative).is_file()
+    assert all(
+        module.safe_text(item["kind"]) in page for item in bundle["relationships"]
+    )
+    for item in bundle["support"]:
+        assert module.safe_text(item["id"]) in page
+        assert module.safe_text(item["label"]) in page
+        detail = item["executable_proof"] or item["exclusion"]
+        assert detail is not None
+        assert module.safe_text(detail) in page
+    for item in bundle["crosswalks"]:
+        assert module.safe_text(item["id"]) in page
+        assert module.safe_text(item["qualification"]) in page
+    artifacts = {item["path"]: item for item in bundle["artifacts"]}
+    downloads = {
+        "schemas/clinical-trial.schema.json": "clinical-trial.schema.json",
+        "schemas/clinical-trial-projection.schema.json": "clinical-trial-projection.schema.json",
+        "examples/ctgov-clinical-trial-projection.json": "ctgov-clinical-trial-projection.json",
+    }
+    for path, name in downloads.items():
+        artifact = artifacts[path]
+        actual = (WEBSITE / "public/downloads/biodata" / name).read_bytes()
+        assert actual == artifact["content"].encode()
+        assert module.safe_text(artifact["id"]) in page
+        assert module.safe_text(artifact["sha256"]) in page
 
 
 @pytest.mark.parametrize(

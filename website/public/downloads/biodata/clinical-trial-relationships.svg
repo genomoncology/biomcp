@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1432" viewBox="0 0 1600 1432" role="img" aria-labelledby="relationship-title relationship-description">
+<title id="relationship-title">ClinicalTrial direct relationships</title>
+<desc id="relationship-description">Ten direct relationships from ClinicalTrial fields to component models, in adopted catalog order. Equivalent text follows the image.</desc>
+<rect x="24" y="30" width="250" height="56" rx="8" fill="#eef5ff" stroke="#315c8c"/>
+<text x="149" y="64" text-anchor="middle" font-family="sans-serif" font-size="20">ClinicalTrial</text>
+<line x1="274" y1="58" x2="340" y2="59" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-identities" data-source="model:ClinicalTrial/field:identities" data-target="model:AuthorityScopedReference" data-kind="contains">
+<rect x="340" y="28" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="49" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-identities</text>
+<text x="360" y="71" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:identities</text>
+<text x="360" y="93" font-family="sans-serif" font-size="14" data-role="target">model:AuthorityScopedReference</text>
+<text x="360" y="115" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="137" font-family="sans-serif" font-size="14" data-role="explanation">The trial retains every authority-qualified identity in source order.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="195" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-status-code" data-source="model:ClinicalTrial/field:overall_status" data-target="model:ExtensibleCode" data-kind="contains">
+<rect x="340" y="164" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="185" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-status-code</text>
+<text x="360" y="207" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:overall_status</text>
+<text x="360" y="229" font-family="sans-serif" font-size="14" data-role="target">model:ExtensibleCode</text>
+<text x="360" y="251" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="273" font-family="sans-serif" font-size="14" data-role="explanation">The trial preserves the source status code.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="331" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-arms" data-source="model:ClinicalTrial/field:arms" data-target="model:ClinicalTrialArm" data-kind="contains">
+<rect x="340" y="300" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="321" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-arms</text>
+<text x="360" y="343" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:arms</text>
+<text x="360" y="365" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialArm</text>
+<text x="360" y="387" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="409" font-family="sans-serif" font-size="14" data-role="explanation">The optional arm collection retains source order.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="467" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-interventions" data-source="model:ClinicalTrial/field:interventions" data-target="model:ClinicalTrialIntervention" data-kind="contains">
+<rect x="340" y="436" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="457" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-interventions</text>
+<text x="360" y="479" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:interventions</text>
+<text x="360" y="501" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialIntervention</text>
+<text x="360" y="523" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="545" font-family="sans-serif" font-size="14" data-role="explanation">The optional intervention collection retains source order.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="603" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-assignments" data-source="model:ClinicalTrial/field:arm_intervention_assignments" data-target="model:ClinicalTrialArmInterventionAssignment" data-kind="contains">
+<rect x="340" y="572" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="593" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-assignments</text>
+<text x="360" y="615" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:arm_intervention_assignments</text>
+<text x="360" y="637" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialArmInterventionAssignment</text>
+<text x="360" y="659" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="681" font-family="sans-serif" font-size="14" data-role="explanation">Typed assignments connect local arm and intervention identities.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="739" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-references" data-source="model:ClinicalTrial/field:references" data-target="model:ClinicalTrialReference" data-kind="contains">
+<rect x="340" y="708" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="729" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-references</text>
+<text x="360" y="751" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:references</text>
+<text x="360" y="773" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialReference</text>
+<text x="360" y="795" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="817" font-family="sans-serif" font-size="14" data-role="explanation">The optional reference collection retains source order.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="875" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-outcomes" data-source="model:ClinicalTrial/field:planned_outcomes" data-target="model:ClinicalTrialPlannedOutcome" data-kind="contains">
+<rect x="340" y="844" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="865" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-outcomes</text>
+<text x="360" y="887" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:planned_outcomes</text>
+<text x="360" y="909" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialPlannedOutcome</text>
+<text x="360" y="931" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="953" font-family="sans-serif" font-size="14" data-role="explanation">The optional planned-outcome collection retains source order.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="1011" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-artifacts" data-source="model:ClinicalTrial/field:artifacts" data-target="model:ClinicalTrialArtifactDescriptor" data-kind="contains">
+<rect x="340" y="980" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="1001" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-artifacts</text>
+<text x="360" y="1023" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:artifacts</text>
+<text x="360" y="1045" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialArtifactDescriptor</text>
+<text x="360" y="1067" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="1089" font-family="sans-serif" font-size="14" data-role="explanation">The optional artifact collection describes source documents.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="1147" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-sites" data-source="model:ClinicalTrial/field:site_directory" data-target="model:ClinicalTrialSiteDirectory" data-kind="contains">
+<rect x="340" y="1116" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="1137" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-sites</text>
+<text x="360" y="1159" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:site_directory</text>
+<text x="360" y="1181" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialSiteDirectory</text>
+<text x="360" y="1203" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="1225" font-family="sans-serif" font-size="14" data-role="explanation">The optional directory keeps central contacts and sites distinct.</text>
+</g>
+<line x1="274" y1="58" x2="340" y2="1283" stroke="#52687a" stroke-width="2"/>
+<g data-relationship-id="trial-eligibility" data-source="model:ClinicalTrial/field:eligibility" data-target="model:ClinicalTrialEligibility" data-kind="contains">
+<rect x="340" y="1252" width="1236" height="116" rx="8" fill="#ffffff" stroke="#52687a"/>
+<text x="360" y="1273" font-family="sans-serif" font-size="17" font-weight="bold" data-role="id">trial-eligibility</text>
+<text x="360" y="1295" font-family="sans-serif" font-size="14" data-role="source">model:ClinicalTrial/field:eligibility</text>
+<text x="360" y="1317" font-family="sans-serif" font-size="14" data-role="target">model:ClinicalTrialEligibility</text>
+<text x="360" y="1339" font-family="sans-serif" font-size="14" data-role="kind">contains</text>
+<text x="360" y="1361" font-family="sans-serif" font-size="14" data-role="explanation">The optional aggregate preserves eligibility facts together.</text>
+</g>
+</svg>

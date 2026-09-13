@@ -32,11 +32,16 @@ def test_prepared_contracts_leave_tmpdir_to_the_offline_runner() -> None:
     assert "TMPDIR" not in prepared
     assert "--basetemp" not in prepared
     recipe_lines = [line for line in prepared.splitlines() if line.strip()]
-    assert len(recipe_lines) == 3
-    assert all(
-        line.startswith("\ttools/run-offline -- env ") for line in recipe_lines[:2]
+    assert len(recipe_lines) == 4
+    assert recipe_lines[0].startswith("\ttools/run-offline -- env BIOMCP_BIN=")
+    assert recipe_lines[1] == (
+        "\ttools/run-offline -- cargo run --locked --no-default-features --example "
+        "biodata-clinical-trial-recorded -- --check"
     )
-    assert recipe_lines[2] == "\ttools/run-offline -- website/check"
+    assert recipe_lines[2].startswith(
+        "\ttools/run-offline -- env NO_MKDOCS_2_WARNING=1"
+    )
+    assert recipe_lines[3] == "\ttools/run-offline -- website/check"
 
 
 def test_website_dependencies_prepare_once_before_network_isolation() -> None:

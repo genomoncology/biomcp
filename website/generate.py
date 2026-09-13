@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import html
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -16,8 +15,14 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
 MANIFEST = ROOT / "biodata-adoption.json"
-EXPECTED_REVISION = "991f9fe16b14208e184a6a9a370d5ed7b708dfae"
+sys.path.insert(0, str(ROOT))
+import model_reference  # noqa: E402
+
+EXPECTED_INPUT_DIGEST = model_reference.EXPECTED_INPUT_DIGEST
+EXPECTED_REVISION = model_reference.EXPECTED_REVISION
+
 EXPECTED_DIGEST = "874989aa405aae4b505f74e13d0f85189692f526e84c84fc29a45e8bc2690854"
+RECORDED_INPUT = ROOT / "public/downloads/biodata/nct02576665-provider-types.json"
 # The producer hashes an evidence locator before stripping its optional URL fragment.
 # Format 1 does not expose that original locator, so the consumer pins the complete
 # emitted evidence table after validating each stored binding's shape.
@@ -307,141 +312,71 @@ def validate_catalog(catalog: dict[str, Any]) -> None:
             raise GenerationError("artifact digest mismatch")
 
 
-def safe_text(value: Any) -> str:
-    text = html.escape(str(value), quote=True)
-    text = text.replace("javascript:", "javascript&#58;")
-    text = text.replace("\\", "&#92;").replace("`", "&#96;").replace("|", "&#124;")
-    for char in "*_{}[]()#+-.!":
-        text = text.replace(char, f"\\{char}")
-    return " ".join(text.split())
+def validate_recorded_input(catalog: dict[str, Any], recorded_input: bytes) -> None:
+    receipt = catalog.get("example_receipt")
+    if not isinstance(receipt, dict):
+        raise GenerationError("missing example receipt")
+    if receipt.get("source_sha256") != "sha256:" + EXPECTED_INPUT_DIGEST:
+        raise GenerationError("catalog recorded input digest does not match accepted pin")
+    if hashlib.sha256(recorded_input).hexdigest() != EXPECTED_INPUT_DIGEST:
+        raise GenerationError("recorded input digest mismatch")
 
 
-def _constraint(value: Any) -> str:
-    serialized = json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
-    )
-    return safe_text(serialized)
+def render_relationship_svg(catalog: dict[str, Any]) -> str:
+    validate_catalog(catalog)
+    try:
+        return model_reference.render_relationship_svg(catalog)
+    except ValueError as error:
+        raise GenerationError(str(error)) from error
 
 
 def render(catalog: dict[str, Any]) -> str:
     validate_catalog(catalog)
-    root = next(
-        model for model in catalog["models"] if model["id"] == catalog["root_model"]
-    )
-    lines = [
-        "# ClinicalTrial",
-        "",
-        safe_text(root["explanation"]),
-        "",
-        f"The stable catalog identity is `{safe_text(root['id'])}`.",
-        "",
-        "## Support and exclusions",
-        "",
-    ]
-    for item in catalog["support"]:
-        detail = item.get("exclusion") or item.get("executable_proof")
-        lines.append(
-            f"- **{safe_text(item['label'])}** `{safe_text(item['id'])}`: {safe_text(detail)}"
-        )
-    lines += [
-        "",
-        "## Fields and absence rules",
-        "",
-        "| Field | Absence | Description | Constraints |",
-        "| --- | --- | --- | --- |",
-    ]
-    for field in root["fields"]:
-        description = field.get("description") or "No separate catalog description."
-        lines.append(
-            f"| `{safe_text(field['name'])}` | `{safe_text(field['absence'])}` | {safe_text(description)} | `{_constraint(field['constraints'])}` |"
-        )
-    lines += [
-        "",
-        "Every listed member follows its stated absence rule. Required nullable members distinguish an explicit null from a missing member. Rust validation remains authoritative.",
-        "",
-        "## Component models",
-        "",
-    ]
-    for model in catalog["models"]:
-        if model["id"] == root["id"]:
-            continue
-        lines += [
-            f"### {safe_text(model['id'].removeprefix('model:'))}",
-            "",
-            safe_text(model["explanation"]),
-            "",
-            "| Field | Absence | Description | Constraints |",
-            "| --- | --- | --- | --- |",
-        ]
-        for field in model["fields"]:
-            description = field.get("description") or "No separate catalog description."
-            lines.append(
-                f"| `{safe_text(field['name'])}` | `{safe_text(field['absence'])}` | {safe_text(description)} | `{_constraint(field['constraints'])}` |"
-            )
-        lines.append("")
-    lines += ["## Component relationships", ""]
-    for item in catalog["relationships"]:
-        lines.append(
-            f"- `{safe_text(item['id'])}`: `{safe_text(item['source'])}` {safe_text(item['kind'])} `{safe_text(item['target'])}`. {safe_text(item['explanation'])}"
-        )
-    lines += [
-        "",
-        "## Provenance",
-        "",
-        f"This reference comes from catalog format {catalog['format_version']} and the recorded example `{safe_text(catalog['example_receipt']['fixture'])}`. {safe_text(catalog['example_receipt']['attribution'])}.",
-        "",
-        "## Reviewed crosswalks",
-        "",
-        "Crosswalk review and adapter support are separate facts. Rows without implementation evidence describe **correspondence only**, not executable conversion.",
-        "",
-        "| External contract | Direction | Relationship | Local path | Qualification | Conversion |",
-        "| --- | --- | --- | --- | --- | --- |",
-    ]
-    for item in catalog["crosswalks"]:
-        url = item["canonical_url"]
-        conversion = (
-            "implemented: " + item["implementation"]["operation"]
-            if item["implementation"]
-            else "correspondence only; no executable conversion"
-        )
-        local = " → ".join(item["local_path"])
-        label = f"{item['external_authority']} {item['external_version']} {item['external_element']}"
-        lines.append(
-            f"| [{safe_text(label)}](<{url}>) | `{safe_text(item['direction'])}` | `{safe_text(item['semantic_relationship'])}` | `{safe_text(local)}` | {safe_text(item['qualification'])} | {safe_text(conversion)} |"
-        )
-    lines += [
-        "",
-        "## Downloads",
-        "",
-        "- [ClinicalTrial schema](/downloads/biodata/clinical-trial.schema.json)",
-        "- [ClinicalTrialProjection schema](/downloads/biodata/clinical-trial-projection.schema.json)",
-        "- [Recorded ClinicalTrials.gov projection](/downloads/biodata/ctgov-clinical-trial-projection.json)",
-        "- [Adopted catalog bundle](/downloads/biodata/clinical-trial-v1.bundle.json)",
-        "",
-        "## Scope",
-        "",
-        "This page renders only the claims and exclusions in the validated adopted catalog.",
-        "",
-    ]
-    return "\n".join(lines)
+    return model_reference.render(catalog)
 
 
-def outputs(catalog: dict[str, Any], bundle_bytes: bytes) -> dict[Path, bytes]:
+def safe_text(value: Any) -> str:
+    return model_reference.safe_text(value)
+
+
+def relationship_line(item: dict[str, Any]) -> str:
+    return model_reference.relationship_line(item)
+
+
+def discovery_contract(catalog: dict[str, Any]) -> dict[str, Any]:
+    validate_catalog(catalog)
+    return model_reference.discovery_contract(catalog)
+
+
+def outputs(
+    catalog: dict[str, Any], bundle_bytes: bytes, recorded_input: bytes
+) -> dict[Path, bytes]:
+    validate_recorded_input(catalog, recorded_input)
     body = render(catalog)
     frontmatter = "---\ntitle: ClinicalTrial\ndescription: Generated BioData ClinicalTrial model reference.\n---\n\n"
     page = frontmatter + body
     model_url = "https://biomcp.org/biodata/models/clinical-trial/"
     raw_url = "https://biomcp.org/biodata/models/clinical-trial.md"
+    discovery = discovery_contract(catalog)
+    route_lines = "\n".join(
+        f"- [{name.replace('_', ' ').title()}]({url})"
+        for name, url in discovery["routes"].items()
+    )
     result = {
         ROOT / "src/content/docs/biodata/models/clinical-trial.md": page.encode(),
         ROOT / "public/biodata/models/clinical-trial.md": body.encode(),
         ROOT / "public/llms.txt": (
-            f"# BioMCP\n\n- [ClinicalTrial]({model_url})\n- [ClinicalTrial raw Markdown]({raw_url})\n"
+            f"# BioMCP\n\n- [ClinicalTrial]({model_url})\n- [ClinicalTrial raw Markdown]({raw_url})\n{route_lines}\n"
         ).encode(),
         ROOT / "public/llms-full.txt": (
-            f"# BioMCP model reference\n\nSource: {model_url}\nRaw: {raw_url}\n\n{body}"
+            f"# BioMCP model reference\n\nSource: {model_url}\nRaw: {raw_url}\n\n{route_lines}\n\n{body}"
         ).encode(),
         ROOT / "public/downloads/biodata/clinical-trial-v1.bundle.json": bundle_bytes,
+        ROOT / "public/downloads/biodata/clinical-trial-relationships.svg": render_relationship_svg(catalog).encode(),
+        RECORDED_INPUT: recorded_input,
+        ROOT / "public/biodata/discovery/clinical-trial.json": (
+            json.dumps(discovery, indent=2, ensure_ascii=False) + "\n"
+        ).encode(),
     }
     names = {
         "schemas/clinical-trial.schema.json": "clinical-trial.schema.json",
@@ -455,7 +390,7 @@ def outputs(catalog: dict[str, Any], bundle_bytes: bytes) -> dict[Path, bytes]:
     return result
 
 
-def load() -> tuple[dict[str, Any], bytes]:
+def load() -> tuple[dict[str, Any], bytes, bytes]:
     manifest = parse_json_strict(MANIFEST.read_text())
     expected = {
         "catalog_format": 1,
@@ -478,7 +413,34 @@ def load() -> tuple[dict[str, Any], bytes]:
         or f"?rev={EXPECTED_REVISION}#{EXPECTED_REVISION}" not in lock
     ):
         raise GenerationError("BioData dependency does not match adoption manifest")
-    return catalog, bundle_bytes
+    recorded_input = RECORDED_INPUT.read_bytes()
+    validate_recorded_input(catalog, recorded_input)
+    return catalog, bundle_bytes, recorded_input
+
+
+def stale_outputs(generated: dict[Path, bytes]) -> list[str]:
+    stale = [
+        str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+        for path, content in generated.items()
+        if not path.is_file() or path.read_bytes() != content
+    ]
+    for relative in (
+        "src/content/docs/biodata/models",
+        "public/biodata/models",
+        "public/biodata/discovery",
+        "public/downloads/biodata",
+    ):
+        directory = ROOT / relative
+        expected = {path for path in generated if path.parent == directory}
+        if not expected or not directory.is_dir():
+            continue
+        unexpected = sorted(
+            path
+            for path in directory.rglob("*")
+            if path.is_file() and path not in expected
+        )
+        stale.extend(str(path.relative_to(ROOT)) for path in unexpected)
+    return stale
 
 
 def main() -> int:
@@ -486,14 +448,10 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     try:
-        catalog, bundle_bytes = load()
-        generated = outputs(catalog, bundle_bytes)
+        catalog, bundle_bytes, recorded_input = load()
+        generated = outputs(catalog, bundle_bytes, recorded_input)
         if args.check:
-            stale = [
-                str(path.relative_to(ROOT))
-                for path, content in generated.items()
-                if not path.is_file() or path.read_bytes() != content
-            ]
+            stale = stale_outputs(generated)
             if stale:
                 raise GenerationError("stale generated output: " + ", ".join(stale))
         else:
