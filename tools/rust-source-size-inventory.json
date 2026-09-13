@@ -14,17 +14,6 @@
       }
     },
     {
-      "path": "src/cache/migration.rs",
-      "baseline_lines": 1086,
-      "floor_lines": 927,
-      "authorized_increase": {
-        "ticket": "1150",
-        "delta": 159,
-        "reason": "Keep deadline-raced epoch filesystem operations, staging cleanup ownership, and deterministic expiry tests beside the cache epoch implementation.",
-        "removal_condition": "Extract cache epoch deadline adapters when package-neutral cache test support is available."
-      }
-    },
-    {
       "path": "src/cache/provider_capture.rs",
       "baseline_lines": 1507,
       "floor_lines": 1507,
