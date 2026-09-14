@@ -574,3 +574,14 @@ provider and nothing more.
   measured number stands recorded either way. (2) src/error.rs lands at a
   rustfmt-stable 1,129 against the 1,125 ceiling: compression exhausted at
   four lines over; the inventory pins 1,129 with this ticket's authorization.
+
+  Re-review adjudication extends this amendment. (3) Package path count:
+  1,306 versus the frozen 1,300 — ticket 1145's five authorized modules plus
+  this ticket's ORCID tests submodule (src/sources/orcid/tests.rs), already
+  attributed inline in the enforcing constant; recorded here for one durable
+  trace. (4) The frozen surface table's json:true descriptive clause was
+  inaccurate: the generic wrapper's isError:true human-line behavior is the
+  preserved contract and is pinned by tests; the table's prose, not the code,
+  was wrong. (5) Middle-slice and offset-beyond-total CLI goldens and the
+  --full spec-lane assertion remain as accepted unit-seam coverage rather
+  than full spec-lane goldens; the re-review recorded this as sufficient.

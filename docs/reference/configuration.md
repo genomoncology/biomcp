@@ -13,6 +13,7 @@ internal fixture overrides and release/install variables.
 | `NCI_API_KEY` | Enables trial operations with `--source nci` |
 | `ONCOKB_TOKEN` | Enables the explicit `variant oncokb <id>` helper |
 | `OPENFDA_API_KEY` | Improves OpenFDA quota headroom |
+| `ORCID_ACCESS_TOKEN` | Enables `get author orcid:<id>` and `author papers orcid:<id>` |
 | `S2_API_KEY` | Enables authenticated Semantic Scholar quota |
 | `UMLS_API_KEY` | Enables optional discover cross-vocabulary enrichment |
 

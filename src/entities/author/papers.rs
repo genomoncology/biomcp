@@ -306,13 +306,16 @@ fn canonical_identifiers(work: &crate::sources::orcid::OrcidSelectedWork) -> Vec
 fn canonical_identifier(kind: &str, value: &str) -> Option<(String, String)> {
     match kind {
         "doi" => {
-            let mut value = value.trim();
-            for prefix in ["doi:", "https://doi.org/"] {
-                if let Some(rest) = value.strip_prefix(prefix) {
-                    value = rest.trim_start();
-                }
-            }
-            let value = value.trim().to_ascii_lowercase();
+            let trimmed = value.trim();
+            // Remove one case-insensitive `doi:` or `https://doi.org/` prefix
+            // so `DOI:10.1/x` and `HTTPS://DOI.ORG/10.1/x` normalize instead
+            // of being dropped.
+            let value = trimmed
+                .strip_prefix_insensitive("doi:")
+                .or_else(|| trimmed.strip_prefix_insensitive("https://doi.org/"))
+                .map(str::trim)
+                .unwrap_or(trimmed);
+            let value = value.to_ascii_lowercase();
             (value.len() >= 3 && value.len() <= 255 && value.contains('/'))
                 .then(|| ("doi".into(), value))
         }
@@ -1263,6 +1266,14 @@ mod orcid_works_tests {
         assert_eq!(
             canonical_identifier("doi", "https://doi.org/10.1/Example"),
             Some(("doi".into(), "10.1/example".into()))
+        );
+        assert_eq!(
+            canonical_identifier("doi", "DOI:10.1/x"),
+            Some(("doi".into(), "10.1/x".into()))
+        );
+        assert_eq!(
+            canonical_identifier("doi", "HTTPS://DOI.ORG/10.1/x"),
+            Some(("doi".into(), "10.1/x".into()))
         );
         assert_eq!(
             canonical_identifier("pmid", "000123"),
