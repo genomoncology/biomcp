@@ -100,3 +100,26 @@ changelog is complete.
 - The 1067 `--out` feature and the three lint contracts land before or
   shortly after the release depending on queue timing. Nothing requires
   holding the release for them.
+
+## Phase 0 refresh — 2026-09-14 final-system verification at main a1326e20
+
+Full-system pass across both hosts after the ten-ticket backlog (PRs #263-#272):
+
+- `make lint`: exit 0 on the gate host.
+- `make test` Rust lane: 3,566/3,566 passed on the dev host. The gate
+  host's Rust run cancels solely on
+  `raw_biomcp_tool_preserves_an_omitted_ctgov_total_as_null` SIGABRT —
+  pre-existing, fails identically on older main there, passes on the dev
+  host; filed in sdlc/issues.
+- `make spec`: exit 0 on the gate host.
+- `make full-feature-check` (all features, AlphaGenome behavior tests,
+  release build): exit 0 on the gate host.
+- Python contract lane: 957 passed. Failures are the eight documented
+  lifecycle contention tests plus two standalone-invocation artifacts
+  (temporary-paths and clean-tree checks) that pass inside the true
+  `make test` lane; the standalone `make test-contracts` invocation omits
+  the lane environment those two require.
+
+Net: green everywhere except the three documented host-condition classes
+(lifecycle contention, GenCC load flakes, gate-host SIGABRT). All three
+have issues filed with next steps.
