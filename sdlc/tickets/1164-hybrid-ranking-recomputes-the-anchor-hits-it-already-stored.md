@@ -113,3 +113,11 @@ Accepted after independent design review. The reviewer confirmed the
 deterministic one-calculation-per-row proof, the aligned private full-width
 carrier, removal of the unsupported 1150 dependency, and the stated ownership,
 source-size, package, and gate constraints.
+
+- Full gates (final): merged as PR #272. Lint OK and spec OK on the gate host
+  at eb3b5268; the full Rust suite passed 3566/3566 on the dev host at the
+  same tip. The gate host's Rust run was cancelled solely by a pre-existing
+  host-specific SIGABRT (fails identically on unmodified main there, passes
+  on the dev host), filed as
+  sdlc/issues/2026-09-13-raw-ctgov-total-test-sigaborts-on-the-gate-host-only.md.
+  Code review: single-cycle ACCEPT.
