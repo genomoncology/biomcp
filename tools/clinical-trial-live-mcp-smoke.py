@@ -184,18 +184,48 @@ def _result(response: dict[str, Any]) -> dict[str, Any] | None:
     return result if isinstance(result, dict) else None
 
 
+def _envelope_kind(response: dict[str, Any]) -> str:
+    has_result = "result" in response
+    has_error = "error" in response
+    if response.get("jsonrpc") != "2.0" or has_result == has_error:
+        raise SmokeError("MCP response did not contain one JSON-RPC result or error")
+    if has_result and not isinstance(response["result"], dict):
+        raise SmokeError("MCP JSON-RPC result was malformed")
+    error = response.get("error")
+    if has_error and (
+        not isinstance(error, dict)
+        or not isinstance(error.get("code"), int)
+        or not isinstance(error.get("message"), str)
+    ):
+        raise SmokeError("MCP JSON-RPC error was malformed")
+    return "result" if has_result else "error"
+
+
 def _expect_success(response: dict[str, Any], label: str) -> None:
+    if _envelope_kind(response) != "result":
+        raise SmokeError(f"{label} returned a JSON-RPC error")
     result = _result(response)
-    if "error" in response or result is None or result.get("isError") is True:
+    if result is None or result.get("isError") is True:
         raise SmokeError(f"{label} did not return a successful MCP tool result")
 
 
-def _expect_rejection(response: dict[str, Any], label: str) -> None:
+def _expect_raw_invalid_argument(response: dict[str, Any]) -> None:
+    if _envelope_kind(response) != "result":
+        raise SmokeError("raw binary document call returned a JSON-RPC error")
     result = _result(response)
-    if "error" not in response and (
-        result is None or result.get("isError") is not True
-    ):
-        raise SmokeError(f"{label} did not return the required rejection")
+    if result is None or result.get("isError") is not True:
+        raise SmokeError("raw binary document call did not return a tool error")
+    payload = _tool_json(response, "raw binary document call")
+    error = payload.get("error")
+    if not isinstance(error, dict) or error.get("code") != "invalid_argument":
+        raise SmokeError("raw binary document call did not return invalid_argument")
+
+
+def _expect_typed_invalid_params(response: dict[str, Any]) -> None:
+    if _envelope_kind(response) != "error":
+        raise SmokeError("typed documents call did not return a JSON-RPC error")
+    if response["error"]["code"] != -32602:
+        raise SmokeError("typed documents call did not return invalid params")
 
 
 def _tool_json(response: dict[str, Any], label: str) -> dict[str, Any]:
@@ -216,6 +246,75 @@ def _tool_json(response: dict[str, Any], label: str) -> dict[str, Any]:
         if isinstance(payload, dict):
             return payload
     raise SmokeError(f"{label} did not contain a JSON object")
+
+
+def _capture(value: object, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict) or not all(
+        isinstance(value.get(field), str) and value[field]
+        for field in ("source_authority", "provider_record_identity", "digest")
+    ):
+        raise SmokeError(f"{label} did not contain complete capture evidence")
+    return value
+
+
+def _validate_detail(payload: dict[str, Any], identity: str, label: str) -> None:
+    identities = payload.get("identities")
+    if not isinstance(identities, list) or not any(
+        isinstance(value, dict) and value.get("identifier") == identity
+        for value in identities
+    ):
+        raise SmokeError(f"{label} did not contain the requested trial identity")
+    _capture(payload.get("capture"), label)
+    if not isinstance(payload.get("conversion_report"), list):
+        raise SmokeError(f"{label} did not contain a conversion report")
+    states = payload.get("section_states")
+    if not isinstance(states, dict) or not states:
+        raise SmokeError(f"{label} did not contain section states")
+
+
+def _validate_search(payload: dict[str, Any], label: str) -> None:
+    results = payload.get("results")
+    if not isinstance(results, list) or not results:
+        raise SmokeError(f"{label} did not contain trial search results")
+    for result in results:
+        if (
+            not isinstance(result, dict)
+            or not isinstance(result.get("nct_id"), str)
+            or not result["nct_id"]
+        ):
+            raise SmokeError(f"{label} contained a result without a trial identity")
+        _capture(result.get("capture"), label)
+        if not isinstance(result.get("conversion_report"), list):
+            raise SmokeError(f"{label} contained a result without a conversion report")
+    if type(payload.get("count")) is not int or payload["count"] != len(results):
+        raise SmokeError(f"{label} contained an inconsistent result count")
+    pagination = payload.get("pagination")
+    required = ("total", "total_precision", "continuation_status", "has_more")
+    if not isinstance(pagination, dict) or any(
+        field not in pagination for field in required
+    ):
+        raise SmokeError(f"{label} did not contain pagination and count facts")
+    total = pagination["total"]
+    if (total is not None and type(total) is not int) or not isinstance(
+        pagination["total_precision"], str
+    ):
+        raise SmokeError(f"{label} contained malformed count facts")
+    if not isinstance(pagination["continuation_status"], str) or not isinstance(
+        pagination["has_more"], bool
+    ):
+        raise SmokeError(f"{label} contained malformed pagination facts")
+
+
+def _validated_tool_payload(
+    response: dict[str, Any], label: str, identity: str | None = None
+) -> dict[str, Any]:
+    _expect_success(response, label)
+    payload = _tool_json(response, label)
+    if identity is None:
+        _validate_search(payload, label)
+    else:
+        _validate_detail(payload, identity, label)
+    return payload
 
 
 def _advertised_filename(response: dict[str, Any]) -> str | None:
@@ -373,11 +472,24 @@ def run_smoke(
         ),
     ]
     responses: list[dict[str, Any]] = []
+    payloads: list[dict[str, Any]] = []
     for index, (name, arguments) in enumerate(successful_calls):
         response = client.call_tool(name, arguments)
-        _expect_success(response, OUTPUT_FILES[index])
+        if index < 8:
+            identity = (ctgov_trial_id, None, nci_trial_id, None)[index % 4]
+            payloads.append(
+                _validated_tool_payload(response, OUTPUT_FILES[index], identity)
+            )
+        else:
+            _expect_success(response, OUTPUT_FILES[index])
+            _tool_json(response, OUTPUT_FILES[index])
         _write_result(output, index, response)
         responses.append(response)
+
+    labels = ("CTGov detail", "CTGov search", "NCI detail", "NCI search")
+    for raw, typed, label in zip(payloads[:4], payloads[4:], labels, strict=True):
+        if raw != typed:
+            raise SmokeError(f"raw and typed {label} results disagreed")
 
     filename = _advertised_filename(responses[-1]) or "not-advertised"
     document_rejection = client.call_tool(
@@ -389,7 +501,7 @@ def run_smoke(
             "json": True,
         },
     )
-    _expect_rejection(document_rejection, "raw binary document call")
+    _expect_raw_invalid_argument(document_rejection)
     _write_result(output, 9, document_rejection)
 
     tools = client.list_tools()
@@ -407,7 +519,7 @@ def run_smoke(
             "json": True,
         },
     )
-    _expect_rejection(typed_rejection, "typed documents call")
+    _expect_typed_invalid_params(typed_rejection)
     _write_result(output, 11, typed_rejection)
 
 
