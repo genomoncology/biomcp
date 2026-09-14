@@ -82,6 +82,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | NCI CTS | 2 | direct_api | required_env | custom provider API terms for the NCI Clinical Trials Search API | query output is usable for search and review, but downstream reuse should follow NCI API terms and record provenance | <https://clinicaltrialsapi.cancer.gov/> |
 | NIH Reporter | 1 | direct_api | none | NIH-operated public funding-reporting service | project and grant metadata are broadly reusable; preserve NIH Reporter attribution, fiscal-year context, and grant identifiers | <https://www.nih.gov/web-policies-notices> |
 | OLS4 | 1 | direct_api | none | EMBL-EBI ontology browser; each ontology keeps its own license | ontology metadata is queryable, but downstream reuse depends on the specific ontology surfaced | <https://www.ebi.ac.uk/ols4/> |
+| ORCID | 2 | direct_api | required_env | ORCID public API terms; public data is released for reuse under the ORCID public-data license | display public record data with attribution; do not assume all record data or downstream works are identically licensed | <https://info.orcid.org/documentation/features/public-api/> |
 | OncoKB | 2 | direct_api | required_env | custom provider terms; academic research access is no-fee but licensed, commercial/clinical use requires a paid license | do not assume open redistribution rights for OncoKB data or proprietary treatment descriptions | <https://faq.oncokb.org/licensing> |
 | OpenFDA | 1 | direct_api | optional_env | FDA-origin public data and API terms | data is broadly reusable, but avoid implying FDA endorsement and preserve source context | <https://open.fda.gov/apis/authentication/> |
 | OpenTargets | 1 | direct_api | none | Open Targets data is CC0; platform code is Apache 2.0 | platform data is dedicated to the public domain, but linked evidence still carries source provenance | <https://platform-docs.opentargets.org/licence> |
@@ -757,6 +758,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - API key / account URL: <https://clinicaltrialsapi.cancer.gov/>
 - Reviewed on: `2026-03-20`
 - Notes: BioMCP treats NCI CTS as an alternate oncology-focused trial backend, not the default public trial source.
+
+### ORCID
+
+- BioMCP surfaces: `get author orcid:<id>; author papers orcid:<id>`
+- Integration mode: `direct_api`
+- BioMCP auth: `required_env`
+- Provider access / registration: public-read bearer token obtained from ORCID for the /read-public scope
+- License / terms summary: ORCID public API terms; public data is released for reuse under the ORCID public-data license
+- Redistribution / reuse summary: display public record data with attribution; do not assume all record data or downstream works are identically licensed
+- Official terms URL: <https://info.orcid.org/documentation/features/public-api/>
+- Reviewed on: `2026-09-13`
+- Notes: exact public person and works records only; no name search, member API, private fields, or cross-provider identity merge. This supersedes the earlier citation-supplied-evidence-only boundary recorded in 2026-09-07 planning; the ADR lives at `sdlc/planning/adr/0001-call-the-orcid-public-api-for-exact-author-records.md`.
 
 ### OncoKB
 

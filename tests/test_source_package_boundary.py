@@ -17,7 +17,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # Ticket 1145 raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar.
-MAX_PACKAGE_FILES = 1_305
+MAX_PACKAGE_FILES = 1_306  # 1,300 base + ticket 1145 five modules + ticket 1142 orcid tests submodule
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 

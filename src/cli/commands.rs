@@ -520,9 +520,9 @@ See also: biomcp list adverse-event")]
 
 #[derive(Subcommand, Debug)]
 pub enum GetEntity {
-    /// Get one exact Semantic Scholar author record
+    /// Get one exact author record (Semantic Scholar or public ORCID)
     #[command(
-        after_help = "EXAMPLES:\n  biomcp get author semanticscholar:1716151\n\nSee also: biomcp list author"
+        after_help = "EXAMPLES:\n  biomcp get author semanticscholar:1716151\n  biomcp get author orcid:0000-0002-1825-0097\n\nSee also: biomcp list author"
     )]
     Author(author::AuthorGetArgs),
     /// Get gene by symbol or known single-gene alias

@@ -30,6 +30,7 @@ fn health_inventory_includes_all_expected_sources() {
             "DisGeNET",
             "AlphaGenome",
             "Semantic Scholar",
+            "ORCID",
             "Figshare",
             "CPIC",
             "PharmGKB",

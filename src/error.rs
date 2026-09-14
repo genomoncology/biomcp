@@ -57,6 +57,7 @@ impl SourceProvider {
     pub const ONCOKB: Self = Self::new("OncoKB");
     pub const OPENFDA: Self = Self::new("OpenFDA");
     pub const OPEN_TARGETS: Self = Self::new("Open Targets");
+    pub const ORCID: Self = Self::new("ORCID");
     pub const PHARMGKB: Self = Self::new("PharmGKB");
     pub const PMC_OPEN_ACCESS: Self = Self::new("PMC Open Access");
     pub const PUBTATOR3: Self = Self::new("PubTator 3");
@@ -123,6 +124,7 @@ impl SourceProvider {
         Self::ONCOKB,
         Self::OPENFDA,
         Self::OPEN_TARGETS,
+        Self::ORCID,
         Self::PHARMGKB,
         Self::PMC_OPEN_ACCESS,
         Self::PUBTATOR3,
@@ -200,6 +202,7 @@ impl SourceProvider {
             "oncokb" | "OncoKB" => Self::ONCOKB,
             "openfda" | "OpenFDA" => Self::OPENFDA,
             "opentargets" | "Open Targets" => Self::OPEN_TARGETS,
+            "orcid" | "ORCID" => Self::ORCID,
             "pharmgkb" | "PharmGKB" => Self::PHARMGKB,
             "pmc-oa" | "PMC Open Access" => Self::PMC_OPEN_ACCESS,
             "pubtator3" | "PubTator 3" => Self::PUBTATOR3,
@@ -291,16 +294,14 @@ fn classify_reqwest_error(error: &reqwest::Error) -> (&'static str, Option<u16>)
     if error.is_timeout() {
         return ("timeout", error.status().map(|status| status.as_u16()));
     }
-    if error.is_connect() {
-        return ("connection", None);
-    }
     if let Some(status) = error.status() {
         return ("http_status", Some(status.as_u16()));
     }
-    if error.is_decode() {
-        return ("decode", None);
+    match (error.is_connect(), error.is_decode()) {
+        (true, _) => ("connection", None),
+        (_, true) => ("decode", None),
+        _ => ("internal", None),
     }
-    ("internal", None)
 }
 
 macro_rules! emit_external_failure {
@@ -390,6 +391,10 @@ pub enum BioMcpError {
         env_var: String,
         docs_url: String,
     },
+    ApiCredentialInvalid {
+        api: String,
+        env_var: String,
+    },
     SourceUnavailable {
         source_name: String,
         reason: String,
@@ -423,10 +428,11 @@ impl BioMcpError {
                 classify_reqwest_error(error)
             }
             Self::Api { message, .. } => {
-                let status = message
-                    .strip_prefix("HTTP ")
-                    .and_then(|rest| rest.split_whitespace().next())
-                    .and_then(|value| value.parse::<u16>().ok());
+                let status = message.strip_prefix("HTTP ").and_then(|rest| {
+                    rest.split_whitespace()
+                        .next()
+                        .and_then(|v| v.parse::<u16>().ok())
+                });
                 (status.map(|_| "http_status").unwrap_or("internal"), status)
             }
             Self::ApiJson { .. } | Self::Json(_) => ("decode", None),
@@ -452,9 +458,7 @@ impl BioMcpError {
     fn message_for_source(&self, source: &'static str) -> String {
         match self.underlying() {
             Self::HttpClientInit(_) => "HTTP client initialization failed.".to_string(),
-            Self::Http(_) | Self::HttpMiddleware(_) => {
-                format!("HTTP request to {source} failed.")
-            }
+            Self::Http(_) | Self::HttpMiddleware(_) => format!("HTTP request to {source} failed."),
             Self::Api { message, .. }
                 if message.starts_with("PMC OA package-route resolution failed:") =>
             {
@@ -490,7 +494,7 @@ impl BioMcpError {
             Self::ApiKeyRequired { .. } => {
                 format!("Source configuration for {source} is incomplete.")
             }
-            Self::ApiKeyRejected { .. } => {
+            Self::ApiKeyRejected { .. } | Self::ApiCredentialInvalid { .. } => {
                 format!("Source configuration for {source} was rejected.")
             }
             Self::Template(_) | Self::Json(_) | Self::Io(_) => {
@@ -528,9 +532,7 @@ impl BioMcpError {
             } => format!("{entity} '{id}' not found.\n\n{suggestion}"),
             Self::ArticleAssetNotRetrievable(message) => message.clone(),
             Self::PackageManagedInstall { guidance } => guidance.clone(),
-            Self::NotInstalled { path } => {
-                format!("BioMCP is not installed at {path}.")
-            }
+            Self::NotInstalled { path } => format!("BioMCP is not installed at {path}."),
             Self::InvalidArgument(message) => format!("Invalid argument: {message}"),
             Self::InternalProcessing | Self::TrialDesign(_) => {
                 "Internal processing failed.".to_string()
@@ -558,6 +560,9 @@ impl BioMcpError {
             } => format!(
                 "API key rejected: {api} rejected the configured {env_var} credential or the account lacks access.\n\nCheck the credential validity and account access.\n\nMore info: {docs_url}"
             ),
+            Self::ApiCredentialInvalid { api, env_var } => format!(
+                "{api} credential in {env_var} is invalid. Set {env_var} to 1-4096 visible ASCII bytes and retry."
+            ),
             Self::SourceUnavailable { source_name, .. } => format!(
                 "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
             ),
@@ -568,24 +573,24 @@ impl BioMcpError {
         }
     }
 
+    fn legacy_recovery(name: &str, known: RecoveryAction) -> RecoveryAction {
+        if SourceProvider::from_legacy(name).is_some() {
+            known
+        } else {
+            RecoveryAction::ReviewSourceConfiguration
+        }
+    }
+
     pub fn public_projection(&self) -> PublicErrorProjection {
         let context = match self {
             Self::WithSourceContext { context, .. } => Some(*context),
             Self::Api { api, .. } | Self::ApiJson { api, .. } => Some(SourceContext::new(
                 SourceProvider::from_legacy(api).unwrap_or(SourceProvider::UNKNOWN),
-                if SourceProvider::from_legacy(api).is_some() {
-                    RecoveryAction::RetryRemoteSource
-                } else {
-                    RecoveryAction::ReviewSourceConfiguration
-                },
+                Self::legacy_recovery(api, RecoveryAction::RetryRemoteSource),
             )),
             Self::BodyLimit { source_name, .. } => Some(SourceContext::new(
                 SourceProvider::from_legacy(source_name).unwrap_or(SourceProvider::UNKNOWN),
-                if SourceProvider::from_legacy(source_name).is_some() {
-                    RecoveryAction::NarrowRequest
-                } else {
-                    RecoveryAction::ReviewSourceConfiguration
-                },
+                Self::legacy_recovery(source_name, RecoveryAction::NarrowRequest),
             )),
             Self::ProviderResponseLimit { source_name, .. } => Some(SourceContext::new(
                 SourceProvider::from_legacy(source_name).unwrap_or(SourceProvider::UNKNOWN),
@@ -612,10 +617,23 @@ impl BioMcpError {
                 source: Some(context.provider().label()),
                 recovery: Some(context.recovery().message()),
             },
-            None => PublicErrorProjection {
-                message: self.non_source_message(),
-                source: None,
-                recovery: None,
+            None => match self {
+                Self::ApiCredentialInvalid { api, env_var } if api == "ORCID" => {
+                    PublicErrorProjection {
+                        // Projection carries the fact only; the recovery
+                        // sentence lives in the recovery field, stated once.
+                        message: format!("{api} credential in {env_var} is invalid."),
+                        source: Some("ORCID"),
+                        recovery: Some(
+                            "Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry.",
+                        ),
+                    }
+                }
+                _ => PublicErrorProjection {
+                    message: self.non_source_message(),
+                    source: None,
+                    recovery: None,
+                },
             },
         }
     }
@@ -642,6 +660,7 @@ impl BioMcpError {
             Self::BindingConflict => "binding_conflict",
             Self::ApiKeyRequired { .. } => "api_key_required",
             Self::ApiKeyRejected { .. } => "api_key_rejected",
+            Self::ApiCredentialInvalid { .. } => "api_credential_invalid",
             Self::SourceUnavailable { .. } => "source_unavailable",
             Self::Template(_) => "template",
             Self::Json(_) => "json",
@@ -719,22 +738,9 @@ impl fmt::Display for BioMcpError {
             Self::BindingConflict => formatter.write_str(
                 "binding_conflict: capture identity conflicts with the requested source",
             ),
-            Self::ApiKeyRequired {
-                api,
-                env_var,
-                docs_url,
-            } => write!(
-                formatter,
-                "API key required: {api} requires {env_var} environment variable.\n\nTo set:\n  export {env_var}=your-key\n\nMore info: {docs_url}"
-            ),
-            Self::ApiKeyRejected {
-                api,
-                env_var,
-                docs_url,
-            } => write!(
-                formatter,
-                "API key rejected: {api} rejected the configured {env_var} credential or the account lacks access.\n\nCheck the credential validity and account access.\n\nMore info: {docs_url}"
-            ),
+            Self::ApiKeyRequired { .. }
+            | Self::ApiKeyRejected { .. }
+            | Self::ApiCredentialInvalid { .. } => formatter.write_str(&self.non_source_message()),
             Self::Template(source) => write!(formatter, "Template error: {source}"),
             Self::Json(source) => write!(formatter, "JSON error: {source}"),
             Self::Io(source) => write!(formatter, "IO error: {source}"),
@@ -897,8 +903,7 @@ mod tests {
     fn source_policy_inventory_is_bounded_and_actionable() {
         for provider in SourceProvider::ALL {
             let label = provider.label();
-            assert!(!label.is_empty());
-            assert!(label.len() <= 80, "provider label exceeds bound: {label}");
+            assert!(!label.is_empty() && label.len() <= 80);
             assert!(!label.contains(['\n', '\r']));
         }
 
@@ -908,8 +913,7 @@ mod tests {
             RecoveryAction::NarrowRequest,
         ] {
             let message = action.message();
-            assert!(!message.is_empty());
-            assert!(message.len() <= 160);
+            assert!(!message.is_empty() && message.len() <= 160);
             assert!(!message.contains(['\n', '\r']));
             assert!(message.to_ascii_lowercase().contains("retry"));
         }

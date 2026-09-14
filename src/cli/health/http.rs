@@ -185,6 +185,41 @@ pub(in crate::cli::health) async fn check_auth_get(
     .await
 }
 
+/// Ticket 1142 health row: the ORCID token validator decides before any
+/// network work. Missing or ASCII-space-only tokens exclude the row; an
+/// invalid nonblank token is an error with zero GETs; a valid token performs
+/// exactly one bearer GET.
+pub(in crate::cli::health) async fn check_orcid_get(
+    client: reqwest::Client,
+    api: &str,
+    url: &str,
+    env_var: &str,
+    affects: Option<&'static str>,
+) -> ProbeOutcome {
+    match crate::sources::orcid::OrcidClient::credential_state() {
+        "excluded" => excluded_outcome(api, env_var, affects),
+        "error" => {
+            let mut row = health_row(api, HealthStatus::Error, "n/a".into(), affects, Some(true));
+            row.required_env_var = Some(env_var.to_string());
+            outcome(row, ProbeClass::Error)
+        }
+        _ => {
+            let token = std::env::var(env_var).unwrap_or_default();
+            let token = token.trim_matches(' ');
+            send_request(
+                api,
+                affects,
+                client
+                    .get(url)
+                    .header("Accept", "application/vnd.orcid+json")
+                    .header("Authorization", format!("Bearer {token}")),
+                Some(true),
+            )
+            .await
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(in crate::cli::health) fn optional_auth_status_outcome(
     api: &str,

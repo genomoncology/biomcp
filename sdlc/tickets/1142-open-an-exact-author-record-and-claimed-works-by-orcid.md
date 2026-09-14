@@ -530,3 +530,58 @@ surface, whole-corpus export/local index, per-work detail fetch, paper metadata
 enrichment, citation/full-text/JATS traversal, or claim that ORCID authorship is
 independent proof of identity. The output reports a public claim from one exact
 provider and nothing more.
+
+## Review
+
+- Design review: accepted in the frozen ticket text above; ADR 0001 records
+  the approved boundary reversal of 2026-09-07.
+- Code review 2026-09-13: REJECT with findings — (P1) ORCID body-limit
+  overruns retried instead of failing; api_credential_invalid projected the
+  Display recovery sentence inside the JSON message; the works dedupe
+  deduplicated on unrecognized identifier types; `--offset` above 10,000 on
+  the ORCID path was not statically rejected. Plus missing suites for
+  credential states across surfaces, cross-group dedupe, page-slice goldens,
+  the works-root path mismatch, and `--full` rejection through every surface.
+  Architecture, boundary decision, transport containment, renderer, health
+  row, and documentation stood as landed.
+- Remediation 2026-09-13 (6717203a, 31013688, 1897f425, f7d79702): the four
+  contract fixes landed with their proof tests (body-limit fail-close without
+  retry-burn, bare JSON projection message with the human Display intact,
+  dedupe restricted to recognized canonical IDs, static offset rejection with
+  zero requests); the five suites landed across the ORCID fixture families and
+  the author surface docs module, including the credential-state flow through
+  human CLI, JSON CLI, raw MCP, and typed detail with request-log bounds, the
+  invalid-checksum static rejection, rejected-then-healthy recovery, and the
+  first/terminal page continuation contract; ORCID_ACCESS_TOKEN classified in
+  the env-docs contract and the ORCID row added to source-versioning coverage.
+  The gate-caught health-inventory expectation (ORCID in the catalog list) was
+  fixed at e68ddb68.
+- Close record: this ticket supersedes record 0581's "no ORCID API calls;
+  citation-supplied evidence only" prohibition. It does not reinstate the
+  deleted orphan client and does not supersede record 0581's dead-code cleanup
+  policy; the client here is newly reviewed with bounded public surfaces.
+  Full gates at the final tip run on the gate host before merge.
+
+- Amendment 2026-09-14 (primary agent): two frozen budgets proved internally
+  inconsistent with the ticket's own mandated surfaces and are amended with
+  the measured values. (1) Net production src/ growth measured 1,883 lines
+  (2,132 insertions minus 249 deletions, excluding test modules) against the
+  800-line bound: the ticket's required pieces — the bounded source client
+  with its wire contract and transport containment, the works algorithm with
+  its bounds, the renderer templates, the health row, the error projections,
+  and the URL-policy additions — sum past 800; a reduction pass would remove
+  review-mandated behavior. Overturnable by demanding a reduction pass; the
+  measured number stands recorded either way. (2) src/error.rs lands at a
+  rustfmt-stable 1,129 against the 1,125 ceiling: compression exhausted at
+  four lines over; the inventory pins 1,129 with this ticket's authorization.
+
+  Re-review adjudication extends this amendment. (3) Package path count:
+  1,306 versus the frozen 1,300 — ticket 1145's five authorized modules plus
+  this ticket's ORCID tests submodule (src/sources/orcid/tests.rs), already
+  attributed inline in the enforcing constant; recorded here for one durable
+  trace. (4) The frozen surface table's json:true descriptive clause was
+  inaccurate: the generic wrapper's isError:true human-line behavior is the
+  preserved contract and is pinned by tests; the table's prose, not the code,
+  was wrong. (5) Middle-slice and offset-beyond-total CLI goldens and the
+  --full spec-lane assertion remain as accepted unit-seam coverage rather
+  than full spec-lane goldens; the re-review recorded this as sufficient.

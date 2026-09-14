@@ -26,7 +26,9 @@ byline. Both modes use one bounded Semantic Scholar page (at most 100 rows)
 and never fetch a second page. The rich projection is source-exact: it does
 not infer affiliations, resolve ORCID, or merge byline records.
 
-The ID prefix is case-sensitive and the value must be numeric. Unqualified IDs, `pubmed:` IDs, and `orcid:` IDs are not accepted. BioMCP does not establish ORCID links in this release. Paper pages preserve Semantic Scholar order and provider pagination.
+`author papers` also accepts an exact ORCID record ID (`orcid:dddd-dddd-dddd-dddC` with its checksum). For ORCID IDs the page lists the public works claimed on that record, locally paginated after one bounded request, and stays compact: `--full` applies only to Semantic Scholar IDs. Semantic Scholar paper pages preserve provider order and pagination.
+
+BioMCP does not infer that an ORCID and a Semantic Scholar author ID name the same person, and `get author` never merges records across providers. ORCID lookups need the `ORCID_ACCESS_TOKEN` environment variable (see the API keys guide).
 
 Use `biomcp article authors <id>` to pivot from a PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID to separate provider-qualified byline records with sourced affiliations.
 

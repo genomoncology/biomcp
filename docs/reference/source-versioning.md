@@ -66,6 +66,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | QuickGO | `https://www.ebi.ac.uk/QuickGO/services` | Unversioned | Service endpoint is canonical and not path-versioned | 2026-02-15 |
 | Reactome Content Service | `https://reactome.org/ContentService` | Unversioned | No explicit major version path in public endpoint | 2026-02-15 |
 | SEER Explorer | `https://seer.cancer.gov/statistics-network/explorer/source/content_writers` | Unversioned | Undocumented PHP endpoints have no stable version segment; BioMCP validates requested site codes and decoded payload structure | 2026-04-10 |
+| ORCID | `https://pub.orcid.org/v3.0` | Versioned (`v3.0`) | Public API base is pinned to the v3.0 major version segment in the default base URL | 2026-09-13 |
 | Semantic Scholar | `https://api.semanticscholar.org` | Unversioned | Public API base is stable without a version segment; endpoint versions live below the base path | 2026-03-15 |
 | STRING | `https://string-db.org/api` | Unversioned | API route uses format path segment; no stable version URL segment | 2026-02-15 |
 | UniProt REST | `https://rest.uniprot.org` | Unversioned | REST base is canonical and not versioned in URL | 2026-02-15 |

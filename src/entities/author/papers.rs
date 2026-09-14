@@ -1,5 +1,4 @@
 use super::*;
-use crate::entities::article::ArticleRelatedPaper;
 use crate::error::BioMcpError;
 use crate::next_command::NextCommand;
 use crate::sources::semantic_scholar::{
@@ -10,20 +9,59 @@ use serde::Serialize;
 use std::time::Duration;
 
 const AUTHOR_PAPERS_COMMAND_DEADLINE: Duration = Duration::from_secs(35);
+/// Ticket 1142: the ORCID works slice is local, and `--offset` beyond the
+/// maximum retained group count is a static invalid argument.
+const ORCID_MAX_OFFSET: usize = 10_000;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AuthorPapersPagination {
     pub offset: u64,
     pub limit: usize,
     pub next: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AuthorPapersResult {
     pub author: AuthorIdentity,
-    pub papers: Vec<ArticleRelatedPaper>,
+    pub papers: Vec<AuthorPaper>,
     pub pagination: AuthorPapersPagination,
     pub _meta: AuthorMeta,
+}
+
+/// Author-owned compact paper: the shared article shape first, then the
+/// ORCID-only fields, so Semantic Scholar JSON stays byte-for-byte.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AuthorPaper {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub paper_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pmid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arxiv_id: Option<String>,
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub journal: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub year: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub work_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pmcid: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub identifiers: Vec<AuthorPaperIdentifier>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AuthorPaperIdentifier {
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub value: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -77,6 +115,16 @@ pub async fn papers(
     limit: usize,
 ) -> Result<AuthorPapersResult, BioMcpError> {
     let requested: ProviderAuthorId = raw_id.parse()?;
+    if requested.provider == AuthorIdProvider::Orcid {
+        // Static bound: a caller offset beyond the maximum possible retained
+        // group count is rejected before any request is planned or sent.
+        if offset > ORCID_MAX_OFFSET {
+            return Err(BioMcpError::InvalidArgument(
+                "--offset must be at most 10000 for orcid: author claimed works".to_string(),
+            ));
+        }
+        return orcid_papers(&requested, offset, limit).await;
+    }
     let mut page = fetch_author_papers_page(&requested, offset, limit, false).await?;
     let mut next_commands = Vec::new();
     let mut evidence_urls = Vec::new();
@@ -102,6 +150,11 @@ pub async fn papers_full(
     limit: usize,
 ) -> Result<AuthorPapersFullResult, BioMcpError> {
     let requested: ProviderAuthorId = raw_id.parse()?;
+    if requested.provider == AuthorIdProvider::Orcid {
+        return Err(BioMcpError::InvalidArgument(
+            "--full is available only for semanticscholar: author IDs; omit --full for ORCID claimed works".to_string(),
+        ));
+    }
     let page = fetch_author_papers_page(&requested, offset, limit, true).await?;
     let mut next_commands = Vec::new();
     let mut evidence_urls = Vec::new();
@@ -115,6 +168,8 @@ pub async fn papers_full(
         offset: page.offset.unwrap_or(offset as u64),
         limit,
         next: page.next,
+        total: None,
+        truncated: None,
     };
     if let Some(next) = page.next {
         next_commands.push(format!(
@@ -136,13 +191,267 @@ pub async fn papers_full(
     })
 }
 
+/// Ticket 1142: one logical `/works` request, group selection and stable
+/// deduplication upstream, then a bounded local slice.
+async fn orcid_papers(
+    requested: &ProviderAuthorId,
+    offset: usize,
+    limit: usize,
+) -> Result<AuthorPapersResult, BioMcpError> {
+    let deadline = tokio::time::Instant::now() + command_deadline_budget();
+    let works = crate::sources::orcid::OrcidClient::new()?
+        .works(&requested.value, deadline)
+        .await?;
+    let selected = works.selected_works()?;
+    let retained = retain_deduplicated(&selected);
+    let (start, end, next, total) = orcid_page_bounds(retained.len(), offset, limit);
+    let mut next_commands = Vec::new();
+    let mut evidence_urls = Vec::new();
+    let papers: Vec<AuthorPaper> = retained[start..end]
+        .iter()
+        .map(|work| orcid_paper(requested, work, &mut next_commands, &mut evidence_urls))
+        .collect();
+    if let Some(next) = next {
+        next_commands.push(format!(
+            "biomcp author papers {requested} --limit {limit} --offset {next}"
+        ));
+    }
+    Ok(AuthorPapersResult {
+        author: AuthorIdentity::ExactProvider {
+            id: requested.clone(),
+        },
+        pagination: AuthorPapersPagination {
+            offset: offset as u64,
+            limit,
+            next,
+            total: Some(total),
+            truncated: Some(false),
+        },
+        papers,
+        _meta: AuthorMeta {
+            source_status: vec![AuthorSourceStatus {
+                source: "orcid",
+                status: crate::entities::author::ProviderStatus::Available,
+            }],
+            evidence_urls,
+            next_commands,
+        },
+    })
+}
+
+/// Ticket 1142: stable cross-group deduplication on recognized canonical
+/// identifiers only. Preserved unrecognized types never drop a group,
+/// including groups whose only identifiers are unrecognized or absent.
+fn retain_deduplicated(
+    selected: &[crate::sources::orcid::OrcidSelectedWork],
+) -> Vec<&crate::sources::orcid::OrcidSelectedWork> {
+    let mut seen: Vec<(String, String)> = Vec::new();
+    let mut retained: Vec<&crate::sources::orcid::OrcidSelectedWork> = Vec::new();
+    for work in selected {
+        let ids = canonical_identifiers(work);
+        // Deduplicate on recognized canonical kinds only: preserved
+        // unrecognized types never drop a group, including groups whose only
+        // identifiers are unrecognized or absent.
+        let recognized: Vec<(String, String)> = ids
+            .iter()
+            .filter(|(kind, _)| is_recognized_kind(kind))
+            .cloned()
+            .collect();
+        if recognized
+            .iter()
+            .any(|(kind, value)| seen.contains(&(kind.clone(), value.clone())))
+        {
+            continue;
+        }
+        seen.extend(recognized);
+        retained.push(work);
+    }
+    retained
+}
+
+/// Ticket 1142 local pagination: slice the retained works by the caller's
+/// offset and limit, with `next` exactly when more retained works remain.
+#[allow(clippy::type_complexity)]
+fn orcid_page_bounds(
+    retained: usize,
+    offset: usize,
+    limit: usize,
+) -> (usize, usize, Option<u64>, u64) {
+    let total = retained as u64;
+    let start = offset.min(retained);
+    let end = start.saturating_add(limit).min(retained);
+    let returned = (start + (end - start)) as u64;
+    let next = (returned < total).then_some(returned);
+    (start, end, next, total)
+}
+
+/// Canonicalize the recognized identifier kinds and keep the full normalized
+/// list (recognized and preserved) in first-occurrence order.
+fn canonical_identifiers(work: &crate::sources::orcid::OrcidSelectedWork) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    for (kind, value) in &work.external_ids {
+        let Some((kind, value)) = canonical_identifier(kind, value) else {
+            if is_preserved_type(kind) && !out.iter().any(|(k, v)| k == kind && v == value) {
+                out.push((kind.clone(), value.clone()));
+            }
+            continue;
+        };
+        if !out.iter().any(|(k, v)| k == &kind && v == &value) {
+            out.push((kind, value));
+        }
+    }
+    out
+}
+
+fn canonical_identifier(kind: &str, value: &str) -> Option<(String, String)> {
+    match kind {
+        "doi" => {
+            let trimmed = value.trim();
+            // Remove one case-insensitive `doi:` or `https://doi.org/` prefix
+            // so `DOI:10.1/x` and `HTTPS://DOI.ORG/10.1/x` normalize instead
+            // of being dropped.
+            let value = trimmed
+                .strip_prefix_insensitive("doi:")
+                .or_else(|| trimmed.strip_prefix_insensitive("https://doi.org/"))
+                .map(str::trim)
+                .unwrap_or(trimmed);
+            let value = value.to_ascii_lowercase();
+            (value.len() >= 3 && value.len() <= 255 && value.contains('/'))
+                .then(|| ("doi".into(), value))
+        }
+        "pmid" => {
+            let digits = value.trim();
+            (!digits.is_empty()
+                && digits.len() <= 12
+                && digits.bytes().all(|b| b.is_ascii_digit())
+                && digits.parse::<u64>().is_ok_and(|n| n > 0))
+            .then(|| ("pmid".into(), digits.parse::<u64>().unwrap().to_string()))
+        }
+        "pmc" | "pmcid" => {
+            let upper = value.trim().to_ascii_uppercase();
+            let digits = upper.strip_prefix("PMC").filter(|digits| {
+                !digits.is_empty()
+                    && digits.len() <= 12
+                    && digits.bytes().all(|b| b.is_ascii_digit())
+                    && digits.parse::<u64>().is_ok_and(|n| n > 0)
+            })?;
+            Some((
+                "pmcid".into(),
+                format!("PMC{}", digits.parse::<u64>().unwrap()),
+            ))
+        }
+        "arxiv" => {
+            let trimmed = value.trim();
+            // Remove one case-insensitive `arxiv:` prefix so `ARXIV:2103.0001`
+            // normalizes instead of being dropped.
+            let value = trimmed
+                .strip_prefix_insensitive("arxiv:")
+                .map(str::trim)
+                .unwrap_or(trimmed);
+            (!value.is_empty()
+                && value.len() <= 64
+                && value
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'/' | b'-')))
+            .then(|| ("arxiv".into(), value.to_string()))
+        }
+        _ => None,
+    }
+}
+
+/// The recognized canonical identifier kinds that participate in flattening
+/// and cross-group deduplication.
+fn is_recognized_kind(kind: &str) -> bool {
+    matches!(kind, "doi" | "pmid" | "pmcid" | "arxiv")
+}
+
+/// Strip one prefix matching `prefix` ASCII-case-insensitively.
+trait StripPrefixInsensitive {
+    fn strip_prefix_insensitive(&self, prefix: &str) -> Option<&str>;
+}
+
+impl StripPrefixInsensitive for str {
+    fn strip_prefix_insensitive(&self, prefix: &str) -> Option<&str> {
+        if self.len() >= prefix.len()
+            && self.is_char_boundary(prefix.len())
+            && self[..prefix.len()].eq_ignore_ascii_case(prefix)
+        {
+            Some(&self[prefix.len()..])
+        } else {
+            None
+        }
+    }
+}
+
+/// Unrecognized-but-well-formed types are preserved verbatim.
+fn is_preserved_type(kind: &str) -> bool {
+    !matches!(kind, "doi" | "pmid" | "pmc" | "pmcid" | "arxiv")
+}
+
+fn orcid_paper(
+    requested: &ProviderAuthorId,
+    work: &crate::sources::orcid::OrcidSelectedWork,
+    next_commands: &mut Vec<String>,
+    evidence_urls: &mut Vec<AuthorEvidenceUrl>,
+) -> AuthorPaper {
+    let ids = canonical_identifiers(work);
+    // Flatten the lexically first normalized value of each recognized kind,
+    // not the first occurrence in provider order.
+    let first = |kind: &str| {
+        ids.iter()
+            .filter(|(k, _)| k == kind)
+            .map(|(_, v)| v.clone())
+            .min()
+    };
+    let pmid = first("pmid");
+    let pmcid = first("pmcid");
+    let doi = first("doi");
+    let arxiv_id = first("arxiv");
+    let evidence_url = format!(
+        "https://orcid.org/{}/work/{}",
+        requested.value, work.put_code
+    );
+    evidence_urls.push(AuthorEvidenceUrl {
+        source: "orcid",
+        url: evidence_url,
+    });
+    if let Some(id) = pmid
+        .as_deref()
+        .or(pmcid.as_deref())
+        .or(doi.as_deref())
+        .or(arxiv_id.as_deref())
+    {
+        next_commands.push(
+            NextCommand::biomcp()
+                .args(["get", "article"])
+                .arg(id)
+                .render_shell(),
+        );
+    }
+    AuthorPaper {
+        paper_id: None,
+        pmid: pmid.clone(),
+        doi: doi.clone(),
+        arxiv_id: arxiv_id.clone(),
+        title: work.title.clone(),
+        journal: work.journal.clone(),
+        year: work.year,
+        work_id: Some(format!("orcid:{}/work:{}", requested.value, work.put_code)),
+        pmcid: pmcid.clone(),
+        identifiers: ids
+            .into_iter()
+            .map(|(kind, value)| AuthorPaperIdentifier { kind, value })
+            .collect(),
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn finish_compact(
     requested: ProviderAuthorId,
     offset: usize,
     limit: usize,
     page: crate::sources::semantic_scholar::SemanticScholarAuthorPapersResponse,
-    papers: Vec<ArticleRelatedPaper>,
+    papers: Vec<AuthorPaper>,
     mut next_commands: Vec<String>,
     evidence_urls: Vec<AuthorEvidenceUrl>,
 ) -> Result<AuthorPapersResult, BioMcpError> {
@@ -158,6 +467,8 @@ fn finish_compact(
             offset: page.offset.unwrap_or(offset as u64),
             limit,
             next: page.next,
+            total: None,
+            truncated: None,
         },
         _meta: AuthorMeta {
             source_status: vec![AuthorSourceStatus {
@@ -288,7 +599,7 @@ fn map_paper(
     paper: SemanticScholarAuthorPaper,
     next_commands: &mut Vec<String>,
     evidence_urls: &mut Vec<AuthorEvidenceUrl>,
-) -> Option<ArticleRelatedPaper> {
+) -> Option<AuthorPaper> {
     let pmid = external_id(&paper, "PubMed");
     let doi = external_id(&paper, "DOI");
     let arxiv_id = external_id(&paper, "ArXiv");
@@ -301,7 +612,7 @@ fn map_paper(
     if let Some(command) = article_follow_up_command(&pmid, &doi, &arxiv_id, &paper_id) {
         next_commands.push(command);
     }
-    Some(ArticleRelatedPaper {
+    Some(AuthorPaper {
         paper_id: Some(paper_id),
         pmid,
         doi,
@@ -309,6 +620,9 @@ fn map_paper(
         title,
         journal: nonblank(paper.venue),
         year: paper.year,
+        work_id: None,
+        pmcid: None,
+        identifiers: Vec::new(),
     })
 }
 
@@ -927,5 +1241,357 @@ mod wire_tests {
         );
         assert!(!message.contains("http://"), "{message}");
         stalled.abort();
+    }
+}
+
+#[cfg(test)]
+mod orcid_works_tests {
+    use super::*;
+
+    fn work(put_code: u64, ids: &[(&str, &str)]) -> crate::sources::orcid::OrcidSelectedWork {
+        crate::sources::orcid::OrcidSelectedWork {
+            put_code,
+            title: "A claimed work".into(),
+            journal: Some("A Journal".into()),
+            year: Some(2024),
+            external_ids: ids
+                .iter()
+                .map(|(kind, value)| (kind.to_string(), value.to_string()))
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn canonical_identifier_normalizes_every_recognized_kind() {
+        assert_eq!(
+            canonical_identifier("doi", "https://doi.org/10.1/Example"),
+            Some(("doi".into(), "10.1/example".into()))
+        );
+        assert_eq!(
+            canonical_identifier("doi", "DOI:10.1/x"),
+            Some(("doi".into(), "10.1/x".into()))
+        );
+        assert_eq!(
+            canonical_identifier("doi", "HTTPS://DOI.ORG/10.1/x"),
+            Some(("doi".into(), "10.1/x".into()))
+        );
+        assert_eq!(
+            canonical_identifier("pmid", "000123"),
+            Some(("pmid".into(), "123".into()))
+        );
+        assert_eq!(canonical_identifier("pmid", "0"), None);
+        assert_eq!(
+            canonical_identifier("pmc", "pmc000456"),
+            Some(("pmcid".into(), "PMC456".into()))
+        );
+        assert_eq!(
+            canonical_identifier("arxiv", "arxiv:2401.00001"),
+            Some(("arxiv".into(), "2401.00001".into()))
+        );
+        assert_eq!(canonical_identifier("doi", "no-slash"), None);
+        assert_eq!(canonical_identifier("unknown", "keep"), None);
+    }
+
+    #[test]
+    fn identifier_lists_preserve_unrecognized_types_in_first_occurrence_order() {
+        // Wire types arrive lowercased from the source validation layer.
+        let ids = canonical_identifiers(&work(
+            1,
+            &[("doi", "10.1/a"), ("unknown", "keep-me"), ("doi", "10.1/a")],
+        ));
+        assert_eq!(
+            ids,
+            vec![
+                ("doi".to_string(), "10.1/a".into()),
+                ("unknown".to_string(), "keep-me".into()),
+            ]
+        );
+    }
+
+    /// Ticket 1142: identifiers that exist only in excluded locations —
+    /// group level, a PRIVATE summary, or a nonselected PUBLIC summary —
+    /// never reach the projected paper, its commands, or its evidence.
+    #[test]
+    fn excluded_location_identifiers_never_reach_the_projected_paper() {
+        let hostile = serde_json::json!({
+            "path": "/0000-0002-1825-0097/works",
+            "group": [{
+                "external-ids": {"external-id": [
+                    {"external-id-type": "pmid", "external-id-value": "9991", "external-id-relationship": "SELF"}
+                ]},
+                "work-summary": [
+                    {"visibility": "PRIVATE", "put-code": 91, "display-index": "50",
+                     "title": {"title": {"value": "Private summary"}},
+                     "external-ids": {"external-id": [
+                        {"external-id-type": "pmid", "external-id-value": "9992", "external-id-relationship": "SELF"}
+                     ]}},
+                    {"visibility": "PUBLIC", "put-code": 92, "display-index": "1",
+                     "title": {"title": {"value": "Public but not selected"}},
+                     "external-ids": {"external-id": [
+                        {"external-id-type": "pmid", "external-id-value": "9993", "external-id-relationship": "SELF"}
+                     ]}},
+                    {"visibility": "PUBLIC", "put-code": 42, "display-index": "2",
+                     "title": {"title": {"value": "Selected representative"}},
+                     "external-ids": {"external-id": [
+                        {"external-id-type": "pmid", "external-id-value": "42", "external-id-relationship": "SELF"}
+                     ]}}
+                ]
+            }]
+        })
+        .to_string();
+        let response: crate::sources::orcid::OrcidWorksResponse =
+            serde_json::from_str(&hostile).expect("valid wire body");
+        let selected = response.selected_works().expect("one representative");
+        assert_eq!(selected.len(), 1);
+        assert_eq!(selected[0].put_code, 42);
+        let requested: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+        let paper = orcid_paper(&requested, &selected[0], &mut commands, &mut evidence);
+        assert_eq!(paper.pmid.as_deref(), Some("42"));
+        let rendered = serde_json::to_string(&paper).unwrap();
+        for forbidden in ["9991", "9992", "9993"] {
+            assert!(
+                !rendered.contains(forbidden),
+                "{forbidden} leaked: {rendered}"
+            );
+        }
+        assert_eq!(commands, ["biomcp get article 42".to_string()]);
+    }
+
+    /// Ticket 1142: `--full` on an ORCID ID is rejected statically, before
+    /// any client construction, with zero provider requests of any kind.
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn full_mode_on_an_orcid_id_is_rejected_with_zero_requests() {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let logged = requests.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind author orcid fixture");
+        let address = listener.local_addr().expect("fixture address");
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let logged = logged.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    if let Some(target) = request.split_whitespace().nth(1) {
+                        logged.lock().unwrap().push(target.to_string());
+                    }
+                    let response =
+                        "HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+                    let _ = stream.write_all(response.as_bytes()).await;
+                });
+            }
+        });
+        let base = format!("http://{address}");
+        struct EnvRestore {
+            previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+        }
+        impl EnvRestore {
+            fn set(&mut self, key: &'static str, value: &str) {
+                self.previous.push((key, std::env::var_os(key)));
+                // SAFETY: serial-guarded test environment mutation.
+                unsafe { std::env::set_var(key, value) };
+            }
+        }
+        impl Drop for EnvRestore {
+            fn drop(&mut self) {
+                for (key, value) in self.previous.drain(..) {
+                    // SAFETY: restoring the serial-guarded environment.
+                    unsafe {
+                        match value {
+                            Some(value) => std::env::set_var(key, value),
+                            None => std::env::remove_var(key),
+                        }
+                    }
+                }
+            }
+        }
+        let mut env = EnvRestore {
+            previous: Vec::new(),
+        };
+        env.set("BIOMCP_S2_BASE", &base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set("BIOMCP_ORCID_BASE", &base);
+        env.set("ORCID_ACCESS_TOKEN", "fixture-public-read-token");
+        let error = papers_full("orcid:0000-0002-1825-0097", 0, 10)
+            .await
+            .expect_err("static rejection");
+        match error {
+            BioMcpError::InvalidArgument(message) => assert_eq!(
+                message,
+                "--full is available only for semanticscholar: author IDs; omit --full for ORCID claimed works"
+            ),
+            other => panic!("wrong error: {other:?}"),
+        }
+        assert!(
+            requests.lock().unwrap().is_empty(),
+            "no provider request may be made"
+        );
+    }
+
+    #[test]
+    fn cross_group_dedupe_drops_only_on_recognized_identity() {
+        let selected = vec![
+            work(1, &[("doi", "10.1/a"), ("grant", "g1")]),
+            // Shares only the preserved unrecognized grant with work 1.
+            work(2, &[("pmid", "100"), ("grant", "g1")]),
+            // Shares the recognized DOI with work 1: dropped.
+            work(3, &[("doi", "10.1/a")]),
+            // No recognized IDs at all: never dropped.
+            work(4, &[("grant", "g2")]),
+            // No identifiers at all: never dropped.
+            work(5, &[]),
+        ];
+        let retained = retain_deduplicated(&selected);
+        assert_eq!(
+            retained.iter().map(|w| w.put_code).collect::<Vec<_>>(),
+            [1, 2, 4, 5],
+            "only recognized canonical identity may drop a group"
+        );
+    }
+
+    #[test]
+    fn lexical_first_normalized_value_wins_the_flattened_slot() {
+        // Provider order carries 10.1/z first, but the flattened slot takes
+        // the lexically first normalized value.
+        let requested: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
+        let selected = work(7, &[("doi", "10.1/z"), ("doi", "10.1/a")]);
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+        let paper = orcid_paper(&requested, &selected, &mut commands, &mut evidence);
+        assert_eq!(paper.doi.as_deref(), Some("10.1/a"));
+    }
+
+    #[test]
+    fn orcid_page_bounds_pin_first_middle_terminal_and_beyond_total() {
+        // 25 retained works, limit 10.
+        assert_eq!(orcid_page_bounds(25, 0, 10), (0, 10, Some(10), 25));
+        assert_eq!(orcid_page_bounds(25, 10, 10), (10, 20, Some(20), 25));
+        // Terminal page: 5 returned, 25 is not below total, so no next.
+        assert_eq!(orcid_page_bounds(25, 20, 10), (20, 25, None, 25));
+        // Offset exactly at total: a successful empty page.
+        assert_eq!(orcid_page_bounds(25, 25, 10), (25, 25, None, 25));
+        // Offset beyond total but within the static cap: still empty.
+        assert_eq!(orcid_page_bounds(25, 30, 10), (25, 25, None, 25));
+        // A single-work terminal page has no next.
+        assert_eq!(orcid_page_bounds(1, 0, 10), (0, 1, None, 1));
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn an_orcid_offset_above_ten_thousand_is_a_static_rejection() {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+        let requests = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let logged = requests.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind offset fixture");
+        let address = listener.local_addr().expect("offset fixture address");
+        tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let logged = logged.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    if let Some(target) = request.split_whitespace().nth(1) {
+                        logged.lock().unwrap().push(target.to_string());
+                    }
+                    let _ = stream
+                        .write_all(
+                            b"HTTP/1.1 500 X\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                        )
+                        .await;
+                });
+            }
+        });
+        let base = format!("http://{address}");
+        struct EnvRestore {
+            previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+        }
+        impl EnvRestore {
+            fn set(&mut self, key: &'static str, value: &str) {
+                self.previous.push((key, std::env::var_os(key)));
+                // SAFETY: serial-guarded test environment mutation.
+                unsafe { std::env::set_var(key, value) };
+            }
+        }
+        impl Drop for EnvRestore {
+            fn drop(&mut self) {
+                for (key, value) in self.previous.drain(..) {
+                    // SAFETY: restoring the serial-guarded environment.
+                    unsafe {
+                        match value {
+                            Some(value) => std::env::set_var(key, value),
+                            None => std::env::remove_var(key),
+                        }
+                    }
+                }
+            }
+        }
+        let mut env = EnvRestore {
+            previous: Vec::new(),
+        };
+        env.set("BIOMCP_ORCID_BASE", &base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set("ORCID_ACCESS_TOKEN", "fixture-public-read-token");
+        let error = papers("orcid:0000-0002-1825-0097", 10_001, 10)
+            .await
+            .expect_err("static rejection");
+        match error {
+            BioMcpError::InvalidArgument(message) => assert_eq!(
+                message,
+                "--offset must be at most 10000 for orcid: author claimed works"
+            ),
+            other => panic!("wrong error: {other:?}"),
+        }
+        assert!(
+            requests.lock().unwrap().is_empty(),
+            "no provider request may be planned or sent"
+        );
+    }
+
+    #[test]
+    fn orcid_paper_projects_the_frozen_shape_with_row_command_priority() {
+        let requested: ProviderAuthorId = "orcid:0000-0002-1825-0097".parse().unwrap();
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+        let paper = orcid_paper(
+            &requested,
+            &work(
+                42,
+                &[("pmid", "123"), ("doi", "10.1/example"), ("pmc", "PMC456")],
+            ),
+            &mut commands,
+            &mut evidence,
+        );
+        assert_eq!(paper.paper_id, None);
+        assert_eq!(paper.pmid.as_deref(), Some("123"));
+        assert_eq!(paper.pmcid.as_deref(), Some("PMC456"));
+        assert_eq!(paper.doi.as_deref(), Some("10.1/example"));
+        assert_eq!(
+            paper.work_id.as_deref(),
+            Some("orcid:0000-0002-1825-0097/work:42")
+        );
+        assert_eq!(
+            commands,
+            ["biomcp get article 123".to_string()],
+            "PMID wins the follow-up priority"
+        );
+        assert_eq!(
+            evidence[0].url,
+            "https://orcid.org/0000-0002-1825-0097/work/42"
+        );
+        let json = serde_json::to_value(&paper).unwrap();
+        assert_eq!(
+            json["identifiers"][0],
+            serde_json::json!({"type":"pmid","value":"123"})
+        );
+        assert!(json.get("paper_id").is_none());
     }
 }

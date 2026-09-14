@@ -2,7 +2,7 @@
 pub(super) fn list_author() -> String {
     r#"# author
 
-Semantic Scholar author records remain provider-exact. BioMCP does not merge same-name people or establish ORCID links in this release.
+Author records stay provider-exact. BioMCP does not merge same-name people across providers. Exact ORCID records (`orcid:<id>`) open through `get author` and list their public claimed works through `author papers`.
 
 ## Commands
 
@@ -16,7 +16,8 @@ Semantic Scholar author records remain provider-exact. BioMCP does not merge sam
 - `author papers --full` returns the same one bounded page (at most 100 rows) with source-exact rich metadata; there is no enrichment.
 - IDs are case-sensitive and always provider-qualified.
 - Paper lists preserve Semantic Scholar order and provider pagination.
-- Coauthor aggregation, topic, affiliation-filter, and PubMed operations are future work; ORCID remains citation-supplied identity evidence.
+- `author papers orcid:<id>` lists public works claimed on one exact ORCID record; `get author orcid:<id>` opens that record. ORCID lookups need `ORCID_ACCESS_TOKEN`.
+- Coauthor aggregation, topic, affiliation-filter, and PubMed operations are future work; BioMCP does not merge authors across providers.
 "#.to_string()
 }
 pub(super) fn list_article() -> String {
