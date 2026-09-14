@@ -164,21 +164,21 @@ class McpClient:
                 body = response.read(MAX_RESPONSE_BYTES + 1)
                 status_code = response.status
         except urllib.error.HTTPError as error:
-            error.read(MAX_RESPONSE_BYTES + 1)
-            raise SmokeError(
-                f"MCP operation returned HTTP status {error.code}"
-            ) from error
+            body = error.read(MAX_RESPONSE_BYTES + 1)
+            status_code = error.code
         except (urllib.error.URLError, TimeoutError) as error:
             raise SmokeError(
                 "MCP operation did not complete within its network bound"
             ) from error
-        if status_code != 200:
-            raise SmokeError(f"MCP operation returned HTTP status {status_code}")
         if len(body) > MAX_RESPONSE_BYTES:
             raise SmokeError("MCP response exceeded the byte bound")
         result = _parse_response(body)
         if result.get("id") != request_id:
             raise SmokeError("MCP response identifier did not match its request")
+        if status_code != _expected_http_status(result):
+            raise SmokeError(
+                "MCP response HTTP status did not match its JSON-RPC envelope"
+            )
         return result
 
     def call_tool(self, name: str, arguments: dict[str, object]) -> dict[str, Any]:
@@ -212,6 +212,17 @@ def _envelope_kind(response: dict[str, Any]) -> str:
     ):
         raise SmokeError("MCP JSON-RPC error was malformed")
     return "result" if has_result else "error"
+
+
+def _expected_http_status(response: dict[str, Any]) -> int:
+    if _envelope_kind(response) == "result":
+        return 200
+    code = response["error"]["code"]
+    if code == -32601:
+        return 404
+    if code in {-32020, -32022, -32600, -32602}:
+        return 400
+    return 200
 
 
 def _expect_success(response: dict[str, Any], label: str) -> None:

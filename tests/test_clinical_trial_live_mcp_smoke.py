@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import io
 import json
 from pathlib import Path
 import sys
@@ -341,6 +342,110 @@ def test_client_bounds_each_http_operation_and_accepts_sse(
     request = observed["request"]
     assert request.get_header("Mcp-method") == "tools/list"
     assert request.get_header("Mcp-protocol-version") == "2026-07-28"
+
+
+@pytest.mark.parametrize(
+    ("status", "code"),
+    [
+        (404, -32601),
+        (400, -32020),
+        (400, -32022),
+        (400, -32600),
+        (400, -32602),
+    ],
+)
+def test_client_accepts_bounded_http_error_json_rpc_envelope(
+    monkeypatch: pytest.MonkeyPatch, status: int, code: int
+) -> None:
+    module = _module()
+    observed: dict[str, object] = {}
+
+    class ErrorBody(io.BytesIO):
+        def read(self, size: int = -1) -> bytes:
+            observed["size"] = size
+            return super().read(size)
+
+    def open_request(request: object, *, timeout: int):
+        observed["timeout"] = timeout
+        body = ErrorBody(json.dumps(_rpc_error(code) | {"id": "1"}).encode())
+        raise module.urllib.error.HTTPError(
+            request.full_url, status, "fixture error", {}, body
+        )
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", open_request)
+    response = module.McpClient("http://127.0.0.1:8765/mcp").list_tools()
+
+    assert response["error"]["code"] == code
+    assert observed == {
+        "size": module.MAX_RESPONSE_BYTES + 1,
+        "timeout": module.OPERATION_TIMEOUT_SECONDS,
+    }
+
+
+@pytest.mark.parametrize(
+    ("status", "body", "message"),
+    [
+        (400, b"x" * (16 * 1024 * 1024 + 1), "byte bound"),
+        (400, b"not JSON", "not JSON-RPC"),
+        (400, b'{"id":"1","error":{}}', "not a JSON-RPC object"),
+        (400, b'{"jsonrpc":"2.0","id":"1","error":{}}', "error was malformed"),
+        (
+            400,
+            b'{"jsonrpc":"2.0","id":"1","result":{}}',
+            "status did not match",
+        ),
+        (
+            400,
+            b'{"jsonrpc":"2.0","id":"wrong","error":{"code":-32602,"message":"bad"}}',
+            "identifier",
+        ),
+        (
+            500,
+            b'{"jsonrpc":"2.0","id":"1","error":{"code":-32602,"message":"bad"}}',
+            "status did not match",
+        ),
+        (
+            404,
+            b'{"jsonrpc":"2.0","id":"1","error":{"code":-32602,"message":"bad"}}',
+            "status did not match",
+        ),
+        (
+            400,
+            b'{"jsonrpc":"2.0","id":"1","error":{"code":-32601,"message":"bad"}}',
+            "status did not match",
+        ),
+        (
+            400,
+            b'{"jsonrpc":"2.0","id":"1","error":{"code":-32603,"message":"bad"}}',
+            "status did not match",
+        ),
+    ],
+    ids=(
+        "oversized",
+        "malformed",
+        "non-json-rpc",
+        "malformed-error",
+        "success-envelope",
+        "wrong-id",
+        "server-error-for-invalid-params",
+        "not-found-for-invalid-params",
+        "bad-request-for-method-not-found",
+        "bad-request-for-unmapped-error",
+    ),
+)
+def test_client_rejects_invalid_http_error_bodies(
+    monkeypatch: pytest.MonkeyPatch, status: int, body: bytes, message: str
+) -> None:
+    module = _module()
+
+    def open_request(request: object, *, timeout: int):
+        raise module.urllib.error.HTTPError(
+            request.full_url, status, "fixture error", {}, io.BytesIO(body)
+        )
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", open_request)
+    with pytest.raises(module.SmokeError, match=message):
+        module.McpClient("http://127.0.0.1:8765/mcp").list_tools()
 
 
 def test_client_rejects_non_loopback_urls_and_public_output_permissions(
