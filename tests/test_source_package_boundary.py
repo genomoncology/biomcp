@@ -444,8 +444,8 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     # Main adds one net ORCID source path. Ticket 0134 adds the pinned-artifact
-    # checker, bounded MCP client, and its contract test.
-    assert len(paths) == 1337
+    # checker, bounded MCP client, its contract test, and two private Rust modules.
+    assert len(paths) == 1339
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
