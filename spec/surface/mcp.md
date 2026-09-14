@@ -502,6 +502,61 @@ print("raw and typed variant evaluation converges")
 PY
 ```
 
+## ORCID Author Surfaces Match The CLI Through Raw MCP
+
+The ORCID exact-record surfaces are reachable through the raw `biomcp` tool
+with byte-identical text, and an ORCID command never requests a Semantic
+Scholar route.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw MCP serves the ORCID author surfaces'
+import json, os, subprocess
+
+env = os.environ.copy()
+request_log = os.environ["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"]
+bin_path = os.environ["BIOMCP_BIN"]
+proc = subprocess.Popen([bin_path, "serve"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=env)
+
+def send(message):
+    proc.stdin.write(json.dumps(message) + "\n")
+    proc.stdin.flush()
+
+def call(message):
+    send(message)
+    return json.loads(proc.stdout.readline())
+
+call({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"spec","version":"1"}}})
+send({"jsonrpc":"2.0","method":"notifications/initialized","params":{}})
+
+open(request_log, "w", encoding="utf-8").close()
+detail_json = subprocess.run(
+    [bin_path, "--json", "get", "author", "orcid:0000-0002-1825-0097"],
+    capture_output=True, text=True, env=env, check=True,
+).stdout
+works_json = subprocess.run(
+    [bin_path, "--json", "author", "papers", "orcid:0000-0002-1825-0097", "--limit", "1", "--offset", "0"],
+    capture_output=True, text=True, env=env, check=True,
+).stdout
+works_markdown = subprocess.run(
+    [bin_path, "author", "papers", "orcid:0000-0002-1825-0097", "--limit", "1", "--offset", "0"],
+    capture_output=True, text=True, env=env, check=True,
+).stdout
+
+for index, command, expected in (
+    (2, "biomcp --json get author orcid:0000-0002-1825-0097", detail_json),
+    (3, "biomcp --json author papers orcid:0000-0002-1825-0097 --limit 1 --offset 0", works_json),
+    (4, "biomcp author papers orcid:0000-0002-1825-0097 --limit 1 --offset 0", works_markdown),
+):
+    result = call({"jsonrpc":"2.0","id":index,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":command}}})["result"]
+    assert result.get("isError") is not True, result
+    assert result["content"][0]["text"].rstrip("\n") == expected.rstrip("\n"), command
+
+proc.terminate()
+proc.wait(timeout=5)
+print("raw MCP serves the ORCID author surfaces")
+PY
+```
+
 ## Probe Routes Stay Lightweight
 
 The HTTP surface is intentionally tiny: two readiness probes and one root

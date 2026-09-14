@@ -195,6 +195,7 @@ export OPENFDA_API_KEY="..."     # OpenFDA rate limits
 export NCI_API_KEY="..."         # NCI CTS trial search (--source nci)
 export DISGENET_API_KEY="..."    # Scored DisGeNET gene/disease sections
 export ONCOKB_TOKEN="..."        # OncoKB variant helper
+export ORCID_ACCESS_TOKEN="..."  # Exact ORCID author records (orcid: IDs)
 export UMLS_API_KEY="..."        # discover crosswalk enrichment
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```

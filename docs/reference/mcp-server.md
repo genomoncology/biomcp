@@ -107,7 +107,7 @@ Keep BioMCP bound to a private interface when possible, and expose only the auth
 
 Provider keys for built-in tools are environment variables read by the BioMCP process. Configure them in the service manager, container environment, or desktop MCP configuration that launches BioMCP.
 
-Common keys include `ONCOKB_TOKEN`, `ALPHAGENOME_API_KEY`, `NCI_API_KEY`, `NCBI_API_KEY`, `S2_API_KEY`, `OPENFDA_API_KEY`, and `UMLS_API_KEY`. See the [API Keys guide](../getting-started/api-keys.md) for the current list and source-specific behavior.
+Common keys include `ONCOKB_TOKEN`, `ALPHAGENOME_API_KEY`, `NCI_API_KEY`, `NCBI_API_KEY`, `S2_API_KEY`, `OPENFDA_API_KEY`, `UMLS_API_KEY`, and `ORCID_ACCESS_TOKEN`. See the [API Keys guide](../getting-started/api-keys.md) for the current list and source-specific behavior.
 
 ## MCP tools and resources
 

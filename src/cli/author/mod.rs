@@ -16,9 +16,9 @@ pub(in crate::cli) use search::handle_search;
 
 #[derive(Subcommand, Debug)]
 pub enum AuthorCommand {
-    /// List papers for one exact Semantic Scholar author record (compact by default; --full adds rich source metadata)
+    /// List papers claimed on one exact author record: semanticscholar:<id> with --full, or orcid:<id> public works (compact only)
     Papers {
-        /// Provider-qualified author ID (`semanticscholar:<id>`)
+        /// Provider-qualified author ID (`semanticscholar:<id>` or `orcid:dddd-dddd-dddd-dddC`)
         id: String,
         /// Maximum papers, 1-100 (default: 10); one bounded page, no prefetching
         #[arg(short, long, default_value = "10")]

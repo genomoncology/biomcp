@@ -126,6 +126,7 @@ def test_configuration_reference_classifies_env_var_families() -> None:
         "NCI_API_KEY",
         "ONCOKB_TOKEN",
         "OPENFDA_API_KEY",
+        "ORCID_ACCESS_TOKEN",
         "S2_API_KEY",
         "UMLS_API_KEY",
         "BIOMCP_CACHE_DIR",

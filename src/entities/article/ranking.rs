@@ -274,12 +274,22 @@ fn pubmed_rescue_metadata(
     )
 }
 
-fn lexical_ranking_metadata(
+struct LexicalRankingCalculation {
+    metadata: ArticleRankingMetadata,
+    anchor_count: usize,
+    union_hits: usize,
+}
+
+fn lexical_ranking_calculation<F>(
     row: &ArticleSearchResult,
     source_positions: &[ArticleSourcePosition],
     anchors: &[String],
-) -> ArticleRankingMetadata {
-    let (title_hits, abstract_hits, combined_hits) = lexical_anchor_hits(row, anchors);
+    calculator: &mut F,
+) -> LexicalRankingCalculation
+where
+    F: FnMut(&ArticleSearchResult, &[String]) -> (usize, usize, usize),
+{
+    let (title_hits, abstract_hits, combined_hits) = calculator(row, anchors);
     let anchor_count = anchors.len();
     let all_anchors_in_title = anchor_count > 0 && title_hits == anchor_count;
     let all_anchors_in_text = anchor_count > 0 && combined_hits == anchor_count;
@@ -296,7 +306,7 @@ fn lexical_ranking_metadata(
     let (pubmed_rescue, pubmed_rescue_kind, pubmed_source_position) =
         pubmed_rescue_metadata(row, source_positions, directness_tier, combined_hits);
 
-    ArticleRankingMetadata {
+    let metadata = ArticleRankingMetadata {
         directness_tier,
         anchor_count: anchor_count.min(u8::MAX as usize) as u8,
         title_anchor_hits: title_hits.min(u8::MAX as usize) as u8,
@@ -315,6 +325,11 @@ fn lexical_ranking_metadata(
         position_score: None,
         composite_score: None,
         avg_source_rank: None,
+    };
+    LexicalRankingCalculation {
+        metadata,
+        anchor_count,
+        union_hits: combined_hits,
     }
 }
 
@@ -337,20 +352,22 @@ fn lexical_anchor_hits(row: &ArticleSearchResult, anchors: &[String]) -> (usize,
     (title_hits, abstract_hits, combined_hits)
 }
 
-fn populate_lexical_ranking_metadata(
+fn populate_lexical_ranking_metadata_with(
     rows: &mut [ArticleCandidate],
     filters: &ArticleSearchFilters,
-) {
+    mut calculator: impl FnMut(&ArticleSearchResult, &[String]) -> (usize, usize, usize),
+) -> Vec<(usize, usize)> {
     let anchors = build_anchor_set(filters);
-
+    let mut private_counts = Vec::with_capacity(rows.len());
     for row in rows.iter_mut() {
         ensure_matched_sources(&mut row.row);
-        row.row.ranking = Some(lexical_ranking_metadata(
-            &row.row,
-            &row.source_positions,
-            &anchors,
-        ));
+        let calculation =
+            lexical_ranking_calculation(&row.row, &row.source_positions, &anchors, &mut calculator);
+        row.row.ranking = Some(calculation.metadata);
+        private_counts.push((calculation.anchor_count, calculation.union_hits));
     }
+    assert_eq!(private_counts.len(), rows.len());
+    private_counts
 }
 
 fn compare_article_candidates_lexical(
@@ -434,7 +451,7 @@ pub(super) fn rank_articles_by_directness(
     rows: &mut [ArticleCandidate],
     filters: &ArticleSearchFilters,
 ) {
-    populate_lexical_ranking_metadata(rows, filters);
+    populate_lexical_ranking_metadata_with(rows, filters, lexical_anchor_hits);
     for row in rows.iter_mut() {
         if let Some(ranking) = row.row.ranking.as_mut() {
             ranking.mode = Some(ArticleRankingMode::Lexical);
@@ -444,7 +461,7 @@ pub(super) fn rank_articles_by_directness(
 }
 
 fn rank_articles_by_semantic(rows: &mut [ArticleCandidate], filters: &ArticleSearchFilters) {
-    populate_lexical_ranking_metadata(rows, filters);
+    populate_lexical_ranking_metadata_with(rows, filters, lexical_anchor_hits);
     for row in rows.iter_mut() {
         let semantic_score = semantic_signal(row);
         if let Some(ranking) = row.row.ranking.as_mut() {
@@ -459,10 +476,13 @@ fn rank_articles_by_semantic(rows: &mut [ArticleCandidate], filters: &ArticleSea
     });
 }
 
-fn rank_articles_hybrid(rows: &mut [ArticleCandidate], filters: &ArticleSearchFilters) {
-    populate_lexical_ranking_metadata(rows, filters);
+fn rank_articles_hybrid_with(
+    rows: &mut [ArticleCandidate],
+    filters: &ArticleSearchFilters,
+    calculator: impl FnMut(&ArticleSearchResult, &[String]) -> (usize, usize, usize),
+) {
+    let private_counts = populate_lexical_ranking_metadata_with(rows, filters, calculator);
     let ranking = resolve_article_ranking(filters);
-    let anchors = build_anchor_set(filters);
     let max_citation_count = rows
         .iter()
         .filter_map(|candidate| candidate.row.citation_count)
@@ -478,13 +498,12 @@ fn rank_articles_hybrid(rows: &mut [ArticleCandidate], filters: &ArticleSearchFi
         })
         .fold(0.0, f64::max);
 
-    for row in rows.iter_mut() {
+    for (row, (anchor_count, union_hits)) in rows.iter_mut().zip(private_counts) {
         let semantic_score = semantic_signal(row);
-        let lexical_score = if anchors.is_empty() {
+        let lexical_score = if anchor_count == 0 {
             0.0
         } else {
-            let (_, _, combined_hits) = lexical_anchor_hits(&row.row, &anchors);
-            combined_hits as f64 / anchors.len() as f64
+            union_hits as f64 / anchor_count as f64
         };
         let citation_score = normalized_citation_score(row.row.citation_count, max_citation_count);
         let avg_source_rank = avg_source_rank(&row.source_positions, row.row.source_local_position);
@@ -533,7 +552,9 @@ pub(super) fn sort_article_rows(
         ArticleSort::Relevance => match resolve_article_ranking(filters).mode {
             ArticleRankingMode::Lexical => rank_articles_by_directness(rows, filters),
             ArticleRankingMode::Semantic => rank_articles_by_semantic(rows, filters),
-            ArticleRankingMode::Hybrid => rank_articles_hybrid(rows, filters),
+            ArticleRankingMode::Hybrid => {
+                rank_articles_hybrid_with(rows, filters, lexical_anchor_hits)
+            }
         },
         ArticleSort::Citations => rows.sort_by(|left, right| {
             compare_optional_citations_desc(Some(&left.row), Some(&right.row))

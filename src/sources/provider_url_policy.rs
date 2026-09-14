@@ -128,6 +128,38 @@ impl ProviderUrlPolicy {
         Ok(policy)
     }
 
+    /// Policy for authenticated ORCID Public API calls. The canonical HTTPS
+    /// origin is the only credential origin; a base override selects the
+    /// request origin and may be a loopback test fixture only.
+    pub(crate) fn orcid_api(base: &Url) -> Result<Self, BioMcpError> {
+        let canonical = AllowedOrigin::parse("https://pub.orcid.org")?;
+        let configured = AllowedOrigin::from_url(base)
+            .ok_or_else(|| policy_error("ORCID base has no valid origin"))?;
+        let loopback = ["127.0.0.1", "::1", "localhost"].contains(&configured.host.as_str());
+        if !loopback && configured != canonical {
+            return Err(policy_error(
+                "ORCID base override must be a loopback test origin",
+            ));
+        }
+        let mut allowed_origins = vec![canonical.clone()];
+        if !allowed_origins.contains(&configured) {
+            allowed_origins.push(configured);
+        }
+        let policy = Self {
+            source: "ORCID",
+            provider: SourceProvider::ORCID,
+            allowed_origins,
+            credential_origins: vec![canonical],
+            // The exact loopback test origin selected through the shared
+            // fixture signal may serve plain HTTP and receive credentials;
+            // every other origin stays HTTPS and canonical-only.
+            unsafe_test_origin: unsafe_test_origin(),
+            pmc_linked_numeric_id: None,
+        };
+        policy.validate_url(base)?;
+        Ok(policy)
+    }
+
     /// Policy for PDF URLs returned in Semantic Scholar payloads.
     pub(crate) fn semantic_scholar_pdf() -> Result<Self, BioMcpError> {
         Self::for_consumer(ProviderUrlConsumer::SemanticScholarPdf, None)

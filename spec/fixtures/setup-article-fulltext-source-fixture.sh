@@ -229,6 +229,54 @@ AUTHOR_ENTITY_PAPERS = {
         "authors": [{**AUTHOR_FORBIDDEN, "authorId": "1716151", "name": "A. Butte"}],
     }],
 }
+ORCID_FORBIDDEN = {"email": "private-orcid@example.invalid", "biography": {"visibility": "PRIVATE", "content": "private-orcid-biography-sentinel"}, "researcher-urls": {"researcher-url": [{"url-name": "homepage", "url": {"value": "https://private.example.invalid/orcid"}}]}}
+ORCID_PERSON_BODY = {
+    "path": "/0000-0002-1825-0097/person",
+    **ORCID_FORBIDDEN,
+    "name": {
+        "visibility": "PUBLIC",
+        "given-names": {"value": "Josiah"},
+        "family-name": {"value": "Carberry"},
+    },
+}
+ORCID_WORKS_BODY = {
+    "path": "/0000-0002-1825-0097/works",
+    "group": [
+        {
+            "work-summary": [
+                {
+                    "visibility": "PUBLIC",
+                    "put-code": 42,
+                    "display-index": "2",
+                    "title": {"title": {"value": "A claimed work | `with markup` <b>and html</b>"}},
+                    "journal-title": {"value": "A Journal"},
+                    "publication-date": {"year": {"value": "2024"}},
+                    "external-ids": {
+                        "external-id": [
+                            {"external-id-type": "pmid", "external-id-value": "123", "external-id-relationship": "SELF"},
+                            {"external-id-type": "doi", "external-id-value": "10.1/example", "external-id-relationship": "SELF"},
+                        ]
+                    },
+                }
+            ]
+        },
+        {
+            "work-summary": [
+                {
+                    "visibility": "PUBLIC",
+                    "put-code": 43,
+                    "display-index": "1",
+                    "title": {"title": {"value": "Second claimed work"}},
+                    "external-ids": {
+                        "external-id": [
+                            {"external-id-type": "pmid", "external-id-value": "124", "external-id-relationship": "SELF"}
+                        ]
+                    },
+                }
+            ]
+        },
+    ],
+}
 ARTICLE_ENTITY_AUTHORS = {
     **AUTHOR_FORBIDDEN,
     "paperId": "paper-byline-1",
@@ -1015,6 +1063,16 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, AUTHOR_ENTITY_PAPERS)
             return
 
+        if decoded_path == "/0000-0002-1825-0097/person":
+            append_request_log("orcid:person")
+            send_json(self, 200, ORCID_PERSON_BODY)
+            return
+
+        if decoded_path == "/0000-0002-1825-0097/works":
+            append_request_log("orcid:works")
+            send_json(self, 200, ORCID_WORKS_BODY)
+            return
+
         if decoded_path == "/graph/v1/paper/ARXIV:2110.01406":
             send_json(self, 200, ARTICLE_ENTITY_AUTHORS)
             return
@@ -1538,6 +1596,8 @@ printf 'export BIOMCP_PMC_OA_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_PMC_HTML_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_NCBI_IDCONV_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_S2_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export BIOMCP_ORCID_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export ORCID_ACCESS_TOKEN=fixture-public-read-token\n' >>"$env_file"
 printf 'export BIOMCP_LITSENSE2_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_FIGSHARE_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CACHE_MIN_DISK_FREE=1B\n' >>"$env_file"

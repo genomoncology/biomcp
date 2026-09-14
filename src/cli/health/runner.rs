@@ -12,7 +12,7 @@ use super::catalog::{ProbeKind, SourceDescriptor};
 use super::http::check_alphagenome_connect;
 use super::http::{
     check_auth_get, check_auth_post_json, check_auth_query_param, check_gencc_head, check_get,
-    check_optional_auth_get, check_post_json, check_vaers_query, configured_key,
+    check_optional_auth_get, check_orcid_get, check_post_json, check_vaers_query, configured_key,
 };
 use super::local::{
     check_cache_dir, check_cache_limits, check_cvx_local_data, check_ddinter_local_data,
@@ -65,6 +65,9 @@ pub(in crate::cli::health) async fn probe_source(
 ) -> ProbeOutcome {
     match source.probe {
         ProbeKind::Get { url } => check_get(client, source.api, url, source.affects).await,
+        ProbeKind::OrcidGet { url, env_var } => {
+            check_orcid_get(client, source.api, url, env_var, source.affects).await
+        }
         ProbeKind::PostJson { url, payload } => {
             check_post_json(client, source.api, url, payload, source.affects).await
         }
@@ -206,7 +209,8 @@ where
     match source.probe {
         ProbeKind::AuthGet { .. }
         | ProbeKind::AuthQueryParam { .. }
-        | ProbeKind::AuthPostJson { .. } => Some(true),
+        | ProbeKind::AuthPostJson { .. }
+        | ProbeKind::OrcidGet { .. } => Some(true),
         #[cfg(feature = "alphagenome")]
         ProbeKind::AlphaGenomeConnect { .. } => Some(true),
         ProbeKind::OptionalAuthGet { env_var, .. } => Some(configured_key_fn(env_var).is_some()),

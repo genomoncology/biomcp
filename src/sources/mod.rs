@@ -306,6 +306,7 @@ pub(crate) mod ols4;
 pub(crate) mod oncokb;
 pub(crate) mod openfda;
 pub(crate) mod opentargets;
+pub(crate) mod orcid;
 mod ordinary_url_policy;
 pub(crate) use ordinary_url_policy::{
     ordinary_middleware_client_for_base, provider_policy_client_builder,
@@ -865,7 +866,6 @@ fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware,
     let config = crate::cache::resolve_cache_config()?;
     build_http_client_with_config(kind, config, None)
 }
-
 pub(crate) fn build_uncached_http_client(
     kind: SharedHttpClientKind,
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,

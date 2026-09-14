@@ -82,6 +82,7 @@ status remain unchanged when source context is present.
 | `NCI_API_KEY` | Trial source `--source nci` |
 | `ONCOKB_TOKEN` | Production OncoKB enrichment |
 | `OPENFDA_API_KEY` | Optional OpenFDA quota stability |
+| `ORCID_ACCESS_TOKEN` | Exact `orcid:` author records and claimed works |
 | `UMLS_API_KEY` | Optional `discover` clinical crosswalk enrichment |
 
 ## Not-found troubleshooting pattern
