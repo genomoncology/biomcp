@@ -5,6 +5,8 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
@@ -13,11 +15,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 WEBSITE = ROOT / "website"
 GENERATOR = WEBSITE / "generate.py"
-EXPECTED_REVISION = "2a32592a8cff4b70f80e51ed7d4a355e618700b8"
+EXPECTED_REVISION = "d6a4bbb86dc793a985e9fdab3d1fc9c0197d06ca"
 EXPECTED_INPUT_SHA256 = (
     "b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e"
 )
 DIRECT_RELATIONSHIP_COUNT = 10
+PIN_CHECKER = WEBSITE / "check-biodata-artifact-pins.py"
 
 
 def _module():
@@ -283,6 +286,52 @@ def test_relationship_changes_change_svg_and_removal_is_rejected() -> None:
     removed["relationships"].pop(0)
     with pytest.raises(module.GenerationError, match="dangling field relationship"):
         module.render_relationship_svg(removed)
+
+
+def test_ordinary_website_check_enforces_biodata_artifact_pins() -> None:
+    website_check = (WEBSITE / "check").read_text(encoding="utf-8")
+    assert 'python3 "$root/check-biodata-artifact-pins.py"' in website_check
+    completed = subprocess.run(
+        [sys.executable, str(PIN_CHECKER), str(WEBSITE)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout == ""
+    assert completed.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "public/downloads/biodata/clinical-trial-relationships.svg",
+        "public/biodata/discovery/clinical-trial.json",
+    ],
+)
+def test_biodata_artifact_pin_rejects_a_one_byte_mutation(
+    tmp_path: Path, relative: str
+) -> None:
+    for artifact in (
+        "public/downloads/biodata/clinical-trial-relationships.svg",
+        "public/biodata/discovery/clinical-trial.json",
+    ):
+        destination = tmp_path / artifact
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(WEBSITE / artifact, destination)
+    target = tmp_path / relative
+    target.write_bytes(target.read_bytes() + b"\n")
+
+    completed = subprocess.run(
+        [sys.executable, str(PIN_CHECKER), str(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 1
+    assert completed.stdout == ""
+    assert "accepted BioData artifact digest mismatch" in completed.stderr
+    assert str(tmp_path) not in completed.stderr
 
 
 def test_hostile_relationship_text_is_inert_in_svg() -> None:

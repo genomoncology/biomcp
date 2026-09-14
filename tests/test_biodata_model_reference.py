@@ -13,7 +13,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 WEBSITE = ROOT / "website"
 GENERATOR = WEBSITE / "generate.py"
-EXPECTED_REVISION = "2a32592a8cff4b70f80e51ed7d4a355e618700b8"
+EXPECTED_REVISION = "d6a4bbb86dc793a985e9fdab3d1fc9c0197d06ca"
 EXPECTED_BUNDLE_SHA256 = (
     "874989aa405aae4b505f74e13d0f85189692f526e84c84fc29a45e8bc2690854"
 )
