@@ -620,10 +620,8 @@ impl BioMcpError {
             None => match self {
                 Self::ApiCredentialInvalid { api, env_var } if api == "ORCID" => {
                     PublicErrorProjection {
-                        // The projection message carries the fact only; the
-                        // recovery sentence lives in the separate recovery
-                        // field so structured surfaces state it once. The
-                        // human Display concatenation is unchanged.
+                        // Projection carries the fact only; the recovery
+                        // sentence lives in the recovery field, stated once.
                         message: format!("{api} credential in {env_var} is invalid."),
                         source: Some("ORCID"),
                         recovery: Some(
