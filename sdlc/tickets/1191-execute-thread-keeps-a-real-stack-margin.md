@@ -100,3 +100,18 @@ None.
   stopgap should be dropped in favor of this structural pin at its next
   merge with main — reconciliation recorded here).
 - Code review: pending
+
+- Code review: ACCEPT 2026-09-14 at 012dbcb5; one file, one line, confirmed
+  by the primary agent with git show; placement, Send reasoning, and the
+  tokio auto-box nuance verified from registry source. P2s closed: hunk
+  byte-verified; branch naming noted.
+- Full gates (final): merged after this evidence. At 42c5a996 on the gate
+  host: lint OK, spec OK, and the previously-aborting test PASSED IN LANE —
+  the primary acceptance — with the Rust suite running 683 tests beyond it
+  before a third variant of the documented GenCC load-flake family cancelled
+  the run (solo 3/3 at 0.03s; family issue updated). Margin: the fault-based
+  gdb watermark no longer applies post-fix (the overflow path does not
+  execute); the recorded basis is measured arithmetic — 8,186 KB total minus
+  the 5,273 KB boxed frames leaves ~2,913 KB, within the 4,096 KB target —
+  plus the empirical in-lane completion. A follow-up watermark capture is
+  available to whoever wants it.
