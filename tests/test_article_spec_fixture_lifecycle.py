@@ -27,6 +27,42 @@ def _wait_until(predicate, timeout: float = 10.0) -> None:
     assert predicate()
 
 
+_FATAL_RUNNER_SIGNALS = (
+    signal.SIGHUP,
+    signal.SIGINT,
+    signal.SIGQUIT,
+    signal.SIGTERM,
+)
+
+
+def _spawn_runner(
+    workspace: Path, mode: str, env: dict[str, str], *, leaking_launcher: bool = False
+) -> subprocess.Popen:
+    """Spawn the runner so its termination traps are always installable.
+
+    POSIX forbids a non-interactive shell from trapping a signal that was
+    ignored on entry, so a launcher chain leaking SIG_IGN (nohup leaks
+    SIGHUP; worker and sandbox chains can leak others) silently disables
+    run-specs.sh's termination traps and the runner stops responding to that
+    signal. ``leaking_launcher`` simulates such a chain for the regression
+    test; the preexec then restores the fatal dispositions the script traps.
+    """
+
+    def prepare_child() -> None:
+        if leaking_launcher:
+            for runner_signal in _FATAL_RUNNER_SIGNALS:
+                signal.signal(runner_signal, signal.SIG_IGN)
+        for runner_signal in _FATAL_RUNNER_SIGNALS:
+            signal.signal(runner_signal, signal.SIG_DFL)
+
+    return subprocess.Popen(
+        ["bash", "scripts/run-specs.sh", mode],
+        cwd=workspace,
+        env=env,
+        preexec_fn=prepare_child,
+    )
+
+
 def _read_exports(path: Path) -> dict[str, str]:
     exports: dict[str, str] = {}
     for line in path.read_text().splitlines():
@@ -258,6 +294,36 @@ def test_runner_cleans_article_fixture_after_child_failure(
 @pytest.mark.parametrize(
     "termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]
 )
+def test_runner_traps_survive_a_launcher_that_ignored_fatal_signals(
+    termination_signal: signal.Signals, tmp_path: Path
+) -> None:
+    """A launcher leaking SIG_IGN cannot disable the runner's traps."""
+    workspace, env = _runner_workspace(tmp_path)
+    ready = workspace / "runner-ready"
+    env |= {
+        "BIOMCP_SPEC_RUNNER_READY_FILE": str(ready),
+        "BIOMCP_SPEC_RUNNER_HOLD": "1",
+    }
+    runner = _spawn_runner(workspace, "spec-contracts", env, leaking_launcher=True)
+    fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
+    fixture_record = workspace / ".cache" / "spec-article-fulltext-source-ownership"
+    try:
+        _wait_until(
+            lambda: ready.exists() and fixture_env.exists() and fixture_record.exists()
+        )
+        os.kill(runner.pid, termination_signal)
+        assert runner.wait(timeout=30) == 128 + termination_signal
+        assert not fixture_env.exists()
+        assert not fixture_record.exists()
+    finally:
+        if runner.poll() is None:
+            runner.kill()
+            runner.wait()
+
+
+@pytest.mark.parametrize(
+    "termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]
+)
 def test_runner_signal_cleans_article_fixture(
     termination_signal: signal.Signals, tmp_path: Path
 ) -> None:
@@ -267,9 +333,7 @@ def test_runner_signal_cleans_article_fixture(
         "BIOMCP_SPEC_RUNNER_READY_FILE": str(ready),
         "BIOMCP_SPEC_RUNNER_HOLD": "1",
     }
-    runner = subprocess.Popen(
-        ["bash", "scripts/run-specs.sh", "spec-contracts"], cwd=workspace, env=env
-    )
+    runner = _spawn_runner(workspace, "spec-contracts", env)
     fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
     fixture_record = workspace / ".cache" / "spec-article-fulltext-source-ownership"
     try:
@@ -302,9 +366,7 @@ def test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns(
         "BIOMCP_SPEC_RUNNER_READY_FILE": str(ready),
         "BIOMCP_SPEC_RUNNER_HOLD": "1",
     }
-    runner = subprocess.Popen(
-        ["bash", "scripts/run-specs.sh", "spec-contracts"], cwd=workspace, env=env
-    )
+    runner = _spawn_runner(workspace, "spec-contracts", env)
     fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
     fixture_record = workspace / ".cache" / "spec-article-fulltext-source-ownership"
     try:
@@ -764,9 +826,7 @@ def test_interrupt_reaps_parallel_markdown_workers(tmp_path: Path) -> None:
         "MUSTMATCH_DELAY": "30",
         "MUSTMATCH_SKIP_DELAY_PATTERN": "spec/entity/article.md",
     }
-    runner = subprocess.Popen(
-        ["bash", "scripts/run-specs.sh", "spec"], cwd=workspace, env=env
-    )
+    runner = _spawn_runner(workspace, "spec", env)
     try:
         _wait_until(lambda: active_dir.exists() and len(list(active_dir.iterdir())) >= 2)
         worker_pids = [int(path.name) for path in active_dir.iterdir()]

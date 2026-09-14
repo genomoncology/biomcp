@@ -24,6 +24,36 @@ def _wait_until(predicate, timeout: float = 10.0) -> None:
     assert predicate()
 
 
+_FATAL_RUNNER_SIGNALS = (
+    signal.SIGHUP,
+    signal.SIGINT,
+    signal.SIGQUIT,
+    signal.SIGTERM,
+)
+
+
+def _spawn_runner(workspace: Path, mode: str, env: dict[str, str]) -> subprocess.Popen:
+    """Spawn the runner so its termination traps are always installable.
+
+    POSIX forbids a non-interactive shell from trapping a signal that was
+    ignored on entry, so a launcher chain leaking SIG_IGN (nohup leaks
+    SIGHUP; worker and sandbox chains can leak others) silently disables
+    run-specs.sh's termination traps and the runner stops responding to that
+    signal. The preexec restores the fatal dispositions the script traps.
+    """
+
+    def prepare_child() -> None:
+        for runner_signal in _FATAL_RUNNER_SIGNALS:
+            signal.signal(runner_signal, signal.SIG_DFL)
+
+    return subprocess.Popen(
+        ["bash", "scripts/run-specs.sh", mode],
+        cwd=workspace,
+        env=env,
+        preexec_fn=prepare_child,
+    )
+
+
 def _read_exports(path: Path) -> dict[str, str]:
     exports: dict[str, str] = {}
     for line in path.read_text().splitlines():
@@ -99,11 +129,7 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
         "BIOMCP_SPEC_RUNNER_READY_FILE": str(ready),
         "BIOMCP_SPEC_RUNNER_HOLD": "1",
     }
-    runner = subprocess.Popen(
-        ["bash", "scripts/run-specs.sh", runner_mode],
-        cwd=workspace,
-        env=env,
-    )
+    runner = _spawn_runner(workspace, runner_mode, env)
     fixture_env = workspace / ".cache" / "spec-ctgov-intervention-alias-env"
     fixture_record = workspace / ".cache" / "spec-ctgov-intervention-alias-ownership"
     try:

@@ -46,3 +46,14 @@ reproduction:
    sleep; no locks or D-states are involved. Mitigated by ticket 1190's
    sixty-second waits plus the operational rule that the gate host runs
    nothing else during gates.
+
+Root cause correction, 2026-09-14 (ticket 1193): the class was never CPU
+contention. POSIX forbids a non-interactive shell from trapping a signal
+ignored at entry, so a launcher chain leaking SIG_IGN silently disables the
+runner's termination traps. The gate scripts' own nohup launcher leaks
+SIGHUP — every "[1]" (SIGHUP-valued) parametrization was doomed regardless
+of load, while a foreground lane passes 37/37 at load average 26. The gate
+host's "[2]" (SIGINT) failures were the same mechanism through its chain.
+Fixed by restoring fatal-signal dispositions at spawn in the lifecycle
+tests, with a leak-simulating regression test. The sixty-second waits from
+1190 remain as cover for genuine teardown latency only.
