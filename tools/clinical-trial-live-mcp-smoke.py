@@ -42,6 +42,19 @@ OUTPUT_FILES = [
     "12-typed-documents-rejection.json",
 ]
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\Z")
+CAPTURE_DIGEST = re.compile(r"sha256:[0-9a-f]{64}\Z")
+TOTAL_UNKNOWN_REASONS = {
+    "total_not_requested",
+    "provider_omitted_total",
+    "traversal_limit_reached",
+    "incomplete_source_coverage",
+    "incomplete_local_verification",
+}
+CONTINUATION_UNAVAILABLE_REASONS = {
+    "unusable_provider_cursor",
+    "traversal_limit_reached",
+    "incomplete_source_coverage",
+}
 
 
 class SmokeError(RuntimeError):
@@ -248,23 +261,34 @@ def _tool_json(response: dict[str, Any], label: str) -> dict[str, Any]:
     raise SmokeError(f"{label} did not contain a JSON object")
 
 
-def _capture(value: object, label: str) -> dict[str, Any]:
+def _capture(value: object, authority: str, label: str) -> dict[str, Any]:
     if not isinstance(value, dict) or not all(
         isinstance(value.get(field), str) and value[field]
         for field in ("source_authority", "provider_record_identity", "digest")
     ):
         raise SmokeError(f"{label} did not contain complete capture evidence")
+    if value["source_authority"] != authority:
+        raise SmokeError(f"{label} capture authority did not match its provider")
+    if CAPTURE_DIGEST.fullmatch(value["digest"]) is None:
+        raise SmokeError(f"{label} capture digest was not canonical SHA-256")
     return value
 
 
-def _validate_detail(payload: dict[str, Any], identity: str, label: str) -> None:
+def _validate_detail(
+    payload: dict[str, Any], identity: str, authority: str, label: str
+) -> None:
     identities = payload.get("identities")
     if not isinstance(identities, list) or not any(
         isinstance(value, dict) and value.get("identifier") == identity
         for value in identities
     ):
         raise SmokeError(f"{label} did not contain the requested trial identity")
-    _capture(payload.get("capture"), label)
+    capture = _capture(payload.get("capture"), authority, label)
+    returned = {
+        value.get("identifier") for value in identities if isinstance(value, dict)
+    }
+    if capture["provider_record_identity"] not in returned:
+        raise SmokeError(f"{label} capture identity was not a returned identity")
     if not isinstance(payload.get("conversion_report"), list):
         raise SmokeError(f"{label} did not contain a conversion report")
     states = payload.get("section_states")
@@ -272,7 +296,7 @@ def _validate_detail(payload: dict[str, Any], identity: str, label: str) -> None
         raise SmokeError(f"{label} did not contain section states")
 
 
-def _validate_search(payload: dict[str, Any], label: str) -> None:
+def _validate_search(payload: dict[str, Any], authority: str, label: str) -> None:
     results = payload.get("results")
     if not isinstance(results, list) or not results:
         raise SmokeError(f"{label} did not contain trial search results")
@@ -283,37 +307,124 @@ def _validate_search(payload: dict[str, Any], label: str) -> None:
             or not result["nct_id"]
         ):
             raise SmokeError(f"{label} contained a result without a trial identity")
-        _capture(result.get("capture"), label)
+        capture = _capture(result.get("capture"), authority, label)
+        if capture["provider_record_identity"] != result["nct_id"]:
+            raise SmokeError(f"{label} result and capture identities differed")
         if not isinstance(result.get("conversion_report"), list):
             raise SmokeError(f"{label} contained a result without a conversion report")
     if type(payload.get("count")) is not int or payload["count"] != len(results):
         raise SmokeError(f"{label} contained an inconsistent result count")
     pagination = payload.get("pagination")
-    required = ("total", "total_precision", "continuation_status", "has_more")
+    required = (
+        "offset",
+        "limit",
+        "returned",
+        "total",
+        "total_precision",
+        "continuation_status",
+        "next_page_token",
+        "has_more",
+    )
     if not isinstance(pagination, dict) or any(
         field not in pagination for field in required
     ):
         raise SmokeError(f"{label} did not contain pagination and count facts")
+    offset, limit, returned = (
+        pagination["offset"],
+        pagination["limit"],
+        pagination["returned"],
+    )
+    if (
+        any(type(value) is not int or value < 0 for value in (offset, returned))
+        or type(limit) is not int
+        or limit < 1
+        or returned != payload["count"]
+        or returned > limit
+    ):
+        raise SmokeError(f"{label} contained malformed pagination counts")
     total = pagination["total"]
-    if (total is not None and type(total) is not int) or not isinstance(
-        pagination["total_precision"], str
-    ):
-        raise SmokeError(f"{label} contained malformed count facts")
-    if not isinstance(pagination["continuation_status"], str) or not isinstance(
-        pagination["has_more"], bool
-    ):
-        raise SmokeError(f"{label} contained malformed pagination facts")
+    precision = pagination["total_precision"]
+    reason = pagination.get("total_reason")
+    has_total_reason = "total_reason" in pagination
+    total_valid = (
+        (
+            precision == "exact"
+            and type(total) is int
+            and total >= 0
+            and not has_total_reason
+        )
+        or (
+            precision == "approximate"
+            and type(total) is int
+            and total >= 0
+            and has_total_reason
+            and reason == "before_local_filtering"
+        )
+        or (
+            precision == "unknown"
+            and total is None
+            and has_total_reason
+            and reason in TOTAL_UNKNOWN_REASONS
+        )
+    )
+    if not total_valid:
+        raise SmokeError(f"{label} contained contradictory total facts")
+    if type(total) is int and total < offset + returned:
+        raise SmokeError(f"{label} total was smaller than the returned result range")
+    status = pagination["continuation_status"]
+    cursor = pagination["next_page_token"]
+    next_offset = pagination.get("next_offset")
+    has_next_offset = "next_offset" in pagination
+    continuation_reason = pagination.get("continuation_reason")
+    has_continuation_reason = "continuation_reason" in pagination
+    has_more = pagination["has_more"]
+    continuation_valid = (
+        (
+            status == "terminal"
+            and cursor is None
+            and not has_next_offset
+            and not has_continuation_reason
+            and has_more is False
+        )
+        or (
+            status == "cursor"
+            and isinstance(cursor, str)
+            and bool(cursor.strip())
+            and not has_next_offset
+            and not has_continuation_reason
+            and has_more is True
+        )
+        or (
+            status == "offset"
+            and cursor is None
+            and has_next_offset
+            and type(next_offset) is int
+            and next_offset == offset + returned
+            and not has_continuation_reason
+            and has_more is True
+        )
+        or (
+            status == "unavailable"
+            and cursor is None
+            and not has_next_offset
+            and has_continuation_reason
+            and continuation_reason in CONTINUATION_UNAVAILABLE_REASONS
+            and has_more is False
+        )
+    )
+    if not continuation_valid:
+        raise SmokeError(f"{label} contained contradictory continuation facts")
 
 
 def _validated_tool_payload(
-    response: dict[str, Any], label: str, identity: str | None = None
+    response: dict[str, Any], label: str, authority: str, identity: str | None = None
 ) -> dict[str, Any]:
     _expect_success(response, label)
     payload = _tool_json(response, label)
     if identity is None:
-        _validate_search(payload, label)
+        _validate_search(payload, authority, label)
     else:
-        _validate_detail(payload, identity, label)
+        _validate_detail(payload, identity, authority, label)
     return payload
 
 
@@ -477,8 +588,13 @@ def run_smoke(
         response = client.call_tool(name, arguments)
         if index < 8:
             identity = (ctgov_trial_id, None, nci_trial_id, None)[index % 4]
+            authority = ("clinicaltrials.gov", "clinicaltrials.gov", "nci", "nci")[
+                index % 4
+            ]
             payloads.append(
-                _validated_tool_payload(response, OUTPUT_FILES[index], identity)
+                _validated_tool_payload(
+                    response, OUTPUT_FILES[index], authority, identity
+                )
             )
         else:
             _expect_success(response, OUTPUT_FILES[index])

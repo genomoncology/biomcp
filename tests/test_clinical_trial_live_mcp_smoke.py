@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -64,9 +65,13 @@ def _search(identity: str, authority: str) -> dict[str, Any]:
             }
         ],
         "pagination": {
+            "offset": 0,
+            "limit": 5,
+            "returned": 1,
             "total": 1,
             "total_precision": "exact",
             "continuation_status": "terminal",
+            "next_page_token": None,
             "has_more": False,
         },
     }
@@ -78,6 +83,75 @@ def _rpc_error(code: int) -> dict[str, Any]:
         "id": "fixture",
         "error": {"code": code, "message": "sanitized fixture error"},
     }
+
+
+def _payload_for_call(call: int) -> dict[str, Any]:
+    payloads = (
+        _detail("NCT03361748", "clinicaltrials.gov"),
+        _search("NCT03361748", "clinicaltrials.gov"),
+        _detail("NCI-2020-00001", "nci"),
+        _search("NCT05929768", "nci"),
+    )
+    return copy.deepcopy(payloads[(call - 1) % 4])
+
+
+def _capture_for_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    if "results" in payload:
+        return payload["results"][0]["capture"]
+    return payload["capture"]
+
+
+def _mutated_success(call: int, mutation: str) -> dict[str, Any]:
+    payload = _payload_for_call(call)
+    capture = _capture_for_payload(payload)
+    if mutation == "authority":
+        capture["source_authority"] = "wrong"
+    elif mutation == "identity":
+        capture["provider_record_identity"] = "NCT00000000"
+    elif mutation == "digest":
+        capture["digest"] = "sha256:" + "A" * 64
+    else:
+        pagination = payload["pagination"]
+        if mutation == "invalid-precision":
+            pagination["total_precision"] = "estimated"
+        elif mutation == "exact-reason":
+            pagination["total_reason"] = "before_local_filtering"
+        elif mutation == "exact-null-reason":
+            pagination["total_reason"] = None
+        elif mutation == "approximate-reason":
+            pagination["total_precision"] = "approximate"
+            pagination["total_reason"] = "provider_omitted_total"
+        elif mutation == "unknown-number":
+            pagination["total_precision"] = "unknown"
+            pagination["total_reason"] = "provider_omitted_total"
+        elif mutation == "unknown-reason":
+            pagination["total"] = None
+            pagination["total_precision"] = "unknown"
+            pagination["total_reason"] = "unrecognized"
+        elif mutation == "returned-mismatch":
+            pagination["returned"] = 2
+        elif mutation == "over-limit":
+            pagination["limit"] = 0
+        elif mutation == "total-too-small":
+            pagination["offset"] = 1
+        elif mutation == "terminal-more":
+            pagination["has_more"] = True
+        elif mutation == "terminal-null-offset":
+            pagination["next_offset"] = None
+        elif mutation == "terminal-null-reason":
+            pagination["continuation_reason"] = None
+        elif mutation == "cursor-missing":
+            pagination["continuation_status"] = "cursor"
+            pagination["has_more"] = True
+        elif mutation == "offset-mismatch":
+            pagination["continuation_status"] = "offset"
+            pagination["next_offset"] = 9
+            pagination["has_more"] = True
+        elif mutation == "invalid-status":
+            pagination["continuation_status"] = "more"
+        else:
+            raise AssertionError(f"unknown fixture mutation: {mutation}")
+    return _tool_response(payload)
 
 
 class FakeClient:
@@ -95,14 +169,8 @@ class FakeClient:
         self.calls.append((name, arguments))
         if len(self.calls) in self.mutations:
             return self.mutations[len(self.calls)]
-        payloads = (
-            _detail("NCT03361748", "clinicaltrials.gov"),
-            _search("NCT03361748", "clinicaltrials.gov"),
-            _detail("NCI-2020-00001", "nci"),
-            _search("NCT05929768", "nci"),
-        )
         if len(self.calls) <= 8:
-            return _tool_response(payloads[(len(self.calls) - 1) % 4])
+            return _tool_response(_payload_for_call(len(self.calls)))
         if len(self.calls) == 9:
             return _tool_response({"documents": self.documents})
         if len(self.calls) == 10:
@@ -372,3 +440,38 @@ def test_client_rejects_non_evidence_envelopes(
     tmp_path: Path, call: int, response: dict[str, Any]
 ) -> None:
     _run_with_mutation(tmp_path, call, response)
+
+
+@pytest.mark.parametrize("call", range(1, 9))
+@pytest.mark.parametrize("mutation", ("authority", "identity", "digest"))
+def test_raw_and_typed_capture_mutations_fail_symmetrically(
+    tmp_path: Path, call: int, mutation: str
+) -> None:
+    _run_with_mutation(tmp_path, call, _mutated_success(call, mutation))
+
+
+@pytest.mark.parametrize("call", (2, 4, 6, 8))
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "invalid-precision",
+        "exact-reason",
+        "exact-null-reason",
+        "approximate-reason",
+        "unknown-number",
+        "unknown-reason",
+        "returned-mismatch",
+        "over-limit",
+        "total-too-small",
+        "terminal-more",
+        "terminal-null-offset",
+        "terminal-null-reason",
+        "cursor-missing",
+        "offset-mismatch",
+        "invalid-status",
+    ),
+)
+def test_raw_and_typed_pagination_contradictions_fail_symmetrically(
+    tmp_path: Path, call: int, mutation: str
+) -> None:
+    _run_with_mutation(tmp_path, call, _mutated_success(call, mutation))
