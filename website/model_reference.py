@@ -6,7 +6,7 @@ import html
 import json
 from typing import Any
 
-EXPECTED_REVISION = "991f9fe16b14208e184a6a9a370d5ed7b708dfae"
+EXPECTED_REVISION = "2a32592a8cff4b70f80e51ed7d4a355e618700b8"
 EXPECTED_INPUT_DIGEST = "b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e"
 RECEIPT_URL = (
     "https://github.com/genomoncology/biodata/blob/"

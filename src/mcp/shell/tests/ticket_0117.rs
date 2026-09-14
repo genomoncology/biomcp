@@ -186,10 +186,7 @@ async fn assert_search_surfaces(provider: &str, body: &'static [u8], collection:
             .digest()
             .to_owned()
     } else {
-        let filters = fixture_search_filters();
-        let plan = biodata::NciCtsV2SearchPlan::new(&filters, None, 1, 0).unwrap();
         let page = crate::sources::nci_cts::NciCtsClient::decode_search_response(
-            &plan,
             reqwest::StatusCode::OK,
             body,
         )
