@@ -96,7 +96,7 @@ None.
   missing pin at outcome.rs:647 (the ticket's original fact #4 cited the
   wrong branch — the CLI arm at :608 and tail arm at :594 are already pinned
   on main); acceptance re-baselined to <= 4 MiB per the measured remainder;
-  raise-the-stack rejection affirmed (the biodata/biomcp-1.0 branch's 16 MiB
+  raise-the-stack rejection affirmed (the downstream 1.0 integration branch's 16 MiB
   stopgap should be dropped in favor of this structural pin at its next
   merge with main — reconciliation recorded here).
 - Code review: pending
