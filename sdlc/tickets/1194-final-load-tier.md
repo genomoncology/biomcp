@@ -62,8 +62,9 @@ The full parent gate verifies the merged lane.
 - Cost of error score: 0 (test and spec infrastructure only)
 - Total: 3
 - Minimum level floor: none
-- Final level: 3
-- Selected model: gpt-5.6-luna, high reasoning (level 1 implementer)
+- Final level: 2
+- Reasons: three test/spec-infrastructure budget fixes with saturated local proofs
+- Selected model: gpt-5.6-luna, high reasoning (level 2 implementer)
 
 ## Review
 
