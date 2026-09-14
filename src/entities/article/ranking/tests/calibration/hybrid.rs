@@ -483,7 +483,6 @@ fn semantic_mode_ignores_non_litsense2_raw_scores() {
         Some(0.0)
     );
 }
-use crate::entities::article::ArticleSearchResult;
 
 fn hybrid_count_row(pmid: &str, title: &str, snippet: &str) -> ArticleSearchResult {
     let mut row = calibration_row(pmid, ArticleSource::EuropePmc, title, snippet, 0);

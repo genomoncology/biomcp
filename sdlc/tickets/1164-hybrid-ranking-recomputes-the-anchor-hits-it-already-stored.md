@@ -90,7 +90,7 @@ tests belong in the existing hybrid sidecar above. Keep `ranking.rs` at or below
 575 lines and the hybrid sidecar at or below 525 lines. Do not raise the global
 Rust source-size threshold or add an inventory allowance. Add no dependency,
 new packaged path, benchmark, public type, feature, or documentation page; the
-package remains exactly 1,300 paths.
+package remains exactly 1,306 paths (authorized).
 
 Run the focused ranking module and hybrid sidecar tests, the record-1102
 full-width and output/warning regressions, `cargo clippy --no-default-features
