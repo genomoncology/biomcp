@@ -644,7 +644,7 @@ async fn run_outcome_with_worker_stack(
                     .enable_all()
                     .build()?;
                 if alias_suggestions_as_json {
-                    runtime.block_on(run_outcome_inner(cli, true))
+                    runtime.block_on(Box::pin(run_outcome_inner(cli, true)))
                 } else {
                     runtime.block_on(run_outcome_on_current_stack(cli))
                 }
