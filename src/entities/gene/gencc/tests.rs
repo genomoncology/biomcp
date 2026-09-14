@@ -313,13 +313,22 @@ async fn expired_refresh_budget_still_projects_authoritative_stale_data() {
     let store = Store::open().unwrap();
     publish(&store, &dataset, "2026-01-01T00:00:00Z", "\"stale\"");
     assert!(store.try_lock_refresh().unwrap());
-    let (section, _) = fetch_section(
-        "ODC1",
-        Ok(vec!["HGNC:8109".into()]),
-        std::time::Duration::from_millis(200),
-    )
-    .await;
+    // The expired refresh budget is the acquisition window: the held lock
+    // burns it and acquisition defers to stale data. The projection then
+    // runs with a far-future deadline so no wall-clock window races load;
+    // routing through `fetch_section` would re-impose the production
+    // one-quarter projection reserve, which is exactly the race this test
+    // must not observe.
+    let start = tokio::time::Instant::now();
+    let acquisition_deadline = start + std::time::Duration::from_millis(200);
+    let projection_deadline = start + std::time::Duration::from_secs(30);
+    let client = crate::sources::gencc::GenCcClient::new().unwrap();
+    let data = client
+        .acquire_until(acquisition_deadline, projection_deadline)
+        .await;
     store.unlock_refresh();
+    assert_eq!(data.status.operation, GenCcOperation::RefreshDeferred);
+    let (section, _) = project_until("ODC1", Some("HGNC:8109"), data, projection_deadline).await;
     assert_eq!(
         (
             section.status.operation,
@@ -392,12 +401,23 @@ async fn post_rename_200_and_304_deadlines_return_committed_public_rows() {
             std::env::set_var("BIOMCP_GENCC_TEST_NOW", "2026-09-09T00:00:00Z");
             std::env::set_var("BIOMCP_GENCC_TEST_FAIL_AT", "after-state-rename");
         }
-        let (section, outcome) = fetch_section(
-            "ODC1",
-            Ok(vec!["HGNC:8109".into()]),
-            std::time::Duration::from_secs(2),
-        )
-        .await;
+        let (section, outcome) = {
+            // Drive acquisition and projection directly with generous
+            // budgets: the fault-injection recovery re-opens the store
+            // under the authority deadline, and the command-level 2-second
+            // budget left that recovery whatever the fsync-heavy publish
+            // had not consumed — the load race this fixture must not have.
+            let start = tokio::time::Instant::now();
+            let acquisition_deadline = start + std::time::Duration::from_secs(5);
+            let authority_deadline = start + std::time::Duration::from_secs(30);
+            let client = crate::sources::gencc::GenCcClient::new().unwrap();
+            let data = client
+                .acquire_until(acquisition_deadline, authority_deadline)
+                .await;
+            let (section, outcome) =
+                project_until("ODC1", Some("HGNC:8109"), data, authority_deadline).await;
+            (section, outcome)
+        };
         assert_eq!(section.assertions.len(), 3);
         assert_eq!(section.status.freshness, GenCcFreshness::Fresh);
         assert_eq!(
