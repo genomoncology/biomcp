@@ -483,3 +483,43 @@ fn semantic_mode_ignores_non_litsense2_raw_scores() {
         Some(0.0)
     );
 }
+use crate::entities::article::ArticleSearchResult;
+
+fn hybrid_count_row(pmid: &str, title: &str, snippet: &str) -> ArticleSearchResult {
+    let mut row = calibration_row(pmid, ArticleSource::EuropePmc, title, snippet, 0);
+    row.citation_count = Some(1);
+    row
+}
+
+#[test]
+fn hybrid_makes_exactly_one_calculator_call_per_candidate() {
+    let mut filters = empty_filters();
+    filters.keyword = Some("BRAF melanoma".into());
+    filters.ranking.requested_mode = Some(ArticleRankingMode::Hybrid);
+    let mut calls = 0usize;
+    let mut empty = Vec::new();
+    rank_articles_hybrid_with(&mut empty, &filters, |row, anchors| {
+        calls += 1;
+        lexical_anchor_hits(row, anchors)
+    });
+    assert_eq!(calls, 0);
+    let mut candidates: Vec<_> = [
+        hybrid_count_row("8001", "BRAF melanoma era", ""),
+        hybrid_count_row("8002", "review", "melanoma"),
+        hybrid_count_row("8001", "BRAF melanoma era", ""),
+    ]
+    .into_iter()
+    .map(article_candidate_from_row)
+    .collect();
+    rank_articles_hybrid_with(&mut candidates, &filters, |row, anchors| {
+        calls += 1;
+        lexical_anchor_hits(row, anchors)
+    });
+    assert_eq!(calls, 3);
+    let ranking = candidates[0].row.ranking.as_ref().expect("ranking");
+    assert_eq!(ranking.mode, Some(ArticleRankingMode::Hybrid));
+    assert_eq!(ranking.lexical_score, Some(1.0));
+    assert_eq!(ranking.title_anchor_hits, 2);
+    assert_eq!(ranking.combined_anchor_hits, 2);
+    assert!(ranking.citation_score.is_some() && ranking.composite_score.is_some());
+}
