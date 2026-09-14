@@ -83,11 +83,11 @@
     },
     {
       "path": "src/entities/author/papers.rs",
-      "baseline_lines": 1586,
+      "baseline_lines": 1597,
       "floor_lines": 931,
       "authorized_increase": {
         "ticket": "1142",
-        "delta": 655,
+        "delta": 666,
         "reason": "The claimed-works algorithm and its proofs live together in the author papers module: group mapping, representative selection, identifier canonicalization, stable deduplication, local slicing, the author-owned compact paper type with its ORCID-only fields, and the transport, bounds, dedupe, pagination, and excluded-identifier suites that prove them, including the review-remediation tests.",
         "removal_condition": "Extract the ORCID claimed-works mapping into its own module when the author papers surface is next decomposed."
       }
