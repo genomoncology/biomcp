@@ -16,6 +16,21 @@ export ALPHAGENOME_API_KEY="..."
 biomcp get variant "chr7:g.140453136A>T" predict
 ```
 
+## Required for exact ORCID author records
+
+### `ORCID_ACCESS_TOKEN`
+
+Used by `biomcp get author orcid:<id>` and `biomcp author papers orcid:<id>` to
+read the public ORCID record. Obtain a public-read bearer token for the
+`/read-public` scope from ORCID.
+
+Provider access: <https://info.orcid.org/documentation/features/public-api/>
+
+```bash
+export ORCID_ACCESS_TOKEN="..."
+biomcp get author orcid:0000-0002-1825-0097
+```
+
 ## Additional API keys
 
 ### `ONCOKB_TOKEN`

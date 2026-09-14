@@ -13,6 +13,7 @@ internal fixture overrides and release/install variables.
 | `NCI_API_KEY` | Enables trial operations with `--source nci` |
 | `ONCOKB_TOKEN` | Enables the explicit `variant oncokb <id>` helper |
 | `OPENFDA_API_KEY` | Improves OpenFDA quota headroom |
+| `ORCID_ACCESS_TOKEN` | Enables `get author orcid:<id>` and `author papers orcid:<id>` |
 | `S2_API_KEY` | Enables authenticated Semantic Scholar quota |
 | `UMLS_API_KEY` | Enables optional discover cross-vocabulary enrichment |
 
@@ -81,6 +82,7 @@ Known examples include `BIOMCP_CSPEC_FIXTURE_ORIGIN` (an exact loopback origin f
 `BIOMCP_MYGENE_BASE`, `BIOMCP_MYVARIANT_BASE`, `BIOMCP_NCBI_IDCONV_BASE`,
 `BIOMCP_NCI_CTS_BASE`, `BIOMCP_NIH_REPORTER_BASE`, `BIOMCP_OLS4_BASE`,
 `BIOMCP_ONCOKB_BASE`, `BIOMCP_OPENFDA_BASE`, `BIOMCP_OPENTARGETS_BASE`,
+`BIOMCP_ORCID_BASE`,
 `BIOMCP_PHARMGKB_BASE`, `BIOMCP_PMC_HTML_BASE`, `BIOMCP_PMC_OA_BASE`,
 `BIOMCP_PUBMED_BASE`, `BIOMCP_PUBTATOR_BASE`, `BIOMCP_QUICKGO_BASE`,
 `BIOMCP_REACTOME_BASE`, `BIOMCP_S2_BASE`, `BIOMCP_SEER_BASE`,

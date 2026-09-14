@@ -4537,10 +4537,10 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 </tr>
 <tr>
 <td>Author search and detail</td>
-<td>Semantic Scholar</td>
-<td><code>https://api.semanticscholar.org</code></td>
-<td>Optional (<code>S2_API_KEY</code>)</td>
-<td>Provider-exact author records; no cross-provider resolution</td>
+<td>Semantic Scholar; ORCID for exact <code>orcid:</code> records</td>
+<td><code>https://api.semanticscholar.org</code>, <code>https://pub.orcid.org/v3.0</code></td>
+<td>Optional (<code>S2_API_KEY</code>); Required for ORCID (<code>ORCID_ACCESS_TOKEN</code>)</td>
+<td>Provider-exact author records; no cross-provider resolution. <code>orcid:</code> detail and claimed works stay exact public ORCID records</td>
 </tr>
 <tr>
 <td>Article enrichment and graph helpers</td>
