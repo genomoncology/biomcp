@@ -36,3 +36,8 @@ stalls the store's synchronous work past the window the fixture assumes.
 Worth considering alongside the first: both tests share the gencc_env serial
 family, and both would benefit from asserting outcomes that do not depend on
 wall-clock windows.
+
+Third variant, 2026-09-14: `sources::gencc::cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work`
+failed once in a full lane at 8.4 s on an otherwise passing run
+("request barrier: Elapsed"); passes solo 3/3 at 0.03 s. Same family: a
+GenCC fixture whose internal barrier window is load-sensitive.
