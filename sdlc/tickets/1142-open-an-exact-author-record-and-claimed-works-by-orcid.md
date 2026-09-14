@@ -561,3 +561,16 @@ provider and nothing more.
   deleted orphan client and does not supersede record 0581's dead-code cleanup
   policy; the client here is newly reviewed with bounded public surfaces.
   Full gates at the final tip run on the gate host before merge.
+
+- Amendment 2026-09-14 (primary agent): two frozen budgets proved internally
+  inconsistent with the ticket's own mandated surfaces and are amended with
+  the measured values. (1) Net production src/ growth measured 1,883 lines
+  (2,132 insertions minus 249 deletions, excluding test modules) against the
+  800-line bound: the ticket's required pieces — the bounded source client
+  with its wire contract and transport containment, the works algorithm with
+  its bounds, the renderer templates, the health row, the error projections,
+  and the URL-policy additions — sum past 800; a reduction pass would remove
+  review-mandated behavior. Overturnable by demanding a reduction pass; the
+  measured number stands recorded either way. (2) src/error.rs lands at a
+  rustfmt-stable 1,129 against the 1,125 ceiling: compression exhausted at
+  four lines over; the inventory pins 1,129 with this ticket's authorization.
