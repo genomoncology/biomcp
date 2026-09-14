@@ -354,10 +354,22 @@ impl BioMcpServer {
         args: Vec<String>,
         json: bool,
     ) -> Result<CallToolResult, McpError> {
+        let command_requests_json = json || cli.json;
         if let Some(message) = binary_download_rejection(&cli, &args) {
+            if command_requests_json {
+                let error = crate::error::BioMcpError::InvalidArgument(
+                    crate::render::human::sanitize_inline(&message),
+                );
+                let text = crate::render::json::to_error_json(&error).map_err(|err| {
+                    McpError::internal_error(
+                        format!("Failed to render MCP JSON rejection: {err}"),
+                        None,
+                    )
+                })?;
+                return Ok(CallToolResult::error(vec![Content::text(text)]));
+            }
             return Ok(Self::tool_error(message));
         }
-        let command_requests_json = json || cli.json;
         let may_return_article_fulltext = cli_may_return_article_fulltext(&cli);
         match crate::cli::execute_mcp_cli(cli).await {
             Ok(output) => {
@@ -1492,8 +1504,8 @@ mod tests {
     mod ticket_0117;
     mod ticket_1120;
 
-    #[test]
-    fn binary_download_rejection_covers_trial_article_and_keeps_manifests_available() {
+    #[tokio::test]
+    async fn binary_download_rejection_covers_trial_article_and_keeps_manifests_available() {
         let article = [
             "biomcp",
             "get",
@@ -1548,6 +1560,25 @@ mod tests {
         })))
         .expect_err("typed trial binary route is rejected before section validation");
         assert!(error.to_string().contains("CLI-only"));
+
+        let result = BioMcpServer::new()
+            .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+                command: "biomcp get trial NCT1 document fixture.pdf".into(),
+                json: true,
+            }))
+            .await
+            .expect("raw MCP trial document rejection");
+        let value = serde_json::to_value(result).expect("serialize raw MCP rejection");
+        assert_eq!(value["isError"], true);
+        let text = value["content"][0]["text"]
+            .as_str()
+            .expect("raw MCP rejection text");
+        let error: serde_json::Value =
+            serde_json::from_str(text).expect("raw MCP rejection is structured JSON");
+        assert_eq!(error["error"]["code"], "invalid_argument");
+        assert!(error["error"]["message"].as_str().is_some_and(|message| {
+            message.contains("trial document") && message.contains("CLI-only")
+        }));
     }
 
     #[tokio::test]
