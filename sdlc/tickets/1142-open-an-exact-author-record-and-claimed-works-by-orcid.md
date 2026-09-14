@@ -585,3 +585,11 @@ provider and nothing more.
   was wrong. (5) Middle-slice and offset-beyond-total CLI goldens and the
   --full spec-lane assertion remain as accepted unit-seam coverage rather
   than full spec-lane goldens; the re-review recorded this as sufficient.
+
+- Full gates (final): merged as PR #271. At e68ddb68: Rust 3557/3557 complete
+  with spec green. At the final tip e530473c: lint and spec green; the Rust
+  suite was cancelled solely by the twice-documented GenCC fault-injection
+  load flake (passes solo 3/3 at the tip in 0.03s; family issue recorded);
+  pytest reds are the documented contention class. The measured-budget
+  amendments (production growth 1,883; error.rs 1,129; papers.rs 1,597;
+  package 1,306) are recorded above with their justifications.
