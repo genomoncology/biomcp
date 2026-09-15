@@ -100,11 +100,11 @@ impl GtrClient {
 
     pub(crate) async fn ready(mode: GtrSyncMode) -> Result<Self, BioMcpError> {
         let root = resolve_gtr_root();
-        sync_gtr_root(&root, mode).await?;
+        sync_gtr_root_inner(&root, mode).await?;
         Ok(Self { root })
     }
 
-    pub(crate) async fn sync(mode: GtrSyncMode) -> Result<(), BioMcpError> {
+    pub(crate) async fn sync(mode: GtrSyncMode) -> Result<bool, BioMcpError> {
         let root = resolve_gtr_root();
         sync_gtr_root(&root, mode).await
     }
@@ -230,7 +230,13 @@ fn sync_intro(state: SyncState, mode: GtrSyncMode) -> &'static str {
     }
 }
 
-async fn sync_gtr_root(root: &Path, mode: GtrSyncMode) -> Result<(), BioMcpError> {
+async fn sync_gtr_root(root: &Path, mode: GtrSyncMode) -> Result<bool, BioMcpError> {
+    let before = crate::utils::download::bundle_fingerprint(root);
+    sync_gtr_root_inner(root, mode).await?;
+    Ok(before != crate::utils::download::bundle_fingerprint(root))
+}
+
+async fn sync_gtr_root_inner(root: &Path, mode: GtrSyncMode) -> Result<(), BioMcpError> {
     let state = sync_state(root, mode);
     if matches!(state, SyncState::Fresh) {
         return Ok(());

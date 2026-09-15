@@ -150,12 +150,13 @@ impl DdinterClient {
         Ok(Self { index, freshness })
     }
 
-    pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<(), BioMcpError> {
+    pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<bool, BioMcpError> {
         let root = resolve_ddinter_root();
-        if sync_ddinter_root(&root, mode).await? {
+        let changed = sync_ddinter_root(&root, mode).await?;
+        if changed {
             evict_cached_index(&root);
         }
-        Ok(())
+        Ok(changed)
     }
 
     pub(crate) fn interactions(&self, identity: &DdinterIdentity) -> Vec<DdinterInteractionRow> {

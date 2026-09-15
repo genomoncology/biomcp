@@ -238,11 +238,11 @@ impl EmaClient {
 
     pub(crate) async fn ready(mode: EmaSyncMode) -> Result<Self, BioMcpError> {
         let root = resolve_ema_root();
-        sync_ema_root(&root, mode).await?;
+        sync_ema_root_inner(&root, mode).await?;
         Ok(Self { root })
     }
 
-    pub(crate) async fn sync(mode: EmaSyncMode) -> Result<(), BioMcpError> {
+    pub(crate) async fn sync(mode: EmaSyncMode) -> Result<bool, BioMcpError> {
         let root = resolve_ema_root();
         sync_ema_root(&root, mode).await
     }
@@ -824,7 +824,13 @@ fn write_stderr_line(line: &str) -> Result<(), BioMcpError> {
     Ok(())
 }
 
-async fn sync_ema_root(root: &Path, mode: EmaSyncMode) -> Result<(), BioMcpError> {
+async fn sync_ema_root(root: &Path, mode: EmaSyncMode) -> Result<bool, BioMcpError> {
+    let before = crate::utils::download::bundle_fingerprint(root);
+    sync_ema_root_inner(root, mode).await?;
+    Ok(before != crate::utils::download::bundle_fingerprint(root))
+}
+
+async fn sync_ema_root_inner(root: &Path, mode: EmaSyncMode) -> Result<(), BioMcpError> {
     let plan = sync_plan(root, mode);
     if plan.is_empty() {
         return Ok(());
