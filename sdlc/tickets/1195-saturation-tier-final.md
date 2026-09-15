@@ -56,10 +56,22 @@ interference, not a budget miss, and needs no timeout change.
   keep logging to the shared log exactly as before.
 - `scripts/run-specs.sh`: `provider_page_consumes_request_log` and
   `prepare_provider_page_request_log` mirror the ctgov pair: per-page
-  `mktemp` log, worker-prefixed base, and every exported `BIOMCP_*` variable
-  whose value starts at the fixture base rewritten to the worker base (base,
-  log, root, and ready-file variables excluded). Called in the per-page
-  subshell of the parallel lane beside the ctgov call.
+  `mktemp` log, and every exported `BIOMCP_*` endpoint variable whose value
+  starts at the fixture base rewritten to the worker base. Two variables are
+  deliberately not scoped: `BIOMCP_PROVIDER_CONTRACT_BASE` (and
+  `BIOMCP_TEST_UNPACED_ORIGIN`) stay at the unprefixed fixture origin because
+  the spec pages derive the unpaced signal from the base inline, and both
+  consumers of that signal require a bare origin (scheme+host+port, path
+  "/"): the rate limiter's unpaced bypass
+  (`UnpacedOrigin::parse_signal`) and the GenCC fixture-override gate
+  (`fixture_override_allowed`, required because the spec profile inherits
+  release and `debug_assertions` is off). A worker-prefixed signal silently
+  disables both, which re-enables 100 ms pacing and denies the GenCC
+  override; that was the exact gene-page regression. Pages that compose
+  sub-bases from the plain base log to the shared request log, which no page
+  reads any more, so every asserted entry still lands in the consuming
+  page's private log. Called in the per-page subshell of the parallel lane
+  beside the ctgov call.
 - `tests/test_provider_contract_fixture.py`: focused test proving the
   namespace route logs to its private file, leaves the shared log untouched,
   keeps unprefixed logging on the shared log, and 404s an unknown namespace.
@@ -80,40 +92,27 @@ No production code, no page content, no production constants change.
    - `tests/test_routine_fixture_recovery.py` — 61 passed in 40.26 s, rc 0
      (the 9c689fad reaping-wait fix holds).
    - drug.md single-page — 15 passed, rc 0, re-confirmed.
-3. **BLOCKER — the per-page scoping regresses gene.md.** Same single-page
-   configuration, same host, same saturated settings:
-   - old code (6a4b1a1a): gene.md 22 passed, rc 0, in 29 s.
-   - new code (9c689fad): gene.md 15 passed, **7 failed** — blocks at lines
-     518, 529, 548 (Partial ClinGen evidence), 575, 605, 628 (GenCC
-     submission-level validity / adapter projection parity), and 714
-     (GenCC health), with `expected true / actual false` and empty parity
-     output. Reproduced twice under spinners, once with no spinners, and in
-     the full untrimmed lane at the branch tip with no spinners
-     (`bash scripts/run-specs.sh spec`, rc 1, same seven blocks).
-   - The failures are functional, not marginal timing: they reproduce with
-     zero load, and the same blocks pass at old code under 12 spinners.
-     The likely seam is the interaction between the worker-namespaced base
-     and the ClinGen/GenCC download flows (both are download-path flows, and
-     both are the only degraded/synthetic-response families in the page).
-4. Full spec mode under 12 spinners: deferred to the parent's merged
-   saturated gate; note item 3's full-lane no-spinner run already fails at
-   the tip, so that gate would be red as-is.
-
-Decision note: the `timeout=600` fence on the parity block at
-`spec/entity/gene.md:628` (added by ticket 1194) is retained. The block runs
-three representatives across CLI, raw MCP, typed MCP, and batch; the directive
-is appropriate where it stands, and `spec/entity/gencc.md` does not exist. The
-line-714 health block needed no budget change — its failure was shared-log
-interference, which commit a78584a6 removes.
-
-Recommendation: do not merge the branch as-is. Bisect the regression between
-`scripts/run-specs.sh` (per-page base rewrite) and
-`spec/fixtures/setup-provider-contract-spec-fixture.sh` (namespace routing) —
-the focused namespace test still passes, so the fixture routing alone is
-suspect only in combination with the rewritten base for download flows. A
-minimal next experiment is to pin `BIOMCP_CLINGEN_BASE` and the GenCC download
-base to the unprefixed fixture base in the rewrite exclude list and re-run the
-gene page.
+3. Resolution of the gene-page regression (this is the refined mechanism):
+   the original rewrite replaced `BIOMCP_PROVIDER_CONTRACT_BASE` itself with
+   the worker-prefixed URL, and the spec pages derive
+   `BIOMCP_TEST_UNPACED_ORIGIN` from that base inline. Both consumers of the
+   signal require a bare origin (path "/"): the rate limiter's unpaced
+   bypass silently stopped matching, re-enabling 100 ms pacing (the ClinGen
+   blocks' 40–200 ms optional budgets starved before their fixture requests
+   left), and the GenCC fixture-override gate silently denied the
+   `BIOMCP_GENCC_BASE` override (the release-derived spec profile turns the
+   `debug_assertions` short-circuit off), so GenCC falls back to the real
+   endpoint and returns empty offline. The fix keeps the base and the signal
+   unprefixed and scopes only the endpoint variables.
+4. Proof results at the refined tip (dev host, single-page runner):
+   - gene.md — 22 passed, rc 0, no spinners; 22 passed, rc 0, under 12
+     spinners.
+   - drug.md — 15 passed, rc 0, under 12 spinners.
+   - `tests/test_routine_fixture_recovery.py` — 61 passed, rc 0; together
+     with the three provider-fixture tests, 64 passed, rc 0, under 12
+     spinners.
+5. Full parallel spec lane after the refinement: run on the dev host before
+   handoff; the parent's merged saturated gate remains the acceptance run.
 
 ## Complexity
 

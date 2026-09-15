@@ -405,11 +405,23 @@ prepare_provider_page_request_log() {
   namespace="${request_log##*/}"
   export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG="$request_log"
   local worker_base="${fixture_base}/__biomcp_provider_worker/$namespace"
+  # Scope only the provider endpoint variables. BIOMCP_PROVIDER_CONTRACT_BASE
+  # stays the unprefixed fixture origin because the spec pages derive
+  # BIOMCP_TEST_UNPACED_ORIGIN from it inline, and both consumers of that
+  # signal require a bare origin (scheme+host+port, path "/"): the rate
+  # limiter's unpaced bypass (UnpacedOrigin::parse_signal) and the GenCC
+  # fixture-override gate (fixture_override_allowed, required because the
+  # spec profile inherits release and debug_assertions is off). A
+  # worker-prefixed signal silently disables both, which re-enables pacing
+  # and denies the GenCC override. Pages that compose sub-bases from the
+  # plain base log to the shared request log, which no page reads any more,
+  # so every asserted entry still lands in the consuming page's private log.
   local var value
   for var in $(compgen -e | LC_ALL=C sort); do
     case "$var" in
       BIOMCP_PROVIDER_CONTRACT_BASE | BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG | \
-        BIOMCP_PROVIDER_CONTRACT_ROOT | BIOMCP_PROVIDER_CONTRACT_READY_FILE)
+        BIOMCP_PROVIDER_CONTRACT_ROOT | BIOMCP_PROVIDER_CONTRACT_READY_FILE | \
+        BIOMCP_TEST_UNPACED_ORIGIN)
         continue
         ;;
     esac
@@ -418,7 +430,6 @@ prepare_provider_page_request_log() {
       export "$var=${worker_base}${value:${#fixture_base}}"
     fi
   done
-  export BIOMCP_PROVIDER_CONTRACT_BASE="$worker_base"
 }
 
 run_markdown_specs() {
