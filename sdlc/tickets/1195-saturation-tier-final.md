@@ -111,8 +111,10 @@ No production code, no page content, no production constants change.
    - `tests/test_routine_fixture_recovery.py` — 61 passed, rc 0; together
      with the three provider-fixture tests, 64 passed, rc 0, under 12
      spinners.
-5. Full parallel spec lane after the refinement: run on the dev host before
-   handoff; the parent's merged saturated gate remains the acceptance run.
+5. Full parallel routine lane after the refinement on the dev host (all
+   pages, four workers, no spinners): every page green, including gene.md
+   22/22 and drug.md 15/15; zero FAIL lines, python contracts 39 passed. The
+   parent's merged saturated gate remains the acceptance run.
 
 ## Complexity
 
