@@ -87,3 +87,14 @@ Exit-code and envelope probes against a built binary, plus source reads:
 
 - Implemented and self-verified under the acceptance-report contract; parent
   retains the independent review gate.
+
+- Code review: ACCEPT 2026-09-15 with record-only P2s, closed here: (a)
+  ddinter's flag is constant true because its sync republishes the whole
+  eight-file bundle into a fresh staging directory every run — a fingerprint
+  wrapper would read the same; recorded as write-state semantics, and the
+  ticket notes automation should not read ddinter changed:false on success.
+  (b) The error.rs inventory entry now records co-ownership "1142, 1196"
+  (seven lines from 1142's accepted overage, three from this ticket's
+  label). (c) The GENCC legacy label also re-points failing (not just
+  uninitializable) gencc sync errors to source "GenCC" with retry guidance —
+  an improvement, recorded as the fifth output change.

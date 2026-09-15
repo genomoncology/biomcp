@@ -193,7 +193,7 @@
       "baseline_lines": 1132,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1196",
+        "ticket": "1142, 1196",
         "delta": 10,
         "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules) plus the GenCC provider label for the sync initialization error (ticket 1196, +3).",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
