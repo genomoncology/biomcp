@@ -76,11 +76,28 @@ No production code, no page content, no production constants change.
    tests/test_routine_fixture_recovery.py -q` — 64 passed in 12.21 s
    (3 provider-fixture tests including the new namespace test, plus the 61
    runner-lifecycle tests).
-2. Single-page runner under 12 spinners on the gate host: drug.md and gene.md
-   (results appended below).
-3. Full spec mode under 12 spinners: deferred to the parent's merged
-   saturated gate (it runs the whole lane at the merged tip).
-4. The reaping test under 12 spinners (result appended below).
+2. Saturated gate-host results (12 spinners):
+   - `tests/test_routine_fixture_recovery.py` — 61 passed in 40.26 s, rc 0
+     (the 9c689fad reaping-wait fix holds).
+   - drug.md single-page — 15 passed, rc 0, re-confirmed.
+3. **BLOCKER — the per-page scoping regresses gene.md.** Same single-page
+   configuration, same host, same saturated settings:
+   - old code (6a4b1a1a): gene.md 22 passed, rc 0, in 29 s.
+   - new code (9c689fad): gene.md 15 passed, **7 failed** — blocks at lines
+     518, 529, 548 (Partial ClinGen evidence), 575, 605, 628 (GenCC
+     submission-level validity / adapter projection parity), and 714
+     (GenCC health), with `expected true / actual false` and empty parity
+     output. Reproduced twice under spinners, once with no spinners, and in
+     the full untrimmed lane at the branch tip with no spinners
+     (`bash scripts/run-specs.sh spec`, rc 1, same seven blocks).
+   - The failures are functional, not marginal timing: they reproduce with
+     zero load, and the same blocks pass at old code under 12 spinners.
+     The likely seam is the interaction between the worker-namespaced base
+     and the ClinGen/GenCC download flows (both are download-path flows, and
+     both are the only degraded/synthetic-response families in the page).
+4. Full spec mode under 12 spinners: deferred to the parent's merged
+   saturated gate; note item 3's full-lane no-spinner run already fails at
+   the tip, so that gate would be red as-is.
 
 Decision note: the `timeout=600` fence on the parity block at
 `spec/entity/gene.md:628` (added by ticket 1194) is retained. The block runs
@@ -88,6 +105,15 @@ three representatives across CLI, raw MCP, typed MCP, and batch; the directive
 is appropriate where it stands, and `spec/entity/gencc.md` does not exist. The
 line-714 health block needed no budget change — its failure was shared-log
 interference, which commit a78584a6 removes.
+
+Recommendation: do not merge the branch as-is. Bisect the regression between
+`scripts/run-specs.sh` (per-page base rewrite) and
+`spec/fixtures/setup-provider-contract-spec-fixture.sh` (namespace routing) —
+the focused namespace test still passes, so the fixture routing alone is
+suspect only in combination with the rewritten base for download flows. A
+minimal next experiment is to pin `BIOMCP_CLINGEN_BASE` and the GenCC download
+base to the unprefixed fixture base in the rewrite exclude list and re-run the
+gene page.
 
 ## Complexity
 
