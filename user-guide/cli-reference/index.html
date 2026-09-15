@@ -5163,28 +5163,29 @@ an extra provider request merely to decide whether to show it.</p>
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>biomcp cvx sync
 <a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>biomcp gtr sync
 <a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>biomcp who-ivd sync
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>biomcp health [--apis-only] [--api NAME]... [--fail-on-error]
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>biomcp list [entity]
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>biomcp study list
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>biomcp study download [--list] [&lt;study_id&gt;]
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>biomcp study filter --study &lt;id&gt; [--mutated &lt;symbol&gt;] [--amplified &lt;symbol&gt;] [--deleted &lt;symbol&gt;] [--expression-above &lt;gene:threshold&gt;] [--expression-below &lt;gene:threshold&gt;] [--cancer-type &lt;type&gt;]
-<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>biomcp study query --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;mutations|cna|expression|sv&gt;
-<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>biomcp study cohort --study &lt;id&gt; --gene &lt;symbol&gt;
-<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>biomcp study survival --study &lt;id&gt; --gene &lt;symbol&gt; [--endpoint &lt;os|dfs|pfs|dss&gt;]
-<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>biomcp study compare --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;expression|mutations&gt; --target &lt;symbol&gt;
-<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>biomcp study co-occurrence --study &lt;id&gt; --genes &lt;g1,g2,...&gt;
-<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>biomcp skill
-<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>biomcp skill render
-<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>biomcp skill install [--force] [dir]
-<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>biomcp skill status [dir]
-<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>biomcp skill list                 # list embedded worked examples
-<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>biomcp mcp
-<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>biomcp serve
-<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>biomcp mcp-config [--client &lt;client&gt;] [--absolute-path]
-<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080] [--allowed-hosts &lt;hosts&gt; | --unsafe-allow-any-host]
-<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>biomcp update [--check]
-<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>biomcp uninstall
-<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>biomcp version [--verbose]
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>biomcp gencc sync
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>biomcp health [--apis-only] [--api NAME]... [--fail-on-error]
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>biomcp list [entity]
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>biomcp study list
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>biomcp study download [--list] [&lt;study_id&gt;]
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>biomcp study filter --study &lt;id&gt; [--mutated &lt;symbol&gt;] [--amplified &lt;symbol&gt;] [--deleted &lt;symbol&gt;] [--expression-above &lt;gene:threshold&gt;] [--expression-below &lt;gene:threshold&gt;] [--cancer-type &lt;type&gt;]
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>biomcp study query --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;mutations|cna|expression|sv&gt;
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>biomcp study cohort --study &lt;id&gt; --gene &lt;symbol&gt;
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>biomcp study survival --study &lt;id&gt; --gene &lt;symbol&gt; [--endpoint &lt;os|dfs|pfs|dss&gt;]
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>biomcp study compare --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;expression|mutations&gt; --target &lt;symbol&gt;
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>biomcp study co-occurrence --study &lt;id&gt; --genes &lt;g1,g2,...&gt;
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>biomcp skill
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>biomcp skill render
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>biomcp skill install [--force] [dir]
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>biomcp skill status [dir]
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>biomcp skill list                 # list embedded worked examples
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>biomcp mcp
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>biomcp serve
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>biomcp mcp-config [--client &lt;client&gt;] [--absolute-path]
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080] [--allowed-hosts &lt;hosts&gt; | --unsafe-allow-any-host]
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>biomcp update [--check]
+<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>biomcp uninstall
+<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a>biomcp version [--verbose]
 </code></pre></div>
 <p>Worked examples are also addressable directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp skill 01

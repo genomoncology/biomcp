@@ -91,6 +91,7 @@ biomcp who sync
 biomcp cvx sync
 biomcp gtr sync
 biomcp who-ivd sync
+biomcp gencc sync
 biomcp health [--apis-only] [--api NAME]... [--fail-on-error]
 biomcp list [entity]
 biomcp study list
