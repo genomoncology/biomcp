@@ -398,7 +398,15 @@ provider_page_consumes_request_log() {
 }
 
 prepare_provider_page_request_log() {
-  local fixture_root="${BIOMCP_PROVIDER_CONTRACT_ROOT:?provider fixture root is not configured}"
+  # The provider fixture is optional: run_provider_contract_fixture tolerates
+  # an absent setup script (`[[ -x ... ]] || return 0`), and the make-test
+  # lane's parallel-isolation harness stubs the setup with no env file. When
+  # the fixture never configured a root there is no request log to make
+  # private, so the preparation is a clean no-op and the page runs exactly as
+  # it does in the sequential path. A configured root without a base is a
+  # broken fixture and still fails loudly below.
+  [[ -n "${BIOMCP_PROVIDER_CONTRACT_ROOT:-}" ]] || return 0
+  local fixture_root="$BIOMCP_PROVIDER_CONTRACT_ROOT"
   local fixture_base="${BIOMCP_PROVIDER_CONTRACT_BASE:?provider fixture base is not configured}"
   local request_log namespace
   request_log="$(mktemp "$fixture_root/request-log.XXXXXX")"
