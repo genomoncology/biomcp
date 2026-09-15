@@ -115,6 +115,19 @@ No production code, no page content, no production constants change.
    pages, four workers, no spinners): every page green, including gene.md
    22/22 and drug.md 15/15; zero FAIL lines, python contracts 39 passed. The
    parent's merged saturated gate remains the acceptance run.
+6. Post-remediation verification (dev host, b0b102a4):
+   - `uv run --no-sync pytest "tests/surface/test_parallel_isolation_contract.py" -q`
+     — 41 passed, including the previously-failing
+     `test_ctgov_parallel_pages_receive_private_mutable_logs` (the P0
+     confirmation), the new provider isolation test, and the new rewrite-set
+     test.
+   - `uv run --no-sync pytest tests/test_provider_contract_fixture.py -q` —
+     3 passed; `tests/test_routine_fixture_recovery.py -q` — 61 passed.
+   - gene.md single page — 22 passed, rc 0; drug.md single page — 15 passed,
+     rc 0.
+   - `tools/check-quality-ratchet.sh` — exit 0; `tools/check-shell-workflows`
+     — 89 Bash files syntax-checked, 80 with ShellCheck at warning severity,
+     4 workflows; `ruff check` clean on the changed test file.
 
 ## Complexity
 
@@ -136,4 +149,27 @@ No production code, no page content, no production constants change.
 
 ## Review
 
-- Code review: pending (independent review by the parent orchestrator)
+- Independent code review, first pass at e31d4b16: REJECT.
+  - P0: `prepare_provider_page_request_log` aborted on an unset
+    `BIOMCP_PROVIDER_CONTRACT_ROOT` (the `:?` expansion), breaking
+    `tests/surface/test_parallel_isolation_contract.py::
+    test_ctgov_parallel_pages_receive_private_mutable_logs` in the make-test
+    lane: that harness stubs the provider setup with no env file while
+    trial.md consumes both request logs. The spec lane masked it because its
+    fixture always configures the environment first.
+  - P2-1: no focused test pinned the rewrite set (which variables are
+    worker-scoped and which are deliberately kept).
+  - P2-2: a missing export indent at
+    spec/fixtures/setup-provider-contract-spec-fixture.sh:633.
+- Remediation at b0b102a4: the preparation is a clean no-op when the fixture
+  root is unset (a configured root without a base still fails loudly,
+  mirroring `run_provider_contract_fixture`'s tolerance); the harness gains
+  the provider analogue of the CTGov isolation contract — a stub provider
+  setup writing `spec-provider-contract-env` plus the private-log assertion
+  over the four provider pages — and a focused rewrite-set test pinning that
+  endpoint variables are worker-scoped while
+  `BIOMCP_PROVIDER_CONTRACT_BASE`, `BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG`,
+  `BIOMCP_PROVIDER_CONTRACT_READY_FILE`, and `BIOMCP_TEST_UNPACED_ORIGIN`
+  are not rewritten; the indent is fixed. Verification item 6 records the
+  run.
+- Re-review: pending (parent orchestrator).
