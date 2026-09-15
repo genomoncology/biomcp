@@ -98,5 +98,5 @@ None.
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: not required — level 1 test-only fix with a frozen-mechanism ticket record; the reviewer confirmed rubric-correct level 1
+- Code review: ACCEPT 2026-09-15 — diff verified as exactly the two frozen-clock injections plus this ticket; mechanism traced into scripts/verify-docs-publication.py line by line; coverage reduction ruled out; report-only notes on the constant-clock spin risk (unreachable today) and the imprecise 'every other call' sentence
