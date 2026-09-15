@@ -71,12 +71,28 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, parse_qsl, urlparse
 import json
+import re
 import sys
 
 ROOT = Path(sys.argv[1])
 READY = Path(sys.argv[2])
 REQUEST_LOG = Path(sys.argv[3])
 SOURCES = ROOT / "testdata/sources"
+WORKER_NAMESPACE = re.compile(
+    r"^/__biomcp_provider_worker/(request-log\.[A-Za-z0-9]{6,})(/.*)$"
+)
+
+
+def resolve_request(request_target):
+    parsed = urlparse(request_target)
+    match = WORKER_NAMESPACE.fullmatch(parsed.path)
+    if not match:
+        return parsed, request_target, REQUEST_LOG
+    request_log = REQUEST_LOG.parent / match.group(1)
+    if not request_log.is_file():
+        return None
+    canonical = parsed._replace(path=match.group(2))
+    return canonical, canonical.geturl(), request_log
 
 
 def fixture(path):
@@ -280,9 +296,13 @@ def send(handler, status, body, content_type="application/json"):
 
 class Handler(BaseHTTPRequestHandler):
     def do_HEAD(self):
-        parsed = urlparse(self.path)
-        with REQUEST_LOG.open("a", encoding="utf-8") as log:
-            log.write(f"HEAD {self.path}\n")
+        routed = resolve_request(self.path)
+        if routed is None:
+            send(self, 404, b'{"error":"unknown provider worker namespace"}')
+            return
+        parsed, request_target, request_log = routed
+        with request_log.open("a", encoding="utf-8") as log:
+            log.write(f"HEAD {request_target}\n")
         if (
             parsed.path == "/gencc/download/action/submissions-export-csv"
             and parse_qs(parsed.query) == {"format": ["new"]}
@@ -297,15 +317,19 @@ class Handler(BaseHTTPRequestHandler):
         send(self, 404, b'{"error":"fixture route not found"}')
 
     def do_GET(self):
-        parsed = urlparse(self.path)
-        with REQUEST_LOG.open("a", encoding="utf-8") as log:
+        routed = resolve_request(self.path)
+        if routed is None:
+            send(self, 404, b'{"error":"unknown provider worker namespace"}')
+            return
+        parsed, request_target, request_log = routed
+        with request_log.open("a", encoding="utf-8") as log:
             conditional = ""
             if parsed.path == "/gencc/download/action/submissions-export-csv":
                 conditional = (
                     f" If-None-Match={self.headers.get('If-None-Match', '')}"
                     f" If-Modified-Since={self.headers.get('If-Modified-Since', '')}"
                 )
-            log.write(f"GET {self.path}{conditional}\n")
+            log.write(f"GET {request_target}{conditional}\n")
 
         if parsed.path == "/healthz":
             send(self, 200, b'{"status":"ok"}')
@@ -483,11 +507,15 @@ class Handler(BaseHTTPRequestHandler):
         send(self, 404, b'{"error":"fixture route not found"}')
 
     def do_POST(self):
-        parsed = urlparse(self.path)
+        routed = resolve_request(self.path)
+        if routed is None:
+            send(self, 404, b'{"error":"unknown provider worker namespace"}')
+            return
+        parsed, request_target, request_log = routed
         length = int(self.headers.get("Content-Length", "0"))
         body = self.rfile.read(length)
-        with REQUEST_LOG.open("a", encoding="utf-8") as log:
-            log.write(f"POST {self.path} {body.decode('utf-8')}\n")
+        with request_log.open("a", encoding="utf-8") as log:
+            log.write(f"POST {request_target} {body.decode('utf-8')}\n")
         if parsed.path == "/fda-orphan/OOPD_Results.cfm":
             form = parse_qsl(body.decode("utf-8"), keep_blank_values=True)
             expected = [
@@ -602,6 +630,7 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_WHO_IVD_DIR=%q\n' "$who_ivd_dir"
   printf 'export BIOMCP_GTR_DIR=%q\n' "$gtr_dir"
   printf 'export BIOMCP_PROVIDER_CONTRACT_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_PROVIDER_CONTRACT_ROOT=%q\n' "$fixture_root"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_PROVIDER_CONTRACT_READY_FILE=%q\n' "$ready_file"
   printf 'export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG=%q\n' "$request_log"
