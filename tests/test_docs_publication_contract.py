@@ -214,6 +214,11 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
         del timeout
         return Response(request, f"{SHA}\n".encode(), "/wrong.txt")
 
+    def frozen_clock() -> float:
+        # A starved real clock can consume the 0.01s budget before the
+        # security checks run; freezing it keeps the mapping deterministic.
+        return 0.0
+
     with pytest.raises(verifier.VerificationError, match="unexpected path"):
         verifier.verify_publication(
             revision=SHA,
@@ -222,6 +227,7 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
             timeout_seconds=0.01,
             opener=redirected,
             sleep=lambda _: None,
+            monotonic=frozen_clock,
         )
 
     def cross_origin(request, timeout):
@@ -241,6 +247,7 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
             timeout_seconds=0.01,
             opener=cross_origin,
             sleep=lambda _: None,
+            monotonic=frozen_clock,
         )
     assert verifier._origin("HTTPS://BIOMCP.ORG") == verifier._origin(
         "https://biomcp.org:443"
