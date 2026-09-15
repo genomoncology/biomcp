@@ -275,6 +275,9 @@ fn list_batch_and_enrich_pages_exist() {
     let batch = render(Some("batch")).expect("list batch should render");
     assert!(batch.contains("# batch"));
     assert!(batch.contains("batch <entity> <id1,id2,...>"));
+    assert!(batch.contains("(article compact batches accept up to 20)"));
+    assert!(batch.contains("`--mode <compact|detail>`"));
+    assert!(batch.contains("article rendering mode; article batches only"));
     assert!(batch.contains("## When to use this surface"));
     assert_eq!(batch.matches("## When to use this surface").count(), 1);
     assert!(batch.contains("Use batch when you already have a short list of IDs"));

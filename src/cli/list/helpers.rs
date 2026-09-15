@@ -66,10 +66,11 @@ pub(super) fn list_batch() -> String {
 
 ## Command
 
-- `batch <entity> <id1,id2,...>` - parallel `get` operations for up to 10 IDs
+- `batch <entity> <id1,id2,...>` - parallel `get` operations for up to 10 IDs (article compact batches accept up to 20)
 
 ## Options
 
+- `--mode <compact|detail>` - article rendering mode; article batches only (default: detail)
 - `--sections <s1,s2,...>` - request specific sections on each entity; adverse-event batches do not support `--sections`
 - `--source <ctgov|nci>` - trial source when `entity=trial` (default: `ctgov`)
 
