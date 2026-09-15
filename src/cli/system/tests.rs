@@ -653,3 +653,35 @@ fn uninstall_removes_exactly_the_owned_binary_and_receipt() {
         Err(crate::error::BioMcpError::NotInstalled { .. })
     ));
 }
+
+#[test]
+fn sync_json_reports_the_actual_change_flag() {
+    let unchanged =
+        super::dispatch::sync_outcome("ema", "ignored for json output".to_string(), true, false)
+            .expect("sync json should render");
+    let value: serde_json::Value =
+        serde_json::from_str(&unchanged.text).expect("sync json should parse");
+    assert_eq!(value["kind"], "data_sync");
+    assert_eq!(value["source"], "ema");
+    assert_eq!(value["status"], "synchronized");
+    assert_eq!(value["changed"], false);
+
+    let changed =
+        super::dispatch::sync_outcome("ema", "ignored for json output".to_string(), true, true)
+            .expect("sync json should render");
+    let value: serde_json::Value =
+        serde_json::from_str(&changed.text).expect("sync json should parse");
+    assert_eq!(value["changed"], true);
+}
+
+#[test]
+fn sync_text_output_reports_its_message_not_a_change_flag() {
+    let outcome = super::dispatch::sync_outcome(
+        "ema",
+        "EMA data synchronized successfully.\n".to_string(),
+        false,
+        false,
+    )
+    .expect("sync text should render");
+    assert_eq!(outcome.text, "EMA data synchronized successfully.\n");
+}

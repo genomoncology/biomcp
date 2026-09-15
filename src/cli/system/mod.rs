@@ -58,7 +58,12 @@ pub(crate) async fn handle_gencc(
     let changed = match cmd {
         GenCcCommand::Sync => {
             crate::sources::gencc::GenCcClient::new()
-                .map_err(|()| anyhow::anyhow!("GenCC client initialization failed"))?
+                .map_err(|()| crate::error::BioMcpError::SourceUnavailable {
+                    source_name: "GenCC".to_string(),
+                    reason: "GenCC client initialization failed.".to_string(),
+                    suggestion: "Set BIOMCP_GENCC_BASE to an allowed endpoint and retry."
+                        .to_string(),
+                })?
                 .sync()
                 .await?
         }

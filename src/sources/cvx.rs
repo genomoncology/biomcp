@@ -121,11 +121,11 @@ impl CvxClient {
 
     pub(crate) async fn ready(mode: CvxSyncMode) -> Result<Self, BioMcpError> {
         let root = resolve_cvx_root();
-        sync_cvx_root(&root, mode).await?;
+        sync_cvx_root_inner(&root, mode).await?;
         Ok(Self { root })
     }
 
-    pub(crate) async fn sync(mode: CvxSyncMode) -> Result<(), BioMcpError> {
+    pub(crate) async fn sync(mode: CvxSyncMode) -> Result<bool, BioMcpError> {
         let root = resolve_cvx_root();
         sync_cvx_root(&root, mode).await
     }
@@ -773,7 +773,13 @@ fn ensure_csv_content_type(
     Ok(())
 }
 
-async fn sync_cvx_root(root: &Path, mode: CvxSyncMode) -> Result<(), BioMcpError> {
+async fn sync_cvx_root(root: &Path, mode: CvxSyncMode) -> Result<bool, BioMcpError> {
+    let before = crate::utils::download::bundle_fingerprint(root);
+    sync_cvx_root_inner(root, mode).await?;
+    Ok(before != crate::utils::download::bundle_fingerprint(root))
+}
+
+async fn sync_cvx_root_inner(root: &Path, mode: CvxSyncMode) -> Result<(), BioMcpError> {
     let state = sync_state(root, mode);
     if matches!(state, SyncState::Fresh) {
         return Ok(());
