@@ -392,6 +392,35 @@ prepare_ctgov_page_request_log() {
   export BIOMCP_CTGOV_BASE="${fixture_base%/api/v2}/__biomcp_ctgov_worker/$namespace/api/v2"
 }
 
+provider_page_consumes_request_log() {
+  local path="$1"
+  grep -Fq 'BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG' "$path"
+}
+
+prepare_provider_page_request_log() {
+  local fixture_root="${BIOMCP_PROVIDER_CONTRACT_ROOT:?provider fixture root is not configured}"
+  local fixture_base="${BIOMCP_PROVIDER_CONTRACT_BASE:?provider fixture base is not configured}"
+  local request_log namespace
+  request_log="$(mktemp "$fixture_root/request-log.XXXXXX")"
+  namespace="${request_log##*/}"
+  export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG="$request_log"
+  local worker_base="${fixture_base}/__biomcp_provider_worker/$namespace"
+  local var value
+  for var in $(compgen -e | LC_ALL=C sort); do
+    case "$var" in
+      BIOMCP_PROVIDER_CONTRACT_BASE | BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG | \
+        BIOMCP_PROVIDER_CONTRACT_ROOT | BIOMCP_PROVIDER_CONTRACT_READY_FILE)
+        continue
+        ;;
+    esac
+    value="${!var}"
+    if [[ "$value" == "$fixture_base" || "$value" == "$fixture_base"/* ]]; then
+      export "$var=${worker_base}${value:${#fixture_base}}"
+    fi
+  done
+  export BIOMCP_PROVIDER_CONTRACT_BASE="$worker_base"
+}
+
 run_markdown_specs() {
   ((${#MD_PATHS[@]})) || return 0
 
@@ -416,6 +445,9 @@ run_markdown_specs() {
     (
       if ctgov_page_consumes_request_log "$path"; then
         prepare_ctgov_page_request_log
+      fi
+      if provider_page_consumes_request_log "$path"; then
+        prepare_provider_page_request_log
       fi
       8>&- exec mustmatch test "$path" --lang bash "${timeout_args[@]}"
     ) >"$log_path" 2>&1 &
