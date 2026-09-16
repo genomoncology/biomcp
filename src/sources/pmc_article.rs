@@ -618,7 +618,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn recorded_pow_interstitial_is_not_returned_as_bytes() {
         let body = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -657,7 +657,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn declared_binary_html_is_not_returned_as_bytes() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
@@ -690,7 +690,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn proof_of_work_is_retained_when_a_later_linked_target_fails() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
@@ -739,7 +739,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn equal_identity_routes_continue_until_one_returns_bytes() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
@@ -784,7 +784,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn rejected_targets_are_precontact() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
@@ -811,7 +811,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn unsafe_redirect_is_rejected_before_redirect_target_contact() {
         let unsafe_target = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let redirect = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

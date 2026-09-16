@@ -4622,7 +4622,7 @@ mod tests {
         }
     }
 
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn real_car_and_ldh_captures_confirm_tp53_article_identity() {
         const CAR: &[u8] = include_bytes!(

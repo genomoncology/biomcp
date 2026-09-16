@@ -2,7 +2,7 @@ use super::*;
 use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
 use crate::error::BioMcpError;
 
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 #[tokio::test]
 async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
     use crate::entities::article::test_support::{

@@ -1153,7 +1153,7 @@ fn opencitations_row(oci: &str, creation: &str) -> String {
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_confirms_the_edge_the_index_holds() {
     use crate::entities::article::graph::citation_evidence::{
         CitationEvidenceConfirmation, CitationEvidenceStatus,
@@ -1233,7 +1233,7 @@ async fn citation_evidence_confirms_the_edge_the_index_holds() {
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_keeps_the_dead_end_when_no_row_matches() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
@@ -1277,7 +1277,7 @@ async fn citation_evidence_keeps_the_dead_end_when_no_row_matches() {
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_keeps_the_dead_end_when_the_index_fails() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
@@ -1326,7 +1326,7 @@ async fn citation_evidence_keeps_the_dead_end_when_the_index_fails() {
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_fails_closed_on_a_matching_row_with_a_hostile_oci() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
@@ -1362,7 +1362,7 @@ async fn citation_evidence_fails_closed_on_a_matching_row_with_a_hostile_oci() {
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_nulls_a_creation_outside_the_shape_and_never_echoes_provider_text() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
@@ -1433,7 +1433,7 @@ async fn opencitations_case(
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_leaves_the_index_unrequested_with_provider_context() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
@@ -1477,7 +1477,7 @@ async fn citation_evidence_leaves_the_index_unrequested_with_provider_context() 
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_leaves_the_index_unrequested_for_linked_fulltext() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
@@ -1518,7 +1518,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_linked_fulltext() {
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_leaves_the_index_unrequested_for_a_resolved_reference() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
     use crate::transform::article::{JatsCitationExtraction, JatsCitationTargetIds};
@@ -1568,7 +1568,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_a_resolved_reference
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_leaves_the_index_unrequested_for_an_unlinked_marker() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
     use crate::transform::article::{JatsCitationExtraction, JatsCitationTargetIds};
@@ -1622,7 +1622,7 @@ async fn citation_evidence_leaves_the_index_unrequested_for_an_unlinked_marker()
     );
 }
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_doi() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 
@@ -1693,7 +1693,7 @@ async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_d
 }
 
 #[tokio::test]
-#[serial_test::serial(source_env, article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_no_room() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 

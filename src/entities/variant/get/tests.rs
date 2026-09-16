@@ -494,7 +494,7 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
 }
 
 #[tokio::test]
-#[serial_test::serial]
+#[serial_test::serial(source_env)]
 async fn population_request_requires_a_grch38_genomic_coordinate() {
     let mut variant = braf_variant_stub();
     assert_eq!(population_variant_id(&variant), None);

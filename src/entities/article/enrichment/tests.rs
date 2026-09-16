@@ -150,7 +150,7 @@ fn article_base_merge_fills_abstract_when_semantic_scholar_has_none() {
     assert!(row.normalized_abstract.contains("hirschsprung"));
 }
 
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 #[tokio::test]
 async fn empty_enrichment_plan_makes_no_provider_requests() {
     use std::sync::{
