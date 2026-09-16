@@ -105,12 +105,12 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4012,
+      "baseline_lines": 4044,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "0979, 1086",
-        "delta": 318,
-        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, pagination, and traced-test timing contract.",
+        "ticket": "0979, 1086, 1201",
+        "delta": 350,
+        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, pagination, and traced-test timing contract; ticket 1201 adds the inline article-search result and its captured render inputs.",
         "removal_condition": "Extract discovery provider orchestration and its tests when the discovery entity is next decomposed."
       }
     },
@@ -257,23 +257,23 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1557,
+      "baseline_lines": 1559,
       "floor_lines": 1555,
       "authorized_increase": {
-        "ticket": "1158",
-        "delta": 2,
-        "reason": "Project the optional GenCC section through the shared JSON entity surface.",
+        "ticket": "1158, 1201",
+        "delta": 4,
+        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests.",
         "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
       }
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1244,
+      "baseline_lines": 1262,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1144",
-        "delta": 37,
-        "reason": "Pin the graph pagination footer and shared continuation command on the existing article Markdown renderer test without adding a package file beyond the fixed 1300-file boundary.",
+        "ticket": "1144, 1201",
+        "delta": 55,
+        "reason": "Pin the graph pagination footer and shared continuation command on the existing article Markdown renderer test without adding a package file beyond the fixed 1300-file boundary; ticket 1201 adds the header parameter to every article render context literal.",
         "removal_condition": "Extract graph renderer tests when a package-neutral module split can preserve the exact 1300-file source package boundary."
       }
     },

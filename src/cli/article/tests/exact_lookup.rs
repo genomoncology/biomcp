@@ -297,6 +297,8 @@ fn degraded_article_sources_share_safe_direct_retries_across_zero_row_surfaces()
             exact_entity_commands: &[],
             source_status: &statuses,
             retry_page: Some((5, 7)),
+
+            header: None,
         },
     )
     .expect("zero-row Markdown");

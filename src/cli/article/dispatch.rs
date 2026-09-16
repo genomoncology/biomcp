@@ -339,6 +339,8 @@ pub(in crate::cli) async fn handle_search(
                 exact_entity_commands: &exact_entity_commands,
                 source_status: &source_status,
                 retry_page: Some((limit, offset)),
+
+                header: None,
             },
         )?
     };

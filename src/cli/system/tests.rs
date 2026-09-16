@@ -279,6 +279,7 @@ fn discover_top_level_command_parses_query() {
                 limit,
                 offset,
                 full,
+                search: _,
             }),
         ..
     } = cli

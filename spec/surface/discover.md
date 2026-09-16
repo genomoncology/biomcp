@@ -77,6 +77,31 @@ When the recorded OLS4 no-match response contains no concepts, discover must sti
 biomcp search article -k "SCENAR therapy" --type review --limit 5'
 ```
 
+## Inline Article Search Answers the Suggested Command
+
+With `--search`, the no-concept fallback runs the suggested article command and returns its rows inside the same response, so the caller does not need a second call.
+
+```bash
+../../tools/biomcp-ci --json discover "SCENAR therapy" --search | mustmatch like '  "article_search": {
+    "command": "biomcp search article -k \"SCENAR therapy\" --type review --limit 5",
+    "results": [
+      {
+        "date": "2025-01-01",
+        "pmid": "1001",'
+../../tools/biomcp-ci --json discover "SCENAR therapy" --search | mustmatch like '    "returned": 3
+  },
+  "concepts": [],'
+```
+
+The rendered response carries the article body under its own heading, after the note that recommends the command.
+
+```bash
+../../tools/biomcp-ci discover "SCENAR therapy" --search | mustmatch like '## Article search
+Source plan: candidates [Europe PMC, PubMed]; enrichment [PubTator3, Europe PMC]
+Found 3 articles
+|PMID 1001|SCENAR therapy review one|Europe PMC|2025-01-01|hybrid 0.367 + title 2/2|none|'
+```
+
 ## Captured Relational Redirect
 
 The recorded OLS4 response for the MEF2 relational query has no viable single-entity result. Discover must redirect that question to keyword search, preserving the full query instead of surfacing weak collocation noise.

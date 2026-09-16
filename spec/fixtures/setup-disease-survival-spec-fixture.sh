@@ -78,6 +78,34 @@ OLS_PAYLOADS = {
     "SCENAR therapy": "ols4/search_scenar_therapy_20260811.json",
     "genes regulated by MEF2 in the heart": "ols4/search_relational_mef2_20260811.json",
 }
+# The discover --search fallback runs the suggested type-capable search, so the
+# fixture serves the Europe PMC page it reads and an empty PubMed esearch.
+EUROPEPMC_FALLBACK_ROWS = [
+    {
+        "id": "1001",
+        "pmid": "1001",
+        "title": "SCENAR therapy review one",
+        "journalTitle": "Fixture Journal",
+        "firstPublicationDate": "2025-01-01",
+        "pubType": "review",
+    },
+    {
+        "id": "1002",
+        "pmid": "1002",
+        "title": "SCENAR therapy review two",
+        "journalTitle": "Fixture Journal",
+        "firstPublicationDate": "2025-02-01",
+        "pubType": "review",
+    },
+    {
+        "id": "1003",
+        "pmid": "1003",
+        "title": "SCENAR therapy review three",
+        "journalTitle": "Fixture Journal",
+        "firstPublicationDate": "2025-03-01",
+        "pubType": "review",
+    },
+]
 
 
 def send_json(handler, status, payload):
@@ -325,6 +353,16 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/seer/render_region_5.php":
             send_bytes(self, 200, SURVIVAL_PAYLOAD)
             return
+        if parsed.path == "/europepmc/search":
+            page = query.get("page", ["1"])[0]
+            send_json(self, 200, {
+                "hitCount": len(EUROPEPMC_FALLBACK_ROWS),
+                "resultList": {"result": EUROPEPMC_FALLBACK_ROWS if page == "1" else []},
+            })
+            return
+        if parsed.path == "/pubmed/esearch.fcgi":
+            send_json(self, 200, {"esearchresult": {"count": "0", "idlist": []}})
+            return
 
         send_json(self, 404, {"error": "fixture path not found"})
 
@@ -417,6 +455,8 @@ PY
   printf 'export BIOMCP_MONARCH_BASE=%q\n' "$base_url/monarch"
   printf 'export BIOMCP_HPO_BASE=%q\n' "$base_url/hpo"
   printf 'export BIOMCP_OLS4_BASE=%q\n' "$base_url/ols4"
+  printf 'export BIOMCP_EUROPEPMC_BASE=%q\n' "$base_url/europepmc"
+  printf 'export BIOMCP_PUBMED_BASE=%q\n' "$base_url/pubmed"
   printf 'export BIOMCP_MEDLINEPLUS_BASE=%q\n' "$base_url/unused-medlineplus"
   printf 'export UMLS_API_KEY=%q\n' ''
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih"
@@ -424,6 +464,7 @@ PY
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/unused-dgidb"
   printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/unused-opentargets"
   printf 'export BIOMCP_CACHE_MODE=off\n'
+  printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url"
   printf 'export BIOMCP_DISEASE_SURVIVAL_READY_FILE=%q\n' "$ready_file"
   printf 'export BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"

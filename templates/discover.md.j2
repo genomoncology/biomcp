@@ -5,6 +5,10 @@
 {% endfor %}
 
 {% endif -%}
+{% if article_search -%}
+{{ article_search }}
+
+{% endif -%}
 ## Concepts
 {% for group in groups -%}
 ### {{ group.label }}

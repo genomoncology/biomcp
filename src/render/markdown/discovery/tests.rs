@@ -104,6 +104,7 @@ fn ticket_377_discover_renderer_envelope_contracts() {
         continuation_command: None,
         preview_meta: vec![crate::entities::discover::DiscoverConceptPreviewMeta::default()],
         full: false,
+        article_search: None,
     };
 
     let json = crate::render::json::to_discover_json(&result).expect("discover JSON");
@@ -164,6 +165,7 @@ fn render_discover_renders_grouped_concepts_and_plain_language() {
         continuation_command: None,
         preview_meta: vec![crate::entities::discover::DiscoverConceptPreviewMeta::default()],
         full: false,
+        article_search: None,
     };
 
     let markdown = render_discover(&result).expect("discover markdown");

@@ -1371,6 +1371,7 @@ mod tests {
             continuation_command: None,
             preview_meta: vec![crate::entities::discover::DiscoverConceptPreviewMeta::default()],
             full: false,
+            article_search: None,
         })
         .expect("discover json");
 
@@ -1421,6 +1422,7 @@ mod tests {
             continuation_command: None,
             preview_meta: Vec::new(),
             full: false,
+            article_search: None,
         })
         .expect("discover json");
 

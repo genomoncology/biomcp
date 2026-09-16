@@ -571,7 +571,9 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
             exact_entity_commands: &[],
             source_status: &[],
             retry_page: None,
-        },
+
+        header: None,
+},
     )
     .expect("markdown should render");
     assert!(markdown.contains(
@@ -640,6 +642,8 @@ fn ticket_377_article_renderer_envelope_contracts_markdown_status() {
             exact_entity_commands: &[],
             source_status: &source_status,
             retry_page: Some((10, 0)),
+
+            header: None,
         },
     )
     .expect("article_search_markdown_with_footer_and_context");
@@ -698,6 +702,8 @@ fn article_search_markdown_renders_non_semantic_source_status() {
             exact_entity_commands: &[],
             source_status: &source_status,
             retry_page: Some((10, 0)),
+
+            header: None,
         },
     )
     .expect("article_search_markdown_with_footer_and_context");
@@ -960,6 +966,8 @@ fn article_search_markdown_prepends_debug_plan_block() {
             exact_entity_commands: &[],
             source_status: &[],
             retry_page: None,
+
+            header: None,
         },
     )
     .expect("markdown should render");
@@ -1012,6 +1020,8 @@ fn article_search_markdown_renders_related_block_before_pagination() {
             exact_entity_commands: &exact_commands,
             source_status: &[],
             retry_page: None,
+
+            header: None,
         },
     )
     .expect("markdown should render");
@@ -1072,6 +1082,8 @@ fn article_search_markdown_includes_cross_entity_discover_hint_for_short_keyword
             exact_entity_commands: &[],
             source_status: &[],
             retry_page: None,
+
+            header: None,
         },
     )
     .expect("markdown should render");
@@ -1131,6 +1143,8 @@ fn article_search_markdown_renders_each_typed_identifier() {
             exact_entity_commands: &[],
             source_status: &[],
             retry_page: None,
+
+            header: None,
         },
     )
     .expect("typed identifier markdown");
@@ -1167,6 +1181,8 @@ fn article_search_markdown_renders_date_sort_warning() {
             exact_entity_commands: &[],
             source_status: &[],
             retry_page: None,
+
+            header: None,
         },
     )
     .expect("date warning markdown");
@@ -1236,6 +1252,8 @@ fn article_search_markdown_omits_index_footer_when_no_rows_have_it() {
             exact_entity_commands: &[],
             source_status: &[],
             retry_page: None,
+
+            header: None,
         },
     )
     .expect("markdown should render");

@@ -141,6 +141,8 @@ pub(super) async fn handle_related_command(
                         exact_entity_commands: &[],
                         source_status: &[],
                         retry_page: None,
+
+                        header: None,
                     },
                 )?
             }

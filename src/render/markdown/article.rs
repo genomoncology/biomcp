@@ -27,6 +27,8 @@ pub struct ArticleSearchRenderContext<'a> {
     pub exact_entity_commands: &'a [String],
     pub source_status: &'a [crate::entities::article::ArticleSourceStatus],
     pub retry_page: Option<(usize, usize)>,
+    /// Header line; defaults to `# Articles: <query>`.
+    pub header: Option<&'a str>,
 }
 
 #[derive(serde::Serialize)]
@@ -674,9 +676,13 @@ pub fn article_search_markdown_with_footer_and_context(
             .join(", ")
     };
 
+    let header = context
+        .header
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("# Articles: {query}"));
     let tmpl = env()?.get_template("article_search.md.j2")?;
     let body = tmpl.render(context! {
-        query => query,
+        header => header,
         candidate_sources => source_names(&source_plan.candidate_sources),
         enrichment_sources => source_names(&source_plan.enrichment_sources),
         count => results.len(),

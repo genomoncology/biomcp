@@ -81,6 +81,35 @@ pub(crate) struct DiscoverResult {
     pub preview_meta: Vec<DiscoverConceptPreviewMeta>,
     #[serde(skip)]
     pub full: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub article_search: Option<DiscoverArticleSearch>,
+}
+
+/// The article keyword search `discover --search` runs when no concepts resolve.
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct DiscoverArticleSearch {
+    pub command: String,
+    pub returned: usize,
+    pub results: Vec<crate::entities::article::ArticleSearchResult>,
+    #[serde(skip)]
+    pub render: DiscoverArticleSearchRender,
+}
+
+/// Render inputs for the discover article-search section. The command captures
+/// them because the article renderer needs the same context the
+/// `search article` command builds.
+#[derive(Debug, Clone)]
+pub(crate) struct DiscoverArticleSearchRender {
+    pub query_summary: String,
+    pub pagination_footer: String,
+    pub filters: crate::entities::article::ArticleSearchFilters,
+    pub source_filter: crate::entities::article::ArticleSourceFilter,
+    pub semantic_scholar_enabled: bool,
+    pub warning: Option<String>,
+    pub note: Option<String>,
+    pub source_status: Vec<crate::entities::article::ArticleSourceStatus>,
+    pub limit: usize,
+    pub offset: usize,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1046,6 +1075,7 @@ pub(crate) fn build_result(
         continuation_command: None,
         preview_meta: Vec::new(),
         full: false,
+        article_search: None,
     }
 }
 
@@ -2452,7 +2482,7 @@ fn next_command<'a>(args: impl IntoIterator<Item = &'a str>) -> String {
         .render_shell()
 }
 
-fn review_article_fallback_command(query: &str) -> String {
+pub(crate) fn review_article_fallback_command(query: &str) -> String {
     next_command([
         "biomcp",
         "search",
@@ -3922,6 +3952,7 @@ mod tests {
             continuation_command: None,
             preview_meta: Vec::new(),
             full: false,
+            article_search: None,
         };
 
         assert!(matches!(
@@ -3950,6 +3981,7 @@ mod tests {
             continuation_command: None,
             preview_meta: Vec::new(),
             full: false,
+            article_search: None,
         }
     }
 
