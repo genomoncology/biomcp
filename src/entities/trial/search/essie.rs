@@ -7,6 +7,11 @@ use crate::error::BioMcpError;
 
 use super::super::TrialSearchFilters;
 
+/// Escape the ESSIE string metacharacters.
+///
+/// The ASCII hyphen stays literal: ClinicalTrials.gov's ESSIE parser treats
+/// an escaped hyphen as a different, far narrower phrase, and unescaped
+/// hyphens are safe in every measured position.
 pub(super) fn essie_escape(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     for ch in value.chars() {
@@ -14,7 +19,6 @@ pub(super) fn essie_escape(value: &str) -> String {
             ch,
             '\\' | '\"'
                 | '+'
-                | '-'
                 | '!'
                 | '('
                 | ')'
@@ -247,10 +251,36 @@ mod tests {
     }
 
     #[test]
+    fn essie_escape_pins_the_escape_set_and_leaves_hyphens_literal() {
+        for (input, expected) in [
+            ("-", "-"),
+            ("anti-PD-1", "anti-PD-1"),
+            ("PD-L1", "PD-L1"),
+            ("3L+", "3L\\+"),
+            ("split", "split"),
+            ("back\\slash", "back\\\\slash"),
+            ("say \"quoted\"", "say \\\"quoted\\\""),
+            ("excited!", "excited\\!"),
+            ("(parens)", "\\(parens\\)"),
+            ("{braces}", "\\{braces\\}"),
+            ("[brackets]", "\\[brackets\\]"),
+            ("caret^", "caret\\^"),
+            ("tilde~", "tilde\\~"),
+            ("star*", "star\\*"),
+            ("question?", "question\\?"),
+            ("colon:", "colon\\:"),
+            ("slash/", "slash\\/"),
+            ("pipe|", "pipe\\|"),
+        ] {
+            assert_eq!(essie_escape(input), expected, "essie_escape({input:?})");
+        }
+    }
+
+    #[test]
     fn essie_escape_boolean_expression_preserves_or_operators() {
         assert_eq!(
-            essie_escape_boolean_expression("dMMR OR MSI-H"),
-            "\"dMMR\" OR \"MSI\\-H\""
+            essie_escape_boolean_expression("dMMR OR PD-1"),
+            "\"dMMR\" OR \"PD-1\""
         );
     }
 
@@ -258,7 +288,7 @@ mod tests {
     fn essie_escape_boolean_expression_handles_leading_not() {
         assert_eq!(
             essie_escape_boolean_expression("NOT MSI-H"),
-            "NOT \"MSI\\-H\""
+            "NOT \"MSI-H\""
         );
     }
 
@@ -266,7 +296,7 @@ mod tests {
     fn essie_escape_boolean_expression_handles_and_not() {
         assert_eq!(
             essie_escape_boolean_expression("dMMR AND NOT MSI-H"),
-            "\"dMMR\" AND NOT \"MSI\\-H\""
+            "\"dMMR\" AND NOT \"MSI-H\""
         );
     }
 

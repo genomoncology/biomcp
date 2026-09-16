@@ -528,8 +528,11 @@ fn finish_ctgov_single_page(
                 .then(|| offset.saturating_add(state.rows.len()))
         })
     };
+    let upstream_total = (!context.eligibility_keywords.is_empty())
+        .then_some(state.total)
+        .flatten();
 
-    SearchPage::cursor(state.rows, returned_total, state.page_token)
+    SearchPage::cursor_with_upstream(state.rows, returned_total, state.page_token, upstream_total)
 }
 
 async fn search_page_with_single_ctgov_intervention(

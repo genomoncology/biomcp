@@ -569,7 +569,7 @@ fn zero_result_trial_next_commands_offer_filtered_broadening() {
         ..Default::default()
     };
 
-    let commands = super::zero_result::zero_result_trial_next_commands(&filters);
+    let commands = super::zero_result::zero_result_trial_next_commands(&filters, None);
 
     assert!(
         commands
@@ -595,6 +595,42 @@ fn zero_result_trial_next_commands_offer_filtered_broadening() {
         commands
             .iter()
             .any(|command| command == "biomcp list trial")
+    );
+}
+
+#[test]
+fn verification_emptied_zero_adds_the_criteria_relaxation_command() {
+    let filters = crate::entities::trial::TrialSearchFilters {
+        criteria: Some("verification-emptied-fixture".to_string()),
+        ..Default::default()
+    };
+
+    let plain = super::zero_result::zero_result_trial_next_commands(&filters, None);
+    assert!(
+        !plain.iter().any(|command| command.contains("--mutation")),
+        "a provider-empty zero must not suggest the criteria relaxation: {plain:?}"
+    );
+
+    let verification_emptied =
+        super::zero_result::zero_result_trial_next_commands(&filters, Some(2));
+    assert!(
+        verification_emptied
+            .iter()
+            .any(|command| command == "biomcp search trial --mutation verification-emptied-fixture"),
+        "the verification-emptied zero should relax criteria into mutation: {verification_emptied:?}"
+    );
+    assert!(
+        verification_emptied
+            .iter()
+            .any(|command| command == "biomcp list trial")
+    );
+}
+
+#[test]
+fn verification_emptied_hint_names_the_upstream_count() {
+    assert_eq!(
+        super::zero_result::verification_emptied_trial_hint(2),
+        "ClinicalTrials.gov matched 2 trial(s) on this eligibility text, but registry eligibility verification removed all of them (the term appears only in exclusion criteria or outside the inclusion section). Try a shorter phrase or `--mutation` for broader field coverage."
     );
 }
 

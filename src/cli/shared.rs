@@ -550,6 +550,8 @@ pub(super) struct SearchJsonMeta {
     pub(super) workflow_playbook: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) section_sources: Vec<crate::render::provenance::SectionSource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) upstream_total: Option<usize>,
 }
 
 impl SearchJsonMeta {
@@ -609,6 +611,7 @@ pub(super) fn search_meta_with_section_sources(
         workflow_rationale: None,
         workflow_playbook: None,
         section_sources: Vec::new(),
+        upstream_total: None,
     });
     (!meta.next_commands.is_empty() || !section_sources.is_empty())
         .then(|| meta.with_section_sources(section_sources))
@@ -645,6 +648,7 @@ pub(super) fn search_meta_with_workflow(
             workflow_rationale,
             workflow_playbook,
             section_sources: Vec::new(),
+            upstream_total: None,
         },
     )
 }
@@ -669,6 +673,36 @@ pub(super) fn search_json_with_meta_and_suggestions<T: serde::Serialize>(
         count,
         results,
         _meta: search_meta_with_suggestions(next_commands, suggestions),
+    })
+    .map_err(Into::into)
+}
+
+/// Carry the provider total alongside a verification-emptied zero page.
+pub(super) fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
+    results: Vec<T>,
+    pagination: PaginationMeta,
+    next_commands: Vec<String>,
+    upstream_total: Option<usize>,
+) -> anyhow::Result<String> {
+    let count = results.len();
+    let mut meta = search_meta_with_suggestions(next_commands, None);
+    if let Some(upstream_total) = upstream_total {
+        let meta = meta.get_or_insert_with(|| SearchJsonMeta {
+            next_commands: Vec::new(),
+            suggestions: None,
+            workflow: None,
+            workflow_rationale: None,
+            workflow_playbook: None,
+            section_sources: Vec::new(),
+            upstream_total: None,
+        });
+        meta.upstream_total = Some(upstream_total);
+    }
+    crate::render::json::to_pretty(&SearchJsonResponseWithMeta {
+        pagination,
+        count,
+        results,
+        _meta: meta,
     })
     .map_err(Into::into)
 }

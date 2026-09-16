@@ -185,13 +185,27 @@ fn ctgov_query_term_broadens_mutation_across_discovery_fields() {
         .expect("query term should build")
         .expect("query term should not be empty");
     assert!(query.contains(
-        "(AREA[EligibilityCriteria](\"dMMR\" OR \"MSI\\-H\") OR \
-AREA[BriefTitle](\"dMMR\" OR \"MSI\\-H\") OR \
-AREA[OfficialTitle](\"dMMR\" OR \"MSI\\-H\") OR \
-AREA[BriefSummary](\"dMMR\" OR \"MSI\\-H\") OR \
-AREA[Keyword](\"dMMR\" OR \"MSI\\-H\"))"
+        "(AREA[EligibilityCriteria](\"dMMR\" OR \"MSI-H\") OR \
+AREA[BriefTitle](\"dMMR\" OR \"MSI-H\") OR \
+AREA[OfficialTitle](\"dMMR\" OR \"MSI-H\") OR \
+AREA[BriefSummary](\"dMMR\" OR \"MSI-H\") OR \
+AREA[Keyword](\"dMMR\" OR \"MSI-H\"))"
     ));
     assert!(query.contains("AREA[EligibilityCriteria](\"mismatch repair deficient\")"));
+}
+
+#[test]
+fn ctgov_query_term_preserves_hyphenated_eligibility_phrases() {
+    let filters = TrialSearchFilters {
+        criteria: Some("anti-PD-1 therapy".into()),
+        ..Default::default()
+    };
+
+    let query = ctgov_query_term(&filters, None)
+        .expect("query term should build")
+        .expect("query term should not be empty");
+
+    assert_eq!(query, "AREA[EligibilityCriteria](\"anti-PD-1 therapy\")");
 }
 
 #[test]
@@ -342,7 +356,8 @@ fn build_ctgov_search_params_quotes_interventions_as_single_essie_literals() {
         ("alpha,beta", "\"alpha,beta\""),
         ("say \"name\"", "\"say \\\"name\\\"\""),
         (r"path\name", r#""path\\name""#),
-        ("A+B-C:D/E", "\"A\\+B\\-C\\:D\\/E\""),
+        ("A+B-C:D/E", "\"A\\+B-C\\:D\\/E\""),
+        ("anti-PD-1", "\"anti-PD-1\""),
         ("AND OR NOT", "\"AND OR NOT\""),
     ] {
         let params =
@@ -584,6 +599,52 @@ fn age_filter_total_returns_native_total_when_exhausted() {
 
         assert_eq!(page.total, Some(20));
     }
+}
+
+#[test]
+fn verification_emptied_zero_reports_the_provider_total() {
+    let filters = TrialSearchFilters {
+        criteria: Some("anti-PD-1 therapy".into()),
+        ..Default::default()
+    };
+    let (context, worker) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, true);
+    apply_ctgov_single_page(
+        &mut state,
+        &context,
+        &worker,
+        5,
+        filtered_page(Vec::new(), None, Some(2)),
+    );
+    let page = finish_ctgov_single_page(state, &context, 5, 0);
+
+    assert!(page.results.is_empty());
+    assert_eq!(page.total, Some(0));
+    assert_eq!(page.upstream_total, Some(2));
+}
+
+#[test]
+fn facility_geo_verification_leaves_the_provider_total_unreported() {
+    let filters = TrialSearchFilters {
+        facility: Some("Rare Disease Center".into()),
+        lat: Some(42.28),
+        lon: Some(-83.74),
+        distance: Some(50),
+        ..Default::default()
+    };
+    let (context, worker) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, true);
+    apply_ctgov_single_page(
+        &mut state,
+        &context,
+        &worker,
+        5,
+        filtered_page(Vec::new(), None, Some(3)),
+    );
+    let page = finish_ctgov_single_page(state, &context, 5, 0);
+
+    assert!(page.results.is_empty());
+    assert_eq!(page.upstream_total, None);
 }
 
 #[test]

@@ -1,5 +1,6 @@
 use super::zero_result::{
-    has_active_trial_filters, zero_result_trial_broadening_hints, zero_result_trial_next_commands,
+    has_active_trial_filters, verification_emptied_trial_hint, zero_result_trial_broadening_hints,
+    zero_result_trial_next_commands,
 };
 use super::{TrialGetArgs, TrialSearchArgs};
 use crate::cli::CommandOutcome;
@@ -246,6 +247,11 @@ pub(in crate::cli) async fn handle_search(
             crate::entities::trial::search_page(&filters, args.limit, args.offset, args.next_page)
                 .await?;
         let results = page.results;
+        let upstream_total = if results.is_empty() {
+            page.upstream_total.filter(|value| *value > 0)
+        } else {
+            None
+        };
         let pagination = super::super::PaginationMeta::cursor(
             args.offset,
             args.limit,
@@ -255,12 +261,17 @@ pub(in crate::cli) async fn handle_search(
         );
         if json {
             let next_commands = if results.is_empty() && has_active_trial_filters(&filters) {
-                zero_result_trial_next_commands(&filters)
+                zero_result_trial_next_commands(&filters, upstream_total)
             } else {
                 crate::render::markdown::search_next_commands_trial(&results)
             };
-            return super::super::search_json_with_meta(results, pagination, next_commands)
-                .map(CommandOutcome::stdout);
+            return super::super::search_json_with_meta_and_upstream_total(
+                results,
+                pagination,
+                next_commands,
+                upstream_total,
+            )
+            .map(CommandOutcome::stdout);
         }
 
         let footer = if matches!(
@@ -279,7 +290,11 @@ pub(in crate::cli) async fn handle_search(
         );
         let zero_result_broadening_hints =
             if results.is_empty() && has_active_trial_filters(&filters) {
-                zero_result_trial_broadening_hints(&filters)
+                let mut hints = zero_result_trial_broadening_hints(&filters);
+                if let Some(upstream_total) = upstream_total {
+                    hints.insert(0, verification_emptied_trial_hint(upstream_total));
+                }
+                hints
             } else {
                 Vec::new()
             };

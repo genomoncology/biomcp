@@ -33,6 +33,7 @@ pub(crate) struct SearchPage<T> {
     pub results: Vec<T>,
     pub total: Option<usize>,
     pub next_page_token: Option<String>,
+    pub upstream_total: Option<usize>,
 }
 
 impl<T> SearchPage<T> {
@@ -41,6 +42,7 @@ impl<T> SearchPage<T> {
             results,
             total,
             next_page_token: None,
+            upstream_total: None,
         }
     }
 
@@ -53,6 +55,21 @@ impl<T> SearchPage<T> {
             results,
             total,
             next_page_token,
+            upstream_total: None,
+        }
+    }
+
+    pub(crate) fn cursor_with_upstream(
+        results: Vec<T>,
+        total: Option<usize>,
+        next_page_token: Option<String>,
+        upstream_total: Option<usize>,
+    ) -> Self {
+        Self {
+            results,
+            total,
+            next_page_token,
+            upstream_total,
         }
     }
 }
