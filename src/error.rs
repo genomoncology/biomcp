@@ -56,6 +56,7 @@ impl SourceProvider {
     pub const NIH_REPORTER: Self = Self::new("NIH RePORTER");
     pub const OLS4: Self = Self::new("OLS4");
     pub const ONCOKB: Self = Self::new("OncoKB");
+    pub const OPEN_CITATIONS: Self = Self::new("OpenCitations");
     pub const OPENFDA: Self = Self::new("OpenFDA");
     pub const OPEN_TARGETS: Self = Self::new("Open Targets");
     pub const ORCID: Self = Self::new("ORCID");
@@ -124,6 +125,7 @@ impl SourceProvider {
         Self::NIH_REPORTER,
         Self::OLS4,
         Self::ONCOKB,
+        Self::OPEN_CITATIONS,
         Self::OPENFDA,
         Self::OPEN_TARGETS,
         Self::ORCID,
@@ -203,6 +205,7 @@ impl SourceProvider {
             "nih_reporter" | "NIH RePORTER" => Self::NIH_REPORTER,
             "ols4" | "OLS4" => Self::OLS4,
             "oncokb" | "OncoKB" => Self::ONCOKB,
+            "opencitations" | "OpenCitations" => Self::OPEN_CITATIONS,
             "openfda" | "OpenFDA" => Self::OPENFDA,
             "opentargets" | "Open Targets" => Self::OPEN_TARGETS,
             "orcid" | "ORCID" => Self::ORCID,

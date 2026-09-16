@@ -40,6 +40,7 @@ fn citation_evidence_markdown_pins_the_unresolved_and_unlinked_states() {
                     "https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTextXML"
                 ),
             }),
+            confirmation: None,
             _meta: CitationEvidenceMeta {
                 source_status: vec![],
                 evidence_urls: vec![],

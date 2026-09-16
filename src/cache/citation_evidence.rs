@@ -72,12 +72,13 @@ fn record_path(cache_root: &Path, citing_pid: &str, cited_pid: &str) -> PathBuf 
 
 /// The statuses that carry usable evidence. A failure status is never cached:
 /// it usually means transient provider unavailability, and pinning one for
-/// the TTL would present a stale failure as current. Ticket 1200's
-/// confirmed-edge state joins this set when it lands.
+/// the TTL would present a stale failure as current.
 const fn is_evidence_status(status: CitationEvidenceStatus) -> bool {
     matches!(
         status,
-        CitationEvidenceStatus::ContextFromProvider | CitationEvidenceStatus::ContextFromFulltext
+        CitationEvidenceStatus::ContextFromProvider
+            | CitationEvidenceStatus::ContextFromFulltext
+            | CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
     )
 }
 

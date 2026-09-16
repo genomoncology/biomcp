@@ -304,6 +304,7 @@ pub(crate) mod nci_cts;
 pub(crate) mod nih_reporter;
 pub(crate) mod ols4;
 pub(crate) mod oncokb;
+pub(crate) mod opencitations;
 pub(crate) mod openfda;
 pub(crate) mod opentargets;
 pub(crate) mod orcid;

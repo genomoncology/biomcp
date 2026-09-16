@@ -996,3 +996,737 @@ async fn citation_evidence_returns_the_bounded_error_when_the_bridge_stalls() {
     assert_eq!(requests.matches("/references").count(), 1, "{requests}");
     assert!(!requests.to_lowercase().contains("fulltext"), "{requests}");
 }
+
+// Ticket 1200: the OpenCitations confirmation phase.
+//
+// These tests point every provider base at a loopback fixture, including
+// `BIOMCP_TEST_UNPACED_ORIGIN`, which the article asset resolver reads when it
+// selects a PMC origin. They therefore hold both serial keys, so neither the
+// citation nor the article-resolver environment group can run beside them.
+
+const OPEN_CITING_PID: &str = "0a1b0c1d0e1f0a1b0c1d0e1f0a1b0c1d0e1f0a1b";
+const OPEN_CITED_PID: &str = "1b2c1d0e1f0a1b2c1d0e1f0a1b2c1d0e1f0a1b2c";
+const OPEN_CITING_PMID: &str = "41990001";
+const OPEN_CITING_DOI: &str = "10.1000/citing-opencitations";
+const OPEN_CITED_DOI: &str = "10.1000/cited-opencitations";
+const OPEN_CITING_PMCID: &str = "PMC4199001";
+
+#[derive(Clone)]
+enum OpenCitationsReply {
+    /// A 200 array body.
+    Rows(String),
+    /// A non-200 status with a body.
+    Status(&'static str, String),
+}
+
+#[derive(Clone)]
+enum JatsReply {
+    /// A 404 on the full-text route.
+    Absent,
+    /// A 200 full-text document.
+    Document(&'static str),
+    /// A 404 that blocks the shared test runtime past a shrunk deadline.
+    Delayed(std::time::Duration),
+}
+
+/// Points every provider the confirmation phase can reach at the loopback
+/// fixture, so no confirmation-phase test can touch a live provider.
+fn point_providers_at(env: &mut TestEnv, fixture: &TestHttpFixture) {
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_OPENCITATIONS_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("BIOMCP_NCBI_IDCONV_BASE", &fixture.base);
+}
+
+/// A fixture for the confirmation phase: seeds carry the DOIs the phase needs,
+/// the references page is contextless, the full-text route follows the
+/// configured reply, and the OpenCitations route answers the configured body.
+async fn spawn_opencitations_fixture(
+    pages: Vec<GraphPage>,
+    opencitations: OpenCitationsReply,
+    jats: JatsReply,
+) -> (TestHttpFixture, Arc<Mutex<Vec<String>>>) {
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let logged = requests.clone();
+    let pages_arc = Arc::new(Mutex::new(pages));
+    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+        let mut parts = request.splitn(2, ' ');
+        let method = parts.next().unwrap_or_default();
+        let target = parts
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .next()
+            .unwrap_or_default();
+        if method == "POST" {
+            logged.lock().unwrap().push("s2:seed".to_string());
+            let row = if request.contains(OPEN_CITING_PMID) || request.contains(OPEN_CITING_DOI) {
+                format!(
+                    "[{{\"paperId\":\"{OPEN_CITING_PID}\",\"title\":\"Citing\",\
+\"externalIds\":{{\"PubMed\":\"{OPEN_CITING_PMID}\",\"DOI\":\"{OPEN_CITING_DOI}\",\
+\"PubMedCentral\":\"{OPEN_CITING_PMCID}\"}}}}]"
+                )
+            } else {
+                format!(
+                    "[{{\"paperId\":\"{OPEN_CITED_PID}\",\"title\":\"Cited\",\
+\"externalIds\":{{\"DOI\":\"{OPEN_CITED_DOI}\"}}}}]"
+                )
+            };
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                row.as_bytes(),
+            ))
+        } else if target.contains("/references/doi:") {
+            logged
+                .lock()
+                .unwrap()
+                .push(format!("opencitations:{target}"));
+            match &opencitations {
+                OpenCitationsReply::Rows(body) => TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    body.as_bytes(),
+                )),
+                OpenCitationsReply::Status(status, body) => TestHttpReply::Bytes(
+                    test_http_response(status, "application/json", body.as_bytes()),
+                ),
+            }
+        } else if target.contains("/fullTextXML") {
+            logged.lock().unwrap().push("fulltext:xml".to_string());
+            match jats {
+                JatsReply::Absent => TestHttpReply::Bytes(test_http_response(
+                    "404 Not Found",
+                    "text/plain",
+                    b"absent",
+                )),
+                JatsReply::Document(body) => TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/xml",
+                    body.as_bytes(),
+                )),
+                JatsReply::Delayed(delay) => {
+                    std::thread::sleep(delay);
+                    TestHttpReply::Bytes(test_http_response(
+                        "404 Not Found",
+                        "text/plain",
+                        b"absent",
+                    ))
+                }
+            }
+        } else if target.contains("/references") {
+            logged.lock().unwrap().push("s2:graph".to_string());
+            let mut queue = pages_arc.lock().unwrap();
+            let body = if queue.is_empty() {
+                "{\"offset\":0,\"next\":null,\"data\":[]}".to_string()
+            } else {
+                queue.remove(0).body()
+            };
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                body.as_bytes(),
+            ))
+        } else {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                b"{\"offset\":0,\"next\":null,\"data\":[]}",
+            ))
+        }
+    })
+    .await;
+    (fixture, requests)
+}
+
+/// The contextless directed edge both sides of the phase need.
+fn opencitations_page() -> GraphPage {
+    graph_page(0, None, vec![(OPEN_CITED_PID.to_string(), vec![])])
+}
+
+fn opencitations_row(oci: &str, creation: &str) -> String {
+    format!(
+        "[{{\"oci\":\"{oci}\",\"citing\":\"omid:br/1 doi:10.0000/elsewhere\",\
+\"cited\":\"omid:br/2 doi:{OPEN_CITED_DOI} pmid:1\",\"creation\":\"{creation}\",\
+\"timespan\":\"P1Y\",\"journal_sc\":\"no\",\"author_sc\":\"no\"}}]"
+    )
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_confirms_the_edge_the_index_holds() {
+    use crate::entities::article::graph::citation_evidence::{
+        CitationEvidenceConfirmation, CitationEvidenceStatus,
+    };
+
+    let (_env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-confirmed",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
+        JatsReply::Absent,
+    )
+    .await;
+
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        result.status,
+        CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
+    );
+    assert_eq!(
+        result.message,
+        "An open citation index confirmed this directed edge, but no open passage is available."
+    );
+    assert_eq!(result.source.as_deref(), Some("opencitations"));
+    assert!(result.passages.is_empty());
+    assert!(result.fulltext_locator.is_none());
+    assert!(result.provider_contexts.is_empty());
+    assert_eq!(
+        result.confirmation,
+        Some(CitationEvidenceConfirmation {
+            source: "opencitations".to_string(),
+            oci: "061502131318-062102119315".to_string(),
+            citing: format!("doi:{OPEN_CITING_DOI}"),
+            cited: format!("doi:{OPEN_CITED_DOI}"),
+            creation: Some("2012-07-12".to_string()),
+            // The production canonical URL, never the fixture base.
+            evidence_url: format!(
+                "https://api.opencitations.net/index/v2/references/doi:{OPEN_CITING_DOI}"
+            ),
+        })
+    );
+    assert_eq!(
+        result
+            ._meta
+            .source_status
+            .iter()
+            .map(|row| (row.source.as_str(), row.status.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            ("semantic_scholar", "available"),
+            ("europe_pmc_jats", "unavailable"),
+            ("opencitations", "available"),
+        ]
+    );
+    assert_eq!(
+        result
+            ._meta
+            .evidence_urls
+            .iter()
+            .map(|row| row.source.as_str())
+            .collect::<Vec<_>>(),
+        ["semantic_scholar", "semantic_scholar", "opencitations"]
+    );
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_keeps_the_dead_end_when_no_row_matches() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let (_env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-no-match",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows(
+            r#"[{"oci":"1-2","citing":"doi:10.1000/other","cited":"omid:br/2 doi:10.1000/other","creation":"2012-07"}]"#
+                .to_string(),
+        ),
+        JatsReply::Absent,
+    )
+    .await;
+
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.status, CitationEvidenceStatus::FulltextUnavailable);
+    assert_eq!(result.source, None);
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "available"
+    );
+    assert_eq!(
+        result._meta.evidence_urls.last().unwrap().source,
+        "opencitations"
+    );
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_keeps_the_dead_end_when_the_index_fails() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let (_env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-failed",
+        vec![opencitations_page()],
+        OpenCitationsReply::Status("500 Internal Server Error", "upstream detail".to_string()),
+        JatsReply::Absent,
+    )
+    .await;
+
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.status, CitationEvidenceStatus::FulltextUnavailable);
+    assert_eq!(
+        result.message,
+        "Structured open full text was unavailable for the citing paper."
+    );
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "unavailable"
+    );
+    assert!(
+        !result
+            ._meta
+            .evidence_urls
+            .iter()
+            .any(|row| row.source == "opencitations")
+    );
+    // The shared retry policy may repeat a 5xx attempt, so the proof is that
+    // the phase tried and the outcome stayed bounded.
+    let logged = requests.lock().unwrap().join("\n");
+    assert!(logged.contains("opencitations:"), "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_fails_closed_on_a_matching_row_with_a_hostile_oci() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let (_env, _cache, fixture, _requests) = opencitations_case(
+        "opencitations-hostile-oci",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows(opencitations_row("1|2\\\"`$;&", "2012-07-12")),
+        JatsReply::Absent,
+    )
+    .await;
+
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.status, CitationEvidenceStatus::FulltextUnavailable);
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "unavailable"
+    );
+    let serialized = serde_json::to_string(&result).unwrap();
+    assert!(!serialized.contains("1|2"), "{serialized}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_nulls_a_creation_outside_the_shape_and_never_echoes_provider_text() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let (_env, _cache, fixture, _requests) = opencitations_case(
+        "opencitations-hostile-creation",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows(opencitations_row(
+            "061502131318-062102119315",
+            "2012-07-12\\\"|`$;&",
+        )),
+        JatsReply::Absent,
+    )
+    .await;
+
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        result.status,
+        CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
+    );
+    let confirmation = result.confirmation.as_ref().expect("confirmation");
+    assert_eq!(confirmation.creation, None);
+    // The provider's own `citing` text is never echoed: the member is the
+    // command's normalized DOI.
+    assert_eq!(confirmation.citing, format!("doi:{OPEN_CITING_DOI}"));
+    let serialized = serde_json::to_string(&result).unwrap();
+    assert!(!serialized.contains("10.0000/elsewhere"), "{serialized}");
+    assert!(!serialized.contains("2012-07-12\\\""), "{serialized}");
+}
+
+/// The linked JATS document whose reference identity names the cited DOI.
+const OPEN_CITING_JATS: &str = "<article><front><article-meta><article-title>T</article-title>\
+</article-meta></front><body><sec><title>Results</title><p>Anchor \
+<xref ref-type=\"bibr\" rid=\"bib7\">7</xref> text.</p></sec></body>\
+<back><ref-list><ref id=\"bib7\"><element-citation>\
+<pub-id pub-id-type=\"doi\">10.1000/cited-opencitations</pub-id>\
+</element-citation></ref></ref-list></back></article>";
+
+/// The one confirmed edge's fixture, ready for a call.
+async fn opencitations_case(
+    label: &str,
+    pages: Vec<GraphPage>,
+    opencitations: OpenCitationsReply,
+    jats: JatsReply,
+) -> (
+    TestEnv,
+    crate::test_support::TempDirGuard,
+    TestHttpFixture,
+    Arc<Mutex<Vec<String>>>,
+) {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new(label);
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, requests) = spawn_opencitations_fixture(pages, opencitations, jats).await;
+    point_providers_at(&mut env, &fixture);
+    (env, cache, fixture, requests)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_leaves_the_index_unrequested_with_provider_context() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let (_env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-context-state",
+        vec![graph_page(
+            0,
+            None,
+            vec![(OPEN_CITED_PID.to_string(), vec!["Context"])],
+        )],
+        OpenCitationsReply::Rows("[]".to_string()),
+        JatsReply::Absent,
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.status, CitationEvidenceStatus::ContextFromProvider);
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "not_requested"
+    );
+    assert!(
+        !requests
+            .lock()
+            .unwrap()
+            .join("\n")
+            .contains("opencitations:")
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_leaves_the_index_unrequested_for_linked_fulltext() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let (_env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-fulltext-state",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows("[]".to_string()),
+        JatsReply::Document(OPEN_CITING_JATS),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.status, CitationEvidenceStatus::ContextFromFulltext);
+    assert_eq!(result.passages.len(), 1);
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "not_requested"
+    );
+    assert!(
+        !requests
+            .lock()
+            .unwrap()
+            .join("\n")
+            .contains("opencitations:")
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_leaves_the_index_unrequested_for_a_resolved_reference() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+    use crate::transform::article::{JatsCitationExtraction, JatsCitationTargetIds};
+
+    fn unresolved_parse(
+        _xml: &str,
+        _target: &JatsCitationTargetIds,
+    ) -> Result<JatsCitationExtraction, ()> {
+        Ok(JatsCitationExtraction::ReferenceUnresolved)
+    }
+
+    let (_env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-unresolved-state",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows("[]".to_string()),
+        JatsReply::Document("<article><body><p>Fixture</p></body></article>"),
+    )
+    .await;
+    super::citation_evidence::install_jats_citation_seam(Some(unresolved_parse));
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+    super::citation_evidence::install_jats_citation_seam(None);
+
+    assert_eq!(result.status, CitationEvidenceStatus::ReferenceUnresolved);
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "not_requested"
+    );
+    assert!(
+        !requests
+            .lock()
+            .unwrap()
+            .join("\n")
+            .contains("opencitations:")
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_leaves_the_index_unrequested_for_an_unlinked_marker() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+    use crate::transform::article::{JatsCitationExtraction, JatsCitationTargetIds};
+
+    fn unlinked_parse(
+        _xml: &str,
+        _target: &JatsCitationTargetIds,
+    ) -> Result<JatsCitationExtraction, ()> {
+        Ok(JatsCitationExtraction::MarkerUnlinked {
+            ref_id: "bib7".to_string(),
+        })
+    }
+
+    let (_env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-unlinked-state",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows("[]".to_string()),
+        JatsReply::Document("<article><body><p>Fixture</p></body></article>"),
+    )
+    .await;
+    super::citation_evidence::install_jats_citation_seam(Some(unlinked_parse));
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+    super::citation_evidence::install_jats_citation_seam(None);
+
+    assert_eq!(
+        result.status,
+        CitationEvidenceStatus::CitationMarkerUnlinked
+    );
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "not_requested"
+    );
+    assert!(
+        !requests
+            .lock()
+            .unwrap()
+            .join("\n")
+            .contains("opencitations:")
+    );
+}
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_leaves_the_index_unrequested_without_a_normalizable_doi() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new("opencitations-no-doi");
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    // The citing seed carries a PubMed identifier and no DOI, so the phase
+    // cannot address a reference list.
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let logged = requests.clone();
+    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+        let mut parts = request.splitn(2, ' ');
+        let method = parts.next().unwrap_or_default();
+        let target = parts
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .next()
+            .unwrap_or_default();
+        logged.lock().unwrap().push(format!("{method} {target}"));
+        let reply = if method == "POST" {
+            if request.contains(OPEN_CITING_PMID) {
+                format!(
+                    "[{{\"paperId\":\"{OPEN_CITING_PID}\",\"title\":\"Citing\",\
+\"externalIds\":{{\"PubMed\":\"{OPEN_CITING_PMID}\"}}}}]"
+                )
+            } else {
+                format!(
+                    "[{{\"paperId\":\"{OPEN_CITED_PID}\",\"title\":\"Cited\",\
+\"externalIds\":{{\"DOI\":\"{OPEN_CITED_DOI}\"}}}}]"
+                )
+            }
+        } else if target.contains("/references") {
+            opencitations_page().body()
+        } else {
+            "{\"records\":[]}".to_string()
+        };
+        TestHttpReply::Bytes(test_http_response(
+            "200 OK",
+            "application/json",
+            reply.as_bytes(),
+        ))
+    })
+    .await;
+    point_providers_at(&mut env, &fixture);
+
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.status, CitationEvidenceStatus::FulltextUnavailable);
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "not_requested"
+    );
+    let logged = requests.lock().unwrap().join("\n");
+    assert!(!logged.contains("/references/doi:"), "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env, article_resolver_env)]
+async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_no_room() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    let (mut env, _cache, fixture, requests) = opencitations_case(
+        "opencitations-no-room",
+        vec![opencitations_page()],
+        OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
+        JatsReply::Delayed(std::time::Duration::from_millis(2500)),
+    )
+    .await;
+    // The shrunk command budget expires during the blocked full-text attempt,
+    // so the confirmation phase starts with no room and issues no request.
+    env.set("BIOMCP_TEST_CITATION_COMMAND_DEADLINE_MS", "1500");
+
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.status, CitationEvidenceStatus::FulltextUnavailable);
+    assert!(result.confirmation.is_none());
+    assert_eq!(
+        result._meta.source_status.last().unwrap().status,
+        "unavailable"
+    );
+    let logged = requests.lock().unwrap().join("\n");
+    assert!(!logged.contains("opencitations:"), "{logged}");
+}
