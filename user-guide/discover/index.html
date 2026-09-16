@@ -4280,9 +4280,10 @@ matches as if they were a good discover answer.</p>
 <li>Relational or multi-entity questions may redirect to
   <code>biomcp search all --keyword "&lt;query&gt;"</code> through <code>notes</code> and
   <code>_meta.next_commands</code> when only weak single-entity residue remains.</li>
-<li>If no entities resolve, suggests <code>biomcp search article -k "&lt;query&gt;" --type review --limit 5</code>.</li>
+<li>If no entities resolve, suggests <code>biomcp search article -k "&lt;query&gt;" --type review --limit 5</code>.
+  Add <code>--search</code> to run that suggested search inline and return its rows with the response.</li>
 <li>If only low-confidence concepts resolve, adds a broader-results article-search hint.</li>
-<li>Returns suggested BioMCP follow-up commands without auto-executing them.</li>
+<li>Returns suggested BioMCP follow-up commands without auto-executing them unless <code>--search</code> asks for the article fallback.</li>
 </ul>
 <h2 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h2>
 <p>Markdown groups concepts by type, shows notes, and lists suggested commands.</p>
@@ -4299,6 +4300,7 @@ existing discover exceptions.</p>
 <li><code>_meta.section_sources</code></li>
 <li><code>_meta.discovery_sources</code></li>
 <li><code>_meta.evidence_urls</code></li>
+<li><code>article_search</code> (with <code>--search</code>): the suggested command, its returned count, and its result rows.</li>
 </ul>
 <p><code>notes</code> is the user-visible guidance channel in both markdown and JSON.
 <code>_meta.next_commands</code> remains the machine-actionable command list, including the

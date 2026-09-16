@@ -41,8 +41,9 @@ biomcp --json discover diabetes
   `biomcp search all --keyword "<query>"` through `notes` and
   `_meta.next_commands` when only weak single-entity residue remains.
 - If no entities resolve, suggests `biomcp search article -k "<query>" --type review --limit 5`.
+  Add `--search` to run that suggested search inline and return its rows with the response.
 - If only low-confidence concepts resolve, adds a broader-results article-search hint.
-- Returns suggested BioMCP follow-up commands without auto-executing them.
+- Returns suggested BioMCP follow-up commands without auto-executing them unless `--search` asks for the article fallback.
 
 ## Output
 
@@ -62,6 +63,7 @@ JSON preserves the same concepts, keeps the same guidance in `notes`, and adds:
 - `_meta.section_sources`
 - `_meta.discovery_sources`
 - `_meta.evidence_urls`
+- `article_search` (with `--search`): the suggested command, its returned count, and its result rows.
 
 `notes` is the user-visible guidance channel in both markdown and JSON.
 `_meta.next_commands` remains the machine-actionable command list, including the
