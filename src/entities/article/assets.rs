@@ -2345,7 +2345,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn manifest_cache_reuses_fresh_entries_and_discards_expired_or_corrupt_entries() {
         let cache = TempDirGuard::new("article-assets-manifest-cache");
         let mut env = TestEnv::new();
@@ -2477,7 +2477,7 @@ mod tests {
         ));
     }
 
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn manifest_and_bytes_preserve_induced_archive_failure_after_figshare_miss() {
         let fixture = TestHttpFixture::spawn(|request| {
@@ -2542,7 +2542,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     async fn pow_capture_projects_named_pmc_gate_coverage_without_an_asset() {
         let fixture = TestHttpFixture::spawn(|request| {
             let body = include_bytes!(concat!(

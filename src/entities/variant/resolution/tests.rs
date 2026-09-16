@@ -51,7 +51,7 @@ fn coordinate_normalizer_handles_aliases_and_alternate_spellings() {
 }
 
 #[test]
-#[serial_test::serial]
+#[serial_test::serial(source_env)]
 fn default_assembly_precedence_is_explicit_then_environment_then_grch38() {
     unsafe { std::env::remove_var("BIOMCP_DEFAULT_ASSEMBLY") };
     assert_eq!(

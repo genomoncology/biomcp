@@ -39,8 +39,9 @@ internal fixture overrides and release/install variables.
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
 
 Cache runtime precedence is environment, then `cache.toml`, then built-in default.
-The resolved root contains the managed HTTP response cache in `http/` and the
-ten-minute article-search loop-breaker records in `sessions/`. Cache reads,
+The resolved root contains the managed HTTP response cache in `http/`, the
+ten-minute article-search loop-breaker records in `sessions/`, and the
+thirty-day directed citation-evidence sidecar in `citation-evidence/`. Cache reads,
 writes, statistics, and maintenance physically remove entries older than
 `max_age_secs`; opening the session store removes expired sessions.
 Managed directories and files are private to the current OS user. BioMCP
@@ -81,7 +82,7 @@ Known examples include `BIOMCP_CSPEC_FIXTURE_ORIGIN` (an exact loopback origin f
 `BIOMCP_MUTALYZER_BASE_URL`, `BIOMCP_MYCHEM_BASE`, `BIOMCP_MYDISEASE_BASE`,
 `BIOMCP_MYGENE_BASE`, `BIOMCP_MYVARIANT_BASE`, `BIOMCP_NCBI_IDCONV_BASE`,
 `BIOMCP_NCI_CTS_BASE`, `BIOMCP_NIH_REPORTER_BASE`, `BIOMCP_OLS4_BASE`,
-`BIOMCP_ONCOKB_BASE`, `BIOMCP_OPENFDA_BASE`, `BIOMCP_OPENTARGETS_BASE`,
+`BIOMCP_ONCOKB_BASE`, `BIOMCP_OPENCITATIONS_BASE`, `BIOMCP_OPENFDA_BASE`, `BIOMCP_OPENTARGETS_BASE`,
 `BIOMCP_ORCID_BASE`,
 `BIOMCP_PHARMGKB_BASE`, `BIOMCP_PMC_HTML_BASE`, `BIOMCP_PMC_OA_BASE`,
 `BIOMCP_PUBMED_BASE`, `BIOMCP_PUBTATOR_BASE`, `BIOMCP_QUICKGO_BASE`,

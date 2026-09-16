@@ -163,6 +163,8 @@ pub(super) async fn handle(
                 exact_entity_commands: &[],
                 source_status: &[],
                 retry_page: None,
+
+                header: None,
             },
         )?
     };

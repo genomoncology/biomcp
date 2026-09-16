@@ -186,7 +186,7 @@ async fn mychem_fallback_fixture_server() -> (String, Arc<AtomicUsize>, tokio::t
 }
 
 #[tokio::test]
-#[serial_test::serial]
+#[serial_test::serial(source_env)]
 async fn unresolved_mychem_paths_each_request_once_and_preserve_positive_cvx_fallback() {
     let (base, requests, server) = mychem_fallback_fixture_server().await;
     let fixture_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("spec/fixtures");

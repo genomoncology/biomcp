@@ -525,6 +525,8 @@ pub(super) struct SearchJsonMeta {
     pub(super) workflow_playbook: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) section_sources: Vec<crate::render::provenance::SectionSource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) upstream_total: Option<usize>,
 }
 
 impl SearchJsonMeta {
@@ -538,12 +540,12 @@ impl SearchJsonMeta {
 }
 
 #[derive(serde::Serialize)]
-struct SearchJsonResponseWithMeta<T: serde::Serialize> {
-    pagination: PaginationMeta,
-    count: usize,
-    results: Vec<T>,
+pub(super) struct SearchJsonResponseWithMeta<T: serde::Serialize> {
+    pub(super) pagination: PaginationMeta,
+    pub(super) count: usize,
+    pub(super) results: Vec<T>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    _meta: Option<SearchJsonMeta>,
+    pub(super) _meta: Option<SearchJsonMeta>,
 }
 
 // dead-code reason: shared::search_json is exercised by binary dispatch or CLI contracts
@@ -584,6 +586,7 @@ pub(super) fn search_meta_with_section_sources(
         workflow_rationale: None,
         workflow_playbook: None,
         section_sources: Vec::new(),
+        upstream_total: None,
     });
     (!meta.next_commands.is_empty() || !section_sources.is_empty())
         .then(|| meta.with_section_sources(section_sources))
@@ -620,6 +623,7 @@ pub(super) fn search_meta_with_workflow(
             workflow_rationale,
             workflow_playbook,
             section_sources: Vec::new(),
+            upstream_total: None,
         },
     )
 }

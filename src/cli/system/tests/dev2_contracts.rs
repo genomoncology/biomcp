@@ -133,7 +133,7 @@ fn serve_http_rejects_port_zero() {
 }
 
 #[tokio::test(start_paused = true)]
-#[serial_test::serial(article_output_fixture)]
+#[serial_test::serial(source_env)]
 async fn dropping_canonical_compact_command_cancels_provider_retry() {
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
 

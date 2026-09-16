@@ -232,6 +232,7 @@ async fn biodata_ctgov_search_values_receive_one_transport_encoding() {
         "a&b=c",
         "fragment#value",
         "BRAF AND NRAS",
+        "anti-PD-1",
     ] {
         let filters = biodata::ClinicalTrialSearchFilters::new(
             biodata::ClinicalTrialSearchFilterFields {
@@ -262,6 +263,10 @@ async fn biodata_ctgov_search_values_receive_one_transport_encoding() {
         assert!(target.starts_with("/studies?query.intr="));
         assert_eq!(decoded_query_pairs(target), expected);
         assert!(!target.contains("%2525"));
+        if value == "anti-PD-1" {
+            assert!(target.contains("%22anti-PD-1%22"));
+            assert!(!target.contains("%5C-"));
+        }
     }
 }
 

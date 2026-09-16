@@ -101,6 +101,26 @@ changelog is complete.
   shortly after the release depending on queue timing. Nothing requires
   holding the release for them.
 
+## Phase 0 refresh — 2026-09-16 final-system verification at main c716dc88
+
+Full-system pass across both hosts after the eight-ticket backlog
+(PRs #263-#280) plus tickets 1198-1201 and three infrastructure fixes
+(serial-test key alignment, URL policy loopback-origin preference, and the
+disease-survival fixture cleanup):
+
+- `make lint`: exit 0 on the gate host.
+- `make test` Rust lane: 3,611/3,611 passed on the gate host (31 deliberate
+  live-network skips). Python contract lane: all passed. The previously
+  documented host-condition classes (lifecycle contention, GenCC load
+  flakes, gate-host SIGABRT) are resolved by PRs #273-#280 and the serial-key
+  alignment.
+- `make spec`: exit 0 on the gate host, including the new trial hyphen,
+  citation sidecar, OpenCitations, and discover --search blocks.
+- Release binary smoke tested live on the gate host: trial search with
+  hyphenated criteria, trial document retrieval, discover --search,
+  get gene, search article, and cache clear all work.
+- GitHub Actions: green on all five CI jobs for the final commit.
+
 ## Phase 0 refresh — 2026-09-14 final-system verification at main a1326e20
 
 Full-system pass across both hosts after the ten-ticket backlog (PRs #263-#272):

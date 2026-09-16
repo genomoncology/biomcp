@@ -151,6 +151,50 @@ biomcp search trial -c melanoma --facility "University of Michigan" -s recruitin
 biomcp list trial'
 ```
 
+## Hyphenated Eligibility Phrases Reach the Registry Unescaped
+
+ClinicalTrials.gov's ESSIE parser treats an escaped hyphen as a different,
+far narrower phrase, so a hyphenated eligibility term must reach the registry
+as the user typed it.
+
+```bash
+../../tools/biomcp-ci --json search trial --criteria "anti-PD-1 therapy" --limit 5 \
+  | jq -e '.count == 1 and .results[0].nct_id == "NCT70000001"' \
+  | mustmatch 'true'
+printf 'escaped_hyphen_requests=%s\n' "$(grep -c -F '%5C-' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" || true)" | mustmatch like 'escaped_hyphen_requests=0'
+grep -F 'anti-PD-1+therapy' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like 'query.term='
+```
+
+## Verification-Emptied Zeros Name the Upstream Count
+
+When registry eligibility verification removes every provider match, the zero
+does not mean the registry lacks trials. The output names the upstream count
+and offers the criteria-to-mutation relaxation.
+
+```bash
+../../tools/biomcp-ci search trial --criteria "verification-emptied-fixture" --limit 5 | mustmatch like 'No trials found matching the filters.
+Try broadening the filtered search:
+- ClinicalTrials.gov reported 2 matching trial(s), but completed local eligibility verification retained none. Try a shorter phrase or `--mutation` for broader field coverage.'
+```
+
+The JSON carries the same upstream count and the relaxed follow-up command.
+
+```bash
+../../tools/biomcp-ci --json search trial --criteria "verification-emptied-fixture" --limit 5 \
+  | jq -r '.count, ._meta.upstream_total, (._meta.next_commands[]? | select(contains("--mutation")))' \
+  | mustmatch like '0
+2
+biomcp search trial --mutation verification-emptied-fixture'
+```
+
+A provider-empty zero keeps its JSON free of the upstream member.
+
+```bash
+../../tools/biomcp-ci --json search trial -c melanoma --facility "University of Michigan" --mutation "EGFR L858R" --limit 3 \
+  | jq -r '._meta.upstream_total // "absent"' \
+  | mustmatch 'absent'
+```
+
 ## Age-Only Count Transparency
 
 The fast count path cannot fully apply age filtering upstream, so BioMCP should

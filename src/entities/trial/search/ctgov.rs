@@ -114,6 +114,7 @@ struct CtGovSinglePageState {
     unusable_cursor: bool,
     verification_incomplete: bool,
     traversal_capped: bool,
+    candidates_examined: usize,
     remaining_skip: usize,
     started_with_cursor: bool,
 }
@@ -135,6 +136,7 @@ impl CtGovSinglePageState {
             unusable_cursor: false,
             verification_incomplete: false,
             traversal_capped: false,
+            candidates_examined: 0,
             started_with_cursor: next_page
                 .as_deref()
                 .is_some_and(|value| !value.trim().is_empty()),
@@ -280,6 +282,9 @@ fn apply_ctgov_single_page(
         state.provider_total = Some(page.provider_total.clone());
     }
     state.verification_incomplete |= page.verification_incomplete;
+    state.candidates_examined = state
+        .candidates_examined
+        .saturating_add(page.raw_study_count);
 
     if page.raw_study_count == 0 {
         apply_provider_cursor(state, page.provider_cursor);
@@ -354,6 +359,34 @@ fn apply_provider_cursor(
     }
 }
 
+fn eligibility_verification_upstream_total(
+    state: &CtGovSinglePageState,
+    context: &CtGovSearchContext,
+    offset: usize,
+) -> Option<usize> {
+    let eligible = offset == 0
+        && !state.started_with_cursor
+        && !context.eligibility_keywords.is_empty()
+        && context.facility_geo_verification.is_none()
+        && context.age_verification.is_none()
+        && !state.verification_incomplete
+        && !state.traversal_capped
+        && !state.unusable_cursor
+        && state.exhausted
+        && state.candidates_examined > 0
+        && state.retained_total == 0
+        && state.rows.is_empty();
+    if !eligible {
+        return None;
+    }
+    match state.provider_total.as_ref() {
+        Some(biodata::ClinicalTrialProviderTotal::Present(value)) if *value > 0 => {
+            usize::try_from(*value).ok()
+        }
+        _ => None,
+    }
+}
+
 fn finish_ctgov_single_page(
     mut state: CtGovSinglePageState,
     context: &CtGovSearchContext,
@@ -365,6 +398,8 @@ fn finish_ctgov_single_page(
     }
 
     state.rows.truncate(limit);
+    let eligibility_verification_upstream_total =
+        eligibility_verification_upstream_total(&state, context, offset);
     let has_local_filter =
         context.uses_expensive_post_filters || context.age_verification.is_some();
     let total = if state.verification_incomplete {
@@ -418,6 +453,7 @@ fn finish_ctgov_single_page(
         results: state.rows,
         total,
         continuation,
+        eligibility_verification_upstream_total,
     })
 }
 
@@ -729,6 +765,7 @@ async fn search_page_with_ctgov_union(
         results: rows,
         total,
         continuation,
+        eligibility_verification_upstream_total: None,
     })
 }
 

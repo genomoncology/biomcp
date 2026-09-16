@@ -198,6 +198,9 @@ pub struct DiscoverArgs {
     /// Expand bounded synonym and cross-reference previews
     #[arg(long)]
     pub full: bool,
+    /// Run the suggested article keyword search when no concepts resolve
+    #[arg(long)]
+    pub search: bool,
 }
 
 #[derive(Args, Debug)]

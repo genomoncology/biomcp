@@ -14,8 +14,8 @@ from pathlib import Path
 import tomllib
 
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "afb4ff9349f5f47e2a9d23305b0ac0ad1efb647c"
-VERSION = "0.0.27"
+REVISION = "30581f0c4b3b44de9631568d6cf3f1fd1df06839"
+VERSION = "0.0.28"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (

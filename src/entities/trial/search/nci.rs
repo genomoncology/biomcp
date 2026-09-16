@@ -66,6 +66,7 @@ pub(super) async fn search_page_with_nci_clients(
         results,
         total,
         continuation,
+        eligibility_verification_upstream_total: None,
     })
 }
 

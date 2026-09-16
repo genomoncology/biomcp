@@ -384,6 +384,75 @@ CANONICAL_AGE_STUDY = {
     }
 }
 
+HYPHENATED_ELIGIBILITY_STUDY = {
+    "protocolSection": {
+        "identificationModule": {
+            "nctId": "NCT70000001",
+            "briefTitle": "Hyphenated Eligibility Phrase Fixture",
+        },
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
+        "conditionsModule": {"conditions": ["Melanoma"]},
+        "designModule": {
+            "phases": ["PHASE2"],
+            "studyType": "Interventional",
+            "enrollmentInfo": {"count": 12},
+        },
+        "armsInterventionsModule": {"interventions": [], "armGroups": []},
+        "eligibilityModule": {
+            "eligibilityCriteria": "Inclusion Criteria: prior anti-PD-1 therapy is permitted."
+        },
+    }
+}
+
+VERIFICATION_EMPTIED_STUDY_ONE = {
+    "protocolSection": {
+        "identificationModule": {
+            "nctId": "NCT70000002",
+            "briefTitle": "Verification Emptied Fixture One",
+        },
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
+        "conditionsModule": {"conditions": ["Solid Tumor"]},
+        "designModule": {
+            "phases": ["PHASE2"],
+            "studyType": "Interventional",
+            "enrollmentInfo": {"count": 30},
+        },
+        "armsInterventionsModule": {"interventions": [], "armGroups": []},
+        "eligibilityModule": {
+            "eligibilityCriteria": (
+                "Inclusion Criteria:\n- Adults with confirmed disease.\n\n"
+                "Exclusion Criteria:\n- prior verification-emptied-fixture therapy"
+            )
+        },
+    }
+}
+
+VERIFICATION_EMPTIED_STUDY_TWO = {
+    "protocolSection": {
+        "identificationModule": {
+            "nctId": "NCT70000003",
+            "briefTitle": "Verification Emptied Fixture Two",
+        },
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
+        "conditionsModule": {"conditions": ["Solid Tumor"]},
+        "designModule": {
+            "phases": ["PHASE2"],
+            "studyType": "Interventional",
+            "enrollmentInfo": {"count": 44},
+        },
+        "armsInterventionsModule": {"interventions": [], "armGroups": []},
+        "eligibilityModule": {
+            "eligibilityCriteria": (
+                "Inclusion Criteria:\n- Adults with confirmed disease.\n\n"
+                "Exclusion Criteria:\n- prior verification-emptied-fixture therapy"
+            )
+        },
+    }
+}
+
 
 STUDIES = {
     "nct02136914": NCT02136914_STUDY,
@@ -395,6 +464,9 @@ STUDIES = {
     "nct51000002": VENCLEXTA_STUDY,
     "nct51000003": CONTINUATION_REJECTED_STUDY,
     "nct51000004": CONTINUATION_QUALIFYING_STUDY,
+    "nct70000001": HYPHENATED_ELIGIBILITY_STUDY,
+    "nct70000002": VERIFICATION_EMPTIED_STUDY_ONE,
+    "nct70000003": VERIFICATION_EMPTIED_STUDY_TWO,
 }
 CTGOV_SEARCH = {
     "melanoma": source_bytes("ctgov/search_melanoma_recruiting_limit3_20260811.json"),
@@ -486,6 +558,24 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if condition == "Canonical Age Fixture":
                 send_json(self, 200, {"studies": [CANONICAL_AGE_STUDY], "totalCount": 1})
+                return
+            term = " ".join(query.get("query.term", []))
+            if "anti-PD-1 therapy" in term:
+                send_json(
+                    self,
+                    200,
+                    {"studies": [HYPHENATED_ELIGIBILITY_STUDY], "totalCount": 1},
+                )
+                return
+            if "verification-emptied-fixture" in term:
+                send_json(
+                    self,
+                    200,
+                    {
+                        "studies": [VERIFICATION_EMPTIED_STUDY_ONE, VERIFICATION_EMPTIED_STUDY_TWO],
+                        "totalCount": 2,
+                    },
+                )
                 return
             if condition == "non-small cell lung cancer" and "EGFR L858R" in " ".join(query.get("query.term", [])):
                 send_bytes(self, 200, CTGOV_SEARCH["mutation"], "application/json")

@@ -58,6 +58,7 @@ DIRECT_SOURCE_MODULES = {
     "nih_reporter": "NIH Reporter",
     "ols4": "OLS4",
     "oncokb": "OncoKB",
+    "opencitations": "OpenCitations",
     "openfda": "OpenFDA",
     "opentargets": "OpenTargets",
     "pharmgkb": "PharmGKB",

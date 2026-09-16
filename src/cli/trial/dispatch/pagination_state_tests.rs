@@ -1,4 +1,7 @@
-use super::{TrialPaginationMeta, trial_pagination_footer, trial_search_json};
+use super::{
+    TrialPaginationMeta, search_json_with_meta_and_upstream_total, trial_pagination_footer,
+    trial_search_json,
+};
 
 #[test]
 fn json_exposes_exact_total_and_only_the_typed_cursor() {
@@ -20,6 +23,27 @@ fn json_exposes_exact_total_and_only_the_typed_cursor() {
     assert_eq!(value["pagination"]["next_page_token"], "page-two");
     assert!(value["pagination"].get("next_offset").is_none());
     assert_eq!(value["pagination"]["has_more"], true);
+}
+
+#[test]
+fn verification_empty_json_carries_the_trial_specific_upstream_total() {
+    let total = biodata::ClinicalTrialSearchTotal::exact(0).unwrap();
+    let continuation = biodata::ClinicalTrialSearchContinuation::terminal();
+    let pagination = TrialPaginationMeta::new(0, 5, 0, &total, &continuation);
+    let rendered = search_json_with_meta_and_upstream_total(
+        Vec::<serde_json::Value>::new(),
+        pagination,
+        vec!["biomcp search trial --mutation anti-PD-1".into()],
+        Some(2),
+    )
+    .unwrap();
+    let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+    assert_eq!(value["count"], 0);
+    assert_eq!(value["_meta"]["upstream_total"], 2);
+    assert_eq!(
+        value["_meta"]["next_commands"][0],
+        "biomcp search trial --mutation anti-PD-1"
+    );
 }
 
 #[test]

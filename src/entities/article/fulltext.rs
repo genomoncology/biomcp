@@ -1276,7 +1276,7 @@ mod tests {
         assert!(!pdf_body_signature_matches(b"not a pdf"));
     }
 
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn html_and_pdf_attempts_classify_transport_and_conversion_failures() {
         let mut env = TestEnv::new();
@@ -1489,7 +1489,7 @@ mod tests {
         );
     }
 
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn resolver_continues_after_bad_xml_and_later_data_overrides_failures() {
         let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
@@ -1540,7 +1540,7 @@ mod tests {
         assert!(calls.load(std::sync::atomic::Ordering::SeqCst) >= 2);
     }
 
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn abstract_only_xml_continues_to_a_later_body_winner() {
         let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
@@ -1595,7 +1595,7 @@ mod tests {
         );
     }
 
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn stale_v3_partial_artifact_cannot_become_the_current_winner() {
         let fixture = TestHttpFixture::spawn(|_| {
@@ -1633,7 +1633,7 @@ mod tests {
         );
     }
 
-    #[serial_test::serial(article_resolver_env)]
+    #[serial_test::serial(source_env)]
     #[tokio::test]
     async fn earlier_fulltext_winner_overrides_failed_pdf_discovery() {
         let fixture = TestHttpFixture::spawn(|_| {

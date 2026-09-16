@@ -95,7 +95,7 @@ async fn repeated_backend_requests_stop_before_the_fifty_first_future_runs() {
     assert_eq!(calls.load(Ordering::SeqCst), 50);
 }
 
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 #[tokio::test]
 async fn pubtator_search_commits_transformed_page_before_one_terminal_event() {
     const BODY: &[u8] = include_bytes!("../../../../testdata/sources/pubtator/search_braf.json");

@@ -165,7 +165,8 @@ orphan blobs, can optionally evict entries older than a duration or LRU-evict to
 a byte target, and keeps the same structured report under `--json`.
 
 `biomcp cache clear [--yes]` is the destructive sibling for the same managed
-request-state trees. It wipes `<resolved cache_root>/http` and `sessions/`, never
+request-state trees. It wipes `<resolved cache_root>/http`, `sessions/`, and the
+`citation-evidence/` sidecar, never
 touches the sibling `downloads/` directory, prompts for confirmation when stdin is a
 TTY, and refuses non-interactive runs with plain stderr unless you pass
 `--yes`. Successful `--json` output uses `{ "bytes_freed": <number|null>,

@@ -17,7 +17,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-BIODATA_REVISION = "afb4ff9349f5f47e2a9d23305b0ac0ad1efb647c"
+BIODATA_REVISION = "30581f0c4b3b44de9631568d6cf3f1fd1df06839"
 REVIEWED_TOP_LEVEL_DIRECTORIES = {
     ".claude-plugin",
     ".github",
@@ -445,7 +445,7 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     # Main adds one net ORCID source path. Ticket 0134 adds the pinned-artifact
     # checker, bounded MCP client, its contract test, and two private Rust modules.
-    assert len(paths) == 1342
+    assert len(paths) == 1346
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

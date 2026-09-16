@@ -60,11 +60,32 @@ pub(super) fn zero_result_trial_broadening_hints(filters: &TrialSearchFilters) -
     hints
 }
 
-pub(super) fn zero_result_trial_next_commands(filters: &TrialSearchFilters) -> Vec<String> {
+pub(super) fn verification_emptied_trial_hint(upstream_total: usize) -> String {
+    format!(
+        "ClinicalTrials.gov reported {upstream_total} matching trial(s), but completed local eligibility verification retained none. Try a shorter phrase or `--mutation` for broader field coverage."
+    )
+}
+
+pub(super) fn zero_result_trial_next_commands(
+    filters: &TrialSearchFilters,
+    upstream_total: Option<usize>,
+) -> Vec<String> {
     let mut commands = Vec::new();
     if has_text(filters.mutation.as_deref()) {
         let mut relaxed = filters.clone();
         relaxed.mutation = None;
+        commands.push(trial_search_command(&relaxed));
+    }
+    if upstream_total.is_some_and(|total| total > 0)
+        && let Some(criteria) = filters
+            .criteria
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+    {
+        let mut relaxed = filters.clone();
+        relaxed.criteria = None;
+        relaxed.mutation = Some(criteria.to_string());
         commands.push(trial_search_command(&relaxed));
     }
     if filters.distance.is_some() {

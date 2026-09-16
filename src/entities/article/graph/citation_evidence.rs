@@ -6,6 +6,10 @@ use super::{
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
+use crate::sources::opencitations::{
+    OPENCITATIONS_BASE, OpenCitationsClient, OpenCitationsEdge, normalize_doi, valid_creation,
+    valid_oci,
+};
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 
 use crate::transform::article::{
@@ -21,6 +25,7 @@ const CITATION_EVIDENCE_GRAPH_DEADLINE: Duration = Duration::from_secs(10);
 
 const SEMANTIC_SCHOLAR_SOURCE: &str = "semantic_scholar";
 const EUROPE_PMC_JATS_SOURCE: &str = "europe_pmc_jats";
+const OPENCITATIONS_SOURCE: &str = "opencitations";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -28,6 +33,7 @@ pub(crate) enum CitationEvidenceStatus {
     ContextFromProvider,
     ContextFromFulltext,
     FulltextUnavailable,
+    ReferenceConfirmedWithoutPassage,
     ReferenceUnresolved,
     CitationMarkerUnlinked,
 }
@@ -44,6 +50,9 @@ impl CitationEvidenceStatus {
             Self::FulltextUnavailable => {
                 "Structured open full text was unavailable for the citing paper."
             }
+            Self::ReferenceConfirmedWithoutPassage => {
+                "An open citation index confirmed this directed edge, but no open passage is available."
+            }
             Self::ReferenceUnresolved => {
                 "Structured full text was available, but the cited reference could not be resolved exactly."
             }
@@ -56,6 +65,7 @@ impl CitationEvidenceStatus {
     const fn source(self) -> Option<&'static str> {
         match self {
             Self::ContextFromProvider => Some(SEMANTIC_SCHOLAR_SOURCE),
+            Self::ReferenceConfirmedWithoutPassage => Some(OPENCITATIONS_SOURCE),
             Self::ContextFromFulltext
             | Self::ReferenceUnresolved
             | Self::CitationMarkerUnlinked => Some(EUROPE_PMC_JATS_SOURCE),
@@ -105,6 +115,20 @@ pub(crate) struct CitationEvidenceLocator {
     pub evidence_url: String,
 }
 
+/// The confirmed directed edge an open citation index supplies when no open
+/// passage is available. The `citing` and `cited` members are locally
+/// constructed from the command's own normalized DOIs, and the `oci` and
+/// `creation` members are validated provider values, never raw echoes.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct CitationEvidenceConfirmation {
+    pub source: String,
+    pub oci: String,
+    pub citing: String,
+    pub cited: String,
+    pub creation: Option<String>,
+    pub evidence_url: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub(crate) struct ArticleCitationEvidenceResult {
     pub citing: super::ArticleRelatedPaper,
@@ -115,6 +139,7 @@ pub(crate) struct ArticleCitationEvidenceResult {
     pub provider_contexts: Vec<String>,
     pub passages: Vec<CitationEvidencePassage>,
     pub fulltext_locator: Option<CitationEvidenceLocator>,
+    pub confirmation: Option<CitationEvidenceConfirmation>,
     pub _meta: CitationEvidenceMeta,
 }
 
@@ -188,6 +213,14 @@ fn command_deadline_error() -> BioMcpError {
         api: "article-citation-evidence".into(),
         message: "invocation deadline exceeded".into(),
     }
+}
+
+/// The sidecar is best-effort: an unresolvable cache configuration leaves the
+/// command running exactly as before the sidecar existed.
+fn citation_evidence_cache_root() -> Option<std::path::PathBuf> {
+    crate::cache::resolve_cache_config()
+        .ok()
+        .map(|config| config.cache_root)
 }
 
 fn valid_paper_id(value: Option<&str>) -> Option<String> {
@@ -525,6 +558,82 @@ fn semantic_scholar_paper_url(paper_id: &str) -> String {
     format!("https://www.semanticscholar.org/paper/{paper_id}")
 }
 
+/// The citing or cited paper's DOI under the JATS reference-extractor rules.
+fn external_doi(paper: &SemanticScholarPaper) -> Option<String> {
+    paper
+        .external_ids
+        .as_ref()
+        .and_then(|ids| ids.doi.as_deref())
+        .and_then(normalize_doi)
+}
+
+/// The production canonical URL of one reference list. The fixture base is
+/// never part of the output.
+fn opencitations_references_url(citing_doi: &str) -> String {
+    format!("{OPENCITATIONS_BASE}/references/doi:{citing_doi}")
+}
+
+/// The first row whose `cited` token list names the normalized cited DOI.
+/// Only the `doi:` token form matches; `omid:`, `openalex:`, and `pmid:`
+/// tokens are never consulted.
+fn matching_opencitations_edge<'a>(
+    edges: &'a [OpenCitationsEdge],
+    cited_doi: &str,
+) -> Option<&'a OpenCitationsEdge> {
+    let wanted = format!("doi:{cited_doi}");
+    edges.iter().find(|edge| {
+        edge.cited
+            .split_ascii_whitespace()
+            .any(|token| token.eq_ignore_ascii_case(&wanted))
+    })
+}
+
+/// Builds the frozen confirmation member. A matching row with an OCI or a
+/// creation value outside the accepted shapes fails closed, so the caller
+/// keeps the bounded outcome instead of publishing provider text.
+fn confirmation_from_edge(
+    edge: &OpenCitationsEdge,
+    citing_doi: &str,
+    cited_doi: &str,
+    evidence_url: &str,
+) -> Option<CitationEvidenceConfirmation> {
+    if !valid_oci(&edge.oci) {
+        return None;
+    }
+    Some(CitationEvidenceConfirmation {
+        source: OPENCITATIONS_SOURCE.to_string(),
+        oci: edge.oci.clone(),
+        citing: format!("doi:{citing_doi}"),
+        cited: format!("doi:{cited_doi}"),
+        creation: edge
+            .creation
+            .as_deref()
+            .filter(|value| valid_creation(value))
+            .map(str::to_string),
+        evidence_url: evidence_url.to_string(),
+    })
+}
+
+/// The confirmation phase: at most one request, placed after the full-text
+/// attempt and under the remaining absolute command deadline. Every failure
+/// is bounded unavailability, never a command error, and a deadline with no
+/// room left for the request is unavailability too.
+async fn opencitations_edges(
+    citing_doi: &str,
+    deadline: tokio::time::Instant,
+) -> Result<Vec<OpenCitationsEdge>, ()> {
+    if tokio::time::Instant::now() >= deadline {
+        return Err(());
+    }
+    let Ok(client) = OpenCitationsClient::new() else {
+        return Err(());
+    };
+    match tokio::time::timeout_at(deadline, client.references_by_doi(citing_doi)).await {
+        Ok(Ok(edges)) => Ok(edges),
+        Ok(Err(_)) | Err(_) => Err(()),
+    }
+}
+
 pub async fn citation_evidence(
     citing_id: &str,
     cited_id: &str,
@@ -551,6 +660,22 @@ pub async fn citation_evidence(
         .ok_or_else(|| provider_decode_error("citing seed lacks a valid paper ID"))?;
     let cited_pid = valid_paper_id(cited.paper_id.as_deref())
         .ok_or_else(|| provider_decode_error("cited seed lacks a valid paper ID"))?;
+
+    // The read follows seed resolution so every hit is paired with a live
+    // resolution of the caller's spelling. A miss is any absent, expired,
+    // mismatched, or non-evidence record, and the pipeline below runs
+    // unchanged.
+    let cache_root = citation_evidence_cache_root();
+    if let Some(cache_root) = &cache_root
+        && let Some(cached) = crate::cache::read_citation_evidence(
+            cache_root,
+            &citing_pid,
+            &cited_pid,
+            force_fulltext,
+        )
+    {
+        return Ok(cached);
+    }
 
     let contexts = match directed_edge_contexts(&client, &citing_pid, &cited_pid, deadline).await? {
         EvidenceGraphOutcome::Matched(contexts) => Some(contexts),
@@ -632,6 +757,45 @@ pub async fn citation_evidence(
         status = CitationEvidenceStatus::FulltextUnavailable;
     }
 
+    // The confirmation phase runs exactly where the assembled outcome would
+    // otherwise be the bounded full-text dead end, and both papers carry a
+    // normalizable DOI. Every other state already holds evidence or a
+    // resolved reference and is left untouched.
+    let mut opencitations_status = "not_requested";
+    let mut opencitations_url: Option<String> = None;
+    let mut confirmation: Option<CitationEvidenceConfirmation> = None;
+    if status == CitationEvidenceStatus::FulltextUnavailable
+        && let (Some(citing_doi), Some(cited_doi)) =
+            (external_doi(&citing_paper), external_doi(&cited_paper))
+    {
+        match opencitations_edges(&citing_doi, deadline).await {
+            Ok(edges) => {
+                let url = opencitations_references_url(&citing_doi);
+                match matching_opencitations_edge(&edges, &cited_doi) {
+                    Some(edge) => {
+                        match confirmation_from_edge(edge, &citing_doi, &cited_doi, &url) {
+                            Some(value) => {
+                                status = CitationEvidenceStatus::ReferenceConfirmedWithoutPassage;
+                                confirmation = Some(value);
+                                opencitations_status = "available";
+                                opencitations_url = Some(url);
+                            }
+                            // A matching row with a shape-invalid OCI fails closed.
+                            None => opencitations_status = "unavailable",
+                        }
+                    }
+                    // A parsed reference list without the edge keeps the
+                    // bounded dead end and still contributes its URL.
+                    None => {
+                        opencitations_status = "available";
+                        opencitations_url = Some(url);
+                    }
+                }
+            }
+            Err(()) => opencitations_status = "unavailable",
+        }
+    }
+
     let mut evidence_urls = vec![
         CitationEvidenceUrl {
             source: SEMANTIC_SCHOLAR_SOURCE.to_string(),
@@ -648,8 +812,14 @@ pub async fn citation_evidence(
             url: europepmc_jats_url(pmcid),
         });
     }
+    if let Some(url) = opencitations_url {
+        evidence_urls.push(CitationEvidenceUrl {
+            source: OPENCITATIONS_SOURCE.to_string(),
+            url,
+        });
+    }
 
-    Ok(ArticleCitationEvidenceResult {
+    let result = ArticleCitationEvidenceResult {
         citing,
         cited,
         message: status.message().to_string(),
@@ -657,6 +827,7 @@ pub async fn citation_evidence(
         provider_contexts,
         passages,
         fulltext_locator: locator,
+        confirmation,
         status,
         _meta: CitationEvidenceMeta {
             source_status: vec![
@@ -668,9 +839,17 @@ pub async fn citation_evidence(
                     source: EUROPE_PMC_JATS_SOURCE.to_string(),
                     status: europepmc_status.to_string(),
                 },
+                CitationEvidenceSourceStatus {
+                    source: OPENCITATIONS_SOURCE.to_string(),
+                    status: opencitations_status.to_string(),
+                },
             ],
             evidence_urls,
             next_commands: Vec::new(),
         },
-    })
+    };
+    if let Some(cache_root) = &cache_root {
+        crate::cache::write_citation_evidence(cache_root, &citing_pid, &cited_pid, &result);
+    }
+    Ok(result)
 }

@@ -298,6 +298,60 @@ fn trial_numeric_filters_are_validated_before_request_construction() {
 }
 
 #[test]
+fn biodata_plan_owns_ctgov_query_terms() {
+    let filters = TrialSearchFilters {
+        mutation: Some("dMMR OR MSI-H".into()),
+        criteria: Some("anti-PD-1 therapy".into()),
+        phase: Some("1/2".into()),
+        ..Default::default()
+    };
+    let normalized = validate_trial_search(&filters).expect("filters should validate");
+    let context = prepare_ctgov_search_context(&normalized).expect("context should build");
+    let plan = build_ctgov_search_plan(&filters, &context, None, None, None, 10, true)
+        .expect("BioData plan should build");
+    let query = plan
+        .query_pairs()
+        .into_iter()
+        .find(|(name, _)| *name == "query.term")
+        .expect("query term should exist")
+        .1;
+    assert!(query.contains("\"dMMR\" OR \"MSI-H\""));
+    assert!(query.contains("AREA[EligibilityCriteria](\"anti-PD-1 therapy\")"));
+    assert!(query.contains("(AREA[Phase]PHASE1 AND AREA[Phase]PHASE2)"));
+}
+
+#[test]
+fn biodata_plan_quotes_interventions_and_preserves_page_choices() {
+    let filters = TrialSearchFilters {
+        intervention: Some("placeholder".into()),
+        ..Default::default()
+    };
+    let normalized = validate_trial_search(&filters).expect("filters should validate");
+    let context = prepare_ctgov_search_context(&normalized).expect("context should build");
+    for (input, expected) in [
+        ("HRS 4642", "\"HRS 4642\""),
+        ("name [salt]", "\"name \\[salt\\]\""),
+        ("A+B-C:D/E", "\"A\\+B-C\\:D\\/E\""),
+        ("anti-PD-1", "\"anti-PD-1\""),
+    ] {
+        let plan = build_ctgov_search_plan(
+            &filters,
+            &context,
+            None,
+            Some(input),
+            Some("cursor-1".into()),
+            37,
+            true,
+        )
+        .expect("BioData plan should build");
+        assert!(plan.query_pairs().contains(&("query.intr", expected)));
+        assert_eq!(plan.page_token(), Some("cursor-1"));
+        assert_eq!(plan.page_size(), 37);
+        assert!(plan.count_total_requested());
+    }
+}
+
+#[test]
 fn age_filter_uses_native_total_semantics_across_limits() {
     let filters = age_filtered_ctgov_filters();
     let (context, worker) = single_ctgov_context_and_worker(&filters);
@@ -450,6 +504,101 @@ fn age_filter_total_returns_native_total_when_exhausted() {
             assert_eq!(page.total.precision(), "exact");
         }
     }
+}
+
+#[test]
+fn verification_emptied_zero_reports_the_provider_total() {
+    let filters = TrialSearchFilters {
+        criteria: Some("anti-PD-1 therapy".into()),
+        ..Default::default()
+    };
+    let (context, _) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, true);
+    state.provider_total = Some(biodata::ClinicalTrialProviderTotal::Present(2));
+    state.candidates_examined = 2;
+    state.exhausted = true;
+    let page = finish_ctgov_single_page(state, &context, 5, 0).unwrap();
+
+    assert!(page.results.is_empty());
+    assert_eq!(
+        (page.total.value(), page.total.precision()),
+        (Some(0), "exact")
+    );
+    assert_eq!(page.eligibility_verification_upstream_total, Some(2));
+}
+
+#[test]
+fn verification_diagnostic_requires_the_exact_completed_initial_page_state() {
+    let filters = TrialSearchFilters {
+        criteria: Some("anti-PD-1 therapy".into()),
+        ..Default::default()
+    };
+    let (context, _) = single_ctgov_context_and_worker(&filters);
+    let valid = || {
+        let mut state = CtGovSinglePageState::new(None, 0, true);
+        state.provider_total = Some(biodata::ClinicalTrialProviderTotal::Present(2));
+        state.candidates_examined = 2;
+        state.exhausted = true;
+        state
+    };
+
+    let mut cases = Vec::new();
+    let mut zero_total = valid();
+    zero_total.provider_total = Some(biodata::ClinicalTrialProviderTotal::Present(0));
+    cases.push((zero_total, &context, 0));
+    let mut omitted_total = valid();
+    omitted_total.provider_total = Some(biodata::ClinicalTrialProviderTotal::Absent);
+    cases.push((omitted_total, &context, 0));
+    let mut not_requested = valid();
+    not_requested.provider_total = Some(biodata::ClinicalTrialProviderTotal::NotRequested);
+    cases.push((not_requested, &context, 0));
+    let mut failed = valid();
+    failed.verification_incomplete = true;
+    cases.push((failed, &context, 0));
+    let mut capped = valid();
+    capped.traversal_capped = true;
+    cases.push((capped, &context, 0));
+    let mut no_candidate = valid();
+    no_candidate.candidates_examined = 0;
+    cases.push((no_candidate, &context, 0));
+    let mut retained = valid();
+    retained.retained_total = 1;
+    cases.push((retained, &context, 0));
+    cases.push((valid(), &context, 1));
+    let mut cursor_page = valid();
+    cursor_page.started_with_cursor = true;
+    cases.push((cursor_page, &context, 0));
+
+    for (state, context, offset) in cases {
+        assert_eq!(
+            eligibility_verification_upstream_total(&state, context, offset),
+            None
+        );
+    }
+
+    let unrelated_filters = TrialSearchFilters {
+        facility: Some("Rare Disease Center".into()),
+        lat: Some(42.28),
+        lon: Some(-83.74),
+        distance: Some(50),
+        criteria: Some("anti-PD-1 therapy".into()),
+        ..Default::default()
+    };
+    let (mixed_context, _) = single_ctgov_context_and_worker(&unrelated_filters);
+    assert_eq!(
+        eligibility_verification_upstream_total(&valid(), &mixed_context, 0),
+        None
+    );
+    let age_filters = TrialSearchFilters {
+        age: Some(50.0),
+        criteria: Some("anti-PD-1 therapy".into()),
+        ..Default::default()
+    };
+    let (age_context, _) = single_ctgov_context_and_worker(&age_filters);
+    assert_eq!(
+        eligibility_verification_upstream_total(&valid(), &age_context, 0),
+        None
+    );
 }
 
 #[test]
@@ -988,6 +1137,11 @@ async fn bounded_alias_pages_are_stable_across_product_page_invocations() {
     assert_eq!(first.continuation.offset_value(), Some(2));
     assert_eq!(second.continuation.status(), "terminal");
     assert_eq!(combined.continuation.status(), "terminal");
+    assert!(
+        [first, second, combined]
+            .iter()
+            .all(|page| page.eligibility_verification_upstream_total.is_none())
+    );
     server.abort();
 
     let requests = requests.lock().unwrap();

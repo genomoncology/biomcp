@@ -31,6 +31,7 @@ pub(crate) struct TrialSearchPage {
     pub(crate) results: Vec<TrialSearchHit>,
     pub(crate) total: biodata::ClinicalTrialSearchTotal,
     pub(crate) continuation: biodata::ClinicalTrialSearchContinuation,
+    pub(crate) eligibility_verification_upstream_total: Option<usize>,
 }
 
 impl std::fmt::Debug for TrialSearchPage {
@@ -40,6 +41,10 @@ impl std::fmt::Debug for TrialSearchPage {
             .field("returned", &self.results.len())
             .field("total", &self.total)
             .field("continuation", &self.continuation)
+            .field(
+                "has_eligibility_verification_diagnostic",
+                &self.eligibility_verification_upstream_total.is_some(),
+            )
             .finish()
     }
 }

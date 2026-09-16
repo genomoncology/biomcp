@@ -35,14 +35,16 @@ provider-specific terms that still apply when a query touches an upstream API.
 
 ## Retention and sensitive data
 
-BioMCP keeps two kinds of managed local request state: HTTP provider responses
-under the resolved cache root's `http/` directory, and article-search session
+BioMCP keeps three kinds of managed local request state: HTTP provider responses
+under the resolved cache root's `http/` directory, article-search session
 records containing a session token, query terms, PMIDs, and update time under
-`sessions/`. HTTP entries expire at configured `max_age_secs` (one day by
-default); article sessions expire after ten minutes. Opening either store for
+`sessions/`, and recovered directed citation evidence under
+`citation-evidence/`. HTTP entries expire at configured `max_age_secs` (one day by
+default); article sessions expire after ten minutes; citation-evidence records
+expire after thirty days. Opening either store for
 normal use or inspection physically removes expired records. `biomcp cache
 clean` performs targeted maintenance and `biomcp cache clear --yes` removes
-both managed trees.
+all three managed trees.
 
 BioMCP creates managed local-state directories for the current user only. On
 Unix, directories are mode `0700` and regular files are `0600`; on Windows,

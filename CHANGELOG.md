@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 — 2026-09-16
 
 ### Breaking changes
 
@@ -17,11 +17,36 @@
 
 ### New features
 
+- Fixed ClinicalTrials.gov trial search so hyphenated terms (anti-PD-1, CAR-T,
+  PD-L1, dMMR/MSI-H combinations) match what the registry actually holds: the
+  ESSIE query builder no longer backslash-escapes hyphens, restoring the
+  expected result counts for `--criteria`, `--mutation`, `--biomarker`,
+  `--sponsor`, `--study-type`, `--prior-therapies`, `--progression-on`, and
+  quoted intervention literals. (1198)
+- Added honest zero reporting for trial searches: when ClinicalTrials.gov
+  matched trials on the eligibility text but registry eligibility verification
+  removed all of them, the output names the upstream count and suggests a
+  `--mutation` relaxation, both in the Markdown hint and in the optional JSON
+  `_meta.upstream_total` member. (1198)
+- Added a persistent sidecar cache for `article citation-evidence`: repeated
+  queries for the same directed edge are served from a local thirty-day record
+  without re-fetching, keyed on resolved Semantic Scholar paper-ID pairs so
+  every hit is paired with a live provider resolution. `biomcp cache clear`
+  removes the sidecar. (1199)
+- Added a sixth `article citation-evidence` outcome,
+  `reference_confirmed_without_passage`: when the passage is not openly
+  available but OpenCitations confirms the directed edge, the command returns
+  a validated citation record so callers can distinguish "the passage is not
+  open" from "this citation may not exist." (1200)
+- Added `discover <query> --search`: when no concepts resolve, the suggested
+  article keyword search runs inline and returns its results alongside the
+  concept metadata in one response, with a new `## Article search` Markdown
+  section and `article_search` JSON member. (1201)
 - Added `article citation-evidence <citing-id> <cited-id>` returning bounded source
   text for one directed citation pair: Semantic Scholar context by default, and an
   exact open-access Europe PMC JATS reference resolution when that edge carries no
   context or `--fulltext` is passed. The result retrieves evidence only and never
-  interprets the citation.
+  interprets the citation. (1145)
 - Added read-only ClinGen Allele Registry (`clingen_car`) normalization for supported
   versioned RefSeq HGVS values, including bounded CLI JSON batches and the typed
   `variant_normalize_car` MCP tool.
@@ -154,6 +179,29 @@
 - Restored live PubMed article indexing for normal DTD-bearing citation XML with
   finite body/node bounds, and added sanitized failure codes/messages while
   preserving the base article when indexing degrades.
+
+### Docs
+
+- Added the `--search` flag to the discover command guide and the article
+  search fallback examples.
+- Updated the article user guide with the sixth citation-evidence outcome
+  state and the OpenCitations confirmation record.
+- Refreshed the trial search guide to document hyphenated term behavior and
+  the verification-emptied zero-result hint.
+- Updated the release-process reference for the 0.9.0 stable version.
+
+### Internal
+
+- Aligned all serial-test keys for provider and cache environment mutation,
+  eliminating random parallel test failures from env-var collisions.
+- Fixed the URL policy to prefer an explicitly selected loopback origin over
+  the unpaced-origin environment signal, restoring trial document retrieval
+  under combined fixtures.
+- Added three load-sensitivity eliminations: GenCC store deadline bounds only
+  lock acquisition, lifecycle runner death waits tolerate lane load, and the
+  execute-thread stack margin is pinned at a real boundary.
+- Bounded the docs-verifier probe window and the FDA orphan cache disk floor
+  for deterministic test behavior across hosts.
 
 ## 0.8.25 — 2026-07-07
 

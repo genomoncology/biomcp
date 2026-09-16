@@ -176,7 +176,7 @@ fn product_mapping_covers_every_ctgov_filter_family() {
         "ResultsFirstPostDate",
         "BRAF",
         "ECOG 0",
-        "MSI\\-H",
+        "MSI-H",
         "platinum",
         "osimertinib",
         "second line",

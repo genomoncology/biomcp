@@ -1,5 +1,8 @@
 # BioMCP 0.9 backlog recommendations
 
+**Status: Tickets A through D implemented, reviewed, and merged on 2026-09-16
+as tickets 1198-1201. Tickets E through H deferred.**
+
 Written 2026-09-16 after the full 18-PR push, the saturated gate runs, and
 the live CLI smoke test on both hosts. Organized by impact and effort. Each
 ticket states what is wrong, the evidence, the proposed fix, and the

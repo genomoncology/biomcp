@@ -501,7 +501,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
-    #[serial_test::serial(article_output_fixture)]
+    #[serial_test::serial(source_env)]
     async fn dropping_settlement_cancels_cacheable_article_provider_retry_and_admission() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 

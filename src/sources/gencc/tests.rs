@@ -247,7 +247,7 @@ fn endpoint_redirect_and_validator_policy_is_closed() {
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn release_equivalent_fixture_override_requires_exact_signaled_loopback_origin() {
     let endpoint = "http://127.0.0.1:4242/download/action/submissions-export-csv?format=new";
     let _base = EnvRestore::set("BIOMCP_GENCC_BASE", std::ffi::OsStr::new(endpoint));
@@ -327,7 +327,7 @@ impl Drop for EnvRestore {
     }
 }
 #[tokio::test(flavor = "current_thread")]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
     use axum::Router;
     use axum::body::Body;
@@ -498,7 +498,7 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
     server.abort();
 }
 #[tokio::test(flavor = "current_thread")]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
     use axum::Router;
     use axum::body::Body;
@@ -562,7 +562,7 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
     server.abort();
 }
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
     use super::store::{PublishMetadata, Store};
     let temp = tempfile::tempdir().unwrap();
@@ -623,7 +623,7 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
     );
 }
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn expired_open_budget_completes_publish_and_deferred_cleanup() {
     use super::store::{PublishMetadata, Store};
     let temp = tempfile::tempdir().unwrap();
@@ -682,7 +682,7 @@ async fn parser_work_obeys_an_expired_refresh_deadline() {
     assert!(result.is_none());
 }
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn refresh_leader_removes_only_owned_abandoned_temporaries() {
     use super::store::Store;
     let temp = tempfile::tempdir().unwrap();
@@ -703,7 +703,7 @@ fn refresh_leader_removes_only_owned_abandoned_temporaries() {
     assert!(root.join("unrelated.tmp").exists());
 }
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     use super::store::{PublishMetadata, Store, StoreError};
     use fs2::FileExt;
@@ -847,7 +847,7 @@ fn gencc_subprocess_client() {
     assert_eq!(actual, expected);
 }
 #[tokio::test(flavor = "current_thread")]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
     use axum::Router;
     use axum::body::Body;

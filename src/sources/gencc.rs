@@ -777,7 +777,7 @@ fn failed_refresh_now(
 
 #[cfg(test)]
 #[tokio::test(flavor = "current_thread")]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation() {
     for seeded in [false, true] {
         let temp = tempfile::tempdir().unwrap();
@@ -860,7 +860,7 @@ async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: O
 
 #[cfg(test)]
 #[tokio::test(flavor = "current_thread")]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 #[rustfmt::skip]
 async fn cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work() {
     use axum::{Router, body::Body, extract::State as AxumState, http::Response};
@@ -896,7 +896,7 @@ async fn cancelling_stalled_headers_and_streamed_body_drops_request_and_store_wo
 
 #[cfg(test)]
 #[tokio::test(flavor = "current_thread")]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn cancelling_active_publication_joins_cleanup_and_releases_locks() {
     use axum::{Router, body::Body, http::Response};
     #[cfg(unix)]

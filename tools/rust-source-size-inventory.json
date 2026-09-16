@@ -43,6 +43,17 @@
       "authorized_increase": null
     },
     {
+      "path": "src/entities/article/graph/tests.rs",
+      "baseline_lines": 1732,
+      "floor_lines": 998,
+      "authorized_increase": {
+        "ticket": "1200",
+        "delta": 734,
+        "reason": "The OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases beside the existing citation-evidence composition tests.",
+        "removal_condition": "Move the confirmation-phase tests to a dedicated citation test submodule when the article test modules are next reorganized."
+      }
+    },
+    {
       "path": "src/entities/article/identity_verification.rs",
       "baseline_lines": 1398,
       "floor_lines": 1398,
@@ -83,12 +94,12 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4012,
+      "baseline_lines": 4044,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "0979, 1086",
-        "delta": 318,
-        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, pagination, and traced-test timing contract.",
+        "ticket": "0979, 1086, 1201",
+        "delta": 350,
+        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, pagination, and traced-test timing contract; ticket 1201 adds the inline article-search result and its captured render inputs.",
         "removal_condition": "Extract discovery provider orchestration and its tests when the discovery entity is next decomposed."
       }
     },
@@ -139,6 +150,28 @@
       "authorized_increase": null
     },
     {
+      "path": "src/entities/trial/search/ctgov.rs",
+      "baseline_lines": 1032,
+      "floor_lines": 995,
+      "authorized_increase": {
+        "ticket": "1198, biodata-0146",
+        "delta": 37,
+        "reason": "Carry the narrowly gated eligibility-verification diagnostic on the trial page while preserving typed totals and continuations.",
+        "removal_condition": "Extract CTGov page finalization when the search module is next decomposed."
+      }
+    },
+    {
+      "path": "src/entities/trial/search/ctgov/tests.rs",
+      "baseline_lines": 1154,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1198, biodata-0146",
+        "delta": 154,
+        "reason": "Preserve CTGov maintenance coverage through BioData plans and prove the exact eligibility-verification diagnostic predicate.",
+        "removal_condition": "Extract CTGov page-state tests when the search test module is next decomposed."
+      }
+    },
+    {
       "path": "src/entities/variant/erepo.rs",
       "baseline_lines": 1026,
       "floor_lines": 1026,
@@ -179,12 +212,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1116,
+      "baseline_lines": 1119,
       "floor_lines": 1109,
       "authorized_increase": {
-        "ticket": "1142, biodata-0144",
-        "delta": 7,
-        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), and incorporate ticket 1196 GenCC source registration (+3).",
+        "ticket": "1142, biodata-0144, 1200",
+        "delta": 10,
+        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate ticket 1196 GenCC source registration (+3), and register OpenCitations as the confirmation source (+3).",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
       }
     },
@@ -224,23 +257,23 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1557,
+      "baseline_lines": 1559,
       "floor_lines": 1555,
       "authorized_increase": {
-        "ticket": "1158",
-        "delta": 2,
-        "reason": "Project the optional GenCC section through the shared JSON entity surface.",
+        "ticket": "1158, 1201",
+        "delta": 4,
+        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests.",
         "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
       }
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1244,
+      "baseline_lines": 1262,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1144",
-        "delta": 37,
-        "reason": "Pin the graph pagination footer and shared continuation command beside the existing article Markdown renderer coverage.",
+        "ticket": "1144, 1201",
+        "delta": 55,
+        "reason": "Pin the graph pagination footer and shared continuation command beside the existing article Markdown renderer coverage; ticket 1201 adds the header parameter to every article render context literal.",
         "removal_condition": "Extract graph renderer tests when the article Markdown renderer tests are next decomposed."
       }
     },
@@ -308,9 +341,14 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2274,
+      "baseline_lines": 2288,
       "floor_lines": 2274,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1199, 1200",
+        "delta": 14,
+        "reason": "Resolve the citation-evidence sidecar cache mode and register the OpenCitations reference client.",
+        "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
+      }
     },
     {
       "path": "src/sources/myvariant.rs",

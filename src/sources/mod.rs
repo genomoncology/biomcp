@@ -304,6 +304,7 @@ pub(crate) mod nci_cts;
 pub(crate) mod nih_reporter;
 pub(crate) mod ols4;
 pub(crate) mod oncokb;
+pub(crate) mod opencitations;
 pub(crate) mod openfda;
 pub(crate) mod opentargets;
 pub(crate) mod orcid;
@@ -389,6 +390,19 @@ pub(crate) fn is_no_cache_enabled() -> bool {
 
 pub(crate) fn cache_is_bypassed() -> bool {
     is_no_cache_enabled() || env_cache_mode() == Some(CacheMode::NoStore)
+}
+
+/// Whether cache reads ignore entry expiry (`BIOMCP_CACHE_MODE=infinite`).
+///
+/// Unlike the HTTP middleware, the citation-evidence sidecar resolves the
+/// mode per call from the environment; the operator knob does not change
+/// mid-process, and the fresh read lets the debug-only test seam exercise
+/// the infinite mode in-process.
+pub(crate) fn cache_is_infinite() -> bool {
+    let mode = std::env::var("BIOMCP_CACHE_MODE")
+        .ok()
+        .map(|value| value.trim().to_ascii_lowercase());
+    parse_cache_mode(mode.as_deref()) == Some(CacheMode::ForceCache)
 }
 
 pub(crate) fn apply_cache_mode(req: RequestBuilder) -> RequestBuilder {

@@ -207,7 +207,7 @@ fn hgnc_precedence_matrix_covers_every_queryable_lifecycle_and_root_failure() {
 }
 
 #[tokio::test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn pre_index_identity_failure_precedes_store_creation() {
     let temp = tempfile::tempdir().unwrap();
     secure_anchor(temp.path());
@@ -296,7 +296,7 @@ async fn projection_deadline_cancels_and_joins_the_actual_gencc_worker() {
 }
 
 #[tokio::test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn expired_refresh_budget_still_projects_authoritative_stale_data() {
     let temp = tempfile::tempdir().unwrap();
     secure_anchor(temp.path());
@@ -345,7 +345,7 @@ async fn expired_refresh_budget_still_projects_authoritative_stale_data() {
 }
 
 #[tokio::test(flavor = "current_thread")]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 async fn post_rename_200_and_304_deadlines_return_committed_public_rows() {
     use axum::Router;
     use axum::body::Body;
@@ -487,7 +487,7 @@ fn publish(store: &Store, dataset: &GenCcDataset, now: &str, etag: &str) -> Snap
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 #[cfg(unix)]
 fn descriptor_bootstrap_rejects_unsafe_or_substituted_anchors_and_reuses_inode() {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
@@ -559,7 +559,7 @@ fn descriptor_bootstrap_rejects_unsafe_or_substituted_anchors_and_reuses_inode()
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 #[cfg(unix)]
 fn publication_rejects_a_substituted_generations_component_without_writing_through_it() {
     let temp = tempfile::tempdir().unwrap();
@@ -590,7 +590,7 @@ fn publication_rejects_a_substituted_generations_component_without_writing_throu
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 #[cfg(unix)]
 fn default_and_override_subprocesses_reuse_the_external_anchor_inode_after_root_recreation() {
     use std::os::unix::fs::MetadataExt;
@@ -642,7 +642,7 @@ fn default_and_override_subprocesses_reuse_the_external_anchor_inode_after_root_
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn crash_boundaries_preserve_one_complete_namespace_generation() {
     for point in PUBLICATION_CRASH_POINTS {
         let temp = tempfile::tempdir().unwrap();
@@ -700,7 +700,7 @@ fn crash_boundaries_preserve_one_complete_namespace_generation() {
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn first_publication_crash_recovery_never_requires_an_incomplete_generation() {
     for point in PUBLICATION_CRASH_POINTS.into_iter().filter(|point| {
         point.contains("temporary-generations")
@@ -756,7 +756,7 @@ fn first_publication_crash_recovery_never_requires_an_incomplete_generation() {
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn state_only_304_and_failure_crashes_select_one_whole_visible_record() {
     let points = [
         "before-state-file-fsync",
@@ -833,7 +833,7 @@ fn state_only_304_and_failure_crashes_select_one_whole_visible_record() {
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn cleanup_faults_retain_unowned_or_unfinished_entries_for_a_later_pass() {
     let temp = tempfile::tempdir().unwrap();
     secure_anchor(temp.path());
@@ -865,7 +865,7 @@ fn cleanup_faults_retain_unowned_or_unfinished_entries_for_a_later_pass() {
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn bootstrap_parent_fsync_failures_fail_closed_before_any_store_is_returned() {
     for point in [
         "before-bootstrap-directory-parent-fsync",
@@ -888,7 +888,7 @@ fn bootstrap_parent_fsync_failures_fail_closed_before_any_store_is_returned() {
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn subprocess_lease_defers_old_generation_cleanup_until_reader_exits() {
     let temp = tempfile::tempdir().unwrap();
     secure_anchor(temp.path());
@@ -929,7 +929,7 @@ fn subprocess_lease_defers_old_generation_cleanup_until_reader_exits() {
 }
 
 #[test]
-#[serial_test::serial(gencc_env)]
+#[serial_test::serial(source_env)]
 fn injected_state_rename_failures_report_the_visible_namespace() {
     let temp = tempfile::tempdir().unwrap();
     secure_anchor(temp.path());

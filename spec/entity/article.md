@@ -1461,10 +1461,11 @@ PY
 `biomcp article citation-evidence <citing-id> <cited-id>` returns bounded
 source text for one directed citation pair. Semantic Scholar context wins by
 default; a contextless edge recovers paragraphs from open Europe PMC JATS by
-exact reference identity. The five outcomes below are closed: any other
-input is a command error. The result retrieves evidence only — it never
-summarizes a passage, infers how the cited work was used, or claims the
-citation supports a conclusion.
+exact reference identity, then confirms a remaining bare edge through
+OpenCitations. The six outcomes below are closed: any other input is a
+command error. The result retrieves evidence only — it never summarizes a
+passage, infers how the cited work was used, or claims the citation supports
+a conclusion.
 
 The full-status JSON keeps the same object shape in every state: `citing`,
 `cited`, `status`, `message`, `source`, `provider_contexts`, `passages`,
@@ -1473,7 +1474,7 @@ forced `--fulltext` attempt fails, and the failure never masquerades as the
 provider-context outcome.
 
 ```bash
-../../tools/biomcp-ci --json article citation-evidence 39991290 10.1038/nature10725 | jq -c '{status,message,source,provider_contexts,passage_count:(.passages|length),locator:.fulltext_locator.pmcid,statuses:._meta.source_status,urls:[._meta.evidence_urls[].source],next:._meta.next_commands}' | mustmatch '{"status":"context_from_fulltext","message":"Open-access JATS linked the cited reference to the returned passage.","source":"europe_pmc_jats","provider_contexts":[],"passage_count":3,"locator":"PMC12923956","statuses":[{"source":"semantic_scholar","status":"available"},{"source":"europe_pmc_jats","status":"available"}],"urls":["semantic_scholar","semantic_scholar","europe_pmc_jats"],"next":[]}'
+../../tools/biomcp-ci --json article citation-evidence 39991290 10.1038/nature10725 | jq -c '{status,message,source,provider_contexts,passage_count:(.passages|length),locator:.fulltext_locator.pmcid,statuses:._meta.source_status,urls:[._meta.evidence_urls[].source],next:._meta.next_commands}' | mustmatch '{"status":"context_from_fulltext","message":"Open-access JATS linked the cited reference to the returned passage.","source":"europe_pmc_jats","provider_contexts":[],"passage_count":3,"locator":"PMC12923956","statuses":[{"source":"semantic_scholar","status":"available"},{"source":"europe_pmc_jats","status":"available"},{"source":"opencitations","status":"not_requested"}],"urls":["semantic_scholar","semantic_scholar","europe_pmc_jats"],"next":[]}'
 ../../tools/biomcp-ci --json article citation-evidence 39991290 10.1038/nature10725 | jq -c '.passages[2]' | mustmatch '{"text":"A nested section contributes a third linked paragraph 7 with its own section path.","locator":{"pmcid":"PMC12923956","ref_id":"bib7","section_path":["Results","Subgroup analysis"],"paragraph":3,"marker":"7"},"evidence_url":"https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923956/fullTextXML"}'
 ../../tools/biomcp-ci --json article citation-evidence 40001001 10.1016/j.artmed.2020.101822 | jq -c '{status,passage:(.passages[0].text),locator:(.passages[0].locator)}' | mustmatch '{"status":"context_from_fulltext","passage":"Expertise and model life-cycle management both appear in this linked paragraph 11.","locator":{"pmcid":"PMC13200738","ref_id":"ooag047-B11","section_path":["Discussion"],"paragraph":1,"marker":"11"}}'
 ../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture | jq -c '{status,source,contexts:.provider_contexts,passages,locator:.fulltext_locator,jats:(._meta.source_status[1].status)}' | mustmatch '{"status":"context_from_provider","source":"semantic_scholar","contexts":["Retained provider context survives a forced full-text failure."],"passages":[],"locator":null,"jats":"not_requested"}'
@@ -1481,6 +1482,7 @@ provider-context outcome.
 ../../tools/biomcp-ci --json article citation-evidence 40001006 10.1099/unresolved-fixture | jq -c '{status,message,source,contexts:.provider_contexts,passages,locator:.fulltext_locator}' | mustmatch '{"status":"fulltext_unavailable","message":"Structured open full text was unavailable for the citing paper.","source":null,"contexts":[],"passages":[],"locator":null}'
 ../../tools/biomcp-ci --json article citation-evidence 40001003 10.1099/unresolved-fixture | jq -c '{status,message,source,passages,locator:.fulltext_locator}' | mustmatch '{"status":"reference_unresolved","message":"Structured full text was available, but the cited reference could not be resolved exactly.","source":"europe_pmc_jats","passages":[],"locator":{"pmcid":"PMC12923960","evidence_url":"https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923960/fullTextXML"}}'
 ../../tools/biomcp-ci --json article citation-evidence 40001004 10.1099/unresolved-fixture | jq -c '{status,message,source,passages,locator:.fulltext_locator.pmcid}' | mustmatch '{"status":"citation_marker_unlinked","message":"The cited reference was resolved, but no unambiguous in-text citation marker linked to it.","source":"europe_pmc_jats","passages":[],"locator":"PMC12923961"}'
+../../tools/biomcp-ci --json article citation-evidence 40001007 10.1000/cited-opencitations | jq -c '{status,message,source,confirmation,statuses:._meta.source_status,urls:[._meta.evidence_urls[].source]}' | mustmatch '{"status":"reference_confirmed_without_passage","message":"An open citation index confirmed this directed edge, but no open passage is available.","source":"opencitations","confirmation":{"source":"opencitations","oci":"061502131318-062102119315","citing":"doi:10.1000/citing-opencitations","cited":"doi:10.1000/cited-opencitations","creation":"2012-07-12","evidence_url":"https://api.opencitations.net/index/v2/references/doi:10.1000/citing-opencitations"},"statuses":[{"source":"semantic_scholar","status":"available"},{"source":"europe_pmc_jats","status":"unavailable"},{"source":"opencitations","status":"available"}],"urls":["semantic_scholar","semantic_scholar","opencitations"]}'
 if ../../tools/biomcp-ci --json article citation-evidence 39991290 10.1093/absent-target >/dev/null 2>&1; then exit 1; fi
 ../../tools/biomcp-ci --json article citation-evidence 39991290 10.1093/absent-target 2>&1 | jq -r '.error.message' | mustmatch "directed citation '39991290 -> 10.1093/absent-target' not found.
 
@@ -1556,6 +1558,12 @@ Status: The cited reference was resolved, but no unambiguous in-text citation ma
 
 Full text: `https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12923961/fullTextXML`
 '
+../../tools/biomcp-ci article citation-evidence 40001007 10.1000/cited-opencitations | mustmatch '# Citation evidence
+
+Citing: `PMID 40001007`
+Cited: `DOI 10.1000/cited-opencitations`
+Status: An open citation index confirmed this directed edge, but no open passage is available.
+'
 ../../tools/biomcp-ci article citation-evidence 40001001 10.1016/j.artmed.2020.101822 | sed -n '9,13p' | mustmatch '### Passage 1
 
 `Expertise and model life-cycle management both appear in this linked paragraph 11.`
@@ -1571,11 +1579,13 @@ request log proves the shape.
 ```bash
 request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
 : >"$request_log"
+export BIOMCP_CACHE_MODE=off
 ../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture >/dev/null
 mustmatch like 's2:seed:x-api-key:absent
 s2:seed:x-api-key:absent
 s2:graph:references:limit=100:offset=0:x-api-key:absent' <"$request_log"
 test "$(wc -l <"$request_log")" -eq 3
+mustmatch not like 'opencitations:' <"$request_log"
 : >"$request_log"
 ../../tools/biomcp-ci --json article citation-evidence 39991290 10.1038/nature10725 >/dev/null
 mustmatch like 's2:seed:x-api-key:absent
@@ -1609,6 +1619,31 @@ test "$(wc -l <"$request_log")" -eq 5
 mustmatch like 's2:seed:x-api-key:absent
 s2:seed:x-api-key:absent
 s2:graph:references:limit=100:offset=0:x-api-key:absent' <"$request_log"
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 40001003 10.1099/unresolved-fixture >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent
+fulltext:xml:europepmc-pmc' <"$request_log"
+test "$(wc -l <"$request_log")" -eq 4
+mustmatch not like 'opencitations:' <"$request_log"
+: >"$request_log"
+../../tools/biomcp-ci --json article citation-evidence 40001007 10.1000/cited-opencitations >/dev/null
+mustmatch like 's2:seed:x-api-key:absent
+s2:seed:x-api-key:absent
+s2:graph:references:limit=100:offset=0:x-api-key:absent
+opencitations:references:doi:10.1000/citing-opencitations' <"$request_log"
+test "$(wc -l <"$request_log")" -eq 4
+```
+
+The sidecar is invisible on the folded surface. The record stands under the
+resolved cache root after the first call, and the second call returns the same
+bytes.
+
+```bash
+first="$(../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture)"
+test -n "$(find "${BIOMCP_CACHE_DIR:?cache root is not configured}/citation-evidence" -name '*.json' -print -quit)"
+../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture | mustmatch "$first"
 ```
 
 Graph edges without usable context carry the evidence command. The blank
@@ -1644,6 +1679,7 @@ behind.
 request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
 probe="$(mktemp -d)"
 : >"$request_log"
+export BIOMCP_CACHE_MODE=off
 command="$(../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -r '.edges[2]._meta.next_commands[0]')"
 case "$command" in
   "biomcp article citation-evidence 39991290 "*) ;;
@@ -1661,7 +1697,7 @@ test -z "$(ls -A "$probe")"
 rmdir "$probe"
 ```
 
-Raw MCP serves the same five states and error envelope through the generic
+Raw MCP serves the same six states and error envelope through the generic
 command tool, byte-identical to the CLI, and keeps the typed inventory
 untouched.
 
@@ -1681,6 +1717,7 @@ cases = (
     ("40001002 10.1099/unresolved-fixture --fulltext", "fulltext_unavailable"),
     ("40001003 10.1099/unresolved-fixture", "reference_unresolved"),
     ("40001004 10.1099/unresolved-fixture", "citation_marker_unlinked"),
+    ("40001007 10.1000/cited-opencitations", "reference_confirmed_without_passage"),
 )
 request_id = 2
 for arguments, expected in cases:

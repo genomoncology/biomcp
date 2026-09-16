@@ -137,7 +137,7 @@ async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>
 }
 
 #[tokio::test]
-#[serial_test::serial]
+#[serial_test::serial(source_env)]
 async fn required_label_failures_make_zero_ddinter_ready_calls() {
     let (base, server) = required_label_failure_server().await;
     let root = crate::test_support::TempDirGuard::new("required-label-ddinter-counter");

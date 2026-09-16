@@ -351,8 +351,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             Commands::Enrich(args) => {
                 outcome_to_string(super::system::handle_enrich(args, json).await?)
             }
-            Commands::Discover(super::system::DiscoverArgs { query, limit, offset, full }) => {
-                crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query, limit, offset, full }, json).await
+            Commands::Discover(super::system::DiscoverArgs { query, limit, offset, full, search }) => {
+                crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query, limit, offset, full, search }, json).await
             }
             Commands::List(super::system::ListArgs { entity }) => {
                 if json {
@@ -511,19 +511,21 @@ async fn run_outcome_inner(
             limit,
             offset,
             full,
+            search,
         }) => {
-            crate::sources::with_no_cache(no_cache, async move {
-                crate::cli::discover::run_outcome(
+            crate::sources::with_no_cache(
+                no_cache,
+                Box::pin(crate::cli::discover::run_outcome(
                     crate::cli::discover::DiscoverArgs {
                         query,
                         limit,
                         offset,
                         full,
+                        search,
                     },
                     json,
-                )
-                .await
-            })
+                )),
+            )
             .await
         }
         Commands::Gene {

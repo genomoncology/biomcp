@@ -1,5 +1,6 @@
 use super::zero_result::{
-    has_active_trial_filters, zero_result_trial_broadening_hints, zero_result_trial_next_commands,
+    has_active_trial_filters, verification_emptied_trial_hint, zero_result_trial_broadening_hints,
+    zero_result_trial_next_commands,
 };
 use super::{TrialGetArgs, TrialSearchArgs};
 use crate::cli::CommandOutcome;
@@ -56,19 +57,13 @@ struct TrialSearchJsonResponse<T: serde::Serialize> {
     _meta: Option<super::super::SearchJsonMeta>,
 }
 
+#[cfg(test)]
 fn trial_search_json<T: serde::Serialize>(
     results: Vec<T>,
     pagination: TrialPaginationMeta,
     next_commands: Vec<String>,
 ) -> anyhow::Result<String> {
-    let count = results.len();
-    crate::render::json::to_pretty(&TrialSearchJsonResponse {
-        pagination,
-        count,
-        results,
-        _meta: super::super::search_meta(next_commands),
-    })
-    .map_err(Into::into)
+    search_json_with_meta_and_upstream_total(results, pagination, next_commands, None)
 }
 
 fn trial_pagination_footer(meta: &TrialPaginationMeta) -> String {
@@ -355,15 +350,21 @@ pub(in crate::cli) async fn handle_search(
             &page.total,
             &page.continuation,
         );
+        let upstream_total = page.eligibility_verification_upstream_total;
         let results = page.results;
         if json {
             let next_commands = if results.is_empty() && has_active_trial_filters(&filters) {
-                zero_result_trial_next_commands(&filters)
+                zero_result_trial_next_commands(&filters, upstream_total)
             } else {
                 crate::render::markdown::search_next_commands_trial(&results)
             };
-            return trial_search_json(results, pagination, next_commands)
-                .map(CommandOutcome::stdout);
+            return search_json_with_meta_and_upstream_total(
+                results,
+                pagination,
+                next_commands,
+                upstream_total,
+            )
+            .map(CommandOutcome::stdout);
         }
 
         let footer = trial_pagination_footer(&pagination);
@@ -378,7 +379,11 @@ pub(in crate::cli) async fn handle_search(
         );
         let zero_result_broadening_hints =
             if results.is_empty() && has_active_trial_filters(&filters) {
-                zero_result_trial_broadening_hints(&filters)
+                let mut hints = zero_result_trial_broadening_hints(&filters);
+                if let Some(upstream_total) = upstream_total {
+                    hints.insert(0, verification_emptied_trial_hint(upstream_total));
+                }
+                hints
             } else {
                 Vec::new()
             };
@@ -430,6 +435,36 @@ pub(super) fn render_count_only(
             _ => "Total: unknown".to_string(),
         })
     }
+}
+
+/// Carry the provider total alongside a verification-emptied zero page.
+fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
+    results: Vec<T>,
+    pagination: TrialPaginationMeta,
+    next_commands: Vec<String>,
+    upstream_total: Option<usize>,
+) -> anyhow::Result<String> {
+    let count = results.len();
+    let mut meta = super::super::shared::search_meta_with_suggestions(next_commands, None);
+    if let Some(n) = upstream_total {
+        let meta = meta.get_or_insert_with(|| super::super::SearchJsonMeta {
+            next_commands: Vec::new(),
+            suggestions: None,
+            workflow: None,
+            workflow_rationale: None,
+            workflow_playbook: None,
+            section_sources: Vec::new(),
+            upstream_total: None,
+        });
+        meta.upstream_total = Some(n);
+    }
+    crate::render::json::to_pretty(&TrialSearchJsonResponse {
+        pagination,
+        count,
+        results,
+        _meta: meta,
+    })
+    .map_err(Into::into)
 }
 
 fn parse_usize_arg(flag: &str, value: &str) -> Result<usize, crate::error::BioMcpError> {

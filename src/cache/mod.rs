@@ -1,3 +1,4 @@
+mod citation_evidence;
 mod clean;
 mod config;
 mod limits;
@@ -53,6 +54,11 @@ pub(crate) fn content_path(cache_path: &Path, integrity: &Integrity) -> PathBuf 
         .join(&hex[2..4])
         .join(&hex[4..])
 }
+
+#[allow(unused_imports)]
+pub(crate) use citation_evidence::{
+    CITATION_EVIDENCE_DIR, read_citation_evidence, write_citation_evidence,
+};
 
 #[allow(unused_imports)]
 pub(crate) use clean::{CleanOptions, CleanReport, execute_cache_clean};

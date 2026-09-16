@@ -73,6 +73,10 @@ pub fn search_all_markdown(
     }
 }
 
+/// Header the discover article-search section renders instead of the
+/// `search article` command's `# Articles: <query>` line.
+const DISCOVER_ARTICLE_SEARCH_HEADER: &str = "## Article search";
+
 pub fn render_discover(result: &DiscoverResult) -> Result<String, BioMcpError> {
     #[derive(serde::Serialize)]
     struct DiscoverConceptView {
@@ -132,9 +136,36 @@ pub fn render_discover(result: &DiscoverResult) -> Result<String, BioMcpError> {
     })
     .collect::<Vec<_>>();
 
+    let article_search = match result.article_search.as_ref() {
+        Some(article) => {
+            let render = &article.render;
+            Some(
+                crate::render::markdown::article_search_markdown_with_footer_and_context(
+                    &render.query_summary,
+                    &article.results,
+                    &render.pagination_footer,
+                    &render.filters,
+                    ArticleSearchRenderContext {
+                        source_filter: render.source_filter,
+                        semantic_scholar_enabled: render.semantic_scholar_enabled,
+                        warning: render.warning.as_deref(),
+                        note: render.note.as_deref(),
+                        debug_plan: None,
+                        exact_entity_commands: &[],
+                        source_status: &render.source_status,
+                        retry_page: Some((render.limit, render.offset)),
+                        header: Some(DISCOVER_ARTICLE_SEARCH_HEADER),
+                    },
+                )?,
+            )
+        }
+        None => None,
+    };
+
     let body = tmpl.render(context! {
         query => &result.query,
         notes => &result.notes,
+        article_search => article_search,
         ambiguous => result.ambiguous,
         groups => groups,
         plain_language => &result.plain_language,

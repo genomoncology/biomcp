@@ -637,7 +637,7 @@ fn assert_sanitized_cache_error(error: &reqwest_middleware::Error, root: &std::p
 }
 
 #[tokio::test]
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn cached_client_post_write_failure_matrix_is_fail_closed() {
     for mode in [
         CacheOriginMode::Initial,
@@ -682,7 +682,7 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
 }
 
 #[tokio::test(start_paused = true)]
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
     let publication_armed = Arc::new(tokio::sync::Notify::new());
     let publication_release = Arc::new(tokio::sync::Notify::new());
@@ -743,7 +743,7 @@ async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
 }
 
 #[tokio::test]
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn cached_client_fresh_hit_and_request_no_store_bypass_writes() {
     let (client, url, requests, gets, puts, armed, _, _, _root, server) =
         cached_test_client(CacheOriginMode::Fresh, "fresh-client-hit", None).await;
@@ -881,7 +881,7 @@ mod cache_security {
 }
 
 #[tokio::test]
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn ordinary_client_blocks_untrusted_local_destinations_before_contact() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();
@@ -898,7 +898,7 @@ async fn ordinary_client_blocks_untrusted_local_destinations_before_contact() {
 }
 
 #[tokio::test]
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 async fn ordinary_client_allows_exact_override_but_ignores_proxy_and_cross_origin_redirects() {
     let provider = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let provider_address = provider.local_addr().unwrap();
