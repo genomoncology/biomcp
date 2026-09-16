@@ -1093,6 +1093,25 @@
     "notes": "The FAQ states that programmatic access for academic use still requires registration and provider approval."
   },
   {
+    "id": "opencitations",
+    "name": "OpenCitations",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "article citation-evidence <citing-id> <cited-id>"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "free public REST API without authentication",
+    "license_summary": "OpenCitations datasets are released under a CC0 public domain dedication; website text is CC BY 4.0 and the software is ISC",
+    "redistribution_summary": "citation data is dedicated to the public domain and may be freely reused for any purpose, including commercial use; the OpenCitations trademark policy still governs the name",
+    "terms_url": "https://opencitations.net/",
+    "key_url": null,
+    "reviewed_on": "2026-09-16",
+    "notes": "BioMCP queries the OpenCitations Index reference endpoint for the citing DOI only when a citation-evidence call would otherwise return no passage, confirming that the directed edge exists. OpenCitations carries no passages, so it never supplies quoted text."
+  },
+  {
     "id": "openfda",
     "name": "OpenFDA",
     "tier": 1,

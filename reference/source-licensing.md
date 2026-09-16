@@ -84,6 +84,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | OLS4 | 1 | direct_api | none | EMBL-EBI ontology browser; each ontology keeps its own license | ontology metadata is queryable, but downstream reuse depends on the specific ontology surfaced | <https://www.ebi.ac.uk/ols4/> |
 | ORCID | 2 | direct_api | required_env | ORCID public API terms; public data is released for reuse under the ORCID public-data license | display public record data with attribution; do not assume all record data or downstream works are identically licensed | <https://info.orcid.org/documentation/features/public-api/> |
 | OncoKB | 2 | direct_api | required_env | custom provider terms; academic research access is no-fee but licensed, commercial/clinical use requires a paid license | do not assume open redistribution rights for OncoKB data or proprietary treatment descriptions | <https://faq.oncokb.org/licensing> |
+| OpenCitations | 1 | direct_api | none | OpenCitations datasets are CC0 public domain; website text is CC BY 4.0 and the software is ISC | citation data may be freely reused, including commercially; the OpenCitations trademark policy still governs the name | <https://opencitations.net/> |
 | OpenFDA | 1 | direct_api | optional_env | FDA-origin public data and API terms | data is broadly reusable, but avoid implying FDA endorsement and preserve source context | <https://open.fda.gov/apis/authentication/> |
 | OpenTargets | 1 | direct_api | none | Open Targets data is CC0; platform code is Apache 2.0 | platform data is dedicated to the public domain, but linked evidence still carries source provenance | <https://platform-docs.opentargets.org/licence> |
 | PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://api.pharmgkb.org/> |
@@ -569,6 +570,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Terms / policy URL: <https://www.fda.gov/about-fda/about-website/website-policies>
 - Reviewed on: `2026-09-11`
 - Notes: BioMCP performs bounded live searches of FDA's Orphan Drug Designations and Approvals table for U.S. regulatory cards. Orphan designation and FDA approval remain separate facts.
+
+### OpenCitations
+
+- BioMCP surfaces: `article citation-evidence <citing-id> <cited-id>`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: free public REST API without authentication
+- License / terms summary: OpenCitations datasets are released under a CC0 public domain dedication; website text is CC BY 4.0 and the software is ISC
+- Redistribution / reuse summary: citation data is dedicated to the public domain and may be freely reused, including commercially; the OpenCitations trademark policy still governs the name
+- Official terms URL: <https://opencitations.net/>
+- Reviewed on: `2026-09-16`
+- Notes: BioMCP queries the OpenCitations Index reference endpoint for the citing DOI only when a citation-evidence call would otherwise return no passage, confirming that the directed edge exists. OpenCitations carries no passages, so it never supplies quoted text.
 
 ### OpenFDA
 

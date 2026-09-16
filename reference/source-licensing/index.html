@@ -3796,6 +3796,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#opencitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenCitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#openfda" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5493,6 +5504,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#opencitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenCitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#openfda" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6446,6 +6468,15 @@ specific capture requires a separate source-by-source rights record.</p>
 <td><a href="https://faq.oncokb.org/licensing">https://faq.oncokb.org/licensing</a></td>
 </tr>
 <tr>
+<td>OpenCitations</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>OpenCitations datasets are CC0 public domain; website text is CC BY 4.0 and the software is ISC</td>
+<td>citation data may be freely reused, including commercially; the OpenCitations trademark policy still governs the name</td>
+<td><a href="https://opencitations.net/">https://opencitations.net/</a></td>
+</tr>
+<tr>
 <td>OpenFDA</td>
 <td>1</td>
 <td>direct_api</td>
@@ -7130,6 +7161,18 @@ specific capture requires a separate source-by-source rights record.</p>
 <li>Terms / policy URL: <a href="https://www.fda.gov/about-fda/about-website/website-policies">https://www.fda.gov/about-fda/about-website/website-policies</a></li>
 <li>Reviewed on: <code>2026-09-11</code></li>
 <li>Notes: BioMCP performs bounded live searches of FDA's Orphan Drug Designations and Approvals table for U.S. regulatory cards. Orphan designation and FDA approval remain separate facts.</li>
+</ul>
+<h3 id="opencitations">OpenCitations<a class="headerlink" href="#opencitations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>article citation-evidence &lt;citing-id&gt; &lt;cited-id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: free public REST API without authentication</li>
+<li>License / terms summary: OpenCitations datasets are released under a CC0 public domain dedication; website text is CC BY 4.0 and the software is ISC</li>
+<li>Redistribution / reuse summary: citation data is dedicated to the public domain and may be freely reused, including commercially; the OpenCitations trademark policy still governs the name</li>
+<li>Official terms URL: <a href="https://opencitations.net/">https://opencitations.net/</a></li>
+<li>Reviewed on: <code>2026-09-16</code></li>
+<li>Notes: BioMCP queries the OpenCitations Index reference endpoint for the citing DOI only when a citation-evidence call would otherwise return no passage, confirming that the directed edge exists. OpenCitations carries no passages, so it never supplies quoted text.</li>
 </ul>
 <h3 id="openfda">OpenFDA<a class="headerlink" href="#openfda" title="Permanent link">&para;</a></h3>
 <ul>
