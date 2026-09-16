@@ -38,13 +38,14 @@ citing a Nature paper) returned `fulltext_unavailable` because S2 had no
 reference graph for the citing paper and the full text was paywalled. The
 ticket-1145 research run found the same gap on 62 percent of edges.
 
-**Fix direction.** Add a third state `context_from_crossref` to the frozen
-five-state enum (making it six), reusing the exact-reference-identity rules
-from the JATS extractor against Crossref's open citations API. The bounded
-deadline architecture already supports multiple provider phases (ticket
-1145's three-page graph deadline plus the bridge deadline pattern from
-ticket 1191's fix). The JATS extractor's pure structural matching can be
-reused directly.
+**Fix direction.** Redesigned after further analysis: Crossref has no
+passages (in-text citation context), only the citation relationship and the
+reference list entry. The right integration is a state like
+`reference_confirmed_without_passage` that uses OpenCitations or OpenAlex
+to verify the directed edge, provides the reference entry, and clearly
+states the passage is not openly available. This distinguishes "we couldn't
+find the passage" from "this citation might not even exist." Design review
+required before implementation.
 
 **Estimated complexity.** Level 3 (Sol Medium). New source module, new
 outcome state, renderer extension, acceptance tests across all six states.
@@ -90,80 +91,6 @@ already builds the exact command string; the flag just runs it.
 **Estimated complexity.** Level 1 (Luna High). One flag, one conditional
 dispatch, tests with existing fixtures.
 
-## Ticket E: Author search requires --query but bare-name drug search works
-
-**What is wrong.** `biomcp search drug imatinib` works (bare-name
-compatibility). `biomcp search author "Louis Williams"` fails with "Query
-is required" because the author surface demands `-q` or `--query`. The
-inconsistency is confusing for users who expect the same bare-name
-convenience across entities.
-
-**Evidence.** The CLI review's command matrix caught this as a smell
-(`EXPECT 2 (author search requires -q/--query)`).
-
-**Fix direction.** Add bare-name compatibility to `search author` the
-same way `search drug` handles it: if the first positional argument is a
-string without a flag, treat it as the query. Backward compatible because
-the current behavior is an error.
-
-**Estimated complexity.** Level 1 (Luna High). One argument parser
-change, one test.
-
-## Ticket F: Local-data sync commands could report per-source detail
-
-**What is wrong.** The `--json` sync commands report `changed` (fixed in
-ticket 1196) but not what changed. An agent syncing six sources cannot
-tell whether the EMA bundle grew by one file or was completely replaced.
-
-**Evidence.** The bundle fingerprint from ticket 1196 already computes the
-sorted path/length/mtime triple before and after. The delta between the
-two fingerprints is exactly the per-file detail, currently discarded.
-
-**Fix direction.** Add a `changes` array to the sync outcome listing
-added, removed, and modified paths computed from the fingerprint delta.
-Backward compatible (new key, existing keys unchanged).
-
-**Estimated complexity.** Level 1 (Luna High). Extend the existing
-fingerprint comparison to emit the delta, one serializer change, tests.
-
-## Ticket G: The ORCID surface could show claim counts in the header
-
-**What is wrong.** `biomcp author papers orcid:<id>` returns the claimed
-works but does not surface how many total works the ORCID record claims
-versus how many were returned. A record with 200 claimed works and 10
-returned (the default page) gives no signal that more exist.
-
-**Evidence.** Not a defect — the pagination metadata does include
-`next` — but the human-readable Markdown does not say "showing 10 of 200
-claimed works" the way the trial surface says "showing N of M results."
-
-**Fix direction.** Add the total claimed-works count to the ORCID record
-fetch (the ORCID API already returns it in the works-summary group count)
-and surface it in both the Markdown header and the JSON pagination object.
-
-**Estimated complexity.** Level 1 (Luna High). One field extraction, one
-renderer change, tests with existing fixtures.
-
-## Ticket H: The MCP tool catalog could gain a discover tool
-
-**What is wrong.** The seven-tool MCP catalog has no discover tool.
-MCP-connected agents cannot use the concept mapper without falling back to
-raw `biomcp` tool execution, which requires them to construct CLI
-arguments rather than using a typed tool.
-
-**Evidence.** The catalog test pins the seven-tool count and the
-exclusion. The discover command has a stable, frozen output shape (JSON
-with concepts and next_commands) that would map cleanly to a typed tool.
-
-**Fix direction.** Add an eighth typed tool `discover` with a typed input
-schema (query string) and the existing discover output shape. Update the
-catalog pins, the measured byte/token ceilings, and the seven-tool tests
-to eight.
-
-**Estimated complexity.** Level 2 (Luna High). One tool definition, one
-handler, catalog updates, tests. The hard part is the ceiling updates,
-not the code.
-
 ## What I would not do
 
 - **Do not add a summarization or interpretation layer.** The bounded,
@@ -182,13 +109,18 @@ not the code.
 If forced to rank by user impact:
 
 1. **A** (search trial criteria) — the most common silent-zero in daily use
-2. **B** (citation-evidence crossref) — the biggest coverage gap in the newest feature
-3. **C** (citation sidecar) — makes B's results accumulate across queries
+2. **C** (citation sidecar) — makes results accumulate across queries, independent of B
+3. **B** (citation-evidence edge confirmation) — redesigned: confirm the edge via
+   open-citations providers (OpenCitations or OpenAlex) when S2 and JATS both
+   miss, providing the reference entry and clearly stating the passage is not
+   openly available. Crossref does not have passages; do not try to extract
+   text it does not contain. Needs a design review before implementation.
 4. **D** (discover --search) — saves a round trip on every unresolved concept query
-5. **E** (author bare-name) — consistency fix, low cost
-6. **F** (sync detail) — operational visibility
-7. **G** (ORCID counts) — user-facing completeness
-8. **H** (MCP discover tool) — convenience for MCP agents
+
+Tickets E through H were reviewed and deferred: E (author bare-name) is
+inconsistent but not broken; F (sync detail) serves a narrow audience; G
+(ORCID counts) is derivable from existing pagination; H (MCP discover tool)
+creates frozen-catalog churn for a convenience the raw tool already provides.
 
 A through C are the ones that change what users can actually accomplish.
 D through H are quality-of-life improvements that make the existing
