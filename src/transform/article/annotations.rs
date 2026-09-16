@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use crate::entities::article::{AnnotationCount, ArticleAnnotations};
-use crate::sources::pubtator::PubTatorDocument;
+use crate::sources::pubtator::{PubTatorDetail, PubTatorDocument};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AnnotationKind {
@@ -59,53 +59,92 @@ fn finalize_counts(map: HashMap<String, (String, u32, usize)>) -> Vec<Annotation
     out.into_iter().map(|(row, _)| row).collect()
 }
 
-pub fn extract_annotations(doc: &PubTatorDocument) -> Option<ArticleAnnotations> {
-    let mut genes: HashMap<String, (String, u32, usize)> = HashMap::new();
-    let mut diseases: HashMap<String, (String, u32, usize)> = HashMap::new();
-    let mut chemicals: HashMap<String, (String, u32, usize)> = HashMap::new();
-    let mut mutations: HashMap<String, (String, u32, usize)> = HashMap::new();
-    let mut next_order = 0usize;
-
-    for passage in &doc.passages {
-        for ann in &passage.annotations {
-            let Some(text) = ann.text.as_deref() else {
-                continue;
-            };
-            let Some(kind) = ann
-                .infons
-                .as_ref()
-                .and_then(|i| i.kind.as_deref())
-                .and_then(annotation_kind)
-            else {
-                continue;
-            };
-
-            match kind {
-                AnnotationKind::Gene => push_annotation_count(&mut genes, text, next_order),
-                AnnotationKind::Disease => push_annotation_count(&mut diseases, text, next_order),
-                AnnotationKind::Chemical => push_annotation_count(&mut chemicals, text, next_order),
-                AnnotationKind::Mutation => push_annotation_count(&mut mutations, text, next_order),
+pub fn extract_detail_annotations(detail: &PubTatorDetail) -> Option<ArticleAnnotations> {
+    match detail {
+        PubTatorDetail::Adopted(response) => {
+            let record = response.provider_record()?;
+            let passages = record.passages();
+            let mut accumulator = AnnotationAccumulator::default();
+            for index in 0..passages.len() {
+                let Some(passage) = passages.get(index) else {
+                    continue;
+                };
+                for annotation in passage.annotations().iter() {
+                    if let Some(kind) = annotation.infons().annotation_type() {
+                        accumulator.push(annotation.text(), kind);
+                    }
+                }
             }
-            next_order += 1;
+            accumulator.finish()
+        }
+        PubTatorDetail::Legacy { document, .. } => extract_annotations(document),
+    }
+}
+
+pub fn extract_annotations(doc: &PubTatorDocument) -> Option<ArticleAnnotations> {
+    aggregate_annotations(doc.passages.iter().flat_map(|passage| {
+        passage.annotations.iter().filter_map(|annotation| {
+            annotation
+                .text
+                .as_deref()
+                .zip(annotation.infons.as_ref()?.kind.as_deref())
+        })
+    }))
+}
+
+type AnnotationMap = HashMap<String, (String, u32, usize)>;
+
+#[derive(Default)]
+struct AnnotationAccumulator {
+    genes: AnnotationMap,
+    diseases: AnnotationMap,
+    chemicals: AnnotationMap,
+    mutations: AnnotationMap,
+    next_order: usize,
+}
+
+impl AnnotationAccumulator {
+    fn push(&mut self, text: &str, kind: &str) {
+        let Some(kind) = annotation_kind(kind) else {
+            return;
+        };
+        let map = match kind {
+            AnnotationKind::Gene => &mut self.genes,
+            AnnotationKind::Disease => &mut self.diseases,
+            AnnotationKind::Chemical => &mut self.chemicals,
+            AnnotationKind::Mutation => &mut self.mutations,
+        };
+        push_annotation_count(map, text, self.next_order);
+        self.next_order += 1;
+    }
+
+    fn finish(self) -> Option<ArticleAnnotations> {
+        let annotations = ArticleAnnotations {
+            genes: finalize_counts(self.genes),
+            diseases: finalize_counts(self.diseases),
+            chemicals: finalize_counts(self.chemicals),
+            mutations: finalize_counts(self.mutations),
+        };
+        if annotations.genes.is_empty()
+            && annotations.diseases.is_empty()
+            && annotations.chemicals.is_empty()
+            && annotations.mutations.is_empty()
+        {
+            None
+        } else {
+            Some(annotations)
         }
     }
+}
 
-    let annotations = ArticleAnnotations {
-        genes: finalize_counts(genes),
-        diseases: finalize_counts(diseases),
-        chemicals: finalize_counts(chemicals),
-        mutations: finalize_counts(mutations),
-    };
-
-    if annotations.genes.is_empty()
-        && annotations.diseases.is_empty()
-        && annotations.chemicals.is_empty()
-        && annotations.mutations.is_empty()
-    {
-        None
-    } else {
-        Some(annotations)
+fn aggregate_annotations<'a>(
+    annotations: impl IntoIterator<Item = (&'a str, &'a str)>,
+) -> Option<ArticleAnnotations> {
+    let mut accumulator = AnnotationAccumulator::default();
+    for (text, kind) in annotations {
+        accumulator.push(text, kind);
     }
+    accumulator.finish()
 }
 
 #[cfg(test)]

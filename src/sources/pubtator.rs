@@ -7,6 +7,11 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
+mod detail;
+pub use self::detail::PubTatorDetail;
+#[cfg(test)]
+pub(crate) use self::detail::{parse_publication_detail, validate_detail_transport};
+
 const PUBTATOR_BASE: &str = "https://www.ncbi.nlm.nih.gov/research/pubtator3-api";
 const PUBTATOR_BASE_ENV: &str = "BIOMCP_PUBTATOR_BASE";
 
@@ -72,15 +77,21 @@ impl PubTatorClient {
         })
     }
 
-    async fn get_json<T: DeserializeOwned>(
+    async fn acquire_json_response(
         &self,
         req: reqwest_middleware::RequestBuilder,
         authenticated: bool,
-    ) -> Result<T, BioMcpError> {
+    ) -> Result<
+        (
+            reqwest::StatusCode,
+            Option<reqwest::header::HeaderValue>,
+            Vec<u8>,
+        ),
+        BioMcpError,
+    > {
+        let context = crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3);
         let resp = crate::sources::apply_cache_mode_with_auth(req, authenticated)
-            .send_with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::PUBTATOR3,
-            ))
+            .send_with_source_context(context)
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
@@ -89,6 +100,15 @@ impl PubTatorClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::PUBTATOR3),
         )
         .await?;
+        Ok((status, content_type, bytes))
+    }
+
+    async fn get_json<T: DeserializeOwned>(
+        &self,
+        req: reqwest_middleware::RequestBuilder,
+        authenticated: bool,
+    ) -> Result<T, BioMcpError> {
+        let (status, content_type, bytes) = self.acquire_json_response(req, authenticated).await?;
         crate::sources::decode_json(
             crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
             status,

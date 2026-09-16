@@ -30,6 +30,7 @@ impl SourceProvider {
     pub const ENRICHR: Self = Self::new("Enrichr");
     pub const EUROPE_PMC: Self = Self::new("Europe PMC");
     pub const FIGSHARE: Self = Self::new("Figshare");
+    pub const GENCC: Self = Self::new("GenCC");
     pub const GNOMAD: Self = Self::new("gnomAD");
     pub const GPROFILER: Self = Self::new("g:Profiler");
     pub const GTEX: Self = Self::new("GTEx");
@@ -97,6 +98,7 @@ impl SourceProvider {
         Self::ENRICHR,
         Self::EUROPE_PMC,
         Self::FIGSHARE,
+        Self::GENCC,
         Self::GNOMAD,
         Self::GPROFILER,
         Self::GTEX,
@@ -175,6 +177,7 @@ impl SourceProvider {
             "enrichr" | "Enrichr" => Self::ENRICHR,
             "europepmc" | "Europe PMC" => Self::EUROPE_PMC,
             "figshare" | "Figshare" => Self::FIGSHARE,
+            "gencc" | "GenCC" => Self::GENCC,
             "gnomAD" => Self::GNOMAD,
             "gprofiler" | "g:Profiler" => Self::GPROFILER,
             "gtex" | "GTEx" => Self::GTEX,

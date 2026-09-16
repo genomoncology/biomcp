@@ -320,7 +320,7 @@ pub(super) async fn resolve_article_from_pmid_with_context(
         .await;
     }
     let Some(pubtator_result) =
-        variant_detail_request(execution, "pubtator", pubtator.export_biocjson(pmid)).await
+        variant_detail_request(execution, "pubtator", pubtator.publication_detail(pmid)).await
     else {
         return Err(BioMcpError::SourceUnavailable {
             source_name: "variant article work budget".into(),
@@ -329,14 +329,9 @@ pub(super) async fn resolve_article_from_pmid_with_context(
         });
     };
     match pubtator_result {
-        Ok(resp) => {
-            let doc = resp
-                .documents
-                .into_iter()
-                .next()
-                .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?;
-
-            let mut article = transform::article::from_pubtator_document(&doc);
+        Ok(detail) => {
+            let detail = detail.ok_or_else(|| article_not_found(not_found_id, suggestion_id))?;
+            let mut article = transform::article::from_pubtator_detail(&detail);
             if let Some(hit) = europe_hint {
                 transform::article::merge_europepmc_metadata(&mut article, hit);
             } else if let Some(Ok(search)) = variant_detail_request(
@@ -349,7 +344,7 @@ pub(super) async fn resolve_article_from_pmid_with_context(
             {
                 transform::article::merge_europepmc_metadata(&mut article, &hit);
             }
-            article.annotations = transform::article::extract_annotations(&doc);
+            article.annotations = transform::article::extract_detail_annotations(&detail);
             Ok(article)
         }
         Err(err) => {
@@ -770,5 +765,7 @@ pub async fn get(
     Ok(article)
 }
 
+#[cfg(test)]
+mod pubtator_surfaces;
 #[cfg(test)]
 mod tests;

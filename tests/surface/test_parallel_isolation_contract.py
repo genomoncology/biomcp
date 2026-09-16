@@ -237,6 +237,250 @@ sleep 0.1
     )
 
 
+def test_provider_parallel_pages_receive_private_mutable_logs(tmp_path: Path) -> None:
+    runner_source = _read_repo("scripts/run-specs.sh")
+    routine_paths = _runner_array_paths("SPEC_ROUTINE_PATHS")
+    provider_log_consumers = [
+        path
+        for path in routine_paths
+        if path.endswith(".md")
+        and "BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" in _read_repo(path)
+    ]
+    assert len(provider_log_consumers) > 1, (
+        "this contract needs the parallel provider pages that observe mutable request logs"
+    )
+
+    workspace = tmp_path / "workspace"
+    (workspace / "scripts").mkdir(parents=True)
+    fixtures = workspace / "spec" / "fixtures"
+    fixtures.mkdir(parents=True)
+    (workspace / "ctgov-root").mkdir()
+    for path in provider_log_consumers:
+        copied_page = workspace / path
+        copied_page.parent.mkdir(parents=True, exist_ok=True)
+        copied_page.write_text(_read_repo(path), encoding="utf-8")
+    routine_body = "\n".join(f"  {path}" for path in provider_log_consumers)
+    runner_source = re.sub(
+        r"(?ms)^SPEC_ROUTINE_PATHS=\(\n.*?^\)",
+        f"SPEC_ROUTINE_PATHS=(\n{routine_body}\n)",
+        runner_source,
+        count=1,
+    )
+    _write_executable(workspace / "scripts" / "run-specs.sh", runner_source)
+
+    noop_setups = (
+        "setup-article-fulltext-source-fixture.sh",
+        "setup-study-spec-fixture.sh",
+        "setup-ddinter-spec-fixture.sh",
+        "setup-disease-survival-spec-fixture.sh",
+        "setup-vaers-spec-fixture.sh",
+        "setup-variant-identity-spec-fixture.sh",
+        "setup-clingen-cspec-spec-fixture.sh",
+        "setup-cpic-spec-fixture.sh",
+    )
+    noop_cleanups = (
+        "cleanup-article-fulltext-source-fixture.sh",
+        "cleanup-ctgov-intervention-alias-spec-fixture.sh",
+        "cleanup-disease-survival-spec-fixture.sh",
+        "cleanup-provider-contract-spec-fixture.sh",
+        "cleanup-vaers-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
+        "cleanup-clingen-cspec-spec-fixture.sh",
+        "cleanup-cpic-spec-fixture.sh",
+    )
+    for name in (*noop_setups, *noop_cleanups):
+        _write_executable(fixtures / name, "#!/usr/bin/env bash\nexit 0\n")
+    _write_executable(
+        fixtures / "setup-provider-contract-spec-fixture.sh",
+        """#!/usr/bin/env bash
+set -euo pipefail
+root="$1"
+mkdir -p "$root/.cache"
+fixture_root="$(mktemp -d "$root/.cache/provider-page.XXXXXX")"
+cat >"$root/.cache/spec-provider-contract-env" <<EOF
+export BIOMCP_PROVIDER_CONTRACT_BASE="http://127.0.0.1/provider"
+export BIOMCP_PROVIDER_CONTRACT_ROOT="$fixture_root"
+EOF
+""",
+    )
+
+    bin_dir = workspace / "bin"
+    bin_dir.mkdir()
+    observations = workspace / "worker-environments"
+    _write_executable(
+        bin_dir / "mustmatch",
+        """#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == --version ]]; then
+  echo 'mustmatch 1.0.0'
+  exit 0
+fi
+printf '%s|%s\\n' "$2" "${BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG:-missing}" >>"$OBSERVATIONS"
+sleep 0.1
+""",
+    )
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"],
+        cwd=workspace,
+        env=os.environ
+        | {
+            "MUSTMATCH_BIN": str(bin_dir / "mustmatch"),
+            "BIOMCP_BIN": "/bin/true",
+            "BIOMCP_SPEC_WORKERS": str(len(provider_log_consumers)),
+            "OBSERVATIONS": str(observations),
+            # trial.md consumes both request logs; this page set does not
+            # include the CTGov fixture's gating paths, so configure the two
+            # variables its per-page preparation needs directly.
+            "BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT": str(workspace / "ctgov-root"),
+            "BIOMCP_CTGOV_BASE": "http://127.0.0.1/ctgov",
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    page_logs = dict(
+        line.split("|", 1)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    )
+    assert set(page_logs) == set(provider_log_consumers)
+    assert "missing" not in page_logs.values()
+    assert len(set(page_logs.values())) == len(page_logs), (
+        "parallel provider pages share mutable request logs: " + repr(page_logs)
+    )
+
+
+def test_provider_page_preparation_scopes_endpoints_and_keeps_the_contract_env(
+    tmp_path: Path,
+) -> None:
+    """The per-page preparation rewrites only the endpoint variables."""
+    ctgov_free_provider_pages = [
+        path
+        for path in _runner_array_paths("SPEC_ROUTINE_PATHS")
+        if path.endswith(".md")
+        and "BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" in _read_repo(path)
+        and "BIOMCP_CTGOV" not in _read_repo(path)
+    ]
+    assert ctgov_free_provider_pages, "expected a CTGov-free provider page"
+    page = ctgov_free_provider_pages[0]
+
+    workspace = tmp_path / "workspace"
+    (workspace / "scripts").mkdir(parents=True)
+    fixtures = workspace / "spec" / "fixtures"
+    fixtures.mkdir(parents=True)
+    copied_page = workspace / page
+    copied_page.parent.mkdir(parents=True, exist_ok=True)
+    copied_page.write_text(_read_repo(page), encoding="utf-8")
+    runner_source = re.sub(
+        r"(?ms)^SPEC_ROUTINE_PATHS=\(\n.*?^\)",
+        f"SPEC_ROUTINE_PATHS=(\n  {page}\n)",
+        _read_repo("scripts/run-specs.sh"),
+        count=1,
+    )
+    _write_executable(workspace / "scripts" / "run-specs.sh", runner_source)
+
+    noop_setups = (
+        "setup-article-fulltext-source-fixture.sh",
+        "setup-study-spec-fixture.sh",
+        "setup-ddinter-spec-fixture.sh",
+        "setup-disease-survival-spec-fixture.sh",
+        "setup-vaers-spec-fixture.sh",
+        "setup-variant-identity-spec-fixture.sh",
+        "setup-clingen-cspec-spec-fixture.sh",
+        "setup-cpic-spec-fixture.sh",
+    )
+    noop_cleanups = (
+        "cleanup-article-fulltext-source-fixture.sh",
+        "cleanup-ctgov-intervention-alias-spec-fixture.sh",
+        "cleanup-disease-survival-spec-fixture.sh",
+        "cleanup-provider-contract-spec-fixture.sh",
+        "cleanup-vaers-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
+        "cleanup-clingen-cspec-spec-fixture.sh",
+        "cleanup-cpic-spec-fixture.sh",
+    )
+    for name in (*noop_setups, *noop_cleanups):
+        _write_executable(fixtures / name, "#!/usr/bin/env bash\nexit 0\n")
+    _write_executable(
+        fixtures / "setup-provider-contract-spec-fixture.sh",
+        """#!/usr/bin/env bash
+set -euo pipefail
+root="$1"
+mkdir -p "$root/.cache"
+fixture_root="$(mktemp -d "$root/.cache/provider-page.XXXXXX")"
+cat >"$root/.cache/spec-provider-contract-env" <<EOF
+export BIOMCP_PROVIDER_CONTRACT_BASE="http://127.0.0.1:9"
+export BIOMCP_PROVIDER_CONTRACT_ROOT="$fixture_root"
+export BIOMCP_PROVIDER_CONTRACT_READY_FILE="$fixture_root/ready"
+export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG="$fixture_root/request.log"
+export BIOMCP_TEST_UNPACED_ORIGIN="http://127.0.0.1:9"
+export BIOMCP_OPENFDA_BASE="http://127.0.0.1:9/openfda"
+export BIOMCP_MYCHEM_BASE="http://127.0.0.1:9/mychem/v1"
+export BIOMCP_UNRELATED_BASE="http://example.invalid/v1"
+EOF
+""",
+    )
+
+    bin_dir = workspace / "bin"
+    bin_dir.mkdir()
+    observations = workspace / "worker-environments"
+    _write_executable(
+        bin_dir / "mustmatch",
+        """#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == --version ]]; then
+  echo 'mustmatch 1.0.0'
+  exit 0
+fi
+{
+  printf 'root=%s\\n' "${BIOMCP_PROVIDER_CONTRACT_ROOT:-missing}"
+  printf 'base=%s\\n' "${BIOMCP_PROVIDER_CONTRACT_BASE:-missing}"
+  printf 'ready_file=%s\\n' "${BIOMCP_PROVIDER_CONTRACT_READY_FILE:-missing}"
+  printf 'request_log=%s\\n' "${BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG:-missing}"
+  printf 'unpaced=%s\\n' "${BIOMCP_TEST_UNPACED_ORIGIN:-missing}"
+  printf 'openfda=%s\\n' "${BIOMCP_OPENFDA_BASE:-missing}"
+  printf 'mychem=%s\\n' "${BIOMCP_MYCHEM_BASE:-missing}"
+  printf 'unrelated=%s\\n' "${BIOMCP_UNRELATED_BASE:-missing}"
+} >>"$OBSERVATIONS"
+""",
+    )
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"],
+        cwd=workspace,
+        env=os.environ
+        | {
+            "MUSTMATCH_BIN": str(bin_dir / "mustmatch"),
+            "BIOMCP_BIN": "/bin/true",
+            "BIOMCP_SPEC_WORKERS": "1",
+            "OBSERVATIONS": str(observations),
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    observed = dict(
+        line.split("=", 1)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    )
+    base = "http://127.0.0.1:9"
+    fixture_root = observed["root"]
+    assert observed["base"] == base
+    assert observed["ready_file"] == f"{fixture_root}/ready"
+    assert observed["unpaced"] == base
+    assert observed["unrelated"] == "http://example.invalid/v1"
+    assert observed["request_log"].startswith(f"{fixture_root}/request-log.")
+    assert observed["request_log"] != f"{fixture_root}/request.log"
+    namespace = observed["request_log"].rsplit("/", 1)[-1]
+    worker_base = f"{base}/__biomcp_provider_worker/{namespace}"
+    assert observed["openfda"] == f"{worker_base}/openfda"
+    assert observed["mychem"] == f"{worker_base}/mychem/v1"
+
+
 def test_ctgov_parallel_isolation_keeps_request_shape_and_no_request_proofs() -> None:
     numeric = _markdown_heading_body(
         "spec/entity/trial-numeric-filters.md",

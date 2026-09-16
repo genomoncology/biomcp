@@ -6,6 +6,7 @@ mod federation;
 mod html;
 mod jats;
 mod pdf;
+mod pubtator;
 
 #[allow(unused_imports)]
 pub use self::anchors::truncate_abstract;
@@ -13,10 +14,10 @@ pub use self::anchors::{
     article_search_abstract_snippet, article_search_fallback_title, clean_abstract, clean_title,
     normalize_article_search_text,
 };
-pub use self::annotations::extract_annotations;
+pub use self::annotations::{extract_annotations, extract_detail_annotations};
 pub use self::federation::{
     from_europepmc_result, from_europepmc_search_result, from_pubmed_esummary_entry,
-    from_pubtator_document, from_pubtator_search_result, merge_europepmc_metadata,
+    from_pubtator_search_result, merge_europepmc_metadata,
 };
 pub(crate) use self::html::{classify_html_document, extract_pmc_supplement_links};
 pub(crate) use self::jats::{
@@ -24,6 +25,7 @@ pub(crate) use self::jats::{
     extract_citation_evidence, extract_jats_supplement_links,
 };
 pub use self::pdf::extract_text_from_pdf;
+pub use self::pubtator::{from_pubtator_detail, from_pubtator_document};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ArticleSupplementLink {

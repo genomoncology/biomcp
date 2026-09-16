@@ -178,3 +178,144 @@ fn decode_json_rejects_non_json_content_type() {
     assert!(msg.contains("PubTator 3"), "got: {msg}");
     assert!(msg.contains("HTML"), "got: {msg}");
 }
+
+fn admitted_record(id: &str, title: &str) -> serde_json::Value {
+    serde_json::json!({
+        "id": id,
+        "passages": [{
+            "infons": {"type": "title"},
+            "offset": 0,
+            "text": title,
+            "sentences": [],
+            "annotations": [],
+            "relations": []
+        }]
+    })
+}
+
+#[test]
+fn pubtator_detail_selects_the_later_admitted_match_and_keeps_original_bytes() {
+    let bytes = serde_json::to_vec(&serde_json::json!({
+        "PubTator3": [admitted_record("8", "other"), admitted_record("7", "selected")]
+    }))
+    .unwrap();
+
+    let detail = parse_publication_detail(7, &bytes).expect("bound detail");
+    let PubTatorDetail::Adopted(response) = detail.expect("nonempty detail") else {
+        panic!("expected adopted response");
+    };
+    assert_eq!(response.selected_index(), 1);
+    assert_eq!(response.response_bytes(), bytes);
+    let capture = biodata::Capture::from_bytes("pubtator3", "7", &bytes).unwrap();
+    assert_eq!(response.capture().digest(), capture.digest());
+    assert_eq!(response.value().title().raw(), Some("selected"));
+}
+
+#[test]
+fn pubtator_detail_rejects_admitted_identity_and_shape_neighbors_safely() {
+    let cases = [
+        (
+            serde_json::json!({"PubTator3": [admitted_record("7", "one"), admitted_record("7", "two")]}),
+            "ambiguous_identity",
+        ),
+        (
+            serde_json::json!({"PubTator3": [{"id": "7", "pmid": 8, "passages": []}]}),
+            "conflicting_identity",
+        ),
+        (
+            serde_json::json!({"PubTator3": [admitted_record("8", "wrong")]}),
+            "identity_mismatch",
+        ),
+        (
+            serde_json::json!({"PubTator3": [{"id": "0", "passages": []}]}),
+            "unusable_identity",
+        ),
+        (
+            serde_json::json!({"PubTator3": [{"id": "8", "passages": [], "neighbor": true}]}),
+            "legacy_identity_mismatch",
+        ),
+        (
+            serde_json::json!({"PubTator3": [{
+                "id": "7", "pmid": 8, "passages": [], "neighbor": true
+            }]}),
+            "legacy_conflicting_identity",
+        ),
+        (
+            serde_json::json!({"PubTator3": [
+                {"id": "7", "passages": [], "neighbor": true},
+                {"id": "7", "passages": [], "neighbor": true}
+            ]}),
+            "legacy_ambiguous_identity",
+        ),
+    ];
+
+    for (payload, code) in cases {
+        let error = parse_publication_detail(7, &serde_json::to_vec(&payload).unwrap())
+            .expect_err("neighbor must reject");
+        let debug = format!("{error:?}");
+        assert!(debug.contains(code), "{debug}");
+        assert!(!debug.contains("wrong"), "{debug}");
+        assert!(!debug.contains("neighbor"), "{debug}");
+    }
+}
+
+#[test]
+fn pubtator_detail_uses_legacy_only_for_one_bound_unsupported_shape() {
+    let bytes = br#"{"PubTator3":[{"id":"7","pmid":7,"pmcid":"PMC7","passages":[{"infons":{"type":"title","wider":"kept by legacy"},"text":"legacy title"}]}]}"#;
+
+    let detail = parse_publication_detail(7, bytes).expect("legacy detail");
+    let PubTatorDetail::Legacy {
+        requested_pmid,
+        document,
+    } = detail.expect("nonempty detail")
+    else {
+        panic!("expected legacy response");
+    };
+    assert_eq!(requested_pmid.as_str(), "7");
+    assert_eq!(document.id.as_deref(), Some("7"));
+    assert_eq!(document.pmid, Some(7));
+}
+
+#[test]
+fn pubtator_detail_transport_checks_status_and_content_type_before_adapter() {
+    let json = HeaderValue::from_static("application/json");
+    let html = HeaderValue::from_static("text/html");
+    let status_error = validate_detail_transport(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Some(&json),
+        br#"{"private":"body"}"#,
+    )
+    .expect_err("status must reject");
+    assert!(format!("{status_error:?}").contains("HTTP 500"));
+    assert!(!format!("{status_error:?}").contains("private"));
+
+    let content_error = validate_detail_transport(StatusCode::OK, Some(&html), b"<html>")
+        .expect_err("content type must reject");
+    assert_eq!(content_error.code(), "api");
+}
+
+#[test]
+fn pubtator_detail_empty_is_distinct_and_adapter_errors_are_terminal() {
+    assert!(
+        parse_publication_detail(7, br#"{"PubTator3":[]}"#)
+            .unwrap()
+            .is_none()
+    );
+    for (bytes, code) in [
+        (
+            br#"{"PubTator3":[{"id":"7","id":"7","passages":[]}]}"#.as_slice(),
+            "duplicate_member",
+        ),
+        (
+            br#"{"PubTator3":[{"id":"7","passages":"many"}]}"#.as_slice(),
+            "legacy_decode",
+        ),
+    ] {
+        let error = parse_publication_detail(7, bytes).expect_err("invalid detail");
+        assert!(format!("{error:?}").contains(code));
+    }
+
+    let oversized = vec![b' '; biodata::PubTator3Limits::default().max_input_bytes() + 1];
+    let error = parse_publication_detail(7, &oversized).expect_err("resource neighbor");
+    assert!(format!("{error:?}").contains("response_too_large"));
+}

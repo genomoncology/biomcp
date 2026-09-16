@@ -2,6 +2,19 @@ version = 1
 
 [selection]
 rust = [
+  "sources::pubtator::tests::construction::pubtator_detail_plan_adapts_the_biodata_path_and_adds_auth_only_in_transport",
+  "sources::pubtator::tests::parsing::pubtator_detail_selects_the_later_admitted_match_and_keeps_original_bytes",
+  "sources::pubtator::tests::parsing::pubtator_detail_rejects_admitted_identity_and_shape_neighbors_safely",
+  "sources::pubtator::tests::parsing::pubtator_detail_uses_legacy_only_for_one_bound_unsupported_shape",
+  "sources::pubtator::tests::parsing::pubtator_detail_transport_checks_status_and_content_type_before_adapter",
+  "sources::pubtator::tests::parsing::pubtator_detail_empty_is_distinct_and_adapter_errors_are_terminal",
+  "entities::article::detail::tests::rejected_admitted_detail_is_terminal_after_one_pubtator_request",
+  "entities::article::detail::tests::empty_admitted_response_is_original_not_found_without_europepmc",
+  "entities::article::detail::tests::actual_pubtator_http_404_retains_europepmc_fallback",
+  "entities::article::detail::tests::admitted_detail_preserves_shared_text_then_assembles_product_fields",
+  "entities::article::detail::pubtator_surfaces::actual_cli_detail_and_ordered_batches_use_adopted_pubtator",
+  "entities::article::detail::pubtator_surfaces::actual_raw_and_typed_mcp_preserve_detail_and_sanitize_refusal",
+  "transform::article::annotations::tests::adopted_and_legacy_details_share_annotation_aggregation",
   "cli::system::batch::tests::trial_batch_json_keeps_shared_projection_metadata",
   "cli::trial::dispatch::site_directory_tests::location_page_filters_sites_and_site_contacts_but_keeps_central_first",
   "cli::trial::dispatch::site_directory_tests::standalone_pagination_wrapper_serializes_only_the_current_directory_page",

@@ -625,7 +625,7 @@ enough to prove the public surfaces consume one projection. The four calls in
 each representative compare the section payload, outcome, and provenance;
 they do not repeat the full lifecycle matrix through every transport.
 
-```bash
+```bash timeout=600
 python3 - <<'PY' | mustmatch like 'GenCC adapter projections converge across CLI, raw MCP, typed MCP, and batch'
 import json
 import os

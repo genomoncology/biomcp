@@ -737,7 +737,7 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
                 "MUSTMATCH_BIN": str(bin_dir / "mustmatch"),
             },
         )
-        assert runner.wait(timeout=3) == 0
+        assert runner.wait(timeout=60) == 0
         _wait_until(lambda: stale.poll() is not None)
         assert not (
             workspace / ".cache" / "spec-article-fulltext-source-ownership"

@@ -66,11 +66,11 @@ impl WhoIvdClient {
 
     pub(crate) async fn ready(mode: WhoIvdSyncMode) -> Result<Self, BioMcpError> {
         let root = resolve_who_ivd_root();
-        sync_who_ivd_root(&root, mode).await?;
+        sync_who_ivd_root_inner(&root, mode).await?;
         Ok(Self { root })
     }
 
-    pub(crate) async fn sync(mode: WhoIvdSyncMode) -> Result<(), BioMcpError> {
+    pub(crate) async fn sync(mode: WhoIvdSyncMode) -> Result<bool, BioMcpError> {
         let root = resolve_who_ivd_root();
         sync_who_ivd_root(&root, mode).await
     }
@@ -264,7 +264,13 @@ fn who_ivd_sync_error(root: &Path, detail: impl Into<String>) -> BioMcpError {
     }
 }
 
-async fn sync_who_ivd_root(root: &Path, mode: WhoIvdSyncMode) -> Result<(), BioMcpError> {
+async fn sync_who_ivd_root(root: &Path, mode: WhoIvdSyncMode) -> Result<bool, BioMcpError> {
+    let before = crate::utils::download::bundle_fingerprint(root);
+    sync_who_ivd_root_inner(root, mode).await?;
+    Ok(before != crate::utils::download::bundle_fingerprint(root))
+}
+
+async fn sync_who_ivd_root_inner(root: &Path, mode: WhoIvdSyncMode) -> Result<(), BioMcpError> {
     let state = sync_state(root, mode);
     if matches!(state, SyncState::Fresh) {
         return Ok(());

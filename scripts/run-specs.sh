@@ -392,6 +392,54 @@ prepare_ctgov_page_request_log() {
   export BIOMCP_CTGOV_BASE="${fixture_base%/api/v2}/__biomcp_ctgov_worker/$namespace/api/v2"
 }
 
+provider_page_consumes_request_log() {
+  local path="$1"
+  grep -Fq 'BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG' "$path"
+}
+
+prepare_provider_page_request_log() {
+  # The provider fixture is optional: run_provider_contract_fixture tolerates
+  # an absent setup script (`[[ -x ... ]] || return 0`), and the make-test
+  # lane's parallel-isolation harness stubs the setup with no env file. When
+  # the fixture never configured a root there is no request log to make
+  # private, so the preparation is a clean no-op and the page runs exactly as
+  # it does in the sequential path. A configured root without a base is a
+  # broken fixture and still fails loudly below.
+  [[ -n "${BIOMCP_PROVIDER_CONTRACT_ROOT:-}" ]] || return 0
+  local fixture_root="$BIOMCP_PROVIDER_CONTRACT_ROOT"
+  local fixture_base="${BIOMCP_PROVIDER_CONTRACT_BASE:?provider fixture base is not configured}"
+  local request_log namespace
+  request_log="$(mktemp "$fixture_root/request-log.XXXXXX")"
+  namespace="${request_log##*/}"
+  export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG="$request_log"
+  local worker_base="${fixture_base}/__biomcp_provider_worker/$namespace"
+  # Scope only the provider endpoint variables. BIOMCP_PROVIDER_CONTRACT_BASE
+  # stays the unprefixed fixture origin because the spec pages derive
+  # BIOMCP_TEST_UNPACED_ORIGIN from it inline, and both consumers of that
+  # signal require a bare origin (scheme+host+port, path "/"): the rate
+  # limiter's unpaced bypass (UnpacedOrigin::parse_signal) and the GenCC
+  # fixture-override gate (fixture_override_allowed, required because the
+  # spec profile inherits release and debug_assertions is off). A
+  # worker-prefixed signal silently disables both, which re-enables pacing
+  # and denies the GenCC override. Pages that compose sub-bases from the
+  # plain base log to the shared request log, which no page reads any more,
+  # so every asserted entry still lands in the consuming page's private log.
+  local var value
+  for var in $(compgen -e | LC_ALL=C sort); do
+    case "$var" in
+      BIOMCP_PROVIDER_CONTRACT_BASE | BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG | \
+        BIOMCP_PROVIDER_CONTRACT_ROOT | BIOMCP_PROVIDER_CONTRACT_READY_FILE | \
+        BIOMCP_TEST_UNPACED_ORIGIN)
+        continue
+        ;;
+    esac
+    value="${!var}"
+    if [[ "$value" == "$fixture_base" || "$value" == "$fixture_base"/* ]]; then
+      export "$var=${worker_base}${value:${#fixture_base}}"
+    fi
+  done
+}
+
 run_markdown_specs() {
   ((${#MD_PATHS[@]})) || return 0
 
@@ -416,6 +464,9 @@ run_markdown_specs() {
     (
       if ctgov_page_consumes_request_log "$path"; then
         prepare_ctgov_page_request_log
+      fi
+      if provider_page_consumes_request_log "$path"; then
+        prepare_provider_page_request_log
       fi
       8>&- exec mustmatch test "$path" --lang bash "${timeout_args[@]}"
     ) >"$log_path" 2>&1 &

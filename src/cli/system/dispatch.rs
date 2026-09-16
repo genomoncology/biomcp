@@ -275,91 +275,105 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
     }
 }
 
-fn sync_outcome(source: &str, message: String, json: bool) -> anyhow::Result<CommandOutcome> {
+pub(super) fn sync_outcome(
+    source: &str,
+    message: impl Into<String>,
+    json: bool,
+    changed: bool,
+) -> anyhow::Result<CommandOutcome> {
     let text = if json {
         crate::render::json::to_pretty(&serde_json::json!({
             "kind": "data_sync",
             "source": source,
             "status": "synchronized",
-            "changed": true,
+            "changed": changed,
         }))?
     } else {
-        message
+        message.into()
     };
     Ok(CommandOutcome::stdout(text))
 }
 
 pub(crate) async fn handle_ema(cmd: EmaCommand, json: bool) -> anyhow::Result<CommandOutcome> {
-    let text = match cmd {
-        EmaCommand::Sync => {
-            crate::sources::ema::EmaClient::sync(crate::sources::ema::EmaSyncMode::Force).await?;
-            "EMA data synchronized successfully.\n".to_string()
-        }
-    };
-    sync_outcome("ema", text, json)
+    let EmaCommand::Sync = cmd;
+    let changed =
+        crate::sources::ema::EmaClient::sync(crate::sources::ema::EmaSyncMode::Force).await?;
+    sync_outcome(
+        "ema",
+        "EMA data synchronized successfully.\n",
+        json,
+        changed,
+    )
 }
 
 pub(crate) async fn handle_who(cmd: WhoCommand, json: bool) -> anyhow::Result<CommandOutcome> {
-    let text = match cmd {
-        WhoCommand::Sync => {
-            crate::sources::who_pq::WhoPqClient::sync(crate::sources::who_pq::WhoPqSyncMode::Force)
-                .await?;
-            "WHO Prequalification data synchronized successfully.\n".to_string()
-        }
-    };
-    sync_outcome("who", text, json)
+    let WhoCommand::Sync = cmd;
+    let changed =
+        crate::sources::who_pq::WhoPqClient::sync(crate::sources::who_pq::WhoPqSyncMode::Force)
+            .await?;
+    sync_outcome(
+        "who",
+        "WHO Prequalification data synchronized successfully.\n",
+        json,
+        changed,
+    )
 }
 
 pub(crate) async fn handle_cvx(cmd: CvxCommand, json: bool) -> anyhow::Result<CommandOutcome> {
-    let text = match cmd {
-        CvxCommand::Sync => {
-            crate::sources::cvx::CvxClient::sync(crate::sources::cvx::CvxSyncMode::Force).await?;
-            "CDC CVX/MVX local data bundle synchronized successfully.\n".to_string()
-        }
-    };
-    sync_outcome("cvx", text, json)
+    let CvxCommand::Sync = cmd;
+    let changed =
+        crate::sources::cvx::CvxClient::sync(crate::sources::cvx::CvxSyncMode::Force).await?;
+    sync_outcome(
+        "cvx",
+        "CDC CVX/MVX local data bundle synchronized successfully.\n",
+        json,
+        changed,
+    )
 }
 
 pub(crate) async fn handle_ddinter(
     cmd: DdinterCommand,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    let text = match cmd {
-        DdinterCommand::Sync => {
-            crate::sources::ddinter::DdinterClient::sync(
-                crate::sources::ddinter::DdinterSyncMode::Force,
-            )
-            .await?;
-            "DDInter local interaction data synchronized successfully.\n".to_string()
-        }
-    };
-    sync_outcome("ddinter", text, json)
+    let DdinterCommand::Sync = cmd;
+    let changed = crate::sources::ddinter::DdinterClient::sync(
+        crate::sources::ddinter::DdinterSyncMode::Force,
+    )
+    .await?;
+    sync_outcome(
+        "ddinter",
+        "DDInter local interaction data synchronized successfully.\n",
+        json,
+        changed,
+    )
 }
 
 pub(crate) async fn handle_gtr(cmd: GtrCommand, json: bool) -> anyhow::Result<CommandOutcome> {
-    let text = match cmd {
-        GtrCommand::Sync => {
-            crate::sources::gtr::GtrClient::sync(crate::sources::gtr::GtrSyncMode::Force).await?;
-            "GTR local diagnostic data synchronized successfully.\n".to_string()
-        }
-    };
-    sync_outcome("gtr", text, json)
+    let GtrCommand::Sync = cmd;
+    let changed =
+        crate::sources::gtr::GtrClient::sync(crate::sources::gtr::GtrSyncMode::Force).await?;
+    sync_outcome(
+        "gtr",
+        "GTR local diagnostic data synchronized successfully.\n",
+        json,
+        changed,
+    )
 }
 
 pub(crate) async fn handle_who_ivd(
     cmd: WhoIvdCommand,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    let text = match cmd {
-        WhoIvdCommand::Sync => {
-            crate::sources::who_ivd::WhoIvdClient::sync(
-                crate::sources::who_ivd::WhoIvdSyncMode::Force,
-            )
+    let WhoIvdCommand::Sync = cmd;
+    let changed =
+        crate::sources::who_ivd::WhoIvdClient::sync(crate::sources::who_ivd::WhoIvdSyncMode::Force)
             .await?;
-            "WHO IVD local diagnostic data synchronized successfully.\n".to_string()
-        }
-    };
-    sync_outcome("who_ivd", text, json)
+    sync_outcome(
+        "who_ivd",
+        "WHO IVD local diagnostic data synchronized successfully.\n",
+        json,
+        changed,
+    )
 }
 
 #[derive(serde::Serialize)]

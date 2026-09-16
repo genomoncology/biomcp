@@ -315,11 +315,11 @@ This reference comes from catalog format 1 and the recorded example `nct02576665
 
 The downloadable input is **transformed historical offline evidence**. It does not present current clinical information and it is not pristine live\-provider bytes. Its recorded time describes capture rather than provider processing. Consult ClinicalTrials.gov for current information.
 
-The [pinned fixture receipt](<https://github.com/genomoncology/biodata/blob/d6a4bbb86dc793a985e9fdab3d1fc9c0197d06ca/tests/fixtures/clinicaltrials-gov-v2/manifest.json>) records `Transport decoding and per\-file contact removal are recorded by this receipt` under `ClinicalTrials\.gov Terms and Conditions` with attribution to ClinicalTrials\.gov, U\.S\. National Library of Medicine. The request was `https://clinicaltrials\.gov/api/v2/studies/NCT02576665`.
+The [pinned fixture receipt](<https://github.com/genomoncology/biodata/blob/afb4ff9349f5f47e2a9d23305b0ac0ad1efb647c/tests/fixtures/clinicaltrials-gov-v2/manifest.json>) records `Transport decoding and per\-file contact removal are recorded by this receipt` under `ClinicalTrials\.gov Terms and Conditions` with attribution to ClinicalTrials\.gov, U\.S\. National Library of Medicine. The request was `https://clinicaltrials\.gov/api/v2/studies/NCT02576665`.
 
 The receipt records capture at `2026-09-02T22:50:57.882811Z`. The provider processing date is not recorded. Transport decoding and removal of `/protocolSection/contactsLocationsModule/overallOfficials` produced this admitted fixture. ClinicalTrials.gov updates daily.
 
-The recorded input SHA\-256 is `b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e`. The adapter and catalog are pinned to BioData revision `d6a4bbb86dc793a985e9fdab3d1fc9c0197d06ca`.
+The recorded input SHA\-256 is `b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e`. The adapter and catalog are pinned to BioData revision `afb4ff9349f5f47e2a9d23305b0ac0ad1efb647c`.
 
 Run the complete offline example after normal locked dependency preparation:
 

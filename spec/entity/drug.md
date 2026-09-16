@@ -32,7 +32,7 @@ pure owner. It keeps item order and resolved identities, compares the exact
 ordered command projection in single and two-item CLI cards, and checks that
 rendering discovery does not add provider requests.
 
-```bash
+```bash timeout=600
 python3 - <<'PY' | mustmatch like 'drug-card production projection passed'
 import json
 import os

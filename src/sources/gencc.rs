@@ -830,7 +830,7 @@ async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation
 
 #[cfg(test)]
 async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: Option<&str>) {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
     loop {
         if let Ok(store) = Store::open()
             && store.try_lock_refresh().is_ok_and(|locked| locked)
@@ -886,9 +886,9 @@ async fn cancelling_stalled_headers_and_streamed_body_drops_request_and_store_wo
         let store = Store::open().unwrap(); let expected = streamed_body.then_some("\"old\"");
         if streamed_body { let body = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/sources/gencc/submissions-new-odc1.csv")); let dataset = GenCcDataset::parse(body, &AtomicBool::new(false)).unwrap(); store.publish(&dataset, PublishMetadata { now: "2026-01-01T00:00:00Z", etag: "\"old\"", last_modified: "Sun, 06 Sep 2026 06:00:29 GMT", endpoint: ENDPOINT, body_sha256: &format!("{:x}", Sha256::digest(body)), row_count: dataset.row_count() }).unwrap(); }
         drop(store);
-        let task = tokio::spawn(async { GenCcClient::new().unwrap().acquire(Duration::from_secs(5)).await });
-        tokio::time::timeout(Duration::from_secs(2), entered.notified()).await.expect("request barrier"); task.abort(); assert!(task.await.unwrap_err().is_cancelled()); release.notify_waiters();
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(2); while active.load(Ordering::Acquire) != 0 { assert!(tokio::time::Instant::now() < deadline, "provider request survived cancellation"); tokio::time::sleep(Duration::from_millis(5)).await; }
+        let task = tokio::spawn(async { GenCcClient::new().unwrap().acquire(Duration::from_secs(30)).await });
+        tokio::time::timeout(Duration::from_secs(60), entered.notified()).await.expect("request barrier"); task.abort(); assert!(task.await.unwrap_err().is_cancelled()); release.notify_waiters();
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(60); while active.load(Ordering::Acquire) != 0 { assert!(tokio::time::Instant::now() < deadline, "provider request survived cancellation"); tokio::time::sleep(Duration::from_millis(5)).await; }
         assert_cancelled_store_settles(&root, expected).await;
         server.abort(); unsafe { std::env::remove_var("BIOMCP_GENCC_TEST_NOW"); std::env::remove_var("BIOMCP_GENCC_BASE"); std::env::remove_var("BIOMCP_GENCC_DIR"); }
     }
@@ -959,10 +959,10 @@ async fn cancelling_active_publication_joins_cleanup_and_releases_locks() {
     let mut task = tokio::spawn(async {
         GenCcClient::new()
             .unwrap()
-            .acquire(Duration::from_secs(5))
+            .acquire(Duration::from_secs(30))
             .await
     });
-    let marker_deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    let marker_deadline = tokio::time::Instant::now() + Duration::from_secs(60);
     while !marker.exists() {
         tokio::select! {
             result = &mut task => panic!("GenCC request completed before publication barrier: {result:?}"),

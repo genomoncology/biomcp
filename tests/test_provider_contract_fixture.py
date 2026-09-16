@@ -112,3 +112,43 @@ def test_provider_fixture_early_failure_removes_external_gencc_root(
     result = subprocess.run(["bash", str(SETUP), str(workspace)], env=environment)
     assert result.returncode == 86
     assert list(external.glob("biomcp-gencc-provider-contract.*")) == []
+
+
+@pytest.mark.skipif(
+    not Path("/proc").is_dir(), reason="fixture supervision needs procfs"
+)
+def test_provider_fixture_worker_namespace_scopes_the_request_log(
+    tmp_path: Path,
+) -> None:
+    workspace = _workspace(tmp_path)
+    try:
+        subprocess.run(["bash", str(SETUP), str(workspace)], check=True)
+        values = _exports(workspace / ".cache/spec-provider-contract-env")
+        fixture_root = Path(values["BIOMCP_PROVIDER_CONTRACT_ROOT"])
+        shared_log = Path(values["BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"])
+        shared_log.write_text("")
+        private_log = fixture_root / "request-log.abc123"
+        private_log.write_text("")
+
+        base_url = values["BIOMCP_PROVIDER_CONTRACT_BASE"]
+        worker = f"{base_url}/__biomcp_provider_worker/{private_log.name}"
+        with urlopen(f"{worker}/mychem/v1/query?q=Keytruda", timeout=2) as response:
+            body = json.load(response)
+        assert body["hits"][0]["_id"] == "C3855203"
+
+        assert "GET /mychem/v1/query?q=Keytruda" in private_log.read_text()
+        assert "Keytruda" not in shared_log.read_text()
+
+        with urlopen(f"{base_url}/mychem/v1/query?q=Keytruda", timeout=2) as response:
+            json.load(response)
+        assert "GET /mychem/v1/query?q=Keytruda" in shared_log.read_text()
+
+        with pytest.raises(HTTPError) as error:
+            urlopen(
+                f"{base_url}/__biomcp_provider_worker/request-log.zzzzzz/mychem/v1/query?q=Keytruda",
+                timeout=2,
+            )
+        assert error.value.code == 404
+        assert "zzzzzz" not in shared_log.read_text()
+    finally:
+        subprocess.run(["bash", str(CLEANUP), str(workspace)], check=False)

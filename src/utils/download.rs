@@ -14,6 +14,46 @@ fn download_path(id: &str) -> Result<PathBuf, BioMcpError> {
     Ok(download_path_for_config(id, &config))
 }
 
+/// A cheap before/after fingerprint of a synced bundle: the sorted
+/// `(path, byte length, mtime nanos)` of every file under `root`, or `None`
+/// when the root does not exist. Data-sync commands capture this before and
+/// after a refresh so `changed` reflects what the invocation actually did to
+/// the local bundle instead of assuming every forced refresh rewrote
+/// something. The signal tracks bundle write state (files added, removed,
+/// or rewritten); a byte-identical rewrite still registers as a change.
+pub(crate) fn bundle_fingerprint(root: &Path) -> Option<Vec<(PathBuf, u64, u128)>> {
+    if !root.exists() {
+        return None;
+    }
+    let mut entries = Vec::new();
+    collect_fingerprint_entries(root, &mut entries);
+    entries.sort();
+    Some(entries)
+}
+
+fn collect_fingerprint_entries(root: &Path, entries: &mut Vec<(PathBuf, u64, u128)>) {
+    let Ok(read_dir) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        if metadata.is_dir() {
+            collect_fingerprint_entries(&path, entries);
+            continue;
+        }
+        let mtime_nanos = metadata
+            .modified()
+            .ok()
+            .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+            .map(|duration| duration.as_nanos())
+            .unwrap_or_default();
+        entries.push((path, metadata.len(), mtime_nanos));
+    }
+}
+
 fn download_path_for_config(id: &str, config: &crate::cache::ResolvedCacheConfig) -> PathBuf {
     config
         .cache_root
@@ -191,8 +231,8 @@ mod tests {
     use std::time::Duration;
 
     use super::{
-        cache_key, download_path_for_config, save_atomic_to_path, write_atomic_bytes,
-        write_user_atomic_bytes,
+        bundle_fingerprint, cache_key, download_path_for_config, save_atomic_to_path,
+        write_atomic_bytes, write_user_atomic_bytes,
     };
     use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
     use crate::test_support::TempDirGuard;
@@ -398,5 +438,32 @@ mod tests {
                 .is_err()
         );
         assert_eq!(std::fs::read_to_string(outside).unwrap(), "outside");
+    }
+
+    #[test]
+    fn bundle_fingerprint_is_none_for_a_missing_root() {
+        let root = TempDirGuard::new("fingerprint-missing");
+        assert!(bundle_fingerprint(&root.path().join("absent")).is_none());
+    }
+
+    #[test]
+    fn bundle_fingerprint_is_stable_until_a_file_changes() {
+        let root = TempDirGuard::new("fingerprint-stable");
+        std::fs::create_dir_all(root.path().join("nested")).unwrap();
+        std::fs::write(root.path().join("bundle.csv"), "one\n").unwrap();
+        std::fs::write(root.path().join("nested").join("extra.csv"), "two\n").unwrap();
+
+        let before = bundle_fingerprint(root.path()).expect("bundle fingerprint");
+        assert_eq!(before.len(), 2);
+        let unchanged = bundle_fingerprint(root.path()).expect("bundle fingerprint");
+        assert_eq!(before, unchanged);
+
+        std::fs::write(root.path().join("bundle.csv"), "one and more\n").unwrap();
+        let rewritten = bundle_fingerprint(root.path()).expect("bundle fingerprint");
+        assert_ne!(before, rewritten);
+
+        std::fs::remove_file(root.path().join("nested").join("extra.csv")).unwrap();
+        let removed = bundle_fingerprint(root.path()).expect("bundle fingerprint");
+        assert_ne!(rewritten, removed);
     }
 }

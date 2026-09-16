@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "d6a4bbb86dc793a985e9fdab3d1fc9c0197d06ca"
+REVISION = "afb4ff9349f5f47e2a9d23305b0ac0ad1efb647c"
 
 
 def _write(path: Path, content: str) -> None:
@@ -36,7 +36,7 @@ biodata = {{ git = "{URL}", rev = "{REVISION}" }}
 
 [[package]]
 name = "biodata"
-version = "0.0.24"
+version = "0.0.27"
 source = "git+{URL}?rev={REVISION}#{REVISION}"
 """,
     )
@@ -104,7 +104,7 @@ def test_biodata_boundary_accepts_a_complete_minimal_fixture(tmp_path: Path) -> 
     ("old", "new"),
     [
         (REVISION, "0" * 40),
-        ('version = "0.0.24"', 'version = "0.0.14"'),
+        ('version = "0.0.27"', 'version = "0.0.14"'),
     ],
 )
 def test_biodata_boundary_rejects_wrong_lock_or_revision(

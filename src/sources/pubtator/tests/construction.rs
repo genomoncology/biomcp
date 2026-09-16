@@ -27,6 +27,20 @@ fn export_biocjson_plan_sets_pmids_and_optional_api_key() {
 }
 
 #[test]
+fn pubtator_detail_plan_adapts_the_biodata_path_and_adds_auth_only_in_transport() {
+    let plan = PubTatorClient::publication_detail_plan(22663011, None).unwrap();
+    assert_eq!(plan.method, HttpMethod::Get);
+    assert_eq!(plan.path, "publications/export/biocjson");
+    assert_eq!(plan.query_value("pmids"), Some("22663011"));
+    assert!(!plan.has_query("api_key"));
+
+    let keyed = PubTatorClient::publication_detail_plan(22663011, Some(" test-key ")).unwrap();
+    assert_eq!(keyed.query_value("pmids"), Some("22663011"));
+    assert_eq!(keyed.query_value("api_key"), Some("test-key"));
+    assert!(PubTatorClient::publication_detail_plan(0, None).is_err());
+}
+
+#[test]
 fn autocomplete_plan_sets_query_and_validates_input() {
     let plan = PubTatorClient::entity_autocomplete_plan(" BRAF ", None).unwrap();
 

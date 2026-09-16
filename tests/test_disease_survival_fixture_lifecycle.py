@@ -367,14 +367,17 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
         time.sleep(0.05)
     record_path = workspace / ".cache" / "spec-disease-survival-ownership"
     try:
-        _wait_until(lambda: ready.exists() and record_path.exists())
+        # The runner can be killed before its ready marker under lane
+        # saturation. The ownership record is the observation needed for the
+        # post-kill cleanup assertions and may take longer to appear.
+        _wait_until(lambda: record_path.exists(), timeout=60)
         record = _read_record(record_path)
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
         healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
 
         assert timed_run.wait(timeout=60) == -signal.SIGKILL
-        _wait_until(lambda: _healthz_is_unavailable(healthz_url))
-        _wait_until(lambda: not fixture_root.exists())
+        _wait_until(lambda: _healthz_is_unavailable(healthz_url), timeout=60)
+        _wait_until(lambda: not fixture_root.exists(), timeout=60)
     finally:
         if timed_run.poll() is None:
             timed_run.kill()

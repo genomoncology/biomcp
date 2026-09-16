@@ -30,6 +30,7 @@ async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
     env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
     env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("NCBI_API_KEY", "");
     let execution = super::super::variant_search::VariantArticleExecutionContext::single();
 
     let article =
@@ -54,6 +55,220 @@ async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
             Some("provider_error")
         )
     );
+}
+
+#[serial_test::serial(article_resolver_env)]
+#[tokio::test]
+async fn rejected_admitted_detail_is_terminal_after_one_pubtator_request() {
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    let pubtator_calls = std::sync::Arc::new(AtomicUsize::new(0));
+    let europe_calls = std::sync::Arc::new(AtomicUsize::new(0));
+    let pubtator_seen = pubtator_calls.clone();
+    let europe_seen = europe_calls.clone();
+    let fixture = TestHttpFixture::spawn(move |request| {
+        if request.starts_with("GET /publications/export/biocjson?") {
+            pubtator_seen.fetch_add(1, Ordering::SeqCst);
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"PubTator3":[{"id":"8","passages":[]}]}"#,
+            ))
+        } else {
+            europe_seen.fetch_add(1, Ordering::SeqCst);
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", br#"{}"#))
+        }
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("pubtator-admitted-refusal");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("NCBI_API_KEY", "");
+    let pubtator = PubTatorClient::new().unwrap();
+    let europe = EuropePmcClient::new().unwrap();
+
+    let error = get_article_base_with_clients("7", &pubtator, &europe)
+        .await
+        .expect_err("mismatched admitted record must fail");
+
+    assert!(format!("{error:?}").contains("identity_mismatch"));
+    assert_eq!(pubtator_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(europe_calls.load(Ordering::SeqCst), 0);
+}
+
+#[serial_test::serial(article_resolver_env)]
+#[tokio::test]
+async fn empty_admitted_response_is_original_not_found_without_europepmc() {
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    let europe_calls = std::sync::Arc::new(AtomicUsize::new(0));
+    let europe_seen = europe_calls.clone();
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let body = if request.starts_with("GET /publications/export/biocjson?") {
+            br#"{"PubTator3":[]}"#.as_slice()
+        } else {
+            europe_seen.fetch_add(1, Ordering::SeqCst);
+            br#"{}"#.as_slice()
+        };
+        TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("pubtator-empty-admitted");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("NCBI_API_KEY", "");
+    let pubtator = PubTatorClient::new().unwrap();
+    let europe = EuropePmcClient::new().unwrap();
+
+    let error = get_article_base_with_clients("7", &pubtator, &europe)
+        .await
+        .expect_err("empty admitted response");
+
+    assert!(matches!(
+        error,
+        BioMcpError::NotFound { entity, id, .. } if entity == "article" && id == "7"
+    ));
+    assert_eq!(europe_calls.load(Ordering::SeqCst), 0);
+}
+
+#[serial_test::serial(article_resolver_env)]
+#[tokio::test]
+async fn actual_pubtator_http_404_retains_europepmc_fallback() {
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+
+    let fixture = TestHttpFixture::spawn(|request| {
+        if request.starts_with("GET /publications/export/biocjson?") {
+            TestHttpReply::Bytes(test_http_response(
+                "404 Not Found",
+                "application/json",
+                br#"{"message":"not ready"}"#,
+            ))
+        } else {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"hitCount":1,"resultList":{"result":[{"id":"7","pmid":"7","title":"Europe fallback"}]}}"#,
+            ))
+        }
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("pubtator-http-404-fallback");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("NCBI_API_KEY", "");
+    let pubtator = PubTatorClient::new().unwrap();
+    let europe = EuropePmcClient::new().unwrap();
+
+    let article = get_article_base_with_clients("7", &pubtator, &europe)
+        .await
+        .expect("HTTP 404 fallback");
+
+    assert_eq!(article.title, "Europe fallback");
+    assert!(article.pubtator_fallback);
+}
+
+#[serial_test::serial(article_resolver_env)]
+#[tokio::test]
+async fn admitted_detail_preserves_shared_text_then_assembles_product_fields() {
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+
+    let long_abstract = format!("  {}  ", "A".repeat(1700));
+    let payload = serde_json::to_vec(&serde_json::json!({
+        "PubTator3": [{
+            "id": "7",
+            "pmcid": null,
+            "date": "2026-09-16T12:00:00Z",
+            "journal": "  Document Journal  ",
+            "authors": ["First Author", "Second Author"],
+            "passages": [
+                {
+                    "infons": {"type": "title", "journal": "Passage Journal", "article-id_pmc": "PMC999"},
+                    "offset": 0,
+                    "text": "  Admitted title  ",
+                    "sentences": [],
+                    "annotations": [{
+                        "id": "a1",
+                        "infons": {"type": "Gene"},
+                        "text": "BRAF",
+                        "locations": [{"offset": 2, "length": 4}]
+                    }],
+                    "relations": []
+                },
+                {
+                    "infons": {"type": "abstract"},
+                    "offset": 20,
+                    "text": long_abstract,
+                    "sentences": [],
+                    "annotations": [],
+                    "relations": []
+                }
+            ]
+        }]
+    }))
+    .unwrap();
+    let fixture = TestHttpFixture::spawn(move |request| {
+        if request.starts_with("GET /publications/export/biocjson?") {
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", &payload))
+        } else {
+            TestHttpReply::Bytes(test_http_response(
+                "503 Service Unavailable",
+                "application/json",
+                br#"{}"#,
+            ))
+        }
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("pubtator-admitted-projection");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("NCBI_API_KEY", "");
+    let pubtator = PubTatorClient::new().unwrap();
+    let europe = EuropePmcClient::new().unwrap();
+
+    let article = get_article_base_with_clients("7", &pubtator, &europe)
+        .await
+        .expect("admitted detail");
+
+    assert_eq!(article.pmid.as_deref(), Some("7"));
+    assert_eq!(article.pmcid, None);
+    assert_eq!(article.title, "Admitted title");
+    assert_eq!(article.journal.as_deref(), Some("Document Journal"));
+    assert_eq!(article.date.as_deref(), Some("2026-09-16"));
+    assert_eq!(article.authors, ["First Author", "Second Author"]);
+    assert_eq!(
+        article.author_completeness,
+        ArticleAuthorCompleteness::SourceLimited
+    );
+    assert!(
+        article
+            .abstract_text
+            .as_deref()
+            .unwrap()
+            .contains("(truncated, 1700 chars total)")
+    );
+    assert_eq!(article.annotations.unwrap().genes[0].text, "BRAF");
 }
 
 #[tokio::test]

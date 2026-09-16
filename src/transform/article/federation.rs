@@ -7,79 +7,14 @@ use crate::entities::article::{
 };
 use crate::sources::europepmc::EuropePmcResult;
 use crate::sources::pubmed::ESummaryEntry;
-use crate::sources::pubtator::{PubTatorDocument, PubTatorSearchResult};
+use crate::sources::pubtator::PubTatorSearchResult;
 
 use super::anchors::{
     article_search_abstract_snippet, clean_abstract, clean_title, normalize_article_search_text,
     truncate_abstract,
 };
-
-pub fn from_pubtator_document(doc: &PubTatorDocument) -> Article {
-    let mut title: Option<String> = None;
-    let mut abstract_text: Option<String> = None;
-    for p in &doc.passages {
-        let kind = p
-            .infons
-            .as_ref()
-            .and_then(|i| i.kind.as_deref())
-            .unwrap_or("");
-        let text = p.text.as_deref().unwrap_or("").trim();
-        if text.is_empty() {
-            continue;
-        }
-        match kind {
-            "title" if title.is_none() => title = Some(text.to_string()),
-            "abstract" if abstract_text.is_none() => abstract_text = Some(text.to_string()),
-            _ => {}
-        }
-    }
-
-    Article {
-        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
-            crate::entities::article::ARTICLE_OUTCOME_KEYS,
-        ),
-        pmid: doc.pmid.map(|v| v.to_string()),
-        pmcid: doc.pmcid.clone(),
-        doi: None,
-        title: title.unwrap_or_default().trim().to_string(),
-        authors: doc.authors.clone(),
-        author_count: doc.authors.len(),
-        author_completeness: if doc.authors.is_empty() {
-            ArticleAuthorCompleteness::Unavailable
-        } else {
-            ArticleAuthorCompleteness::Complete
-        },
-        author_source: ArticleSource::PubTator,
-        journal: doc
-            .journal
-            .as_ref()
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty()),
-        date: doc
-            .date
-            .as_deref()
-            .and_then(|d| d.get(0..10))
-            .map(|s| s.to_string()),
-        citation_count: None,
-        publication_type: None,
-        open_access: None,
-        abstract_text: abstract_text
-            .map(|t| truncate_abstract(&t))
-            .filter(|t| !t.is_empty()),
-        full_text_path: None,
-        full_text_note: None,
-        full_text_source: None,
-        full_text_manifest: None,
-        full_text_coverage: None,
-        not_included: None,
-        europepmc_license: None,
-        europepmc_retracted: None,
-        annotations: None,
-        indexing: None,
-        semantic_scholar: None,
-        pubtator_fallback: false,
-    }
-}
+#[cfg(test)]
+use super::pubtator::from_pubtator_document;
 
 fn parse_citation_count(value: Option<&serde_json::Value>) -> Option<u64> {
     let value = value?;

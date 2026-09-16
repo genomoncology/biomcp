@@ -107,3 +107,32 @@ fn extract_annotations_preserves_first_seen_order_for_equal_counts() {
         ]
     );
 }
+
+#[test]
+fn adopted_and_legacy_details_share_annotation_aggregation() {
+    let admitted = br#"{"PubTator3":[{"id":"7","passages":[{"infons":{"type":"title"},"offset":0,"text":"Title","sentences":[],"annotations":[{"id":"a1","infons":{"type":"Gene"},"text":"BRAF","locations":[{"offset":0,"length":4}]},{"id":"a2","infons":{"type":"Gene"},"text":"BRAF","locations":[{"offset":5,"length":4}]}],"relations":[]}]}]}"#;
+    let adopted = crate::sources::pubtator::parse_publication_detail(7, admitted)
+        .expect("admitted response")
+        .expect("admitted detail");
+    let document: PubTatorDocument = serde_json::from_value(serde_json::json!({
+        "id": "7",
+        "passages": [{
+            "infons": {"type": "title"},
+            "text": "Title",
+            "annotations": [
+                {"text": "BRAF", "infons": {"type": "Gene"}},
+                {"text": "BRAF", "infons": {"type": "Gene"}}
+            ]
+        }]
+    }))
+    .expect("legacy document");
+    let legacy = crate::sources::pubtator::PubTatorDetail::Legacy {
+        requested_pmid: biodata::Pmid::new("7").expect("PMID"),
+        document,
+    };
+
+    assert_eq!(
+        extract_detail_annotations(&adopted),
+        extract_detail_annotations(&legacy)
+    );
+}
