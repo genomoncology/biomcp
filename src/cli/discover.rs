@@ -161,6 +161,7 @@ mod tests {
     struct Fixture {
         base: String,
         requests: Arc<Mutex<Vec<String>>>,
+        cache: crate::test_support::TempDirGuard,
     }
 
     impl Fixture {
@@ -223,7 +224,10 @@ mod tests {
 
     /// One process-wide loopback fixture. The shared HTTP client reads its
     /// unpaced origin once, so every test must target the same origin, and a
-    /// plain thread keeps the fixture alive across per-test runtimes.
+    /// plain thread keeps the fixture alive across per-test runtimes. The
+    /// fixture also owns the cache root: HTTP client construction walks the
+    /// cache tree, and the machine cache root is large enough that the walk
+    /// can outlast the federated source deadline under any other disk load.
     fn fixture() -> &'static Fixture {
         static FIXTURE: OnceLock<Fixture> = OnceLock::new();
         FIXTURE.get_or_init(|| {
@@ -256,6 +260,7 @@ mod tests {
             Fixture {
                 base: format!("http://{address}"),
                 requests,
+                cache: crate::test_support::TempDirGuard::new("discover-cache"),
             }
         })
     }
@@ -281,6 +286,10 @@ mod tests {
                 ("BIOMCP_PUBMED_BASE", format!("{base}/pubmed")),
                 ("BIOMCP_S2_BASE", format!("{base}/s2")),
                 ("BIOMCP_TEST_UNPACED_ORIGIN", base.clone()),
+                (
+                    "BIOMCP_CACHE_DIR",
+                    fixture().cache.path().to_string_lossy().into_owned(),
+                ),
                 ("BIOMCP_CACHE_MODE", "off".to_string()),
                 ("UMLS_API_KEY", String::new()),
                 ("NCBI_API_KEY", String::new()),
