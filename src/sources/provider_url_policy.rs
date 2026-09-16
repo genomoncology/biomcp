@@ -297,8 +297,9 @@ impl ProviderUrlPolicy {
             provider,
             allowed_origins,
             credential_origins: Vec::new(),
-            unsafe_test_origin: unsafe_test_origin()
-                .or_else(|| selected_origin.and_then(selected_loopback_test_origin)),
+            unsafe_test_origin: selected_origin
+                .and_then(selected_loopback_test_origin)
+                .or_else(unsafe_test_origin),
             pmc_linked_numeric_id: None,
         };
         if let Some(url) = selected_origin {
