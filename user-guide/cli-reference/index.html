@@ -5227,7 +5227,8 @@ is the targeted maintenance command for the same cache family. It always removes
 orphan blobs, can optionally evict entries older than a duration or LRU-evict to
 a byte target, and keeps the same structured report under <code>--json</code>.</p>
 <p><code>biomcp cache clear [--yes]</code> is the destructive sibling for the same managed
-request-state trees. It wipes <code>&lt;resolved cache_root&gt;/http</code> and <code>sessions/</code>, never
+request-state trees. It wipes <code>&lt;resolved cache_root&gt;/http</code>, <code>sessions/</code>, and the
+<code>citation-evidence/</code> sidecar, never
 touches the sibling <code>downloads/</code> directory, prompts for confirmation when stdin is a
 TTY, and refuses non-interactive runs with plain stderr unless you pass
 <code>--yes</code>. Successful <code>--json</code> output uses <code>{ "bytes_freed": &lt;number|null&gt;,

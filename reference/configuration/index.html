@@ -4392,8 +4392,9 @@ internal fixture overrides and release/install variables.</p>
 </tbody>
 </table>
 <p>Cache runtime precedence is environment, then <code>cache.toml</code>, then built-in default.
-The resolved root contains the managed HTTP response cache in <code>http/</code> and the
-ten-minute article-search loop-breaker records in <code>sessions/</code>. Cache reads,
+The resolved root contains the managed HTTP response cache in <code>http/</code>, the
+ten-minute article-search loop-breaker records in <code>sessions/</code>, and the
+thirty-day directed citation-evidence sidecar in <code>citation-evidence/</code>. Cache reads,
 writes, statistics, and maintenance physically remove entries older than
 <code>max_age_secs</code>; opening the session store removes expired sessions.
 Managed directories and files are private to the current OS user. BioMCP

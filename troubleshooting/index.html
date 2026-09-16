@@ -4557,8 +4557,8 @@ the managed HTTP cache path under the resolved cache root.</p>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>biomcp<span class="w"> </span>cache<span class="w"> </span>clean<span class="w"> </span>--max-age<span class="w"> </span>7d
 </code></pre></div>
 <p>If targeted cleanup still does not recover the cache, use
-<code>biomcp cache clear --yes</code> for a full wipe of the managed <code>http/</code> and ten-minute
-article-session trees tied to
+<code>biomcp cache clear --yes</code> for a full wipe of the managed <code>http/</code>, ten-minute
+article-session, and thirty-day citation-evidence trees tied to
 the resolved cache root you printed with <code>biomcp cache path</code>. <code>cache clear</code>
 never touches the sibling <code>downloads/</code> directory, so the choice is explicit:
 start with <code>cache clean</code> for targeted GC, escalate to <code>cache clear --yes</code> only

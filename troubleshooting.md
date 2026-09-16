@@ -73,8 +73,8 @@ biomcp cache clean --max-age 7d
 ```
 
 If targeted cleanup still does not recover the cache, use
-`biomcp cache clear --yes` for a full wipe of the managed `http/` and ten-minute
-article-session trees tied to
+`biomcp cache clear --yes` for a full wipe of the managed `http/`, ten-minute
+article-session, and thirty-day citation-evidence trees tied to
 the resolved cache root you printed with `biomcp cache path`. `cache clear`
 never touches the sibling `downloads/` directory, so the choice is explicit:
 start with `cache clean` for targeted GC, escalate to `cache clear --yes` only
