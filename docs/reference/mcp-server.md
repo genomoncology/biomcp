@@ -143,7 +143,7 @@ The seven-tool catalog is intentionally bounded. Reproduce its current local
 measurement with `uv run --no-sync python scripts/measure-mcp-tools.py`. CI
 rejects the full catalog above 22,600 UTF-8 bytes or 5,800 `cl100k_base` tokens,
 and rejects the raw `biomcp` description above 4,000 bytes. The 22,600-byte /
-5,800-token CI budget applies to the 0.9.0-dev.5 development build. The
+5,800-token CI budget applies to the 0.9.0 released build. The
 aggregate ceilings combine its current 15,841-byte, 3,996-token catalog with
 the largest typed entry (`search`), leaving 99 bytes and 52 tokens of margin.
 Exact current counts belong to that executable measurement rather than
