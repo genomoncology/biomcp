@@ -480,7 +480,7 @@ def test_mcp_catalog_docs_name_the_development_build_they_measure() -> None:
         "docs/reference/mcp-server.md",
     ):
         text = _normalize_whitespace(_read(path))
-        assert "0.9.0-dev.5 development build" in text
+        assert "0.9.0 released build" in text
         assert "15,841-byte, 3,996-token catalog" in text
         assert "22,600-byte / 5,800-token CI budget" in text
 

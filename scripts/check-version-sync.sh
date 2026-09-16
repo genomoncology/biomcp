@@ -171,10 +171,11 @@ if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
                 check_equal "Cargo.toml" "$cargo_version" "Formula/biomcp.rb" "$formula_version"
             fi
         fi
-        breaking_changes="$(awk '
-            /^## Unreleased$/ { unreleased=1; next }
-            unreleased && /^## / { exit }
-            unreleased && /^### Breaking changes$/ { breaking=1; next }
+        breaking_changes="$(awk -v want_version="$cargo_version" '
+            BEGIN { in_first = 0; seen_first = 0 }
+            /^## / && !seen_first { in_first = 1; seen_first = 1; next }
+            /^## / && seen_first { exit }
+            in_first && /^### Breaking changes$/ { breaking = 1; next }
             breaking && /^### / { exit }
             breaking && /^[[:space:]]*[-*][[:space:]]+[^[:space:]]/ { print; exit }
         ' "$repo_root/CHANGELOG.md")"

@@ -48,7 +48,7 @@ def _copy_version_sync_fixture(tmp_path: Path) -> Path:
     subprocess.run(
         ["git", "commit", "-qm", "published release"], cwd=fixture_root, check=True
     )
-    subprocess.run(["git", "tag", "v0.9.0"], cwd=fixture_root, check=True)
+    subprocess.run(["git", "tag", "v0.8.25"], cwd=fixture_root, check=True)
     return fixture_root
 
 
