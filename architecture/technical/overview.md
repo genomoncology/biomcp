@@ -62,7 +62,7 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
 ```
 
 - **Edition:** Rust 2024
-- **Development candidate:** Rust `0.9.0-dev.6`; Python `0.9.0.dev6`. `scripts/check-version-sync.sh` validates that exact mapping and its lock files while public metadata remains at `0.8.25`.
+- **Released:** Rust `0.9.0`; Python `0.9.0`. `scripts/check-version-sync.sh` validates that exact agreement across lock files and public metadata.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
 - **Release state:** v0.8.25 is the latest published release. A protected
   two-step workflow can privately stage a committed future version and, only

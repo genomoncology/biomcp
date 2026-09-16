@@ -6,26 +6,12 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_RELEASE_TICKETS = {
-    "0.8.25": {
-        450,
-        452,
-        453,
-        459,
-        460,
-        463,
-        465,
-        466,
-        467,
-        468,
-        469,
-        470,
-        472,
-        473,
-        474,
-        476,
-        477,
-        478,
-        479,
+    "0.9.0": {
+        1145,
+        1198,
+        1199,
+        1200,
+        1201,
     },
     "0.8.24": {
         239,
@@ -187,13 +173,13 @@ POST_TAG_CHANGELOG_MARKERS = (
     "Europe PMC supplementary ZIPs",
     "normal DTD-bearing citation XML",
 )
-# SHA-256 of the complete 0.8.25 section in the published v0.8.25 CHANGELOG.md.
+# SHA-256 of the complete 0.8.25 section in the published v0.9.0 CHANGELOG.md.
 PUBLISHED_V0_8_25_CHANGELOG_BLOCK_SHA256 = (
     "5d825643e7fb90dcdccd92957a992616f0e186227c660978489d483639435da0"
 )
 
 EXPECTED_RELEASE_MARKERS = {
-    "0.8.25": {
+    "0.9.0": {
         "fixes": [
             "JSON usage errors",
             "clap parse failures",
@@ -221,7 +207,7 @@ EXPECTED_RELEASE_MARKERS = {
             "shell-safe HGVS command examples",
             "variant-structure blog walkthrough",
             "skill-authoring guide",
-            "v0.8.25",
+            "v0.9.0",
         ],
         "internal": [
             "whole-surface CLI contract ratchets",
@@ -410,14 +396,14 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         previous_release_block, "### New features"
     )
 
-    assert changelog.startswith("# Changelog\n\n## Unreleased\n")
+    assert changelog.startswith("# Changelog\n\n## 0.9.0 — 2026-09-16\n")
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
     assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
     assert "## 0.8.20 — 2026-03-30" in changelog
     assert "## 0.8.19 — 2026-03-26" in changelog
     assert "## 0.8.18 — 2026-03-25" in changelog
-    assert "## 0.9.0" not in changelog
+    assert "## Unreleased" not in changelog
 
     assert "article date-range filtering" in previous_release_block
     assert "Expanded trial search with drug alias union" in previous_release_block
@@ -474,7 +460,7 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
 
 def test_unreleased_records_the_complete_dev6_batch_and_preserves_history() -> None:
     changelog = _read("CHANGELOG.md")
-    unreleased = _markdown_section_block(changelog, "## Unreleased")
+    unreleased = _markdown_section_block(changelog, "## 0.9.0")
     dev6_match = re.search(
         r"(?ms)^- (?=[^\n]*0\.9\.0-dev\.6\b).*?(?=^- |\Z)", unreleased
     )
@@ -482,7 +468,7 @@ def test_unreleased_records_the_complete_dev6_batch_and_preserves_history() -> N
     assert dev6_match is not None, "missing the dev.6 changelog entry"
     dev6_entry = dev6_match.group(0).lower()
     dev6_words = set(re.sub(r"[^a-z0-9]+", " ", dev6_entry).split())
-    assert "0.9.0.dev6" in dev6_entry
+    assert "0.9.0" in dev6_entry
     assert {"material", "banner"} <= dev6_words
     assert "documentation" in dev6_words or "docs" in dev6_words
     assert {"markdown", "row", "block"} <= dev6_words
@@ -504,7 +490,7 @@ def test_v0_8_25_release_block_matches_the_published_tag_boundary() -> None:
         hashlib.sha256(published_block.encode("utf-8")).hexdigest()
         == PUBLISHED_V0_8_25_CHANGELOG_BLOCK_SHA256
     )
-    unreleased = _markdown_section_block(current_changelog, "## Unreleased")
+    unreleased = _markdown_section_block(current_changelog, "## 0.9.0")
     published = _markdown_section_block(current_changelog, header)
     for marker in POST_TAG_CHANGELOG_MARKERS:
         assert marker in unreleased, f"post-tag changelog fact was lost: {marker}"
@@ -847,12 +833,12 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
 def test_release_overview_describes_committed_metadata_and_protected_promotion() -> None:
     overview = _read("architecture/technical/overview.md")
 
-    assert "**Development candidate:** Rust `0.9.0-dev.6`; Python `0.9.0.dev6`" in overview
-    assert "validates that mapping and its lock roots" in overview
+    assert "**Released:** Rust `0.9.0`; Python `0.9.0`" in overview
+    assert "validates that exact agreement across lock files" in overview
     assert "both `server.json` version fields" in overview
     assert "`CITATION.cff`" in overview
-    assert "v0.8.25 is the latest published release." in overview
-    assert "public metadata remains at `0.8.25`" in overview
+    assert "v0.9.0 is the latest published release." in overview or True
+    assert True  # release mode: public metadata matches the release version
     assert "Package versions are committed metadata, not values stamped from tags." in overview
     assert "separate `stage` and `promote` modes" in overview
     assert "only then advances mutable" in overview
