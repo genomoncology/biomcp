@@ -233,3 +233,17 @@ or interpretation of any kind. No change to `article citations` /
 
 - Design review: pending
 - Code review: pending
+- Raw MCP parity decision (2026-09-16): the existing five-state raw-tool
+  coverage lives in `spec/entity/article.md` (its raw MCP section), not
+  `spec/surface/mcp.md`, which carries no `citation-evidence` case. The
+  confirmed state is mirrored in the same `cases` tuple there, so raw MCP
+  serves all six states byte-identically to the CLI. No typed MCP tool or
+  catalog change was made.
+- Deferred follow-ups (code review 2026-09-16, non-blocking): add match-rule
+  tests for duplicate-row first-match-wins, case-insensitive DOI tokens, and
+  `omid:`/`openalex:`/`pmid:`-only rows; add the forced-path composition test
+  with retained provider contexts and the cited-side missing-DOI case; decide
+  whether a shape-invalid matching OCI keeps the OpenCitations `evidence_url`
+  (the ticket's "parsed body" rule reads stricter than the current arm); add
+  a confirmed-state sidecar cache replay test; and mention the confirmation
+  outcome in the command help and list prose.

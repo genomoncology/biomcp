@@ -1461,10 +1461,11 @@ PY
 `biomcp article citation-evidence <citing-id> <cited-id>` returns bounded
 source text for one directed citation pair. Semantic Scholar context wins by
 default; a contextless edge recovers paragraphs from open Europe PMC JATS by
-exact reference identity. The five outcomes below are closed: any other
-input is a command error. The result retrieves evidence only — it never
-summarizes a passage, infers how the cited work was used, or claims the
-citation supports a conclusion.
+exact reference identity, then confirms a remaining bare edge through
+OpenCitations. The six outcomes below are closed: any other input is a
+command error. The result retrieves evidence only — it never summarizes a
+passage, infers how the cited work was used, or claims the citation supports
+a conclusion.
 
 The full-status JSON keeps the same object shape in every state: `citing`,
 `cited`, `status`, `message`, `source`, `provider_contexts`, `passages`,
@@ -1696,7 +1697,7 @@ test -z "$(ls -A "$probe")"
 rmdir "$probe"
 ```
 
-Raw MCP serves the same five states and error envelope through the generic
+Raw MCP serves the same six states and error envelope through the generic
 command tool, byte-identical to the CLI, and keeps the typed inventory
 untouched.
 
@@ -1716,6 +1717,7 @@ cases = (
     ("40001002 10.1099/unresolved-fixture --fulltext", "fulltext_unavailable"),
     ("40001003 10.1099/unresolved-fixture", "reference_unresolved"),
     ("40001004 10.1099/unresolved-fixture", "citation_marker_unlinked"),
+    ("40001007 10.1000/cited-opencitations", "reference_confirmed_without_passage"),
 )
 request_id = 2
 for arguments, expected in cases:
