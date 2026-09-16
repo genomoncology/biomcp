@@ -17,6 +17,31 @@
 
 ### New features
 
+- Fixed ClinicalTrials.gov trial search so hyphenated terms (anti-PD-1, CAR-T,
+  PD-L1, dMMR/MSI-H combinations) match what the registry actually holds: the
+  ESSIE query builder no longer backslash-escapes hyphens, restoring the
+  expected result counts for `--criteria`, `--mutation`, `--biomarker`,
+  `--sponsor`, `--study-type`, `--prior-therapies`, `--progression-on`, and
+  quoted intervention literals.
+- Added honest zero reporting for trial searches: when ClinicalTrials.gov
+  matched trials on the eligibility text but registry eligibility verification
+  removed all of them, the output names the upstream count and suggests a
+  `--mutation` relaxation, both in the Markdown hint and in the optional JSON
+  `_meta.upstream_total` member.
+- Added a persistent sidecar cache for `article citation-evidence`: repeated
+  queries for the same directed edge are served from a local thirty-day record
+  without re-fetching, keyed on resolved Semantic Scholar paper-ID pairs so
+  every hit is paired with a live provider resolution. `biomcp cache clear`
+  removes the sidecar.
+- Added a sixth `article citation-evidence` outcome,
+  `reference_confirmed_without_passage`: when the passage is not openly
+  available but OpenCitations confirms the directed edge, the command returns
+  a validated citation record so callers can distinguish "the passage is not
+  open" from "this citation may not exist."
+- Added `discover <query> --search`: when no concepts resolve, the suggested
+  article keyword search runs inline and returns its results alongside the
+  concept metadata in one response, with a new `## Article search` Markdown
+  section and `article_search` JSON member.
 - Added `article citation-evidence <citing-id> <cited-id>` returning bounded source
   text for one directed citation pair: Semantic Scholar context by default, and an
   exact open-access Europe PMC JATS reference resolution when that edge carries no
