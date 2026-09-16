@@ -92,7 +92,7 @@ Spec (`spec/entity/dataset.md`, served by a local fixture server like `spec/fixt
 
 ## Out of scope
 
-- Expression values, the matrix table, supplementary files, full file download, and probe to gene mapping.
+- Expression values, the matrix table, supplementary files, full file download, and probe to gene mapping. Ticket 1207 lists where values live.
 - Treatment and control labeling, parsing characteristics into typed fields, and any grouping or scoring of samples.
 - The FTP directory listing, SOFT and MINiML formats, and GSM or GPL records as their own entities.
 - `cell-line datasets` and LINCS.

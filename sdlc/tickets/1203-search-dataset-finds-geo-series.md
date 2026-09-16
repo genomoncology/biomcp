@@ -48,13 +48,15 @@ New module `src/sources/geo.rs` with `GeoClient`. It uses `shared_client()`, `en
 
 `GeoClient::search(term, offset, limit)` runs one ESearch on `db=gds` and then one ESummary for the returned UIDs. A zero-hit ESearch makes no ESummary request.
 
-The decoder reads these ESummary JSON members per UID: `accession`, `entrytype`, `title`, `summary`, `taxon`, `gdstype`, `gpl`, `gse`, `n_samples`, `pubmedids`. The recorded fixture decides exact shapes. The names above follow the E-utilities `gds` document summary.
+The decoder reads these ESummary JSON members per UID: `accession`, `entrytype`, `title`, `summary`, `taxon`, `gdstype`, `gpl`, `gse`, `n_samples`, `pubmedids`, `suppfile`, `geo2r`. The recorded fixture decides exact shapes. The names above follow the E-utilities `gds` document summary.
 
 - A `GSE` record maps straight to a row.
 - A `GDS` record maps to its parent series `GSE<gse>`. If that GSE already appears in the result, the decoder drops the GDS record. If the GDS names more than one parent, it yields one row per parent. The row keeps the GDS accession in `curated_datasets`.
 - The decoder drops `GPL` and `GSM` records.
 - `gpl` and `gse` hold semicolon-separated numbers. The decoder prefixes each one (`GPL570`) and keeps the upstream order.
 - `taxon` and `gdstype` hold semicolon-separated lists. They become arrays in upstream order.
+- `suppfile` holds a comma-separated list of supplementary file types (`CEL`, `TXT`, `BW`). It becomes `supplementary_types`, an array in upstream order. A blank value becomes an empty array.
+- `geo2r` (`yes` or `no`) becomes the boolean `geo2r`. Measured 2026-09-16 on 585 AML series: 104 had `yes` and a series matrix table, 200 had `yes` and an empty table, and 3 had `no` with a table. The flag therefore means GEO offers an analysis view, often from NCBI-computed RNA-seq counts. It does not mean the series matrix carries values. The source page states this, and ticket 1207 reports where values live.
 - A missing required member (`accession`, `entrytype`, `title`) is an `Api` error naming the UID.
 
 ### Query
