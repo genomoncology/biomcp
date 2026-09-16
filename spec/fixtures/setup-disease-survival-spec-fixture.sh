@@ -464,7 +464,6 @@ PY
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/unused-dgidb"
   printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/unused-opentargets"
   printf 'export BIOMCP_CACHE_MODE=off\n'
-  printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url"
   printf 'export BIOMCP_DISEASE_SURVIVAL_READY_FILE=%q\n' "$ready_file"
   printf 'export BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
