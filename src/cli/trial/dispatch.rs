@@ -265,7 +265,7 @@ pub(in crate::cli) async fn handle_search(
             } else {
                 crate::render::markdown::search_next_commands_trial(&results)
             };
-            return super::super::search_json_with_meta_and_upstream_total(
+            return search_json_with_meta_and_upstream_total(
                 results,
                 pagination,
                 next_commands,
@@ -352,6 +352,36 @@ pub(super) fn render_count_only(
             }
         })
     }
+}
+
+/// Carry the provider total alongside a verification-emptied zero page.
+fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
+    results: Vec<T>,
+    pagination: super::super::PaginationMeta,
+    next_commands: Vec<String>,
+    upstream_total: Option<usize>,
+) -> anyhow::Result<String> {
+    let count = results.len();
+    let mut meta = super::super::shared::search_meta_with_suggestions(next_commands, None);
+    if let Some(n) = upstream_total {
+        let meta = meta.get_or_insert_with(|| super::super::SearchJsonMeta {
+            next_commands: Vec::new(),
+            suggestions: None,
+            workflow: None,
+            workflow_rationale: None,
+            workflow_playbook: None,
+            section_sources: Vec::new(),
+            upstream_total: None,
+        });
+        meta.upstream_total = Some(n);
+    }
+    crate::render::json::to_pretty(&super::super::shared::SearchJsonResponseWithMeta {
+        pagination,
+        count,
+        results,
+        _meta: meta,
+    })
+    .map_err(Into::into)
 }
 
 fn parse_usize_arg(flag: &str, value: &str) -> Result<usize, crate::error::BioMcpError> {

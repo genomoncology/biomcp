@@ -150,6 +150,28 @@
       "authorized_increase": null
     },
     {
+      "path": "src/entities/trial/search/ctgov.rs",
+      "baseline_lines": 1003,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1198",
+        "delta": 3,
+        "reason": "The honest-zero contract fills upstream_total on eligibility-verified pages.",
+        "removal_condition": "Trim when the CTGov search module is next decomposed."
+      }
+    },
+    {
+      "path": "src/entities/trial/search/ctgov/tests.rs",
+      "baseline_lines": 1036,
+      "floor_lines": 975,
+      "authorized_increase": {
+        "ticket": "1198",
+        "delta": 61,
+        "reason": "Hyphen-escape table pins and the verification-emptied zero contract tests.",
+        "removal_condition": "Move escape table pins to essie.rs when the test module is next reorganized."
+      }
+    },
+    {
       "path": "src/entities/variant/erepo.rs",
       "baseline_lines": 1026,
       "floor_lines": 1026,

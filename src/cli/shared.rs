@@ -565,12 +565,12 @@ impl SearchJsonMeta {
 }
 
 #[derive(serde::Serialize)]
-struct SearchJsonResponseWithMeta<T: serde::Serialize> {
-    pagination: PaginationMeta,
-    count: usize,
-    results: Vec<T>,
+pub(super) struct SearchJsonResponseWithMeta<T: serde::Serialize> {
+    pub(super) pagination: PaginationMeta,
+    pub(super) count: usize,
+    pub(super) results: Vec<T>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    _meta: Option<SearchJsonMeta>,
+    pub(super) _meta: Option<SearchJsonMeta>,
 }
 
 // dead-code reason: shared::search_json is exercised by binary dispatch or CLI contracts
@@ -673,36 +673,6 @@ pub(super) fn search_json_with_meta_and_suggestions<T: serde::Serialize>(
         count,
         results,
         _meta: search_meta_with_suggestions(next_commands, suggestions),
-    })
-    .map_err(Into::into)
-}
-
-/// Carry the provider total alongside a verification-emptied zero page.
-pub(super) fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
-    results: Vec<T>,
-    pagination: PaginationMeta,
-    next_commands: Vec<String>,
-    upstream_total: Option<usize>,
-) -> anyhow::Result<String> {
-    let count = results.len();
-    let mut meta = search_meta_with_suggestions(next_commands, None);
-    if let Some(upstream_total) = upstream_total {
-        let meta = meta.get_or_insert_with(|| SearchJsonMeta {
-            next_commands: Vec::new(),
-            suggestions: None,
-            workflow: None,
-            workflow_rationale: None,
-            workflow_playbook: None,
-            section_sources: Vec::new(),
-            upstream_total: None,
-        });
-        meta.upstream_total = Some(upstream_total);
-    }
-    crate::render::json::to_pretty(&SearchJsonResponseWithMeta {
-        pagination,
-        count,
-        results,
-        _meta: meta,
     })
     .map_err(Into::into)
 }
