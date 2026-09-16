@@ -36,7 +36,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.93.1
-        with:
           components: rustfmt, clippy
 
       - run: cargo fmt --check
@@ -109,7 +108,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.93.1
-        with:
           targets: ${{ matrix.target }}
 
       - name: Install Linux cross toolchain
@@ -358,7 +356,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.93.1
-        with:
           targets: ${{ matrix.target }}
 
       - name: Sync Cargo.toml, pyproject.toml, and manifest.json version from release tag and server.json
