@@ -228,6 +228,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "OpenCitations",
+        affects: Some("citation evidence edge confirmation"),
+        probe: ProbeKind::Get {
+            url: "https://api.opencitations.net/index/v2/references/doi:10.1038/nature10725",
+        },
+    },
+    SourceDescriptor {
         api: "ORCID",
         affects: Some("get author and author papers for ORCID IDs"),
         probe: ProbeKind::OrcidGet {

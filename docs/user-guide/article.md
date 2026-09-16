@@ -434,11 +434,14 @@ for one directed citation pair: Semantic Scholar context by default, and when
 the edge carries no context, the paragraphs of the citing paper's open
 Europe PMC JATS full text whose unambiguous bibliographic markers link to the
 cited reference. Pass `--fulltext` to force the JATS path even when provider
-context exists. The response is a closed five-status evidence object
+context exists. When no passage is openly available, OpenCitations confirms
+whether the directed edge exists and the response reports that confirmed edge
+without a passage. The response is a closed six-status evidence object
 (`context_from_provider`, `context_from_fulltext`, `fulltext_unavailable`,
-`reference_unresolved`, `citation_marker_unlinked`) with per-passage locators
-and evidence URLs. It retrieves evidence only: BioMCP does not summarize the
-passage or interpret how the cited work was used.
+`reference_confirmed_without_passage`, `reference_unresolved`,
+`citation_marker_unlinked`) with per-passage locators and evidence URLs. It
+retrieves evidence only: BioMCP does not summarize the passage or interpret
+how the cited work was used.
 
 ## Caching behavior
 

@@ -81,9 +81,11 @@ CITING_A4 = "a4c4" * 10
 CITING_A5 = "a5c5" * 10
 CITING_A6 = "a6c6" * 10
 CITING_A7 = "a7c7" * 10
+CITING_A8 = "a8c8" * 10
 CITED_T1 = "b1d1" * 10
 CITED_T2 = "b2d2" * 10
 CITED_T4 = "b4d4" * 10
+CITED_T8 = "b8d8" * 10
 CITED_T9 = "b9e9" * 10
 DECOY_X1 = "c3e5" * 10
 HOSTILE_XH = "d4f6" * 10
@@ -116,9 +118,11 @@ CITATION_BATCH_ROWS = {
         ("PMID:40001004", CITING_A5, "Grouped marker document", {"PubMed": "40001004", "PubMedCentral": "PMC12923961"}),
         ("PMID:40001005", CITING_A6, "Three-page bound traversal", {"PubMed": "40001005"}),
         ("PMID:40001006", CITING_A7, "Missing open-access carrier", {"PubMed": "40001006"}),
+        ("PMID:40001007", CITING_A8, "Open citation confirmation carrier", {"PubMed": "40001007", "DOI": "10.1000/citing-opencitations"}),
         ("DOI:10.1038/nature10725", CITED_T1, "Nature reference target", {"DOI": "10.1038/nature10725"}),
         ("DOI:10.1016/j.artmed.2020.101822", CITED_T2, "Artificial intelligence in medicine target", {"DOI": "10.1016/j.artmed.2020.101822"}),
         ("DOI:10.1099/unresolved-fixture", CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}),
+        ("DOI:10.1000/cited-opencitations", CITED_T8, "Open citation target", {"DOI": "10.1000/cited-opencitations"}),
         ("DOI:10.1093/absent-target", CITED_T9, "Absent directed target", {"DOI": "10.1093/absent-target"}),
         (f"DOI:{HOSTILE_DOI}", HOSTILE_XH, "Hostile identifier carrier", {"DOI": HOSTILE_DOI}),
         ("1640a8f64efa15c8fc94e5a8e9c96521e50b8211", "1640a8f64efa15c8fc94e5a8e9c96521e50b8211", "Captured reference edge target", {"DOI": "10.1002/prot.22460", "PubMed": "19452558"}),
@@ -147,6 +151,7 @@ CITATION_GRAPH_BODIES = {
         CITING_A5: [_citation_edge(_citation_paper(CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}), [])],
         CITING_A6: {"data": [_citation_edge(_citation_paper(f"ca{i:038x}", f"Cap filler {i}", {"DOI": f"10.1093/cap.{i:03d}"}), []) for i in range(300)], "next": 300},
         CITING_A7: [_citation_edge(_citation_paper(CITED_T4, "Unresolved reference target", {"DOI": "10.1099/unresolved-fixture"}), [])],
+        CITING_A8: [_citation_edge(_citation_paper(CITED_T8, "Open citation target", {"DOI": "10.1000/cited-opencitations"}), [])],
         HOSTILE_XH: [],
     },
 }
@@ -1148,7 +1153,7 @@ class Handler(BaseHTTPRequestHandler):
         if (
             decoded_path == "/"
             and query.get("idtype") == ["pmid"]
-            and query.get("ids") in (["22663015"], ["22663017"], ["40001006"])
+            and query.get("ids") in (["22663015"], ["22663017"], ["40001006"], ["40001007"])
         ):
             send_json(self, 200, {"records": [{"pmid": int(query.get("ids")[0])}]})
             return
@@ -1159,6 +1164,19 @@ class Handler(BaseHTTPRequestHandler):
             and query.get("ids") in (["10.1158/fixture.figshare"], ["10.1158/fixture.figshare-cold"])
         ):
             send_json(self, 200, {"records": [{"doi": query.get("ids")[0]}]})
+            return
+
+        if decoded_path == "/references/doi:10.1000/citing-opencitations":
+            append_request_log("opencitations:references:doi:10.1000/citing-opencitations")
+            send_json(self, 200, [{
+                "oci": "061502131318-062102119315",
+                "citing": "omid:br/061502131318 doi:10.1000/citing-opencitations pmid:40001007",
+                "cited": "omid:br/062102119315 doi:10.1000/cited-opencitations openalex:W2136474966",
+                "creation": "2012-07-12",
+                "timespan": "P1Y",
+                "journal_sc": "no",
+                "author_sc": "no",
+            }])
             return
 
         if decoded_path == "/PMC123456/fullTextXML":
@@ -1597,6 +1615,7 @@ printf 'export BIOMCP_PMC_HTML_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_NCBI_IDCONV_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_S2_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_ORCID_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export BIOMCP_OPENCITATIONS_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export ORCID_ACCESS_TOKEN=fixture-public-read-token\n' >>"$env_file"
 printf 'export BIOMCP_LITSENSE2_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_FIGSHARE_BASE=%q\n' "$base_url" >>"$env_file"
