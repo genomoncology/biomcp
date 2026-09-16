@@ -190,6 +190,14 @@ fn command_deadline_error() -> BioMcpError {
     }
 }
 
+/// The sidecar is best-effort: an unresolvable cache configuration leaves the
+/// command running exactly as before the sidecar existed.
+fn citation_evidence_cache_root() -> Option<std::path::PathBuf> {
+    crate::cache::resolve_cache_config()
+        .ok()
+        .map(|config| config.cache_root)
+}
+
 fn valid_paper_id(value: Option<&str>) -> Option<String> {
     value
         .map(str::trim)
@@ -552,6 +560,22 @@ pub async fn citation_evidence(
     let cited_pid = valid_paper_id(cited.paper_id.as_deref())
         .ok_or_else(|| provider_decode_error("cited seed lacks a valid paper ID"))?;
 
+    // The read follows seed resolution so every hit is paired with a live
+    // resolution of the caller's spelling. A miss is any absent, expired,
+    // mismatched, or non-evidence record, and the pipeline below runs
+    // unchanged.
+    let cache_root = citation_evidence_cache_root();
+    if let Some(cache_root) = &cache_root
+        && let Some(cached) = crate::cache::read_citation_evidence(
+            cache_root,
+            &citing_pid,
+            &cited_pid,
+            force_fulltext,
+        )
+    {
+        return Ok(cached);
+    }
+
     let contexts = match directed_edge_contexts(&client, &citing_pid, &cited_pid, deadline).await? {
         EvidenceGraphOutcome::Matched(contexts) => Some(contexts),
         EvidenceGraphOutcome::ExhaustedWithoutMatch => {
@@ -649,7 +673,7 @@ pub async fn citation_evidence(
         });
     }
 
-    Ok(ArticleCitationEvidenceResult {
+    let result = ArticleCitationEvidenceResult {
         citing,
         cited,
         message: status.message().to_string(),
@@ -672,5 +696,9 @@ pub async fn citation_evidence(
             evidence_urls,
             next_commands: Vec::new(),
         },
-    })
+    };
+    if let Some(cache_root) = &cache_root {
+        crate::cache::write_citation_evidence(cache_root, &citing_pid, &cited_pid, &result);
+    }
+    Ok(result)
 }

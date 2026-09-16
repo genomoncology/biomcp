@@ -47,12 +47,12 @@ This command is CLI-only because cache commands reveal workstation-local filesys
         #[arg(long)]
         dry_run: bool,
     },
-    /// Wipe managed HTTP cache and article-session directories
+    /// Wipe managed cache, session, and citation-evidence directories
     #[command(long_about = "\
 Wipe the entire managed HTTP cache directory.
 
-Deletes all contents of <resolved cache_root>/http and sessions/. This is a destructive full wipe;
-use `biomcp cache clean` for targeted cleanup instead. The managed downloads/ sibling
+Deletes all contents of <resolved cache_root>/http, sessions/, and citation-evidence/. This is a
+destructive full wipe; use `biomcp cache clean` for targeted cleanup instead. The managed downloads/ sibling
 directory is never touched. Interactive confirmation is required unless you pass
 --yes. Without a TTY and without --yes, this command refuses even under `--json`.
 
@@ -365,12 +365,18 @@ pub(crate) fn execute_managed_clear(
     crate::cache::secure_managed_tree(&config.cache_root, true, Some(&content_root))?;
     let http = crate::cache::execute_cache_clear(&config.cache_root.join("http"))?;
     let sessions = crate::cache::execute_cache_clear(&config.cache_root.join("sessions"))?;
+    let citation_evidence = crate::cache::execute_cache_clear(
+        &config.cache_root.join(crate::cache::CITATION_EVIDENCE_DIR),
+    )?;
     Ok(crate::cache::ClearReport {
         bytes_freed: http
             .bytes_freed
             .zip(sessions.bytes_freed)
-            .map(|(a, b)| a + b),
-        entries_removed: http.entries_removed + sessions.entries_removed,
+            .zip(citation_evidence.bytes_freed)
+            .map(|((http, sessions), citation_evidence)| http + sessions + citation_evidence),
+        entries_removed: http.entries_removed
+            + sessions.entries_removed
+            + citation_evidence.entries_removed,
     })
 }
 

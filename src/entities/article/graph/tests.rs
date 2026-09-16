@@ -7,6 +7,8 @@ use super::citation_evidence::{
 use super::*;
 #[cfg(test)]
 mod admission;
+#[cfg(test)]
+mod cache;
 use crate::sources::semantic_scholar::{
     SemanticScholarCitationEdge, SemanticScholarClient, SemanticScholarExternalIds,
     SemanticScholarGraphResponse, SemanticScholarPaper, SemanticScholarRecommendationsResponse,

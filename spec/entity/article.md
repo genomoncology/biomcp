@@ -1571,6 +1571,7 @@ request log proves the shape.
 ```bash
 request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
 : >"$request_log"
+export BIOMCP_CACHE_MODE=off
 ../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture >/dev/null
 mustmatch like 's2:seed:x-api-key:absent
 s2:seed:x-api-key:absent
@@ -1611,6 +1612,17 @@ s2:seed:x-api-key:absent
 s2:graph:references:limit=100:offset=0:x-api-key:absent' <"$request_log"
 ```
 
+The sidecar is invisible on the folded surface. The record stands under the
+resolved cache root after the first call, and the second call returns the same
+bytes.
+
+```bash
+first="$(../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture)"
+test -n "$(find "${BIOMCP_CACHE_DIR:?cache root is not configured}/citation-evidence" -name '*.json' -print -quit)"
+second="$(../../tools/biomcp-ci --json article citation-evidence 40001002 10.1099/unresolved-fixture)"
+printf '%s' "$second" | mustmatch "$first"
+```
+
 Graph edges without usable context carry the evidence command. The blank
 Context cell becomes `Try:`, a contextual edge keeps its text, and the root
 continuation array and `Next:` footer stay exactly as landed by ticket 1144.
@@ -1644,6 +1656,7 @@ behind.
 request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
 probe="$(mktemp -d)"
 : >"$request_log"
+export BIOMCP_CACHE_MODE=off
 command="$(../../tools/biomcp-ci --json article references 39991290 --limit 3 --offset 0 | jq -r '.edges[2]._meta.next_commands[0]')"
 case "$command" in
   "biomcp article citation-evidence 39991290 "*) ;;

@@ -147,6 +147,42 @@ fn explicit_cache_maintenance_waits_for_an_active_cache_operation() {
         .expect("managed clear");
 }
 
+#[test]
+fn managed_clear_removes_the_citation_evidence_sidecar_and_sums_its_bytes() {
+    let root = crate::test_support::TempDirGuard::new("cache-clear-citation-evidence");
+    let record = root
+        .path()
+        .join(crate::cache::CITATION_EVIDENCE_DIR)
+        .join("v1")
+        .join("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.json");
+    std::fs::create_dir_all(record.parent().expect("record parent")).expect("sidecar tree");
+    let body = b"{\"schema_version\":1}";
+    std::fs::write(&record, body).expect("sidecar record");
+    let config = test_config(
+        root.path(),
+        10_000_000_000,
+        86_400,
+        CacheConfigOrigins {
+            cache_root: ConfigOrigin::Default,
+            max_size: ConfigOrigin::Default,
+            min_disk_free: ConfigOrigin::Default,
+            max_age: ConfigOrigin::Default,
+        },
+    );
+
+    let report = super::execute_managed_clear(&config).expect("managed clear");
+
+    assert!(
+        !root
+            .path()
+            .join(crate::cache::CITATION_EVIDENCE_DIR)
+            .exists()
+    );
+    assert_eq!(report.bytes_freed, Some(body.len() as u64));
+    // The sidecar root, its v1 shard, and the record.
+    assert_eq!(report.entries_removed, 3);
+}
+
 fn test_integrity(bytes: &[u8]) -> Integrity {
     Integrity::from(bytes)
 }

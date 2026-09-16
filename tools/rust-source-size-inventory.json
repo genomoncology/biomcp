@@ -335,12 +335,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2275,
+      "baseline_lines": 2288,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1022, 1150, 1158",
-        "delta": 428,
-        "reason": "Register dbSNP and GenCC and carry the task-local variant deadline through shared request, retry, and provider-admission utilities.",
+        "ticket": "1022, 1150, 1158, 1199",
+        "delta": 441,
+        "reason": "Register dbSNP and GenCC, carry the task-local variant deadline through shared request, retry, and provider-admission utilities, and resolve the citation-evidence sidecar cache mode.",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },
