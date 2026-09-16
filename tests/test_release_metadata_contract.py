@@ -153,7 +153,7 @@ def test_version_lock_rejects_formula_version_drift(tmp_path: Path) -> None:
 
 def test_version_lock_rejects_dirty_future_release_rewrite(tmp_path: Path) -> None:
     repo = _copy_release_metadata_fixture(tmp_path)
-    _set_every_concrete_version(repo, "0.9.0")
+    _set_every_concrete_version(repo, "0.9.1")
 
     result = _run_version_lock(repo)
 
@@ -279,7 +279,7 @@ def test_development_candidate_rejects_wrong_python_mapping(tmp_path: Path) -> N
 
 def test_population_response_change_is_explicitly_breaking() -> None:
     changelog = (REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    unreleased = changelog.split("## Unreleased", 1)[1].split("\n## ", 1)[0]
+    unreleased = changelog.split("## 0.9.0", 1)[1].split("\n## ", 1)[0]
     breaking = unreleased.split("### Breaking changes", 1)[1].split("\n### ", 1)[0]
     features = unreleased.split("### New features", 1)[1].split("\n### ", 1)[0]
     marker = "Replaced the legacy MyVariant/ExAC variant-detail population fields"
