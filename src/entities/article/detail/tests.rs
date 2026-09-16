@@ -57,7 +57,7 @@ async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
     );
 }
 
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 #[tokio::test]
 async fn rejected_admitted_detail_is_terminal_after_one_pubtator_request() {
     use crate::entities::article::test_support::{
@@ -102,7 +102,7 @@ async fn rejected_admitted_detail_is_terminal_after_one_pubtator_request() {
     assert_eq!(europe_calls.load(Ordering::SeqCst), 0);
 }
 
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 #[tokio::test]
 async fn empty_admitted_response_is_original_not_found_without_europepmc() {
     use crate::entities::article::test_support::{
@@ -143,7 +143,7 @@ async fn empty_admitted_response_is_original_not_found_without_europepmc() {
     assert_eq!(europe_calls.load(Ordering::SeqCst), 0);
 }
 
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 #[tokio::test]
 async fn actual_pubtator_http_404_retains_europepmc_fallback() {
     use crate::entities::article::test_support::{
@@ -184,7 +184,7 @@ async fn actual_pubtator_http_404_retains_europepmc_fallback() {
     assert!(article.pubtator_fallback);
 }
 
-#[serial_test::serial(article_resolver_env)]
+#[serial_test::serial(source_env)]
 #[tokio::test]
 async fn admitted_detail_preserves_shared_text_then_assembles_product_fields() {
     use crate::entities::article::test_support::{

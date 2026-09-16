@@ -14,18 +14,18 @@ pub(super) use crate::error::BioMcpError;
 #[allow(unused_imports)]
 pub(super) use crate::sources::europepmc::EuropePmcSort;
 
-pub(super) struct TestEnv {
+pub(crate) struct TestEnv {
     previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
 }
 
 impl TestEnv {
-    pub(super) fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             previous: Vec::new(),
         }
     }
 
-    pub(super) fn set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
+    pub(crate) fn set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
         if !self.previous.iter().any(|(existing, _)| *existing == key) {
             self.previous.push((key, std::env::var_os(key)));
         }
@@ -49,17 +49,17 @@ impl Drop for TestEnv {
     }
 }
 
-pub(super) enum TestHttpReply {
+pub(crate) enum TestHttpReply {
     Bytes(Vec<u8>),
 }
 
-pub(super) struct TestHttpFixture {
-    pub(super) base: String,
+pub(crate) struct TestHttpFixture {
+    pub(crate) base: String,
     task: tokio::task::JoinHandle<()>,
 }
 
 impl TestHttpFixture {
-    pub(super) async fn spawn(
+    pub(crate) async fn spawn(
         handler: impl Fn(&str) -> TestHttpReply + Send + Sync + 'static,
     ) -> Self {
         use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
@@ -94,7 +94,7 @@ impl Drop for TestHttpFixture {
     }
 }
 
-pub(super) fn test_http_response(status: &str, content_type: &str, body: &[u8]) -> Vec<u8> {
+pub(crate) fn test_http_response(status: &str, content_type: &str, body: &[u8]) -> Vec<u8> {
     let mut response = format!(
         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         body.len()

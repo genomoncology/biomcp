@@ -10,6 +10,11 @@ use serde::{Deserialize, Serialize};
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
+mod detail;
+pub use self::detail::EuropePmcDetail;
+#[cfg(test)]
+pub(crate) use self::detail::parse_publication_detail;
+
 const EUROPE_PMC_BASE: &str = "https://www.ebi.ac.uk/europepmc/webservices/rest";
 const EUROPE_PMC_API: &str = "europepmc";
 const EUROPE_PMC_BASE_ENV: &str = "BIOMCP_EUROPEPMC_BASE";
@@ -71,10 +76,17 @@ impl EuropePmcClient {
         })
     }
 
-    async fn get_json<T: DeserializeOwned>(
+    async fn acquire_json_response(
         &self,
         req: reqwest_middleware::RequestBuilder,
-    ) -> Result<T, BioMcpError> {
+    ) -> Result<
+        (
+            reqwest::StatusCode,
+            Option<reqwest::header::HeaderValue>,
+            Vec<u8>,
+        ),
+        BioMcpError,
+    > {
         let resp = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::EUROPE_PMC,
@@ -87,6 +99,14 @@ impl EuropePmcClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::EUROPE_PMC),
         )
         .await?;
+        Ok((status, content_type, bytes))
+    }
+
+    async fn get_json<T: DeserializeOwned>(
+        &self,
+        req: reqwest_middleware::RequestBuilder,
+    ) -> Result<T, BioMcpError> {
+        let (status, content_type, bytes) = self.acquire_json_response(req).await?;
         crate::sources::decode_json(
             crate::error::SourceContext::retry(crate::error::SourceProvider::EUROPE_PMC),
             status,
@@ -96,7 +116,7 @@ impl EuropePmcClient {
         )
     }
 
-    pub async fn search_by_doi(&self, doi: &str) -> Result<EuropePmcSearchResponse, BioMcpError> {
+    fn doi_query(doi: &str) -> Result<String, BioMcpError> {
         let doi = doi.trim();
         if doi.is_empty() {
             return Err(BioMcpError::InvalidArgument(
@@ -106,8 +126,21 @@ impl EuropePmcClient {
         if doi.len() > 256 {
             return Err(BioMcpError::InvalidArgument("DOI is too long.".into()));
         }
+        Ok(format!("DOI:{doi}"))
+    }
 
-        self.search_query(&format!("DOI:{doi}"), 1, 1).await
+    async fn search_by_doi_with_query(
+        &self,
+        doi: &str,
+    ) -> Result<(String, EuropePmcSearchResponse), BioMcpError> {
+        let query = Self::doi_query(doi)?;
+        let response = self.search_by_doi(doi).await?;
+        Ok((query, response))
+    }
+
+    pub async fn search_by_doi(&self, doi: &str) -> Result<EuropePmcSearchResponse, BioMcpError> {
+        let query = Self::doi_query(doi)?;
+        self.search_query(&query, 1, 1).await
     }
 
     pub async fn search_by_pmcid(
@@ -565,8 +598,21 @@ fn parse_supplementary_zip_with_limits(
 pub struct EuropePmcSearchResponse {
     #[serde(rename = "hitCount")]
     pub hit_count: Option<u64>,
+    pub request: Option<EuropePmcLegacyRequest>,
     #[serde(rename = "resultList")]
     pub result_list: Option<EuropePmcResultList>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EuropePmcLegacyRequest {
+    #[serde(rename = "queryString")]
+    pub query_string: Option<String>,
+    #[serde(rename = "resultType")]
+    pub result_type: Option<String>,
+    #[serde(rename = "cursorMark")]
+    pub cursor_mark: Option<String>,
+    #[serde(rename = "pageSize")]
+    pub page_size: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -578,6 +624,7 @@ pub struct EuropePmcResultList {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EuropePmcResult {
     pub id: Option<String>,
+    pub source: Option<String>,
     pub title: Option<String>,
     pub pmid: Option<String>,
     pub pmcid: Option<String>,

@@ -45,6 +45,20 @@ fn normalize_publication_type(value: &str) -> Option<String> {
     Some(mapped)
 }
 
+pub(super) fn publication_type_from_string(value: Option<&str>) -> Option<String> {
+    value?.split(';').find_map(normalize_publication_type)
+}
+
+pub(super) fn retraction_status_from_string(value: Option<&str>) -> Option<bool> {
+    let mut types = value?
+        .split(';')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .peekable();
+    types.peek()?;
+    Some(types.any(|value| value.to_ascii_lowercase().contains("retracted publication")))
+}
+
 fn collect_publication_types_from_value(value: &serde_json::Value, out: &mut Vec<String>) {
     match value {
         serde_json::Value::String(s) => {
@@ -131,17 +145,21 @@ fn parse_open_access(value: Option<&serde_json::Value>) -> Option<bool> {
     let value = value?;
     match value {
         serde_json::Value::Bool(v) => Some(*v),
-        serde_json::Value::String(v) => match v.trim().to_ascii_uppercase().as_str() {
-            "Y" | "YES" | "TRUE" | "1" => Some(true),
-            "N" | "NO" | "FALSE" | "0" => Some(false),
-            _ => None,
-        },
+        serde_json::Value::String(v) => parse_open_access_string(v),
         serde_json::Value::Number(v) => v.as_u64().map(|n| n > 0),
         _ => None,
     }
 }
 
-fn split_author_string(value: &str) -> Vec<String> {
+pub(super) fn parse_open_access_string(value: &str) -> Option<bool> {
+    match value.trim().to_ascii_uppercase().as_str() {
+        "Y" | "YES" | "TRUE" | "1" => Some(true),
+        "N" | "NO" | "FALSE" | "0" => Some(false),
+        _ => None,
+    }
+}
+
+pub(super) fn split_author_string(value: &str) -> Vec<String> {
     let v = value.trim();
     if v.is_empty() {
         return vec![];

@@ -15,7 +15,7 @@ mod query;
 mod ranking;
 mod search;
 #[cfg(test)]
-mod test_support;
+pub(crate) mod test_support;
 pub(crate) mod variant_search;
 
 pub use self::assets::{article_asset_bytes, article_assets_manifest};

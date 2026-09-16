@@ -2,7 +2,9 @@
 
 use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
-use crate::sources::europepmc::{EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse};
+use crate::sources::europepmc::{
+    EuropePmcClient, EuropePmcDetail, EuropePmcResult, EuropePmcSearchResponse,
+};
 use crate::sources::pubmed::{PubMedCitation, PubMedCitationErrorKind, PubMedClient};
 use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
@@ -254,50 +256,52 @@ pub(super) fn is_pubtator_lag_error(err: &BioMcpError) -> bool {
     }
 }
 
-async fn variant_detail_request<T, F>(
-    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
-    source: &str,
-    future: F,
-) -> Option<Result<T, BioMcpError>>
-where
-    F: std::future::Future<Output = Result<T, BioMcpError>>,
-{
-    let Some(execution) = execution else {
-        return Some(future.await);
-    };
-    let started = match execution.reserve("enrichment") {
-        Some(started) => started,
-        None => {
-            execution.record_not_attempted("enrichment", source);
-            return None;
-        }
-    };
-    let result = future.await;
-    match &result {
-        Ok(_) => execution.record("enrichment", source, started, "ok", 1),
-        Err(error) => execution.record_error("enrichment", source, started, error),
-    }
-    Some(result)
-}
-
 pub(super) async fn resolve_article_from_pmid(
     pmid: u32,
     not_found_id: &str,
     suggestion_id: &str,
     pubtator: &PubTatorClient,
     europe: &EuropePmcClient,
-    europe_hint: Option<&EuropePmcResult>,
+    europe_hint: Option<&EuropePmcDetail>,
 ) -> Result<Article, BioMcpError> {
-    resolve_article_from_pmid_with_context(
-        pmid,
-        not_found_id,
-        suggestion_id,
-        pubtator,
-        europe,
-        europe_hint,
-        None,
-    )
-    .await
+    let pubtator_result = pubtator.publication_detail(pmid).await;
+    match pubtator_result {
+        Ok(Some(detail)) => {
+            let mut article = transform::article::from_pubtator_detail(&detail);
+            if let Some(hint) = europe_hint {
+                transform::article::merge_europepmc_detail_metadata(&mut article, hint);
+            } else if let Ok(Some(detail)) =
+                europe.publication_detail(publication_pmid(pmid)?).await
+            {
+                transform::article::merge_europepmc_detail_metadata(&mut article, &detail);
+            }
+            article.annotations = transform::article::extract_detail_annotations(&detail);
+            Ok(article)
+        }
+        Ok(None) => Err(article_not_found(not_found_id, suggestion_id)),
+        Err(error) if is_pubtator_lag_error(&error) => {
+            let owned;
+            let detail = if let Some(hint) = europe_hint {
+                hint
+            } else {
+                owned = europe
+                    .publication_detail(publication_pmid(pmid)?)
+                    .await?
+                    .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?;
+                &owned
+            };
+            Ok(article_from_europepmc_detail_fallback(detail))
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn publication_pmid(pmid: u32) -> Result<biodata::PublicationIdentifier, BioMcpError> {
+    biodata::Pmid::new(&pmid.to_string())
+        .map(biodata::PublicationIdentifier::Pmid)
+        .map_err(|_| {
+            BioMcpError::InvalidArgument("PMID must be a nonzero canonical identifier".into())
+        })
 }
 
 pub(super) async fn resolve_article_from_pmid_with_context(
@@ -309,72 +313,19 @@ pub(super) async fn resolve_article_from_pmid_with_context(
     europe_hint: Option<&EuropePmcResult>,
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
 ) -> Result<Article, BioMcpError> {
-    if let Some(execution) = execution {
-        return resolve_variant_article_from_pmid(
+    let Some(execution) = execution else {
+        return resolve_article_from_pmid(
             pmid,
             not_found_id,
             suggestion_id,
-            europe_hint,
-            execution,
+            pubtator,
+            europe,
+            None,
         )
         .await;
-    }
-    let Some(pubtator_result) =
-        variant_detail_request(execution, "pubtator", pubtator.publication_detail(pmid)).await
-    else {
-        return Err(BioMcpError::SourceUnavailable {
-            source_name: "variant article work budget".into(),
-            reason: "item work budget exhausted".into(),
-            suggestion: "Retry with a narrower request".into(),
-        });
     };
-    match pubtator_result {
-        Ok(detail) => {
-            let detail = detail.ok_or_else(|| article_not_found(not_found_id, suggestion_id))?;
-            let mut article = transform::article::from_pubtator_detail(&detail);
-            if let Some(hit) = europe_hint {
-                transform::article::merge_europepmc_metadata(&mut article, hit);
-            } else if let Some(Ok(search)) = variant_detail_request(
-                execution,
-                "europepmc",
-                europe.search_by_pmid(&pmid.to_string()),
-            )
-            .await
-                && let Some(hit) = first_europepmc_hit(search)
-            {
-                transform::article::merge_europepmc_metadata(&mut article, &hit);
-            }
-            article.annotations = transform::article::extract_detail_annotations(&detail);
-            Ok(article)
-        }
-        Err(err) => {
-            if !is_pubtator_lag_error(&err) {
-                return Err(err);
-            }
-
-            let hit = match europe_hint.cloned() {
-                Some(hit) => hit,
-                None => {
-                    let Some(search) = variant_detail_request(
-                        execution,
-                        "europepmc",
-                        europe.search_by_pmid(&pmid.to_string()),
-                    )
-                    .await
-                    else {
-                        return Err(BioMcpError::SourceUnavailable {
-                            source_name: "variant article work budget".into(),
-                            reason: "item work budget exhausted".into(),
-                            suggestion: "Retry with a narrower request".into(),
-                        });
-                    };
-                    first_europepmc_hit(search?)
-                        .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?
-                }
-            };
-            Ok(article_from_europepmc_fallback(&hit))
-        }
-    }
+    resolve_variant_article_from_pmid(pmid, not_found_id, suggestion_id, europe_hint, execution)
+        .await
 }
 
 pub(super) async fn resolve_variant_article_from_pmid(
@@ -488,6 +439,12 @@ fn article_from_europepmc_fallback(hit: &EuropePmcResult) -> Article {
     article
 }
 
+fn article_from_europepmc_detail_fallback(detail: &EuropePmcDetail) -> Article {
+    let mut article = transform::article::from_europepmc_detail(detail);
+    article.pubtator_fallback = true;
+    article
+}
+
 pub(super) async fn get_article_base_with_clients(
     id: &str,
     pubtator: &PubTatorClient,
@@ -508,29 +465,34 @@ pub(super) async fn get_article_base_with_clients(
             resolve_article_from_pmid(pmid, id, id, pubtator, europe, None).await
         }
         ArticleIdType::Doi(doi) => {
-            let search = europe.search_by_doi(&doi).await?;
-            if search.hit_count.unwrap_or(0) == 0 {
-                return Err(article_not_found(&doi, id));
+            if doi.len() > 256 {
+                return Err(BioMcpError::InvalidArgument("DOI is too long.".into()));
             }
-            let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&doi, id))?;
-
-            if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
-                resolve_article_from_pmid(pmid, &doi, id, pubtator, europe, Some(&hit)).await
+            let canonical = biodata::Doi::new(&doi)
+                .map_err(|_| BioMcpError::InvalidArgument(INVALID_ARTICLE_ID_MSG.into()))?;
+            let detail = europe
+                .publication_detail(biodata::PublicationIdentifier::Doi(canonical))
+                .await?
+                .ok_or_else(|| article_not_found(id, id))?;
+            let article = transform::article::from_europepmc_detail(&detail);
+            if let Some(pmid) = article.pmid.as_deref().and_then(parse_pmid) {
+                resolve_article_from_pmid(pmid, id, id, pubtator, europe, Some(&detail)).await
             } else {
-                Ok(transform::article::from_europepmc_result(&hit))
+                Ok(article)
             }
         }
         ArticleIdType::Pmc(pmcid) => {
-            let search = europe.search_by_pmcid(&pmcid).await?;
-            if search.hit_count.unwrap_or(0) == 0 {
-                return Err(article_not_found(&pmcid, id));
-            }
-            let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&pmcid, id))?;
-
-            if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
-                resolve_article_from_pmid(pmid, &pmcid, id, pubtator, europe, Some(&hit)).await
+            let canonical = biodata::Pmcid::new(&pmcid)
+                .map_err(|_| BioMcpError::InvalidArgument(INVALID_ARTICLE_ID_MSG.into()))?;
+            let detail = europe
+                .publication_detail(biodata::PublicationIdentifier::Pmcid(canonical))
+                .await?
+                .ok_or_else(|| article_not_found(id, id))?;
+            let article = transform::article::from_europepmc_detail(&detail);
+            if let Some(pmid) = article.pmid.as_deref().and_then(parse_pmid) {
+                resolve_article_from_pmid(pmid, id, id, pubtator, europe, Some(&detail)).await
             } else {
-                Ok(transform::article::from_europepmc_result(&hit))
+                Ok(article)
             }
         }
         ArticleIdType::Invalid => Err(BioMcpError::InvalidArgument(INVALID_ARTICLE_ID_MSG.into())),
@@ -765,6 +727,8 @@ pub async fn get(
     Ok(article)
 }
 
+#[cfg(test)]
+mod europepmc_surfaces;
 #[cfg(test)]
 mod pubtator_surfaces;
 #[cfg(test)]

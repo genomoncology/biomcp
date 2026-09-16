@@ -2,6 +2,7 @@
 
 mod anchors;
 mod annotations;
+mod europepmc;
 mod federation;
 mod html;
 mod jats;
@@ -15,6 +16,7 @@ pub use self::anchors::{
     normalize_article_search_text,
 };
 pub use self::annotations::{extract_annotations, extract_detail_annotations};
+pub use self::europepmc::{from_europepmc_detail, merge_europepmc_detail_metadata};
 pub use self::federation::{
     from_europepmc_result, from_europepmc_search_result, from_pubmed_esummary_entry,
     from_pubtator_search_result, merge_europepmc_metadata,
