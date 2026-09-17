@@ -19,7 +19,8 @@ biomcp study query --study gse48843_counts --gene CD34 --type expression
 
 ## Current Facts
 
-- Local studies live under `resolve_study_root()` (`src/sources/cbioportal_study.rs:278`, override `BIOMCP_STUDY_DIR`).
+- Local studies live under `resolve_study_root()` (`src/sources/cbioportal_study.rs:278`, override `BIOMCP_STUDY_DIR`, default `dirs::data_dir()/biomcp/studies` at `src/sources/cbioportal_study.rs:287`). Ticket 1208 adds `BIOMCP_DATA_DIR` above that default, with `BIOMCP_STUDY_DIR` still taking precedence.
+- Ticket 1208 records `upstream_last_updated` in each dataset manifest entry and gives the manifest a series-level `imports` list. Its writes take the series `manifest.lock`.
 - A study needs `meta_study.txt`, parsed by `parse_meta_study` (`src/sources/cbioportal_study.rs:1483`) with `cancer_study_identifier`, `name`, and `type_of_cancer`.
 - Samples come from `data_clinical_sample.txt`. Parsers skip blank lines and lines that start with `#` (`src/sources/cbioportal_study.rs:2181`, `:2205`). `clinical_column_values` (`:991`) reads a named column.
 - Expression comes from the first file in `EXPRESSION_FILES` (`src/sources/cbioportal_study.rs:15`) that exists. The format is `Hugo_Symbol`, `Entrez_Gene_Id`, then one column per sample (test fixture at `:2305`).
@@ -53,10 +54,12 @@ Docs say that sample maps usually come from characteristics keys (`treatment`, `
 ### Output
 
 - Folder `<study root>/<name>/` staged, then renamed into place. An existing name fails unless `--replace`.
-- `meta_study.txt`: `cancer_study_identifier: <name>`, `name` from the dataset title, `type_of_cancer: other`; when `--cancer-type` is given the same value also fills a `CANCER_TYPE` column in `data_clinical_sample.txt`, because `study filter --cancer-type` reads that column (`src/sources/cbioportal_study.rs:1442-1443`); the machine unit fields `measurement_kind`, `normalization_or_transform`, and `feature_id_type` from 1207, with `unknown` allowed; and `description` stating source ID, asset IDs, SHA-256 from the 1208 manifest, product kind, the probe rule, and dropped-feature counts.
+- `meta_study.txt`: `cancer_study_identifier: <name>`, `name` from the dataset title, `type_of_cancer: other`; when `--cancer-type` is given the same value also fills a `CANCER_TYPE` column in `data_clinical_sample.txt`, because `study filter --cancer-type` reads that column (`src/sources/cbioportal_study.rs:1442-1443`); the machine unit fields `measurement_kind`, `normalization_or_transform`, and `feature_id_type` from 1207, with `unknown` allowed; and `description` stating source ID, asset IDs, SHA-256 from the 1208 manifest, `upstream_last_updated` from the same manifest entry (or `unknown` when it is null), product kind, the probe rule, and dropped-feature counts.
 - `data_clinical_sample.txt`: `SAMPLE_ID`, `PATIENT_ID` (set to the sample ID), and the map columns, with the four standard `#` header lines.
 - `data_expression_imported.txt`: the mapped matrix. `EXPRESSION_FILES` gains this name last, so existing DataHub studies keep their current file.
-- `import.json`: the full provenance, including the sample map SHA-256, the three unit fields, the annotation file date, dropped-row counts (retired, replaced, and other), symbol collisions, and unmatched matrix columns.
+- `import.json`: the full provenance, including the sample map SHA-256, `upstream_last_updated` copied from the 1208 manifest entry for the value asset, the import time, the three unit fields, the annotation file date, dropped-row counts (retired, replaced, and other), symbol collisions, and unmatched matrix columns. `upstream_last_updated` is `null` when the asset had none, which is the honest answer for NCBI count files and supplementary files.
+- After the study folder is renamed into place, import appends `{study: <name>, imported_at: <time>, asset_id: <value asset>}` to the dataset manifest's `imports` list, under the series `manifest.lock` that ticket 1208 defines. A repeat import of the same study name with `--replace` replaces the existing entry rather than adding a second one. A failed import appends nothing. When the manifest cannot be locked or written, the study is already installed and the command exits nonzero with a message naming the manifest path and the study, so the user can re-run `study import --replace`.
+- Output carries `data_as_of`, set to `upstream_last_updated` when the manifest entry has one and to the manifest `downloaded_at` otherwise, with `data_as_of_kind` naming which. Markdown ends with the GEO attribution line from ticket 1204.
 - No `data_clinical_patient.txt` and no `data_mutations.txt`. Commands that need them fail with the existing missing-file messages. The study commands are unit-blind (`--expression-above` compares a bare number). The unit fields let `study score` (ticket 1212) print and check units.
 
 ### Error rendering
@@ -64,6 +67,12 @@ Docs say that sample maps usually come from characteristics keys (`treatment`, `
 Study command errors keep their reason. Markdown and JSON both name the missing file, for example `data_mutations.txt` or `meta_study.txt`, in place of the bare `cBioPortal DataHub is not available` line.
 
 `study import` is CLI-only. The MCP shell rejects it.
+
+### Docs
+
+- State that analysis works offline. Once the assets are on disk, `study import`, `study query`, `study filter`, `study compare`, and `study score` make no network request, and `dataset path` is the way to reach the files without a network.
+- State that an imported study is frozen. Nothing refreshes it, and a later `dataset download --refresh` never changes an imported input. The study keeps the SHA-256 it recorded.
+- State the study root resolution order: `BIOMCP_STUDY_DIR`, then `BIOMCP_DATA_DIR/studies/`, then the platform data directory.
 
 ## Acceptance
 
@@ -83,6 +92,9 @@ Study command errors keep their reason. Markdown and JSON both name the missing 
 14. Spec `spec/entity/study.md` gains one import-then-query block on fixtures.
 15. `study survival`, `study co-occurrence`, and `study compare --gene` on the imported study fail with a message that names the missing file, in Markdown and in JSON. A test pins both forms.
 16. `--cancer-type AML` makes `study filter --cancer-type AML` return every imported sample.
+17. `import.json` and the `meta_study.txt` description carry `upstream_last_updated` from the manifest entry. A manifest entry with a null value writes `null` in `import.json` and `unknown` in the description.
+18. The dataset manifest gains one `imports` entry with the study name, the import time, and the asset ID. A second import under the same name with `--replace` leaves one entry. A failed import leaves the list unchanged.
+19. `study query --type expression` on the imported study makes no network request. The test asserts an empty request log.
 
 ## Out of scope
 
@@ -94,3 +106,10 @@ Study command errors keep their reason. Markdown and JSON both name the missing 
 ## Decisions
 
 Open to Ian's overturn: `--gene-history` is optional because `gene_history.gz` is 162 MB. Without it, dropped GeneIDs are one count. NCBI counts map through NCBI Gene `gene_info` because a script cannot fetch the counts-page annotation file. Collisions keep the first row in file order, matching what the expression reader already returns.
+
+Open to Ian's overturn: an import that installs the study and then fails to update the dataset manifest exits nonzero and keeps the study. The study is the expensive artifact and the manifest entry is a pointer the user can restore with `--replace`.
+
+## Review
+
+- Design review: pending
+- Code review: pending

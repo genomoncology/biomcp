@@ -33,6 +33,7 @@ GEO facts the design relies on, to confirm against the recorded fixtures:
 - Experiment 203 found 5,912 sample IDs in more than one of 585 series (774 files). A SuperSeries repeats the samples of its SubSeries. GSE982 is a SubSeries of GSE995.
 - In the same survey, sample characteristics and sample titles were the first field that split samples by a treatment word in 569 of 623 files. The characteristics keys that split samples most often were `treatment` (336 series) and `agent` (41). The treatment protocol mentioned DMSO in 328 series and was usually the same for every sample.
 - `elink` with `dbfrom=pubmed&db=gds` returns GDS UIDs of mixed record types (series, platforms, samples, curated DataSets).
+- ESummary on `db=gds` publishes no update date and no release name. The provider's own dates live in the series matrix header as `!Series_submission_date`, `!Series_last_update_date`, and `!Series_status`. Ticket 1211 returns them as `submitted`, `last_updated`, and `status`. The GEO download service sends no `ETag` and no `Last-Modified`, so the header is the only freshness signal GEO offers.
 
 ## Design
 
@@ -41,6 +42,15 @@ GEO facts the design relies on, to confirm against the recorded fixtures:
 `get dataset <id>` accepts `geo:GSE…` or bare `GSE…` and renders the 1203 row for that series from one `esummary` call: ID, title, organisms, series types, platforms, sample count, PMIDs, supplementary types, `geo2r`, and summary. Sections `publications` (the PMIDs with `get article` next commands) and `links` (the GEO page, BioProject, and SuperSeries/SubSeries relations) read the same response. The card names the SuperSeries or SubSeries relation when one exists.
 
 `all` means the sections that make no file request: the card, `publications`, and `links`. It never includes `series` (ticket 1211) or `assets` and `products` (ticket 1207).
+
+### Dates on the card
+
+The card carries four more fields: `submitted`, `last_updated`, `status`, and `data_as_of`.
+
+- `data_as_of` is the time the ESummary response was retrieved, because NCBI GEO publishes no release name or release date for a series. Every dataset output carries it, including `dataset samples` and `article datasets`.
+- `submitted`, `last_updated`, and `status` come from the series matrix header through ticket 1211's `read_header`. The card alone reads no file, so a plain card renders all three as `unknown` and prints one note: `Provider dates come from the series matrix header. Run biomcp get dataset <id> series.` When the invocation also asks for `series`, or for `assets` (ticket 1207), the scan already read the header and the card prints the three values as published.
+- A `status` that is not `Public` renders as a warning line above the card body, naming the status verbatim, for example `Warning: GEO status is "Withdrawn".` The line prints in Markdown and the value sits in JSON as `status`. BioMCP normalizes no status word and applies no threshold.
+- Markdown prints the attribution line `NCBI GEO records are public; submitters keep rights to their data. Retrieved <data_as_of>.` JSON carries `data_as_of` at the top level of the payload.
 
 ### `dataset samples <id>` helper
 
@@ -58,6 +68,7 @@ GEO facts the design relies on, to confirm against the recorded fixtures:
 ### Docs
 
 - Add the card, `publications`, `links`, the `dataset samples` helper, and the `article datasets` row to the GEO source page.
+- State that `data_as_of` is a retrieval time, because GEO publishes no release, and that the provider's own dates need the `series` section.
 - Add the sections, the helper, and the pivot to `biomcp list dataset` and `biomcp list article`.
 - State that a SuperSeries repeats its SubSeries samples. Any tally across series counts distinct GSM IDs.
 - State that sample maps for ticket 1209 usually come from characteristics keys such as `treatment` and `agent` and from sample titles. The treatment protocol rarely tells samples apart.
@@ -71,6 +82,9 @@ Fixtures under `testdata/sources/geo/`, small and recorded: `esummary` JSON for 
 3. `dataset samples` renders samples in provider order and pages with `--offset`.
 4. `article datasets` keeps only `GSE` rows from the mixed `elink` fixture and returns the empty note for the unlinked PMID.
 5. `get dataset <GSE>` and `get dataset <GSE> all` send only the `esummary` request.
+6. Every dataset output carries `data_as_of` in JSON and the attribution line in Markdown, including `dataset samples` and `article datasets`.
+7. A plain card renders `submitted`, `last_updated`, and `status` as `unknown` with the note naming `get dataset <id> series`, and makes no matrix request.
+8. A fixture whose `status` is not `Public` renders the warning line with the status verbatim, in Markdown and in JSON. Ticket 1211 supplies that value; until it lands the test drives the renderer directly.
 
 Spec `spec/entity/dataset.md`, served by a local fixture server with `BIOMCP_PUBMED_BASE` pointed at it: one block each for `get dataset`, `dataset samples`, and `article datasets`.
 
@@ -86,3 +100,10 @@ Spec `spec/entity/dataset.md`, served by a local fixture server with `BIOMCP_PUB
 ## Decisions
 
 Open to Ian's overturn: samples are a paged helper rather than a `get` section, because no `get` section takes `--offset` today.
+
+Open to Ian's overturn: the card defines `submitted`, `last_updated`, and `status` but never fetches them itself. Ticket 1211 depends on this ticket, so this ticket cannot call the header reader. A card that read a matrix file would also break the rule that `all` makes no file request. The fields render as `unknown` with a note until `series` or `assets` runs in the same invocation.
+
+## Review
+
+- Design review: pending
+- Code review: pending

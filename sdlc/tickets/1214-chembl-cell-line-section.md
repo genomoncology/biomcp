@@ -38,8 +38,13 @@ Add two calls to `ChemblClient`, each with a plan function:
 - Add `chembl` to the 1202 cell line section list with an outcome key. `all` does not include it.
 - The section calls `cell_line_by_cellosaurus` with the requested accession, then `cell_line_assay_count` for each record. It never searches by name.
 - No record gives `empty` with the message `no ChEMBL cell line lists this accession`. A transport or decode failure gives `unavailable`.
-- JSON: `cell_line.chembl` holds `{ "source": "ChEMBL", "records": [{"chembl_id", "name", "efo_id", "clo_id", "assay_count"}] }`.
-- Markdown: a `## ChEMBL` heading, one row per record, and the ChEMBL attribution line. BioMCP lists no assays and no activity values.
+- JSON: `cell_line.chembl` holds `{ "source": "ChEMBL", "data_as_of", "data_as_of_kind", "records": [{"chembl_id", "name", "efo_id", "clo_id", "assay_count"}] }`.
+- `data_as_of` is the ChEMBL release name and date read from `status.json`, measured 2026-09-17 as `ChEMBL_37 (2026-05-01)`, with `data_as_of_kind: "release"`. Add `status()` to `ChemblClient` with its own plan function. The section calls it once, the shared HTTP cache holds the answer, and a failed call falls back to the retrieval time with `data_as_of_kind: "retrieved"`. The release is not hard-coded.
+- Markdown: a `## ChEMBL` heading, one row per record, and the attribution line `ChEMBL_37 (2026-05-01), CC BY-SA 3.0. ChEMBL is produced by EMBL-EBI.` The release part is the `data_as_of` value. BioMCP lists no assays and no activity values.
+
+### Bot checks
+
+ChEMBL served no bot check in any measurement. The rule still holds: an HTTP 200 whose body is an HTML human-verification page where JSON was expected is a provider error. It names the URL and the endpoint, and the command stops. BioMCP never retries through a check, never rewrites the request to get around one, and never scrapes the page.
 - The `ChEMBL` health row adds the cell line section to its `affects` text.
 
 ### Docs
@@ -54,6 +59,7 @@ Record through the production request path into `testdata/sources/chembl/`, each
 - `cell_line_cvcl_0004_20260917.json`: the K-562 record, whose ChEMBL name `K562` differs from the Cellosaurus name.
 - `cell_line_none_20260917.json`: an empty result for an accession ChEMBL does not list.
 - `assay_count_chembl3706573_20260917.json`: the `limit=1` assay page.
+- `status_20260917.json`: the `status.json` body reporting ChEMBL_37, released 2026-05-01.
 
 ## Acceptance
 
@@ -65,6 +71,8 @@ Fixture-backed Rust tests, no live network:
 4. The empty fixture gives `empty` with the message and makes no assay request.
 5. `get cell-line CVCL_2119 all` makes no ChEMBL request.
 6. The catalog lists `chembl` among the cell line sections.
+7. The section carries `data_as_of` `ChEMBL_37 (2026-05-01)` and `data_as_of_kind: "release"` from the `status.json` fixture, and the Markdown ends with the CC BY-SA 3.0 attribution line naming that release. A failing `status.json` gives a retrieval time and `data_as_of_kind: "retrieved"`, and the records still render.
+8. An HTML body served with HTTP 200 for a ChEMBL JSON request is a provider error naming the URL, and no row renders.
 
 Executable spec: the 1202 cell line spec page gains one JSON block (`get cell-line CVCL_2119 chembl --json`: `chembl.records[0].chembl_id == "CHEMBL3706573"`).
 
@@ -82,6 +90,7 @@ Ian can overturn these.
 
 - The section shows a count and no assays. Assays are free-text literature records in the thousands per line.
 - The join goes only through `cellosaurus_id` because name filters missed four of ten test lines.
+- `data_as_of` is read from `status.json` at runtime rather than pinned in the source, so a new ChEMBL release needs no code change.
 
 ## Complexity
 

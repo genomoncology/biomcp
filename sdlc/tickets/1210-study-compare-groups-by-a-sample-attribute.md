@@ -58,3 +58,9 @@ biomcp study compare --study gse48843_counts --group-by AGENT --type expression 
 ## Decisions
 
 Open to Ian's overturn: the test stays the existing normal approximation, with the method named in the output. An exact test for small groups stays out of scope.
+
+
+## Review
+
+- Design review: pending
+- Code review: pending

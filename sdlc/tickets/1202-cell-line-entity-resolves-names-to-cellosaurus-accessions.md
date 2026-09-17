@@ -69,6 +69,18 @@ deps: []
 - Health: one `SourceDescriptor` for Cellosaurus probing `/release-info?format=json`, affects "cell-line search and detail".
 - The review note wrote `cell_line`. This ticket uses `cell-line` because every multi-word entity in the CLI and catalog is kebab case (`adverse-event`).
 
+### Release date and attribution
+
+Every cell line output, card and section and search result, in Markdown and in JSON, carries a `data_as_of` field and one attribution line.
+
+- `data_as_of` holds the Cellosaurus release name and date, read from `/release-info?format=json`. Measured 2026-09-17: release 56.0, dated 2026-06-25. The value is not hard-coded. The client reads `/release-info` once per process, caches the result through the shared HTTP cache, and falls back to the retrieval time with `data_as_of_kind: "retrieved"` when the call fails. A successful read sets `data_as_of_kind: "release"`. The health probe already calls `/release-info`, so this adds no new endpoint.
+- JSON carries `{"data_as_of": "56.0 (2026-06-25)", "data_as_of_kind": "release"}` at the top level of the payload.
+- Markdown ends with one fixed line: `Cellosaurus 56.0 (2026-06-25), CC BY 4.0. Cite Bairoch A. J. Biomol. Tech. 29:25-38 (2018).` The release part is the `data_as_of` value.
+
+### Bot checks
+
+Cellosaurus served no bot check in any measurement. The rule still holds for every request this ticket makes: an HTTP 200 whose body is an HTML human-verification page where JSON was expected is a provider error. It names the URL and the file or endpoint, and the command stops. BioMCP never retries through a check, never rewrites the request to get around one, and never falls back to scraping the page.
+
 ### Docs
 
 - `docs/sources/cellosaurus.md` on the KEGG page model, a row in `docs/sources/index.md`, and a nav entry in `mkdocs.yml`.
@@ -89,6 +101,7 @@ Record these through the production request path into `testdata/sources/cellosau
 - `get_cvcl_1844_var_20260917.json`: OCI-AML-3 card fields plus `var`.
 - `get_cvcl_0007_20260917.json`: U-937 card fields plus `dr`, with no GDSC or Cosmic-CLP link.
 - `get_cvcl_0005_20260917.json`: NB4 card fields plus `dr`.
+- `release_info_20260917.json`: the `/release-info?format=json` body reporting release 56.0, 2026-06-25.
 
 One synthetic 1000-row page is generated in the test from a template. It is not a recorded file. Extend `setup-provider-contract-spec-fixture.sh` to serve `/cellosaurus/...` from these files, answer an empty search for any other `dr:` query, answer 404 for any other accession, and export `BIOMCP_CELLOSAURUS_BASE`.
 
@@ -109,6 +122,9 @@ Rust tests, fixture-backed, no live network:
 11. An unknown accession fails with the not-found error. An unknown section fails before any request.
 12. The catalog lists `cell-line` as searchable and gettable with sections `variants`, `xrefs`, and `all`. The typed MCP `get` schema gains a `cell-line` branch. Typed MCP `search` still rejects `cell-line`.
 13. The health catalog test counts the new Cellosaurus row. The rate-limit test resolves Cellosaurus URLs to the new policy.
+14. A `/release-info` fixture gives `data_as_of` `56.0 (2026-06-25)` and `data_as_of_kind: "release"` on every search and get output. A failing `/release-info` gives a retrieval time and `data_as_of_kind: "retrieved"`, and the rest of the output is unchanged.
+15. Every Markdown output ends with the attribution line naming the release, CC BY 4.0, and the citation.
+16. An HTML body served with HTTP 200 for a Cellosaurus JSON request is a provider error naming the URL, and no row renders.
 
 Executable spec `spec/entity/cell-line.md`, added to `SPEC_ROUTINE_PATHS`:
 
@@ -127,6 +143,7 @@ Executable spec `spec/entity/cell-line.md`, added to `SPEC_ROUTINE_PATHS`:
 These choices follow the 2026-09-17 source survey. Ian can overturn any of them.
 
 - Cellosaurus is the identity source for every cell line section. Every other source joins to it through the CVCL accession.
+- `data_as_of` is read from `/release-info` at runtime rather than pinned in the source, so a new Cellosaurus release needs no code change. A failed read degrades to the retrieval time instead of failing the command.
 - Ranking puts identifier matches before synonym-only matches and human lines before other species. Upstream order failed on NB4.
 - The card never fetches `dr`. Only `xrefs` and join sections pay for it.
 - Sources read in other tickets: PharmacoDB (1205), DepMap through Figshare (1206), HPA expression across cell lines (1213), and ChEMBL cell line lookup (1214).
@@ -145,3 +162,9 @@ These choices follow the 2026-09-17 source survey. Ian can overturn any of them.
 - A species or disease filter on search, and any rule that picks one line among several exact matches and hides the rest.
 - The `misspelling` field, fuzzy matching, and paging past the 1000-row window.
 - Typed MCP `search` support, batch support, and local mirroring of Cellosaurus.
+
+
+## Review
+
+- Design review: pending
+- Code review: pending

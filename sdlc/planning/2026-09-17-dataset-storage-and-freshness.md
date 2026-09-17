@@ -102,7 +102,7 @@ The DepMap portal and the NCBI annotation link both return a human verification 
 | 1209 | Copy `upstream_last_updated` into `import.json` and the study description |
 | 1211 | Keep the three header lines and return them |
 | 1202, 1205, 1206, 1213, 1214 | Add `data_as_of` and the license line; state the bot-check behavior |
-| New | `dataset check` and `dataset list` |
+| New | `dataset check` (ticket 1215) and `dataset list` (ticket 1216) |
 | Docs | One data root, the platform subfolder, offline analysis, and the three cache layers |
 
 ## Decisions

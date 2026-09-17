@@ -75,6 +75,9 @@ biomcp cell-line dependency CVCL_2119 --limit 20
 - `cell-line dependency <CVCL id> [--limit N] [--offset N]`: the genes with the lowest gene effect for the matched models, one table per model, `NaN` left out, same limits as `gene dependency`. It lives in the `CellLineCommand` group that ticket 1205 adds, or adds that group if 1205 has not landed. A line with no screen prints the no-screen message and no table. The model axis is already in `gene_effect_axes.json`, so the lookup scans the index once and reads one value per gene block at the model's offset. The index needs no new file.
 - Not installed: the section outcome is unavailable with the message `DepMap data is not installed. Run \`biomcp depmap sync\`.` No network call happens.
 - Release on every output: every Markdown output prints `DepMap <release title>, published <date>` from `manifest.json`, and every JSON output carries `release: {title, published_date, doi}`.
+- `data_as_of` on every output: every JSON payload carries `data_as_of` and `data_as_of_kind: "release"`, with `data_as_of` set to `<release title> (<published_date>)`, for example `24Q4 (2024-12-10)` from the newest Figshare release measured on 2026-09-17. The value comes from `manifest.json`, so it is the release the user installed and never a hard-coded string.
+- Attribution on every output: every Markdown output ends with `DepMap 24Q4 (2024-12-10), CC BY 4.0. Cite the release DOI <doi>.` The release and DOI parts come from `manifest.json`.
+- Bot checks: `depmap.org/portal/api/download/files` answers scripts with a human verification page, measured 2026-09-16 and again on 2026-09-17. BioMCP never calls it. If any request in this ticket returns HTTP 200 with an HTML body where JSON or CSV bytes were expected, the command reports the URL, names the file, and stops. It never retries through the check, never rewrites the request, and never scrapes the page. `depmap sync` leaves any earlier install untouched when that happens.
 - JSON: `dependency` carries `release`, `scored_models`, `total`, and `rows`. `depmap` carries `release` and `models` (a list, possibly empty), each with `screened: bool`. `cell-line dependency` carries `release` and one `{model_id, screened, total, rows}` entry per model.
 - Health: one local probe reports installed, the release title, and missing files. It uses the same helper shape as `who_ivd_local_data_outcome`. The data has no stale timer.
 
@@ -104,9 +107,10 @@ Focused Rust tests:
 8. An unknown symbol returns an empty row list with `total: 0`.
 9. The cell-line section returns both models for the shared RRID, an empty list for a CVCL id with no row, and `screened: false` with the no-screen message for the unscreened model.
 10. `cell-line dependency` returns rows in ascending gene effect order for a screened model and the no-screen message for the unscreened one.
-11. Every Markdown output in these tests contains the release title and date. Every JSON output carries `release.published_date`.
+11. Every Markdown output in these tests contains the release title and date, and ends with the CC BY 4.0 attribution line naming the release DOI. Every JSON output carries `release.published_date`, `data_as_of` in the form `<title> (<date>)`, and `data_as_of_kind: "release"`.
 12. With no install, the sections and the helpers report unavailable with the exact message and make no request.
 13. `all` does not include `dependency`.
+14. An HTML body served with HTTP 200 where the Figshare article JSON or a CSV file was expected fails, names the URL and the file, leaves no install, and leaves an earlier install untouched.
 
 Executable spec (`spec/entity/depmap.md`): one block runs `depmap sync` against the fixture and checks the manifest release title. One block pins the Markdown table of `get gene <fixture gene> dependency`. One JSON block checks `gene dependency <fixture gene> --lineage <fixture lineage> --json` row count and first model ID. One JSON block checks `get cell-line <fixture shared CVCL> depmap --json` for two model IDs. One Markdown block checks the no-screen message and the release line.
 

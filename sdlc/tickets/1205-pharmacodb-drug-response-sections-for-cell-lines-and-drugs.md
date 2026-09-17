@@ -78,10 +78,12 @@ The upstream "Please provide a valid ..." error maps to `None`. Any other GraphQ
   - `biomcp drug cell-lines <drug> --dataset <name>`: rows for that dataset. `--cell-line` or `--dataset` is required. With neither, the command fails before any request and prints the counts command.
   - `biomcp cell-line drug-response <ac> --dataset <name>`: rows for that dataset. `--dataset` is required. This adds a `CellLineCommand` group next to `DrugCommand` (`src/cli/drug/mod.rs:78`).
   - The dataset filter matches the PharmacoDB dataset name ignoring ASCII case. An unknown name fails and lists the ten dataset names. `--limit` is 1 to 100 with a default of 25, and `--offset` defaults to 0.
+- **Release date.** PharmacoDB publishes no version, no release name, and no release date. The GraphQL schema exposes none, and the survey of 2026-09-17 found none. Every output therefore carries `data_as_of` set to the retrieval time and `data_as_of_kind: "retrieved"`. The docs say plainly that PharmacoDB publishes no version, so a repeat query can return different numbers with no way to tell.
+- **Bot checks.** PharmacoDB served no bot check in any measurement. The rule still holds: an HTTP 200 whose body is an HTML human-verification page where a GraphQL JSON body was expected is a provider error. It names the URL and the operation, and the command stops. BioMCP never retries through a check and never scrapes the page.
 - Rows are sorted by counterpart name (compound for a cell line, cell line for a drug), then dataset name, then experiment id. Rows are never sorted by a metric. Repeated compound-and-dataset pairs stay as separate rows, and each row shows its experiment id so the repeat is visible. BioMCP does not merge or average them.
 - Each helper result returns `total`, `datasets`, and one page of rows. Each row holds `experiment_id`, `dataset`, the counterpart `name` and `uid` (and `tissue` for the drug section), and `aac`, `ic50`, `ec50`, `einf`, `hs`, `dss1` as published. A null metric stays null in JSON and prints as `-`. No unit conversion, no rounding in JSON, and Markdown prints the value with up to four significant digits.
-- JSON shape: `drug.cell_lines` and `cell_line.drug_response` hold `{ "source": "PharmacoDB", "pharmacodb_id": ..., "total": N, "datasets": [{"name", "count"}] }`. The helpers add `"filter"` and `"rows": [...]`.
-- Markdown: a `## Drug response (PharmacoDB)` heading on the cell line card and a `## Cell lines (PharmacoDB)` heading on the drug card, then a `N experiments: GDSC1 426, ...` line, and the next commands. The helpers print a table with columns `Experiment | Dataset | Compound or Cell line | AAC | IC50 | EC50 | Einf | HS | DSS1` and a `Showing X of N` line when truncated. Every output prints one fixed line: `Values as published by PharmacoDB (CC BY-NC 4.0). PharmacoDB gives no units; BioMCP does not interpret sensitivity.`
+- JSON shape: `drug.cell_lines` and `cell_line.drug_response` hold `{ "source": "PharmacoDB", "pharmacodb_id": ..., "total": N, "datasets": [{"name", "count"}], "data_as_of": "<retrieval time>", "data_as_of_kind": "retrieved" }`. The helpers add `"filter"` and `"rows": [...]`.
+- Markdown: a `## Drug response (PharmacoDB)` heading on the cell line card and a `## Cell lines (PharmacoDB)` heading on the drug card, then a `N experiments: GDSC1 426, ...` line, and the next commands. The helpers print a table with columns `Experiment | Dataset | Compound or Cell line | AAC | IC50 | EC50 | Einf | HS | DSS1` and a `Showing X of N` line when truncated. Every output prints one fixed attribution line: `Values as published by PharmacoDB (CC BY-NC 4.0, non-commercial use only). PharmacoDB publishes no version; retrieved <data_as_of>. PharmacoDB gives no units; BioMCP does not interpret sensitivity.` The non-commercial term is named in the line itself, because a user cannot tell it from the data.
 
 ### Docs and inventory
 
@@ -120,7 +122,9 @@ Focused Rust tests (fixture-backed):
 6. Size guard: a synthetic 78,373-row counts body (the K-562 case) parses and sums to 78,373. A synthetic full body over 32 MiB (the doxorubicin and K-562 full-field case) gives `unavailable` with the size message and no panic.
 7. `get drug venetoclax all` and `get cell-line CVCL_2119 all` make no PharmacoDB request, and their output is byte-identical to the output before this ticket.
 8. An unknown section error lists `cell_lines` for drugs. An unknown `--dataset` lists the ten dataset names.
-9. The Markdown renders pin the heading, the counts line, the next commands, a helper row with `-` for a null value, the `Showing 25 of 30` line, and the fixed source line with the no-units note.
+9. The Markdown renders pin the heading, the counts line, the next commands, a helper row with `-` for a null value, the `Showing 25 of 30` line, and the fixed attribution line with the non-commercial term, the retrieval time, and the no-units note.
+10. Every section and helper payload carries `data_as_of` and `data_as_of_kind: "retrieved"`, with the time supplied by an injected clock so the test pins an exact string.
+11. An HTML body served with HTTP 200 for a GraphQL request is a provider error naming the URL and the operation, and no row renders.
 
 Executable specs: `spec/entity/drug.md` gains one JSON block (`get drug venetoclax cell_lines --json`: `cell_lines.total == 6` and the first dataset count), one JSON block (`drug cell-lines venetoclax --cell-line CVCL_2119 --json`: two rows), and one Markdown block (the heading and the fixed line). The 1202 cell line spec page gains the same pair for `drug_response`.
 
@@ -143,6 +147,7 @@ These follow the 2026-09-17 source survey. Ian can overturn any of them.
 - The experiments body cap is 32 MiB for PharmacoDB only. The shared 8 MiB default stays for every other source.
 - The cell line join falls back to the Cellosaurus name and always checks the accession.
 - Repeated experiments stay as separate rows.
+- `data_as_of` is the retrieval time, because PharmacoDB publishes no version. The output says so rather than leaving the field out.
 
 ## Complexity
 

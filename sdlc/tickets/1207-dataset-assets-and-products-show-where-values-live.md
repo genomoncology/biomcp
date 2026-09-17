@@ -27,7 +27,8 @@ Measured 2026-09-16 against 588 AML series that a hackathon team screening publi
 - Experiment 203 (2026-09-16) fetched the annotation link from the GSE48843 counts page (`?format=file&type=rnaseq_counts&file=Human.GRCh38.p13.annot.tsv.gz`). It returned HTTP 200 `text/html`, a 21,586-byte reCAPTCHA page. Adding `acc=GSE48843` returned HTTP 404. The raw counts link returned HTTP 200 gzip.
 - NCBI Gene publishes `Homo_sapiens.gene_info.gz` and `Mus_musculus.gene_info.gz` under `https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/`. The human file mapped 37,663 of 39,376 GSE48843 count rows (95.65%). `gene_history.gz` sits under `https://ftp.ncbi.nlm.nih.gov/gene/DATA/`.
 - The same experiment compared a two-line peek with a full read on 774 matrix files. 654 files have the table header followed directly by the end marker. Five SAGE files use `TAG` as the first column name in place of `ID_REF`. Accepting any first column name, the peek agreed with the full read on 774 of 774 files.
-- Ticket 1211 adds `series_prefix`, `read_header(url, lines_after_marker)`, and the `BIOMCP_GEO_FTP_BASE` override. Ticket 1203 adds `supplementary_types` and `geo2r` to dataset rows.
+- Ticket 1211 adds `series_prefix`, `read_header(url, lines_after_marker)`, and the `BIOMCP_GEO_FTP_BASE` override. It also returns `submitted`, `last_updated`, and `status` from the matrix header. Ticket 1203 adds `supplementary_types` and `geo2r` to dataset rows. Ticket 1204 defines the `data_as_of` field and the GEO attribution line on every dataset output.
+- GEO publishes no release name and no release date. The download service sends no `ETag` and no `Last-Modified` (experiment 203, measured 2026-09-16).
 
 ## Design
 
@@ -44,6 +45,7 @@ Sections `assets` and `products` on `get dataset`. Both are opt-in and not part 
 - JSON: `assets: {snapshot_id, coverage: {complete, notes}, assets: [{id, role, producer, format, platform, url, size, has_values, library_strategies}], inspected: [{asset_id, lines_after_marker}]}`. `role` is `series_matrix`, `raw_gene_counts`, `fpkm`, `tpm`, `gene_annotation`, `gene_history`, or `supplementary`. `producer` is `submitter` or `ncbi`. `snapshot_id` is the retrieval time plus a digest of the listed IDs and URLs. It records what was seen and claims no upstream version. `coverage.complete` is false when any listing failed or hit a cap, and `notes` says which.
 - `products: [{kind, producer, measurement_kind, normalization_or_transform, feature_id_type, asset_ids, status}]`. One product may reference several assets. NCBI raw counts reference the counts file and the `gene_info` file. `kind` is `array_values`, `raw_gene_counts`, `normalized_counts`, or `unknown`. `measurement_kind` is `raw_counts`, `normalized_counts`, `array_intensity`, or `unknown`. `normalization_or_transform` is `none`, `fpkm`, `tpm`, or `unknown`. Submitter arrays report `unknown`. `feature_id_type` is `platform_probe` for arrays and `ncbi_gene_id` for NCBI counts. `status` is `usable_values` or `meaning_unknown`. A supplementary file is always `unknown` and `meaning_unknown`.
 - Markdown prints an asset table and a product table, and no ranking line. Products print in the order assets were listed. BioMCP makes no claim that any file suits an analysis.
+- **Dates and attribution.** The `assets` and `products` payloads each carry `data_as_of`. Its value is the series `!Series_last_update_date` that 1211's `read_header` returned during this scan, because the scan reads that header anyway. When no matrix was read, or the header carried no such line, `data_as_of` is the retrieval time and the output says which of the two it is through `data_as_of_kind`, either `upstream_last_updated` or `retrieved`. The scan also carries `upstream_last_updated` and `status` forward, so ticket 1208 can record them without a second request. A `status` that is not `Public` prints 1204's warning line above the tables. Markdown ends both sections with the line `NCBI GEO records are public; submitters keep rights to their data. Data as of <data_as_of>.` The NCBI Gene files carry the same line, because they come from the same provider.
 
 ## Fixtures
 
@@ -63,9 +65,18 @@ Under `testdata/sources/geo/`: the GSE48843 counts page, the GSE982 counts page,
 10. The HTML fixture served with HTTP 200 yields a provider error naming its URL, and no asset row.
 11. The `TAG` matrix fixture reports `has_values: true`. A header followed by the end marker reports `has_values: false`.
 12. The output lists the peeked files in `inspected`.
+13. `assets` and `products` carry `data_as_of` and `data_as_of_kind`. The GSE982 fixture reports `upstream_last_updated` from its header. A series whose scan read no matrix reports `retrieved`.
+14. Markdown for both sections ends with the attribution line naming the same `data_as_of` value.
+15. A fixture whose `!Series_status` is not `Public` prints the warning line above the asset table.
 
 ## Out of scope
 
 - Downloading any listed file (ticket 1208), reading count values, or mapping GeneIDs to symbols (ticket 1209).
 - Probe-to-gene mapping for array platforms.
 - Choosing between raw, FPKM, and TPM.
+- Comparing `data_as_of` against anything on disk. The `dataset check` ticket does that.
+
+## Review
+
+- Design review: pending
+- Code review: pending

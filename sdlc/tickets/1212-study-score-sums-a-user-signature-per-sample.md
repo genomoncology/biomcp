@@ -60,3 +60,9 @@ The motivating consumer is a hackathon team that scores drug-treated and DMSO-tr
 ## Decisions
 
 Open to Ian's overturn: a missing gene fails by default. `--allow-missing` reports the effective signature on every run. The score warns on raw counts and never rescales them.
+
+
+## Review
+
+- Design review: pending
+- Code review: pending

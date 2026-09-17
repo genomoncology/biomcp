@@ -44,8 +44,13 @@ Add `cell_line_rna(ensembl_id, group)` to `HpaClient` with a `cell_line_rna_plan
 
 - `biomcp gene cell-lines <symbol> --group <group> [--limit N] [--offset N]` under `GeneCommand`. The symbol resolves through the existing gene lookup to its Ensembl ID. Limit is 1 to 100 with a default of 100, so one call shows a whole leukemia group.
 - Rows keep HPA's order. `--sort nTPM` is not offered. Each row prints the HPA line name, the accession or `-`, and the nTPM value as published.
-- JSON: `{ "source": "Human Protein Atlas", "gene", "ensembl_id", "group", "total", "rows": [{"name", "accession", "ntpm"}] }`.
-- Markdown ends with the HPA attribution line and `biomcp get cell-line <first accession>` as the next command.
+- JSON: `{ "source": "Human Protein Atlas", "gene", "ensembl_id", "group", "total", "data_as_of", "data_as_of_kind", "rows": [{"name", "accession", "ntpm"}] }`.
+- `data_as_of` is the HPA file date, measured 2025-11-05 on 2026-09-17, with `data_as_of_kind: "release"`. HPA publishes the file date on its data access page and not in the `search_download.php` response, so the date is a constant in the source module next to the group list, refreshed the same way the group list is. The docs say the constant is a recorded file date and name the page it came from. When a future response carries a date, the parser prefers it.
+- Markdown ends with the HPA attribution line, `Human Protein Atlas, files dated 2025-11-05, <license>. proteinatlas.org`, and `biomcp get cell-line <first accession>` as the next command. `<license>` is the term the implementer confirms on the terms page, CC BY-SA 4.0 in `docs/reference/source-licensing.md:68` today and CC BY 4.0 in the 2026-09-17 survey. One value lands in the line, in `source-licensing.md`, and in `sources.json`, and a test pins that the three agree.
+
+### Bot checks
+
+HPA served no bot check in any measurement. The rule still holds: an HTTP 200 whose body is an HTML human-verification page where JSON was expected is a provider error. It names the URL and the file, and the command stops. BioMCP never retries through a check, never rewrites the request to get around one, and never scrapes the page.
 - The existing HPA health row gains the new surface in its `affects` text.
 
 ### Docs
@@ -70,6 +75,9 @@ Fixture-backed Rust tests, no live network:
 4. A Cellosaurus error leaves the rows intact with `null` accessions and one note.
 5. `--limit` and `--offset` page the rows, and `total` stays 91.
 6. The HPA health row names the new surface.
+7. Every output carries `data_as_of` `2025-11-05` and `data_as_of_kind: "release"`, and the Markdown ends with the attribution line naming that date and the confirmed license.
+8. The license string in the attribution line, `docs/reference/source-licensing.md`, and `docs/reference/sources.json` are the same value.
+9. An HTML body served with HTTP 200 for the search download is a provider error naming the URL, and no row renders.
 
 Executable spec: `spec/entity/gene.md` gains one JSON block (`gene cell-lines FLT3 --group leukemia --json`: `total == 91` and the MOLM-13 accession) and one Markdown block (the attribution line).
 
@@ -88,6 +96,7 @@ Ian can overturn these.
 
 - The helper sits on the gene side because HPA answers one gene at a time in about 11 KB.
 - The join accepts only a unique human identifier match and shows `null` otherwise. A wrong accession costs more than a missing one.
+- `data_as_of` is a recorded file date held as a constant, because the response carries no date. The alternative is a second request to the data access page on every call, for a value that changes a few times a year.
 
 ## Complexity
 

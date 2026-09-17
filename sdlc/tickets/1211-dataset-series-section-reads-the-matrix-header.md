@@ -31,10 +31,12 @@ biomcp --json get dataset geo:GSE995 series
 - New `src/sources/geo_matrix.rs` builds URLs from base `https://ftp.ncbi.nlm.nih.gov/geo` with override `BIOMCP_GEO_FTP_BASE`. `series_prefix` returns `GSEnnn` for any series number under 1000.
 - `read_header(url, lines_after_marker)` uses the unbuffered client. It feeds chunks through a streaming gzip decoder and a line reader. The line reader splits on line feed only. A bare carriage return stays inside its cell. It reads `lines_after_marker` lines after `!series_matrix_table_begin`, default 0, then drops the response. It never reads a byte past that.
 - Caps: 8 MiB compressed and 16 MiB expanded per file, and 4 MiB per line. A cap hit before the marker returns `BodyLimit` naming the file. A file that ends without the marker is a provider error. HTTP 404 for one platform becomes a per-platform "matrix file not found" note, and the other platforms still render.
+- Three `!Series_` lines are also returned as named fields, because later tickets read them: `!Series_submission_date` as `submitted`, `!Series_last_update_date` as `last_updated`, and `!Series_status` as `status`. The values are the raw cell text, trimmed of surrounding quotes and nothing else. BioMCP parses no date and normalizes no status word. A line the file does not carry gives `null`. The three fields stay in `series_lines` as well, so the raw view loses nothing. `read_header` returns them to every caller, which is how tickets 1204, 1207, 1208, and 1209 get a freshness signal. GEO's download service sends no `ETag` and no `Last-Modified`, so the header is the only date the provider publishes for a series.
 - Parsing keeps every `!Series_` line as `{key, values}` in file order, with repeated keys preserved. It keeps every `!Sample_` line as a key with one unquoted cell per sample. Characteristics cells stay raw strings such as `cell line: MOLM-13`. The parser does not split, merge, rename, or label them. A column count that differs from the `!Sample_geo_accession` count is a provider error.
 - A SuperSeries and its SubSeries list the same samples. The section renders each file as published. Any tally across series counts distinct GSM IDs. The `links` section from ticket 1204 shows the relation.
-- JSON: `series: {platforms: [{platform, file, series_lines: [...], samples: [{accession, fields: [{key, value}]}]}]}`. Markdown prints the series lines as a key and value list, then one block per sample with its raw lines in file order.
+- JSON: `series: {platforms: [{platform, file, submitted, last_updated, status, series_lines: [...], samples: [{accession, fields: [{key, value}]}]}]}`. Markdown prints the submitted, last updated, and status values first, then the series lines as a key and value list, then one block per sample with its raw lines in file order.
 - `series` is opt-in. `all` never includes it, because it reads a file.
+- When `series` runs, it fills the card's `submitted`, `last_updated`, and `status` fields that ticket 1204 defines, from the first platform file that parsed. A card rendered without `series` keeps 1204's `unknown` values and its note. A `status` that is not `Public` renders 1204's warning line.
 - Docs: add the section to the GEO source page and `biomcp list dataset`, stating that it reads only the header and stops at the table marker. Add the matrix host to the GEO row in `docs/reference/data-sources.md`.
 
 ## Acceptance
@@ -49,13 +51,22 @@ Fixtures under `testdata/sources/geo/`: two trimmed gzip matrix files for one tw
 6. Characteristics cells come back byte-identical to the fixture, with repeated keys in order.
 7. A two-platform series renders both platforms. A 404 on one keeps the other and adds the note.
 8. `get dataset <GSE> all` makes no matrix request.
-9. Spec `spec/entity/dataset.md` gains one JSON block for `series` pinning a raw characteristics cell, with `BIOMCP_GEO_FTP_BASE` pointed at the fixture server.
+9. `read_header` returns `submitted`, `last_updated`, and `status` byte for byte from the fixture, and they also appear in `series_lines`. A fixture with no `!Series_status` line returns `null` for `status` and still parses.
+10. Spec `spec/entity/dataset.md` gains one JSON block for `series` pinning a raw characteristics cell and the `last_updated` value, with `BIOMCP_GEO_FTP_BASE` pointed at the fixture server.
 
 ## Out of scope
 
 - The value table itself, supplementary files, and download.
 - Typed characteristics, labeling, and grouping.
+- Parsing, normalizing, or comparing the three date and status values. Tickets 1204, 1208, and the `dataset check` ticket use them.
 
 ## Decisions
 
 Open to Ian's overturn: caps are 8 MiB compressed, 16 MiB expanded, 4 MiB per line, and 10 platform files. The line cap was 64 KiB until experiment 203 found 33 of 774 real files with longer lines. The 16 MiB expanded cap covers the largest measured header of 8,364,887 bytes.
+
+The three header fields are returned as raw text. BioMCP stores and compares them as strings, because GEO publishes them in one format and a parsed date adds a failure mode for no gain.
+
+## Review
+
+- Design review: pending
+- Code review: pending
