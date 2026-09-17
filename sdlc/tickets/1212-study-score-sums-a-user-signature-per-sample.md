@@ -12,7 +12,7 @@ deps: [1210]
 
 ```
 biomcp study score --study gse48843_counts --signature lsc17.tsv
-biomcp study score --study gse48843_counts --weights DNMT3B:0.0874,CD34:0.0171 --group-by AGENT --groups DMSO,venetoclax
+biomcp study score --study gse48843_counts --weights GENE_A:0.5,GENE_B:-0.25 --group-by AGENT --groups DMSO,venetoclax
 ```
 
 The motivating consumer is a hackathon team that scores drug-treated and DMSO-treated AML cell lines with published LSC6 and LSC17 weights and compares the groups within one study.
