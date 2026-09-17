@@ -8,7 +8,7 @@ deps: [1202]
 
 ## Goal
 
-`biomcp depmap sync` installs the DepMap model table and CRISPR gene effect matrix from the Figshare mirror. `biomcp get gene <symbol> dependency` and `biomcp gene dependency <symbol> [--lineage <text>]` then print the models with the lowest gene effect scores. `biomcp get cell-line <CVCL id> depmap` prints the matching DepMap model. BioMCP reports the numbers as published and adds no labels or scores of its own.
+`biomcp depmap sync` installs the DepMap model table and CRISPR gene effect matrix from the Figshare mirror. `biomcp get gene <symbol> dependency` and `biomcp gene dependency <symbol> [--lineage <text>]` then print the models with the lowest gene effect scores. `biomcp get cell-line <CVCL id> depmap` prints the matching DepMap models and says by name when a line has no CRISPR screen. `biomcp cell-line dependency <CVCL id>` prints the genes with the lowest gene effect scores for that line. Every output names the DepMap release and its date. BioMCP reports the numbers as published and adds no labels or scores of its own.
 
 The motivating consumer is a hackathon team screening public GEO studies of drug-treated AML cell lines. The same lookup serves any agent asking which cancer models depend on a gene.
 
@@ -28,6 +28,9 @@ The motivating consumer is a hackathon team screening public GEO studies of drug
 - `GeneGetArgs.sections` is a trailing variadic argument (`src/cli/gene/mod.rs:40-42`). A section cannot take its own flag, so `get gene X dependency --lineage Y` would parse `--lineage` as a section name. Per-gene helpers with flags live under `GeneCommand` (`src/cli/gene/mod.rs:79`), for example `gene pathways <symbol> --limit`.
 - The `cell-line` entity and its CVCL lookup do not exist yet. Ticket 1202 adds them.
 - Source pages live in `docs/sources/*.md` with a row in `docs/sources/index.md` (`:41` is WHO IVD) and a nav entry in `mkdocs.yml` (`:66`). Terms live in `docs/reference/source-licensing.md` and `docs/reference/sources.json`.
+- Survey of 2026-09-17 (workspace experiment 204): the `RRID` column matched all ten AML and leukemia test lines. The join is not one-to-one. `Model.csv` has 134 rows with no RRID, and 4 RRIDs map to two models each (CVCL_0041 maps to ACH-000833 and ACH-001189).
+- HL-60 (ACH-000002) and KG-1 (ACH-000386) have no CRISPR screen in 24Q4. `CRISPRInferredModelGrowthRate.csv` (41 KB) lists the screened models, and the gene effect matrix row list gives the same answer.
+- 24Q4 was still the newest Figshare release on 2026-09-17, 21 months after its 2024-12-10 date. The depmap.org portal download API still answers scripts with "We're verifying you're a person".
 - PRISM drug sensitivity is not in article 27993248. No file name contains PRISM, Drug, or Repurposing. Figshare holds it in separate articles: "PRISM Repurposing 20Q2 Dataset" (20564034) and "PRISM Repurposing 19Q4 Dataset" (9393293).
 
 ## Design
@@ -41,6 +44,7 @@ biomcp depmap sync [--article <figshare id>]
 biomcp get gene KMT2A dependency
 biomcp gene dependency KMT2A --lineage Myeloid --limit 20
 biomcp get cell-line CVCL_2119 depmap
+biomcp cell-line dependency CVCL_2119 --limit 20
 ```
 
 ### Figshare client changes
@@ -67,9 +71,11 @@ biomcp get cell-line CVCL_2119 depmap
 
 - `dependency` gene section: the 10 models with the lowest gene effect. Models with `NaN` are left out. Each row prints model ID, cell line name, RRID, lineage, primary disease, and gene effect to three decimals. The header prints the release title, the count of scored models, and the command to see more. The section stays out of `all`, the same as `diagnostics`.
 - `gene dependency <symbol> [--lineage <text>] [--limit N] [--offset N]`: the same rows, filtered by case-insensitive exact match on `OncotreeLineage` when `--lineage` is set. Limit is 1 to 50 with a default of 10.
-- `depmap` cell-line section: the `models.tsv` row whose `RRID` equals the CVCL id, plus whether the model has a row in the gene effect matrix. No per-model score list in this ticket.
+- `depmap` cell-line section: a list of every `models.tsv` row whose `RRID` equals the CVCL id, usually one and sometimes two. Each entry says whether the model has a row in the gene effect matrix. A model with no row prints `<name> (<ModelID>) has no CRISPR screen in <release>`. An empty list prints `No DepMap model lists <CVCL id> as its RRID in <release>`.
+- `cell-line dependency <CVCL id> [--limit N] [--offset N]`: the genes with the lowest gene effect for the matched models, one table per model, `NaN` left out, same limits as `gene dependency`. It lives in the `CellLineCommand` group that ticket 1205 adds, or adds that group if 1205 has not landed. A line with no screen prints the no-screen message and no table. The model axis is already in `gene_effect_axes.json`, so the lookup scans the index once and reads one value per gene block at the model's offset. The index needs no new file.
 - Not installed: the section outcome is unavailable with the message `DepMap data is not installed. Run \`biomcp depmap sync\`.` No network call happens.
-- JSON: `dependency` carries `release`, `scored_models`, `total`, and `rows`. `depmap` carries `release` and `model` (or `null`).
+- Release on every output: every Markdown output prints `DepMap <release title>, published <date>` from `manifest.json`, and every JSON output carries `release: {title, published_date, doi}`.
+- JSON: `dependency` carries `release`, `scored_models`, `total`, and `rows`. `depmap` carries `release` and `models` (a list, possibly empty), each with `screened: bool`. `cell-line dependency` carries `release` and one `{model_id, screened, total, rows}` entry per model.
 - Health: one local probe reports installed, the release title, and missing files. It uses the same helper shape as `who_ivd_local_data_outcome`. The data has no stale timer.
 
 ### Docs
@@ -81,6 +87,7 @@ biomcp get cell-line CVCL_2119 depmap
 ## Fixtures
 
 - `testdata/sources/depmap/`: a recorded Figshare search response cut to the three DepMap articles plus one unrelated title, an article response for a fixture article with two files, a `Model.csv` with 6 rows (one without RRID), and a `CRISPRGeneEffect.csv` with 5 models by 4 genes that includes one empty cell. The MD5 values in the article fixture match the fixture files.
+- The fixture `Model.csv` gives two rows the same RRID, and one model with an RRID has no row in the fixture matrix.
 - A spec fixture script serves these files from a local HTTP server through `BIOMCP_FIGSHARE_BASE` and a download URL on the same host, then runs `depmap sync` into a temp `BIOMCP_DEPMAP_DIR`.
 
 ## Acceptance
@@ -95,26 +102,37 @@ Focused Rust tests:
 6. A failed validation leaves an earlier install untouched.
 7. Gene lookup returns fixture rows in ascending gene effect order, excludes `NaN`, applies `--lineage` case-insensitively, and pages with limit and offset.
 8. An unknown symbol returns an empty row list with `total: 0`.
-9. The cell-line section finds the model by RRID and returns `null` for a CVCL id with no row.
-10. With no install, both sections report unavailable with the exact message and make no request.
-11. `all` does not include `dependency`.
+9. The cell-line section returns both models for the shared RRID, an empty list for a CVCL id with no row, and `screened: false` with the no-screen message for the unscreened model.
+10. `cell-line dependency` returns rows in ascending gene effect order for a screened model and the no-screen message for the unscreened one.
+11. Every Markdown output in these tests contains the release title and date. Every JSON output carries `release.published_date`.
+12. With no install, the sections and the helpers report unavailable with the exact message and make no request.
+13. `all` does not include `dependency`.
 
-Executable spec (`spec/entity/depmap.md`): one block runs `depmap sync` against the fixture and checks the manifest release title. One block pins the Markdown table of `get gene <fixture gene> dependency`. One JSON block checks `gene dependency <fixture gene> --lineage <fixture lineage> --json` row count and first model ID. One JSON block checks `get cell-line <fixture CVCL> depmap --json` model ID.
+Executable spec (`spec/entity/depmap.md`): one block runs `depmap sync` against the fixture and checks the manifest release title. One block pins the Markdown table of `get gene <fixture gene> dependency`. One JSON block checks `gene dependency <fixture gene> --lineage <fixture lineage> --json` row count and first model ID. One JSON block checks `get cell-line <fixture shared CVCL> depmap --json` for two model IDs. One Markdown block checks the no-screen message and the release line.
 
 `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA. No test touches the network.
 
 ## Out of scope
 
-- PRISM drug sensitivity. It lives in separate Figshare articles (20564034, 9393293) and becomes a follow-up ticket.
+- PRISM drug sensitivity. PharmacoDB already serves PRISM through ticket 1205, so no PRISM follow-up ticket is planned.
 - `CRISPRGeneDependency.csv`, `ModelCondition.csv`, and the omics expression and mutation files (339 to 507 MB each).
-- A per-model list of top dependencies on the cell-line card.
+- A per-model dependency list inside the `get cell-line` card. The `cell-line dependency` helper covers it.
 - The depmap.org download API, automatic refresh, and any stale timer.
 - Any threshold, "essential" label, ranking beyond sort order, or cross-release comparison.
 - LINCS, and any change to the team repository that motivated this work.
 
+## Decisions
+
+These follow the 2026-09-17 source survey. Ian can overturn any of them.
+
+- BioMCP reads DepMap from the Figshare mirror only. The depmap.org portal download API sits behind a bot check, so BioMCP does not call it. The newest Figshare release is 24Q4 (2024-12-10), and BioMCP names that limit on every output instead of hiding it. When DepMap publishes a newer release to Figshare group 36075, `depmap sync` picks it up with no code change.
+- The `depmap` section returns a list because the RRID join is not one-to-one.
+- The per-line dependency view fits in this ticket because it reuses the same index.
+- PRISM is served through PharmacoDB (ticket 1205).
+
 ## Complexity
 
-- Contract score: 2 (new sync command, new gene section, new gene helper with flags, new cell-line section, two Figshare client changes)
+- Contract score: 2 (new sync command, new gene section, new gene helper with flags, new cell-line section and helper, two Figshare client changes)
 - State and timing score: 2 (large streamed download, atomic install, binary index)
 - Reach score: 2 (Figshare client, new source, gene entity and CLI, cell-line entity, health, docs)
 - Proof score: 1 (recorded fixtures, round-trip index test, spec against a local server)
