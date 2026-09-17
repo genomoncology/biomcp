@@ -25,6 +25,7 @@ The motivating consumer is a hackathon team screening public GEO studies of drug
 - The streaming install pattern is `CBioPortalDownloadClient::download_study_archive_to_path` (`src/sources/cbioportal_download.rs:97`). It checks `content_length` against a byte cap, writes to a unique temp path (`:294`), and installs only after validation (`:501`).
 - The local source pattern is WHO IVD. It has a `BIOMCP_WHO_IVD_DIR` override with a `dirs::data_dir()/biomcp/who-ivd` default (`resolve_who_ivd_root`, `src/sources/who_ivd.rs:403`), a required file list (`:17`), a missing file helper (`:395`), a `who-ivd sync` command (`src/cli/system/mod.rs:73`, `src/cli/commands.rs:142`, `src/cli/system/dispatch.rs:363`), and a health probe (`src/cli/health/local.rs:192`).
 - Gene sections are fixed names in `src/entities/gene.rs:244-260`, listed in `GENE_OUTCOME_KEYS` (`:261`) and `GENE_SECTION_NAMES` (`:291`). `parse_sections` (`:1129`) expands `all` to a fixed list that already leaves out `diagnostics`, `disgenet`, and `funding` (`:1168`).
+- `is_allowed_mcp_command` (`src/mcp/shell.rs:472`) matches every `Commands` and subcommand variant by name and has no wildcard arm. `Commands::WhoIvd { .. }` is rejected whole (`src/mcp/shell.rs:564`) because the family writes workstation-local state. It is the model for `depmap sync`.
 - `GeneGetArgs.sections` is a trailing variadic argument (`src/cli/gene/mod.rs:40-42`). A section cannot take its own flag, so `get gene X dependency --lineage Y` would parse `--lineage` as a section name. Per-gene helpers with flags live under `GeneCommand` (`src/cli/gene/mod.rs:79`), for example `gene pathways <symbol> --limit`.
 - The `cell-line` entity and its CVCL lookup do not exist yet. Ticket 1202 adds them.
 - Source pages live in `docs/sources/*.md` with a row in `docs/sources/index.md` (`:41` is WHO IVD) and a nav entry in `mkdocs.yml` (`:66`). Terms live in `docs/reference/source-licensing.md` and `docs/reference/sources.json`.
@@ -56,35 +57,37 @@ biomcp cell-line dependency CVCL_2119 --limit 20
 ### Source module `src/sources/depmap.rs`
 
 - Root: `BIOMCP_DEPMAP_DIR`, default `dirs::data_dir()/biomcp/depmap`, same shape as `resolve_who_ivd_root`.
-- Release resolution: search group 36075 for `:title: DepMap`. Keep titles that match `^DepMap (\d{2})Q([1-4]) Public$`. Pick the highest year and quarter. `--article <id>` skips the search and must still match the title pattern.
+- Release resolution: search group 36075 for `:title: DepMap`. Keep titles that match `^DepMap (?<release_tag>\d{2}Q[1-4]) Public$`. Pick the highest year and quarter. `--article <id>` skips the search and must still match the title pattern. `release_tag` is the captured group, `24Q4` for the article titled `DepMap 24Q4 Public`. It is stored in `manifest.json` and is the only release string any output prints.
 - Files: `Model.csv` and `CRISPRGeneEffect.csv` only. Cap each download at 1 GiB. Nothing downloads on a lookup. The files download only on `depmap sync`.
 - Index built at sync, in a temp directory that is renamed into place after every file validates:
   - `models.tsv`: `ModelID`, `RRID`, `CellLineName`, `OncotreeLineage`, `OncotreePrimaryDisease`, `OncotreeSubtype`, one row per `Model.csv` row.
-  - `gene_effect.f32`: little-endian `f32`, one block of 1,178 values per gene in header order. Empty cells become `NaN`.
-  - `gene_effect_axes.json`: the gene labels (`SYMBOL (Entrez)`) and model IDs in file order.
-  - `manifest.json`: article id, title, DOI, license, `published_date`, and for each file its name, id, size, and MD5, plus `indexed_at`.
+  - `gene_effect.f32`: little-endian `f32`, one block of `model_count` values per gene in header order, where `model_count` is the number of models in the installed file, 1,178 in 24Q4. Empty cells become `NaN`.
+  - `gene_effect_axes.json`: the gene labels (`SYMBOL (Entrez)`) and model IDs in file order. `model_count` is the length of the model ID list, and every reader takes the block size from it rather than from a constant.
+  - `manifest.json`: article id, title, `release_tag`, DOI, license, `published_date`, `model_count`, and for each file its name, id, size, and MD5, plus `indexed_at`.
 - The raw `CRISPRGeneEffect.csv` is deleted after the index validates. The install keeps `Model.csv`.
-- A gene lookup seeks to one block and reads 1,178 values. It never opens the CSV.
+- A gene lookup seeks to one block and reads `model_count` values. It never opens the CSV.
 - Gene matching: the symbol resolved by the existing gene lookup, matched exactly against the `SYMBOL` part of the label. No alias matching in the index.
 
 ### Surfaces
 
-- `dependency` gene section: the 10 models with the lowest gene effect. Models with `NaN` are left out. Each row prints model ID, cell line name, RRID, lineage, primary disease, and gene effect to three decimals. The header prints the release title, the count of scored models, and the command to see more. The section stays out of `all`, the same as `diagnostics`.
+- `dependency` gene section: the 10 models with the lowest gene effect. Models with `NaN` are left out. Each row prints model ID, cell line name, RRID, lineage, primary disease, and gene effect to three decimals. The header prints `release_tag`, the count of scored models, and the command to see more. The section stays out of `all`, the same as `diagnostics`.
 - `gene dependency <symbol> [--lineage <text>] [--limit N] [--offset N]`: the same rows, filtered by case-insensitive exact match on `OncotreeLineage` when `--lineage` is set. Limit is 1 to 50 with a default of 10.
-- `depmap` cell-line section: a list of every `models.tsv` row whose `RRID` equals the CVCL id, usually one and sometimes two. Each entry says whether the model has a row in the gene effect matrix. A model with no row prints `<name> (<ModelID>) has no CRISPR screen in <release>`. An empty list prints `No DepMap model lists <CVCL id> as its RRID in <release>`.
+- `depmap` cell-line section: one key of the same name in the `section_outcomes` registry that ticket 1202 builds, holding a list of every `models.tsv` row whose `RRID` equals the CVCL id, usually one and sometimes two. Each entry says whether the model has a row in the gene effect matrix. A model with no row prints `<name> (<ModelID>) has no CRISPR screen in <release_tag>`. An empty list prints `No DepMap model lists <CVCL id> as its RRID in <release_tag>`.
 - `cell-line dependency <CVCL id> [--limit N] [--offset N]`: the genes with the lowest gene effect for the matched models, one table per model, `NaN` left out, same limits as `gene dependency`. It lives in the `CellLineCommand` group that ticket 1205 adds, or adds that group if 1205 has not landed. A line with no screen prints the no-screen message and no table. The model axis is already in `gene_effect_axes.json`, so the lookup scans the index once and reads one value per gene block at the model's offset. The index needs no new file.
 - Not installed: the section outcome is unavailable with the message `DepMap data is not installed. Run \`biomcp depmap sync\`.` No network call happens.
-- Release on every output: every Markdown output prints `DepMap <release title>, published <date>` from `manifest.json`, and every JSON output carries `release: {title, published_date, doi}`.
-- `data_as_of` on every output: every JSON payload carries `data_as_of` and `data_as_of_kind: "release"`, with `data_as_of` set to `<release title> (<published_date>)`, for example `24Q4 (2024-12-10)` from the newest Figshare release measured on 2026-09-17. The value comes from `manifest.json`, so it is the release the user installed and never a hard-coded string.
-- Attribution on every output: every Markdown output ends with `DepMap 24Q4 (2024-12-10), CC BY 4.0. Cite the release DOI <doi>.` The release and DOI parts come from `manifest.json`.
+- Release on every output: every Markdown output prints `DepMap <release_tag>, published <published_date>` from `manifest.json`, and every JSON output carries `release: {tag, title, published_date, doi}`. `title` is the Figshare title, `DepMap 24Q4 Public`, and it is never the release string an output prints.
+- `data_as_of` on every output: every JSON payload carries `data_as_of` and `data_as_of_kind: "release"`, with `data_as_of` set to `<release_tag> (<published_date>)`, for example `24Q4 (2024-12-10)` from the newest Figshare release measured on 2026-09-17. The value comes from `manifest.json`, so it is the release the user installed and never a hard-coded string.
+- Attribution on every output: every Markdown output ends with `DepMap <data_as_of>, CC BY 4.0. Cite the release DOI <doi>.`, which reads `DepMap 24Q4 (2024-12-10), CC BY 4.0. Cite the release DOI 10.25452/figshare.plus.27993248.v1.` on the measured release. The release and DOI parts come from `manifest.json`, and the release part is the `data_as_of` value.
 - Bot checks: `depmap.org/portal/api/download/files` answers scripts with a human verification page, measured 2026-09-16 and again on 2026-09-17. BioMCP never calls it. If any request in this ticket returns HTTP 200 with an HTML body where JSON or CSV bytes were expected, the command reports the URL, names the file, and stops. It never retries through the check, never rewrites the request, and never scrapes the page. `depmap sync` leaves any earlier install untouched when that happens.
 - JSON: `dependency` carries `release`, `scored_models`, `total`, and `rows`. `depmap` carries `release` and `models` (a list, possibly empty), each with `screened: bool`. `cell-line dependency` carries `release` and one `{model_id, screened, total, rows}` entry per model.
+- MCP arms: `is_allowed_mcp_command` (`src/mcp/shell.rs:472`) is an exhaustive match with no wildcard, so every new variant is classified here or the build fails. `Commands::Depmap` with the `Sync` subcommand is rejected, following `Commands::WhoIvd { .. }` (`src/mcp/shell.rs:564`), because it downloads and writes workstation-local state. `GeneCommand::Dependency` and `CellLineCommand::Dependency` are allowed, because they read the installed index and reveal no local path. The `dependency` gene section and the `depmap` cell line section reach MCP through the typed `get` tool with no arm change.
 - Health: one local probe reports installed, the release title, and missing files. It uses the same helper shape as `who_ivd_local_data_outcome`. The data has no stale timer.
 
 ### Docs
 
 - `docs/sources/depmap.md`: what BioMCP reads, the four commands, the install size, and the fact that BioMCP reports gene effect values as published.
 - Rows in `docs/sources/index.md`, `mkdocs.yml`, `docs/reference/source-licensing.md`, and `docs/reference/sources.json` (tier 1, CC BY 4.0, reviewed 2026-09-16, with a note that DepMap asks for citation of the release DOI).
+- The index description says "one block of `model_count` values per gene", with the count read from `gene_effect_axes.json`. It never hard-codes 1,178, which belongs to the 24Q4 file.
 - Help lists for gene sections and the `list gene` page gain `dependency`.
 
 ## Fixtures
@@ -101,16 +104,17 @@ Focused Rust tests:
 2. A search with a group sends `group` in the body. A search without a group sends today's body byte for byte.
 3. Release resolution picks 24Q4 from the recorded search and ignores the unrelated title. An `--article` whose title does not match fails.
 4. `download_file_to_path` rejects a body over the cap and a body whose MD5 differs, and leaves no file at the destination in either case.
-5. Index build on the fixture CSV round-trips every value, maps the empty cell to `NaN`, and writes the manifest with article id and MD5 values.
+5. Index build on the fixture CSV round-trips every value, maps the empty cell to `NaN`, and writes the manifest with article id, `release_tag`, `model_count`, and MD5 values. The reader takes the block size from `model_count` in `gene_effect_axes.json`, so the 5-model fixture reads without a code change.
 6. A failed validation leaves an earlier install untouched.
 7. Gene lookup returns fixture rows in ascending gene effect order, excludes `NaN`, applies `--lineage` case-insensitively, and pages with limit and offset.
 8. An unknown symbol returns an empty row list with `total: 0`.
 9. The cell-line section returns both models for the shared RRID, an empty list for a CVCL id with no row, and `screened: false` with the no-screen message for the unscreened model.
 10. `cell-line dependency` returns rows in ascending gene effect order for a screened model and the no-screen message for the unscreened one.
-11. Every Markdown output in these tests contains the release title and date, and ends with the CC BY 4.0 attribution line naming the release DOI. Every JSON output carries `release.published_date`, `data_as_of` in the form `<title> (<date>)`, and `data_as_of_kind: "release"`.
-12. With no install, the sections and the helpers report unavailable with the exact message and make no request.
+11. Every Markdown output in these tests contains `release_tag` and the published date, never the Figshare title, and ends with the CC BY 4.0 attribution line naming the release DOI. Every JSON output carries `release.published_date`, `data_as_of` in the form `<release_tag> (<published_date>)`, and `data_as_of_kind: "release"`.
+12. With no install, the sections and the helpers report unavailable with the exact message and make no Figshare or DepMap request. The install check runs before the gene symbol resolves, so `get gene KMT2A dependency` with no install makes no request at all. Every other lookup resolves its symbol through the existing gene lookup first, which is a network request and is unchanged by this ticket.
 13. `all` does not include `dependency`.
 14. An HTML body served with HTTP 200 where the Figshare article JSON or a CSV file was expected fails, names the URL and the file, leaves no install, and leaves an earlier install untouched.
+15. The MCP shell rejects `depmap sync` and allows `gene dependency` and `cell-line dependency`.
 
 Executable spec (`spec/entity/depmap.md`): one block runs `depmap sync` against the fixture and checks the manifest release title. One block pins the Markdown table of `get gene <fixture gene> dependency`. One JSON block checks `gene dependency <fixture gene> --lineage <fixture lineage> --json` row count and first model ID. One JSON block checks `get cell-line <fixture shared CVCL> depmap --json` for two model IDs. One Markdown block checks the no-screen message and the release line.
 
@@ -129,7 +133,8 @@ Executable spec (`spec/entity/depmap.md`): one block runs `depmap sync` against 
 
 These follow the 2026-09-17 source survey. Ian can overturn any of them.
 
-- BioMCP reads DepMap from the Figshare mirror only. The depmap.org portal download API sits behind a bot check, so BioMCP does not call it. The newest Figshare release is 24Q4 (2024-12-10), and BioMCP names that limit on every output instead of hiding it. When DepMap publishes a newer release to Figshare group 36075, `depmap sync` picks it up with no code change.
+- The 21-month release limit is recorded here, in this ticket's Decisions block, and not in an ADR. Survey finding D14 asked for an ADR. The repo writes an ADR under `sdlc/planning/adr/` when a decision reverses a recorded product boundary, which is what ADR 0001 does. This decision sets one source's freshness expectation and travels with the ticket that implements it. Both places are durable and Ian can move it.
+- BioMCP reads DepMap from the Figshare mirror only. The depmap.org portal download API sits behind a bot check, so BioMCP does not call it. The newest Figshare release is 24Q4 (2024-12-10), 21 months old on 2026-09-17, and BioMCP names that limit on every output instead of hiding it. When DepMap publishes a newer release to Figshare group 36075, `depmap sync` picks it up with no code change.
 - The `depmap` section returns a list because the RRID join is not one-to-one.
 - The per-line dependency view fits in this ticket because it reuses the same index.
 - PRISM is served through PharmacoDB (ticket 1205).

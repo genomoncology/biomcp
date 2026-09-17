@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 3
-deps: [1209]
+deps: [1218]
 ---
 
 # 1210: Study compare groups by a sample attribute
@@ -19,7 +19,7 @@ biomcp study compare --study gse48843_counts --group-by AGENT --type expression 
 
 - The existing comparison reports mean, median, and a Mann-Whitney U p-value (`mann_whitney_u_test`, `src/sources/cbioportal_study.rs:1919`). No t-test helper exists.
 - Experiment 203 ported `mann_whitney_u_test`. It ranks ties at their average rank, corrects the variance for ties, applies a 0.5 continuity correction, and returns a two-sided p-value from a normal approximation. It has no exact calculation and returns nothing when every value is equal. The port matched R `wilcox.test(exact=FALSE, correct=TRUE)` within 5e-8 on six cases. For 3 versus 3 fully separated samples, the exact p-value is 0.1 and the normal p-value is 0.081.
-- A study command failure prints `Source unavailable: cBioPortal DataHub is not available.` and drops the missing file name. Ticket 1209 fixes the rendering.
+- A study command failure prints `Source unavailable: cBioPortal DataHub is not available.` and drops the missing file name (`src/error.rs:482`, `:573`). Ticket 1218 fixes that rendering for every study command, and this ticket depends on it and on nothing else. The grouped comparison reads a clinical column that any study can carry, so it needs no GEO import. Ticket 1209 supplies the GEO study the Goal shows, and this ticket's acceptance runs on fixture studies.
 - `study compare` requires `--gene` and splits samples into mutant and wildtype (`compare_expression_with_root`, `src/entities/study.rs:719`, calling `compare_expression_by_mutation`).
 - `study filter` already reads clinical labels (`--cancer-type`). `clinical_column_values` reads any named column (`src/sources/cbioportal_study.rs:991`).
 - `expression_values_by_sample` (`src/sources/cbioportal_study.rs:1183`) reads one gene per sample, `expression_values_for_samples` (`:1909`) restricts it to a sample set, and `expression_group_stats` (`:1971`) builds the per-group summary.
@@ -45,7 +45,7 @@ biomcp study compare --study gse48843_counts --group-by AGENT --type expression 
 5. Existing mutation-group compare tests pass unchanged.
 6. The MCP shell allows the command, as it allows `study compare` today.
 7. Spec `spec/entity/study.md` gains one grouped compare block.
-8. `--group-by` works on a study with no mutation file. `--gene` on that study fails naming `data_mutations.txt`. This item depends on the 1209 error-rendering fix.
+8. `--group-by` works on a study with no mutation file. `--gene` on that study fails naming `data_mutations.txt`. This item depends on ticket 1218, which this ticket already depends on.
 9. Group values `undiff` and `Undiff` form two groups.
 10. A fixture with tied values matches the pinned R value within 1e-6.
 
@@ -58,6 +58,8 @@ biomcp study compare --study gse48843_counts --group-by AGENT --type expression 
 ## Decisions
 
 Open to Ian's overturn: the test stays the existing normal approximation, with the method named in the output. An exact test for small groups stays out of scope.
+
+Open to Ian's overturn: this ticket depends on 1218 alone, not on 1209. The only thing it needed from 1209 was the error rendering, which is now its own ticket. The grouped comparison reads a clinical sample column, which a DataHub study carries as readily as an imported GEO study, so it can land before the import does.
 
 
 ## Review

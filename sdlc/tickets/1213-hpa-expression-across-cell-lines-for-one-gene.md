@@ -36,9 +36,9 @@ Add `cell_line_rna(ensembl_id, group)` to `HpaClient` with a `cell_line_rna_plan
 ### Join to Cellosaurus
 
 - Normalize each HPA name with the 1202 normalizer.
-- Look up the names in batches of 20 with one Cellosaurus search per batch, `q=id:("<name1>" OR "<name2>" ...)`, the 1202 escape, and `fields=ac,id,ox`. The recorded fixture confirms the `id:` field. If Cellosaurus rejects `id:`, the batch uses `idsy:` with the same filter below.
+- Look up the names in batches of 20 with one Cellosaurus search per batch, `q=id:("<name1>" OR "<name2>" ...)`, the 1202 escape, and `fields=ac,id,ox`. The recorded fixture confirms the `id:` field. If Cellosaurus rejects `id:`, the batch uses `idsy:` with the same filter below. The 91-line leukemia group is five batches, so one run of the spec block sends five requests.
 - A row gets an accession only when exactly one human record's normalized identifier equals the normalized HPA name. Otherwise the accession is `null` and the row notes `no unique Cellosaurus match`.
-- A Cellosaurus failure leaves every accession `null` and adds one note. The expression rows still print.
+- A Cellosaurus failure leaves every accession `null` and adds one note. The expression rows still print. An empty window is not a failure. A batch that matches nothing gives `null` accessions for its names and adds no note, which is the same answer as a name with no unique match.
 
 ### Surface
 
@@ -63,7 +63,8 @@ HPA served no bot check in any measurement. The rule still holds: an HTTP 200 wh
 Record through the production request path, each with a `real_and_receipted` receipt:
 
 - `testdata/sources/hpa/cell_rna_leukemia_flt3_20260917.json`: the full FLT3 leukemia response, three objects.
-- `testdata/sources/cellosaurus/search_id_leukemia_batch1_20260917.json`: one batch of 20 leukemia names, including MOLM-13 and OCI-AML-3.
+- `testdata/sources/cellosaurus/search_id_leukemia_batch1_20260917.json` through `search_id_leukemia_batch5_20260917.json`: all five batches the 91-line leukemia group needs, 20 names each and 11 in the last. Batch 1 holds MOLM-13, and OCI-AML-3 sits in whichever batch its name order puts it. Five recorded batches are needed because the spec block requires `total == 91` and both accessions, and one batch answers 20 names.
+- The 1202 fixture server answers an empty window for any unlisted `id:` query, so a name outside these batches gets a `null` accession rather than a Cellosaurus failure.
 
 ## Acceptance
 
@@ -71,8 +72,8 @@ Fixture-backed Rust tests, no live network:
 
 1. The plan targets `api/search_download.php` with the four parameters. An unknown group fails before any request and lists the group names.
 2. The parser keeps only the FLT3 object whose `Ensembl` is ENSG00000122025, returns 91 rows in key order, and reads `MOLM-13` as 23.0.
-3. The join gives MOLM-13 CVCL_2119 and OCI-AML-3 CVCL_1844. A name with no unique human match gets `null` and the note.
-4. A Cellosaurus error leaves the rows intact with `null` accessions and one note.
+3. The join runs five batch requests for the 91 names and gives MOLM-13 CVCL_2119 and OCI-AML-3 CVCL_1844. The request log shows five `id:` searches and no sixth. A name with no unique human match gets `null` and the note.
+4. A Cellosaurus error leaves the rows intact with `null` accessions and one note. An empty window for one batch gives `null` accessions for those names and no failure note.
 5. `--limit` and `--offset` page the rows, and `total` stays 91.
 6. The HPA health row names the new surface.
 7. Every output carries `data_as_of` `2025-11-05` and `data_as_of_kind: "release"`, and the Markdown ends with the attribution line naming that date and the confirmed license.

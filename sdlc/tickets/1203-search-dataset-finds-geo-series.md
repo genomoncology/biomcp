@@ -48,7 +48,7 @@ New module `src/sources/geo.rs` with `GeoClient`. It uses `shared_client()`, `en
 
 `GeoClient::search(term, offset, limit)` runs one ESearch on `db=gds` and then one ESummary for the returned UIDs. A zero-hit ESearch makes no ESummary request.
 
-The decoder reads these ESummary JSON members per UID: `accession`, `entrytype`, `title`, `summary`, `taxon`, `gdstype`, `gpl`, `gse`, `n_samples`, `pubmedids`, `suppfile`, `geo2r`. The recorded fixture decides exact shapes. The names above follow the E-utilities `gds` document summary.
+The decoder reads these ESummary JSON members per UID: `accession`, `entrytype`, `title`, `summary`, `taxon`, `gdstype`, `gpl`, `gse`, `n_samples`, `pubmedids`, `suppfile`, `geo2r`, `pdat`. The recorded fixture decides exact shapes. The names above follow the E-utilities `gds` document summary.
 
 - A `GSE` record maps straight to a row.
 - A `GDS` record maps to its parent series `GSE<gse>`. If that GSE already appears in the result, the decoder drops the GDS record. If the GDS names more than one parent, it yields one row per parent. The row keeps the GDS accession in `curated_datasets`.
@@ -57,6 +57,7 @@ The decoder reads these ESummary JSON members per UID: `accession`, `entrytype`,
 - `taxon` and `gdstype` hold semicolon-separated lists. They become arrays in upstream order.
 - `suppfile` holds a comma-separated list of supplementary file types (`CEL`, `TXT`, `BW`). It becomes `supplementary_types`, an array in upstream order. A blank value becomes an empty array.
 - `geo2r` (`yes` or `no`) becomes the boolean `geo2r`. Measured 2026-09-16 on 585 AML series: 104 had `yes` and a series matrix table, 200 had `yes` and an empty table, and 3 had `no` with a table. The flag therefore means GEO offers an analysis view, often from NCBI-computed RNA-seq counts. It does not mean the series matrix carries values. The source page states this, and ticket 1207 reports where values live.
+- `pdat` holds the date the series went public, for example `2004/01/30` on the live GSE982 record read 2026-09-17. It becomes `published`, an ISO date string, on every row. It is free in a response the command already makes. It is not an update date, so it never fills `data_as_of`, and a missing or unparsable value becomes `null`.
 - A missing required member (`accession`, `entrytype`, `title`) is an `Api` error naming the UID.
 
 ### Query
@@ -109,6 +110,9 @@ JSON:
       "sample_count": 12,
       "pmids": ["12345678"],
       "curated_datasets": [],
+      "supplementary_types": ["CEL", "TXT"],
+      "geo2r": true,
+      "published": "2004-01-30",
       "summary": "..."
     }
   ]
@@ -119,7 +123,7 @@ JSON:
 
 Identity: the `id` field is always `geo:<GSE>`. Commands that take a dataset ID accept both `geo:GSE164073` and bare `GSE164073`.
 
-Markdown prints `# Datasets: <query>`, then `Found <total> series`, then one block per row. Each block has the accession and title as a heading, then organism, type, platforms, samples, and PMIDs lines, then the summary. The summary is cut at 400 characters with an ellipsis, and JSON keeps it whole.
+Markdown prints `# Datasets: <query>`, then `Found <total> series`, then one block per row. Each block has the accession and title as a heading, then organism, type, platforms, samples, published, and PMIDs lines, then the summary. The summary is cut at 400 characters with an ellipsis, and JSON keeps it whole.
 
 Registration:
 - `list dataset` prints the search usage and filter notes.
@@ -147,7 +151,7 @@ Tests (no network):
 1. Helper construction: `esearch_plan` and `esummary_plan` with `db=gds` set `db`, `retmode`, `term`, `retstart`, `retmax`, `id`, and `api_key` exactly. A blank key adds no `api_key`, and an unknown `db` is rejected.
 2. The existing `src/sources/pubmed/tests/construction.rs` cases pass unchanged.
 3. Term builder: each flag alone and all four together produce the exact term. A term with neither `--disease` nor `--keyword` fails, and so does a value with an embedded quote.
-4. Decoder on `esummary_mixed.json`: GSE rows carry prefixed platforms in order, the sample count, and PMIDs. The GDS with a present parent is dropped and shows in that parent's `curated_datasets`. The GDS with an absent parent becomes a `GSE<gse>` row. The GPL record is dropped. A record missing `accession` yields an `Api` error naming its UID.
+4. Decoder on `esummary_mixed.json`: GSE rows carry prefixed platforms in order, the sample count, PMIDs, `supplementary_types`, `geo2r`, and `published` from `pdat`. A row with no `pdat` carries `published: null`. The GDS with a present parent is dropped and shows in that parent's `curated_datasets`. The GDS with an absent parent becomes a `GSE<gse>` row. The GPL record is dropped. A record missing `accession` yields an `Api` error naming its UID.
 5. Search against a local fixture server under `BIOMCP_PUBMED_BASE`: the request log shows one ESearch and one ESummary with `db=gds`. The empty ESearch makes no ESummary request.
 6. Rate limit: a GEO URL under the default base resolves to the `pubmed-eutils` policy key.
 7. CLI parse: `--limit 0` and `--limit 51` fail. The help text and example block match the Design.

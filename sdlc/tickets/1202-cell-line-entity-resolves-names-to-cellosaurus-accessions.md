@@ -16,6 +16,8 @@ deps: []
 - The entity inventory is `ENTITY_FLAGS` (`src/cli/list/catalog.rs:38`), with section names mapped per entity at `src/cli/list/catalog.rs:78`. Multi-word entities use kebab case: `("adverse-event", true, true)` (`src/cli/list/catalog.rs:52`) and `biomcp search adverse-event` (`src/cli/commands.rs:507`).
 - `SearchEntity` (`src/cli/commands.rs:269`) and `GetEntity` (`src/cli/commands.rs:522`) hold one clap variant per entity. Dispatch runs through `src/cli/outcome.rs` (`GetEntity::Pathway` at `:129`, `SearchEntity::Pathway` at `:232`) and `src/cli/response_contract.rs` (`:126`, `:287`).
 - The typed MCP `get` tool derives its entity list and section enum from the catalog (`typed_get_capabilities`, `src/mcp/shell/typed_get.rs:12`). A new gettable entity reaches typed MCP `get` with no tool change. The typed MCP `search` tool covers a fixed list of eight entities (`src/mcp/shell.rs:285`). Pathway search reaches MCP only through the raw tool, and a test pins that typed rejection (`src/mcp/shell.rs:1825`).
+- `is_allowed_mcp_command` (`src/mcp/shell.rs:472`) matches every `Commands` and subcommand variant by name and has no wildcard arm, so a new top-level command fails the build until it is classified there.
+- Section outcomes are a per-entity registry. The pathway entity builds one from its outcome keys (`default_pathway_section_outcomes`, `src/entities/pathway.rs:18`), and `spec/entity/section-outcomes.md` ties `_meta.section_sources` to it.
 - Per-origin pacing and base-URL overrides live in `src/sources/rate_limit.rs`. KEGG is the model: `policy("kegg", "BIOMCP_KEGG_BASE", "https://rest.kegg.jp", 334 ms)` (`:167`). Health probes are `SourceDescriptor` rows (`src/cli/health/catalog.rs:410`).
 - Pathway search args are the model for a name search: positional query plus `-q`, `--limit` 1-25 default 10, `--offset` default 0 (`src/cli/pathway/mod.rs:6`). Pathway get takes `id` plus trailing `sections` (`src/cli/pathway/mod.rs:28`).
 - Each source has a page under `docs/sources/` (for example `docs/sources/kegg.md`), a row in `docs/sources/index.md` (`:44` for KEGG), a nav entry in `mkdocs.yml` (`:70`), a summary row and a tier section in `docs/reference/source-licensing.md` (tier 1 starts at `:114`), and an object in `docs/reference/sources.json` (`"id": "kegg"` at `:781`). Each entity has a user guide under `docs/user-guide/`.
@@ -63,8 +65,10 @@ deps: []
 ### CLI and MCP
 
 - `SearchEntity::CellLine(CellLineSearchArgs)` with the pathway argument shape: positional query or `-q`, `--limit` 1-25 default 10, `--offset` default 0. Search takes no filters.
-- `GetEntity::CellLine(CellLineGetArgs)` with `id` and trailing `sections`. Sections are `variants`, `xrefs`, and `all`. The default card shows the card fields only and ends with the next commands `biomcp get cell-line <ac> variants` and `biomcp get cell-line <ac> xrefs`. The requested sections widen the `fields` list of the one record request, so no section makes an extra call and the entity needs no `section_outcomes` registry row. A reverse lookup adds one search request before it.
-- Catalog: `("cell-line", true, true)` in `ENTITY_FLAGS` and `CELL_LINE_SECTION_NAMES` in the section map. Typed MCP `get` picks it up from the catalog. Typed MCP `search` stays at eight entities. Cell-line search reaches MCP through the raw tool, like pathway.
+- `GetEntity::CellLine(CellLineGetArgs)` with `id` and trailing `sections`. Sections are `variants`, `xrefs`, and `all`. The default card shows the card fields only and ends with the next commands `biomcp get cell-line <ac> variants` and `biomcp get cell-line <ac> xrefs`. The requested sections widen the `fields` list of the one record request, so no section in this ticket makes an extra call. A reverse lookup adds one search request before it.
+- `section_outcomes`: the entity carries the registry from the start, following the pathway entity (`default_pathway_section_outcomes`, `src/entities/pathway.rs:18`), with the keys `variants` and `xrefs`. Each key completes as `data` when the projected record carried rows, `empty` when it carried none. `_meta.section_sources` is wired the way `spec/entity/section-outcomes.md` requires. Tickets 1205, 1206, and 1214 then add one key each (`drug_response`, `depmap`, `chembl`) and nothing else. Building the registry here costs one field and spares three tickets a retrofit.
+- Catalog: `("cell-line", true, true)` in `ENTITY_FLAGS` (`src/cli/list/catalog.rs:38`) and `CELL_LINE_SECTION_NAMES` in the section map (`src/cli/list/catalog.rs:78`). Typed MCP `get` picks it up from the catalog. Typed MCP `search` stays at eight entities. Cell-line search reaches MCP through the raw tool, like pathway.
+- MCP arms: `is_allowed_mcp_command` (`src/mcp/shell.rs:472`) gains `SearchEntity::CellLine` and `GetEntity::CellLine`, both allowed, because each makes bounded read-only requests and reveals no local path. This ticket adds no `CellLineCommand` group; ticket 1205 adds it and classifies its arms.
 - Search rows print `biomcp get cell-line <ac>` in `_meta.next_commands` for the first exact row.
 - Health: one `SourceDescriptor` for Cellosaurus probing `/release-info?format=json`, affects "cell-line search and detail".
 - The review note wrote `cell_line`. This ticket uses `cell-line` because every multi-word entity in the CLI and catalog is kebab case (`adverse-event`).
@@ -92,6 +96,7 @@ Cellosaurus served no bot check in any measurement. The rule still holds for eve
 Record these through the production request path into `testdata/sources/cellosaurus/`, each with a `real_and_receipted` receipt. No fields are removed.
 
 - `search_idsy_molm13_20260916.json`: one row, CVCL_2119.
+- `search_idsy_molm_13_20260917.json` for `idsy:"MOLM-13"`: the hyphen rule sends this request beside the unhyphenated one, and acceptance 2 needs both to answer.
 - `search_idsy_mv4_11_semicolon_20260916.json` for `idsy:"MV4;11"`: three rows, CVCL_0064 exact.
 - `search_idsy_kg1_20260917.json`: three rows (CVCL_E3VV, CVCL_0374, CVCL_UD72), all exact. It replaces the stale 2026-09-16 capture.
 - `search_idsy_kg_1_20260917.json` for `idsy:"KG-1"`: CVCL_0374, CVCL_2971, CVCL_1S07.
@@ -103,14 +108,14 @@ Record these through the production request path into `testdata/sources/cellosau
 - `get_cvcl_0005_20260917.json`: NB4 card fields plus `dr`.
 - `release_info_20260917.json`: the `/release-info?format=json` body reporting release 56.0, 2026-06-25.
 
-One synthetic 1000-row page is generated in the test from a template. It is not a recorded file. Extend `setup-provider-contract-spec-fixture.sh` to serve `/cellosaurus/...` from these files, answer an empty search for any other `dr:` query, answer 404 for any other accession, and export `BIOMCP_CELLOSAURUS_BASE`.
+One synthetic 1000-row page is generated in the test from a template. It is not a recorded file. Extend `setup-provider-contract-spec-fixture.sh` to serve `/cellosaurus/...` from these files, answer an empty search for any other `dr:`, `idsy:`, or `id:` query, answer 404 for any other accession, and export `BIOMCP_CELLOSAURUS_BASE`. An empty window is a normal zero-row result and never a Cellosaurus failure. Ticket 1213 relies on the same rule for its `id:` batches.
 
 ## Acceptance
 
 Rust tests, fixture-backed, no live network:
 
 1. Normalizer: `MOLM13`, `molm-13`, and `Molm 13` normalize equal. `MV4;11`, `MV4-11`, and `MV 4;11` normalize equal.
-2. `MOLM13`, `MOLM-13`, and `MV4;11` searches each return the expected accession as the first row with `match: exact`.
+2. `MOLM13`, `MOLM-13`, and `MV4;11` searches each return the expected accession as the first row with `match: exact`. The `MOLM-13` search sends both `idsy:"MOLM-13"` and `idsy:"MOLM13"`, each answered by its own fixture, and merges them by accession into one row.
 3. `KG1` returns the exact set {CVCL_0374, CVCL_E3VV, CVCL_UD72}, each with its species. CVCL_0374 is first because it is a human identifier match. The test checks the set and the first row, not the order of the rest. `KG-1` runs two requests and merges them by accession with no duplicate rows.
 4. `NB4` returns CVCL_0005 first with `matched_on: name`. CVCL_8821 appears later with `matched_on: synonym`.
 5. A full 1000-row window sets the total to unknown and prints the note. A 3-row window reports total 3 and no note.
@@ -120,11 +125,12 @@ Rust tests, fixture-backed, no live network:
 9. `get cell-line CVCL_1844 variants` lists DNMT3A, NPM1, and NRAS rows with their HGVS descriptions as published.
 10. `get cell-line ACH-000362`, `SIDM00437`, `CHEMBL3706573`, and `MOLM13_950_2019` each resolve to CVCL_2119. An unmatched source ID fails with the not-found error and the search hint.
 11. An unknown accession fails with the not-found error. An unknown section fails before any request.
-12. The catalog lists `cell-line` as searchable and gettable with sections `variants`, `xrefs`, and `all`. The typed MCP `get` schema gains a `cell-line` branch. Typed MCP `search` still rejects `cell-line`.
+12. The catalog lists `cell-line` as searchable and gettable with sections `variants`, `xrefs`, and `all`. The typed MCP `get` schema gains a `cell-line` branch. Typed MCP `search` still rejects `cell-line`. The MCP shell allows `search cell-line` and `get cell-line` through the raw tool.
 13. The health catalog test counts the new Cellosaurus row. The rate-limit test resolves Cellosaurus URLs to the new policy.
 14. A `/release-info` fixture gives `data_as_of` `56.0 (2026-06-25)` and `data_as_of_kind: "release"` on every search and get output. A failing `/release-info` gives a retrieval time and `data_as_of_kind: "retrieved"`, and the rest of the output is unchanged.
 15. Every Markdown output ends with the attribution line naming the release, CC BY 4.0, and the citation.
 16. An HTML body served with HTTP 200 for a Cellosaurus JSON request is a provider error naming the URL, and no row renders.
+17. `_meta.section_sources` names Cellosaurus for `variants` and `xrefs`. A record with no `sequence-variation-list` completes `variants` as `empty`, and a record with rows completes it as `data`. The `spec/entity/section-outcomes.md` check accepts the new entity.
 
 Executable spec `spec/entity/cell-line.md`, added to `SPEC_ROUTINE_PATHS`:
 

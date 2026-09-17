@@ -180,3 +180,13 @@ The `deps` chains are right: 1203 → 1204 → 1211 → 1207 → 1208 → 1209 �
 - 1208 carries six features from the proposal (data root, layout, download, disk floor, lock, resume, refresh conflict, manifest, path, MCP) with 19 acceptance items. Resume (proposal section 10) is independent new code with its own HTTP semantics and no other ticket needs it. Move it to a follow-up that depends on 1208. The lock stays, because 1209 appends to the manifest.
 
 1216 depends on 1209 only for the imported-studies line and spec block 13. It can be built after 1208 with an empty `imports` list and re-verified after 1209.
+
+## Disposition, 2026-09-17
+
+Ian approved every finding. All 25 are applied to the tickets, together with both splits.
+
+- Resume moved out of 1208 into ticket 1217, which depends on 1208.
+- The study error rendering moved out of 1209 into ticket 1218. Ticket 1209 now depends on [1208, 1218] and ticket 1210 on [1218] alone, so the grouped compare no longer waits for the import.
+- F2 retires one line of the proposal. `sdlc/planning/2026-09-17-dataset-storage-and-freshness.md` section 2 and decision 4 are amended in the same commit: the check is per series, and `unknown` now means only that the header could not be read.
+- F25 is recorded as a Decisions bullet in 1206, not an ADR. The repo writes an ADR when a decision reverses a recorded product boundary.
+- One fact the review did not have: the shared `SourceUnavailable` renderer also serves DDInter and MyDisease.info, whose exact strings are pinned at `spec/entity/section-outcomes.md:175`, `:177`, and `spec/entity/diagnostic.md:116`. Ticket 1218 therefore adds an optional `detail` field instead of changing the shared sentence.

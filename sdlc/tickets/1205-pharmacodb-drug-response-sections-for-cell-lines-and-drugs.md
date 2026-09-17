@@ -71,13 +71,14 @@ The upstream "Please provide a valid ..." error maps to `None`. Any other GraphQ
 ### Sections
 
 - Drug: add `DRUG_SECTION_CELL_LINES = "cell_lines"` to `DRUG_SECTION_NAMES` and to `parse_sections_for_name`, with a `cell_lines` section outcome key. `all` does not include it, following `approvals`. The name follows the existing noun sections (`targets`, `indications`) and names what each row is.
-- Cell line: add `drug_response` to the 1202 section list with a matching outcome key. The 1202 `all` expansion does not include it.
+- Cell line: add `drug_response` to the 1202 section list and one key of the same name to the `section_outcomes` registry that ticket 1202 builds. The 1202 `all` expansion does not include it.
 - Each section returns `total` (all experiments) and `datasets` (count per dataset name, sorted by name). It lists no rows. It ends with next commands for the helper: `biomcp drug cell-lines <drug> --cell-line <ac>` and `biomcp drug cell-lines <drug> --dataset <name>` on the drug card, and `biomcp cell-line drug-response <ac> --dataset <name>` on the cell line card.
 - Helpers, following `gene pathways` under `GeneCommand`:
   - `biomcp drug cell-lines <drug> --cell-line <id>`: one pair request, 0 to 3 rows in practice. The `<id>` takes any form `get cell-line` accepts.
   - `biomcp drug cell-lines <drug> --dataset <name>`: rows for that dataset. `--cell-line` or `--dataset` is required. With neither, the command fails before any request and prints the counts command.
   - `biomcp cell-line drug-response <ac> --dataset <name>`: rows for that dataset. `--dataset` is required. This adds a `CellLineCommand` group next to `DrugCommand` (`src/cli/drug/mod.rs:78`).
   - The dataset filter matches the PharmacoDB dataset name ignoring ASCII case. An unknown name fails and lists the ten dataset names. `--limit` is 1 to 100 with a default of 25, and `--offset` defaults to 0.
+- **MCP arms.** `is_allowed_mcp_command` (`src/mcp/shell.rs:472`) is an exhaustive match with no wildcard, so every new variant is classified here or the build fails. `DrugCommand::CellLines` is allowed. The new `Commands::CellLine` group and its `CellLineCommand::DrugResponse` arm are allowed. Each makes bounded read-only requests and reveals no local path, and each is reachable through the raw tool the way `gene pathways` is. `GENERIC_MCP_REJECTION_MESSAGE` (`src/mcp/shell.rs:326`) names study commands only and is unchanged.
 - **Release date.** PharmacoDB publishes no version, no release name, and no release date. The GraphQL schema exposes none, and the survey of 2026-09-17 found none. Every output therefore carries `data_as_of` set to the retrieval time and `data_as_of_kind: "retrieved"`. The docs say plainly that PharmacoDB publishes no version, so a repeat query can return different numbers with no way to tell.
 - **Bot checks.** PharmacoDB served no bot check in any measurement. The rule still holds: an HTTP 200 whose body is an HTML human-verification page where a GraphQL JSON body was expected is a provider error. It names the URL and the operation, and the command stops. BioMCP never retries through a check and never scrapes the page.
 - Rows are sorted by counterpart name (compound for a cell line, cell line for a drug), then dataset name, then experiment id. Rows are never sorted by a metric. Repeated compound-and-dataset pairs stay as separate rows, and each row shows its experiment id so the repeat is visible. BioMCP does not merge or average them.
@@ -106,7 +107,7 @@ The upstream "Please provide a valid ..." error maps to `None`. Any other GraphQ
 - `experiments_compound_53572.json`: 6 rows over GDSC1, GDSC2, PRISM, CTRPv2, and NCI60, including the MOLM-13 GDSC1 row with `IC50: null`. The PRISM row is on a line outside the ten test lines.
 - `experiments_pair_53572_1248.json`: the two MOLM-13 venetoclax rows.
 
-The K-562 and doxorubicin bodies are too large to commit. Tests generate synthetic bodies instead: a counts body of 78,373 rows and a full body over 32 MiB.
+The K-562 and doxorubicin bodies are too large to commit. Tests generate synthetic bodies instead: a counts body of 78,373 rows, a full-field body of 19.4 MB matching the measured K-562 case, and a hypothetical full body over 32 MiB.
 
 A spec fixture script `spec/fixtures/setup-pharmacodb-spec-fixture.sh` with a matching cleanup script serves these files on loopback, keyed by GraphQL operation and argument, and exports `BIOMCP_PHARMACODB_BASE`. The same script serves or reuses the 1202 Cellosaurus fixture for MOLM-13. No test touches the network.
 
@@ -119,7 +120,7 @@ Focused Rust tests (fixture-backed):
 3. `cell-line drug-response CVCL_2119 --dataset GDSC1` returns rows sorted by compound name, dataset, and id, keeps both rows of the repeated pair, and prints null metrics as JSON null.
 4. The accession mismatch fixture gives an `unavailable` outcome and makes no `experiments` request. A Cellosaurus record without a PharmacoDB cross-reference falls back to `cell_line_by_name`. The HL-60(TB) fixture joins to CVCL_A794.
 5. `get drug venetoclax cell_lines` returns `total == 6` with no rows. `drug cell-lines venetoclax --cell-line CVCL_2119` sends one pair request and returns two rows. `drug cell-lines venetoclax` with no filter fails before any request. An unknown compound gives `empty`.
-6. Size guard: a synthetic 78,373-row counts body (the K-562 case) parses and sums to 78,373. A synthetic full body over 32 MiB (the doxorubicin and K-562 full-field case) gives `unavailable` with the size message and no panic.
+6. Size guard: a synthetic 78,373-row counts body (the K-562 case) parses and sums to 78,373. A synthetic 19.4 MB full-field body, the largest measured input, parses and returns its rows. A synthetic body over 32 MiB, which no measured input reaches, gives `unavailable` with the size message and no panic.
 7. `get drug venetoclax all` and `get cell-line CVCL_2119 all` make no PharmacoDB request, and their output is byte-identical to the output before this ticket.
 8. An unknown section error lists `cell_lines` for drugs. An unknown `--dataset` lists the ten dataset names.
 9. The Markdown renders pin the heading, the counts line, the next commands, a helper row with `-` for a null value, the `Showing 25 of 30` line, and the fixed attribution line with the non-commercial term, the retrieval time, and the no-units note.
@@ -144,7 +145,7 @@ Executable specs: `spec/entity/drug.md` gains one JSON block (`get drug venetocl
 These follow the 2026-09-17 source survey. Ian can overturn any of them.
 
 - Sections print counts only. Rows need a pair or a dataset filter because K-562 and doxorubicin are over 18 MB.
-- The experiments body cap is 32 MiB for PharmacoDB only. The shared 8 MiB default stays for every other source.
+- The experiments body cap is 32 MiB for PharmacoDB only. The shared 8 MiB default stays for every other source. The cap sits above every measured input: the largest are K-562 at 19.4 MB and doxorubicin at 18.6 MB, and both must parse. No measured input exceeds the cap.
 - The cell line join falls back to the Cellosaurus name and always checks the accession.
 - Repeated experiments stay as separate rows.
 - `data_as_of` is the retrieval time, because PharmacoDB publishes no version. The output says so rather than leaving the field out.

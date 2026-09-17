@@ -35,7 +35,7 @@ Add two calls to `ChemblClient`, each with a plan function:
 
 ### Section
 
-- Add `chembl` to the 1202 cell line section list with an outcome key. `all` does not include it.
+- Add `chembl` to the 1202 cell line section list and one key of the same name to the `section_outcomes` registry that ticket 1202 builds. `all` does not include it.
 - The section calls `cell_line_by_cellosaurus` with the requested accession, then `cell_line_assay_count` for each record. It never searches by name.
 - No record gives `empty` with the message `no ChEMBL cell line lists this accession`. A transport or decode failure gives `unavailable`.
 - JSON: `cell_line.chembl` holds `{ "source": "ChEMBL", "data_as_of", "data_as_of_kind", "records": [{"chembl_id", "name", "efo_id", "clo_id", "assay_count"}] }`.

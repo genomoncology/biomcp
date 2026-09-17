@@ -28,7 +28,7 @@ A header read costs one request and stops at the table marker. It is the cheapes
 
 New command `biomcp dataset check [<id>]`. It re-reads the matrix header for each downloaded series, compares `last_updated` against the manifest, and prints one row per asset: current, changed upstream, withdrawn, or unknown. It downloads nothing and changes nothing. `--refresh` on `dataset download` stays the only way to fetch new bytes.
 
-`unknown` is the honest answer for NCBI count files and supplementary files, because those carry no date of their own.
+Retired on 2026-09-17 by the ticket review: this section used to say that `unknown` is the honest answer for NCBI count files and supplementary files. GEO publishes one date for a series and none for any single file, so the series date covers every file of that series. The check is per series, and `unknown` means only that the header could not be read. Ticket 1215 carries the rule and ticket 1208 stores the series-level date and matrix URLs that make it work.
 
 ### 3. List what is on disk
 
@@ -112,4 +112,4 @@ Open to Ian's overturn.
 1. Nothing is evicted from the dataset root automatically.
 2. `dataset list` reads manifests only. BioMCP builds no index over downloaded values.
 3. `BIOMCP_DATA_DIR` is added, and the two older settings keep working and take precedence.
-4. `dataset check` re-reads headers only, and reports `unknown` where a provider publishes no date.
+4. `dataset check` re-reads headers only, once per series, and reports `unknown` only where the header could not be read. Amended 2026-09-17 by the ticket review.
