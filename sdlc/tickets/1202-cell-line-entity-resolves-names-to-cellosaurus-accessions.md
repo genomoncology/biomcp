@@ -102,7 +102,7 @@ Executable spec `spec/entity/cell-line.md`, added to `SPEC_ROUTINE_PATHS`:
 
 ## Out of scope
 
-- Pivots such as `cell-line datasets` or `cell-line drugs`. Tickets 1205 and 1206 own those.
+- Pivots such as `cell-line datasets`. Drug response and dependency sections are tickets 1205 and 1206.
 - STR profiles, sequence variations, HLA typing, child lines, publications, and every other record field.
 - A species or disease filter on search, and any rule that picks one line among several exact matches.
 - The `misspelling` field, fuzzy matching, and paging past the 1000-row window.

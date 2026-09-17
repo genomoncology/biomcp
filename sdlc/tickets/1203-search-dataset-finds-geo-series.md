@@ -65,7 +65,7 @@ The decoder reads these ESummary JSON members per UID: `accession`, `entrytype`,
 
 | Flag | Term |
 | --- | --- |
-| `--disease <text>` | `(<text>)` |
+| `--disease <text>` | `(<text>)`. A second free-text term that reads better in examples. It is not a disease-ontology filter. |
 | `--keyword <text>` (`-k`) | `(<text>)` |
 | `--organism <text>` | `"<text>"[ORGN]` |
 | `--type <text>` | `"<text>"[GTYP]` |
@@ -116,8 +116,6 @@ JSON:
 ```
 
 `_meta.next_commands` includes `biomcp get article <pmid>` for the first PMID of the first row that has one. Ticket 1204 adds `get dataset`; until then the output never suggests it.
-
-`--source <name>` is accepted and defaults to `geo`. Any other value fails with `InvalidArgument` listing `geo`. The flag reserves the provider-neutral shape from the 2026-09-16 research-data decision brief without building a second provider.
 
 Identity: the `id` field is always `geo:<GSE>`. Commands that take a dataset ID accept both `geo:GSE164073` and bare `GSE164073`.
 
