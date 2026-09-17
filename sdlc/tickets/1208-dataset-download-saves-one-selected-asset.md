@@ -23,16 +23,21 @@ biomcp dataset path geo:GSE48843 --asset ncbi:GSE48843_raw_counts_GRCh38.p13_NCB
 - Ticket 1207 gives each asset a stable ID (`matrix:<GPL>`, `annot:<GPL>`, `ncbi:<name>`, `suppl:<name>`), a URL, and a `snapshot_id`.
 - MCP tools are read-only and withhold local paths (https://biomcp.org/reference/mcp-server/). This ticket keeps that boundary.
 - Measured 2026-09-16: GSE48843 raw counts are 1.5 MB. A full AML series matrix download of 774 files was 1.1 GB.
+- Measured 2026-09-16 (experiment 203): the GEO download service sends `Content-Length` and `Content-Disposition size=`, with no `ETag` or `Last-Modified`. The FTP host sends `Last-Modified` only. A repeat download of GSE48843 raw counts had the same SHA-256. The counts page prints rounded sizes ("1.4 Mb" for 1,493,706 bytes).
+- The annotation link on the counts page returned HTTP 200 with a reCAPTCHA HTML page in place of gzip.
 
 ## Design
 
 - Root: `<data-root>/biomcp/datasets/<source>/<accession>/`, with override `BIOMCP_DATASET_DIR`. The data root is the one `study` uses. It is not the disposable cache.
 - `download` resolves the asset by re-running the 1207 scan for that series. It fails when the asset ID is not listed, and names the listed IDs.
 - `--dry-run` prints the plan and transfers nothing: asset ID, URL, known size or `unknown`, destination path, and the byte limit.
+- A known size comes from `Content-Length` or `Content-Disposition size=`. BioMCP never takes a size from the rounded page text.
 - `--max-size` defaults to `2G` and uses the `cache clean --max-size` parser (`src/cli/cache.rs:43-45`), so values look like `500M` or `5G`. A known size over the limit fails before any transfer. An unknown size streams and aborts at the limit.
 - `--dry-run` and `--max-size` follow `cache clean`. `--refresh` is new.
-- Transfer streams into `<name>.partial` and renames on success. An interrupted transfer leaves only the partial file, which the next download deletes and restarts. No resume.
-- On success, `manifest.json` in the series folder gains or replaces one entry: `{asset_id, url, path, bytes, sha256, downloaded_at, snapshot_id}`. An existing file with the same asset ID is kept and reported as already present unless `--refresh` is given. A refresh that yields a different SHA-256 keeps the old file as `<name>.<old sha prefix>` and records both.
+- Before writing, BioMCP checks the content type and the first bytes. A gzip asset must start with the gzip magic bytes (`1f 8b`). An HTML body with HTTP 200 is a failure that names the URL, and nothing is written.
+- Transfer streams into `<name>.partial` and renames on success. An interrupted transfer leaves only the partial file. The next download deletes it and restarts. BioMCP never returns a partial file as complete. No resume.
+- On success, `manifest.json` in the series folder gains or replaces one entry: `{asset_id, url, path, bytes, sha256, downloaded_at, snapshot_id}`. SHA-256 is the only change signal, because the servers send no `ETag` and the download service sends no `Last-Modified`.
+- Repeat rules: BioMCP hashes an existing file with the same asset ID. A file that matches the manifest SHA-256 is reused and reported as already present, with no asset request. With `--refresh`, BioMCP downloads again. Matching SHA-256 keeps the file. A different SHA-256 is a conflict. It keeps the old file as `<name>.<old sha prefix>`, records both, and reports the conflict. Without `--refresh`, a file on disk whose SHA-256 differs from the manifest fails and is never overwritten. An imported study keeps the SHA-256 it recorded. A refresh never changes an imported input silently.
 - `path` reads only the manifest. It prints the absolute path alone on stdout, or exits nonzero with `not downloaded` and the download command as a suggestion.
 - Both commands are CLI-only. The MCP shell allows helper families and the read-only `study` subcommands, and rejects `study download <id>` (`GENERIC_MCP_REJECTION_MESSAGE`, `src/mcp/shell.rs:326`). `dataset samples` stays allowed. `dataset download` and `dataset path` are rejected by name, with the "reveals workstation-local paths" wording used for `cache path`, and the rejection message lists `dataset samples` as allowed.
 - Progress goes to stderr. `--json` returns the manifest entry.
@@ -45,9 +50,12 @@ biomcp dataset path geo:GSE48843 --asset ncbi:GSE48843_raw_counts_GRCh38.p13_NCB
 4. A killed transfer leaves only `.partial`. The next download removes it and succeeds.
 5. A second download without `--refresh` makes no asset request. With `--refresh` and changed bytes, both versions are on disk and in the manifest.
 6. An unlisted asset ID fails and lists the valid IDs.
-7. `path` for an asset not yet downloaded exits nonzero and makes no network request.
-8. The MCP shell rejects `dataset download` and `dataset path`.
-9. Spec `spec/entity/dataset.md` gains one dry-run block and one download-then-path block against the fixture server.
+7. An HTML body served with HTTP 200 for a gzip asset fails, names the URL, and leaves no file.
+8. A file on disk edited after download makes the next download fail without overwriting it.
+9. A size comes from `Content-Length` in the fixture, not from page text.
+10. `path` for an asset not yet downloaded exits nonzero and makes no network request.
+11. The MCP shell rejects `dataset download` and `dataset path`.
+12. Spec `spec/entity/dataset.md` gains one dry-run block and one download-then-path block against the fixture server.
 
 ## Out of scope
 

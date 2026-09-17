@@ -13,7 +13,7 @@ deps: [1208]
 ```
 biomcp study import --name gse48843_counts \
   --from geo:GSE48843 --asset ncbi:GSE48843_raw_counts_GRCh38.p13_NCBI.tsv.gz \
-  --sample-map samples.tsv
+  --annotation gene_info:Homo_sapiens --sample-map samples.tsv
 biomcp study query --study gse48843_counts --gene CD34 --type expression
 ```
 
@@ -23,29 +23,45 @@ biomcp study query --study gse48843_counts --gene CD34 --type expression
 - A study needs `meta_study.txt`, parsed by `parse_meta_study` (`src/sources/cbioportal_study.rs:1483`) with `cancer_study_identifier`, `name`, and `type_of_cancer`.
 - Samples come from `data_clinical_sample.txt`. Parsers skip blank lines and lines that start with `#` (`src/sources/cbioportal_study.rs:2181`, `:2205`). `clinical_column_values` (`:991`) reads a named column.
 - Expression comes from the first file in `EXPRESSION_FILES` (`src/sources/cbioportal_study.rs:15`) that exists. The format is `Hugo_Symbol`, `Entrez_Gene_Id`, then one column per sample (test fixture at `:2305`).
-- Ticket 1207 marks NCBI counts with `feature_ids: ncbi_gene_id` and arrays with `platform_probe`. Ticket 1208 downloads assets and records their paths.
+- Ticket 1207 marks each product with `measurement_kind`, `normalization_or_transform`, and `feature_id_type` (`ncbi_gene_id` for NCBI counts, `platform_probe` for arrays). Ticket 1208 downloads assets and records their paths.
+- A script cannot fetch the counts-page annotation file (ticket 1207). NCBI Gene `Homo_sapiens.gene_info.gz` mapped 37,663 of 39,376 GSE48843 count rows (95.65%). `gene_history.gz` sorted the 1,713 misses into 1,334 retired IDs, 378 IDs replaced by a current ID, and 1 ID replaced by an ID that is not current. The symbol `TRNAV-CAC` came from two GeneIDs (experiment 203).
+- `GPL96.annot.gz` has an `!Annotation_date` line (Aug 09 2016) and its table between `!platform_table_begin` and `!platform_table_end`. On GSE982, 1,223 probes list several genes, always separated by `///`. Choosing the max-mean probe over all 75 samples and over a 15-sample subset gave different probes for 275 of 12,502 genes.
+- The expression reader returns the first row when several rows share a symbol. It drops blank and non-finite cells without saying so.
+- Every study command failure prints `Source unavailable: cBioPortal DataHub is not available.` in Markdown and JSON (`src/error.rs:481`, `:572`). The internal reason, such as `Missing study metadata file` (`src/sources/cbioportal_study.rs:1486`), is dropped.
+- `study filter --cancer-type` ignores case (`src/sources/cbioportal_study.rs:1448`).
 - NCBI publishes platform annotation files with gene symbol and gene ID columns for many arrays. `https://ftp.ncbi.nlm.nih.gov/geo/platforms/GPLnnn/GPL96/annot/GPL96.annot.gz` returned HTTP 200 on 2026-09-16. The sequencing platform GPL24676 has no `annot/` folder (HTTP 404) and needs none.
 
 ## Design
 
 ### Sample map
 
-A TSV the user writes, with header. `sample_id` (a GSM accession) is required. Every other column is copied as a clinical sample attribute, with the header uppercased (`agent` becomes `AGENT`). BioMCP does not read, check, or change the values. The map may list a subset of samples. Import keeps only those samples in the expression file. A map sample that is missing from the asset is an error naming it.
+A TSV the user writes, with header. `sample_id` (a GSM accession) is required. Every other column is copied as a clinical sample attribute, with the header uppercased (`agent` becomes `AGENT`). BioMCP does not read, check, or change the values. Ticket 1210 compares group values exactly as written. `undiff` and `Undiff` form two groups. The map may list a subset of samples. Import keeps only those samples in the expression file.
+
+- A `sample_id` listed twice fails and names the ID.
+- Map samples missing from the asset fail the import, and the error names every one.
+- Asset columns absent from the map are reported as unmatched columns in the output and in `import.json`.
+
+Docs say that sample maps usually come from characteristics keys (`treatment`, `agent`) and sample titles. The treatment protocol is usually the same for every sample. Docs also say that group values match exactly as written, while `study filter --cancer-type` ignores case.
 
 ### Feature mapping
 
-- NCBI counts: the gene ID column becomes `Entrez_Gene_Id`. The symbol comes from the NCBI annotation asset for that build, downloaded through 1208 (`--annotation <asset-id>`, required for this producer). A gene ID with no symbol is dropped and counted.
-- Arrays: the matrix table (downloaded through 1208 as `matrix:<GPL>`) is read past the header. The GPL annotation file maps probe to symbol and gene ID. The user downloads it through 1208 as `annot:<GPL>` and passes it with `--annotation`, the same flag NCBI counts use. A platform with no annotation file fails with a message naming the platform. Probes with no gene, or with several genes, are dropped and counted. `--probe-rule max-mean` is the only value today and the default. It keeps the probe with the highest mean across the mapped samples, the `MaxMean` rule of WGCNA `collapseRows`. `meta_study.txt` records the rule.
+- NCBI counts: the gene ID column becomes `Entrez_Gene_Id`. The symbol comes from NCBI Gene `gene_info` for the organism, downloaded through 1208 (`--annotation gene_info:<organism>`, required for this producer). A gene ID with no symbol is dropped. When `--gene-history gene_history` is given, dropped rows are split into retired IDs and replaced IDs. Otherwise they are counted as one number.
+- Arrays: the matrix table (downloaded through 1208 as `matrix:<GPL>`) is read past the header. The GPL annotation file maps probe to symbol and gene ID. The user downloads it through 1208 as `annot:<GPL>` and passes it with `--annotation`, the same flag NCBI counts use. A platform with no annotation file fails with a message naming the platform. Multi-gene probes are split on `///`. Probes with no gene, or with several genes, are dropped and counted. `--probe-rule max-mean` is the only value today and the default. It keeps the probe with the highest mean, the `MaxMean` rule of WGCNA `collapseRows`. The mean is computed once over the samples kept by the map and never uses group labels. Blank cells are skipped in the mean. A tie goes to the lowest probe ID in byte order. `meta_study.txt` records the rule. `import.json` records the rule and the annotation file date from `!Annotation_date`.
+- One row per symbol: when two features map to the same symbol, import keeps the first in file order, drops the rest, and counts them as symbol collisions.
 - Values are copied unchanged. BioMCP does not normalize, log-transform, or z-score.
 
 ### Output
 
 - Folder `<study root>/<name>/` staged, then renamed into place. An existing name fails unless `--replace`.
-- `meta_study.txt`: `cancer_study_identifier: <name>`, `name` from the dataset title, `type_of_cancer: other`; when `--cancer-type` is given the same value also fills a `CANCER_TYPE` column in `data_clinical_sample.txt`, because `study filter --cancer-type` reads that column (`src/sources/cbioportal_study.rs:1442-1443`); and `description` stating source ID, asset ID, SHA-256 from the 1208 manifest, product kind, units as reported by 1207, the probe rule, and dropped-feature counts.
+- `meta_study.txt`: `cancer_study_identifier: <name>`, `name` from the dataset title, `type_of_cancer: other`; when `--cancer-type` is given the same value also fills a `CANCER_TYPE` column in `data_clinical_sample.txt`, because `study filter --cancer-type` reads that column (`src/sources/cbioportal_study.rs:1442-1443`); the machine unit fields `measurement_kind`, `normalization_or_transform`, and `feature_id_type` from 1207, with `unknown` allowed; and `description` stating source ID, asset IDs, SHA-256 from the 1208 manifest, product kind, the probe rule, and dropped-feature counts.
 - `data_clinical_sample.txt`: `SAMPLE_ID`, `PATIENT_ID` (set to the sample ID), and the map columns, with the four standard `#` header lines.
 - `data_expression_imported.txt`: the mapped matrix. `EXPRESSION_FILES` gains this name last, so existing DataHub studies keep their current file.
-- `import.json`: the full provenance, including the sample map SHA-256.
-- No `data_clinical_patient.txt` and no `data_mutations.txt`. Commands that need them fail with the existing missing-file messages. Units live only in the `meta_study.txt` description, because the study commands are unit-blind (`--expression-above` compares a bare number).
+- `import.json`: the full provenance, including the sample map SHA-256, the three unit fields, the annotation file date, dropped-row counts (retired, replaced, and other), symbol collisions, and unmatched matrix columns.
+- No `data_clinical_patient.txt` and no `data_mutations.txt`. Commands that need them fail with the existing missing-file messages. The study commands are unit-blind (`--expression-above` compares a bare number). The unit fields let `study score` (ticket 1212) print and check units.
+
+### Error rendering
+
+Study command errors keep their reason. Markdown and JSON both name the missing file, for example `data_mutations.txt` or `meta_study.txt`, in place of the bare `cBioPortal DataHub is not available` line.
 
 `study import` is CLI-only. The MCP shell rejects it.
 
@@ -53,15 +69,20 @@ A TSV the user writes, with header. `sample_id` (a GSM accession) is required. E
 
 1. NCBI counts fixture plus annotation fixture plus a three-sample map: `study list` shows the study, `study query --type expression --gene` returns the three values unchanged.
 2. Array fixture with two probes for one gene keeps the higher-mean probe. `meta_study.txt` names the rule and the dropped counts.
-3. A platform with no annotation file fails before any study folder exists.
-4. A map sample missing from the asset fails and names the sample.
-5. `study filter --study <name> --expression-above GENE:X` works on the imported study.
-6. Map columns come back byte-identical through `clinical_column_values`.
-7. An existing DataHub fixture study still reads its original expression file.
-8. The MCP shell rejects `study import`.
-9. Spec `spec/entity/study.md` gains one import-then-query block on fixtures.
-10. `study survival`, `study co-occurrence`, and `study compare --gene` on the imported study fail with a message that names the missing file.
-11. `--cancer-type AML` makes `study filter --cancer-type AML` return every imported sample.
+3. Max-mean uses only the kept samples: a fixture where the choice flips when a sample is excluded picks the probe for the kept set. A tie picks the lowest probe ID in byte order. A blank cell is skipped in the mean. A `///` probe is dropped and counted. `import.json` records the annotation date.
+4. NCBI counts with a `gene_info` fixture and a `gene_history` fixture report dropped rows as retired and replaced.
+5. Two GeneIDs with one symbol produce one row and a collision count of 1.
+6. A map with a repeated `sample_id` fails and names it. Asset columns absent from the map appear as unmatched columns.
+7. `import.json` and `meta_study.txt` carry `measurement_kind`, `normalization_or_transform`, and `feature_id_type`.
+8. A platform with no annotation file fails before any study folder exists.
+9. A map sample missing from the asset fails and names the sample.
+10. `study filter --study <name> --expression-above GENE:X` works on the imported study.
+11. Map columns come back byte-identical through `clinical_column_values`.
+12. An existing DataHub fixture study still reads its original expression file.
+13. The MCP shell rejects `study import`.
+14. Spec `spec/entity/study.md` gains one import-then-query block on fixtures.
+15. `study survival`, `study co-occurrence`, and `study compare --gene` on the imported study fail with a message that names the missing file, in Markdown and in JSON. A test pins both forms.
+16. `--cancer-type AML` makes `study filter --cancer-type AML` return every imported sample.
 
 ## Out of scope
 
@@ -69,3 +90,7 @@ A TSV the user writes, with header. `sample_id` (a GSM accession) is required. E
 - Normalization, batch correction, and scaling between arrays and counts.
 - Supplementary files with unknown meaning. Only 1207 products with `usable_values` import.
 - Grouped comparison by a map column (ticket 1210) and signature scores (ticket 1212).
+
+## Decisions
+
+Open to Ian's overturn: `--gene-history` is optional because `gene_history.gz` is 162 MB. Without it, dropped GeneIDs are one count. NCBI counts map through NCBI Gene `gene_info` because a script cannot fetch the counts-page annotation file. Collisions keep the first row in file order, matching what the expression reader already returns.

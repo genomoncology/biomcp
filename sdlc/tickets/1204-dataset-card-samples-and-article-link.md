@@ -30,13 +30,15 @@ The motivating consumer is a hackathon team screening public GEO studies of drug
 GEO facts the design relies on, to confirm against the recorded fixtures:
 
 - `esummary` with `db=gds` returns, per series, `accession`, `entrytype`, `gpl`, `n_samples`, `bioproject`, `relations`, and a `samples` array of `{accession, title}`.
+- Experiment 203 found 5,912 sample IDs in more than one of 585 series (774 files). A SuperSeries repeats the samples of its SubSeries. GSE982 is a SubSeries of GSE995.
+- In the same survey, sample characteristics and sample titles were the first field that split samples by a treatment word in 569 of 623 files. The characteristics keys that split samples most often were `treatment` (336 series) and `agent` (41). The treatment protocol mentioned DMSO in 328 series and was usually the same for every sample.
 - `elink` with `dbfrom=pubmed&db=gds` returns GDS UIDs of mixed record types (series, platforms, samples, curated DataSets).
 
 ## Design
 
 ### `get dataset <id>` card
 
-`get dataset <id>` accepts `geo:GSE…` or bare `GSE…` and renders the 1203 row for that series from one `esummary` call: ID, title, organisms, series types, platforms, sample count, PMIDs, supplementary types, `geo2r`, and summary. Sections `publications` (the PMIDs with `get article` next commands) and `links` (the GEO page, BioProject, and SuperSeries/SubSeries relations) read the same response.
+`get dataset <id>` accepts `geo:GSE…` or bare `GSE…` and renders the 1203 row for that series from one `esummary` call: ID, title, organisms, series types, platforms, sample count, PMIDs, supplementary types, `geo2r`, and summary. Sections `publications` (the PMIDs with `get article` next commands) and `links` (the GEO page, BioProject, and SuperSeries/SubSeries relations) read the same response. The card names the SuperSeries or SubSeries relation when one exists.
 
 `all` means the sections that make no file request: the card, `publications`, and `links`. It never includes `series` (ticket 1211) or `assets` and `products` (ticket 1207).
 
@@ -57,13 +59,15 @@ GEO facts the design relies on, to confirm against the recorded fixtures:
 
 - Add the card, `publications`, `links`, the `dataset samples` helper, and the `article datasets` row to the GEO source page.
 - Add the sections, the helper, and the pivot to `biomcp list dataset` and `biomcp list article`.
+- State that a SuperSeries repeats its SubSeries samples. Any tally across series counts distinct GSM IDs.
+- State that sample maps for ticket 1209 usually come from characteristics keys such as `treatment` and `agent` and from sample titles. The treatment protocol rarely tells samples apart.
 
 ## Acceptance
 
 Fixtures under `testdata/sources/geo/`, small and recorded: `esummary` JSON for one single-platform series with three samples and one two-platform series with relations, and `elink` JSON for one PMID linking to a series, a platform, and a sample, plus one PMID with no links.
 
 1. `get dataset GSE982` and `get dataset geo:GSE982` render the same card.
-2. `publications` and `links` render from the fixture with no extra request.
+2. `publications` and `links` render from the fixture with no extra request. The two-platform fixture shows its SuperSeries or SubSeries relation on the card and in `links`.
 3. `dataset samples` renders samples in provider order and pages with `--offset`.
 4. `article datasets` keeps only `GSE` rows from the mixed `elink` fixture and returns the empty note for the unlinked PMID.
 5. `get dataset <GSE>` and `get dataset <GSE> all` send only the `esummary` request.
