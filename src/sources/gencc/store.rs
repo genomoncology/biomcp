@@ -690,7 +690,7 @@ fn create_file_at(parent: &File, name: &str) -> Result<File, StoreError> {
     use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
     let name = std::ffi::CString::new(name).map_err(|_| StoreError::Unavailable)?;
     // SAFETY: parent and the NUL-terminated name remain valid.
-    let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), libc::O_RDWR | libc::O_CREAT | libc::O_EXCL | libc::O_NOFOLLOW | libc::O_CLOEXEC, 0o600) };
+    let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), libc::O_RDWR | libc::O_CREAT | libc::O_EXCL | libc::O_NOFOLLOW | libc::O_CLOEXEC, 0o600 as libc::c_uint) };
     if fd < 0 { return Err(StoreError::Unavailable); }
     Ok(File::from(unsafe { OwnedFd::from_raw_fd(fd) }))
 }
@@ -700,7 +700,7 @@ fn write_new_at(parent: &File, name: &str, bytes: &[u8], point: &str) -> Result<
     use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
     let name = std::ffi::CString::new(name).map_err(|_| StoreError::Unavailable)?;
     // SAFETY: parent and the NUL-terminated name remain valid.
-    let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL | libc::O_NOFOLLOW | libc::O_CLOEXEC, 0o600) };
+    let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), libc::O_WRONLY | libc::O_CREAT | libc::O_EXCL | libc::O_NOFOLLOW | libc::O_CLOEXEC, 0o600 as libc::c_uint) };
     if fd < 0 { return Err(StoreError::Unavailable); }
     let mut file = File::from(unsafe { OwnedFd::from_raw_fd(fd) });
     file.write_all(bytes).map_err(|_| StoreError::Unavailable)?;
@@ -733,7 +733,7 @@ fn validate_at_identity(parent: &File, name: &str, file: &File) -> Result<(), St
     // SAFETY: descriptors/pointers are valid; success initializes `named`.
     if unsafe { libc::fstatat(parent.as_raw_fd(), name.as_ptr(), named.as_mut_ptr(), libc::AT_SYMLINK_NOFOLLOW) } != 0 { return Err(StoreError::Invalid); }
     let named = unsafe { named.assume_init() };
-    (opened.dev() == named.st_dev && opened.ino() == named.st_ino).then_some(()).ok_or(StoreError::Invalid)
+    (opened.dev() as i128 == named.st_dev as i128 && opened.ino() as i128 == named.st_ino as i128).then_some(()).ok_or(StoreError::Invalid)
 }
 #[cfg(unix)]
 fn read_at(parent: &File, name: &str) -> Result<Vec<u8>, StoreError> {
@@ -837,7 +837,7 @@ fn open_private_at(parent: &File, name: &str) -> Result<File, StoreError> {
     let name = std::ffi::CString::new(name).map_err(|_| StoreError::Unavailable)?;
     let flags = libc::O_RDWR | libc::O_CREAT | libc::O_NOFOLLOW | libc::O_CLOEXEC;
     // SAFETY: the name is NUL-terminated and parent remains open.
-    let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), flags, 0o600) };
+    let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), flags, 0o600 as libc::c_uint) };
     if fd < 0 { return Err(StoreError::Unavailable); }
     // SAFETY: openat returned a new owned descriptor.
     let file = File::from(unsafe { OwnedFd::from_raw_fd(fd) });
@@ -848,7 +848,7 @@ fn open_private_at(parent: &File, name: &str) -> Result<File, StoreError> {
     // SAFETY: descriptors/pointers are valid; success initializes `named`.
     if unsafe { libc::fstatat(parent.as_raw_fd(), name.as_ptr(), named.as_mut_ptr(), libc::AT_SYMLINK_NOFOLLOW) } != 0 { return Err(StoreError::Unavailable); }
     let named = unsafe { named.assume_init() };
-    if metadata.dev() != named.st_dev || metadata.ino() != named.st_ino { return Err(StoreError::Unavailable); }
+    if metadata.dev() as i128 != named.st_dev as i128 || metadata.ino() as i128 != named.st_ino as i128 { return Err(StoreError::Unavailable); }
     injected(&format!("before-{point}-file-fsync"), StoreError::Unavailable)?;
     file.sync_all().map_err(|_| StoreError::Unavailable)?;
     injected(&format!("after-{point}-file-fsync"), StoreError::Unavailable)?;
@@ -871,7 +871,7 @@ fn validate_open_identity(file: &File, path: &Path) -> Result<(), StoreError> {
     use std::os::unix::fs::MetadataExt;
     let opened = file.metadata().map_err(|_| StoreError::Unavailable)?;
     let named = fs::symlink_metadata(path).map_err(|_| StoreError::Unavailable)?;
-    if opened.dev() != named.dev() || opened.ino() != named.ino() {
+    if opened.dev() as i128 != named.dev() as i128 || opened.ino() as i128 != named.ino() as i128 {
         return Err(StoreError::Unavailable);
     }
     Ok(())
