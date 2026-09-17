@@ -73,7 +73,7 @@ jobs:
           cd target/${{ matrix.target }}/release
           tar czf ../../../${{ matrix.artifact }} biomcp
           cd ../../..
-          sha256sum ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
+          shasum -a 256 ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
@@ -81,7 +81,7 @@ jobs:
           cd target/${{ matrix.target }}/release
           7z a ../../../${{ matrix.artifact }} biomcp.exe
           cd ../../..
-          sha256sum ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
+          shasum -a 256 ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
         shell: bash
 
       - name: Upload release asset
