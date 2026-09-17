@@ -8,7 +8,7 @@ deps: []
 
 ## Goal
 
-`biomcp search dataset` finds public NCBI GEO series (GSE) by free text, organism, and series type. Each row gives the GSE accession, title, organism, series type, every platform (GPL), sample count, PubMed IDs, and summary. A hackathon team screening public GEO studies of drug-treated AML cell lines motivated it. That team had to write its own E-utilities loop to answer "which GEO series match this disease and treatment".
+`biomcp search dataset` finds public NCBI GEO series (GSE) by free text, organism, and series type. Each row gives a namespaced dataset ID (`geo:GSE164073`), the GSE accession, title, organism, series type, every platform (GPL), sample count, PubMed IDs, and summary. A hackathon team screening public GEO studies of drug-treated AML cell lines motivated it. That team had to write its own E-utilities loop to answer "which GEO series match this disease and treatment".
 
 ## Current Facts
 
@@ -99,6 +99,8 @@ JSON:
   "returned": 2,
   "results": [
     {
+      "id": "geo:GSE00000",
+      "source": "geo",
       "accession": "GSE00000",
       "title": "...",
       "organisms": ["Homo sapiens"],
@@ -113,7 +115,11 @@ JSON:
 }
 ```
 
-`_meta.next_commands` includes `biomcp get article <pmid>` for the first PMID of the first row that has one. No `get dataset` exists yet, so the output never suggests one.
+`_meta.next_commands` includes `biomcp get article <pmid>` for the first PMID of the first row that has one. Ticket 1204 adds `get dataset`; until then the output never suggests it.
+
+`--source <name>` is accepted and defaults to `geo`. Any other value fails with `InvalidArgument` listing `geo`. The flag reserves the provider-neutral shape from the 2026-09-16 research-data decision brief without building a second provider.
+
+Identity: the `id` field is always `geo:<GSE>`. Commands that take a dataset ID accept both `geo:GSE164073` and bare `GSE164073`.
 
 Markdown prints `# Datasets: <query>`, then `Found <total> series`, then one block per row. Each block has the accession and title as a heading, then organism, type, platforms, samples, and PMIDs lines, then the summary. The summary is cut at 400 characters with an ellipsis, and JSON keeps it whole.
 

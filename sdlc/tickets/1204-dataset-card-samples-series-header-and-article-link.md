@@ -4,14 +4,15 @@ priority: 3
 deps: [1203]
 ---
 
-# 1204: Dataset samples, series header, and article link
+# 1204: Dataset card, samples, series header, and article link
 
 ## Goal
 
 An agent lists the samples of one GEO series, reads the raw series and sample header lines of that series, and finds the GEO series linked to a PubMed article. Three commands deliver this:
 
 ```
-biomcp get dataset GSE982 samples
+biomcp get dataset GSE982
+biomcp dataset samples GSE982 --limit 25
 biomcp get dataset GSE982 series
 biomcp article datasets 12345678
 ```
@@ -36,13 +37,19 @@ GEO facts the design relies on (to confirm against the recorded fixtures):
 
 ## Design
 
-### `samples` section
+### `get dataset <id>` card
 
-`get dataset <GSE> samples` renders the `samples` array that 1203's `esummary` call already returns. It makes no extra request and reads no file. Output is a table of sample accession and title in provider order, plus `n_samples`. JSON adds `samples: [{accession, title}]`. Every sample accession is printed as the bare `GSM` string.
+`get dataset <id>` accepts `geo:GSE…` or bare `GSE…` and renders the 1203 row for that series from one `esummary` call: ID, title, organisms, series types, platforms, sample count, PMIDs, supplementary types, `geo2r`, and summary. Sections `publications` (the PMIDs with `get article` next commands) and `links` (the GEO page, BioProject, and SuperSeries/SubSeries relations from `esummary`) read the same response.
+
+`all` means the bounded metadata sections that make no file request: the card, `publications`, and `links`. It never includes `series` or 1207's `products` and `assets`.
+
+### `dataset samples <id>` helper
+
+`biomcp dataset samples <id> --limit 25 --offset 0` renders the `samples` array from the same `esummary` call. It is a helper, like `article entities`, because series can have hundreds of samples and need paging. `--limit` accepts 1 to 500. It makes no extra request and reads no file. Output is a table of sample accession and title in provider order, plus `n_samples`. JSON adds `samples: [{accession, title}]`. Every sample accession is printed as the bare `GSM` string.
 
 ### `series` section
 
-`get dataset <GSE> series` reads the matrix header. It is opt-in. The default card never reads the file. `all` includes it, because a caller who asks for everything expects the header, and the byte caps below bound the cost.
+`get dataset <GSE> series` reads the matrix header. It is opt-in. The default card never reads the file, and `all` does not include it.
 
 - The platform list comes from the `esummary` `gpl` field. One platform maps to `<GSE>_series_matrix.txt.gz`. Several platforms map to one `<GSE>-GPL<n>_series_matrix.txt.gz` each, in `gpl` order, capped at 10 files. This avoids parsing the FTP directory listing.
 - A new `src/sources/geo_matrix.rs` builds the URL from base `https://ftp.ncbi.nlm.nih.gov/geo` with override `BIOMCP_GEO_FTP_BASE`. `series_prefix("GSE100446") == "GSE100nnn"`, and `series_prefix` returns `GSEnnn` for any series number under 1000.
@@ -57,14 +64,14 @@ GEO facts the design relies on (to confirm against the recorded fixtures):
 
 - The command calls `elink` with `dbfrom=pubmed&db=gds&id=<pmid>`, then calls `esummary` with `db=gds` on the linked UIDs, then keeps rows whose `entrytype` is `GSE`. It renders the same compact row that `search dataset` renders (accession, title, organism, platforms, sample count).
 - No links gives an empty result with the note `No GEO series linked to PMID <pmid>.` and exit 0.
-- Each row carries the next command `biomcp get dataset <GSE> samples`. The empty result suggests `biomcp search dataset -k <pmid>` only if 1203 ships `-k`.
+- Each row carries the next command `biomcp dataset samples geo:<GSE>`. The empty result suggests `biomcp search dataset -k <pmid>` only if 1203 ships `-k`.
 - Help text: `Find GEO series linked to one PubMed article`, with two examples and `See also: biomcp list article`.
 
 ### Docs
 
-- Add `samples` and `series` rows and the `article datasets` row to the GEO source page that 1203 adds under `docs/sources/`. State that `series` reads only the header of the matrix file and stops at the table marker.
+- Add the card, `publications`, `links`, `series`, the `dataset samples` helper, and the `article datasets` row to the GEO source page that 1203 adds under `docs/sources/`. State that `series` reads only the header of the matrix file and stops at the table marker.
 - Add the matrix file host to the GEO row in `docs/reference/data-sources.md`. Update `sources.json` and `source-licensing.md` only if 1203 did not already cover GEO FTP.
-- Add both sections and the pivot to `biomcp list dataset` and `biomcp list article`.
+- Add the sections, the helper, and the pivot to `biomcp list dataset` and `biomcp list article`.
 
 ## Acceptance
 
@@ -77,16 +84,16 @@ Fixtures under `testdata/sources/geo/`, all small and recorded:
 Rust tests, all offline:
 
 1. `series_prefix` returns `GSE100nnn`, `GSEnnn`, and `GSEnnn` for `GSE100446`, `GSE982`, and `GSE14`, and the file names follow the one-platform and multi-platform rules.
-2. `samples` renders the fixture samples in provider order and sends no matrix request.
+2. `dataset samples` renders the fixture samples in provider order, pages with `--offset`, and sends no matrix request. `get dataset GSE982` and `get dataset geo:GSE982` render the same card.
 3. The reader stops at the marker. A test reader panics if it is asked for bytes past the marker line, and the parse still succeeds.
 4. A header under the cap succeeds when the whole file exceeds the cap. The test injects a small cap.
 5. A header that exceeds the compressed or expanded cap before the marker returns `BodyLimit`. A missing marker returns a provider error. A column count mismatch returns a provider error.
 6. Characteristics cells come back byte-identical to the fixture strings, with repeated keys kept in order.
 7. A two-platform series renders both platforms. A 404 on one platform keeps the other and adds the note.
 8. `article datasets` keeps only `GSE` rows from the mixed `elink` fixture and returns the empty note for the unlinked PMID.
-9. The default `get dataset <GSE>` card sends no matrix request and stays byte-identical to 1203's output.
+9. `get dataset <GSE>` and `get dataset <GSE> all` send no matrix request.
 
-Spec (`spec/entity/dataset.md`, served by a local fixture server like `spec/fixtures/setup-provider-contract-spec-fixture.sh`, with `BIOMCP_PUBMED_BASE` and `BIOMCP_GEO_FTP_BASE` pointed at it): one block for `get dataset <GSE> samples`, one JSON block for `series` pinning a raw characteristics cell, and one block for `article datasets <pmid>`. The request log shows no matrix request for `samples`.
+Spec (`spec/entity/dataset.md`, served by a local fixture server like `spec/fixtures/setup-provider-contract-spec-fixture.sh`, with `BIOMCP_PUBMED_BASE` and `BIOMCP_GEO_FTP_BASE` pointed at it): one block for `get dataset <GSE>`, one for `dataset samples <GSE>`, one JSON block for `series` pinning a raw characteristics cell, and one block for `article datasets <pmid>`. The request log shows no matrix request for `samples`.
 
 `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA.
 
