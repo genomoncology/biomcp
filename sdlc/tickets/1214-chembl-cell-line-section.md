@@ -55,11 +55,11 @@ ChEMBL served no bot check in any measurement. The rule still holds: an HTTP 200
 
 Record through the production request path into `testdata/sources/chembl/`, each with a `real_and_receipted` receipt:
 
-- `cell_line_cvcl_2119_20260917.json`: the MOLM-13 record.
-- `cell_line_cvcl_0004_20260917.json`: the K-562 record, whose ChEMBL name `K562` differs from the Cellosaurus name.
-- `cell_line_none_20260917.json`: an empty result for an accession ChEMBL does not list.
-- `assay_count_chembl3706573_20260917.json`: the `limit=1` assay page.
-- `status_20260917.json`: the `status.json` body reporting ChEMBL_37, released 2026-05-01.
+- `cell_line_cvcl_2119_20260918.json`: the MOLM-13 record.
+- `cell_line_cvcl_0004_20260918.json`: the K-562 record, whose ChEMBL name `K562` differs from the Cellosaurus name. Recorded as CHEMBL3308378 with EFO_0002067 and CLO_0007059, so this fixture also covers non-null EFO and CLO IDs.
+- `cell_line_none_20260918.json`: an empty result for an accession ChEMBL does not list.
+- `assay_count_chembl3706573_20260918.json`: the `limit=1` assay page.
+- `status_20260918.json`: the `status.json` body reporting ChEMBL_37, released 2026-05-01.
 
 ## Acceptance
 
