@@ -85,3 +85,30 @@ number.
 
 Any spec-page regression since the changelog problem appeared would not have
 been caught. The Rust tests are unaffected and did run.
+
+## Resolved
+
+`scripts/run-specs.sh` now runs every stage and fails at the end.
+
+- `run_spec_stage` wraps each of `run_article_markdown_specs`,
+  `run_markdown_specs`, `run_section_outcome_specs`, and
+  `run_python_contracts`. A stage that fails is recorded in
+  `FAILED_SPEC_ENTRIES` and the next stage still starts.
+- The parallel page loop no longer returns on the first failing batch. It
+  records each failing page by path and keeps launching the remaining batches.
+- Every page log is preceded by `=== spec page: <path> ===`, and the serial
+  stages print `=== spec pages: <paths> ===`. A missing page no longer reads
+  like a passing one.
+- The run ends with a named list of every failure and exits 1.
+
+Observed with `spec-contracts` (article group plus `spec/surface/skills.md` and
+`spec/surface/trial-retirement.md`):
+
+- Before: `173 passed, 2 failed, 8 skipped`, exit 1. The two remaining pages
+  never ran.
+- After: the same article result, then `spec/surface/skills.md` 6 passed and
+  `spec/surface/trial-retirement.md` 10 passed. 189 blocks executed instead of
+  183.
+- A deliberate break in `spec/surface/skills.md` reported
+  `page spec/surface/skills.md (exit 1)` in the final list while
+  `spec/surface/trial-retirement.md` still ran. The break was reverted.
