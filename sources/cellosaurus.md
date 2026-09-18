@@ -51,12 +51,6 @@ biomcp get cell-line CVCL_1844 variants
 
 Returns the curated DNMT3A, NPM1, and NRAS rows for OCI-AML-3.
 
-```bash
-biomcp get cell-line ACH-000362
-```
-
-Resolves the DepMap ID to CVCL_2119 and prints that card.
-
 ## Release and attribution
 
 Every cell line output names the Cellosaurus release it came from, read at runtime from the provider's own release endpoint. When that read fails, the output names the retrieval time instead. Cellosaurus data is CC BY 4.0, and every output carries the attribution line and the requested citation.
