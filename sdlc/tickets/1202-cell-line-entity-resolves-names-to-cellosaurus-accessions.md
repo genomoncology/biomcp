@@ -48,16 +48,18 @@ deps: []
 
 - `get(accession, fields)`: `/cell-line/{ac}?format=json&fields=<fields>`. The card fields are `ac,id,sy,ox,di,ca,sx,ag`. The request adds `var` when the `variants` section is asked for and `dr` when `xrefs` or a join section (tickets 1205, 1206, and later ones) is asked for. The card alone never fetches `dr`. A 404 maps to the repo's not-found error.
 - `search_names(name)`: `/search/cell-line?q=idsy:"<escaped>"&format=json&fields=ac,id,sy,ox,di,ca&rows=1000`. The escape backslash-quotes `"` and `\`. It returns the rows and a `window_full` flag set when 1000 rows came back.
+Both searches call one `search(q, fields, rows)` primitive, so ticket 1213 adds an `id:` wrapper rather than a third request path.
+
 - `search_xref(id)`: `/search/cell-line?q=dr:"<escaped>"&format=json&fields=ac,id&rows=10`. The recorded fixture confirms that the quoted form returns the same record as the unquoted form.
 
 ### Entity
 
 `src/entities/cell_line.rs` owns the types, the normalizer, and ranking.
 
-- `CellLine`: `accession`, `secondary_accessions`, `rrid`, `name`, `synonyms`, `species` (taxon id and label), `diseases` (database, accession, label), `category`, `sex`, `age`, `variants`, and `xrefs`. `xrefs` holds only the join keys, in this fixed order: `depmap`, `cosmic_clp`, `chembl`, `cell_model_passport`, `gdsc`, `pharmacodb`, `lincs_ldp`. Each is a list, so a record with two DepMap IDs keeps both. Every key is present. A missing link is an empty list, so U-937 shows `gdsc: []`. `source` is `Cellosaurus` and the card carries the CC BY 4.0 attribution line.
+- `CellLine`: `accession`, `secondary_accessions`, `rrid`, `name`, `synonyms`, `species` (a list of taxon id and label, in upstream order, because a hybrid record carries more than one: CVCL_1S07 in the KG-1 window lists both Cricetulus griseus and Homo sapiens), `diseases` (database, accession, label), `category`, `sex`, `age`, `variants`, and `xrefs`. `xrefs` holds only the join keys, in this fixed order: `depmap`, `cosmic_clp`, `chembl`, `cell_model_passport`, `gdsc`, `pharmacodb`, `lincs_ldp`. Each is a list, so a record with two DepMap IDs keeps both. Every key is present. A missing link is an empty list, so U-937 shows `gdsc: []`. `source` is `Cellosaurus` and the card carries the CC BY 4.0 attribution line.
 - `variants`: one row per `sequence-variation-list` entry with gene symbol, HGNC ID, variation type, HGVS description, zygosity, and PubMed IDs, in upstream order and as published. BioMCP adds no interpretation.
-- Search row: `accession`, `name`, `species`, `category`, first disease label, `match` (`exact` or `partial`), and `matched_on` (`name` or `synonym`, set on exact rows). `exact` means the normalized query equals the normalized name or any normalized synonym. `matched_on: name` means the query equals the record's identifier name. Rows sort in this order: exact identifier matches, then exact synonym-only matches, then partial matches. Within each group human lines (taxon 9606) come first, then upstream order. `--offset` and `--limit` apply after sorting. The total is the row count when the window was not full. A full window makes the total unknown and adds one note: `Cellosaurus returned 1000 rows; an exact match may lie past this window. Use a more specific name or the CVCL accession.`
-- Spelling: when the query contains a hyphen, search runs twice, once with the raw query and once with every hyphen removed. The rows merge by accession before ranking. A full window on either request sets the total to unknown.
+- Search row: `accession`, `name`, `species`, `category`, first disease label, `match` (`exact` or `partial`), and `matched_on` (`name` or `synonym`, set on exact rows). `exact` means the normalized query equals the normalized name or any normalized synonym. `matched_on: name` means the query equals the record's identifier name. Rows sort in this order: exact identifier matches, then exact synonym-only matches, then partial matches. Within each group human lines come first, then upstream order. A row counts as human when any entry in its species list is taxon 9606. `--offset` and `--limit` apply after sorting. The total is the row count when the window was not full. A full window makes the total unknown and adds one note: `Cellosaurus returned 1000 rows; an exact match may lie past this window. Use a more specific name or the CVCL accession.`
+- Spelling: when the query contains a hyphen, search runs twice, once with the raw query and once with every hyphen removed. The rows merge by accession before ranking. Merged upstream order is the raw-query window in its order, then the rows seen only in the hyphen-stripped window in theirs. The match kind is computed after the merge from the normalized query, so the two windows cannot disagree. A full window on either request sets the total to unknown.
 - More than one exact match is reported as it is. The rows show the species and the match kind that tell KG-1 from KG1 and NB4 from SJNB-4. The ranking orders the rows. BioMCP still picks no winner and hides no row.
 - A query that already looks like an accession (`^CVCL_[A-Z0-9]{4}$`, case-insensitive) searches `ac:` instead and returns that one row as `exact`.
 - Reverse lookup: `get cell-line <id>` treats any ID that is not a CVCL accession as a source ID and calls `search_xref`. Examples are DepMap `ACH-000362`, Cell Model Passports `SIDM00437`, ChEMBL `CHEMBL3706573`, and PharmacoDB `MOLM13_950_2019`. One result opens that record. Zero results give the not-found error with the hint `biomcp search cell-line <id>`. More than one result fails and lists the accessions. The card prints the ID it was resolved from.
@@ -68,7 +70,7 @@ deps: []
 - `GetEntity::CellLine(CellLineGetArgs)` with `id` and trailing `sections`. Sections are `variants`, `xrefs`, and `all`. The default card shows the card fields only and ends with the next commands `biomcp get cell-line <ac> variants` and `biomcp get cell-line <ac> xrefs`. The requested sections widen the `fields` list of the one record request, so no section in this ticket makes an extra call. A reverse lookup adds one search request before it.
 - `section_outcomes`: the entity carries the registry from the start, following the pathway entity (`default_pathway_section_outcomes`, `src/entities/pathway.rs:18`), with the keys `variants` and `xrefs`. Each key completes as `data` when the projected record carried rows, `empty` when it carried none. `_meta.section_sources` is wired the way `spec/entity/section-outcomes.md` requires. Tickets 1205, 1206, and 1214 then add one key each (`drug_response`, `depmap`, `chembl`) and nothing else. Building the registry here costs one field and spares three tickets a retrofit.
 - Catalog: `("cell-line", true, true)` in `ENTITY_FLAGS` (`src/cli/list/catalog.rs:38`) and `CELL_LINE_SECTION_NAMES` in the section map (`src/cli/list/catalog.rs:78`). Typed MCP `get` picks it up from the catalog. Typed MCP `search` stays at eight entities. Cell-line search reaches MCP through the raw tool, like pathway.
-- MCP arms: `is_allowed_mcp_command` (`src/mcp/shell.rs:472`) gains `SearchEntity::CellLine` and `GetEntity::CellLine`, both allowed, because each makes bounded read-only requests and reveals no local path. This ticket adds no `CellLineCommand` group; ticket 1205 adds it and classifies its arms.
+- MCP arms: `is_allowed_mcp_command` allows `Commands::Search` and `Commands::Get` wholesale (`src/mcp/shell.rs:479`), so the raw tool admits the new entity with no change there. The by-name matching applies to top-level commands. This ticket adds no `CellLineCommand` group; ticket 1205 adds it and classifies its arms.
 - Search rows print `biomcp get cell-line <ac>` in `_meta.next_commands` for the first exact row.
 - Health: one `SourceDescriptor` for Cellosaurus probing `/release-info?format=json`, affects "cell-line search and detail".
 - The review note wrote `cell_line`. This ticket uses `cell-line` because every multi-word entity in the CLI and catalog is kebab case (`adverse-event`).
@@ -78,7 +80,8 @@ deps: []
 Every cell line output, card and section and search result, in Markdown and in JSON, carries a `data_as_of` field and one attribution line.
 
 - `data_as_of` holds the Cellosaurus release name and date, read from `/release-info?format=json`. Measured 2026-09-17: release 56.0, dated 2026-06-25. The value is not hard-coded. The client reads `/release-info` once per process, caches the result through the shared HTTP cache, and falls back to the retrieval time with `data_as_of_kind: "retrieved"` when the call fails. A successful read sets `data_as_of_kind: "release"`. The health probe already calls `/release-info`, so this adds no new endpoint.
-- JSON carries `{"data_as_of": "56.0 (2026-06-25)", "data_as_of_kind": "release"}` at the top level of the payload.
+- JSON carries `{"data_as_of": "56.0 (2026-06-25)", "data_as_of_kind": "release"}` at the top level of the payload. Search output has no slot for them today. `SearchJsonResponseWithMeta` (`src/cli/shared.rs:568`) gains optional `data_as_of` and `data_as_of_kind`, both skipped when `None`, so no other entity's output changes. The full-window note goes in a new `notes: Vec<String>` on `SearchJsonMeta` (`src/cli/shared.rs:541`), skipped when empty. The unknown total needs no change, because `PaginationMeta.total` is already an `Option` (`src/cli/shared.rs:480`).
+- Markdown for `data_as_of_kind: "retrieved"` names no release. The line reads `Cellosaurus, retrieved <RFC 3339 time>, CC BY 4.0. Cite Bairoch A. J. Biomol. Tech. 29:25-38 (2018).`
 - Markdown ends with one fixed line: `Cellosaurus 56.0 (2026-06-25), CC BY 4.0. Cite Bairoch A. J. Biomol. Tech. 29:25-38 (2018).` The release part is the `data_as_of` value.
 
 ### Bot checks
@@ -96,11 +99,11 @@ Cellosaurus served no bot check in any measurement. The rule still holds for eve
 Record these through the production request path into `testdata/sources/cellosaurus/`, each with a `real_and_receipted` receipt. No fields are removed.
 
 - `search_idsy_molm13_20260916.json`: one row, CVCL_2119.
-- `search_idsy_molm_13_20260917.json` for `idsy:"MOLM-13"`: the hyphen rule sends this request beside the unhyphenated one, and acceptance 2 needs both to answer.
+- `search_idsy_molm_13_20260917.json` for `idsy:"MOLM-13"`: ten rows, CVCL_2119 the one exact match. The hyphen rule sends this request beside the unhyphenated one, and acceptance 2 needs both to answer.
 - `search_idsy_mv4_11_semicolon_20260916.json` for `idsy:"MV4;11"`: three rows, CVCL_0064 exact.
 - `search_idsy_kg1_20260917.json`: three rows (CVCL_E3VV, CVCL_0374, CVCL_UD72), all exact. It replaces the stale 2026-09-16 capture.
 - `search_idsy_kg_1_20260917.json` for `idsy:"KG-1"`: CVCL_0374, CVCL_2971, CVCL_1S07.
-- `search_idsy_nb4_20260917.json`: the full window with CVCL_8821 before CVCL_0005.
+- `search_idsy_nb4_20260917.json`: all 25 rows, with CVCL_8821 at position 16 and CVCL_0005 at 21. The window is not full, so this fixture carries no note.
 - `search_dr_ach_000362_20260917.json`, `search_dr_sidm00437_20260917.json`, `search_dr_chembl3706573_20260917.json`, and `search_dr_molm13_950_2019_20260917.json`: one row each, CVCL_2119.
 - `get_cvcl_2119_20260917.json` and `get_cvcl_0064_20260917.json`: card fields plus `var` and `dr`.
 - `get_cvcl_1844_var_20260917.json`: OCI-AML-3 card fields plus `var`.
@@ -108,7 +111,7 @@ Record these through the production request path into `testdata/sources/cellosau
 - `get_cvcl_0005_20260917.json`: NB4 card fields plus `dr`.
 - `release_info_20260917.json`: the `/release-info?format=json` body reporting release 56.0, 2026-06-25.
 
-One synthetic 1000-row page is generated in the test from a template. It is not a recorded file. Extend `setup-provider-contract-spec-fixture.sh` to serve `/cellosaurus/...` from these files, answer an empty search for any other `dr:`, `idsy:`, or `id:` query, answer 404 for any other accession, and export `BIOMCP_CELLOSAURUS_BASE`. An empty window is a normal zero-row result and never a Cellosaurus failure. Ticket 1213 relies on the same rule for its `id:` batches.
+One synthetic 1000-row page is generated in the test from a template. It is not a recorded file. Extend `setup-provider-contract-spec-fixture.sh` to serve `/cellosaurus/...` from these files, answer an empty search for any other `ac:`, `dr:`, `idsy:`, or `id:` query, answer 404 for any other accession, and export `BIOMCP_CELLOSAURUS_BASE`. The server matches `/cell-line/{ac}` on the path alone and ignores the `fields` parameter, so each accession has one recorded file whatever projection the command asks for. A recorded file that lacks `var` is the empty-variants case, which acceptance 17 needs and no live record provides. An empty window is a normal zero-row result and never a Cellosaurus failure. Ticket 1213 relies on the same rule for its `id:` batches.
 
 ## Acceptance
 
@@ -130,7 +133,7 @@ Rust tests, fixture-backed, no live network:
 14. A `/release-info` fixture gives `data_as_of` `56.0 (2026-06-25)` and `data_as_of_kind: "release"` on every search and get output. A failing `/release-info` gives a retrieval time and `data_as_of_kind: "retrieved"`, and the rest of the output is unchanged.
 15. Every Markdown output ends with the attribution line naming the release, CC BY 4.0, and the citation.
 16. An HTML body served with HTTP 200 for a Cellosaurus JSON request is a provider error naming the URL, and no row renders.
-17. `_meta.section_sources` names Cellosaurus for `variants` and `xrefs`. A record with no `sequence-variation-list` completes `variants` as `empty`, and a record with rows completes it as `data`. The `spec/entity/section-outcomes.md` check accepts the new entity.
+17. `_meta.section_sources` names Cellosaurus for `variants` and `xrefs`. `get cell-line CVCL_0007 variants` replays `get_cvcl_0007_20260917.json`, which was recorded without `var`, so it completes `variants` as `empty`. `get cell-line CVCL_1844 variants` completes it as `data`. The entity has a `section_sources` builder in `src/render/provenance.rs`, beside the existing per-entity builders.
 
 Executable spec `spec/entity/cell-line.md`, added to `SPEC_ROUTINE_PATHS`:
 
@@ -138,7 +141,8 @@ Executable spec `spec/entity/cell-line.md`, added to `SPEC_ROUTINE_PATHS`:
 - `search cell-line KG1 --json` has three `exact` results and `results[0].accession == "CVCL_0374"`.
 - `search cell-line NB4 --json` has `results[0].accession == "CVCL_0005"`.
 - `get cell-line ACH-000362 --json` has `accession == "CVCL_2119"`.
-- `get cell-line CVCL_2119 --json` has `accession == "CVCL_2119"` and `xrefs.depmap == ["ACH-000362"]`.
+- `get cell-line CVCL_2119 --json` has `accession == "CVCL_2119"`.
+- `get cell-line CVCL_2119 xrefs --json` has `xrefs.depmap == ["ACH-000362"]`. The card request carries no `dr`, so the assertion needs the section.
 - `get cell-line CVCL_2119` Markdown shows the attribution line and the `get cell-line CVCL_2119 xrefs` next command.
 - `get cell-line CVCL_1844 variants` Markdown shows a variants table with `NPM1`.
 
@@ -172,5 +176,5 @@ These choices follow the 2026-09-17 source survey. Ian can overturn any of them.
 
 ## Review
 
-- Design review: pending
+- Design review: done 2026-09-17, `sdlc/planning/notes/2026-09-17-cell-line-1202-design-review.md`. All four blocking findings and the seven polish items are applied.
 - Code review: pending
