@@ -204,9 +204,12 @@ biomcp gene drugs BRAF --limit 5
 biomcp gene pathways BRAF
 biomcp gene articles BRAF
 biomcp gene definition BRAF
+biomcp gene cell-lines FLT3 --group leukemia
 ```
 
 Gene trial pivots send the supplied symbol as a biomarker.
+
+`gene cell-lines` prints the Human Protein Atlas RNA level (nTPM) of one gene in every HPA cell line of one cancer group, as published. Each row carries the Cellosaurus accession when exactly one human cell line carries the HPA name, and `-` otherwise. See [Human Protein Atlas](../sources/human-protein-atlas.md) for the 30 group names and [Cell line](cell-line.md) for the accession the rows join on.
 
 ## Common workflows
 

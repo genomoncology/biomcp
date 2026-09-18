@@ -746,17 +746,18 @@
     "integration_mode": "direct_api",
     "via": null,
     "bioMcp_surfaces": [
-      "get gene <symbol> hpa"
+      "get gene <symbol> hpa",
+      "gene cell-lines <symbol> --group <group>"
     ],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public XML and web resources",
-    "license_summary": "CC BY-SA 4.0 for copyrightable parts of the database",
-    "redistribution_summary": "reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions",
+    "license_summary": "CC BY 4.0 for copyrightable parts of the database",
+    "redistribution_summary": "reuse is allowed with attribution; third-party components may impose extra conditions",
     "terms_url": "https://www.proteinatlas.org/about/licence",
     "key_url": null,
-    "reviewed_on": "2026-03-20",
-    "notes": "The licence page also requires clear citation for images and specific gene/data pages."
+    "reviewed_on": "2026-09-18",
+    "notes": "The terms page reads \"The Human Protein Atlas is licensed under the Creative Commons Attribution 4.0 International License for all copyrightable parts of our database.\" The earlier CC BY-SA 4.0 reading was one of the external sources listed further down that page. The page also requires clear citation for images and specific gene/data pages."
   },
   {
     "id": "interpro",

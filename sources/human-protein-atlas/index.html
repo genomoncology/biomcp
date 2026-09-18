@@ -4318,6 +4318,11 @@
 <td>Protein tissue expression, localization, and cancer-expression context</td>
 <td>Explicit gene section backed by Human Protein Atlas</td>
 </tr>
+<tr>
+<td><code>gene cell-lines &lt;symbol&gt; --group &lt;group&gt;</code></td>
+<td>The RNA level (nTPM) of one gene in every HPA cell line of one cancer group</td>
+<td>One search download call per gene. Each row carries the Cellosaurus accession when exactly one human cell line carries the HPA name</td>
+</tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
@@ -4330,6 +4335,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>TP53<span class="w"> </span>hpa
 </code></pre></div>
 <p>Returns Human Protein Atlas tissue and cancer-expression context for TP53.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>cell-lines<span class="w"> </span>FLT3<span class="w"> </span>--group<span class="w"> </span>leukemia
+</code></pre></div>
+<p>Returns the nTPM of FLT3 in each of the 93 cell lines of the HPA leukemia group, as published. BioMCP adds no labels and no thresholds, and it offers no sort.</p>
+<p>The 30 cancer groups are <code>adrenocortical_cancer</code>, <code>bile_duct_cancer</code>, <code>bladder_cancer</code>, <code>bone_cancer</code>, <code>brain_cancer</code>, <code>breast_cancer</code>, <code>cervical_cancer</code>, <code>colorectal_cancer</code>, <code>esophageal_cancer</code>, <code>gallbladder_cancer</code>, <code>gastric_cancer</code>, <code>head_and_neck_cancer</code>, <code>kidney_cancer</code>, <code>leukemia</code>, <code>liver_cancer</code>, <code>lung_cancer</code>, <code>lymphoma</code>, <code>myeloma</code>, <code>neuroblastoma</code>, <code>non-cancerous</code>, <code>ovarian_cancer</code>, <code>pancreatic_cancer</code>, <code>prostate_cancer</code>, <code>rhabdoid</code>, <code>sarcoma</code>, <code>skin_cancer</code>, <code>testis_cancer</code>, <code>thyroid_cancer</code>, <code>uncategorized</code>, and <code>uterine_cancer</code>. They cover 1,206 cell lines. An unknown group fails before any request and lists the names.</p>
+<p><code>data_as_of</code> is <code>2025-11-05</code>, the date of the HPA cell line RNA file. The search download response carries no date, so the value is a constant next to the group list in the source module. It was read from the <code>Last-Modified</code> header of the <code>rna_celline.tsv.zip</code> file the <a href="https://www.proteinatlas.org/about/help/dataaccess">data access page</a> links, and it is refreshed the same way the group list is. A future response that carries its own date is preferred over the constant.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>No BioMCP API key required.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>

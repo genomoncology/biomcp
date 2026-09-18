@@ -4394,6 +4394,7 @@
 <p><code>all</code> covers <code>variants</code> and <code>xrefs</code>. The <code>chembl</code> section costs one request per record, so it is asked for by name.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>Cell line has no separate helper family. Drug response and dependency data arrive as their own sections in later work; today every command is <code>search cell-line</code> or <code>get cell-line</code>.</p>
+<p>To go the other way, from a gene to the cell lines that express it, run <a href="../gene/"><code>biomcp gene cell-lines &lt;symbol&gt; --group &lt;group&gt;</code></a>. That helper prints the Human Protein Atlas nTPM of one gene across one cancer group and carries the Cellosaurus accession on each row it could resolve by name.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>cell-line<span class="w"> </span>KG1<span class="w"> </span>--json
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>xrefs<span class="w"> </span>--json

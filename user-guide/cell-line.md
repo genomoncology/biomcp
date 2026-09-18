@@ -83,6 +83,8 @@ biomcp get cell-line CVCL_2119 all
 
 Cell line has no separate helper family. Drug response and dependency data arrive as their own sections in later work; today every command is `search cell-line` or `get cell-line`.
 
+To go the other way, from a gene to the cell lines that express it, run [`biomcp gene cell-lines <symbol> --group <group>`](gene.md). That helper prints the Human Protein Atlas nTPM of one gene across one cancer group and carries the Cellosaurus accession on each row it could resolve by name.
+
 ## JSON mode
 
 ```bash

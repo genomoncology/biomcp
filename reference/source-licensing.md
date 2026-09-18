@@ -66,7 +66,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | GTEx | 1 | direct_api | none | NIH-hosted public-access expression resource | public summary/expression views are broadly reusable; controlled-access data remains outside BioMCP's scope | <https://gtexportal.org/home/documentationPage> |
 | NCBI Genetic Testing Registry | 1 | direct_api | none | NLM/NCBI government data service with public bulk-export access | GTR records are broadly queryable and reusable, but preserve accession provenance and review any embedded third-party identifiers separately | <https://www.ncbi.nlm.nih.gov/gtr/docs/faq/> |
 | GWAS Catalog | 1 | direct_api | none | EMBL-EBI resource terms; summary statistics may carry separate licenses | query results are generally reusable, but dataset-level summary statistics can have separate downstream terms | <https://www.ebi.ac.uk/gwas/docs/about> |
-| Human Protein Atlas | 3 | direct_api | none | CC BY-SA 4.0 for copyrightable parts of the database | reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions | <https://www.proteinatlas.org/about/licence> |
+| Human Protein Atlas | 3 | direct_api | none | CC BY 4.0 for copyrightable parts of the database | reuse is allowed with attribution; third-party components may impose extra conditions | <https://www.proteinatlas.org/about/licence> |
 | HPO JAX API | 1 | direct_api | none | open HPO data with attribution and integrity requirements | reuse is allowed, but users should preserve attribution, version context, and source integrity | <https://human-phenotype-ontology.github.io/license.html> |
 | InterPro | 1 | direct_api | none | EMBL-EBI open data resource | reuse follows InterPro/EMBL-EBI resource terms and any embedded member-database obligations | <https://www.ebi.ac.uk/interpro/> |
 | KEGG | 3 | direct_api | none | custom KEGG terms; academic users may freely use the website, non-academic use requires a commercial license | do not assume commercial redistribution rights; query access does not grant a redistribution license | <https://www.kegg.jp/kegg/legal.html> |
@@ -900,15 +900,15 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### Human Protein Atlas
 
-- BioMCP surfaces: `get gene <symbol> hpa`
+- BioMCP surfaces: `get gene <symbol> hpa; gene cell-lines <symbol> --group <group>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public XML and web resources
-- License / terms summary: CC BY-SA 4.0 for copyrightable parts of the database
-- Redistribution / reuse summary: reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions
+- License / terms summary: CC BY 4.0 for copyrightable parts of the database
+- Redistribution / reuse summary: reuse is allowed with attribution; third-party components may impose extra conditions
 - Official terms URL: <https://www.proteinatlas.org/about/licence>
-- Reviewed on: `2026-03-20`
-- Notes: The licence page also requires clear citation for images and specific gene/data pages.
+- Reviewed on: `2026-09-18`
+- Notes: The terms page reads "The Human Protein Atlas is licensed under the Creative Commons Attribution 4.0 International License for all copyrightable parts of our database." The earlier CC BY-SA 4.0 reading was one of the external sources listed further down that page. The page also requires clear citation for images and specific gene/data pages.
 
 ### KEGG
 
