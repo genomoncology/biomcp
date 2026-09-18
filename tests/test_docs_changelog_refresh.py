@@ -380,14 +380,14 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         previous_release_block, "### New features"
     )
 
-    assert changelog.startswith("# Changelog\n\n## 0.9.0 — 2026-09-16\n")
+    assert changelog.startswith("# Changelog\n\n## Unreleased\n")
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
     assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
     assert "## 0.8.20 — 2026-03-30" in changelog
     assert "## 0.8.19 — 2026-03-26" in changelog
     assert "## 0.8.18 — 2026-03-25" in changelog
-    assert "## Unreleased" not in changelog
+    assert changelog.index("## Unreleased") < changelog.index(current_release_heading)
 
     assert "article date-range filtering" in previous_release_block
     assert "Expanded trial search with drug alias union" in previous_release_block

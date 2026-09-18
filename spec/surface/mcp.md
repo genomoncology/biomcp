@@ -992,7 +992,7 @@ the operator's quick proof that those identities agree while MCP registry,
 citation, and plugin metadata truthfully remain on the latest public release.
 
 ```bash
-bash ../../scripts/check-version-sync.sh | mustmatch like "Versions in sync: 0.9.0 (Python 0.9.0; release candidate)"
+bash ../../scripts/check-version-sync.sh | mustmatch like "Versions in sync: 0.9.1-dev.1 (Python 0.9.1.dev1; development candidate)"
 ```
 
 ## Spec Corpus Uses Robust Mustmatch Blocks

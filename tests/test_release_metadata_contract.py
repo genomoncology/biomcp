@@ -197,6 +197,7 @@ def test_nonbreaking_unreleased_keeps_the_published_pre_1_0_version_valid(
     tmp_path: Path,
 ) -> None:
     repo = _copy_release_metadata_fixture(tmp_path)
+    _set_every_concrete_version(repo, "0.8.25")
     (repo / "CHANGELOG.md").write_text(
         "# Changelog\n\n## Unreleased\n\n### Fixed\n\n- Corrected a display label.\n\n## 0.8.25 — 2026-07-07\n",
         encoding="utf-8",
@@ -208,6 +209,8 @@ def test_nonbreaking_unreleased_keeps_the_published_pre_1_0_version_valid(
         ),
         encoding="utf-8",
     )
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "publish 0.8.25"], cwd=repo, check=True)
 
     result = _run_version_lock(repo)
 
@@ -243,6 +246,10 @@ def test_breaking_unreleased_rejects_patch_stable_and_development_versions(
 ) -> None:
     stable = _copy_release_metadata_fixture(tmp_path / "stable")
     _set_every_concrete_version(stable, "0.8.26")
+    (stable / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## Unreleased\n\n### Breaking changes\n\n- Changed a public command.\n\n## 0.8.25 — 2026-07-07\n",
+        encoding="utf-8",
+    )
     subprocess.run(["git", "add", "."], cwd=stable, check=True)
     subprocess.run(["git", "commit", "-qm", "prepare 0.8.26"], cwd=stable, check=True)
     stable_result = _run_version_lock(stable)
@@ -251,6 +258,10 @@ def test_breaking_unreleased_rejects_patch_stable_and_development_versions(
 
     development = _copy_release_metadata_fixture(tmp_path / "development")
     _set_development_package_versions(development, "0.8.26-dev.1", "0.8.26.dev1")
+    (development / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## Unreleased\n\n### Breaking changes\n\n- Changed a public command.\n\n## 0.8.25 — 2026-07-07\n",
+        encoding="utf-8",
+    )
     subprocess.run(["git", "add", "."], cwd=development, check=True)
     subprocess.run(
         ["git", "commit", "-qm", "prepare 0.8.26 development"],
