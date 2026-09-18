@@ -676,16 +676,14 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "Package versions are committed metadata, not values stamped from tags."
         in release_pipeline_section
     )
-    assert "separate `stage` and `promote` modes" in release_pipeline_section
-    assert "only then advances mutable" in release_pipeline_section
     assert "scripts/check-version-sync.sh" in release_pipeline_section
-    assert "privately builds, signs, inspects, and seals" in technical_ws
     assert "release workflow stamps" not in technical_ws
+    assert "five platform archives" in release_pipeline_section
+    assert "protected `pypi` environment" in release_pipeline_section
     assert "workflow_dispatch:" in release_workflow
-    assert "contents: read" in release_workflow
-    assert "promotion-preflight:" in release_workflow
-    assert "reconcile-public-release:" in release_workflow
-    assert "advance-mutable-pointers:" in release_workflow
+    assert "types: [published]" in release_workflow
+    assert "environment: pypi" in release_workflow
+    assert "homebrew-tap:" in release_workflow
     assert (
         'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"'
         in install_script
@@ -1139,9 +1137,9 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ]
 
     assert "workflow_dispatch:" in release
-    assert "promotion-preflight:" in release
-    assert "environment: biomcp-release-promotion" in release
-    assert "advance-mutable-pointers:" in release
+    assert "types: [published]" in release
+    assert "environment: pypi" in release
+    assert "make lint" not in release and "make test" not in release
 
     assert "name: Contract Smoke Tests" in contracts_smoke
     assert "schedule:" not in contracts_smoke

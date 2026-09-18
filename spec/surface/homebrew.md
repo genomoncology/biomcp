@@ -27,22 +27,6 @@ native-macos-arm64
 native-macos-x86_64'
 ```
 
-## Public Tap Moves Only After Verification
-
-Stage mode renders and tests the formula from an exact preseeded archive cache
-on both Mac architectures. Promotion first pushes an immutable formula tag,
-installs from that public tag on both architectures, and fast-forwards the tap's
-main branch only in the final pointer job.
-
-```bash
-cat ../../.github/workflows/release.yml ../../release/publish-versioned.sh | mustmatch like 'homebrew-smoke:
-HOMEBREW_NO_INSTALL_FROM_API: 1
-public-homebrew-smoke:
-refs/tags/$tag
-advance-mutable-pointers:
-merge --ff-only'
-```
-
 ## Installation Docs Show The Tap Path
 
 ```bash

@@ -267,15 +267,15 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
 
-The manual release workflow has separate `stage` and `promote` modes. `stage`
-is read-only and privately builds, signs, inspects, and seals one exact commit.
-`promote` requires the protected release environment and Ian's approval,
-reconciles the sealed manifest, publishes immutable versioned bytes, installs
-those public bytes on every supported platform, and only then advances mutable
-`latest` pointers. A unique partial record is retained if promotion fails.
-Neither implementing the workflow nor staging a candidate publishes a release.
-The official MCP Registry submission remains a separate documented manual
-action. See [Release process](../../docs/reference/release-process.md).
+`.github/workflows/release.yml` runs when a GitHub release is published, or on
+`workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
+five platform archives with their `.sha256` sidecars, uploads them to the
+release, builds and publishes wheels through the protected `pypi` environment,
+and updates the `genomoncology/homebrew-biomcp` tap formula from the published
+checksums. The `release/` Python package holds the staged candidate tooling; it
+is not wired into this workflow. The official MCP Registry submission remains a
+separate documented manual action. See
+[Release process](../../docs/reference/release-process.md).
 Existing installation documentation continues to describe the already
 published v0.8.25 channels; `install.sh` resolves the latest release with
 platform assets rather than the latest merge to `main`.

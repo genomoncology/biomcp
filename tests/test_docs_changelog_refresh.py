@@ -824,9 +824,9 @@ def test_release_overview_describes_committed_metadata_and_protected_promotion()
     assert "v0.9.0 is the latest published release." in overview or True
     assert True  # release mode: public metadata matches the release version
     assert "Package versions are committed metadata, not values stamped from tags." in overview
-    assert "separate `stage` and `promote` modes" in overview
-    assert "only then advances mutable" in overview
-    assert "Neither implementing the workflow nor staging a candidate publishes" in overview
+    assert "five platform archives" in overview
+    assert "protected `pypi` environment" in overview
+    assert "`release/` Python package holds the staged candidate tooling" in overview
 
 
 def test_gene_guide_includes_new_sections_and_positional_search() -> None:

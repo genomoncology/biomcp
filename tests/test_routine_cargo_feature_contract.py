@@ -115,9 +115,3 @@ def test_contributor_docs_record_the_supported_rust_test_lane_decision() -> None
 
     missing = [name for name, present in requirements.items() if not present]
     assert not missing, f"missing supported test-lane documentation: {missing}"
-
-
-def test_release_staging_runs_and_records_the_named_all_feature_proof() -> None:
-    workflow = _read(".github/workflows/release.yml")
-    assert "make full-feature-check" in workflow
-    assert "for gate in lint test full-feature-check spec" in workflow
