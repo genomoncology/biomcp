@@ -429,6 +429,16 @@ biomcp search pathway -q "Pathways in cancer" --limit 5 --offset 0
 
 `search pathway --limit` accepts 1-25; pathway pivot helpers accept 1-50. Out-of-range errors state the range.
 
+### Cell Line
+
+```bash
+biomcp search cell-line MOLM13 --limit 5 --offset 0
+biomcp search cell-line "MV4;11" --limit 5 --offset 0
+biomcp search cell-line CVCL_2119
+```
+
+`search cell-line --limit` accepts 1-25. Search takes no other filters.
+
 ### Protein
 
 ```bash
@@ -737,6 +747,22 @@ biomcp get pathway rs113488022     # hints to use `biomcp get variant rs11348802
 Reactome lookup failures for IDs that look like UniProt accessions, Ensembl IDs, gene symbols,
 or dbSNP rsIDs include a redirect hint to the matching `get protein`, `get gene`, or
 `get variant` command.
+
+### Cell Line
+
+```bash
+biomcp get cell-line CVCL_2119
+biomcp get cell-line CVCL_2119 xrefs
+biomcp get cell-line CVCL_1844 variants
+biomcp get cell-line CVCL_2119 all
+biomcp get cell-line ACH-000362      # DepMap ID resolves to CVCL_2119
+biomcp get cell-line SIDM00437       # Cell Model Passports ID
+biomcp get cell-line CHEMBL3706573   # ChEMBL ID
+biomcp get cell-line MOLM13_950_2019 # PharmacoDB ID
+```
+
+An ID that is not a CVCL accession is treated as a source ID and resolved through a
+cross-reference search. No match gives the not-found error with a `search cell-line` hint.
 
 ### Protein
 

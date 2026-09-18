@@ -19,6 +19,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/discover.md
   spec/entity/diagnostic.md
   spec/entity/vaers.md
+  spec/entity/cell-line.md
   spec/entity/pathway.md
   spec/entity/trial.md
   spec/entity/drug.md

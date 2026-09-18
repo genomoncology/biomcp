@@ -1,0 +1,69 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2119"
+          }
+        ],
+        "category": "Cancer cell line",
+        "disease-list": [
+          {
+            "accession": "C8263",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C8263",
+            "label": "Adult acute monocytic leukemia",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C8263"
+          },
+          {
+            "accession": "C3247",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C3247",
+            "label": "Myelodysplastic syndrome",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C3247"
+          },
+          {
+            "accession": "Orphanet_514",
+            "category": "Medical resources",
+            "database": "ORDO",
+            "iri": "http://www.orpha.net/ORDO/Orphanet_514",
+            "label": "Acute monoblastic/monocytic leukemia",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/ordo/classes/http%253A%252F%252Fwww.orpha.net%252FORDO%252FOrphanet_514"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "MOLM13"
+          },
+          {
+            "type": "synonym",
+            "value": "Molm13"
+          },
+          {
+            "type": "synonym",
+            "value": "Molm 13"
+          },
+          {
+            "type": "identifier",
+            "value": "MOLM-13"
+          }
+        ],
+        "species-list": [
+          {
+            "accession": "9606",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+            "label": "Homo sapiens (Human)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -148,7 +148,7 @@ pub struct UpdateArgs {
 #[derive(Args, Debug)]
 pub struct ListArgs {
     #[arg(
-        help = "Optional entity name. Canonical values:\n(gene, variant, article, author, trial, diagnostic, drug, disease, phenotype, pgx,\ngwas, pathway, protein, study, adverse-event, search-all, discover, batch, enrich, skill)"
+        help = "Optional entity name. Canonical values:\n(gene, variant, article, author, trial, diagnostic, drug, disease, phenotype, pgx,\ngwas, pathway, cell-line, protein, study, adverse-event, search-all, discover, batch,\nenrich, skill)"
     )]
     pub entity: Option<String>,
 }

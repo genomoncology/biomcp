@@ -372,6 +372,7 @@ fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
             workflow_playbook: None,
             section_sources: Vec::new(),
             upstream_total: None,
+            notes: Vec::new(),
         });
         meta.upstream_total = Some(n);
     }
@@ -379,6 +380,8 @@ fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
         pagination,
         count,
         results,
+        data_as_of: None,
+        data_as_of_kind: None,
         _meta: meta,
     })
     .map_err(Into::into)

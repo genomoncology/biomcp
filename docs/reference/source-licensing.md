@@ -43,6 +43,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | cBioPortal | 3 | direct_api | none | public API with study-specific downstream terms | reuse depends on the specific study or consortium behind each dataset | <https://www.cbioportal.org/> |
 | CDC CVX/MVX | 1 | direct_api | none | most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply | reuse is generally allowed with CDC attribution and non-endorsement language; avoid CDC logos and review exceptions before republishing | <https://www.cdc.gov/other/agencymaterials.html> |
 | CDC WONDER VAERS | 1 | direct_api | none | CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts | reuse is allowed for statistical reporting and analysis with source attribution, but do not try to identify individuals or publish identifying linkages | <https://wonder.cdc.gov/datause.html> |
+| Cellosaurus | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution and the requested citation; every BioMCP cell line output carries both | <https://www.cellosaurus.org/description.html> |
 | ChEMBL | 1 | direct_api | none | EMBL-EBI open data service; ChEMBL is published for broad reuse | reuse is generally allowed under the provider's open-data terms with attribution where required | <https://www.ebi.ac.uk/chembl/> |
 | CIViC | 1 | direct_api | none | open community knowledgebase; CIViC content is published for unrestricted reuse | reuse is broadly permitted; attribution remains best practice | <https://civicdb.org/home> |
 | ClinGen | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://clinicalgenome.org/> |
@@ -112,6 +113,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | PDB | 1 | indirect_only | not_applicable | PDB archive data is CC0 1.0 | data is broadly reusable; attribution to original structure authors is encouraged | <https://www.rcsb.org/pages/usage-policy> |
 
 ## Tier 1 - Baseline use without credentials
+
+### Cellosaurus
+
+- BioMCP surfaces: `search cell-line <name>; get cell-line <id>; get cell-line <id> xrefs; get cell-line <id> variants`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public API, no key
+- License / terms summary: CC BY 4.0
+- Redistribution / reuse summary: reuse is allowed with attribution and the requested citation; every BioMCP cell line output names the release, the licence, and the citation
+- Official terms URL: <https://www.cellosaurus.org/description.html>
+- Reviewed on: `2026-09-16`
+- Notes: Cellosaurus is the RRID authority for cell lines, and the RRID is `RRID:` plus the primary accession. The requested citation is Bairoch A. "The Cellosaurus, a cell line knowledge resource." J. Biomol. Tech. 29:25-38 (2018).
 
 ### ChEMBL
 

@@ -552,6 +552,9 @@ pub(super) struct SearchJsonMeta {
     pub(super) section_sources: Vec<crate::render::provenance::SectionSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) upstream_total: Option<usize>,
+    /// Notes the search wants to carry, such as a filled provider window.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) notes: Vec<String>,
 }
 
 impl SearchJsonMeta {
@@ -569,6 +572,11 @@ pub(super) struct SearchJsonResponseWithMeta<T: serde::Serialize> {
     pub(super) pagination: PaginationMeta,
     pub(super) count: usize,
     pub(super) results: Vec<T>,
+    /// The source release the rows came from, when the entity reports one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) data_as_of: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) data_as_of_kind: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) _meta: Option<SearchJsonMeta>,
 }
@@ -612,6 +620,7 @@ pub(super) fn search_meta_with_section_sources(
         workflow_playbook: None,
         section_sources: Vec::new(),
         upstream_total: None,
+        notes: Vec::new(),
     });
     (!meta.next_commands.is_empty() || !section_sources.is_empty())
         .then(|| meta.with_section_sources(section_sources))
@@ -649,6 +658,7 @@ pub(super) fn search_meta_with_workflow(
             workflow_playbook,
             section_sources: Vec::new(),
             upstream_total: None,
+            notes: Vec::new(),
         },
     )
 }
@@ -672,7 +682,42 @@ pub(super) fn search_json_with_meta_and_suggestions<T: serde::Serialize>(
         pagination,
         count,
         results,
+        data_as_of: None,
+        data_as_of_kind: None,
         _meta: search_meta_with_suggestions(next_commands, suggestions),
+    })
+    .map_err(Into::into)
+}
+
+/// Search JSON that carries the source release and any notes. Only entities
+/// that report a release use it, so no other entity's output changes.
+pub(super) fn search_json_with_data_as_of<T: serde::Serialize>(
+    results: Vec<T>,
+    pagination: PaginationMeta,
+    next_commands: Vec<String>,
+    notes: Vec<String>,
+    data_as_of: String,
+    data_as_of_kind: String,
+) -> anyhow::Result<String> {
+    let count = results.len();
+    let mut meta = search_meta(next_commands).unwrap_or(SearchJsonMeta {
+        next_commands: Vec::new(),
+        suggestions: None,
+        workflow: None,
+        workflow_rationale: None,
+        workflow_playbook: None,
+        section_sources: Vec::new(),
+        upstream_total: None,
+        notes: Vec::new(),
+    });
+    meta.notes = notes;
+    crate::render::json::to_pretty(&SearchJsonResponseWithMeta {
+        pagination,
+        count,
+        results,
+        data_as_of: Some(data_as_of),
+        data_as_of_kind: Some(data_as_of_kind),
+        _meta: Some(meta),
     })
     .map_err(Into::into)
 }

@@ -283,6 +283,50 @@ pub(super) fn list_pathway() -> String {
     .to_string()
 }
 
+pub(super) fn list_cell_line() -> String {
+    r#"# cell-line
+
+## Commands
+
+- `search cell-line <query>` - positional cell line search (Cellosaurus)
+- `search cell-line -q <query>` - cell line search (Cellosaurus)
+- `search cell-line <query> --limit <N> --offset <N>`
+- `get cell-line <accession>` - base cell line card
+- `get cell-line <source_id>` - reverse lookup from a DepMap, Cell Model Passports, ChEMBL, or PharmacoDB ID
+- `get cell-line <accession> xrefs` - DepMap, COSMIC, ChEMBL, GDSC, PharmacoDB, and LINCS join keys
+- `get cell-line <accession> variants` - curated sequence variations as Cellosaurus published them
+- `get cell-line <accession> all` - include all sections
+
+## Search filters
+
+- `search cell-line <query>`
+- `search cell-line -q <query>`
+- `--limit <N> --offset <N>`
+
+Search takes no other filters. The query is a name, a synonym, or a CVCL accession.
+
+## Helpers
+
+Cell line has no helper family.
+
+## Workflow examples
+
+- To resolve any spelling of a line, run `biomcp search cell-line MOLM13`.
+- Punctuation does not change the answer: `biomcp search cell-line "MV4;11"` finds CVCL_0064.
+- To read the join keys for another dataset, run `biomcp get cell-line CVCL_2119 xrefs`.
+- To go the other way, run `biomcp get cell-line ACH-000362`.
+
+## JSON Output
+
+- Non-empty `search cell-line --json` responses include `_meta.next_commands`.
+- The first follow-up drills the top exact result with `biomcp get cell-line <accession>`.
+- Every response carries `data_as_of` and `data_as_of_kind` at the top level.
+- A filled 1000-row provider window sets `pagination.total` to null and adds `_meta.notes`.
+- `biomcp list cell-line` is always included so agents can inspect the full filter surface.
+"#
+    .to_string()
+}
+
 pub(super) fn list_protein() -> String {
     r#"# protein
 

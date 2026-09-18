@@ -273,6 +273,27 @@ OPENTARGETS = {
     ("ENSG00000012048", False): fixture("opentargets/clinical_brca1_20260811.json"),
     ("ENSG00000141510", False): b'{"data":{"target":{"associatedDiseases":{"rows":[]},"drugAndClinicalCandidates":{"rows":[]}}}}',
 }
+CELLOSAURUS_RELEASE = fixture("cellosaurus/release_info_20260917.json")
+CELLOSAURUS_EMPTY = b'{"Cellosaurus":{"cell-line-list":[]}}'
+CELLOSAURUS_RECORDS = {
+    "CVCL_2119": fixture("cellosaurus/get_cvcl_2119_20260917.json"),
+    "CVCL_0064": fixture("cellosaurus/get_cvcl_0064_20260917.json"),
+    "CVCL_1844": fixture("cellosaurus/get_cvcl_1844_var_20260917.json"),
+    "CVCL_0007": fixture("cellosaurus/get_cvcl_0007_20260917.json"),
+    "CVCL_0005": fixture("cellosaurus/get_cvcl_0005_20260917.json"),
+}
+CELLOSAURUS_SEARCHES = {
+    'idsy:"MOLM13"': fixture("cellosaurus/search_idsy_molm13_20260917.json"),
+    'idsy:"MOLM-13"': fixture("cellosaurus/search_idsy_molm_13_20260917.json"),
+    'idsy:"MV4;11"': fixture("cellosaurus/search_idsy_mv4_11_semicolon_20260917.json"),
+    'idsy:"KG1"': fixture("cellosaurus/search_idsy_kg1_20260917.json"),
+    'idsy:"KG-1"': fixture("cellosaurus/search_idsy_kg_1_20260917.json"),
+    'idsy:"NB4"': fixture("cellosaurus/search_idsy_nb4_20260917.json"),
+    'dr:"ACH-000362"': fixture("cellosaurus/search_dr_ach_000362_20260917.json"),
+    'dr:"SIDM00437"': fixture("cellosaurus/search_dr_sidm00437_20260917.json"),
+    'dr:"CHEMBL3706573"': fixture("cellosaurus/search_dr_chembl3706573_20260917.json"),
+    'dr:"MOLM13_950_2019"': fixture("cellosaurus/search_dr_molm13_950_2019_20260917.json"),
+}
 KEGG_SEARCH = fixture("kegg/search_mapk_20260811.txt")
 KEGG_DETAIL = fixture("kegg/get_hsa05200_20260811.txt")
 REACTOME_SEARCH = {
@@ -471,6 +492,25 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/hpa/ENSG00000157764.xml":
             send(self, 200, HPA_BRAF, "application/xml")
             return
+        if parsed.path == "/cellosaurus/release-info":
+            send(self, 200, CELLOSAURUS_RELEASE)
+            return
+        if parsed.path == "/cellosaurus/search/cell-line":
+            # The window is answered by the query alone. An unlisted ac:, dr:,
+            # idsy: or id: query is a normal zero-row result, never a failure.
+            query = parse_qs(parsed.query).get("q", [""])[0]
+            send(self, 200, CELLOSAURUS_SEARCHES.get(query, CELLOSAURUS_EMPTY))
+            return
+        if parsed.path.startswith("/cellosaurus/cell-line/"):
+            # Matched on the path alone. The fields parameter is ignored, so one
+            # recorded file answers every projection the command asks for.
+            accession = parsed.path.rsplit("/", 1)[-1]
+            record = CELLOSAURUS_RECORDS.get(accession)
+            if record is None:
+                send(self, 404, b'{"error":"cell line not found"}')
+                return
+            send(self, 200, record)
+            return
         if parsed.path == "/kegg/find/pathway/MAPK%20signaling%20pathway":
             send(self, 200, KEGG_SEARCH, "text/plain")
             return
@@ -616,6 +656,7 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_HPA_BASE=%q\n' "$base_url/hpa"
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/dgidb/api"
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih/v2"
+  printf 'export BIOMCP_CELLOSAURUS_BASE=%q\n' "$base_url/cellosaurus"
   printf 'export BIOMCP_KEGG_BASE=%q\n' "$base_url/kegg"
   printf 'export BIOMCP_REACTOME_BASE=%q\n' "$base_url/reactome/ContentService"
   printf 'export BIOMCP_WIKIPATHWAYS_BASE=%q\n' "$base_url/wikipathways"

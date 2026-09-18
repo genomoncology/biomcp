@@ -170,6 +170,12 @@ impl RateLimiter {
                 "https://rest.kegg.jp",
                 Duration::from_millis(334),
             ),
+            policy(
+                "cellosaurus",
+                "BIOMCP_CELLOSAURUS_BASE",
+                "https://api.cellosaurus.org",
+                Duration::from_millis(334),
+            ),
         ];
         Self::new(
             policies,

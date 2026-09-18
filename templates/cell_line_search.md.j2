@@ -1,0 +1,24 @@
+# Cell lines: {{ query }}
+
+{% if count == 0 -%}
+No cell lines found
+{% else -%}
+Found {{ count }} cell line{% if count != 1 %}s{% endif %}{% if total %} (of {{ total }} total){% else %} (total unknown){% endif %}
+
+| Accession | Name | Species | Category | Disease | Match | Matched on |
+|---|---|---|---|---|---|---|
+{% for row in results -%}
+| {{ row.accession }} | {{ row.name }} | {{ row.species | map(attribute="label") | join("; ") }} | {{ row.category or "-" }} | {{ row.disease or "-" }} | {{ row.match }} | {{ row.matched_on or "-" }} |
+{% endfor %}
+
+Use `get cell-line <accession>` for details.
+{% endif -%}
+{% for note in notes %}
+Note: {{ note }}
+{% endfor -%}
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+
+{{ attribution }}

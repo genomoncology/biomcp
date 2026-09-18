@@ -3,6 +3,7 @@
 pub(crate) mod adverse_event;
 pub(crate) mod article;
 pub(crate) mod author;
+pub(crate) mod cell_line;
 pub(crate) mod diagnostic;
 pub(crate) mod discover;
 pub(crate) mod disease;

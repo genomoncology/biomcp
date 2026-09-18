@@ -2326,6 +2326,7 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
     entity_paths = {
         "adverse_event": "src/entities/adverse_event.rs",
         "article": "src/entities/article/mod.rs",
+        "cell_line": "src/entities/cell_line.rs",
         "diagnostic": "src/entities/diagnostic/mod.rs",
         "disease": "src/entities/disease/mod.rs",
         "drug": "src/entities/drug/mod.rs",

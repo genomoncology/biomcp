@@ -3,6 +3,7 @@
 mod adverse_event;
 mod article;
 mod author;
+mod cell_line;
 mod diagnostic;
 mod discovery;
 mod disease;
@@ -51,6 +52,8 @@ pub use self::author::{
     author_papers_markdown, author_search_markdown,
 };
 #[allow(unused_imports)]
+pub use self::cell_line::{cell_line_markdown, cell_line_search_markdown_with_footer};
+#[allow(unused_imports)]
 pub use self::diagnostic::{
     diagnostic_markdown, diagnostic_search_markdown, diagnostic_search_markdown_with_footer,
 };
@@ -69,7 +72,6 @@ pub use self::drug::{
 };
 #[allow(unused_imports)]
 pub use self::gene::{gene_markdown, gene_search_markdown, gene_search_markdown_with_footer};
-#[allow(unused_imports)]
 pub use self::pathway::{pathway_markdown, pathway_search_markdown_with_footer};
 #[allow(unused_imports)]
 pub use self::pgx::{pgx_markdown, pgx_search_markdown_with_footer};
@@ -418,6 +420,13 @@ pub(crate) fn diagnostic_next_commands(
     sections::diagnostic_next_commands(diagnostic, requested_sections)
 }
 
+pub(crate) fn cell_line_next_commands(
+    cell_line: &crate::entities::cell_line::CellLine,
+    requested_sections: &[String],
+) -> Vec<String> {
+    sections::cell_line_next_commands(cell_line, requested_sections)
+}
+
 pub(crate) fn disease_next_commands(
     disease: &Disease,
     requested_sections: &[String],
@@ -455,6 +464,10 @@ pub(crate) fn gene_next_commands(gene: &Gene, requested_sections: &[String]) -> 
 
 pub(crate) fn related_gene(gene: &Gene) -> Vec<String> {
     related::related_gene(gene)
+}
+
+pub(crate) fn related_cell_line(_cell_line: &crate::entities::cell_line::CellLine) -> Vec<String> {
+    Vec::new()
 }
 
 pub(crate) fn related_pathway(pathway: &Pathway) -> Vec<String> {
@@ -572,6 +585,12 @@ pub(crate) fn search_next_commands_pgx(
     drug_filter: Option<&str>,
 ) -> Vec<String> {
     related::search_next_commands_pgx(results, gene_filter, drug_filter)
+}
+
+pub(crate) fn search_next_commands_cell_line(
+    results: &[crate::entities::cell_line::CellLineSearchResult],
+) -> Vec<String> {
+    related::search_next_commands_cell_line(results)
 }
 
 pub(crate) fn search_next_commands_pathway(results: &[PathwaySearchResult]) -> Vec<String> {
@@ -837,6 +856,14 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     env.add_template(
         "drug_search.md.j2",
         include_str!("../../../templates/drug_search.md.j2"),
+    )?;
+    env.add_template(
+        "cell_line.md.j2",
+        include_str!("../../../templates/cell_line.md.j2"),
+    )?;
+    env.add_template(
+        "cell_line_search.md.j2",
+        include_str!("../../../templates/cell_line_search.md.j2"),
     )?;
     env.add_template(
         "pathway.md.j2",

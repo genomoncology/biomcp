@@ -188,6 +188,8 @@ pub(super) fn section_description(entity: &str, section: &str) -> &'static str {
         ("trial", "outcomes") => "endpoint measures and time frames",
         ("trial", "arms") => "study arms and assigned interventions",
         ("trial", "references") => "linked publications and PMID citations",
+        ("cell-line", "variants") => "curated sequence variations as Cellosaurus published them",
+        ("cell-line", "xrefs") => "DepMap, COSMIC, ChEMBL, GDSC, PharmacoDB and LINCS join keys",
         _ => "additional detail",
     }
 }
@@ -249,6 +251,23 @@ fn visible_section_commands(entity: &str, id: &str, sections: &[String]) -> Vec<
         .take(visible_section_limit(entity))
         .map(|section| format!("biomcp get {entity} {id_q} {section}"))
         .collect()
+}
+
+pub(crate) fn cell_line_next_commands(
+    cell_line: &crate::entities::cell_line::CellLine,
+    requested_sections: &[String],
+) -> Vec<String> {
+    let out = visible_section_commands(
+        "cell-line",
+        &cell_line.accession,
+        &sections_cell_line(cell_line, requested_sections),
+    );
+    with_section_recovery(
+        "cell_line",
+        &cell_line.accession,
+        &cell_line.section_outcomes,
+        out,
+    )
 }
 
 pub(crate) fn disease_next_commands(
@@ -606,6 +625,22 @@ pub(super) fn sections_pathway(pathway: &Pathway, requested: &[String]) -> Vec<S
             crate::entities::pathway::supported_pathway_sections_for_source(&pathway.source),
         ),
         &pathway.section_outcomes,
+    )
+}
+
+pub(super) fn sections_cell_line(
+    cell_line: &crate::entities::cell_line::CellLine,
+    requested: &[String],
+) -> Vec<String> {
+    if quote_arg(&cell_line.accession).is_empty() {
+        return Vec::new();
+    }
+    without_failed_recovery_sections(
+        sections_for(
+            requested,
+            crate::entities::cell_line::CELL_LINE_SECTION_NAMES,
+        ),
+        &cell_line.section_outcomes,
     )
 }
 

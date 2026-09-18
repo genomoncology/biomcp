@@ -737,6 +737,27 @@ pub(crate) fn trial_section_sources(trial: &Trial) -> Vec<SectionSource> {
     out
 }
 
+pub(crate) fn cell_line_section_sources(
+    cell_line: &crate::entities::cell_line::CellLine,
+) -> Vec<SectionSource> {
+    let mut out = Vec::new();
+    let source_ref = [cell_line.source.as_str()];
+    let identity_present = has_text(&cell_line.accession) || has_text(&cell_line.name);
+    push_section(
+        &mut out,
+        identity_present,
+        "identity",
+        "Identity",
+        source_ref,
+    );
+    out.extend(outcome_section_sources(
+        "cell_line",
+        &cell_line.section_outcomes,
+        &[("variants", "Variants"), ("xrefs", "Cross-references")],
+    ));
+    out
+}
+
 pub(crate) fn pathway_section_sources(pathway: &Pathway) -> Vec<SectionSource> {
     let mut out = Vec::new();
     let source = pathway_source_label(&pathway.source);

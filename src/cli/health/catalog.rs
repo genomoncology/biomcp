@@ -408,6 +408,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "Cellosaurus",
+        affects: Some("cell-line search and detail"),
+        probe: ProbeKind::Get {
+            url: "https://api.cellosaurus.org/release-info?format=json",
+        },
+    },
+    SourceDescriptor {
         api: "KEGG",
         affects: Some("pathway search and detail sections"),
         probe: ProbeKind::Get {

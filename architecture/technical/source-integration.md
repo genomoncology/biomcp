@@ -508,6 +508,8 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | article | fulltext | canonical | fallback | Europe PMC / NCBI EFetch / PMC OA / PMC / Semantic Scholar | `fulltext` outcome and provenance projection |
 | article | indexing | canonical | fallback | PubMed | `indexing` outcome and provenance projection |
 | article | tldr | canonical | fallback | Semantic Scholar | `tldr` outcome and provenance projection |
+| cell_line | variants | canonical | additive | Cellosaurus | `variants` outcome and provenance projection |
+| cell_line | xrefs | canonical | additive | Cellosaurus | `xrefs` outcome and provenance projection |
 | pathway | genes | canonical | fallback | Reactome / KEGG / WikiPathways / MyGene.info | `genes` outcome and provenance projection |
 | pathway | events | canonical | additive | Reactome | `events` outcome and provenance projection |
 | pathway | enrichment | canonical | additive | g:Profiler | `enrichment` outcome and provenance projection |

@@ -12,6 +12,7 @@ impl SourceProvider {
     pub const CANCER_HOTSPOTS: Self = Self::new("Cancer Hotspots");
     pub const CBIOPORTAL: Self = Self::new("cBioPortal");
     pub const CBIOPORTAL_DATAHUB: Self = Self::new("cBioPortal DataHub");
+    pub const CELLOSAURUS: Self = Self::new("Cellosaurus");
     pub const CHEMBL: Self = Self::new("ChEMBL");
     pub const CIVIC: Self = Self::new("CIViC");
     pub const CLINGEN: Self = Self::new("ClinGen");

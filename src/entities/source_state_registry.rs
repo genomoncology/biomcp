@@ -214,6 +214,20 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         Aggregation::Fallback,
     ),
     state(
+        "cell_line",
+        "variants",
+        "Variants",
+        &["Cellosaurus"],
+        Aggregation::Additive,
+    ),
+    state(
+        "cell_line",
+        "xrefs",
+        "Cross-references",
+        &["Cellosaurus"],
+        Aggregation::Additive,
+    ),
+    state(
         "pathway",
         "genes",
         "Genes",
@@ -562,6 +576,19 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
     selector("article", "assets", SelectorClass::Local, None),
     selector("article", "asset", SelectorClass::Alias, Some("assets")),
     selector("article", "all", SelectorClass::Aggregate, None),
+    selector(
+        "cell_line",
+        "variants",
+        SelectorClass::Canonical,
+        Some("variants"),
+    ),
+    selector(
+        "cell_line",
+        "xrefs",
+        SelectorClass::Canonical,
+        Some("xrefs"),
+    ),
+    selector("cell_line", "all", SelectorClass::Aggregate, None),
     selector("pathway", "genes", SelectorClass::Canonical, Some("genes")),
     selector(
         "pathway",
@@ -799,6 +826,7 @@ pub(crate) fn recovery_route(entity: &str, key: &str) -> Option<RecoveryRoute> {
     let cli_entity = match entity {
         "adverse_event" => "adverse-event",
         "article" => "article",
+        "cell_line" => "cell-line",
         "diagnostic" => "diagnostic",
         "disease" => "disease",
         "drug" => "drug",

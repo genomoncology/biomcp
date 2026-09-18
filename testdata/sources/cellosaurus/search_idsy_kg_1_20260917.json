@@ -1,0 +1,157 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0374"
+          }
+        ],
+        "category": "Cancer cell line",
+        "disease-list": [
+          {
+            "accession": "C3249",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C3249",
+            "label": "Acute myeloid leukemia without maturation",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C3249"
+          },
+          {
+            "accession": "C9154",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C9154",
+            "label": "Adult acute myeloid leukemia",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C9154"
+          },
+          {
+            "accession": "Orphanet_519",
+            "category": "Medical resources",
+            "database": "ORDO",
+            "iri": "http://www.orpha.net/ORDO/Orphanet_519",
+            "label": "Acute myeloid leukemia",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/ordo/classes/http%253A%252F%252Fwww.orpha.net%252FORDO%252FOrphanet_519"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "KG1"
+          },
+          {
+            "type": "identifier",
+            "value": "KG-1"
+          }
+        ],
+        "species-list": [
+          {
+            "accession": "9606",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+            "label": "Homo sapiens (Human)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2971"
+          }
+        ],
+        "category": "Cancer cell line",
+        "disease-list": [
+          {
+            "accession": "C3288",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C3288",
+            "label": "Oligodendroglioma",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C3288"
+          },
+          {
+            "accession": "Orphanet_251627",
+            "category": "Medical resources",
+            "database": "ORDO",
+            "iri": "http://www.orpha.net/ORDO/Orphanet_251627",
+            "label": "Oligodendroglioma",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/ordo/classes/http%253A%252F%252Fwww.orpha.net%252FORDO%252FOrphanet_251627"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "KG-1C"
+          },
+          {
+            "type": "synonym",
+            "value": "KG1C"
+          },
+          {
+            "type": "synonym",
+            "value": "KG-1"
+          },
+          {
+            "type": "identifier",
+            "value": "KG-1-C"
+          }
+        ],
+        "species-list": [
+          {
+            "accession": "9606",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+            "label": "Homo sapiens (Human)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1S07"
+          }
+        ],
+        "category": "Hybrid cell line",
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "KG-1"
+          },
+          {
+            "type": "synonym",
+            "value": "K1"
+          },
+          {
+            "type": "identifier",
+            "value": "GM10888"
+          }
+        ],
+        "species-list": [
+          {
+            "accession": "10029",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_10029",
+            "label": "Cricetulus griseus (Chinese hamster)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10029&lvl=3"
+          },
+          {
+            "accession": "9606",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+            "label": "Homo sapiens (Human)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3"
+          }
+        ]
+      }
+    ]
+  }
+}

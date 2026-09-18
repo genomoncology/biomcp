@@ -55,6 +55,7 @@ fn health_inventory_includes_all_expected_sources() {
             "QuickGO",
             "STRING",
             "Reactome",
+            "Cellosaurus",
             "KEGG",
             "WikiPathways",
             "g:Profiler",

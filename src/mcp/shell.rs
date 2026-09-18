@@ -1621,7 +1621,14 @@ mod tests {
         assert!(gwas["properties"].get("trait").is_some());
         assert!(gwas["properties"].get("region").is_none());
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
-        assert_eq!(get["oneOf"].as_array().unwrap().len(), 12);
+        assert_eq!(get["oneOf"].as_array().unwrap().len(), 13);
+        let cell_line = get["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|branch| branch["properties"]["entity"]["const"] == "cell-line")
+            .expect("typed get publishes a cell-line branch");
+        assert!(cell_line["properties"].get("sections").is_some());
         let author = get["oneOf"]
             .as_array()
             .unwrap()
@@ -1823,6 +1830,7 @@ mod tests {
         for input in [
             json!({"entity":"gwas","gene":"BRAF","region":"7:1-2"}),
             json!({"entity":"pathway","query":"MAPK"}),
+            json!({"entity":"cell-line","query":"MOLM13"}),
             json!({"entity":"protein","query":"BRAF","reviewed":"yes"}),
             json!({"entity":"gwas","gene":"BRAF","offset":49,"limit":2}),
             json!({"entity":"gene","query":"BRAF","limit":50}),

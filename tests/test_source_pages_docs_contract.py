@@ -585,6 +585,31 @@ SOURCE_PAGE_SPECS = {
             "biomcp discover \"Marfan syndrome\"",
         ],
     },
+    "cellosaurus.md": {
+        "title": "Cellosaurus MCP Tool for Cell Line Lookup | BioMCP",
+        "description": "Use BioMCP to turn any common spelling of a cell line into its Cellosaurus accession, then read species, disease, cross-references, and curated variants.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://www.cellosaurus.org/",
+        "required_intro_phrases": [
+            "Cellosaurus is the identity source for cell lines",
+            "the base card stays small",
+            "3 requests / second",
+        ],
+        "exposes": [
+            "search cell-line <name>",
+            "get cell-line <accession>",
+            "get cell-line <accession> xrefs",
+            "get cell-line <accession> variants",
+        ],
+        "example_commands": [
+            "biomcp search cell-line MOLM13",
+            'biomcp search cell-line "MV4;11"',
+            "biomcp get cell-line CVCL_2119",
+            "biomcp get cell-line CVCL_2119 xrefs",
+            "biomcp get cell-line CVCL_1844 variants",
+            "biomcp get cell-line ACH-000362",
+        ],
+    },
     "kegg.md": {
         "title": "KEGG MCP Tool for Pathway Search | BioMCP",
         "description": "Use BioMCP to search KEGG pathways, fetch KEGG pathway summaries, and expand to pathway genes without learning KEGG's flat-file API.",

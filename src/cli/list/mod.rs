@@ -23,6 +23,7 @@ pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
         Some("pgx") => Ok(molecular::list_pgx()),
         Some("gwas") => Ok(molecular::list_gwas()),
         Some("pathway") => Ok(molecular::list_pathway()),
+        Some("cell-line") => Ok(molecular::list_cell_line()),
         Some("protein") => Ok(molecular::list_protein()),
         Some("study") => Ok(literature::list_study()),
         Some("adverse-event") => Ok(clinical::list_adverse_event()),
@@ -79,6 +80,7 @@ fn normalize_entity(entity: Option<&str>) -> Result<Option<&'static str>, BioMcp
         "pgx" => Ok(Some("pgx")),
         "gwas" => Ok(Some("gwas")),
         "pathway" => Ok(Some("pathway")),
+        "cell-line" | "cell_line" | "cellline" => Ok(Some("cell-line")),
         "protein" => Ok(Some("protein")),
         "study" => Ok(Some("study")),
         "adverse-event" | "adverse_event" | "adverseevent" => Ok(Some("adverse-event")),
@@ -88,7 +90,7 @@ fn normalize_entity(entity: Option<&str>) -> Result<Option<&'static str>, BioMcp
         "enrich" => Ok(Some("enrich")),
         "skill" | "skills" => Ok(Some("skill")),
         other => Err(BioMcpError::InvalidArgument(format!(
-            "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- author\n- trial\n- diagnostic\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- study\n- adverse-event\n- search-all\n- discover\n- batch\n- enrich\n- skill"
+            "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- author\n- trial\n- diagnostic\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- cell-line\n- protein\n- study\n- adverse-event\n- search-all\n- discover\n- batch\n- enrich\n- skill"
         ))),
     }
 }

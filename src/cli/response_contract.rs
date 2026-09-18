@@ -123,6 +123,7 @@ pub(super) fn command_requests_json(command: &Commands) -> bool {
             GetEntity::Trial(args) => sections_request_json(&args.sections),
             GetEntity::Variant(args) => sections_request_json(&args.sections),
             GetEntity::Drug(args) => sections_request_json(&args.args),
+            GetEntity::CellLine(args) => sections_request_json(&args.sections),
             GetEntity::Pathway(args) => sections_request_json(&args.sections),
             GetEntity::Protein(args) => sections_request_json(&args.sections),
             GetEntity::AdverseEvent(args) => sections_request_json(&args.sections),
@@ -284,6 +285,7 @@ impl JsonResponseContract {
             | SearchEntity::Article(_)
             | SearchEntity::Trial(_)
             | SearchEntity::Variant(_)
+            | SearchEntity::CellLine(_)
             | SearchEntity::Pathway(_)
             | SearchEntity::Protein(_)
             | SearchEntity::AdverseEvent(_) => Self::RESULTS,

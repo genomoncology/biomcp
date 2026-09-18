@@ -126,6 +126,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 entity: GetEntity::Drug(args),
             } => outcome_to_string(super::drug::handle_get(args, json, false).await?),
             Commands::Get {
+                entity: GetEntity::CellLine(args),
+            } => outcome_to_string(super::cell_line::handle_get(args, json).await?),
+            Commands::Get {
                 entity: GetEntity::Pathway(args),
             } => outcome_to_string(super::pathway::handle_get(args, json).await?),
             Commands::Get {
@@ -228,6 +231,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 }
                 SearchEntity::Drug(args) => {
                     outcome_to_string(super::drug::handle_search(args, json).await?)
+                }
+                SearchEntity::CellLine(args) => {
+                    outcome_to_string(super::cell_line::handle_search(args, json).await?)
                 }
                 SearchEntity::Pathway(args) => {
                     outcome_to_string(super::pathway::handle_search(args, json).await?)
