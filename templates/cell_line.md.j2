@@ -60,6 +60,24 @@ RRID: {{ rrid }}
 | LINCS LDP | {{ xrefs.lincs_ldp | join(", ") or "-" }} |
 {% endif -%}
 {% endif -%}
+{% if show_chembl_section and (chembl or source_states.chembl.status) -%}
+## ChEMBL
+
+{% if source_states.chembl.status %}{{ source_states.chembl.status }}
+{% endif -%}
+{% if source_states.chembl.payload_allowed and chembl -%}
+{% if chembl.records -%}
+| ChEMBL ID | Name | EFO | CLO | Assays |
+|---|---|---|---|---|
+{% for row in chembl.records -%}
+| {{ row.chembl_id }} | {{ row.name or "-" }} | {{ row.efo_id or "-" }} | {{ row.clo_id or "-" }} | {{ row.assay_count }} |
+{% endfor -%}
+{% else -%}
+{{ chembl_empty_message }}
+{% endif %}
+{{ chembl_attribution }}
+{% endif -%}
+{% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}
 {% if related_block %}{{ related_block }}

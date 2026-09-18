@@ -17,6 +17,8 @@ pub fn cell_line_markdown(
     let has_requested = |name: &str| requested.iter().any(|s| s.eq_ignore_ascii_case(name));
     let show_variants_section = !section_only || include_all || has_requested("variants");
     let show_xrefs_section = !section_only || include_all || has_requested("xrefs");
+    // `all` never includes the ChEMBL section, so it renders only when asked for.
+    let show_chembl_section = !section_only || has_requested("chembl");
     let label = if cell_line.name.trim().is_empty() {
         cell_line.accession.as_str()
     } else {
@@ -39,8 +41,17 @@ pub fn cell_line_markdown(
         age => &cell_line.age,
         variants => &cell_line.variants,
         xrefs => &cell_line.xrefs,
+        chembl => &cell_line.chembl,
+        chembl_empty_message => crate::entities::cell_line::chembl::CELL_LINE_CHEMBL_EMPTY_MESSAGE,
+        chembl_attribution => cell_line.chembl.as_ref().map(|section| {
+            crate::entities::cell_line::chembl::chembl_attribution(
+                &section.data_as_of,
+                &section.data_as_of_kind,
+            )
+        }),
         show_variants_section => show_variants_section,
         show_xrefs_section => show_xrefs_section,
+        show_chembl_section => show_chembl_section,
         attribution => cell_line_attribution(&cell_line.data_as_of, &cell_line.data_as_of_kind),
         sections_block => format_sections_block(
             "cell-line",

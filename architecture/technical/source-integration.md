@@ -510,6 +510,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | article | tldr | canonical | fallback | Semantic Scholar | `tldr` outcome and provenance projection |
 | cell_line | variants | canonical | additive | Cellosaurus | `variants` outcome and provenance projection |
 | cell_line | xrefs | canonical | additive | Cellosaurus | `xrefs` outcome and provenance projection |
+| cell_line | chembl | canonical | additive | ChEMBL | `chembl` outcome and provenance projection |
 | pathway | genes | canonical | fallback | Reactome / KEGG / WikiPathways / MyGene.info | `genes` outcome and provenance projection |
 | pathway | events | canonical | additive | Reactome | `events` outcome and provenance projection |
 | pathway | enrichment | canonical | additive | g:Profiler | `enrichment` outcome and provenance projection |

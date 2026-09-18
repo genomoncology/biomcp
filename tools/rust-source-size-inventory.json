@@ -301,12 +301,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1838,
+      "baseline_lines": 1842,
       "floor_lines": 1810,
       "authorized_increase": {
-        "ticket": "1022, 1158, 1202",
-        "delta": 28,
-        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs, and the cell-line section-sources builder (ticket 1202, +21).",
+        "ticket": "1022, 1158, 1202, 1214",
+        "delta": 32,
+        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs, the cell-line section-sources builder (ticket 1202, +21), and its ChEMBL section row (ticket 1214, +4).",
         "removal_condition": "Extract variant provenance into its own renderer module."
       }
     },

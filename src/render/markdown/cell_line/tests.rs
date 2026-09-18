@@ -3,7 +3,9 @@ use crate::entities::cell_line::{CellLineSpecies, CellLineXrefs};
 
 fn sample() -> CellLine {
     CellLine {
-        section_outcomes: Default::default(),
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            &crate::entities::source_state_registry::outcome_keys("cell_line"),
+        ),
         source: "Cellosaurus".to_string(),
         data_as_of: "56.0 (2026-06-25)".to_string(),
         data_as_of_kind: "release".to_string(),
@@ -23,6 +25,7 @@ fn sample() -> CellLine {
         resolved_from: None,
         variants: Vec::new(),
         xrefs: None,
+        chembl: None,
     }
 }
 
@@ -115,4 +118,76 @@ fn a_full_window_note_is_printed_once() {
         rendered.matches("Cellosaurus returned 1000 rows").count(),
         1
     );
+}
+
+// Ticket 1214 acceptance 7: the ChEMBL section names its release.
+
+fn with_chembl_section(records: Vec<crate::entities::cell_line::CellLineChemblRecord>) -> CellLine {
+    let mut cell_line = sample();
+    cell_line.section_outcomes.complete(
+        "chembl",
+        if records.is_empty() {
+            crate::entities::section_outcome::SectionOutcome::empty("ChEMBL")
+        } else {
+            crate::entities::section_outcome::SectionOutcome::data("ChEMBL")
+        },
+    );
+    cell_line.chembl = Some(crate::entities::cell_line::chembl::CellLineChembl {
+        source: "ChEMBL".to_string(),
+        data_as_of: "ChEMBL_37 (2026-05-01)".to_string(),
+        data_as_of_kind: "release".to_string(),
+        records,
+    });
+    cell_line
+}
+
+fn molm13_chembl_record() -> crate::entities::cell_line::CellLineChemblRecord {
+    crate::entities::cell_line::CellLineChemblRecord {
+        chembl_id: "CHEMBL3706573".to_string(),
+        name: "MOLM-13".to_string(),
+        efo_id: None,
+        clo_id: None,
+        assay_count: 1408,
+    }
+}
+
+#[test]
+fn the_chembl_section_prints_one_row_and_the_release_attribution() {
+    let cell_line = with_chembl_section(vec![molm13_chembl_record()]);
+    let rendered = cell_line_markdown(&cell_line, &["chembl".to_string()]).expect("renders");
+
+    assert!(rendered.contains("## ChEMBL"), "{rendered}");
+    assert!(rendered.contains("CHEMBL3706573"), "{rendered}");
+    assert!(rendered.contains("1408"), "{rendered}");
+    assert!(
+        rendered.contains("ChEMBL_37 (2026-05-01), CC BY-SA 3.0. ChEMBL is produced by EMBL-EBI."),
+        "{rendered}"
+    );
+}
+
+#[test]
+fn a_cell_line_chembl_does_not_list_says_so_and_prints_no_row() {
+    let cell_line = with_chembl_section(Vec::new());
+    let rendered = cell_line_markdown(&cell_line, &["chembl".to_string()]).expect("renders");
+
+    assert!(
+        rendered.contains("no ChEMBL cell line lists this accession"),
+        "{rendered}"
+    );
+    assert!(!rendered.contains("CHEMBL"), "{rendered}");
+}
+
+#[test]
+fn an_unavailable_chembl_section_renders_no_row() {
+    let mut cell_line = sample();
+    cell_line.section_outcomes.complete(
+        "chembl",
+        crate::entities::section_outcome::SectionOutcome::unavailable(
+            "ChEMBL did not answer the cell line lookup",
+        ),
+    );
+    let rendered = cell_line_markdown(&cell_line, &["chembl".to_string()]).expect("renders");
+
+    assert!(rendered.contains("unavailable"), "{rendered}");
+    assert!(!rendered.contains("CHEMBL3706573"), "{rendered}");
 }

@@ -22,7 +22,7 @@ pub struct CellLineSearchArgs {
 pub struct CellLineGetArgs {
     /// Cellosaurus accession (CVCL_2119) or a DepMap, Cell Model Passports, ChEMBL, or PharmacoDB ID
     pub id: String,
-    /// Sections to include (variants, xrefs, all)
+    /// Sections to include (variants, xrefs, chembl, all)
     #[arg(trailing_var_arg = true)]
     pub sections: Vec<String>,
 }
@@ -47,6 +47,7 @@ EXAMPLES:
   biomcp get cell-line CVCL_2119
   biomcp get cell-line CVCL_2119 xrefs
   biomcp get cell-line CVCL_1844 variants
+  biomcp get cell-line CVCL_2119 chembl
   biomcp get cell-line ACH-000362
 
 See also: biomcp list cell-line";

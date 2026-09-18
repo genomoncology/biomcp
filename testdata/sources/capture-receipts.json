@@ -2486,6 +2486,66 @@
         "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
         "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
       }
+    },
+    {
+      "path": "chembl/cell_line_cvcl_2119_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/cell_line.json?cellosaurus_id=CVCL_2119",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "4644e6f654efe411382e0151030cba545a6adf7094afa3d022e27cfa4d4944d8",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/cell_line_cvcl_0004_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/cell_line.json?cellosaurus_id=CVCL_0004",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "6ed4e97e57eb1bdc59db13f92d007f7b7e6f5cea90c4f6a0f9d78487f1185409",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/cell_line_none_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/cell_line.json?cellosaurus_id=CVCL_UD72",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "71272fe8ce740e7eb02600ffb850e1c418c29875f69bd64907dedb28cef20576",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/assay_count_chembl3706573_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/assay.json?cell_chembl_id=CHEMBL3706573&limit=1",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "842266634bf4a11c02b3e8872f6165798f0ed6bc36efb753c5c374e395498dc1",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/status_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/status.json",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "29dc1fb09487a8d2962253a4d0d92c4ded0aa0d831effab42445d0c3483d4740",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
     }
   ],
   "fixture_key_contract": {

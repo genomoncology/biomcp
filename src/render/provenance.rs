@@ -753,7 +753,11 @@ pub(crate) fn cell_line_section_sources(
     out.extend(outcome_section_sources(
         "cell_line",
         &cell_line.section_outcomes,
-        &[("variants", "Variants"), ("xrefs", "Cross-references")],
+        &[
+            ("variants", "Variants"),
+            ("xrefs", "Cross-references"),
+            ("chembl", "ChEMBL"),
+        ],
     ));
     out
 }

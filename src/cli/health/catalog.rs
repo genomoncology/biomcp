@@ -446,7 +446,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
     },
     SourceDescriptor {
         api: "ChEMBL",
-        affects: Some("drug targets and indications sections"),
+        affects: Some("drug targets and indications sections, and the cell line ChEMBL section"),
         probe: ProbeKind::Get {
             url: "https://www.ebi.ac.uk/chembl/api/data/molecule/CHEMBL25.json",
         },

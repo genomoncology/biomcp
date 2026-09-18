@@ -566,7 +566,7 @@ impl RequestPlan {
     }
 }
 
-fn join_base_path(base: &str, path: &str) -> String {
+pub(crate) fn join_base_path(base: &str, path: &str) -> String {
     format!(
         "{}/{}",
         base.trim_end_matches('/'),

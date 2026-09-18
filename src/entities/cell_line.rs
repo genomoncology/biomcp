@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
+pub(crate) mod chembl;
+
+use self::chembl::CellLineChembl;
 use crate::sources::cellosaurus::{
     CARD_FIELDS, CellLineXrefDatabase, CellosaurusClient, CellosaurusRecord, CellosaurusSearchPage,
 };
@@ -15,11 +18,13 @@ pub(crate) const CELL_LINE_CITATION: &str = "Cite Bairoch A. J. Biomol. Tech. 29
 
 const CELL_LINE_SECTION_VARIANTS: &str = "variants";
 const CELL_LINE_SECTION_XREFS: &str = "xrefs";
+const CELL_LINE_SECTION_CHEMBL: &str = "chembl";
 const CELL_LINE_SECTION_ALL: &str = "all";
 
 pub const CELL_LINE_SECTION_NAMES: &[&str] = &[
     CELL_LINE_SECTION_VARIANTS,
     CELL_LINE_SECTION_XREFS,
+    CELL_LINE_SECTION_CHEMBL,
     CELL_LINE_SECTION_ALL,
 ];
 
@@ -78,6 +83,18 @@ pub struct CellLine {
     pub variants: Vec<CellLineVariant>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub xrefs: Option<CellLineXrefs>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chembl: Option<CellLineChembl>,
+}
+
+/// One ChEMBL cell line record. BioMCP lists the count and no assays.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CellLineChemblRecord {
+    pub chembl_id: String,
+    pub name: String,
+    pub efo_id: Option<String>,
+    pub clo_id: Option<String>,
+    pub assay_count: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -418,9 +435,12 @@ pub(crate) async fn search(
 pub(crate) struct CellLineSections {
     pub include_variants: bool,
     pub include_xrefs: bool,
+    /// The ChEMBL section is asked for by name. `all` leaves it out, because it
+    /// costs one request per record.
+    pub include_chembl: bool,
 }
 
-fn parse_sections(sections: &[String]) -> Result<CellLineSections, BioMcpError> {
+pub(crate) fn parse_sections(sections: &[String]) -> Result<CellLineSections, BioMcpError> {
     let mut out = CellLineSections::default();
     for raw in sections {
         let section = raw.trim().to_ascii_lowercase();
@@ -430,6 +450,7 @@ fn parse_sections(sections: &[String]) -> Result<CellLineSections, BioMcpError> 
         match section.as_str() {
             CELL_LINE_SECTION_VARIANTS => out.include_variants = true,
             CELL_LINE_SECTION_XREFS => out.include_xrefs = true,
+            CELL_LINE_SECTION_CHEMBL => out.include_chembl = true,
             CELL_LINE_SECTION_ALL => {
                 out.include_variants = true;
                 out.include_xrefs = true;
@@ -509,14 +530,21 @@ pub(crate) async fn get(id: &str, sections: &[String]) -> Result<CellLine, BioMc
         .await?
         .ok_or_else(|| not_found(id))?;
 
-    Ok(build_cell_line(
+    let mut cell_line = build_cell_line(
         &record,
         &accession,
         resolved_from,
         parsed,
         data_as_of,
         data_as_of_kind,
-    ))
+    );
+    if parsed.include_chembl {
+        chembl::attach_chembl_section(
+            &mut cell_line,
+            chembl::load_chembl_section(&accession).await,
+        );
+    }
+    Ok(cell_line)
 }
 
 pub(crate) fn build_cell_line(
@@ -607,6 +635,7 @@ pub(crate) fn build_cell_line(
             Vec::new()
         },
         xrefs: sections.include_xrefs.then_some(xrefs),
+        chembl: None,
     }
 }
 
@@ -615,6 +644,7 @@ pub(crate) fn cell_line_sections(include_variants: bool, include_xrefs: bool) ->
     CellLineSections {
         include_variants,
         include_xrefs,
+        include_chembl: false,
     }
 }
 

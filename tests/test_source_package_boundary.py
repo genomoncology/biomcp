@@ -17,7 +17,7 @@ OFFLINE = ROOT / "tools/run-offline"
 # Ticket 1145 raised the package by five authorized module paths:
 # citation evidence traversal, its admission proof, the pure JATS citation
 # extractor, its tests, and the article CLI citation test sidecar.
-MAX_PACKAGE_FILES = 1_323  # 1,300 base + ticket 1145 five modules + ticket 1142 orcid tests submodule + ticket 1199 cache module and tests submodule + ticket 1200 opencitations source module + ticket 1202 cellosaurus source, cell-line entity, render, CLI, docs, and spec files, minus the retired staged release workflow test
+MAX_PACKAGE_FILES = 1_325  # 1,300 base + ticket 1145 five modules + ticket 1142 orcid tests submodule + ticket 1199 cache module and tests submodule + ticket 1200 opencitations source module + ticket 1202 cellosaurus source, cell-line entity, render, CLI, docs, and spec files, minus the retired staged release workflow test, plus ticket 1214 cell-line ChEMBL section module and its tests submodule
 REMOVED_TRIAL_CRATE = "bio" + "data"
 
 

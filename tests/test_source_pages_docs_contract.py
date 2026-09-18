@@ -290,11 +290,13 @@ SOURCE_PAGE_SPECS = {
         "exposes": [
             "get drug <name> targets",
             "get drug <name> indications",
+            "get cell-line <accession> chembl",
         ],
         "example_commands": [
             "biomcp get drug pembrolizumab targets",
             "biomcp get drug pembrolizumab indications",
             "biomcp get drug dabrafenib targets",
+            "biomcp get cell-line CVCL_2119 chembl",
         ],
     },
     "opentargets.md": {

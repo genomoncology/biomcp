@@ -228,6 +228,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         Aggregation::Additive,
     ),
     state(
+        "cell_line",
+        "chembl",
+        "ChEMBL",
+        &["ChEMBL"],
+        Aggregation::Additive,
+    ),
+    state(
         "pathway",
         "genes",
         "Genes",
@@ -587,6 +594,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         "xrefs",
         SelectorClass::Canonical,
         Some("xrefs"),
+    ),
+    selector(
+        "cell_line",
+        "chembl",
+        SelectorClass::Canonical,
+        Some("chembl"),
     ),
     selector("cell_line", "all", SelectorClass::Aggregate, None),
     selector("pathway", "genes", SelectorClass::Canonical, Some("genes")),

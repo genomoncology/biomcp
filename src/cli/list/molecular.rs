@@ -295,7 +295,8 @@ pub(super) fn list_cell_line() -> String {
 - `get cell-line <source_id>` - reverse lookup from a DepMap, Cell Model Passports, ChEMBL, or PharmacoDB ID
 - `get cell-line <accession> xrefs` - DepMap, COSMIC, ChEMBL, GDSC, PharmacoDB, and LINCS join keys
 - `get cell-line <accession> variants` - curated sequence variations as Cellosaurus published them
-- `get cell-line <accession> all` - include all sections
+- `get cell-line <accession> chembl` - ChEMBL cell line record and assay count (asked for by name)
+- `get cell-line <accession> all` - include the Cellosaurus sections
 
 ## Search filters
 
@@ -315,6 +316,7 @@ Cell line has no helper family.
 - Punctuation does not change the answer: `biomcp search cell-line "MV4;11"` finds CVCL_0064.
 - To read the join keys for another dataset, run `biomcp get cell-line CVCL_2119 xrefs`.
 - To go the other way, run `biomcp get cell-line ACH-000362`.
+- To see whether ChEMBL holds literature assays for a line, run `biomcp get cell-line CVCL_2119 chembl`.
 
 ## JSON Output
 

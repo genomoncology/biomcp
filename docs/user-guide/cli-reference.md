@@ -754,6 +754,7 @@ or dbSNP rsIDs include a redirect hint to the matching `get protein`, `get gene`
 biomcp get cell-line CVCL_2119
 biomcp get cell-line CVCL_2119 xrefs
 biomcp get cell-line CVCL_1844 variants
+biomcp get cell-line CVCL_2119 chembl
 biomcp get cell-line CVCL_2119 all
 biomcp get cell-line ACH-000362      # DepMap ID resolves to CVCL_2119
 biomcp get cell-line SIDM00437       # Cell Model Passports ID
@@ -763,6 +764,9 @@ biomcp get cell-line MOLM13_950_2019 # PharmacoDB ID
 
 An ID that is not a CVCL accession is treated as a source ID and resolved through a
 cross-reference search. No match gives the not-found error with a `search cell-line` hint.
+
+`all` covers the Cellosaurus sections `variants` and `xrefs`. The `chembl` section reads
+ChEMBL and is asked for by name.
 
 ### Protein
 

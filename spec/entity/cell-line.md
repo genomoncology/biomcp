@@ -72,3 +72,12 @@ biomcp get cell-line CVCL_2119 xrefs'
 | Gene | HGNC | Type | Description | Zygosity | PubMed |
 | NPM1 | HGNC:7910 | Mutation | p.Trp288Cysfs*12 (c.860_863dupTCTG) | Heterozygous | 16079892 |'
 ```
+
+## ChEMBL Assay Coverage Is Counted, Not Listed
+
+ChEMBL names the Cellosaurus accession on its own cell line record, so the
+section joins on the accession and reports how many assays name the line.
+
+```bash
+../../tools/biomcp-ci get cell-line CVCL_2119 chembl --json | jq -r '.chembl.records[0].chembl_id' | mustmatch 'CHEMBL3706573'
+```

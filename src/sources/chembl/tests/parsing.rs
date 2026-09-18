@@ -41,6 +41,95 @@ fn target_summary_response_maps_pref_name_and_target_type() {
     assert_eq!(summary.target_type, "PROTEIN FAMILY");
 }
 
+// Ticket 1214: the cell line record, the assay count, and the release.
+
+#[test]
+fn cell_line_response_maps_the_molm13_record() {
+    let resp: ChemblCellLineResponse = ChemblClient::decode_json_response(
+        StatusCode::OK,
+        fixture!("cell_line_cvcl_2119_20260918.json"),
+    )
+    .unwrap();
+    let records = ChemblClient::cell_lines_from_response(resp);
+
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].chembl_id, "CHEMBL3706573");
+    assert_eq!(records[0].name, "MOLM-13");
+    assert_eq!(records[0].tax_id, Some(9606));
+    assert_eq!(records[0].efo_id, None);
+    assert_eq!(records[0].clo_id, None);
+}
+
+#[test]
+fn cell_line_response_maps_the_k562_record_whose_name_chembl_spells_differently() {
+    let resp: ChemblCellLineResponse = ChemblClient::decode_json_response(
+        StatusCode::OK,
+        fixture!("cell_line_cvcl_0004_20260918.json"),
+    )
+    .unwrap();
+    let records = ChemblClient::cell_lines_from_response(resp);
+
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].chembl_id, "CHEMBL3308378");
+    assert_eq!(records[0].name, "K562");
+    assert_eq!(records[0].efo_id.as_deref(), Some("EFO_0002067"));
+    assert_eq!(records[0].clo_id.as_deref(), Some("CLO_0007059"));
+}
+
+#[test]
+fn an_accession_chembl_does_not_list_maps_to_no_record() {
+    let resp: ChemblCellLineResponse = ChemblClient::decode_json_response(
+        StatusCode::OK,
+        fixture!("cell_line_none_20260918.json"),
+    )
+    .unwrap();
+
+    assert!(ChemblClient::cell_lines_from_response(resp).is_empty());
+}
+
+#[test]
+fn assay_page_reports_the_total_count() {
+    let resp: ChemblPageResponse = ChemblClient::decode_json_response(
+        StatusCode::OK,
+        fixture!("assay_count_chembl3706573_20260918.json"),
+    )
+    .unwrap();
+
+    assert_eq!(ChemblClient::total_count_from_response(resp), 1408);
+}
+
+#[test]
+fn status_reports_the_release_name_and_date() {
+    let resp: ChemblStatusResponse =
+        ChemblClient::decode_json_response(StatusCode::OK, fixture!("status_20260918.json"))
+            .unwrap();
+    let release = ChemblClient::release_from_response(resp).unwrap();
+
+    assert_eq!(release.version, "ChEMBL_37");
+    assert_eq!(release.released, "2026-05-01");
+}
+
+// Ticket 1214 acceptance 8: an HTML body with HTTP 200 is a provider error.
+
+#[test]
+fn an_html_body_served_with_http_200_names_the_url() {
+    let url = "https://www.ebi.ac.uk/chembl/api/data/cell_line.json";
+    let err = ChemblClient::decode_body::<ChemblCellLineResponse>(
+        url,
+        StatusCode::OK,
+        b"<!DOCTYPE html><html><body>Verify you are human</body></html>",
+    )
+    .unwrap_err();
+    let msg = format!("{err:?}");
+
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains(url), "got: {msg}");
+    assert!(
+        msg.contains("HTML page where JSON was expected"),
+        "got: {msg}"
+    );
+}
+
 #[test]
 fn decode_json_response_maps_http_and_json_errors() {
     let err = ChemblClient::decode_json_response::<ChemblMechanismResponse>(

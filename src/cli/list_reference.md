@@ -165,7 +165,7 @@ New to BioMCP? Try:
 - `gene pathways <symbol> --limit <N> --offset <N>`
 - `pathway drugs|articles|trials <id>`
 - `search cell-line <query> --limit <N> --offset <N>`
-- `get cell-line <id> [variants|xrefs|all]`
+- `get cell-line <id> [variants|xrefs|chembl|all]`
 - `protein structures <accession> --limit <N> --offset <N>`
 - `search drug --interactions <drug>` remains unavailable from current public data sources; use `drug interactions <name>` when you already know the anchor drug
 - `study list`

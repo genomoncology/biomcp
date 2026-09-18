@@ -257,6 +257,15 @@ OPENFDA_FAERS_COUNT = fixture(
 )
 FDA_ORPHAN = fixture("fda_orphan/provider-shaped.html")
 CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
+CHEMBL_STATUS = fixture("chembl/status_20260918.json")
+CHEMBL_CELL_LINE_EMPTY = fixture("chembl/cell_line_none_20260918.json")
+CHEMBL_CELL_LINES = {
+    "CVCL_2119": fixture("chembl/cell_line_cvcl_2119_20260918.json"),
+    "CVCL_0004": fixture("chembl/cell_line_cvcl_0004_20260918.json"),
+}
+CHEMBL_ASSAY_COUNTS = {
+    "CHEMBL3706573": fixture("chembl/assay_count_chembl3706573_20260918.json"),
+}
 OPENTARGETS_DRUG = fixture("opentargets/drug_pembrolizumab_20260811.json")
 QUICKGO_ANNOTATIONS = fixture("quickgo/annotations_braf_20260811.json")
 QUICKGO_TERMS = fixture("quickgo/terms_braf_20260811.json")
@@ -472,6 +481,21 @@ class Handler(BaseHTTPRequestHandler):
             query = parse_qs(parsed.query)
             if query.get("limit") == ["25"] and "BRCA1 Hereditary Cancer Panel" in query.get("search", [""])[0]:
                 send(self, 404, OPENFDA_DEVICE_PMA)
+                return
+        if parsed.path == "/chembl/status.json":
+            send(self, 200, CHEMBL_STATUS)
+            return
+        if parsed.path == "/chembl/cell_line.json":
+            # The join goes through the Cellosaurus accession alone. An
+            # accession ChEMBL does not list is a normal zero-row result.
+            accession = parse_qs(parsed.query).get("cellosaurus_id", [""])[0]
+            send(self, 200, CHEMBL_CELL_LINES.get(accession, CHEMBL_CELL_LINE_EMPTY))
+            return
+        if parsed.path == "/chembl/assay.json":
+            chembl_id = parse_qs(parsed.query).get("cell_chembl_id", [""])[0]
+            page = CHEMBL_ASSAY_COUNTS.get(chembl_id)
+            if page is not None:
+                send(self, 200, page)
                 return
         if parsed.path == "/chembl/mechanism.json":
             query = parse_qs(parsed.query)
