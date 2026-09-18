@@ -31,7 +31,7 @@ execution path.
 Ticket 1191 fixed the execute-thread stack margin with `Box::pin` at
 `src/cli/outcome.rs:647`, bounding the recursive future at 8 MiB. The
 maturin-built binary may have a different default thread stack size or
-optimization profile that reduces the effective margin. The biodata 1.0
+optimization profile that reduces the effective margin. A downstream 1.0
 branch carries a 16 MiB `EXECUTE_STACK_BYTES` stopgap (ticket 1191 records
 this) which has not landed on main.
 
@@ -40,7 +40,7 @@ this) which has not landed on main.
 1. Reproduce locally: `maturin build --release && uv run --no-sync biomcp
    search trial --criteria "anti-PD-1 therapy"` to confirm the wheel binary
    hits the same overflow.
-2. Raise the execute-thread stack to the same 16 MiB the biodata branch
+2. Raise the execute-thread stack to the same 16 MiB that downstream branch
    uses, or increase the Box::pin margin, whichever is smaller.
 3. Add a CI job that installs the built wheel and runs the trial search
    path as a smoke check, so wheel-specific binary regressions are caught

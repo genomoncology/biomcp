@@ -76,11 +76,11 @@ frozen catalog that multiple tests pin.
 
 **Estimated complexity:** Level 2.
 
-### F5: Drop the biodata/biomcp-1.0 16 MiB stack stopgap
+### F5: Drop the downstream 1.0 16 MiB stack stopgap
 
-Ticket 1191 records this. When biodata merges their branch with main, the
-`EXECUTE_STACK_BYTES` stopgap drops in favor of main's `Box::pin` fix.
-Coordinate with the biodata team.
+Ticket 1191 records this. When the downstream consumer merges its branch with
+main, the `EXECUTE_STACK_BYTES` stopgap drops in favor of main's `Box::pin`
+fix. Coordinate with that team.
 
 **Estimated complexity:** Level 1 (a deletion, once the merge lands).
 
@@ -139,7 +139,7 @@ has accumulated large history blobs from the growth audit.
 4. P4 — Release docs (operator clarity)
 
 1.0 (ship when ready):
-1. F5 — Stack stopgap cleanup (coordinate with biodata)
+1. F5 — Stack stopgap cleanup (coordinate with the downstream consumer)
 2. F6 — Linux ARM64 PyPI wheel (distribution completeness)
 3. F1-F4 — Deferred quality-of-life tickets
 4. F7 — MCPB bundle (if Claude Desktop directory is a goal)
