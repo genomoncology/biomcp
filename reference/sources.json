@@ -778,6 +778,28 @@
     "notes": "InterPro aggregates signatures from multiple member databases; downstream interpretation should keep that provenance."
   },
   {
+    "id": "cellosaurus",
+    "name": "Cellosaurus",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "search cell-line <name>",
+      "get cell-line <id>",
+      "get cell-line <id> xrefs",
+      "get cell-line <id> variants"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public API, no key and no published rate limit",
+    "license_summary": "CC BY 4.0",
+    "redistribution_summary": "reuse is allowed with attribution and the requested citation on reuse",
+    "terms_url": "https://www.cellosaurus.org/description.html",
+    "key_url": null,
+    "reviewed_on": "2026-09-16",
+    "notes": "Cellosaurus is the identity source for cell lines and the RRID authority. Every BioMCP cell line output names the release, CC BY 4.0, and the citation Bairoch A. J. Biomol. Tech. 29:25-38 (2018)."
+  },
+  {
     "id": "kegg",
     "name": "KEGG",
     "tier": 3,
