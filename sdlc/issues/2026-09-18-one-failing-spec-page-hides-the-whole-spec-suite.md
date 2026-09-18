@@ -88,7 +88,8 @@ been caught. The Rust tests are unaffected and did run.
 
 ## Resolved
 
-`scripts/run-specs.sh` now runs every stage and fails at the end.
+Fixed in `e1d15860`. `scripts/run-specs.sh` now runs every stage and fails at
+the end.
 
 - `run_spec_stage` wraps each of `run_article_markdown_specs`,
   `run_markdown_specs`, `run_section_outcome_specs`, and
