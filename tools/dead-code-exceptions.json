@@ -32,7 +32,7 @@
       "removal_condition": "Remove when `mod benchmark;` is used by every compiled target or deleted."
     },
     {
-      "path": "src/cli/shared.rs",
+      "path": "src/cli/shared/search_payloads.rs",
       "scope": "item",
       "item": "struct SearchJsonResponse<T: serde::Serialize> {",
       "occurrence": 1,
@@ -41,13 +41,13 @@
       "removal_condition": "Remove when `struct SearchJsonResponse<T: serde::Serialize> {` is used by every compiled target or deleted."
     },
     {
-      "path": "src/cli/shared.rs",
+      "path": "src/cli/shared/search_payloads.rs",
       "scope": "item",
-      "item": "pub(super) fn search_json<T: serde::Serialize>(",
+      "item": "pub(in crate::cli) fn search_json<T: serde::Serialize>(",
       "occurrence": 1,
       "owner": "cli-contracts",
       "reason": "shared::search_json is exercised by binary dispatch or CLI contracts",
-      "removal_condition": "Remove when `pub(super) fn search_json<T: serde::Serialize>(` is used by every compiled target or deleted."
+      "removal_condition": "Remove when `pub(in crate::cli) fn search_json<T: serde::Serialize>(` is used by every compiled target or deleted."
     },
     {
       "path": "src/cli/update.rs",

@@ -11,9 +11,9 @@ join honest.
 whose Cellosaurus identifier is `MV4-11`.
 
 ```bash
-../../tools/biomcp-ci search cell-line 'MV4;11' | mustmatch like 'CVCL_0064'
-../../tools/biomcp-ci search cell-line 'MV4;11' | mustmatch like 'MV4-11'
-../../tools/biomcp-ci search cell-line 'MV4;11' | mustmatch like 'exact'
+../../tools/biomcp-ci search cell-line 'MV4;11' | mustmatch like '# Cell lines: MV4;11
+| Accession | Name | Species | Category | Disease | Match | Matched on |
+| CVCL_0064 | MV4-11 | Homo sapiens (Human) | Cancer cell line | Childhood acute monocytic leukemia | exact | name |'
 ```
 
 ## Three Lines Share One Short Name
@@ -68,5 +68,7 @@ biomcp get cell-line CVCL_2119 xrefs'
 ## Curated Variants Are Published As Written
 
 ```bash
-../../tools/biomcp-ci get cell-line CVCL_1844 variants | mustmatch like 'NPM1'
+../../tools/biomcp-ci get cell-line CVCL_1844 variants | mustmatch like '## Variants (Cellosaurus)
+| Gene | HGNC | Type | Description | Zygosity | PubMed |
+| NPM1 | HGNC:7910 | Mutation | p.Trp288Cysfs*12 (c.860_863dupTCTG) | Heterozygous | 16079892 |'
 ```
