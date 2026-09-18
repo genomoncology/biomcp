@@ -63,11 +63,21 @@ biomcp get cell-line CVCL_1844 variants
 
 Rows appear as Cellosaurus published them, with the HGVS description, the HGNC link, zygosity, and the PubMed sources. BioMCP adds no interpretation.
 
-Both sections:
+ChEMBL assay coverage:
+
+```bash
+biomcp get cell-line CVCL_2119 chembl
+```
+
+The section prints the ChEMBL cell line record that names the accession: the ChEMBL ID, the EFO and CLO IDs, and how many ChEMBL assays were run on the line. The count tells you whether ChEMBL literature assays exist. BioMCP lists no assays and no activity values. The join goes through the accession alone, so `biomcp get cell-line CVCL_0004 chembl` finds the line ChEMBL spells `K562`.
+
+The Cellosaurus sections together:
 
 ```bash
 biomcp get cell-line CVCL_2119 all
 ```
+
+`all` covers `variants` and `xrefs`. The `chembl` section costs one request per record, so it is asked for by name.
 
 ## Helper commands
 

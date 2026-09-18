@@ -4384,14 +4384,19 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_1844<span class="w"> </span>variants
 </code></pre></div>
 <p>Rows appear as Cellosaurus published them, with the HGVS description, the HGNC link, zygosity, and the PubMed sources. BioMCP adds no interpretation.</p>
-<p>Both sections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>all
+<p>ChEMBL assay coverage:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>chembl
 </code></pre></div>
+<p>The section prints the ChEMBL cell line record that names the accession: the ChEMBL ID, the EFO and CLO IDs, and how many ChEMBL assays were run on the line. The count tells you whether ChEMBL literature assays exist. BioMCP lists no assays and no activity values. The join goes through the accession alone, so <code>biomcp get cell-line CVCL_0004 chembl</code> finds the line ChEMBL spells <code>K562</code>.</p>
+<p>The Cellosaurus sections together:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>all
+</code></pre></div>
+<p><code>all</code> covers <code>variants</code> and <code>xrefs</code>. The <code>chembl</code> section costs one request per record, so it is asked for by name.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>Cell line has no separate helper family. Drug response and dependency data arrive as their own sections in later work; today every command is <code>search cell-line</code> or <code>get cell-line</code>.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>cell-line<span class="w"> </span>KG1<span class="w"> </span>--json
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>xrefs<span class="w"> </span>--json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>cell-line<span class="w"> </span>KG1<span class="w"> </span>--json
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>xrefs<span class="w"> </span>--json
 </code></pre></div>
 <p>JSON carries <code>data_as_of</code> and <code>data_as_of_kind</code> at the top level. <code>data_as_of_kind</code> is <code>release</code> when BioMCP read the Cellosaurus release, and <code>retrieved</code> when that read failed and the value is a retrieval time instead. A filled provider window appears in <code>_meta.notes</code>, and <code>pagination.total</code> is null.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>

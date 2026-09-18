@@ -15,6 +15,7 @@ In BioMCP, ChEMBL mainly appears inside the drug `targets` section and the drug 
 |---|---|---|
 | `get drug <name> targets` | Generic drug-target activity, mechanism, and target context | Mixed-source section: ChEMBL generic targets/mechanisms plus OpenTargets target context; CIViC may add a separate variant-target annotation line |
 | `get drug <name> indications` | Drug indication context linked to known use areas | ChEMBL contributes indication enrichment alongside OpenTargets |
+| `get cell-line <accession> chembl` | The ChEMBL cell line record for a Cellosaurus accession: ChEMBL ID, EFO ID, CLO ID, and the number of ChEMBL assays run on the line | Joined on `cellosaurus_id`. BioMCP lists no assays and no activity values |
 
 ## Example commands
 
@@ -35,6 +36,12 @@ biomcp get drug dabrafenib targets
 ```
 
 Returns a target-focused view for a kinase inhibitor with mechanism-oriented enrichment.
+
+```bash
+biomcp get cell-line CVCL_2119 chembl
+```
+
+Returns the ChEMBL cell line record for MOLM-13 with its assay count. The section is asked for by name; `get cell-line <accession> all` leaves it out. It reads the release name and date from ChEMBL `status.json` at runtime and prints them with the CC BY-SA 3.0 attribution line.
 
 ## API access
 

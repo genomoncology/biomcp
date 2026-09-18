@@ -5787,14 +5787,17 @@ or dbSNP rsIDs include a redirect hint to the matching <code>get protein</code>,
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119
 <a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>xrefs
 <a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_1844<span class="w"> </span>variants
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>all
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>ACH-000362<span class="w">      </span><span class="c1"># DepMap ID resolves to CVCL_2119</span>
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>SIDM00437<span class="w">       </span><span class="c1"># Cell Model Passports ID</span>
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CHEMBL3706573<span class="w">   </span><span class="c1"># ChEMBL ID</span>
-<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>MOLM13_950_2019<span class="w"> </span><span class="c1"># PharmacoDB ID</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>chembl
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>all
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>ACH-000362<span class="w">      </span><span class="c1"># DepMap ID resolves to CVCL_2119</span>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>SIDM00437<span class="w">       </span><span class="c1"># Cell Model Passports ID</span>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CHEMBL3706573<span class="w">   </span><span class="c1"># ChEMBL ID</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>MOLM13_950_2019<span class="w"> </span><span class="c1"># PharmacoDB ID</span>
 </code></pre></div>
 <p>An ID that is not a CVCL accession is treated as a source ID and resolved through a
 cross-reference search. No match gives the not-found error with a <code>search cell-line</code> hint.</p>
+<p><code>all</code> covers the Cellosaurus sections <code>variants</code> and <code>xrefs</code>. The <code>chembl</code> section reads
+ChEMBL and is asked for by name.</p>
 <h3 id="protein_1">Protein<a class="headerlink" href="#protein_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056
 <a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056<span class="w"> </span>domains<span class="w"> </span>interactions

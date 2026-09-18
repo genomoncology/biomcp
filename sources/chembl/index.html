@@ -4323,6 +4323,11 @@
 <td>Drug indication context linked to known use areas</td>
 <td>ChEMBL contributes indication enrichment alongside OpenTargets</td>
 </tr>
+<tr>
+<td><code>get cell-line &lt;accession&gt; chembl</code></td>
+<td>The ChEMBL cell line record for a Cellosaurus accession: ChEMBL ID, EFO ID, CLO ID, and the number of ChEMBL assays run on the line</td>
+<td>Joined on <code>cellosaurus_id</code>. BioMCP lists no assays and no activity values</td>
+</tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
@@ -4335,6 +4340,9 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>dabrafenib<span class="w"> </span>targets
 </code></pre></div>
 <p>Returns a target-focused view for a kinase inhibitor with mechanism-oriented enrichment.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>chembl
+</code></pre></div>
+<p>Returns the ChEMBL cell line record for MOLM-13 with its assay count. The section is asked for by name; <code>get cell-line &lt;accession&gt; all</code> leaves it out. It reads the release name and date from ChEMBL <code>status.json</code> at runtime and prints them with the CC BY-SA 3.0 attribution line.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>No BioMCP API key required.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
