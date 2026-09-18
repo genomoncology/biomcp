@@ -68,11 +68,11 @@ nav:
       - CDC CVX/MVX: sources/cdc-cvx.md
       - CDC WONDER VAERS: sources/vaers.md
       - MedlinePlus: sources/medlineplus.md
-      - Cellosaurus: sources/cellosaurus.md
       - KEGG: sources/kegg.md
       - PharmGKB / CPIC: sources/pharmgkb.md
       - Human Protein Atlas: sources/human-protein-atlas.md
       - Monarch Initiative: sources/monarch-initiative.md
+      - Cellosaurus: sources/cellosaurus.md
   - How-To:
       - Annotate Variants: how-to/annotate-variants.md
       - Annotate Variant Structure: how-to/annotate-variant-structure.md

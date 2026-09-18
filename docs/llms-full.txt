@@ -64,6 +64,7 @@ An expanded index of the BioMCP documentation.
 - [Source Versioning Matrix](https://biomcp.org/reference/source-versioning/): Reference details for Source Versioning Matrix.
 - [cBioPortal](https://biomcp.org/sources/cbioportal/): Access details and query guidance for the cBioPortal data source.
 - [CDC CVX/MVX](https://biomcp.org/sources/cdc-cvx/): Access details and query guidance for the CDC CVX/MVX data source.
+- [Cellosaurus](https://biomcp.org/sources/cellosaurus/): Access details and query guidance for the Cellosaurus data source.
 - [ChEMBL](https://biomcp.org/sources/chembl/): Access details and query guidance for the ChEMBL data source.
 - [CIViC](https://biomcp.org/sources/civic/): Access details and query guidance for the CIViC data source.
 - [ClinGen Allele Registry](https://biomcp.org/sources/clingen-allele-registry/): Access details and query guidance for the ClinGen Allele Registry data source.
@@ -98,6 +99,7 @@ An expanded index of the BioMCP documentation.
 - [Adverse Event](https://biomcp.org/user-guide/adverse-event/): BioMCP usage guidance for Adverse Event.
 - [Article](https://biomcp.org/user-guide/article/): BioMCP usage guidance for Article.
 - [Author](https://biomcp.org/user-guide/author/): BioMCP usage guidance for Author.
+- [Cell Line](https://biomcp.org/user-guide/cell-line/): BioMCP usage guidance for Cell Line.
 - [CLI Reference](https://biomcp.org/user-guide/cli-reference/): BioMCP usage guidance for CLI Reference.
 - [Diagnostic](https://biomcp.org/user-guide/diagnostic/): BioMCP usage guidance for Diagnostic.
 - [Discover](https://biomcp.org/user-guide/discover/): BioMCP usage guidance for Discover.

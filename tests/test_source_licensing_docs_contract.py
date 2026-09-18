@@ -10,6 +10,7 @@ DIRECT_SOURCE_MODULES = {
     "alphagenome": "AlphaGenome",
     "cancerhotspots": "Cancerhotspots.org",
     "cbioportal": "cBioPortal",
+    "cellosaurus": "Cellosaurus",
     "chembl": "ChEMBL",
     "civic": "CIViC",
     "clingen": "ClinGen",

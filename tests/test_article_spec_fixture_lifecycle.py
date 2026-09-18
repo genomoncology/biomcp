@@ -228,7 +228,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == (3 if mode == "spec-contracts" else 28)
+    assert len(invocations) == (3 if mode == "spec-contracts" else 29)
     article_args, article_base, article_origin = invocations[0]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args

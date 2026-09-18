@@ -406,12 +406,16 @@ where
     let get_schema = serde_json::to_value(&get.input_schema)?;
     assert_eq!(
         get_schema["oneOf"].as_array().map(Vec::len),
-        Some(12),
-        "typed get schema must have twelve entity-specific branches: {get_schema}"
+        Some(13),
+        "typed get schema must have thirteen entity-specific branches: {get_schema}"
     );
     assert!(
         json_property_contains(&get_schema, "entity", "gene"),
         "typed get entity schema missing gene enum: {get_schema}"
+    );
+    assert!(
+        json_property_contains(&get_schema, "entity", "cell-line"),
+        "typed get entity schema missing cell-line enum: {get_schema}"
     );
     assert!(
         json_property_contains(&get_schema, "sections", "pathways"),

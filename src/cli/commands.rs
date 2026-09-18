@@ -481,15 +481,7 @@ Explicit --region eu|all with structured filters still errors.
 See also: biomcp list drug")]
     Drug(drug::DrugSearchArgs),
     /// Search cell lines by name, synonym, or CVCL accession
-    #[command(after_help = "\
-EXAMPLES:
-  biomcp search cell-line MOLM13
-  biomcp search cell-line \"MV4;11\"
-  biomcp search cell-line KG1 --limit 5
-  biomcp search cell-line CVCL_2119
-
-Note: HL-60 (CVCL_0002) and HL-60(TB) (CVCL_A794) are separate lines.
-See also: biomcp list cell-line")]
+    #[command(after_help = cell_line::SEARCH_AFTER_HELP)]
     CellLine(cell_line::CellLineSearchArgs),
     /// Search pathways by name or keyword
     #[command(
@@ -671,14 +663,7 @@ If you omit `--region` on `biomcp get drug <name> regulatory`, BioMCP checks U.S
 See also: biomcp list drug")]
     Drug(drug::DrugGetArgs),
     /// Get cell line by CVCL accession or a source ID
-    #[command(after_help = "\
-EXAMPLES:
-  biomcp get cell-line CVCL_2119
-  biomcp get cell-line CVCL_2119 xrefs
-  biomcp get cell-line CVCL_1844 variants
-  biomcp get cell-line ACH-000362
-
-See also: biomcp list cell-line")]
+    #[command(after_help = cell_line::GET_AFTER_HELP)]
     CellLine(cell_line::CellLineGetArgs),
     /// Get pathway by ID
     #[command(after_help = "\

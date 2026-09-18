@@ -607,7 +607,6 @@ SOURCE_PAGE_SPECS = {
             "biomcp get cell-line CVCL_2119",
             "biomcp get cell-line CVCL_2119 xrefs",
             "biomcp get cell-line CVCL_1844 variants",
-            "biomcp get cell-line ACH-000362",
         ],
     },
     "kegg.md": {
@@ -796,6 +795,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - PharmGKB / CPIC: sources/pharmgkb.md
       - Human Protein Atlas: sources/human-protein-atlas.md
       - Monarch Initiative: sources/monarch-initiative.md
+      - Cellosaurus: sources/cellosaurus.md
 """
 
 

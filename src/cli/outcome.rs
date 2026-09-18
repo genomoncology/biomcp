@@ -4,7 +4,7 @@ use super::response_contract::{
     require_json_document,
 };
 use super::skill::SkillCommand;
-use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity, StudyCommand};
+use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity};
 use std::io::IsTerminal;
 fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
     error.exit_code()
@@ -19,7 +19,7 @@ fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {
         anyhow::bail!("{}", outcome.text)
     }
 }
-fn mcp_output_flag_error() -> crate::error::BioMcpError {
+pub(super) fn mcp_output_flag_error() -> crate::error::BioMcpError {
     crate::error::BioMcpError::InvalidArgument(
         "MCP chart responses do not support --output/-o. Omit file output and consume the inline SVG image content instead.".into(),
     )
@@ -36,57 +36,8 @@ pub fn server_json_rejection() -> CommandOutcome {
     )
 }
 
-fn is_charted_mcp_study_command(cli: &Cli) -> Result<bool, crate::error::BioMcpError> {
-    let chart = match &cli.command {
-        Commands::Study {
-            cmd:
-                StudyCommand::Query { chart, .. }
-                | StudyCommand::Survival { chart, .. }
-                | StudyCommand::Compare { chart, .. }
-                | StudyCommand::CoOccurrence { chart, .. },
-        } => chart,
-        _ => return Ok(false),
-    };
-
-    if chart.chart.is_none() || cli.json {
-        return Ok(false);
-    }
-    if chart.output.is_some() {
-        return Err(mcp_output_flag_error());
-    }
-    Ok(true)
-}
-
-fn prepare_mcp_chart(cli: &mut Cli) -> Result<(), crate::error::BioMcpError> {
-    let chart = match &mut cli.command {
-        Commands::Study {
-            cmd:
-                StudyCommand::Query { chart, .. }
-                | StudyCommand::Survival { chart, .. }
-                | StudyCommand::Compare { chart, .. }
-                | StudyCommand::CoOccurrence { chart, .. },
-        } => chart,
-        _ => return Ok(()),
-    };
-    if chart.chart.is_none() || cli.json {
-        return Ok(());
-    }
-    if chart.output.is_some() {
-        return Err(mcp_output_flag_error());
-    }
-    if chart.cols.is_some() || chart.rows.is_some() {
-        return Err(crate::error::BioMcpError::InvalidArgument(
-            crate::render::chart::TERMINAL_SIZE_FLAGS_ERROR.into(),
-        ));
-    }
-    if chart.scale.is_some() {
-        return Err(crate::error::BioMcpError::InvalidArgument(
-            crate::render::chart::PNG_SCALE_FLAGS_ERROR.into(),
-        ));
-    }
-    chart.mcp_inline = true;
-    Ok(())
-}
+mod mcp_chart;
+use self::mcp_chart::{is_charted_mcp_study_command, prepare_mcp_chart};
 
 pub async fn run(cli: Cli) -> anyhow::Result<String> {
     super::shared::validate_cli_state_contract(&cli)?;

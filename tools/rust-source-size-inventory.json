@@ -223,12 +223,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1135,
+      "baseline_lines": 1136,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1142, 1196, 1200",
-        "delta": 13,
-        "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules), the GenCC provider label for the sync initialization error (ticket 1196, +3), and the OpenCitations provider registration as the confirmation phase source (ticket 1200, +3).",
+        "ticket": "1142, 1196, 1200, 1202",
+        "delta": 14,
+        "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules), the GenCC provider label for the sync initialization error (ticket 1196, +3), and the OpenCitations provider registration as the confirmation phase source (ticket 1200, +3), and the Cellosaurus provider registration for the cell-line source (ticket 1202, +1).",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
       }
     },
@@ -240,12 +240,12 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2149,
+      "baseline_lines": 2157,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1031, 1150, 1158",
-        "delta": 193,
-        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions.",
+        "ticket": "1031, 1150, 1158, 1202",
+        "delta": 201,
+        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions, and the typed cell-line get branch and its typed-search rejection (ticket 1202, +8).",
         "removal_condition": "Extract typed tool schema transforms when the MCP shell is next decomposed."
       }
     },
@@ -279,9 +279,14 @@
     },
     {
       "path": "src/render/markdown/related.rs",
-      "baseline_lines": 1123,
+      "baseline_lines": 1140,
       "floor_lines": 1123,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1202",
+        "delta": 17,
+        "reason": "Cell-line next commands beside the other entity related-command builders (ticket 1202, +17).",
+        "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed."
+      }
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
@@ -296,12 +301,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1817,
+      "baseline_lines": 1838,
       "floor_lines": 1810,
       "authorized_increase": {
-        "ticket": "1022, 1158",
-        "delta": 7,
-        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs.",
+        "ticket": "1022, 1158, 1202",
+        "delta": 28,
+        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs, and the cell-line section-sources builder (ticket 1202, +21).",
         "removal_condition": "Extract variant provenance into its own renderer module."
       }
     },
@@ -346,12 +351,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2289,
+      "baseline_lines": 2290,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1022, 1150, 1158, 1199, 1200",
-        "delta": 442,
-        "reason": "Register dbSNP and GenCC, carry the task-local variant deadline through shared request, retry, and provider-admission utilities, resolve the citation-evidence sidecar cache mode, and register the OpenCitations reference client.",
+        "ticket": "1022, 1150, 1158, 1199, 1200, 1202",
+        "delta": 443,
+        "reason": "Register dbSNP and GenCC, carry the task-local variant deadline through shared request, retry, and provider-admission utilities, resolve the citation-evidence sidecar cache mode, and register the OpenCitations reference client, and register the Cellosaurus client (ticket 1202, +1).",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },
