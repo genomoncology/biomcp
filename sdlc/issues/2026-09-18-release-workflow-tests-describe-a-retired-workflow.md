@@ -13,7 +13,17 @@ workflow family:
 - `tests/test_public_installer_checksum.py`, 1 failure
 - `tests/test_routine_cargo_feature_contract.py`, 1 failure
 
-They assert a staged release design against `.github/workflows/release.yml`:
+Two executable spec blocks fail for the same reason, found once the spec
+suite was unmasked:
+
+- `spec/surface/docker-image.md:30`, `Stage And Promotion Stay Separate`
+- `spec/surface/homebrew.md:30`, `Public Tap Moves Only After Verification`
+
+Both match `.github/workflows/release.yml` against staged-release markers such as
+`mode:`, `publish-versioned:`, and `advance-mutable-pointers:`, none of which the
+current workflow contains.
+
+The tests assert a staged release design against `.github/workflows/release.yml`:
 
 ```
 assert set(dispatch) == {"mode", "source_sha", "stage_run_id", "windows_desktop_smoke", ...}
@@ -48,7 +58,9 @@ the staged workflow deliberately, so the likely answer is that the tests go.
 
 1. Delete the tests that describe the retired design, or rewrite them against
    the workflow that exists. `test_release_stage_workflow.py` is entirely about
-   `stage` and `promote` modes and has no meaning without them.
+   `stage` and `promote` modes and has no meaning without them. The two spec
+   blocks go the same way as whatever is decided for the tests, since they
+   assert the same markers.
 2. Check the four failures outside that file individually. They may be asserting
    something the current workflow could reasonably satisfy, in which case the
    workflow is what should change.
