@@ -456,8 +456,15 @@ fn not_found(id: &str) -> BioMcpError {
 /// Resolve a source ID held in a cross-reference to one accession.
 async fn resolve_source_id(client: &CellosaurusClient, id: &str) -> Result<String, BioMcpError> {
     let page = client.search_xref(id).await?;
-    let accessions: Vec<String> = page
-        .records
+    accession_for_source_id(id, &page.records)
+}
+
+/// Pick the one accession a cross-reference lookup names.
+pub(crate) fn accession_for_source_id(
+    id: &str,
+    records: &[CellosaurusRecord],
+) -> Result<String, BioMcpError> {
+    let accessions: Vec<String> = records
         .iter()
         .filter_map(|record| record.primary_accession().map(str::to_string))
         .collect();

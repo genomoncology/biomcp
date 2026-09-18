@@ -403,3 +403,65 @@ fn all_turns_on_every_section() {
     assert!(sections.include_variants);
     assert!(sections.include_xrefs);
 }
+
+// Acceptance 10: a source ID held in a cross-reference resolves to one accession.
+
+#[test]
+fn each_recorded_source_id_resolves_to_the_same_accession() {
+    for (id, fixture) in [
+        ("ACH-000362", "search_dr_ach_000362_20260917.json"),
+        ("SIDM00437", "search_dr_sidm00437_20260917.json"),
+        ("CHEMBL3706573", "search_dr_chembl3706573_20260917.json"),
+        ("MOLM13_950_2019", "search_dr_molm13_950_2019_20260917.json"),
+    ] {
+        let accession = accession_for_source_id(id, &records(fixture))
+            .unwrap_or_else(|err| panic!("{id} resolves: {err:?}"));
+        assert_eq!(accession, "CVCL_2119", "{id}");
+    }
+}
+
+#[test]
+fn an_unmatched_source_id_is_not_found_and_names_the_search() {
+    let error = accession_for_source_id("ACH-999999", &[]).expect_err("no rows is not found");
+    let BioMcpError::NotFound {
+        entity,
+        id,
+        suggestion,
+    } = error
+    else {
+        panic!("expected NotFound, got {error:?}");
+    };
+    assert_eq!(entity, "cell-line");
+    assert_eq!(id, "ACH-999999");
+    assert_eq!(suggestion, "biomcp search cell-line ACH-999999");
+}
+
+#[test]
+fn a_source_id_that_names_two_lines_asks_for_one_accession() {
+    let mut ambiguous = records("search_idsy_kg1_20260917.json");
+    ambiguous.truncate(2);
+    let error = accession_for_source_id("KG1", &ambiguous).expect_err("two rows is ambiguous");
+    let BioMcpError::InvalidArgument(message) = error else {
+        panic!("expected InvalidArgument, got {error:?}");
+    };
+    assert!(message.contains("more than one"), "{message}");
+    assert!(message.contains("CVCL_"), "{message}");
+}
+
+// Acceptance 11: an unknown accession fails with the not-found error and the search hint.
+
+#[test]
+fn an_unknown_accession_is_not_found_and_names_the_search() {
+    let error = not_found("CVCL_9ZZZ");
+    let BioMcpError::NotFound {
+        entity,
+        id,
+        suggestion,
+    } = error
+    else {
+        panic!("expected NotFound, got {error:?}");
+    };
+    assert_eq!(entity, "cell-line");
+    assert_eq!(id, "CVCL_9ZZZ");
+    assert_eq!(suggestion, "biomcp search cell-line CVCL_9ZZZ");
+}
