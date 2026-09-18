@@ -150,6 +150,16 @@ These follow the 2026-09-17 source survey. Ian can overturn any of them.
 - Final level: 3
 - Selected model: build tier, high reasoning
 
+## Blocked 2026-09-18
+
+Implementation stopped before any code was written. Two findings, both measured on 2026-09-18.
+
+The licence in this ticket is wrong. `https://depmap.org/portal/terms_text` answered HTTP 200 with the current terms, last revised 2026-04-02. They forbid Commercial Use including "incorporation into a product", and they require that anyone rehosting the Data repost the terms in full and bind third-party users to them. The Figshare article's CC BY 4.0 field says the opposite. Recorded fixture bytes in this public MIT repository are rehosting, and all fifteen acceptance items need them. `sdlc/issues/2026-09-18-depmap-site-terms-contradict-the-figshare-cc-by-4-0-field.md` has the verbatim sentences and the reading that would unblock it. Ian decides which statement governs.
+
+The mirror is further behind than recorded here. The newest DepMap release is 26Q1, announced 2026-04-01, with 25Q2 and 25Q3 before it. Figshare group 36075 still holds only 24Q4, 24Q2, and 23Q4.
+
+Two facts here were re-measured and hold. `Model.csv` for 24Q4 downloads at 645,696 bytes with MD5 `675210d17675f3517b0ce39a3c274f16` and carries 2,105 rows, of which 134 have no RRID. Four RRIDs map to two models each: CVCL_0041, CVCL_1122, CVCL_1150, and CVCL_1439. The 429 MB matrix was not downloaded.
+
 ## Review
 
 - Design review: pending
