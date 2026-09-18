@@ -926,6 +926,8 @@ biomcp gene trials BRAF
 biomcp gene drugs BRAF
 biomcp gene articles BRCA1
 biomcp gene pathways BRAF
+biomcp gene cell-lines FLT3 --group leukemia
+biomcp gene cell-lines MYCN --group neuroblastoma --limit 20 --offset 0
 biomcp pathway drugs R-HSA-5673001
 biomcp pathway drugs hsa05200
 biomcp pathway articles R-HSA-5673001

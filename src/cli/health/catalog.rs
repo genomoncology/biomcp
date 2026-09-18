@@ -453,7 +453,9 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
     },
     SourceDescriptor {
         api: "HPA",
-        affects: Some("gene protein tissue expression and localization section"),
+        affects: Some(
+            "gene protein tissue expression and localization section, and gene cell-lines RNA expression",
+        ),
         probe: ProbeKind::Get {
             url: "https://www.proteinatlas.org/ENSG00000157764.xml",
         },

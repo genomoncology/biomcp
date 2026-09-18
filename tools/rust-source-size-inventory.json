@@ -122,12 +122,12 @@
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3857,
+      "baseline_lines": 3858,
       "floor_lines": 3812,
       "authorized_increase": {
-        "ticket": "0973",
-        "delta": 45,
-        "reason": "Canonical MyGene alias identity reuses the existing gene query and ambiguity rules rather than duplicating them in discovery.",
+        "ticket": "0973, 1213",
+        "delta": 46,
+        "reason": "Canonical MyGene alias identity reuses the existing gene query and ambiguity rules rather than duplicating them in discovery, and the cell_lines helper module declaration (ticket 1213, +1).",
         "removal_condition": "Extract MyGene identity resolution when the gene entity provider helpers are next decomposed."
       }
     },
@@ -240,12 +240,12 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2157,
+      "baseline_lines": 2158,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1031, 1150, 1158, 1202",
-        "delta": 201,
-        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions, and the typed cell-line get branch and its typed-search rejection (ticket 1202, +8).",
+        "ticket": "1031, 1150, 1158, 1202, 1213",
+        "delta": 202,
+        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions, the typed cell-line get branch and its typed-search rejection (ticket 1202, +8), and the gene cell-lines arm of the MCP command allowlist (ticket 1213, +1).",
         "removal_condition": "Extract typed tool schema transforms when the MCP shell is next decomposed."
       }
     },

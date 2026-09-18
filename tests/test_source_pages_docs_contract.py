@@ -676,11 +676,13 @@ SOURCE_PAGE_SPECS = {
         ],
         "exposes": [
             "get gene <symbol> hpa",
+            "gene cell-lines <symbol> --group <group>",
         ],
         "example_commands": [
             "biomcp get gene BRAF hpa",
             "biomcp get gene EGFR hpa",
             "biomcp get gene TP53 hpa",
+            "biomcp gene cell-lines FLT3 --group leukemia",
         ],
     },
     "monarch-initiative.md": {

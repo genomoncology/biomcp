@@ -2546,6 +2546,90 @@
         "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
         "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
       }
+    },
+  {
+      "path": "hpa/cell_rna_leukemia_flt3_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Human Protein Atlas",
+        "request": "https://www.proteinatlas.org/api/search_download.php?search=ENSG00000122025&format=json&columns=g%2Ceg%2Ccell_RNA_leukemia&compress=no",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "54e1c69e0ca672cd0bc3024c40e28a03581459f229aed8b3cd7f0db0e8ed3eb1",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. The Human Protein Atlas publishes cell line RNA levels and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP HpaClient production request path against the public Human Protein Atlas search download API on 2026-09-18. The API is unauthenticated and read-only and publishes no rate limit. The cell line RNA file behind the response is dated 2025-11-05. Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch1_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22697%22+OR+%22ALL-SIL%22+OR+%22AML-193%22+OR+%22BDCM%22+OR+%22BV-173%22+OR+%22CCRF-SB%22+OR+%22CMK%22+OR+%22CML-T1%22+OR+%22DND-41%22+OR+%22EM-2%22+OR+%22EoL-1%22+OR+%22F-36P%22+OR+%22GDM-1%22+OR+%22HAP1%22+OR+%22HEL%22+OR+%22HEL+92.1.7%22+OR+%22HL-60%22+OR+%22HMC-1%22+OR+%22HNT-34%22+OR+%22HPB-ALL%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "75cdd2ba8bd663d2c47de174ba2282e8155e14b7cf1b3d215dfec62b3acbc7af",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch2_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22JK-1%22+OR+%22JM-1%22+OR+%22JURKAT%22+OR+%22Jurkat+E6.1%22+OR+%22JURL-MK1%22+OR+%22JVM-3%22+OR+%22K-562%22+OR+%22Kasumi-1%22+OR+%22Kasumi-2%22+OR+%22Kasumi-6%22+OR+%22KCL-22%22+OR+%22KE-37%22+OR+%22KG-1%22+OR+%22KO52%22+OR+%22KOPN-8%22+OR+%22Ku812%22+OR+%22KYO-1%22+OR+%22LAMA-84%22+OR+%22Loucy%22+OR+%22M-07e%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "2f3666fc5118f40190d5fd75cadf00118e400949e388d6e7cda09960b4375234",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch3_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22ME-1+%5BHuman+leukemia%5D%22+OR+%22MEC-1%22+OR+%22MEG-01%22+OR+%22MHH-CALL-2%22+OR+%22MHH-CALL-3%22+OR+%22MHH-CALL-4%22+OR+%22ML-2%22+OR+%22MOLM-13%22+OR+%22MOLM-16%22+OR+%22MOLM-6%22+OR+%22MOLT-13%22+OR+%22MOLT-16%22+OR+%22MOLT-3%22+OR+%22MOLT-4%22+OR+%22Mono-Mac-1%22+OR+%22Mono-Mac-6%22+OR+%22MUTZ-3%22+OR+%22MUTZ-5%22+OR+%22MV4-11%22+OR+%22NALM-1%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "f04f99e09e5be3662a39ea07626ea9d2d844bcd83b564a06f322802588acf9db",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch4_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22NALM-19%22+OR+%22NALM-6%22+OR+%22NB4%22+OR+%22NCO2%22+OR+%22NOMO-1%22+OR+%22OCI-AML-2%22+OR+%22OCI-AML-3%22+OR+%22OCI-AML-5%22+OR+%22OCI-M1%22+OR+%22OCI-M2%22+OR+%22P12-Ichikawa%22+OR+%22P31%2FFUJ%22+OR+%22Peer%22+OR+%22PF-382%22+OR+%22PL-21%22+OR+%22PLB-985%22+OR+%22RCH-ACV%22+OR+%22REH%22+OR+%22RPMI-8402%22+OR+%22RS4%3B11%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "9d1052000de24d92ca87b6dd02d2ea46f480203a7fb8272f2b5e5f456b66de61",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch5_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22SEM%22+OR+%22SET-2%22+OR+%22SIG-M5%22+OR+%22SKM-1%22+OR+%22SKNO-1%22+OR+%22SUP-B15%22+OR+%22SUP-T1%22+OR+%22SUP-T11%22+OR+%22TALL-1+%5BHuman+adult+T-ALL%5D%22+OR+%22TF-1%22+OR+%22THP-1%22+OR+%22U-937%22+OR+%22UKE-1%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "456efcd6db83cd2eb371d4adf6473837acaf632428bb24c207ec2df7827deafa",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "mygene/get_flt3_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22FLT3%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "4a02539067d9b4a5e77bed89fafde70286532a78ef42b49c640a4fc7f3e0b2ae",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. MyGene.info publishes gene annotation and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP MyGeneClient production request path against the public MyGene.info API on 2026-09-18. The API is unauthenticated and read-only. The field list is the one the production plan sends."
+      }
     }
   ],
   "fixture_key_contract": {

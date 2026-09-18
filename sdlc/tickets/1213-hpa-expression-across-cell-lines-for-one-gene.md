@@ -110,6 +110,65 @@ Ian can overturn these.
 - Final level: 2
 - Reasons: existing source, one new query shape, and a guarded name join
 
+## Implementation findings, 2026-09-18
+
+Measured through the production request path against the live public APIs. Where
+a live value differs from the measurement above, the recorded value stands and
+the ticket text is left as the earlier reading.
+
+### Licence
+
+The Human Protein Atlas terms page
+(<https://www.proteinatlas.org/about/licence>) reads: "The Human Protein Atlas is
+licensed under the Creative Commons Attribution 4.0 International License for all
+copyrightable parts of our database." The licence is **CC BY 4.0**. The
+CC BY-SA 4.0 the repo carried was one of the external data sources the same page
+lists further down, next to CC BY-NC-SA 4.0, MIT and CC BY-SA 3.0 entries. The
+attribution line, `docs/reference/source-licensing.md` and
+`docs/reference/sources.json` now all read CC BY 4.0, `reviewed_on` is
+`2026-09-18`, and a test pins that the three agree.
+
+### Drift from the measurements above
+
+- The leukemia group holds **93** cell lines, not 91. The data access page lists
+  30 groups covering **1,206** cell lines, not 1,193.
+- FLT3 in MOLM-13 is **166.1** nTPM, not 23.0. 23.0 is the value for the line
+  named `697`, the first column of the group.
+- `search=<ensembl id>` returns **one** object, not three. The three-object
+  reading came from `search=FLT3`, which matches by symbol.
+- The file date holds: the `Last-Modified` header of
+  `https://www.proteinatlas.org/download/tsv/rna_celline.tsv.zip` is
+  2025-11-05. The data access page itself publishes no date, so the constant
+  names the file instead.
+- The spec block asserts `total == 93`.
+
+### Join
+
+- The batch query is `id:(...) AND ox:9606`, with `fields=ac,id`. The `ox` filter
+  is the source's own, and it halves the recorded bytes: 613 KB across the five
+  batches instead of 1.46 MB with `ox` in the projection. Every returned record
+  is human by construction, and the matcher still requires exactly one
+  identifier match.
+- `id:` searches identifiers and not synonyms, so the 1202 traps answer
+  correctly with no second rule: NB4 is CVCL_0005 and not SJNB-4, KG-1 is
+  CVCL_0374, HL-60 is CVCL_0002 and not HL-60(TB).
+- All **93** names resolve to exactly one human accession. None is unresolved.
+- The first batch window fills at 1000 rows, because `HAP1` alone matches
+  thousands of Horizon knockout derivatives. The exact records still rank inside
+  that window, which the recorded fixture proves. A name pushed out of a window
+  gets a `null` accession and the row note, never a wrong accession.
+
+### Shape
+
+- A row carries an optional `note`, and the payload carries an optional `notes`
+  list. Acceptance 3 and 4 need both, and the ticket's JSON sketch named
+  neither.
+- The symbol resolves through one MyGene.info lookup rather than the whole gene
+  card, because the card fetches every optional section for a value the helper
+  reads in one field. `testdata/sources/mygene/get_flt3_20260918.json` is the
+  recorded fixture for it.
+- Recorded fixtures carry the 20260918 date suffix, the day they were recorded.
+
 ## Review
 
 - Design review: pending

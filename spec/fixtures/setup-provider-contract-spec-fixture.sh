@@ -167,6 +167,7 @@ MYGENE = {
     "(symbol:PD\\-L1 OR alias:PD\\-L1)": fixture("mygene/search_pdl1_20260811.json"),
     'symbol:"CD274"': fixture("mygene/get_cd274_20260811.json"),
     'symbol:"BRCA1"': fixture("mygene/get_brca1_20260811.json"),
+    'symbol:"FLT3"': fixture("mygene/get_flt3_20260918.json"),
     'symbol:"EGFR"': fixture("mygene/get_egfr_20260811.json"),
     'symbol:"ERBB2"': fixture("mygene/get_erbb2_20260811.json"),
     'symbol:"ODC1"': json.dumps({
@@ -271,6 +272,11 @@ QUICKGO_ANNOTATIONS = fixture("quickgo/annotations_braf_20260811.json")
 QUICKGO_TERMS = fixture("quickgo/terms_braf_20260811.json")
 STRING_NETWORK = fixture("string/network_braf_20260811.json")
 HPA_BRAF = fixture("hpa/braf_20260811.xml")
+HPA_CELL_RNA = {
+    ("ENSG00000122025", "g,eg,cell_RNA_leukemia"): fixture(
+        "hpa/cell_rna_leukemia_flt3_20260918.json"
+    ),
+}
 DGIDB_EGFR = fixture("dgidb/gene_egfr_20260811.json")
 NIH_ERBB2 = fixture("nih_reporter/funding_erbb2_20260811.json")
 NIH_MARFAN = fixture("nih_reporter/funding_marfan_syndrome.json")
@@ -290,6 +296,15 @@ CELLOSAURUS_RECORDS = {
     "CVCL_1844": fixture("cellosaurus/get_cvcl_1844_var_20260917.json"),
     "CVCL_0007": fixture("cellosaurus/get_cvcl_0007_20260917.json"),
     "CVCL_0005": fixture("cellosaurus/get_cvcl_0005_20260917.json"),
+}
+# Ticket 1213: the five identifier batches the 93-line leukemia group needs.
+# The key is the first name in the batch, which the query quotes first.
+CELLOSAURUS_ID_BATCHES = {
+    "697": fixture("cellosaurus/search_id_leukemia_batch1_20260918.json"),
+    "JK-1": fixture("cellosaurus/search_id_leukemia_batch2_20260918.json"),
+    "ME-1 [Human leukemia]": fixture("cellosaurus/search_id_leukemia_batch3_20260918.json"),
+    "NALM-19": fixture("cellosaurus/search_id_leukemia_batch4_20260918.json"),
+    "SEM": fixture("cellosaurus/search_id_leukemia_batch5_20260918.json"),
 }
 CELLOSAURUS_SEARCHES = {
     'idsy:"MOLM13"': fixture("cellosaurus/search_idsy_molm13_20260917.json"),
@@ -516,6 +531,11 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/hpa/ENSG00000157764.xml":
             send(self, 200, HPA_BRAF, "application/xml")
             return
+        if parsed.path == "/hpa/api/search_download.php":
+            params = parse_qs(parsed.query)
+            key = (params.get("search", [""])[0], params.get("columns", [""])[0])
+            send(self, 200, HPA_CELL_RNA.get(key, b"[]"))
+            return
         if parsed.path == "/cellosaurus/release-info":
             send(self, 200, CELLOSAURUS_RELEASE)
             return
@@ -523,6 +543,10 @@ class Handler(BaseHTTPRequestHandler):
             # The window is answered by the query alone. An unlisted ac:, dr:,
             # idsy: or id: query is a normal zero-row result, never a failure.
             query = parse_qs(parsed.query).get("q", [""])[0]
+            if query.startswith("id:("):
+                first_name = query.split('"')[1] if '"' in query else ""
+                send(self, 200, CELLOSAURUS_ID_BATCHES.get(first_name, CELLOSAURUS_EMPTY))
+                return
             send(self, 200, CELLOSAURUS_SEARCHES.get(query, CELLOSAURUS_EMPTY))
             return
         if parsed.path.startswith("/cellosaurus/cell-line/"):

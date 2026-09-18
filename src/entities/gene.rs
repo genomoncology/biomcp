@@ -1,3 +1,4 @@
+pub(crate) mod cell_lines;
 mod clingen;
 pub(crate) mod cspec;
 mod gencc;

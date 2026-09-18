@@ -507,6 +507,7 @@ fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
                 | GeneCommand::Drugs { .. }
                 | GeneCommand::Articles { .. }
                 | GeneCommand::Pathways { .. }
+                | GeneCommand::CellLines { .. }
                 | GeneCommand::Cspec(_),
         }
         | Commands::Pathway {

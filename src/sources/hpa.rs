@@ -12,6 +12,54 @@ use crate::sources::{RequestPlan, request_from_plan};
 const HPA_BASE: &str = "https://www.proteinatlas.org";
 const HPA_API: &str = "hpa";
 const HPA_BASE_ENV: &str = "BIOMCP_HPA_BASE";
+/// The search download endpoint that answers one gene at a time.
+const HPA_CELL_LINE_PATH: &str = "api/search_download.php";
+/// The column key prefix and suffix HPA wraps each cell line name in.
+const HPA_CELL_LINE_PREFIX: &str = "Cell line RNA - ";
+const HPA_CELL_LINE_SUFFIX: &str = " [nTPM]";
+
+/// The cancer groups HPA sorts its cell lines into, copied from the data access
+/// page (`https://www.proteinatlas.org/about/help/dataaccess`) on 2026-09-18,
+/// where 30 groups cover 1,206 cell lines. A column key is `cell_RNA_<group>`.
+pub(crate) const HPA_CELL_LINE_GROUPS: &[&str] = &[
+    "adrenocortical_cancer",
+    "bile_duct_cancer",
+    "bladder_cancer",
+    "bone_cancer",
+    "brain_cancer",
+    "breast_cancer",
+    "cervical_cancer",
+    "colorectal_cancer",
+    "esophageal_cancer",
+    "gallbladder_cancer",
+    "gastric_cancer",
+    "head_and_neck_cancer",
+    "kidney_cancer",
+    "leukemia",
+    "liver_cancer",
+    "lung_cancer",
+    "lymphoma",
+    "myeloma",
+    "neuroblastoma",
+    "non-cancerous",
+    "ovarian_cancer",
+    "pancreatic_cancer",
+    "prostate_cancer",
+    "rhabdoid",
+    "sarcoma",
+    "skin_cancer",
+    "testis_cancer",
+    "thyroid_cancer",
+    "uncategorized",
+    "uterine_cancer",
+];
+
+/// The date of the HPA cell line RNA file, read from the `Last-Modified` header
+/// of `https://www.proteinatlas.org/download/tsv/rna_celline.tsv.zip` on
+/// 2026-09-18, the file the data access page links. The search download
+/// response carries no date, so the value is a recorded file date. It is
+/// refreshed the same way the group list is.
+pub(crate) const HPA_CELL_LINE_FILE_DATE: &str = "2025-11-05";
 
 pub struct HpaClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -29,6 +77,97 @@ impl HpaClient {
     pub(crate) fn protein_data_plan(ensembl_id: &str) -> Result<RequestPlan, BioMcpError> {
         let ensembl_id = normalize_ensembl_id(ensembl_id)?;
         Ok(RequestPlan::get(format!("{ensembl_id}.xml")))
+    }
+
+    /// Check one cancer group before any request is made.
+    pub(crate) fn cell_line_group(group: &str) -> Result<String, BioMcpError> {
+        normalize_cell_line_group(group)
+    }
+
+    /// The RNA level of one gene across the cell lines of one cancer group.
+    ///
+    /// HPA answers one gene at a time through its search download endpoint. The
+    /// `columns` list asks for the gene name, the Ensembl ID, and the one cell
+    /// line column the group names.
+    pub(crate) fn cell_line_rna_plan(
+        ensembl_id: &str,
+        group: &str,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let ensembl_id = normalize_ensembl_id(ensembl_id)?;
+        let group = normalize_cell_line_group(group)?;
+        Ok(RequestPlan::get(HPA_CELL_LINE_PATH)
+            .query("search", ensembl_id)
+            .query("format", "json")
+            .query("columns", format!("g,eg,cell_RNA_{group}"))
+            .query("compress", "no"))
+    }
+
+    /// Decode one search download body into the cell line rows of one gene.
+    ///
+    /// An HTTP 200 carrying an HTML human-verification page where JSON was
+    /// expected is a provider error that names the URL and stops the command.
+    pub(crate) fn decode_cell_line_rna(
+        url: &str,
+        status: StatusCode,
+        bytes: &[u8],
+        ensembl_id: &str,
+    ) -> Result<Vec<HpaCellLineExpression>, BioMcpError> {
+        if !status.is_success() {
+            return Err(BioMcpError::Api {
+                api: HPA_API.to_string(),
+                message: format!(
+                    "HTTP {status} from {url}: {}",
+                    crate::sources::body_excerpt(bytes)
+                ),
+            });
+        }
+        if looks_like_html(bytes) {
+            return Err(BioMcpError::Api {
+                api: HPA_API.to_string(),
+                message: format!(
+                    "HPA returned an HTML page where JSON was expected at {url}: {}",
+                    crate::sources::body_excerpt(bytes)
+                ),
+            });
+        }
+        let rows: Vec<OrderedObject> =
+            serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
+                api: HPA_API.to_string(),
+                source,
+            })?;
+        Ok(cell_line_rows_for_gene(&rows, ensembl_id))
+    }
+
+    /// The cell line rows for one gene and one cancer group, in the order HPA
+    /// published the columns.
+    pub async fn cell_line_rna(
+        &self,
+        ensembl_id: &str,
+        group: &str,
+    ) -> Result<Vec<HpaCellLineExpression>, BioMcpError> {
+        let plan = Self::cell_line_rna_plan(ensembl_id, group)?;
+        let url = crate::sources::join_base_path(self.base.as_ref(), &plan.path);
+        let resp = crate::sources::apply_cache_mode(request_from_plan(
+            &self.client,
+            self.base.as_ref(),
+            &plan,
+        ))
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::HPA,
+        ))
+        .await?;
+        let status = resp.status();
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::HPA),
+        )
+        .await?;
+        Self::decode_cell_line_rna(&url, status, &bytes, &normalize_ensembl_id(ensembl_id)?)
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::HPA,
+                ))
+            })
     }
 
     pub(crate) fn decode_protein_data_xml(
@@ -132,6 +271,115 @@ pub struct GeneHpa {
 pub struct HpaTissueExpression {
     pub tissue: String,
     pub level: String,
+}
+
+/// One cell line RNA value, as HPA published it. A value that is not a number
+/// is kept as `None` rather than guessed at.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct HpaCellLineExpression {
+    pub name: String,
+    pub ntpm: Option<f64>,
+}
+
+/// A JSON object whose keys keep the order the provider wrote them in. The cell
+/// line columns are read in upstream order, and `serde_json` sorts its own map.
+#[derive(Debug, Clone, Default)]
+struct OrderedObject(Vec<(String, serde_json::Value)>);
+
+impl OrderedObject {
+    fn get(&self, key: &str) -> Option<&serde_json::Value> {
+        self.0
+            .iter()
+            .find(|(name, _)| name == key)
+            .map(|(_, value)| value)
+    }
+}
+
+impl<'de> Deserialize<'de> for OrderedObject {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct OrderedObjectVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for OrderedObjectVisitor {
+            type Value = OrderedObject;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str("a JSON object")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut entries = Vec::new();
+                while let Some(entry) = map.next_entry::<String, serde_json::Value>()? {
+                    entries.push(entry);
+                }
+                Ok(OrderedObject(entries))
+            }
+        }
+
+        deserializer.deserialize_map(OrderedObjectVisitor)
+    }
+}
+
+/// Keep the one object whose `Ensembl` value is the gene that was asked for.
+/// A missing object gives an empty list.
+fn cell_line_rows_for_gene(rows: &[OrderedObject], ensembl_id: &str) -> Vec<HpaCellLineExpression> {
+    let Some(row) = rows.iter().find(|row| {
+        row.get("Ensembl")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .is_some_and(|value| value.eq_ignore_ascii_case(ensembl_id))
+    }) else {
+        return Vec::new();
+    };
+
+    row.0
+        .iter()
+        .filter_map(|(key, value)| {
+            let name = key
+                .strip_prefix(HPA_CELL_LINE_PREFIX)?
+                .strip_suffix(HPA_CELL_LINE_SUFFIX)?
+                .trim();
+            (!name.is_empty()).then(|| HpaCellLineExpression {
+                name: name.to_string(),
+                ntpm: parse_ntpm(value),
+            })
+        })
+        .collect()
+}
+
+/// HPA publishes the values as strings. Anything that is not a number is kept
+/// as `None`.
+fn parse_ntpm(value: &serde_json::Value) -> Option<f64> {
+    match value {
+        serde_json::Value::Number(number) => number.as_f64(),
+        serde_json::Value::String(text) => text.trim().parse::<f64>().ok(),
+        _ => None,
+    }
+}
+
+/// Validate one cancer group against the recorded list.
+fn normalize_cell_line_group(group: &str) -> Result<String, BioMcpError> {
+    let group = group.trim().to_ascii_lowercase();
+    if HPA_CELL_LINE_GROUPS.contains(&group.as_str()) {
+        return Ok(group);
+    }
+    Err(BioMcpError::InvalidArgument(format!(
+        "Unknown HPA cancer group \"{group}\". Available: {}",
+        HPA_CELL_LINE_GROUPS.join(", ")
+    )))
+}
+
+/// An HTTP 200 body that is an HTML page where JSON was expected.
+fn looks_like_html(bytes: &[u8]) -> bool {
+    let sniff = String::from_utf8_lossy(&bytes[..bytes.len().min(128)])
+        .trim_start()
+        .to_ascii_lowercase();
+    sniff.starts_with("<!doctype html") || sniff.starts_with("<html")
 }
 
 fn reject_html_content_type(

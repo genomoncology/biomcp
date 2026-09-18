@@ -1,0 +1,958 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1632"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "P31/FUJ"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1851"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "RCH-ACV"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1630"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "P12-Ichikawa"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2162"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PLB-985"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1641"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PF-382"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1667"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "RPMI-8402"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1620"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "OCI-AML-5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1844"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "OCI-AML-3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1619"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "OCI-AML-2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2150"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "OCI-M2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3HD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PLB-985 CYBB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8HI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PLB-985 NCF1 DeltaGT"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2149"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "OCI-M1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2161"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PL-21"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1835"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-19"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_3043"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NCO2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1913"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Peer"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1609"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NOMO-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0092"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6CI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE OCI-Aml-3-CopGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5V1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE OCI-Aml-3-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1650"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Reh"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0093"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "RS4;11"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6C9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE OCI-AML-2-CopGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5US"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE OCI-AML-2-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_3077"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NOMO-1/ADM"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0005"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE04"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 DCLRE1C(-/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE05"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 LIG4(-/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE06"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 MUS81(-/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4IJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 POLB (-/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE07"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 PRKDC(+/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE08"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 RAD54L(-/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE09"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 TOP1(+/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE10"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 TOP2B(-/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE11"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 TP53(+/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE12"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 TP53(-/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE13"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6 XRCC5(+/-)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_J365"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Nalm-6-MSH+"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UD96"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Nalm-6-TK+/-"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7AM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6/H"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7AN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6/HDR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_ZV66"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Reh/EphA3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UD71"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Nalm-6-MSH+/TK+/-"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7AP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6/HDR-C5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0U51"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-6/SP-B"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_VV77"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-A1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U080"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-AsR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_VV78"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-B1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_VV79"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-D5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U085"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-DR1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U087"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-DR2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U088"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-DR3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_8811"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-LR1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U081"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-LR2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_VV80"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-MR2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_VV81"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-MR6"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_VV82"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-R4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U086"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4-S1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U082"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NB4/As"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_XZ61"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "RS4;11 BCL2-F104L"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_XZ62"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "RS4;11 BCL2-G101V"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8JJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "RS4;11 mouse MCL1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5R0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE NB4-Cas9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0ZE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene NB4 TLN1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4RL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte NALM-6 stable cell line for hP4HA2 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4S8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte NALM-6 stable cell line for hZCCHC7 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4SQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte NB4 stable cell line for hBCL6B overexpression"
+          }
+        ]
+      }
+    ]
+  }
+}

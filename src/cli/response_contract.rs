@@ -85,6 +85,7 @@ const AUTHORS_PATH: JsonPath = &["authors"];
 const INTERACTIONS_PATH: JsonPath = &["interactions"];
 const STRUCTURES_PATH: JsonPath = &["structures"];
 const PATHWAYS_PATH: JsonPath = &["pathways"];
+const ROWS_PATH: JsonPath = &["rows"];
 const DOCUMENTS_PATH: JsonPath = &["documents"];
 const CONCEPTS_PATH: JsonPath = &["concepts"];
 const DRUG_US_RESULTS_PATH: JsonPath = &["regions", "us", "results"];
@@ -200,6 +201,9 @@ impl JsonResponseContract {
                 | super::GeneCommand::Articles { .. } => Self::RESULTS,
                 super::GeneCommand::Pathways { .. } => Self {
                     collection_paths: &[PATHWAYS_PATH],
+                },
+                super::GeneCommand::CellLines { .. } => Self {
+                    collection_paths: &[ROWS_PATH],
                 },
                 super::GeneCommand::Cspec(_)
                 | super::GeneCommand::Definition { .. }

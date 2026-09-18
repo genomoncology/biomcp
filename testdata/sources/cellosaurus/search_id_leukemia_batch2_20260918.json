@@ -1,0 +1,8672 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0367"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat E6.1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2086"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "JURL-MK1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0388"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "LAMA-84"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2091"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KCL-22"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2106"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "M-07e"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1327"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KE-37"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_RM07"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "M-07e/TPO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WN96"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat E6.1 NF-kappaB::eGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0614"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Kasumi-6"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2095"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KYO-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1320"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "JVM-3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1321"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KO52"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1380"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Loucy"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1866"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KOPN-8"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_3532"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "JM-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0374"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KG-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0379"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ku812"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0590"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Kasumi-2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5VA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE M-07e-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0004"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2079"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "JK-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0589"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Kasumi-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2971"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KG-1-C"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_DX77"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 Cas9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_RY26"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 CRISPRa"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_JM00"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562-GFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8Y5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562-Luc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UR39"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562-luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_LH50"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562-RH"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_L434"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "P2UR/K-562"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_JY45"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Kasumi-1 PR48"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_JY44"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Kasumi-1 R48"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6I5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KU812 IM1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6I6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KU812 IM2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6I7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "KU812 IM3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A9P4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience Jurkat E6.1 NF-kappaB-driven luciferase reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5YS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE K-562-CopGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5R9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE K-562-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3HQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte K-562-Luc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_DX78"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 dCas9-VPR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4AH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 KC/16"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4AI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 KL/4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4AJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 P/5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1LN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte K-562 KO-hERAP1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4II"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte K-562 KO-hMYC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S029"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 SimpleCell O-GalNAc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_LH51"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562-C-1 p365"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ84"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ABI1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ85"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ACAA1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ86"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ACAT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ87"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ACOT13 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ88"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ACTR3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ89"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ACVR2B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ90"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ACVRL1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ91"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ACY1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B0ZA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ADAM17 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ92"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ADD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ93"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 AHCY KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ94"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 AKR7A2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ95"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ALAD KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ96"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ALDH1A2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ97"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ALDH4A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ98"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ALDOB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ99"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ALOX5AP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ARSA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ASL KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ATXN2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 BAZ2A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 BCAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 BCAT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 BRMS1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 BTLA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CA8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CALU KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CAMK4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CASP10 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CASP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CBLC KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CCS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CHP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CLASP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CLPP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CMAS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CNDP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CRYZ KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B0ZB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CSF3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CYB5A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 CYB5R3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 DFFB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 DGAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1M9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 DGKA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 DNPEP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 DNTT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 DPP8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7VR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 EP300 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 EPHX1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1ME"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 EPHX2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 EPN1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ETV4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 FDX1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 FECH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 FOLR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 FOSB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1ML"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 FPGS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 FRK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 FUBP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GAMT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GANAB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GART KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GCDH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GGH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GLG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GLUL KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GNE KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GRK3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GRK6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1MZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 GUSB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HDAC10 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HDGF KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HEXA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HIF1AN KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HMBS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HMGCS2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HMOX2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HSD17B10 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HSD17B4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1N9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HSPA13 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HSPA1L KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HSPA2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HSPA4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1ND"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 HSPH1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 IKZF3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 IL13RA1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 IL2RG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 IMPDH1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ITGA4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 LGALS8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 LIAS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MAEA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MAP3K4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MAP4K1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MAP4K4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MARK3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MAT1A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 ME2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MMACHC KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MPG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 MTHFR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NAGK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NAPRT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1NZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NCOA5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NDUFA12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NDUFAF2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NDUFB6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NDUFB8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NDUFS1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NDUFS2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NFKBIB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NMNAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NMT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1P9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NMT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NOD2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NOX5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NPEPPS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NQO2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 NUCB2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 OAT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 OXSR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 P3H1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PADI2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PAICS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PCMT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PCYT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PDHB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PDHX KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PEF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PGAM1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PGRMC1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PI4KB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PIM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PKLR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PMVK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PNMT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 POLH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PPOX KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1PZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PPP2CB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRDX5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRG2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRKAB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRKACA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRKAG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRKCG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRKD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PRSS8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PSMF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1Q9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PTPA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 PYCR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 QDPR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 RECQL KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 REEP5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 RPIA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 RXRB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SELENOP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SERPINB9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SH2D1A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SLC25A12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SLC5A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SLK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SMS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SORD KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SPAG9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SPTLC2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SRSF4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 SSTR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 STK17B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TACR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TBL1XR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TDP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TEC KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 THOP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1QZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TLE3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TNFSF9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TPMT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TPP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TPP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TRPC3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 TRPM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 UAP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 UBE2T KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 UBR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1R9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 UNC119 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1RA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 UPP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1RB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 VDAC2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1RC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 VPS37A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1RD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 WAS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1RE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam K-562 XPNPEP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene K-562 PIGA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene K-562 RAPSN KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene K-562 RBKS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene K-562 SET KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene K-562 SLC39A8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene K-562 TMEM187 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0065"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech K-562 H_HLA-G+B2M"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech K-562 H_IL21(Membrane bound)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_RY28"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 CRISPRa+SaCas9 clone C11"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_RY27"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 CRISPRa+SaCas9 clone C7"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F0X2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 GATA2 clone G2-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F0X3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 GATA2 clone G2-2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F0X4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 GATA2 clone G2-3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F0X5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 GATA2 clone G2-4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_LH52"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562-B1-V-2 p17"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E9XV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 VPS13A/VPS13C DKO clone 1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E9XW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "K-562 VPS13A/VPS13C DKO clone 2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U617"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BCL2 Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_LH47"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat 1F2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_IR10"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat 1G4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D5JP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat 2H4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8ZJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat C11"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_DX76"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat Cas9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_3502"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat D1.1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_DS01"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat J77"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_EG05"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat R3.25"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0584"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat Wurzburg"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E5FJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat Zip6KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U326"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-111"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_6925"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-77"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U323"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-99"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_X703"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-A2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1G46"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-deltaKS"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_X593"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Dual"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HF44"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-FADD-/-"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8VR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-hART4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B332"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-JMN"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_XX92"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-LTRGT"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C831"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-TAg"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_X692"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-tat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_AR84"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat/A4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_YJ84"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "LINTERNA Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U621"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Neo Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1H23"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PPIA-/- Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6K0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE MSLN-LUC Overexpression K-562 Stable Cell Line"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U618"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BCL2 (AAA) Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U619"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BCL2 (S70A) Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U620"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BCL2 (S87A) Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5P2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE Jurkat-Cas9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U426"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Flp-In-Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_CCR8"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_CTLA4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3HP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat-Luc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_LH48"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat 1F2-hGITR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat B2M KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1061"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat clone A3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_DS02"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat J77 cl20"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_DF51"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat NucLight Red"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_YB71"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat pNFAT-EGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3G2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat RB1-KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KU38"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat Tet-Off"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KU35"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat Tet-On"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1G48"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-713 STOP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_JZ99"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-F9-1906LUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1F94"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-HXBc2(4)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1F95"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-HXBc2(6)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7NZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Luc-RFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8F1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia hCD27"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KS47"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia NFAT"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C9F1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat/Cas9-hyg"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E2U5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Novoprotein Jurkat-NFAT"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D588"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "T-REx-Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D7C6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abeomics Jurkat GFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KS58"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "CellSensor CRE-bla Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KS63"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "CellSensor ISRE-bla Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KB42"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "CellSensor NFAT-bla Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KB43"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "CellSensor NFkB-bla Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_X694"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "1G5 [Human Jurkat derivative]"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_ZK91"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "GeneBLAzer CMV-bla Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_CTLA4 Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4JE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_FCGR3A Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4JB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat Mouse_Fcgr4 Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1LM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat KO-hATM"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1R5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat KO-hBCL10"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4EA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat KO-hSBNO2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4FT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat KO-hUFL1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4JD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat KO-hUSP13"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_HE54"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat clone 77-6.8"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KU30"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat KZ142 clone #24"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_V356"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat Tet-On 3G"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1G47"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-522 F/Y"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8F0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia h4-1BB"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A7ZT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia NFAT-CD16"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3JD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia NFAT-CD28"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A7ZU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia NFAT-CD32"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2 reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D7AE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Leeporter Jurkat FOXP3 luciferase"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KZ68"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PathHunter Jurkat IkappaB Degradation"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ00"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ABI1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ01"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ACAA1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ02"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ACAT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ03"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ACOT13 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ04"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ACTR3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ05"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ACVR2B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ06"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ACVRL1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ07"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ACY1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ08"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ADD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ09"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat AHCY KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ10"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat AKR7A2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ11"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ALAD KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ12"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ALDH1A2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ13"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ALDH4A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ14"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ALDOB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ15"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ALOX5AP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ16"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ARSA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ17"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ASL KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ18"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ATXN2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ19"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat BAZ2A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ20"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat BCAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ21"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat BCAT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ22"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat BRMS1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ23"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat BTLA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ24"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CA8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ25"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CALU KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ26"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CAMK4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ27"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CASP10 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ28"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CASP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ29"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CBLC KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ30"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CCS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7V8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CD1A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B0Z5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CD1C KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7V9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CD247 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1G4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CD3E KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1G5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CD3G KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ31"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CHP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ32"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CLASP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ33"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CLPP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ34"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CMAS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ35"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CNDP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ36"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CRYZ KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ37"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CYB5A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ38"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat CYB5R3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ39"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat DFFB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ40"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat DGAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ41"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat DGKA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ42"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat DNPEP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ43"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat DNTT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ44"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat DPP8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1G6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ENO2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ45"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat EPHX1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ46"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat EPHX2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ47"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat EPN1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ48"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ETV4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ49"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat FDX1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ50"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat FECH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ51"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat FOLR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ52"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat FOSB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ53"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat FPGS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ54"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat FRK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ55"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat FUBP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ56"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GAMT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ57"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GANAB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ58"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GART KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ59"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GCDH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ60"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GGH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ61"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GLG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ62"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GLUL KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ63"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GNE KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ64"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GRK3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ65"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GRK6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ66"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat GUSB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ67"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HDAC10 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ68"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HDGF KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ69"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HEXA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ70"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HIF1AN KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HMBS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ71"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HMGCS2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ72"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HMOX2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ73"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HSD17B10 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ74"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HSD17B4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ75"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HSPA13 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ76"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HSPA1L KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ77"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HSPA2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ78"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HSPA4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ79"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat HSPH1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7VD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IDH2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1G7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IFI16 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B0Z6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IFNG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B0Z7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IKZF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ80"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IKZF3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ81"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IL13RA1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ82"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IL2RG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ83"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat IMPDH1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ84"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ITGA4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7VA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat LCK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7VB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat LEF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ85"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat LGALS8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ86"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat LIAS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ87"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat LPXN KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ88"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MAEA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ89"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MAP3K4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ90"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MAP4K1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ91"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MAP4K4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ92"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MARK3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ93"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MAT1A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ94"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ME2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ95"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MMACHC KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ96"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MPG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ97"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat MTHFR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ98"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NAGK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UQ99"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NAPRT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ00"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ01"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NCOA5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ02"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NDUFA12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ03"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NDUFAF2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ04"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NDUFB6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ05"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NDUFB8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ06"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NDUFS1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ07"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NDUFS2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ08"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NFKBIA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ09"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NFKBIB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ10"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NMNAT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ11"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NMT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ12"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NMT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ13"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NOD2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ14"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NOX5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ15"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NPEPPS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ16"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NQO2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ17"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat NUCB2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ18"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat OAT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ19"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat OXSR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat P3H1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PADI2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ20"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PAICS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ21"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PCMT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ22"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PCYT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ23"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PDHB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ24"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PDHX KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ25"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PEF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ26"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PGAM1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ27"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PGRMC1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ28"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PI4KB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ29"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PIM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ30"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PKLR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ31"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PLIN3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ32"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PMVK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ33"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PNMT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ34"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat POLH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ35"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PPOX KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ36"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PPP2CB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ37"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRDX5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRG2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ38"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRKAB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ39"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRKACA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ40"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRKAG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ41"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRKCG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ42"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRKD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PRSS8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PSMF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ43"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PTPA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B0Z8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PTPN2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7VF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PVRIG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ44"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat PYCR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ45"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat QDPR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ46"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat RECQL KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ47"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat REEP5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ48"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat RPIA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ49"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat RXRB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ50"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SELENOP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1G8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SELPLG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ51"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SERPINB9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ52"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SH2D1A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ53"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SLAMF6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ54"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SLC25A12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ55"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SLC5A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4CA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SLIT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ56"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SLK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SMS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ57"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SORD KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ58"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SPAG9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ59"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SPTLC2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ60"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SRSF4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ61"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat SSTR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ62"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat STK17B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ63"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TACR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B0Z9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TAL1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ64"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TBL1XR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ65"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TDP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ66"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TEC KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ67"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat THOP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ68"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TLE3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ69"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TNFSF9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7VE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TP53 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ70"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TPD52 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ71"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TPMT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ72"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TPP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ73"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TPP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ74"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TRPC3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1LC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat TRPM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ75"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat UAP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ76"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat UBE2T KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ77"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat UBR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ78"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat UNC119 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ79"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat UPP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ80"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat VDAC2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ81"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat VPS37A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ82"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat WAS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WQ83"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat XPNPEP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7VC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam Jurkat ZAP70 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6BM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE Jurkat,CloneE6-1-CopGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5U1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE Jurkat,CloneE6-1-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_ZK76"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "GeneBLAzer M1-NFAT-bla Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat Cynomolgus_CLEC4C(BDCA2)+FCER1G"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_CD40(TNFRSF5) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4J6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_CLEC4C(BDCA2) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_CLEC4C(BDCA2)+FCER1G"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_LILRB1(ILT2) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_LILRB2(ILT4) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_NCR1(NKp46) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_PVRIG(CD112R) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_TIGIT+CD226 Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_TNFRSF14(HVEM) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_TNFRSF1B(TNFR2) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4IQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_TNFRSF25(DR3) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4IP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat Mouse_Tnfrsf25(DR3) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat NFAT Luc Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat NFkB Luc Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_LB63"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "GloResponse NFAT-RE-luc2 Jurkat"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-A*01:01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-A*02:01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-A*03:01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-A*11:01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-A*24:02"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-B*07:02"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-B*08:01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-B*15:10"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-B*35:01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3CZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat HLA-B*40:01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3EZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat Safe Harbor Landing Pad"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_W813"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat tet-on clone 1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_W814"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat tet-on clone 2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8Z3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat, Clone E6-1-Luc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3JF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-508/511 RR/SS"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8EZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia NFAT-CD16-Low"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3JE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-Lucia TCR-hPD-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD16a-F158"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD16a-V158"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D7AF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Leeporter Jurkat NF-kB luciferase"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat FOXP3-promoter Luc Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6VX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_PDCD1(PD-1) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat H_TNFRSF9(4-1BB) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E6W3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat IL2-promoter Luc Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E4IX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Genomeditech Jurkat Mouse_Pdcd1(PD-1) Reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-B2M-KO-1A4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD2-KO-1B4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD2-KO-2A2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD28-KO-3A4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD28-KO-4A2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD3D-KO-1B1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD3E-KO-1A1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD3E-KO-1B3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD47-KO-1B3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD47-KO-1C2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD7-KO-3A4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-HPK1-KO-2B1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-TRAC-KO-1A2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8DI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience Jurkat E6-1 B2M KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD3D-CD3E-KO-1C4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-CD3D-CD3E-KO-2A3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene Jurkat, Clone E6-1 CARD8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene Jurkat, Clone E6-1 CXCR4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene Jurkat, Clone E6-1 DGKZ KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene Jurkat, Clone E6-1 JAK3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene Jurkat, Clone E6-1 LRBA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene Jurkat, Clone E6-1 PRG2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E0WM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene Jurkat, Clone E6-1 TPCN2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4NJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat stable cell line for hCD72 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8IH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-ACVR2B-KO-CD16-V158-OE"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A9P6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience Jurkat E6-1 FOXP3-driven luciferase reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4JW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte Jurkat hLCK_p.C476A_c.1426T>G_c.1427G>C cell line"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8II"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Jurkat-NFAT-Luc2-ROR1-KO-CD16-V158 clone 2A6"
+          }
+        ]
+      }
+    ]
+  }
+}

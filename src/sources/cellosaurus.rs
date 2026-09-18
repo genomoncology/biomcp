@@ -21,6 +21,13 @@ pub(crate) const CARD_FIELDS: &[&str] = &["ac", "id", "sy", "ox", "di", "ca", "s
 pub(crate) const SEARCH_FIELDS: &[&str] = &["ac", "id", "sy", "ox", "di", "ca"];
 /// Projection for a reverse cross-reference lookup.
 pub(crate) const XREF_LOOKUP_FIELDS: &[&str] = &["ac", "id"];
+/// Projection for a batched identifier lookup. The query filters to human, so
+/// the rows carry the accession and the identifier and nothing else.
+pub(crate) const IDENTIFIER_FIELDS: &[&str] = &["ac", "id"];
+/// How many names one identifier batch carries.
+pub(crate) const IDENTIFIER_BATCH_SIZE: usize = 20;
+/// The NCBI taxon the identifier batch filters on.
+const HUMAN_TAXON: &str = "9606";
 /// The window Cellosaurus fills for a name search.
 pub(crate) const SEARCH_ROWS: usize = 1000;
 /// The window for a reverse cross-reference lookup.
@@ -209,6 +216,19 @@ impl CellosaurusClient {
         .await
     }
 
+    /// Look up a batch of cell line names by identifier, human records only.
+    pub(crate) async fn search_identifiers(
+        &self,
+        names: &[String],
+    ) -> Result<CellosaurusSearchPage, BioMcpError> {
+        self.search(
+            &identifier_batch_query(names),
+            IDENTIFIER_FIELDS,
+            SEARCH_ROWS,
+        )
+        .await
+    }
+
     /// Reverse lookup from a source ID held in a cross-reference.
     pub(crate) async fn search_xref(&self, id: &str) -> Result<CellosaurusSearchPage, BioMcpError> {
         self.search(
@@ -237,6 +257,21 @@ impl CellosaurusClient {
                 message: "Cellosaurus release info carried no version and date".to_string(),
             })
     }
+}
+
+/// One query for a batch of cell line names.
+///
+/// The `id` field searches identifiers and leaves synonyms out, so a name that
+/// another line carries only as a synonym cannot answer for it. `ox:9606`
+/// filters to human records at the source, which keeps the window short enough
+/// to hold the exact matches and halves the bytes.
+pub(crate) fn identifier_batch_query(names: &[String]) -> String {
+    let terms = names
+        .iter()
+        .map(|name| format!("\"{}\"", escape_solr_value(name)))
+        .collect::<Vec<_>>()
+        .join(" OR ");
+    format!("id:({terms}) AND ox:{HUMAN_TAXON}")
 }
 
 /// Escape a value for a Solr phrase. Cellosaurus quotes the phrase, so the

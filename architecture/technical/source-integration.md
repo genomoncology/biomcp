@@ -445,8 +445,10 @@ Current concrete examples:
 
 - KEGG uses plain-text flat-file / tab-separated style responses and parses
   them inline in `src/sources/kegg.rs`.
-- HPA uses XML and parses it with `roxmltree` behind `spawn_blocking` in
-  `src/sources/hpa.rs`.
+- HPA uses XML for the gene `hpa` section and parses it with `roxmltree` behind
+  `spawn_blocking` in `src/sources/hpa.rs`. Its search download endpoint answers
+  JSON whose object keys carry the cell line order, so `cell_line_rna` decodes
+  the object into an ordered key list rather than a map.
 
 ## Provenance and Rendering
 

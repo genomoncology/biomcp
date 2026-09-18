@@ -342,3 +342,73 @@ fn gene_markdown_pathways_show_source_labels() {
     assert!(markdown.contains("| Reactome | R-HSA-5673001 | RAF/MAP kinase cascade |"));
     assert!(!markdown.contains("Showing pathway rows from Reactome search results."));
 }
+
+// Ticket 1213: the cell line table, its notes, and the attribution line.
+
+fn cell_lines_page(rows: Vec<crate::entities::gene::cell_lines::GeneCellLineRow>) -> crate::entities::gene::cell_lines::GeneCellLines {
+    crate::entities::gene::cell_lines::GeneCellLines {
+        source: "Human Protein Atlas".to_string(),
+        gene: "FLT3".to_string(),
+        ensembl_id: "ENSG00000122025".to_string(),
+        group: "leukemia".to_string(),
+        total: 93,
+        data_as_of: "2025-11-05".to_string(),
+        data_as_of_kind: "release".to_string(),
+        notes: Vec::new(),
+        rows,
+    }
+}
+
+fn cell_line_row(
+    name: &str,
+    accession: Option<&str>,
+    ntpm: Option<f64>,
+    note: Option<&str>,
+) -> crate::entities::gene::cell_lines::GeneCellLineRow {
+    crate::entities::gene::cell_lines::GeneCellLineRow {
+        name: name.to_string(),
+        accession: accession.map(str::to_string),
+        ntpm,
+        note: note.map(str::to_string),
+    }
+}
+
+#[test]
+fn gene_cell_lines_markdown_prints_the_rows_and_the_attribution_line() {
+    let page = cell_lines_page(vec![
+        cell_line_row("MOLM-13", Some("CVCL_2119"), Some(166.1), None),
+        cell_line_row("OCI-AML-3", Some("CVCL_1844"), Some(27.1), None),
+    ]);
+
+    let markdown = gene_cell_lines_markdown(&page).expect("cell line markdown");
+
+    assert!(markdown.contains("# FLT3 cell lines: leukemia"));
+    assert!(markdown.contains("Showing 2 of 93 cell lines (HPA nTPM as published)"));
+    assert!(markdown.contains("| MOLM-13 | CVCL_2119 | 166.1 |"));
+    assert!(markdown.contains("| OCI-AML-3 | CVCL_1844 | 27.1 |"));
+    assert!(markdown.contains("Next: `biomcp get cell-line CVCL_2119`"));
+    assert!(
+        markdown
+            .trim_end()
+            .ends_with("Human Protein Atlas, files dated 2025-11-05, CC BY 4.0. proteinatlas.org"),
+        "markdown: {markdown:?}"
+    );
+    assert!(!markdown.contains("\n\n\n"), "markdown: {markdown:?}");
+}
+
+#[test]
+fn gene_cell_lines_markdown_shows_a_dash_for_an_unresolved_name_and_prints_notes() {
+    let mut page = cell_lines_page(vec![cell_line_row(
+        "not-a-cell-line-name",
+        None,
+        None,
+        Some("no unique Cellosaurus match"),
+    )]);
+    page.notes = vec!["Cellosaurus did not answer the name lookup".to_string()];
+
+    let markdown = gene_cell_lines_markdown(&page).expect("cell line markdown");
+
+    assert!(markdown.contains("| not-a-cell-line-name | - | - |"));
+    assert!(markdown.contains("Note: Cellosaurus did not answer the name lookup"));
+    assert!(!markdown.contains("Next: `biomcp get cell-line"));
+}

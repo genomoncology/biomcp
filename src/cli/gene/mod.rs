@@ -171,6 +171,28 @@ See also: biomcp list gene")]
         #[arg(long, default_value = "0")]
         offset: usize,
     },
+    /// Show HPA RNA levels for this gene across one cancer group of cell lines
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp gene cell-lines FLT3 --group leukemia
+  biomcp gene cell-lines MYCN --group neuroblastoma --limit 20
+  biomcp gene cell-lines FLT3 --group leukemia --limit 10 --offset 20
+
+Values are Human Protein Atlas nTPM as published. BioMCP adds no labels and no thresholds.
+See also: biomcp list gene")]
+    CellLines {
+        /// HGNC gene symbol (e.g., FLT3)
+        symbol: String,
+        /// HPA cancer group (e.g., leukemia, lymphoma, neuroblastoma)
+        #[arg(long)]
+        group: String,
+        /// Maximum rows, 1-100 (default: 100)
+        #[arg(short, long, default_value = "100")]
+        limit: usize,
+        /// Skip the first N rows
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
     #[command(external_subcommand)]
     External(Vec<String>),
 }

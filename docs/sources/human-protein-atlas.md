@@ -14,6 +14,7 @@ In BioMCP, Human Protein Atlas is surfaced through the gene `hpa` section. That 
 | Command | What BioMCP gets from this source | Integration note |
 |---|---|---|
 | `get gene <symbol> hpa` | Protein tissue expression, localization, and cancer-expression context | Explicit gene section backed by Human Protein Atlas |
+| `gene cell-lines <symbol> --group <group>` | The RNA level (nTPM) of one gene in every HPA cell line of one cancer group | One search download call per gene. Each row carries the Cellosaurus accession when exactly one human cell line carries the HPA name |
 
 ## Example commands
 
@@ -34,6 +35,16 @@ biomcp get gene TP53 hpa
 ```
 
 Returns Human Protein Atlas tissue and cancer-expression context for TP53.
+
+```bash
+biomcp gene cell-lines FLT3 --group leukemia
+```
+
+Returns the nTPM of FLT3 in each of the 93 cell lines of the HPA leukemia group, as published. BioMCP adds no labels and no thresholds, and it offers no sort.
+
+The 30 cancer groups are `adrenocortical_cancer`, `bile_duct_cancer`, `bladder_cancer`, `bone_cancer`, `brain_cancer`, `breast_cancer`, `cervical_cancer`, `colorectal_cancer`, `esophageal_cancer`, `gallbladder_cancer`, `gastric_cancer`, `head_and_neck_cancer`, `kidney_cancer`, `leukemia`, `liver_cancer`, `lung_cancer`, `lymphoma`, `myeloma`, `neuroblastoma`, `non-cancerous`, `ovarian_cancer`, `pancreatic_cancer`, `prostate_cancer`, `rhabdoid`, `sarcoma`, `skin_cancer`, `testis_cancer`, `thyroid_cancer`, `uncategorized`, and `uterine_cancer`. They cover 1,206 cell lines. An unknown group fails before any request and lists the names.
+
+`data_as_of` is `2025-11-05`, the date of the HPA cell line RNA file. The search download response carries no date, so the value is a constant next to the group list in the source module. It was read from the `Last-Modified` header of the `rna_celline.tsv.zip` file the [data access page](https://www.proteinatlas.org/about/help/dataaccess) links, and it is refreshed the same way the group list is. A future response that carries its own date is preferred over the constant.
 
 ## API access
 

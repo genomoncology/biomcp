@@ -251,6 +251,29 @@ fn match_rank(record: &CellosaurusRecord, normalized_query: &str) -> MatchRank {
     MatchRank::Partial
 }
 
+/// The one accession a cell line name resolves to, or `None`.
+///
+/// A name resolves only when exactly one record in the window carries it as its
+/// identifier after normalization. Synonyms never answer, so `NB4` cannot land
+/// on SJNB-4 and `HL-60` cannot land on HL-60(TB). The caller restricts the
+/// window to human records. This is the one name matcher; every cell line join
+/// by name goes through it.
+pub(crate) fn unique_identifier_accession(
+    records: &[CellosaurusRecord],
+    name: &str,
+) -> Option<String> {
+    let normalized = normalize_cell_line_name(name);
+    if normalized.is_empty() {
+        return None;
+    }
+    let mut matches = records
+        .iter()
+        .filter(|record| match_rank(record, &normalized) == MatchRank::ExactName)
+        .filter_map(|record| record.primary_accession().map(str::to_string));
+    let first = matches.next()?;
+    matches.next().is_none().then_some(first)
+}
+
 fn is_human(species: &[CellLineSpecies]) -> bool {
     species.iter().any(|entry| entry.taxon_id == "9606")
 }

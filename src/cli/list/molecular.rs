@@ -61,6 +61,7 @@ pub(super) fn list_gene() -> String {
 - `gene drugs <symbol>`
 - `gene articles <symbol>`
 - `gene pathways <symbol> --limit <N> --offset <N>`
+- `gene cell-lines <symbol> --group <group> --limit <N> --offset <N>` - HPA nTPM across one cancer group of cell lines
 "#
     .to_string()
 }
