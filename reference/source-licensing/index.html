@@ -2423,6 +2423,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/pharmacodb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PharmacoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4205,6 +4233,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pharmacodb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PharmacoDB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pharmgkb" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5924,6 +5963,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pharmacodb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PharmacoDB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pharmgkb" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6580,6 +6630,15 @@ specific capture requires a separate source-by-source rights record.</p>
 <td>Open Targets data is CC0; platform code is Apache 2.0</td>
 <td>platform data is dedicated to the public domain, but linked evidence still carries source provenance</td>
 <td><a href="https://platform-docs.opentargets.org/licence">https://platform-docs.opentargets.org/licence</a></td>
+</tr>
+<tr>
+<td>PharmacoDB</td>
+<td>3</td>
+<td>direct_api</td>
+<td>none</td>
+<td>PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider</td>
+<td>treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established</td>
+<td>none published</td>
 </tr>
 <tr>
 <td>PharmGKB</td>
@@ -7608,6 +7667,18 @@ specific capture requires a separate source-by-source rights record.</p>
 <li>Official terms URL: <a href="https://www.ncbi.nlm.nih.gov/research/litsense2-api/">https://www.ncbi.nlm.nih.gov/research/litsense2-api/</a></li>
 <li>Reviewed on: <code>2026-04-10</code></li>
 <li>Notes: LitSense2 is individually selectable with <code>search article --source litsense2</code> and contributes semantic-signal metadata; it is not part of the default <code>--source all</code> federation.</li>
+</ul>
+<h3 id="pharmacodb">PharmacoDB<a class="headerlink" href="#pharmacodb" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get cell-line &lt;accession&gt; drug_response; get drug &lt;name&gt; cell_lines; cell-line drug-response &lt;accession&gt; --dataset &lt;name&gt;; drug cell-lines &lt;name&gt; --cell-line &lt;id&gt;; drug cell-lines &lt;name&gt; --dataset &lt;name&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public GraphQL endpoint, no key</li>
+<li>License / terms summary: PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider</li>
+<li>Redistribution / reuse summary: treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established</li>
+<li>Official terms URL: none published</li>
+<li>Reviewed on: <code>2026-09-18</code></li>
+<li>Notes: Verified 2026-09-18. <code>pharmacodb.ca</code> serves the same 2,258-byte single-page shell on every path, including <code>/about</code>, <code>/documentation</code>, <code>/terms</code> and <code>/api</code>, and its application bundle carries no licence string, so the provider publishes no licence or terms page. The code licence is GPL-3.0 at <a href="https://github.com/bhklab/PharmacoDB/blob/master/LICENSE">https://github.com/bhklab/PharmacoDB/blob/master/LICENSE</a>. The CC BY-NC 4.0 reading traces to the describing paper, Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which states "This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License". That covers the article and not the database, so BioMCP records the absence rather than a licence PharmacoDB never published. Every BioMCP output names the non-commercial term because a user cannot read it from the numbers.</li>
 </ul>
 <h3 id="pharmgkb">PharmGKB<a class="headerlink" href="#pharmgkb" title="Permanent link">&para;</a></h3>
 <ul>

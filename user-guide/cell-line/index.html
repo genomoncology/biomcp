@@ -2552,6 +2552,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/pharmacodb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PharmacoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4388,16 +4416,24 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>chembl
 </code></pre></div>
 <p>The section prints the ChEMBL cell line record that names the accession: the ChEMBL ID, the EFO and CLO IDs, and how many ChEMBL assays were run on the line. The count tells you whether ChEMBL literature assays exist. BioMCP lists no assays and no activity values. The join goes through the accession alone, so <code>biomcp get cell-line CVCL_0004 chembl</code> finds the line ChEMBL spells <code>K562</code>.</p>
-<p>The Cellosaurus sections together:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>all
+<p>PharmacoDB drug response:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>drug_response
 </code></pre></div>
-<p><code>all</code> covers <code>variants</code> and <code>xrefs</code>. The <code>chembl</code> section costs one request per record, so it is asked for by name.</p>
+<p>The section counts the experiments PharmacoDB published for the line in each dataset. MOLM-13 has 1117 across CTRPv2, gCSI, GDSC1, and GDSC2. The join goes through the PharmacoDB ID in <code>xrefs</code> first and the line name second, and BioMCP keeps the answer only when the accession PharmacoDB returns is the accession asked for. The section lists no rows, because the unscoped listing for a heavily screened line such as K-562 is 19.4 MB of body.</p>
+<p>The Cellosaurus sections together:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>all
+</code></pre></div>
+<p><code>all</code> covers <code>variants</code> and <code>xrefs</code>. The <code>chembl</code> and <code>drug_response</code> sections each cost their own request, so they are asked for by name.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<p>Cell line has no separate helper family. Drug response and dependency data arrive as their own sections in later work; today every command is <code>search cell-line</code> or <code>get cell-line</code>.</p>
+<p>One helper reads the PharmacoDB rows behind the <code>drug_response</code> counts, one dataset at a time:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>cell-line<span class="w"> </span>drug-response<span class="w"> </span>CVCL_2119<span class="w"> </span>--dataset<span class="w"> </span>GDSC1
+</code></pre></div>
+<p><code>--dataset</code> is required. Without it the command fails before any request and names the ten PharmacoDB datasets, because an unscoped listing is megabytes of body. Each row names the compound, the experiment ID, and the published AAC, IC50, EC50, Einf, HS, and DSS1. PharmacoDB gives no units, BioMCP interprets no value, and an absent metric prints as <code>-</code>. A compound tested twice in one dataset stays two rows with two experiment IDs.</p>
+<p>To go from a compound back to the lines it was tested on, run <a href="../drug/"><code>biomcp drug cell-lines &lt;name&gt;</code></a>.</p>
 <p>To go the other way, from a gene to the cell lines that express it, run <a href="../gene/"><code>biomcp gene cell-lines &lt;symbol&gt; --group &lt;group&gt;</code></a>. That helper prints the Human Protein Atlas nTPM of one gene across one cancer group and carries the Cellosaurus accession on each row it could resolve by name.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>cell-line<span class="w"> </span>KG1<span class="w"> </span>--json
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>xrefs<span class="w"> </span>--json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>cell-line<span class="w"> </span>KG1<span class="w"> </span>--json
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>xrefs<span class="w"> </span>--json
 </code></pre></div>
 <p>JSON carries <code>data_as_of</code> and <code>data_as_of_kind</code> at the top level. <code>data_as_of_kind</code> is <code>release</code> when BioMCP read the Cellosaurus release, and <code>retrieved</code> when that read failed and the value is a retrieval time instead. A filled provider window appears in <code>_meta.notes</code>, and <code>pagination.total</code> is null.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>

@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Search ClinicalTrials.gov from BioMCP for recruiting studies, eligibility criteria, locations, and trial details without learning the native API.">
+        <meta name="description" content="Use BioMCP to read published PharmacoDB drug sensitivity experiments for a cell line or a compound, scoped by dataset, without writing GraphQL.">
       
       
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/sources/clinicaltrials-gov/">
+        <link rel="canonical" href="https://biomcp.org/sources/pharmacodb/">
       
       
-        <link rel="prev" href="../pubmed/">
+        <link rel="prev" href="../cellosaurus/">
       
       
-        <link rel="next" href="../clingen-allele-registry/">
+        <link rel="next" href="../../how-to/annotate-variants/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>ClinicalTrials.gov MCP Tool for AI Agents | BioMCP - BioMCP</title>
+        <title>PharmacoDB MCP Tool for Cell Line Drug Response | BioMCP - BioMCP</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#clinicaltrialsgov" class="md-skip">
+        <a href="#pharmacodb" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ClinicalTrials.gov MCP Tool for AI Agents | BioMCP
+              PharmacoDB MCP Tool for Cell Line Drug Response | BioMCP
             
           </span>
         </div>
@@ -1564,37 +1564,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ClinicalTrials.gov
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../clinicaltrials-gov/" class="md-nav__link">
         
   
   
@@ -1610,92 +1583,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#what-biomcp-exposes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What BioMCP exposes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example commands
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#runtime-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Runtime behavior
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#api-access" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        API access
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#official-source" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Official source
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related docs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2545,10 +2432,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../pharmacodb/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PharmacoDB
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2564,6 +2478,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-biomcp-exposes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What BioMCP exposes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#release-and-attribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release and attribution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API access
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#official-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Official source
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -4287,10 +4287,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#runtime-behavior" class="md-nav__link">
+  <a href="#release-and-attribution" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Runtime behavior
+        Release and attribution
       
     </span>
   </a>
@@ -4350,9 +4350,9 @@
   
 
 
-<h1 id="clinicaltrialsgov">ClinicalTrials.gov<a class="headerlink" href="#clinicaltrialsgov" title="Permanent link">&para;</a></h1>
-<p>ClinicalTrials.gov is the default public registry for structured trial discovery, which makes it the most practical source when you need to move from a condition or biomarker to live recruiting studies quickly. It is the source most clinicians, coordinators, and patients already recognize, so its identifiers and status labels carry well across teams.</p>
-<p>This page covers BioMCP's default trial backend. BioMCP also supports <code>--source nci</code> for NCI CTS, but that is a separate boundary with different access rules and should not be conflated with the default ClinicalTrials.gov path.</p>
+<h1 id="pharmacodb">PharmacoDB<a class="headerlink" href="#pharmacodb" title="Permanent link">&para;</a></h1>
+<p>PharmacoDB matters when you have a cell line and want to know which compounds were tested on it, and in which study. It gathers the large pharmacogenomic screens, CTRPv2, GDSC1, GDSC2, gCSI, NCI60, PRISM and the rest, behind one GraphQL endpoint, and reports one row per experiment with the published sensitivity metrics.</p>
+<p>In BioMCP, PharmacoDB answers two questions from two directions. <code>get cell-line &lt;accession&gt; drug_response</code> counts the experiments a line has in each dataset, and <code>get drug &lt;name&gt; cell_lines</code> counts them for a compound. Both sections are asked for by name and never load under <code>all</code>, because the row listings behind them are large: the unscoped K-562 response is 19.4 MB of body, so every row helper demands a scope and refuses without one. The rows are the values PharmacoDB published. There are no units, no thresholds, and no sort BioMCP invented, and a repeated cell line and compound pair in one dataset stays as separate rows with separate experiment IDs.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4364,97 +4364,60 @@
 </thead>
 <tbody>
 <tr>
-<td><code>search trial</code></td>
-<td>Filtered trial search with condition, status, biomarker, and pagination controls</td>
-<td>Default backend is ClinicalTrials.gov v2</td>
+<td><code>get cell-line &lt;accession&gt; drug_response</code></td>
+<td>Experiment counts per dataset for one cell line</td>
+<td>The join goes through the Cellosaurus PharmacoDB xref, then the line name, and the accession PharmacoDB returns must match</td>
 </tr>
 <tr>
-<td><code>get trial &lt;nct_id&gt;</code></td>
-<td>Trial summary card for a specific NCT record</td>
-<td>Uses the default ClinicalTrials.gov detail path</td>
+<td><code>get drug &lt;name&gt; cell_lines</code></td>
+<td>Experiment counts per dataset for one compound</td>
+<td>PharmacoDB publishes no ChEMBL or DrugBank key on a compound, so the join goes by name and the name it returns must be the name asked for</td>
 </tr>
 <tr>
-<td><code>get trial &lt;nct_id&gt; eligibility</code></td>
-<td>Registry text, age, sex, healthy-subject state, and criteria</td>
-<td>Section expansion from the same trial record</td>
+<td><code>cell-line drug-response &lt;accession&gt; --dataset &lt;name&gt;</code></td>
+<td>One page of experiment rows for that line inside one dataset</td>
+<td><code>--dataset</code> is required; an unscoped listing is megabytes of body</td>
 </tr>
 <tr>
-<td><code>get trial &lt;nct_id&gt; locations</code></td>
-<td>Facility and contact rows</td>
-<td>Uses site data from the default backend</td>
+<td><code>drug cell-lines &lt;name&gt; --cell-line &lt;accession&gt;</code></td>
+<td>The rows for one compound on one cell line, usually 0 to 3</td>
+<td>One of <code>--cell-line</code> or <code>--dataset</code> is required</td>
 </tr>
 <tr>
-<td><code>get trial &lt;nct_id&gt; outcomes</code></td>
-<td>Primary and secondary outcome measures</td>
-<td>Detail-section view</td>
-</tr>
-<tr>
-<td><code>get trial &lt;nct_id&gt; arms</code></td>
-<td>Study arms and interventions</td>
-<td>Detail-section view</td>
-</tr>
-<tr>
-<td><code>get trial &lt;nct_id&gt; references</code></td>
-<td>Linked publications and citations when present</td>
-<td>Detail-section view</td>
-</tr>
-<tr>
-<td><code>--json get trial &lt;nct_id&gt; documents</code></td>
-<td>Posted-document manifest and BioMCP retrieval handles</td>
-<td>ClinicalTrials.gov only; provider URLs are not exposed as handles</td>
-</tr>
-<tr>
-<td><code>get trial &lt;nct_id&gt; document &lt;filename&gt;</code></td>
-<td>Exact advertised document bytes</td>
-<td>32 MiB response limit; shared outbound policy protects the CDN fetch</td>
+<td><code>drug cell-lines &lt;name&gt; --dataset &lt;name&gt;</code></td>
+<td>One page of rows for that compound inside one dataset</td>
+<td>Rows carry AAC, IC50, EC50, Einf, HS, and DSS1 exactly as published, with <code>-</code> for an absent value</td>
 </tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>cell-line<span class="w"> </span>CVCL_2119<span class="w"> </span>drug_response
 </code></pre></div>
-<p>Returns a trial table with NCT ID, title, status, phase, and condition columns.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<p>Returns the MOLM-13 counts, 1117 experiments across CTRPv2, gCSI, GDSC1, and GDSC2.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>cell-line<span class="w"> </span>drug-response<span class="w"> </span>CVCL_2119<span class="w"> </span>--dataset<span class="w"> </span>GDSC1
 </code></pre></div>
-<p>Returns a filtered trial table with the mutation echoed in the query summary.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
+<p>Returns the first 25 of the 426 GDSC1 rows for MOLM-13, each naming the compound.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>venetoclax<span class="w"> </span>cell_lines
 </code></pre></div>
-<p>Returns a trial card with the NCT heading, status, and condition context.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
+<p>Returns the venetoclax counts, 3608 experiments across CTRPv2, GDSC1, GDSC2, NCI60, and PRISM.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>cell-lines<span class="w"> </span>venetoclax<span class="w"> </span>--cell-line<span class="w"> </span>CVCL_2119
 </code></pre></div>
-<p>Returns a shared eligibility section with registry text, source age bounds, source-coded sex, and healthy-subject state. JSON keeps each fact discrete. Markdown presents a readable bounded view.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>locations
+<p>Returns the two published venetoclax-on-MOLM-13 experiments, one in GDSC1 and one in GDSC2.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>cell-lines<span class="w"> </span>venetoclax<span class="w"> </span>--dataset<span class="w"> </span>NCI60
 </code></pre></div>
-<p>Returns a locations table with facility, city, country, status, and contact fields.</p>
-<p>Location requests return a 20-site page by default. Use <code>--offset</code> and
-<code>--limit</code> to select another page; an explicit Markdown page renders every site
-selected by that limit and reports the shown count, total, offset, and limit.
-When <code>contacts</code> and <code>locations</code> are requested together, top-level site contacts
-belong only to sites on that page, while central contacts remain visible.
-Contacts-only output remains complete.</p>
-<p>In JSON, each location's <code>contacts</code> array contains every named site contact in
-the order ClinicalTrials.gov provides them. The older <code>contact_name</code>,
-<code>contact_role</code>, <code>contact_phone</code>, and <code>contact_email</code> fields remain first-contact
-aliases for compatibility. Markdown keeps one row per site and renders all of
-that site's contacts in the Contact cell, separated by <code>&lt;br&gt;</code>.</p>
-<p>Standalone <code>all</code> JSON and batch JSON remain complete and unpaginated. For
-readability, unpaginated <code>all</code> and batch Markdown show at most 20 sites, state
-the display cap when it truncates the table, and limit top-level site contacts
-to those displayed sites.</p>
-<h2 id="runtime-behavior">Runtime behavior<a class="headerlink" href="#runtime-behavior" title="Permanent link">&para;</a></h2>
-<p>Posted-document retrieval validates the fixed ClinicalTrials.gov CDN HTTPS
-origin, port, DNS answers, and every redirect through BioMCP's shared outbound
-policy before contact. Loopback, private, link-local, metadata, non-HTTPS, and
-off-origin destinations are rejected with a sanitized source-unavailable error.</p>
+<p>Returns the first 25 of the 113 NCI60 rows for venetoclax, each naming the cell line and its tissue.</p>
+<h2 id="release-and-attribution">Release and attribution<a class="headerlink" href="#release-and-attribution" title="Permanent link">&para;</a></h2>
+<p>PharmacoDB publishes no version or release date, so every output reports the retrieval time as <code>data_as_of</code> with kind <code>retrieved</code>. PharmacoDB also publishes no licence or terms page: its source code is GPL-3.0 and the paper describing it is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider. The attribution line on every output says so and asks you to treat reuse as non-commercial.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
-<p>No BioMCP API key required.</p>
+<p>No BioMCP API key required. Set <code>BIOMCP_PHARMACODB_BASE</code> to point at a different host.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
-<p><a href="https://clinicaltrials.gov/">ClinicalTrials.gov</a> is the official public registry and API surface behind BioMCP's default trial workflow.</p>
+<p><a href="https://pharmacodb.ca/">PharmacoDB</a> is the pharmacogenomic experiment resource behind BioMCP's cell line drug response and drug cell lines sections. Its GraphQL endpoint is unauthenticated and read-only.</p>
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="../../user-guide/trial/">Trial</a></li>
-<li><a href="../../how-to/find-trials/">How to find trials</a></li>
+<li><a href="../../user-guide/cell-line/">Cell Line</a></li>
+<li><a href="../../user-guide/drug/">Drug</a></li>
 <li><a href="../../reference/data-sources/">Data Sources</a></li>
+<li><a href="../../reference/source-licensing/">Source Licensing</a></li>
 </ul>
 
 

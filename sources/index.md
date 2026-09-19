@@ -42,6 +42,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | CDC CVX/MVX | Vaccine brand-to-antigen bridge for EMA/default lookups and explicit WHO vaccine search | [CDC CVX/MVX](cdc-cvx.md) |
 | MedlinePlus | Plain-language disease/symptom context for `discover` | [MedlinePlus](medlineplus.md) |
 | Cellosaurus | Cell line identity, accessions, cross-reference join keys, and curated variants | [Cellosaurus](cellosaurus.md) |
+| PharmacoDB | Published drug sensitivity experiments for a cell line or a compound, per dataset | [PharmacoDB](pharmacodb.md) |
 | KEGG | KEGG pathway IDs, summary cards, and pathway genes | [KEGG](kegg.md) |
 | PharmGKB / CPIC | Pharmacogenomic recommendations, frequencies, and clinical annotations | [PharmGKB / CPIC](pharmgkb.md) |
 | Human Protein Atlas | Tissue expression, localization, and cancer-expression context | [Human Protein Atlas](human-protein-atlas.md) |
