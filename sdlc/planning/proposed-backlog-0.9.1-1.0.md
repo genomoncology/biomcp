@@ -117,6 +117,34 @@ has accumulated large history blobs from the growth audit.
 
 **Estimated complexity:** Level 1 (an audit and cleanup, not a code change).
 
+## Entity track status, recorded 2026-09-19
+
+This backlog was written before the cell line work and names none of it. The
+status below is a record, not a proposal.
+
+The cell line track shipped. Four tickets are merged to main, each gated green
+on the build host at a pushed SHA, each with a completion record in
+`sdlc/records/`.
+
+- 1202 resolves a cell line name or a third-party identifier to a Cellosaurus
+  accession, which is the join key the rest of the track hangs from.
+- 1214 adds the ChEMBL section, naming the ChEMBL, EFO and CLO identifiers and
+  an assay count.
+- 1213 adds `gene cell-lines <symbol> --group <group>`, reading one gene across
+  a cancer group's lines.
+- 1205 adds the PharmacoDB drug response sections on the cell line and drug
+  cards.
+
+Ticket 1206, DepMap CRISPR dependency, is deferred and held as a draft. DepMap's
+site terms forbid commercial use and bind anyone who rehosts the data, which
+contradicts the CC BY 4.0 field on the Figshare mirror the ticket relied on. The
+mirror also stops at release 24Q4 while DepMap has shipped 26Q1. Both reasons are
+recorded in `sdlc/issues/2026-09-18-depmap-site-terms-contradict-the-figshare-cc-by-4-0-field.md`.
+
+The GEO dataset chain is unstarted: 1203, 1204, 1207 to 1212, and 1215 to 1218.
+No ticket in that chain depends on a cell line ticket, and no cell line ticket
+depends on the chain. The two tracks can be scheduled independently.
+
 ## What I would not do
 
 - **Do not restore the elaborate signing pipeline.** It was designed but

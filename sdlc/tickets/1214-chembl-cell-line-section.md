@@ -105,5 +105,5 @@ Ian can overturn these.
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: covered by the 2026-09-17 ticket review, which rated this ticket ready.
+- Code review: none. The work shipped on 2026-09-18 and passed lint, test and spec on the build host at `fd6a100c`. The completion record is `sdlc/records/1214-chembl-cell-line-section.md`.

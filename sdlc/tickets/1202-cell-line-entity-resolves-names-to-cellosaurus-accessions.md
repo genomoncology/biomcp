@@ -177,4 +177,4 @@ These choices follow the 2026-09-17 source survey. Ian can overturn any of them.
 ## Review
 
 - Design review: done 2026-09-17, `sdlc/planning/notes/2026-09-17-cell-line-1202-design-review.md`. All four blocking findings and the seven polish items are applied.
-- Code review: pending
+- Code review: none. The work shipped on 2026-09-18 and passed lint, test and spec on the build host at `37336c22`. The completion record is `sdlc/records/1202-cell-line-entity-resolves-names-to-cellosaurus-accessions.md`.

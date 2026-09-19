@@ -8,7 +8,7 @@ deps: [1202]
 
 ## Goal
 
-`biomcp gene cell-lines <symbol> --group <cancer group>` prints the Human Protein Atlas RNA level (nTPM) of one gene in every HPA cell line of one cancer group, for example FLT3 across the 91 leukemia lines. Each row carries the Cellosaurus accession when the HPA name matches exactly one human Cellosaurus line. BioMCP reports the values as published and adds no labels or thresholds. The motivating consumer is a hackathon team screening public GEO studies of drug-treated AML cell lines. That team needs to see which lines express a target gene before it picks a study.
+`biomcp gene cell-lines <symbol> --group <cancer group>` prints the Human Protein Atlas RNA level (nTPM) of one gene in every HPA cell line of one cancer group, for example FLT3 across the 93 leukemia lines. Each row carries the Cellosaurus accession when the HPA name matches exactly one human Cellosaurus line. BioMCP reports the values as published and adds no labels or thresholds. The motivating consumer is a hackathon team screening public GEO studies of drug-treated AML cell lines. That team needs to see which lines express a target gene before it picks a study.
 
 ## Current Facts
 
@@ -19,8 +19,8 @@ deps: [1202]
 
 ### HPA search download, observed 2026-09-17 (workspace experiment 204)
 
-- `GET https://www.proteinatlas.org/api/search_download.php?search=FLT3&format=json&columns=g,eg,cell_RNA_leukemia&compress=no` returned 11,043 bytes. The body is a JSON array with one object per gene that matched the search, three for FLT3. Each object has `Gene`, `Ensembl`, and one key per cell line, for example `"Cell line RNA - MOLM-13 [nTPM]": "23.0"`. Values are strings.
-- The column keys are `cell_RNA_<group>`. The HPA data access page (`/about/help/dataaccess`) lists 30 groups covering 1,193 lines. Examples: `leukemia`, `lymphoma`, `myeloma`, `breast_cancer`, `lung_cancer`, `neuroblastoma`. The leukemia group holds 91 lines.
+- `GET https://www.proteinatlas.org/api/search_download.php?search=FLT3&format=json&columns=g,eg,cell_RNA_leukemia&compress=no` returned 11,043 bytes. The body is a JSON array with one object per gene that matched the search, three for FLT3. Each object has `Gene`, `Ensembl`, and one key per cell line, for example `"Cell line RNA - MOLM-13 [nTPM]": "166.1"`. Values are strings.
+- The column keys are `cell_RNA_<group>`. The HPA data access page (`/about/help/dataaccess`) lists 30 groups covering 1,206 lines. Examples: `leukemia`, `lymphoma`, `myeloma`, `breast_cancer`, `lung_cancer`, `neuroblastoma`. The leukemia group holds 93 lines.
 - All ten AML and leukemia test lines appear in the leukemia group under their Cellosaurus names: MOLM-13, MV4-11, HL-60, K-562, KG-1, THP-1, OCI-AML-3, Kasumi-1, U-937, NB4. No test line has an HPA link in Cellosaurus, so the join goes by name.
 - The gene JSON (`/<ensembl>.json`) holds only summaries. The full cell line file `rna_celline.tsv.zip` is 205,861,141 bytes, so an all-genes view for one line is out of reach.
 - HPA files were dated 2025-11-05. No rate limit appears in the headers.
@@ -36,7 +36,7 @@ Add `cell_line_rna(ensembl_id, group)` to `HpaClient` with a `cell_line_rna_plan
 ### Join to Cellosaurus
 
 - Normalize each HPA name with the 1202 normalizer.
-- Look up the names in batches of 20 with one Cellosaurus search per batch, `q=id:("<name1>" OR "<name2>" ...)`, the 1202 escape, and `fields=ac,id,ox`. The recorded fixture confirms the `id:` field. If Cellosaurus rejects `id:`, the batch uses `idsy:` with the same filter below. The 91-line leukemia group is five batches, so one run of the spec block sends five requests.
+- Look up the names in batches of 20 with one Cellosaurus search per batch, `q=id:("<name1>" OR "<name2>" ...)`, the 1202 escape, and `fields=ac,id,ox`. The recorded fixture confirms the `id:` field. If Cellosaurus rejects `id:`, the batch uses `idsy:` with the same filter below. The 93-line leukemia group is five batches, so one run of the spec block sends five requests.
 - A row gets an accession only when exactly one human record's normalized identifier equals the normalized HPA name. Otherwise the accession is `null` and the row notes `no unique Cellosaurus match`.
 - A Cellosaurus failure leaves every accession `null` and adds one note. The expression rows still print. An empty window is not a failure. A batch that matches nothing gives `null` accessions for its names and adds no note, which is the same answer as a name with no unique match.
 
@@ -63,7 +63,7 @@ HPA served no bot check in any measurement. The rule still holds: an HTTP 200 wh
 Record through the production request path, each with a `real_and_receipted` receipt:
 
 - `testdata/sources/hpa/cell_rna_leukemia_flt3_20260917.json`: the full FLT3 leukemia response, three objects.
-- `testdata/sources/cellosaurus/search_id_leukemia_batch1_20260917.json` through `search_id_leukemia_batch5_20260917.json`: all five batches the 91-line leukemia group needs, 20 names each and 11 in the last. Batch 1 holds MOLM-13, and OCI-AML-3 sits in whichever batch its name order puts it. Five recorded batches are needed because the spec block requires `total == 91` and both accessions, and one batch answers 20 names.
+- `testdata/sources/cellosaurus/search_id_leukemia_batch1_20260917.json` through `search_id_leukemia_batch5_20260917.json`: all five batches the 93-line leukemia group needs, 20 names each and 13 in the last. Batch 1 holds MOLM-13, and OCI-AML-3 sits in whichever batch its name order puts it. Five recorded batches are needed because the spec block requires `total == 93` and both accessions, and one batch answers 20 names.
 - The 1202 fixture server answers an empty window for any unlisted `id:` query, so a name outside these batches gets a `null` accession rather than a Cellosaurus failure.
 
 ## Acceptance
@@ -71,16 +71,16 @@ Record through the production request path, each with a `real_and_receipted` rec
 Fixture-backed Rust tests, no live network:
 
 1. The plan targets `api/search_download.php` with the four parameters. An unknown group fails before any request and lists the group names.
-2. The parser keeps only the FLT3 object whose `Ensembl` is ENSG00000122025, returns 91 rows in key order, and reads `MOLM-13` as 23.0.
-3. The join runs five batch requests for the 91 names and gives MOLM-13 CVCL_2119 and OCI-AML-3 CVCL_1844. The request log shows five `id:` searches and no sixth. A name with no unique human match gets `null` and the note.
+2. The parser keeps only the FLT3 object whose `Ensembl` is ENSG00000122025, returns 93 rows in key order, and reads `MOLM-13` as 166.1.
+3. The join runs five batch requests for the 93 names and gives MOLM-13 CVCL_2119 and OCI-AML-3 CVCL_1844. The request log shows five `id:` searches and no sixth. A name with no unique human match gets `null` and the note.
 4. A Cellosaurus error leaves the rows intact with `null` accessions and one note. An empty window for one batch gives `null` accessions for those names and no failure note.
-5. `--limit` and `--offset` page the rows, and `total` stays 91.
+5. `--limit` and `--offset` page the rows, and `total` stays 93.
 6. The HPA health row names the new surface.
 7. Every output carries `data_as_of` `2025-11-05` and `data_as_of_kind: "release"`, and the Markdown ends with the attribution line naming that date and the confirmed license.
 8. The license string in the attribution line, `docs/reference/source-licensing.md`, and `docs/reference/sources.json` are the same value.
 9. An HTML body served with HTTP 200 for the search download is a provider error naming the URL, and no row renders.
 
-Executable spec: `spec/entity/gene.md` gains one JSON block (`gene cell-lines FLT3 --group leukemia --json`: `total == 91` and the MOLM-13 accession) and one Markdown block (the attribution line).
+Executable spec: `spec/entity/gene.md` gains one JSON block (`gene cell-lines FLT3 --group leukemia --json`: `total == 93` and the MOLM-13 accession) and one Markdown block (the attribution line).
 
 `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA.
 
@@ -171,5 +171,5 @@ attribution line, `docs/reference/source-licensing.md` and
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: covered by the 2026-09-17 ticket review. Its findings were applied before the build.
+- Code review: none. The work shipped on 2026-09-19 and passed lint, test and spec on the build host at `6d8fd435`. The completion record is `sdlc/records/1213-hpa-expression-across-cell-lines-for-one-gene.md`.

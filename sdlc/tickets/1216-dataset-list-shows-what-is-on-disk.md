@@ -30,7 +30,7 @@ The motivating consumer is a hackathon team screening public GEO studies of drug
 - The cache's free-disk floor is `DiskFreeThreshold` (`src/cache/config.rs:15`), which prints itself with `display()` (`src/cache/config.rs:32`), and `inspect_filesystem_space(path)` returns available and total bytes (`src/cache/limits.rs:50`). Ticket 1208 reuses the same threshold for downloads.
 - The MCP shell rejects everything outside its allowed families with `GENERIC_MCP_REJECTION_MESSAGE` (`src/mcp/shell.rs:326`). Ticket 1208 rejects `dataset download` and `dataset path` by name because they reveal workstation-local paths.
 - `biomcp list <entity>` renders through `render` (`src/cli/list/mod.rs:11`) and `render_json` (`:38`), and the unknown-entity message lists every valid entity at `src/cli/list/mod.rs:91`. Ticket 1203 adds `dataset` to both.
-- Measured 2026-09-16: a full AML series matrix download of 774 files was 1.1 GB, and GSE48843 raw counts are 1.5 MB. DepMap's dependency matrix is 429 MB. A user needs a disk number.
+- Measured 2026-09-16: a full AML series matrix download of 774 files was 1.1 GB, and GSE48843 raw counts are 1.5 MB. DepMap's dependency matrix is 429 MB, measured from its public mirror; BioMCP does not integrate DepMap, and ticket 1206 is deferred. A user needs a disk number.
 
 ## Design
 

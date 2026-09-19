@@ -164,8 +164,8 @@ These follow the 2026-09-17 source survey. Ian can overturn any of them.
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: covered by the 2026-09-17 ticket review. Its findings were applied before the build.
+- Code review: none. The work shipped on 2026-09-19 and passed lint, test and spec on the build host at `3b1d6452`. The completion record is `sdlc/records/1205-pharmacodb-drug-response-sections-for-cell-lines-and-drugs.md`.
 
 ## Licence findings, 2026-09-18
 
