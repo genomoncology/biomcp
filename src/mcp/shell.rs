@@ -482,7 +482,11 @@ fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
             cmd:
                 DrugCommand::Trials { .. }
                 | DrugCommand::AdverseEvents { .. }
-                | DrugCommand::Interactions { .. },
+                | DrugCommand::Interactions { .. }
+                | DrugCommand::CellLines { .. },
+        }
+        | Commands::CellLine {
+            cmd: crate::cli::cell_line::CellLineCommand::DrugResponse { .. },
         }
         | Commands::Disease {
             cmd:

@@ -19,6 +19,9 @@ pub fn cell_line_markdown(
     let show_xrefs_section = !section_only || include_all || has_requested("xrefs");
     // `all` never includes the ChEMBL section, so it renders only when asked for.
     let show_chembl_section = !section_only || has_requested("chembl");
+    // The PharmacoDB section is opt-in: asked for by name, never by `all` and
+    // never on the plain card.
+    let show_drug_response_section = has_requested("drug_response");
     let label = if cell_line.name.trim().is_empty() {
         cell_line.accession.as_str()
     } else {
@@ -52,6 +55,16 @@ pub fn cell_line_markdown(
         show_variants_section => show_variants_section,
         show_xrefs_section => show_xrefs_section,
         show_chembl_section => show_chembl_section,
+        show_drug_response_section => show_drug_response_section,
+        drug_response => &cell_line.drug_response,
+        drug_response_counts_line => cell_line.drug_response.as_ref().map(|section| {
+            crate::entities::pharmacodb::counts_line(section.total, &section.datasets)
+        }),
+        drug_response_empty_message =>
+            crate::entities::cell_line::pharmacodb::drug_response_empty_message(),
+        drug_response_attribution => cell_line.drug_response.as_ref().map(|section| {
+            crate::entities::pharmacodb::pharmacodb_attribution(&section.data_as_of)
+        }),
         attribution => cell_line_attribution(&cell_line.data_as_of, &cell_line.data_as_of_kind),
         sections_block => format_sections_block(
             "cell-line",

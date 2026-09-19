@@ -116,9 +116,14 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1094,
+      "baseline_lines": 1103,
       "floor_lines": 1094,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1205",
+        "delta": 9,
+        "reason": "Ticket 1205 adds the drug cell_lines section flag, its parse arm, and its load call.",
+        "removal_condition": "Extract the drug section flags and their loads when the drug get path is next decomposed."
+      }
     },
     {
       "path": "src/entities/gene.rs",
@@ -223,12 +228,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1136,
+      "baseline_lines": 1138,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1142, 1196, 1200, 1202",
-        "delta": 14,
-        "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules), the GenCC provider label for the sync initialization error (ticket 1196, +3), and the OpenCitations provider registration as the confirmation phase source (ticket 1200, +3), and the Cellosaurus provider registration for the cell-line source (ticket 1202, +1).",
+        "ticket": "1142, 1196, 1200, 1202, 1205",
+        "delta": 16,
+        "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules), the GenCC provider label for the sync initialization error (ticket 1196, +3), and the OpenCitations provider registration as the confirmation phase source (ticket 1200, +3), and the Cellosaurus provider registration for the cell-line source (ticket 1202, +1), and the PharmacoDB source provider constant (ticket 1205, +2).",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
       }
     },
@@ -240,12 +245,12 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2158,
+      "baseline_lines": 2162,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1031, 1150, 1158, 1202, 1213",
-        "delta": 202,
-        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions, the typed cell-line get branch and its typed-search rejection (ticket 1202, +8), and the gene cell-lines arm of the MCP command allowlist (ticket 1213, +1).",
+        "ticket": "1031, 1150, 1158, 1202, 1213, 1205",
+        "delta": 206,
+        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions, the typed cell-line get branch and its typed-search rejection (ticket 1202, +8), and the gene cell-lines arm of the MCP command allowlist (ticket 1213, +1), and the two PharmacoDB row helpers on the MCP allowlist (ticket 1205, +4).",
         "removal_condition": "Extract typed tool schema transforms when the MCP shell is next decomposed."
       }
     },
@@ -257,12 +262,12 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1559,
+      "baseline_lines": 1561,
       "floor_lines": 1555,
       "authorized_increase": {
-        "ticket": "1158, 1201",
-        "delta": 4,
-        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests.",
+        "ticket": "1158, 1201, 1205",
+        "delta": 6,
+        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests, and the PharmacoDB section fields on the cell line and drug JSON shapes (ticket 1205, +2).",
         "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
       }
     },
@@ -301,12 +306,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1842,
+      "baseline_lines": 1847,
       "floor_lines": 1810,
       "authorized_increase": {
-        "ticket": "1022, 1158, 1202, 1214",
-        "delta": 32,
-        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs, the cell-line section-sources builder (ticket 1202, +21), and its ChEMBL section row (ticket 1214, +4).",
+        "ticket": "1022, 1158, 1202, 1214, 1205",
+        "delta": 37,
+        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs, the cell-line section-sources builder (ticket 1202, +21), and its ChEMBL section row (ticket 1214, +4), and the two PharmacoDB outcome sections and their pinned test literals (ticket 1205, +5).",
         "removal_condition": "Extract variant provenance into its own renderer module."
       }
     },
@@ -351,12 +356,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2290,
+      "baseline_lines": 2291,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1022, 1150, 1158, 1199, 1200, 1202",
-        "delta": 443,
-        "reason": "Register dbSNP and GenCC, carry the task-local variant deadline through shared request, retry, and provider-admission utilities, resolve the citation-evidence sidecar cache mode, and register the OpenCitations reference client, and register the Cellosaurus client (ticket 1202, +1).",
+        "ticket": "1022, 1150, 1158, 1199, 1200, 1202, 1205",
+        "delta": 444,
+        "reason": "Register dbSNP and GenCC, carry the task-local variant deadline through shared request, retry, and provider-admission utilities, resolve the citation-evidence sidecar cache mode, and register the OpenCitations reference client, and register the Cellosaurus client (ticket 1202, +1), and the pharmacodb module declaration (ticket 1205, +1).",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },

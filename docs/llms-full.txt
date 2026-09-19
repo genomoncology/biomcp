@@ -86,6 +86,7 @@ An expanded index of the BioMCP documentation.
 - [OncoKB](https://biomcp.org/sources/oncokb/): Access details and query guidance for the OncoKB data source.
 - [OpenFDA](https://biomcp.org/sources/openfda/): Access details and query guidance for the OpenFDA data source.
 - [OpenTargets](https://biomcp.org/sources/opentargets/): Access details and query guidance for the OpenTargets data source.
+- [PharmacoDB](https://biomcp.org/sources/pharmacodb/): Published drug sensitivity experiments for a cell line or a compound, scoped by dataset.
 - [PharmGKB / CPIC](https://biomcp.org/sources/pharmgkb/): Access details and query guidance for the PharmGKB / CPIC data source.
 - [PubMed](https://biomcp.org/sources/pubmed/): Access details and query guidance for the PubMed data source.
 - [Reactome](https://biomcp.org/sources/reactome/): Access details and query guidance for the Reactome data source.

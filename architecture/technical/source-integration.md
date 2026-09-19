@@ -513,6 +513,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | cell_line | variants | canonical | additive | Cellosaurus | `variants` outcome and provenance projection |
 | cell_line | xrefs | canonical | additive | Cellosaurus | `xrefs` outcome and provenance projection |
 | cell_line | chembl | canonical | additive | ChEMBL | `chembl` outcome and provenance projection |
+| cell_line | drug_response | canonical | additive | PharmacoDB | `drug_response` outcome and provenance projection |
 | pathway | genes | canonical | fallback | Reactome / KEGG / WikiPathways / MyGene.info | `genes` outcome and provenance projection |
 | pathway | events | canonical | additive | Reactome | `events` outcome and provenance projection |
 | pathway | enrichment | canonical | additive | g:Profiler | `enrichment` outcome and provenance projection |
@@ -526,6 +527,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | drug | indications | canonical | additive | DrugCentral / Open Targets | `indications` outcome and provenance projection |
 | drug | interactions | canonical | additive | DDInter / DrugBank / OpenFDA label | `interactions` outcome and provenance projection |
 | drug | civic | canonical | fallback | CIViC | `civic` outcome and provenance projection |
+| drug | cell_lines | canonical | additive | PharmacoDB | `cell_lines` outcome and provenance projection |
 | adverse_event | faers | outcome-only | additive | OpenFDA FAERS | `faers` outcome and provenance projection |
 | adverse_event | vaers | outcome-only | additive | CDC CVX / CDC VAERS | `vaers` outcome and provenance projection |
 | disease | treatments | outcome-only | fallback | MyChem.info indication search | `treatments` outcome and provenance projection |

@@ -88,6 +88,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | OpenCitations | 1 | direct_api | none | OpenCitations datasets are CC0 public domain; website text is CC BY 4.0 and the software is ISC | citation data may be freely reused, including commercially; the OpenCitations trademark policy still governs the name | <https://opencitations.net/> |
 | OpenFDA | 1 | direct_api | optional_env | FDA-origin public data and API terms | data is broadly reusable, but avoid implying FDA endorsement and preserve source context | <https://open.fda.gov/apis/authentication/> |
 | OpenTargets | 1 | direct_api | none | Open Targets data is CC0; platform code is Apache 2.0 | platform data is dedicated to the public domain, but linked evidence still carries source provenance | <https://platform-docs.opentargets.org/licence> |
+| PharmacoDB | 3 | direct_api | none | PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider | treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established | none published |
 | PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://api.pharmgkb.org/> |
 | PMC OA | 1 | direct_api | optional_env | open-access subset only; article licenses vary within PMC OA | full text is reusable only according to each article's specific PMC Open Access license | <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/> |
 | PubMed | 1 | direct_api | optional_env | NLM public-domain search and metadata service | search results are broadly reusable, but article-level abstracts, full text, and downstream reuse still depend on the returned record context | <https://www.ncbi.nlm.nih.gov/books/NBK25501/> |
@@ -933,6 +934,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://www.ncbi.nlm.nih.gov/research/litsense2-api/>
 - Reviewed on: `2026-04-10`
 - Notes: LitSense2 is individually selectable with `search article --source litsense2` and contributes semantic-signal metadata; it is not part of the default `--source all` federation.
+
+### PharmacoDB
+
+- BioMCP surfaces: `get cell-line <accession> drug_response; get drug <name> cell_lines; cell-line drug-response <accession> --dataset <name>; drug cell-lines <name> --cell-line <id>; drug cell-lines <name> --dataset <name>`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public GraphQL endpoint, no key
+- License / terms summary: PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider
+- Redistribution / reuse summary: treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established
+- Official terms URL: none published
+- Reviewed on: `2026-09-18`
+- Notes: Verified 2026-09-18. `pharmacodb.ca` serves the same 2,258-byte single-page shell on every path, including `/about`, `/documentation`, `/terms` and `/api`, and its application bundle carries no licence string, so the provider publishes no licence or terms page. The code licence is GPL-3.0 at <https://github.com/bhklab/PharmacoDB/blob/master/LICENSE>. The CC BY-NC 4.0 reading traces to the describing paper, Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which states "This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License". That covers the article and not the database, so BioMCP records the absence rather than a licence PharmacoDB never published. Every BioMCP output names the non-commercial term because a user cannot read it from the numbers.
 
 ### PharmGKB
 

@@ -172,7 +172,13 @@ impl JsonResponseContract {
                 super::DrugCommand::Interactions { .. } => Self {
                     collection_paths: &[INTERACTIONS_PATH],
                 },
+                super::DrugCommand::CellLines { .. } => Self {
+                    collection_paths: &[ROWS_PATH],
+                },
                 super::DrugCommand::External(_) => Self::NONE,
+            },
+            Commands::CellLine { .. } => Self {
+                collection_paths: &[ROWS_PATH],
             },
             Commands::Disease { .. } | Commands::Pathway { .. } => Self::RESULTS,
             Commands::Article { cmd } => match cmd {

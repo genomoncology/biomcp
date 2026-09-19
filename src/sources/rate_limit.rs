@@ -171,6 +171,12 @@ impl RateLimiter {
                 Duration::from_millis(334),
             ),
             policy(
+                "pharmacodb",
+                "BIOMCP_PHARMACODB_BASE",
+                "https://pharmacodb.ca",
+                Duration::from_millis(334),
+            ),
+            policy(
                 "cellosaurus",
                 "BIOMCP_CELLOSAURUS_BASE",
                 "https://api.cellosaurus.org",

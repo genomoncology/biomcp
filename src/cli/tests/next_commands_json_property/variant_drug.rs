@@ -90,6 +90,7 @@ fn drug_json_next_commands_parse() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     assert_entity_json_next_commands(

@@ -61,6 +61,7 @@ impl SourceProvider {
     pub const OPENFDA: Self = Self::new("OpenFDA");
     pub const OPEN_TARGETS: Self = Self::new("Open Targets");
     pub const ORCID: Self = Self::new("ORCID");
+    pub const PHARMACODB: Self = Self::new("PharmacoDB");
     pub const PHARMGKB: Self = Self::new("PharmGKB");
     pub const PMC_OPEN_ACCESS: Self = Self::new("PMC Open Access");
     pub const PUBTATOR3: Self = Self::new("PubTator 3");
@@ -130,6 +131,7 @@ impl SourceProvider {
         Self::OPENFDA,
         Self::OPEN_TARGETS,
         Self::ORCID,
+        Self::PHARMACODB,
         Self::PHARMGKB,
         Self::PMC_OPEN_ACCESS,
         Self::PUBTATOR3,

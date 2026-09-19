@@ -223,6 +223,7 @@ fn drug_evidence_urls_include_chembl() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let urls = drug_evidence_urls(&drug);
@@ -280,6 +281,7 @@ fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
             ema_shortage: None,
             who_prequalification: None,
             civic: None,
+            cell_lines: None,
         };
 
     let urls = drug_evidence_urls(&drug);

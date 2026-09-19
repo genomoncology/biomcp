@@ -170,6 +170,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
     let drug_markdown = drug_markdown(&drug, &["all".to_string()]).expect("drug markdown");
     assert!(drug_markdown.contains("Type (MyChem.info): small molecule"));

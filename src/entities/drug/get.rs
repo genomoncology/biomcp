@@ -23,11 +23,11 @@ use super::metadata::{
 use super::search::{search_page, search_results_from_openfda_label_response};
 use super::targets::{enrich_indications, enrich_targets};
 use super::{
-    DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CIVIC, DRUG_SECTION_INDICATIONS,
-    DRUG_SECTION_INTERACTIONS, DRUG_SECTION_LABEL, DRUG_SECTION_NAMES, DRUG_SECTION_REGULATORY,
-    DRUG_SECTION_SAFETY, DRUG_SECTION_SHORTAGE, DRUG_SECTION_TARGETS, Drug, DrugApproval,
-    DrugRegion, DrugSearchFilters, OPTIONAL_SAFETY_TIMEOUT, build_ema_identity, build_who_identity,
-    direct_drug_lookup,
+    DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CELL_LINES, DRUG_SECTION_CIVIC,
+    DRUG_SECTION_INDICATIONS, DRUG_SECTION_INTERACTIONS, DRUG_SECTION_LABEL, DRUG_SECTION_NAMES,
+    DRUG_SECTION_REGULATORY, DRUG_SECTION_SAFETY, DRUG_SECTION_SHORTAGE, DRUG_SECTION_TARGETS,
+    Drug, DrugApproval, DrugRegion, DrugSearchFilters, OPTIONAL_SAFETY_TIMEOUT, build_ema_identity,
+    build_who_identity, direct_drug_lookup,
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -41,6 +41,7 @@ struct DrugSections {
     include_interactions: bool,
     include_civic: bool,
     include_approvals: bool,
+    include_cell_lines: bool,
     requested_all: bool,
     requested_safety: bool,
     requested_shortage: bool,
@@ -82,6 +83,7 @@ fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSectio
             DRUG_SECTION_INTERACTIONS => out.include_interactions = true,
             DRUG_SECTION_CIVIC => out.include_civic = true,
             DRUG_SECTION_APPROVALS => out.include_approvals = true,
+            DRUG_SECTION_CELL_LINES => out.include_cell_lines = true,
             DRUG_SECTION_ALL => {
                 include_all = true;
                 out.requested_all = true;
@@ -777,6 +779,13 @@ async fn populate_common_sections(
         drug.section_outcomes.complete("civic", civic_outcome);
     } else {
         drug.civic = None;
+    }
+
+    if section_flags.include_cell_lines {
+        let section = super::cell_lines::load_cell_lines_section(&drug.name, requested_name).await;
+        super::cell_lines::attach_cell_lines_section(drug, section);
+    } else {
+        drug.cell_lines = None;
     }
     Ok(())
 }

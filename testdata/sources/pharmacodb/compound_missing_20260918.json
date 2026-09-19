@@ -1,0 +1,1 @@
+{"errors":[{"message":"Cannot return null for non-nullable field CompoundDetail.compound.","locations":[{"line":3,"column":5}],"path":["compound","compound"]}],"data":null}

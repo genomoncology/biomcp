@@ -313,6 +313,7 @@ mod ordinary_url_policy;
 pub(crate) use ordinary_url_policy::{
     ordinary_middleware_client_for_base, provider_policy_client_builder,
 };
+pub(crate) mod pharmacodb;
 pub(crate) mod pharmgkb;
 pub(crate) mod pmc_article;
 pub(crate) mod pmc_oa;

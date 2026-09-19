@@ -7,8 +7,10 @@ use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 pub(crate) mod chembl;
+pub(crate) mod pharmacodb;
 
 use self::chembl::CellLineChembl;
+use crate::entities::pharmacodb::PharmacoDbCounts;
 use crate::sources::cellosaurus::{
     CARD_FIELDS, CellLineXrefDatabase, CellosaurusClient, CellosaurusRecord, CellosaurusSearchPage,
 };
@@ -19,12 +21,14 @@ pub(crate) const CELL_LINE_CITATION: &str = "Cite Bairoch A. J. Biomol. Tech. 29
 const CELL_LINE_SECTION_VARIANTS: &str = "variants";
 const CELL_LINE_SECTION_XREFS: &str = "xrefs";
 const CELL_LINE_SECTION_CHEMBL: &str = "chembl";
+pub(crate) const CELL_LINE_SECTION_DRUG_RESPONSE: &str = "drug_response";
 const CELL_LINE_SECTION_ALL: &str = "all";
 
 pub const CELL_LINE_SECTION_NAMES: &[&str] = &[
     CELL_LINE_SECTION_VARIANTS,
     CELL_LINE_SECTION_XREFS,
     CELL_LINE_SECTION_CHEMBL,
+    CELL_LINE_SECTION_DRUG_RESPONSE,
     CELL_LINE_SECTION_ALL,
 ];
 
@@ -85,6 +89,9 @@ pub struct CellLine {
     pub xrefs: Option<CellLineXrefs>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chembl: Option<CellLineChembl>,
+    /// The PharmacoDB counts, asked for by name. `all` leaves it out.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub drug_response: Option<PharmacoDbCounts>,
 }
 
 /// One ChEMBL cell line record. BioMCP lists the count and no assays.
@@ -461,6 +468,9 @@ pub(crate) struct CellLineSections {
     /// The ChEMBL section is asked for by name. `all` leaves it out, because it
     /// costs one request per record.
     pub include_chembl: bool,
+    /// The PharmacoDB section is asked for by name. `all` leaves it out, because
+    /// it costs a join and one counts request.
+    pub include_drug_response: bool,
 }
 
 pub(crate) fn parse_sections(sections: &[String]) -> Result<CellLineSections, BioMcpError> {
@@ -474,6 +484,7 @@ pub(crate) fn parse_sections(sections: &[String]) -> Result<CellLineSections, Bi
             CELL_LINE_SECTION_VARIANTS => out.include_variants = true,
             CELL_LINE_SECTION_XREFS => out.include_xrefs = true,
             CELL_LINE_SECTION_CHEMBL => out.include_chembl = true,
+            CELL_LINE_SECTION_DRUG_RESPONSE => out.include_drug_response = true,
             CELL_LINE_SECTION_ALL => {
                 out.include_variants = true;
                 out.include_xrefs = true;
@@ -544,7 +555,9 @@ pub(crate) async fn get(id: &str, sections: &[String]) -> Result<CellLine, BioMc
     if parsed.include_variants {
         fields.push("var");
     }
-    if parsed.include_xrefs {
+    // The PharmacoDB join reads the cross-reference list, so the section pays
+    // for the `dr` field even when the card prints no cross-references.
+    if parsed.include_xrefs || parsed.include_drug_response {
         fields.push("dr");
     }
 
@@ -565,6 +578,18 @@ pub(crate) async fn get(id: &str, sections: &[String]) -> Result<CellLine, BioMc
         chembl::attach_chembl_section(
             &mut cell_line,
             chembl::load_chembl_section(&accession).await,
+        );
+    }
+    if parsed.include_drug_response {
+        let ids = pharmacodb_ids(&record);
+        pharmacodb::attach_drug_response_section(
+            &mut cell_line,
+            pharmacodb::load_drug_response_section(
+                &accession,
+                &ids,
+                record.identifier().unwrap_or_default(),
+            )
+            .await,
         );
     }
     Ok(cell_line)
@@ -659,7 +684,59 @@ pub(crate) fn build_cell_line(
         },
         xrefs: sections.include_xrefs.then_some(xrefs),
         chembl: None,
+        drug_response: None,
     }
+}
+
+/// The PharmacoDB cell line IDs one Cellosaurus record publishes.
+pub(crate) fn pharmacodb_ids(record: &CellosaurusRecord) -> Vec<String> {
+    record
+        .xref_list
+        .iter()
+        .filter(|entry| {
+            entry
+                .database
+                .as_deref()
+                .and_then(CellLineXrefDatabase::from_name)
+                == Some(CellLineXrefDatabase::PharmacoDb)
+        })
+        .filter_map(|entry| entry.accession.clone())
+        .collect()
+}
+
+/// What a PharmacoDB helper needs to know about one cell line: the accession it
+/// resolved to, the Cellosaurus name, and the PharmacoDB cross-references.
+pub(crate) struct PharmacoDbIdentity {
+    pub accession: String,
+    pub name: String,
+    pub pharmacodb_ids: Vec<String>,
+}
+
+/// Resolve any ID `get cell-line` accepts into a PharmacoDB join input.
+pub(crate) async fn load_pharmacodb_identity(id: &str) -> Result<PharmacoDbIdentity, BioMcpError> {
+    let id = id.trim();
+    if id.is_empty() {
+        return Err(BioMcpError::InvalidArgument(
+            "A cell line accession or source ID is required".into(),
+        ));
+    }
+    let client = CellosaurusClient::new()?;
+    let accession = if is_cvcl_accession(id) {
+        id.to_ascii_uppercase()
+    } else {
+        resolve_source_id(&client, id).await?
+    };
+    let mut fields: Vec<&str> = CARD_FIELDS.to_vec();
+    fields.push("dr");
+    let record = client
+        .get_record(&accession, &fields)
+        .await?
+        .ok_or_else(|| not_found(id))?;
+    Ok(PharmacoDbIdentity {
+        accession: record.primary_accession().unwrap_or(&accession).to_string(),
+        name: record.identifier().unwrap_or_default().to_string(),
+        pharmacodb_ids: pharmacodb_ids(&record),
+    })
 }
 
 #[cfg(test)]
@@ -668,6 +745,7 @@ pub(crate) fn cell_line_sections(include_variants: bool, include_xrefs: bool) ->
         include_variants,
         include_xrefs,
         include_chembl: false,
+        include_drug_response: false,
     }
 }
 

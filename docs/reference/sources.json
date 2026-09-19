@@ -1544,5 +1544,28 @@
     "key_url": null,
     "reviewed_on": "2026-03-20",
     "notes": "The current license statement is still hosted on the WikiPathways classic site."
+  },
+  {
+    "id": "pharmacodb",
+    "name": "PharmacoDB",
+    "tier": 3,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "get cell-line <accession> drug_response",
+      "get drug <name> cell_lines",
+      "cell-line drug-response <accession> --dataset <name>",
+      "drug cell-lines <name> --cell-line <id>",
+      "drug cell-lines <name> --dataset <name>"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public GraphQL endpoint, no key",
+    "license_summary": "PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider",
+    "redistribution_summary": "treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established",
+    "terms_url": null,
+    "key_url": null,
+    "reviewed_on": "2026-09-18",
+    "notes": "Verified 2026-09-18: pharmacodb.ca serves the same 2,258-byte single-page shell on every path (/about, /documentation, /terms, /api) and its application bundle contains no licence string, so the provider publishes no licence or terms page. The code licence is GPL-3.0 at https://github.com/bhklab/PharmacoDB/blob/master/LICENSE. The CC BY-NC 4.0 reading traces to the describing paper, Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which states \"This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License\"; that covers the article, not the database. PharmacoDB publishes no version or release date, so every output carries the retrieval time."
   }
 ]

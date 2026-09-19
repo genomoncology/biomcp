@@ -460,6 +460,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         &drug.section_outcomes,
         &[
             ("approvals", "Drugs@FDA Approvals"),
+            ("cell_lines", "Cell lines"),
             ("safety", "Safety"),
             ("targets", "Targets"),
             ("indications", "Indications"),
@@ -757,6 +758,7 @@ pub(crate) fn cell_line_section_sources(
             ("variants", "Variants"),
             ("xrefs", "Cross-references"),
             ("chembl", "ChEMBL"),
+            ("drug_response", "Drug response"),
         ],
     ));
     out
@@ -1071,6 +1073,7 @@ mod tests {
             ema_shortage: None,
             who_prequalification: None,
             civic: None,
+            cell_lines: None,
         };
 
         let sources = drug_section_sources(&drug);
@@ -1144,6 +1147,7 @@ mod tests {
                 responsible_nra: None,
             }]),
             civic: None,
+            cell_lines: None,
         };
 
         let sources = drug_section_sources(&drug);
@@ -1192,6 +1196,7 @@ mod tests {
             ema_shortage: None,
             who_prequalification: None,
             civic: None,
+            cell_lines: None,
         };
 
         let sources = drug_section_sources(&drug);

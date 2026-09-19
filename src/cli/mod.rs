@@ -10,7 +10,7 @@ mod author;
 #[allow(dead_code)]
 mod benchmark;
 pub mod cache;
-mod cell_line;
+pub(crate) mod cell_line;
 pub mod chart;
 mod commands;
 pub mod debug_plan;

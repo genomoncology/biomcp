@@ -297,6 +297,32 @@ CELLOSAURUS_RECORDS = {
     "CVCL_0007": fixture("cellosaurus/get_cvcl_0007_20260917.json"),
     "CVCL_0005": fixture("cellosaurus/get_cvcl_0005_20260917.json"),
 }
+# Ticket 1205: PharmacoDB answers every lookup and both experiment reads from
+# recorded bodies. The counts projection and the row projection are the same
+# `experiments` query with different fields, so the router tells them apart by
+# the metric fields.
+PHARMACODB_CELL_LINE_BY_UID = {
+    "CVCL_2119": fixture("pharmacodb/cell_line_uid_molm13_20260918.json"),
+}
+PHARMACODB_CELL_LINE_BY_NAME = {
+    "HL-60(TB)": fixture("pharmacodb/cell_line_name_hl60tb_20260918.json"),
+    "HL-60": fixture("pharmacodb/cell_line_name_hl60_20260918.json"),
+}
+PHARMACODB_CELL_LINE_MISSING = fixture("pharmacodb/cell_line_name_missing_20260918.json")
+PHARMACODB_COMPOUNDS = {
+    "venetoclax": fixture("pharmacodb/compound_venetoclax_20260918.json"),
+}
+PHARMACODB_COMPOUND_MISSING = fixture("pharmacodb/compound_missing_20260918.json")
+PHARMACODB_COUNTS = {
+    (1248, None): fixture("pharmacodb/experiment_counts_cell_line_1248_20260918.json"),
+    (None, 53572): fixture("pharmacodb/experiment_counts_compound_53572_20260918.json"),
+}
+PHARMACODB_EXPERIMENTS = {
+    (1248, None): fixture("pharmacodb/experiments_cell_line_1248_20260918.json"),
+    (None, 53572): fixture("pharmacodb/experiments_compound_53572_20260918.json"),
+    (1248, 53572): fixture("pharmacodb/experiments_pair_53572_1248_20260918.json"),
+}
+
 # Ticket 1213: the five identifier batches the 93-line leukemia group needs.
 # The key is the first name in the batch, which the query quotes first.
 CELLOSAURUS_ID_BATCHES = {
@@ -633,6 +659,30 @@ class Handler(BaseHTTPRequestHandler):
             if response is not None:
                 send(self, 200, response)
                 return
+        if parsed.path == "/pharmacodb/graphql":
+            request = json.loads(body)
+            query = request.get("query", "")
+            variables = request.get("variables", {})
+            if "cell_line(" in query:
+                uid = variables.get("cellUID")
+                name = variables.get("cellName")
+                record = PHARMACODB_CELL_LINE_BY_UID.get(uid) if uid else PHARMACODB_CELL_LINE_BY_NAME.get(name)
+                send(self, 200, record or PHARMACODB_CELL_LINE_MISSING)
+                return
+            if "compound(" in query:
+                name = variables.get("compoundName", "")
+                record = PHARMACODB_COMPOUNDS.get(name.lower())
+                send(self, 200, record or PHARMACODB_COMPOUND_MISSING)
+                return
+            if "experiments(" in query:
+                key = (variables.get("cellLineId"), variables.get("compoundId"))
+                table = PHARMACODB_EXPERIMENTS if "AAC" in query else PHARMACODB_COUNTS
+                record = table.get(key)
+                if record is not None:
+                    send(self, 200, record)
+                    return
+                send(self, 200, b'{"data":{"experiments":[]}}')
+                return
         if parsed.path == "/dgidb/api/graphql":
             request = json.loads(body)
             if request.get("variables") == {"gene": "EGFR", "first": 1}:
@@ -705,6 +755,7 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/dgidb/api"
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih/v2"
   printf 'export BIOMCP_CELLOSAURUS_BASE=%q\n' "$base_url/cellosaurus"
+  printf 'export BIOMCP_PHARMACODB_BASE=%q\n' "$base_url/pharmacodb"
   printf 'export BIOMCP_KEGG_BASE=%q\n' "$base_url/kegg"
   printf 'export BIOMCP_REACTOME_BASE=%q\n' "$base_url/reactome/ContentService"
   printf 'export BIOMCP_WIKIPATHWAYS_BASE=%q\n' "$base_url/wikipathways"

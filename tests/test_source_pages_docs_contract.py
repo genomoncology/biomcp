@@ -762,6 +762,32 @@ SOURCE_PAGE_SPECS = {
             "biomcp --json variant articles --input variants.json --verify-identity",
         ],
     },
+    "pharmacodb.md": {
+        "title": "PharmacoDB MCP Tool for Cell Line Drug Response | BioMCP",
+        "description": "Use BioMCP to read published PharmacoDB drug sensitivity experiments for a cell line or a compound, scoped by dataset, without writing GraphQL.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://pharmacodb.ca/",
+        "required_intro_phrases": [
+            "one GraphQL endpoint",
+            "asked for by name and never load under `all`",
+            "19.4 MB of body",
+            "There are no units",
+        ],
+        "exposes": [
+            "get cell-line <accession> drug_response",
+            "get drug <name> cell_lines",
+            "cell-line drug-response <accession> --dataset <name>",
+            "drug cell-lines <name> --cell-line <accession>",
+            "drug cell-lines <name> --dataset <name>",
+        ],
+        "example_commands": [
+            "biomcp get cell-line CVCL_2119 drug_response",
+            "biomcp cell-line drug-response CVCL_2119 --dataset GDSC1",
+            "biomcp get drug venetoclax cell_lines",
+            "biomcp drug cell-lines venetoclax --cell-line CVCL_2119",
+            "biomcp drug cell-lines venetoclax --dataset NCI60",
+        ],
+    },
 }
 
 EXPECTED_SOURCE_FILES = [OVERVIEW_FILE, *SOURCE_PAGE_SPECS, "gencc.md"]
@@ -800,6 +826,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - Human Protein Atlas: sources/human-protein-atlas.md
       - Monarch Initiative: sources/monarch-initiative.md
       - Cellosaurus: sources/cellosaurus.md
+      - PharmacoDB: sources/pharmacodb.md
 """
 
 

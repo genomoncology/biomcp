@@ -184,6 +184,7 @@ fn related_drug_includes_pgx_search() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let related = related_drug(&drug);

@@ -166,6 +166,7 @@ pub(super) fn list_drug() -> String {
 - `get drug <name> interactions` - the first 25 local DDInter-backed rows with totals, freshness, and helper continuation guidance; empty states stay scoped to the current bundle
 - `get drug <name> civic` - CIViC therapy evidence/assertion summary
 - `get drug <name> approvals` - Drugs@FDA approval/application details (US-only legacy section)
+- `get drug <name> cell_lines` - PharmacoDB experiment counts per dataset for that compound (asked for by name, never under `all`)
 - `get drug <name> all [--region <us|eu|ema|who|all>]` - include all sections
 
 ## Search
@@ -188,6 +189,8 @@ pub(super) fn list_drug() -> String {
 - `drug trials <name> [--no-alias-expand]`
 - `drug interactions <name> [--limit <N>] [--offset <N>]` - DDInter-backed local interaction pages; defaults to 25 rows, caps pages at 50, and reports bundle freshness
 - `drug adverse-events <name>` - checks FAERS first, accepts FAERS filters including `--reaction`, `--outcome`, `--serious`, `--date-from`, `--date-to`, `--suspect-only`, `--sex`, `--age-min`, `--age-max`, `--reporter`, `--count <field>`, and `--type`, distinguishes FAERS 404 from FAERS 200+empty results, and falls back to ClinicalTrials.gov trial-reported adverse events only on FAERS 404
+- `drug cell-lines <name> --cell-line <accession> [--limit <N>] [--offset <N>]` - PharmacoDB rows for one compound on one cell line
+- `drug cell-lines <name> --dataset <name> [--limit <N>] [--offset <N>]` - PharmacoDB rows for one compound within one dataset; one of `--cell-line` or `--dataset` is required, because an unscoped listing is megabytes of body
 
 ## JSON Output
 

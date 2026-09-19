@@ -26,6 +26,7 @@ fn sample() -> CellLine {
         variants: Vec::new(),
         xrefs: None,
         chembl: None,
+        drug_response: None,
     }
 }
 

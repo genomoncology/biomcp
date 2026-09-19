@@ -68,6 +68,7 @@ fn health_inventory_includes_all_expected_sources() {
             "UMLS",
             "MedlinePlus",
             "cBioPortal",
+            "PharmacoDB",
         ]
     );
 }

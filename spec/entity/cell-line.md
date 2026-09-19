@@ -81,3 +81,39 @@ section joins on the accession and reports how many assays name the line.
 ```bash
 ../../tools/biomcp-ci get cell-line CVCL_2119 chembl --json | jq -r '.chembl.records[0].chembl_id' | mustmatch 'CHEMBL3706573'
 ```
+
+## PharmacoDB Drug Response Is Counted, Not Listed
+
+The section reports how many experiments PharmacoDB published for the line in
+each dataset. It lists no rows, because the unscoped listing for a heavily
+screened line is 19.4 MB of body.
+
+```bash
+../../tools/biomcp-ci get cell-line CVCL_2119 drug_response --json | jq -r '.drug_response.total' | mustmatch '1117'
+../../tools/biomcp-ci get cell-line CVCL_2119 drug_response --json | jq -r '.drug_response.rows' | mustmatch 'null'
+../../tools/biomcp-ci get cell-line CVCL_2119 drug_response | mustmatch like '## Drug response (PharmacoDB)
+1117 experiments: CTRPv2 416, gCSI 35, GDSC1 426, GDSC2 240
+biomcp cell-line drug-response CVCL_2119 --dataset CTRPv2'
+```
+
+## The Drug-Response Listing Demands A Dataset
+
+An unscoped row listing is refused before any request, and the refusal names the
+flag.
+
+```bash
+(../../tools/biomcp-ci cell-line drug-response CVCL_2119 2>&1 || true) | mustmatch like '--dataset'
+../../tools/biomcp-ci cell-line drug-response CVCL_2119 --dataset GDSC1 --json | jq -r '.matched' | mustmatch '426'
+../../tools/biomcp-ci cell-line drug-response CVCL_2119 --dataset GDSC1 --json | jq -r '.rows | length' | mustmatch '25'
+```
+
+## The Rows Are The Published Values
+
+PharmacoDB gives no units and BioMCP interprets nothing. An absent metric prints
+as `-`, and the attribution line says what the provider does and does not
+publish.
+
+```bash
+../../tools/biomcp-ci cell-line drug-response CVCL_2119 --dataset GDSC1 | mustmatch like '| Experiment | Dataset | Compound | AAC | IC50 | EC50 | Einf | HS | DSS1 |'
+../../tools/biomcp-ci cell-line drug-response CVCL_2119 --dataset GDSC1 | mustmatch like 'PharmacoDB publishes no licence or terms page'
+```

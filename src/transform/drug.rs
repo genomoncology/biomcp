@@ -651,6 +651,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     }
 }
 

@@ -14,6 +14,7 @@ mod funding;
 mod gene;
 mod pathway;
 mod pgx;
+mod pharmacodb;
 mod protein;
 mod related;
 #[cfg(test)]
@@ -77,6 +78,7 @@ pub use self::gene::{
 pub use self::pathway::{pathway_markdown, pathway_search_markdown_with_footer};
 #[allow(unused_imports)]
 pub use self::pgx::{pgx_markdown, pgx_search_markdown_with_footer};
+pub use self::pharmacodb::pharmacodb_rows_markdown;
 #[allow(unused_imports)]
 pub use self::protein::{
     protein_markdown, protein_search_markdown, protein_search_markdown_with_footer,
@@ -862,6 +864,10 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     env.add_template(
         "gene_cell_lines.md.j2",
         include_str!("../../../templates/gene_cell_lines.md.j2"),
+    )?;
+    env.add_template(
+        "pharmacodb_rows.md.j2",
+        include_str!("../../../templates/pharmacodb_rows.md.j2"),
     )?;
     env.add_template(
         "cell_line.md.j2",

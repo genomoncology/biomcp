@@ -504,6 +504,16 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
             url: "https://www.cbioportal.org/api/studies?projection=SUMMARY&pageSize=1",
         },
     },
+    SourceDescriptor {
+        api: "PharmacoDB",
+        affects: Some(
+            "cell line drug response section and drug cell lines section, and both PharmacoDB row helpers",
+        ),
+        probe: ProbeKind::PostJson {
+            url: "https://pharmacodb.ca/graphql",
+            payload: r#"{"query":"{ datasets { id } }"}"#,
+        },
+    },
 ];
 
 pub(in crate::cli::health) const EMA_LOCAL_DATA_AFFECTS: &str = "default plain-name drug search plus search/get drug --region eu|all and EU regulatory/safety/shortage sections";

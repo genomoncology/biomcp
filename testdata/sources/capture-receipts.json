@@ -2630,6 +2630,138 @@
         "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. MyGene.info publishes gene annotation and carries no personal data.",
         "provider_origin_statement": "Recorded through the BioMCP MyGeneClient production request path against the public MyGene.info API on 2026-09-18. The API is unauthenticated and read-only. The field list is the one the production plan sends."
       }
+    },
+    {
+      "path": "pharmacodb/cell_line_uid_molm13_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "50664dfff78b3379d11afa6adc8d615b1067cc91d9f84ee298b2644ce0b93b39",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellUID \"CVCL_2119\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/cell_line_name_hl60tb_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "fe4321db2f797cdc304a0323f693d6dcdf1055b9f7a4466a55424b49a16f51be",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellName \"HL-60(TB)\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/cell_line_name_hl60_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "e81934f762718bdb421f2d0b39f0276e1077881f28a3417e1727cfd67557f349",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellName \"HL-60\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/cell_line_name_missing_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "4612b04c6f3a3a463e8f22330948ae8adf577e46e8165fbb5cfb766d369ca5ed",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellName \"NOT-A-CELL-LINE\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/compound_venetoclax_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "af6f80b9a09da3185c3eb20a1aea3e90c3a3508708bf942bc779225c224974d0",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `compound` query with compoundName \"venetoclax\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/compound_missing_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "00c1da4a813007566aa9fe5dac893024838b6ead8a47599b51fb7eb8e99646f8",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `compound` query with compoundName \"not-a-compound\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiment_counts_cell_line_1248_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "63b789d66029d4cf33358668f68245303620f5ddfcf8e3f0b85bdb5c0a80058b",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` counts projection, which asks for the experiment id and the dataset name only, with cellLineId 1248 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiment_counts_compound_53572_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "0e9329e0c5303f7c888ac2635215e5244c4de1dd362f05fc48bb59dfef9eb0f6",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` counts projection, which asks for the experiment id and the dataset name only, with compoundId 53572 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiments_cell_line_1248_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "452441f1cf24b6e890f89034908a4cb9c4bd0d2f9248b5e226efb9e5da4fc50e",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` row projection with cellLineId 1248 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiments_compound_53572_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "9210cbd840176882adf2b366fab4352058db00f99d1699ef87fde3df491c8c95",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` row projection with compoundId 53572 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiments_pair_53572_1248_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "6e64724d0dca7e2601caf88ba2b8dbb0fa34370f953603df1e30766b73595126",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` row projection with cellLineId 1248 and compoundId 53572 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
     }
   ],
   "fixture_key_contract": {

@@ -501,3 +501,23 @@ evidence.
 not_in_ddinter_coverage
 source coverage miss'
 ```
+
+## PharmacoDB Cell Lines Are Counted, Then Paged
+
+The drug side of the same PharmacoDB join reports counts per dataset on the card
+and needs one scope for a row listing.
+
+```bash
+(../../tools/biomcp-ci drug cell-lines venetoclax 2>&1 || true) | mustmatch like 'biomcp get drug <name> cell_lines'
+(../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 --dataset GDSC1 2>&1 || true) | mustmatch like 'not both'
+../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 --json | jq -r '.matched' | mustmatch '2'
+../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 | mustmatch like '| Experiment | Dataset | Cell line | Tissue | AAC | IC50 | EC50 | Einf | HS | DSS1 |'
+```
+
+A repeated cell line and compound pair inside one dataset stays as separate rows
+with separate experiment IDs, and an absent metric prints as `-`.
+
+```bash
+../../tools/biomcp-ci drug cell-lines venetoclax --dataset NCI60 --json | jq -r '.total' | mustmatch '3608'
+../../tools/biomcp-ci drug cell-lines venetoclax --dataset NCI60 --json | jq -r '.matched' | mustmatch '113'
+```

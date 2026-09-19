@@ -94,6 +94,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             Commands::Drug { cmd } => {
                 outcome_to_string(super::drug::handle_command(cmd, json, false).await?)
             }
+            Commands::CellLine { cmd } => {
+                outcome_to_string(super::cell_line::handle_command(cmd, json).await?)
+            }
             Commands::Disease { cmd } => {
                 outcome_to_string(super::disease::handle_command(cmd, json).await?)
             }

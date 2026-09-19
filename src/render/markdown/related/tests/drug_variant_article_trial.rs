@@ -38,6 +38,7 @@ fn related_drug_suggests_review_when_label_and_indications_are_sparse() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let related = related_drug(&drug);

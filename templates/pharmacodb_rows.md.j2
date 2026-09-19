@@ -1,0 +1,17 @@
+# {{ heading }}
+
+{{ counts_line }}
+{% if filter_line %}{{ filter_line }}
+{% endif -%}
+{% if truncated %}Showing {{ shown }} of {{ matched }}
+{% endif %}
+{% if rows -%}
+| Experiment | Dataset | {{ counterpart_column }} |{% if show_tissue %} Tissue |{% endif %} AAC | IC50 | EC50 | Einf | HS | DSS1 |
+|---|---|---|{% if show_tissue %}---|{% endif %}---|---|---|---|---|---|
+{% for row in rows -%}
+| {{ row.experiment_id }} | {{ row.dataset }} | {{ row.name }} |{% if show_tissue %} {{ row.tissue }} |{% endif %} {{ row.aac }} | {{ row.ic50 }} | {{ row.ec50 }} | {{ row.einf }} | {{ row.hs }} | {{ row.dss1 }} |
+{% endfor -%}
+{% else -%}
+No experiments matched this filter
+{% endif %}
+{{ attribution }}

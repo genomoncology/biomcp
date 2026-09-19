@@ -297,6 +297,7 @@ pub(super) fn list_cell_line() -> String {
 - `get cell-line <accession> xrefs` - DepMap, COSMIC, ChEMBL, GDSC, PharmacoDB, and LINCS join keys
 - `get cell-line <accession> variants` - curated sequence variations as Cellosaurus published them
 - `get cell-line <accession> chembl` - ChEMBL cell line record and assay count (asked for by name)
+- `get cell-line <accession> drug_response` - PharmacoDB experiment counts per dataset for that line (asked for by name, never under `all`)
 - `get cell-line <accession> all` - include the Cellosaurus sections
 
 ## Search filters
@@ -309,7 +310,7 @@ Search takes no other filters. The query is a name, a synonym, or a CVCL accessi
 
 ## Helpers
 
-Cell line has no helper family.
+- `cell-line drug-response <accession> --dataset <name> [--limit <N>] [--offset <N>]` - PharmacoDB rows for one line within one dataset; `--dataset` is required, because an unscoped listing is megabytes of body
 
 ## Workflow examples
 
@@ -318,6 +319,7 @@ Cell line has no helper family.
 - To read the join keys for another dataset, run `biomcp get cell-line CVCL_2119 xrefs`.
 - To go the other way, run `biomcp get cell-line ACH-000362`.
 - To see whether ChEMBL holds literature assays for a line, run `biomcp get cell-line CVCL_2119 chembl`.
+- To count published drug response for a line, run `biomcp get cell-line CVCL_2119 drug_response`, then read one dataset with `biomcp cell-line drug-response CVCL_2119 --dataset GDSC1`.
 
 ## JSON Output
 

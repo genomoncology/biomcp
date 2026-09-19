@@ -78,6 +78,22 @@ RRID: {{ rrid }}
 {{ chembl_attribution }}
 {% endif -%}
 {% endif -%}
+{% if show_drug_response_section and (drug_response or source_states.drug_response.status) -%}
+## Drug response (PharmacoDB)
+
+{% if source_states.drug_response.status %}{{ source_states.drug_response.status }}
+{% endif -%}
+{% if source_states.drug_response.payload_allowed and drug_response -%}
+{% if drug_response.total -%}
+{{ drug_response_counts_line }}
+
+Next: `biomcp cell-line drug-response {{ accession }} --dataset {{ drug_response.datasets[0].name }}`
+{% else -%}
+{{ drug_response_empty_message }}
+{% endif %}
+{{ drug_response_attribution }}
+{% endif -%}
+{% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}
 {% if related_block %}{{ related_block }}

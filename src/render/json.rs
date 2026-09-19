@@ -1016,6 +1016,7 @@ mod tests {
             ema_shortage: None,
             who_prequalification: None,
             civic: None,
+            cell_lines: None,
         };
 
         let json = to_pretty(&drug).expect("drug json");
@@ -1065,6 +1066,7 @@ mod tests {
             ema_shortage: None,
             who_prequalification: None,
             civic: None,
+            cell_lines: None,
         };
 
         let json = to_pretty(&drug).expect("drug json");

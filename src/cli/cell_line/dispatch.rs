@@ -1,4 +1,4 @@
-use super::{CellLineGetArgs, CellLineSearchArgs};
+use super::{CellLineCommand, CellLineGetArgs, CellLineSearchArgs};
 use crate::cli::CommandOutcome;
 
 pub(in crate::cli) async fn handle_get(
@@ -80,4 +80,36 @@ pub(in crate::cli) async fn handle_search(
         )?
     };
     Ok(CommandOutcome::stdout(text))
+}
+
+pub(in crate::cli) async fn handle_command(
+    cmd: CellLineCommand,
+    json: bool,
+) -> anyhow::Result<CommandOutcome> {
+    match cmd {
+        CellLineCommand::DrugResponse {
+            id,
+            dataset,
+            limit,
+            offset,
+        } => {
+            super::super::paged_fetch_limit(limit, offset, 100)?;
+            let page = crate::entities::cell_line::pharmacodb::load_drug_response_rows(
+                &id, &dataset, offset, limit,
+            )
+            .await?;
+            super::super::log_pagination_truncation(page.matched, offset, page.rows.len());
+            let text = if json {
+                crate::render::json::to_pretty(&page)?
+            } else {
+                crate::render::markdown::pharmacodb_rows_markdown(
+                    &page,
+                    &format!("{} drug response (PharmacoDB)", page.subject),
+                    "Compound",
+                    false,
+                )?
+            };
+            Ok(CommandOutcome::stdout(text))
+        }
+    }
 }

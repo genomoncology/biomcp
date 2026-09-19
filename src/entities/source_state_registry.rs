@@ -235,6 +235,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         Aggregation::Additive,
     ),
     state(
+        "cell_line",
+        "drug_response",
+        "Drug response",
+        &["PharmacoDB"],
+        Aggregation::Additive,
+    ),
+    state(
         "pathway",
         "genes",
         "Genes",
@@ -319,6 +326,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         Aggregation::Additive,
     ),
     state("drug", "civic", "CIViC", &["CIViC"], Aggregation::Fallback),
+    state(
+        "drug",
+        "cell_lines",
+        "Cell lines",
+        &["PharmacoDB"],
+        Aggregation::Additive,
+    ),
     state(
         "adverse_event",
         "faers",
@@ -601,6 +615,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         SelectorClass::Canonical,
         Some("chembl"),
     ),
+    selector(
+        "cell_line",
+        "drug_response",
+        SelectorClass::Canonical,
+        Some("drug_response"),
+    ),
     selector("cell_line", "all", SelectorClass::Aggregate, None),
     selector("pathway", "genes", SelectorClass::Canonical, Some("genes")),
     selector(
@@ -664,6 +684,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         "approvals",
         SelectorClass::Canonical,
         Some("approvals"),
+    ),
+    selector(
+        "drug",
+        "cell_lines",
+        SelectorClass::Canonical,
+        Some("cell_lines"),
     ),
     selector("drug", "all", SelectorClass::Aggregate, None),
     selector("adverse_event", "reactions", SelectorClass::Local, None),

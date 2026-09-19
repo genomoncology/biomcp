@@ -71,17 +71,33 @@ biomcp get cell-line CVCL_2119 chembl
 
 The section prints the ChEMBL cell line record that names the accession: the ChEMBL ID, the EFO and CLO IDs, and how many ChEMBL assays were run on the line. The count tells you whether ChEMBL literature assays exist. BioMCP lists no assays and no activity values. The join goes through the accession alone, so `biomcp get cell-line CVCL_0004 chembl` finds the line ChEMBL spells `K562`.
 
+PharmacoDB drug response:
+
+```bash
+biomcp get cell-line CVCL_2119 drug_response
+```
+
+The section counts the experiments PharmacoDB published for the line in each dataset. MOLM-13 has 1117 across CTRPv2, gCSI, GDSC1, and GDSC2. The join goes through the PharmacoDB ID in `xrefs` first and the line name second, and BioMCP keeps the answer only when the accession PharmacoDB returns is the accession asked for. The section lists no rows, because the unscoped listing for a heavily screened line such as K-562 is 19.4 MB of body.
+
 The Cellosaurus sections together:
 
 ```bash
 biomcp get cell-line CVCL_2119 all
 ```
 
-`all` covers `variants` and `xrefs`. The `chembl` section costs one request per record, so it is asked for by name.
+`all` covers `variants` and `xrefs`. The `chembl` and `drug_response` sections each cost their own request, so they are asked for by name.
 
 ## Helper commands
 
-Cell line has no separate helper family. Drug response and dependency data arrive as their own sections in later work; today every command is `search cell-line` or `get cell-line`.
+One helper reads the PharmacoDB rows behind the `drug_response` counts, one dataset at a time:
+
+```bash
+biomcp cell-line drug-response CVCL_2119 --dataset GDSC1
+```
+
+`--dataset` is required. Without it the command fails before any request and names the ten PharmacoDB datasets, because an unscoped listing is megabytes of body. Each row names the compound, the experiment ID, and the published AAC, IC50, EC50, Einf, HS, and DSS1. PharmacoDB gives no units, BioMCP interprets no value, and an absent metric prints as `-`. A compound tested twice in one dataset stays two rows with two experiment IDs.
+
+To go from a compound back to the lines it was tested on, run [`biomcp drug cell-lines <name>`](drug.md).
 
 To go the other way, from a gene to the cell lines that express it, run [`biomcp gene cell-lines <symbol> --group <group>`](gene.md). That helper prints the Human Protein Atlas nTPM of one gene across one cancer group and carries the Cellosaurus accession on each row it could resolve by name.
 

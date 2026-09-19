@@ -62,6 +62,7 @@ DIRECT_SOURCE_MODULES = {
     "opencitations": "OpenCitations",
     "openfda": "OpenFDA",
     "opentargets": "OpenTargets",
+    "pharmacodb": "PharmacoDB",
     "pharmgkb": "PharmGKB",
     "pmc_oa": "PMC OA",
     "pubmed": "PubMed",
@@ -171,7 +172,13 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
         assert item["tier"] in {1, 2, 3}
         assert item["integration_mode"] in allowed_modes
         assert item["bioMcp_auth"] in allowed_auth
-        assert item["terms_url"].startswith("https://")
+        # Ticket 1205: a provider that publishes no terms page gets a null
+        # terms_url rather than a link to something that is not terms, and its
+        # licence summary has to say so.
+        if item["terms_url"] is None:
+            assert "publishes no licence or terms page" in item["license_summary"]
+        else:
+            assert item["terms_url"].startswith("https://")
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(item["reviewed_on"]))
         assert isinstance(item["bioMcp_surfaces"], list)
         assert item["bioMcp_surfaces"]

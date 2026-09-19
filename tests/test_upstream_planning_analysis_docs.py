@@ -869,7 +869,9 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     source_integration = _read_repo("architecture/technical/source-integration.md")
     drug_guide = _read_repo("docs/user-guide/drug.md")
     bioasq_reference = _read_repo("docs/reference/bioasq-benchmark.md")
-    cli_commands = _read_repo("src/cli/commands.rs")
+    # Ticket 1205 split the get/search selectors out of src/cli/commands.rs to
+    # stay under the CLI line cap; their long-form help moved with them.
+    cli_commands = _read_repo("src/cli/commands/selectors.rs")
     cli_drug_mod = _read_repo("src/cli/drug/mod.rs")
     cli_list_clinical = _read_repo("src/cli/list/clinical.rs")
     cli_list_reference = _read_repo("src/cli/list_reference.md")

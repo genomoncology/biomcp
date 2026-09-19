@@ -41,7 +41,7 @@ Survey of 2026-09-17 (workspace experiment 204) over ten AML and leukemia test l
 - HL-60(TB) is PharmacoDB id 1228, uid `HL-60(TB)6502021_`, accession CVCL_A794. Cellosaurus has no PharmacoDB link for CVCL_A794, so a join through the Cellosaurus link alone misses it. PharmacoDB also has 17 NCI60 rows for NB4.
 - `cancerrxgene.org` returns HTTP 410 and points users to Cell Model Passports. The GDSC release 8.5 bulk files (2023) remain on `cog.sanger.ac.uk`. PharmacoDB carries GDSC1 and GDSC2.
 
-Terms: PharmacoDB API and data are CC BY-NC 4.0 and its code is GPL-3.0. Ian ruled on 2026-09-16 that the non-commercial term does not block an open-source, non-commercial BioMCP. The site is a JavaScript app, so a plain fetch of `/about` shows no license text. The implementer confirms the terms URL in a browser and records it with `reviewed_on`. Citation: Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, PMID 34850112.
+Terms: corrected on 2026-09-18, see "Licence findings, 2026-09-18" below. PharmacoDB publishes no licence or terms page. Its source code is GPL-3.0 and the paper describing it is CC BY-NC 4.0; the terms for the data itself are unstated by the provider. Ian ruled on 2026-09-16 that the non-commercial term does not block an open-source, non-commercial BioMCP. The site is a JavaScript app, so a plain fetch of `/about` shows no license text. The implementer confirms the terms URL in a browser and records it with `reviewed_on`. Citation: Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, PMID 34850112.
 
 ## Design
 
@@ -84,7 +84,7 @@ The upstream "Please provide a valid ..." error maps to `None`. Any other GraphQ
 - Rows are sorted by counterpart name (compound for a cell line, cell line for a drug), then dataset name, then experiment id. Rows are never sorted by a metric. Repeated compound-and-dataset pairs stay as separate rows, and each row shows its experiment id so the repeat is visible. BioMCP does not merge or average them.
 - Each helper result returns `total`, `datasets`, and one page of rows. Each row holds `experiment_id`, `dataset`, the counterpart `name` and `uid` (and `tissue` for the drug section), and `aac`, `ic50`, `ec50`, `einf`, `hs`, `dss1` as published. A null metric stays null in JSON and prints as `-`. No unit conversion, no rounding in JSON, and Markdown prints the value with up to four significant digits.
 - JSON shape: `drug.cell_lines` and `cell_line.drug_response` hold `{ "source": "PharmacoDB", "pharmacodb_id": ..., "total": N, "datasets": [{"name", "count"}], "data_as_of": "<retrieval time>", "data_as_of_kind": "retrieved" }`. The helpers add `"filter"` and `"rows": [...]`.
-- Markdown: a `## Drug response (PharmacoDB)` heading on the cell line card and a `## Cell lines (PharmacoDB)` heading on the drug card, then a `N experiments: GDSC1 426, ...` line, and the next commands. The helpers print a table with columns `Experiment | Dataset | Compound or Cell line | AAC | IC50 | EC50 | Einf | HS | DSS1` and a `Showing X of N` line when truncated. Every output prints one fixed attribution line: `Values as published by PharmacoDB (CC BY-NC 4.0, non-commercial use only). PharmacoDB publishes no version; retrieved <data_as_of>. PharmacoDB gives no units; BioMCP does not interpret sensitivity.` The non-commercial term is named in the line itself, because a user cannot tell it from the data.
+- Markdown: a `## Drug response (PharmacoDB)` heading on the cell line card and a `## Cell lines (PharmacoDB)` heading on the drug card, then a `N experiments: GDSC1 426, ...` line, and the next commands. The helpers print a table with columns `Experiment | Dataset | Compound or Cell line | AAC | IC50 | EC50 | Einf | HS | DSS1` and a `Showing X of N` line when truncated. Every output prints one fixed attribution line: `Values as published by PharmacoDB. PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider; treat reuse as non-commercial. PharmacoDB publishes no version; retrieved <data_as_of>. PharmacoDB gives no units; BioMCP does not interpret sensitivity.` (reworded on 2026-09-18 so the line asserts no licence the provider never published) The non-commercial term is named in the line itself, because a user cannot tell it from the data.
 
 ### Docs and inventory
 
@@ -166,3 +166,14 @@ These follow the 2026-09-17 source survey. Ian can overturn any of them.
 
 - Design review: pending
 - Code review: pending
+
+## Licence findings, 2026-09-18
+
+The original Terms sentence above claimed CC BY-NC 4.0 for the PharmacoDB API and data. That claim does not hold, and it is corrected in place.
+
+- `https://pharmacodb.ca/` serves a single-page app. Every path, including `/about`, `/documentation`, `/terms` and `/api`, returns the identical 2,258-byte HTML shell with HTTP 200. There is no server-rendered terms page to read.
+- The app's JavaScript bundles contain no licence string: no "CC BY", no "Creative Commons", no "license" text that names terms for the data.
+- The CC BY-NC 4.0 in the original ticket text traces to the journal article, Feizi N, et al. PharmacoDB 2.0, Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which is published under CC BY-NC 4.0. That licence covers the paper, not the database.
+- The only licence the project itself publishes is for its source code: GPL-3.0, at `https://github.com/bhklab/PharmacoDB/blob/master/LICENSE`.
+- Conclusion recorded in both registries with `reviewed_on: 2026-09-18`, tier 3, and `terms_url: null`: PharmacoDB publishes no licence or terms page, its source code is GPL-3.0, the describing paper is CC BY-NC 4.0, and redistribution terms for the data itself are unstated by the provider. The user-facing attribution line says the same and asks the reader to treat reuse as non-commercial, because a user cannot tell that from the data.
+- `the_license_agrees_across_the_attribution_line_and_both_registries` in `src/entities/pharmacodb/tests.rs` pins that the attribution line, `docs/reference/sources.json` and `docs/reference/source-licensing.md` carry one value and that no bare `CC BY-NC 4.0` row returns.
