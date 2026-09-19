@@ -509,7 +509,7 @@ and needs one scope for a row listing.
 
 ```bash
 (../../tools/biomcp-ci drug cell-lines venetoclax 2>&1 || true) | mustmatch like 'biomcp get drug <name> cell_lines'
-(../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 --dataset GDSC1 2>&1 || true) | mustmatch like 'not both'
+(../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 --dataset GDSC1 2>&1 || true) | mustmatch like 'Use --cell-line or --dataset for drug cell-lines, not both.'
 ../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 --json | jq -r '.matched' | mustmatch '2'
 ../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 | mustmatch like '| Experiment | Dataset | Cell line | Tissue | AAC | IC50 | EC50 | Einf | HS | DSS1 |'
 ```

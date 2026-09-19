@@ -102,7 +102,7 @@ An unscoped row listing is refused before any request, and the refusal names the
 flag.
 
 ```bash
-(../../tools/biomcp-ci cell-line drug-response CVCL_2119 2>&1 || true) | mustmatch like '--dataset'
+(../../tools/biomcp-ci cell-line drug-response CVCL_2119 2>&1 || true) | mustmatch like '--dataset <DATASET>'
 ../../tools/biomcp-ci cell-line drug-response CVCL_2119 --dataset GDSC1 --json | jq -r '.matched' | mustmatch '426'
 ../../tools/biomcp-ci cell-line drug-response CVCL_2119 --dataset GDSC1 --json | jq -r '.rows | length' | mustmatch '25'
 ```
