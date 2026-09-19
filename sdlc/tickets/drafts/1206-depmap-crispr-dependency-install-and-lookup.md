@@ -2,6 +2,7 @@
 flow: build
 priority: 4
 deps: [1202]
+hold: Deferred 2026-09-19 pending a ruling on the DepMap terms contradiction recorded in sdlc/issues/2026-09-18-depmap-site-terms-contradict-the-figshare-cc-by-4-0-field.md.
 ---
 
 # 1206: DepMap CRISPR dependency install and lookup
@@ -36,8 +37,8 @@ The motivating consumer is a hackathon team screening public GEO studies of drug
 
 ## Current Facts
 
-- No DepMap code exists. `grep -rni depmap src docs` finds nothing, and `notes/biomcp-ideas-20260916.md` (idea 5, score 62) records the same. Ian ruled on 2026-09-16 that DepMap terms do not block this work because BioMCP is open-source and non-commercial.
-- Measured 2026-09-16: `depmap.org/portal/api/download/files` returns a bot verification page to scripts. The Figshare API does not. `GET https://api.figshare.com/v2/articles/27993248` returns "DepMap 24Q4 Public", license CC BY 4.0, DOI `10.25452/figshare.plus.27993248.v1`, group 36075, and 73 files (30.83 GB).
+- No DepMap code exists. `grep -rni depmap src docs` finds nothing, and `notes/biomcp-ideas-20260916.md` (idea 5, score 62) records the same. Ian ruled on 2026-09-16 that DepMap terms do not block this work because BioMCP is open-source and non-commercial. That ruling rested on the Figshare CC BY 4.0 field. The 2026-09-18 reading of DepMap's own terms page found a rehosting clause the ruling never saw, so the ruling no longer settles the question. See `## Blocked 2026-09-18` below.
+- Measured 2026-09-16: `depmap.org/portal/api/download/files` returns a bot verification page to scripts. The Figshare API does not. `GET https://api.figshare.com/v2/articles/27993248` returns "DepMap 24Q4 Public", a `license` field reading CC BY 4.0, DOI `10.25452/figshare.plus.27993248.v1`, group 36075, and 73 files (30.83 GB).
 - Needed files in that article: `Model.csv` (645,696 bytes, 2,105 rows, file 51065297) and `CRISPRGeneEffect.csv` (428,678,699 bytes, file 51064667). `CRISPRGeneDependency.csv` is 421,115,594 bytes and `ModelCondition.csv` is 219,100 bytes. `CRISPRGeneEffect.csv` holds 1,178 models by 17,916 genes. Its header starts with an empty cell, then `A1BG (1),A1CF (29974),...`. Each row starts with a `ModelID`.
 - `Model.csv` has the columns `ModelID`, `CellLineName`, `StrippedCellLineName`, `OncotreeLineage`, `OncotreePrimaryDisease`, `OncotreeSubtype`, and `RRID` among 47. Example values: `ModelID` ACH-000362, `RRID` CVCL_2119, `CellLineName` MOLM-13, `OncotreeLineage` Myeloid, `OncotreePrimaryDisease` Acute Myeloid Leukemia. Sixty-one rows mention acute myeloid.
 - Release discovery: `POST /v2/articles/search` with `{"group":36075,"search_for":":title: DepMap"}` returns 27993248 (24Q4, 2024-12-10), 25880521 (24Q2), and 24667905 (23Q4). The same search with no group returns no DepMap releases. 24Q4 is the newest release on Figshare as of 2026-09-16.
@@ -99,7 +100,7 @@ biomcp cell-line dependency CVCL_2119 --limit 20
 - Not installed: the section outcome is unavailable with the message `DepMap data is not installed. Run \`biomcp depmap sync\`.` No network call happens.
 - Release on every output: every Markdown output prints `DepMap <release_tag>, published <published_date>` from `manifest.json`, and every JSON output carries `release: {tag, title, published_date, doi}`. `title` is the Figshare title, `DepMap 24Q4 Public`, and it is never the release string an output prints.
 - `data_as_of` on every output: every JSON payload carries `data_as_of` and `data_as_of_kind: "release"`, with `data_as_of` set to `<release_tag> (<published_date>)`, for example `24Q4 (2024-12-10)` from the newest Figshare release measured on 2026-09-17. The value comes from `manifest.json`, so it is the release the user installed and never a hard-coded string.
-- Attribution on every output: every Markdown output ends with `DepMap <data_as_of>, CC BY 4.0. Cite the release DOI <doi>.`, which reads `DepMap 24Q4 (2024-12-10), CC BY 4.0. Cite the release DOI 10.25452/figshare.plus.27993248.v1.` on the measured release. The release and DOI parts come from `manifest.json`, and the release part is the `data_as_of` value.
+- Attribution on every output: the wording is unsettled and no longer says CC BY 4.0. This ticket first specified `DepMap <data_as_of>, CC BY 4.0. Cite the release DOI <doi>.`, taking the licence from the Figshare mirror's metadata field. DepMap's own terms page denies those rights, so the line would assert a licence the publisher does not grant. The release and DOI parts still come from `manifest.json`, and the release part is still the `data_as_of` value. The licence part waits on the ruling recorded under `## Blocked 2026-09-18`.
 - Bot checks: `depmap.org/portal/api/download/files` answers scripts with a human verification page, measured 2026-09-16 and again on 2026-09-17. BioMCP never calls it. If any request in this ticket returns HTTP 200 with an HTML body where JSON or CSV bytes were expected, the command reports the URL, names the file, and stops. It never retries through the check, never rewrites the request, and never scrapes the page. `depmap sync` leaves any earlier install untouched when that happens.
 - JSON: `dependency` carries `release`, `scored_models`, `total`, and `rows`. `depmap` carries `release` and `models` (a list, possibly empty), each with `screened: bool`. `cell-line dependency` carries `release` and one `{model_id, screened, total, rows}` entry per model.
 - MCP arms: `is_allowed_mcp_command` (`src/mcp/shell.rs:472`) is an exhaustive match with no wildcard, so every new variant is classified here or the build fails. `Commands::Depmap` with the `Sync` subcommand is rejected, following `Commands::WhoIvd { .. }` (`src/mcp/shell.rs:564`), because it downloads and writes workstation-local state. `GeneCommand::Dependency` and `CellLineCommand::Dependency` are allowed, because they read the installed index and reveal no local path. The `dependency` gene section and the `depmap` cell line section reach MCP through the typed `get` tool with no arm change.
@@ -108,7 +109,7 @@ biomcp cell-line dependency CVCL_2119 --limit 20
 ### Docs
 
 - `docs/sources/depmap.md`: what BioMCP reads, the four commands, the install size, and the fact that BioMCP reports gene effect values as published.
-- Rows in `docs/sources/index.md`, `mkdocs.yml`, `docs/reference/source-licensing.md`, and `docs/reference/sources.json` (tier 1, CC BY 4.0, reviewed 2026-09-16, with a note that DepMap asks for citation of the release DOI).
+- Rows in `docs/sources/index.md`, `mkdocs.yml`, `docs/reference/source-licensing.md`, and `docs/reference/sources.json`, with a note that DepMap asks for citation of the release DOI. The tier and the licence summary wait on the ruling under `## Blocked 2026-09-18`. The tier 1 and CC BY 4.0 first written here came from the Figshare mirror's metadata field, and DepMap's own terms contradict it.
 - The index description says "one block of `model_count` values per gene", with the count read from `gene_effect_axes.json`. It never hard-codes 1,178, which belongs to the 24Q4 file.
 - Help lists for gene sections and the `list gene` page gain `dependency`.
 
@@ -132,7 +133,7 @@ Focused Rust tests:
 8. An unknown symbol returns an empty row list with `total: 0`.
 9. The cell-line section returns both models for the shared RRID, an empty list for a CVCL id with no row, and `screened: false` with the no-screen message for the unscreened model.
 10. `cell-line dependency` returns rows in ascending gene effect order for a screened model and the no-screen message for the unscreened one.
-11. Every Markdown output in these tests contains `release_tag` and the published date, never the Figshare title, and ends with the CC BY 4.0 attribution line naming the release DOI. Every JSON output carries `release.published_date`, `data_as_of` in the form `<release_tag> (<published_date>)`, and `data_as_of_kind: "release"`.
+11. Every Markdown output in these tests contains `release_tag` and the published date, never the Figshare title, and ends with an attribution line naming the release DOI. This item first pinned a CC BY 4.0 line and must be reworded before any work starts, because DepMap's own terms deny that licence. Every JSON output carries `release.published_date`, `data_as_of` in the form `<release_tag> (<published_date>)`, and `data_as_of_kind: "release"`.
 12. With no install, the sections and the helpers report unavailable with the exact message and make no Figshare or DepMap request. The install check runs before the gene symbol resolves, so `get gene KMT2A dependency` with no install makes no request at all. Every other lookup resolves its symbol through the existing gene lookup first, which is a network request and is unchanged by this ticket.
 13. `all` does not include `dependency`.
 14. An HTML body served with HTTP 200 where the Figshare article JSON or a CSV file was expected fails, names the URL and the file, leaves no install, and leaves an earlier install untouched.
