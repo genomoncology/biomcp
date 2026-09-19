@@ -25,3 +25,17 @@ A reading that would resolve it: the Broad's own DepMap group deposited article 
 Separately, the mirror is now further behind than the ticket records. The DepMap community forum lists releases 25Q2 (2025-06-05), 25Q3 (2025-09-30), and 26Q1 (2026-04-01). Figshare group 36075 still holds only 24Q4, 24Q2, and 23Q4, confirmed by article search on 2026-09-18. The newest DepMap release is 26Q1; the newest release BioMCP could install is three releases and sixteen months older than that, and twenty-one months old in absolute terms.
 
 Ticket 1206 is parked on both points.
+
+## Decision 2026-09-19
+
+Ian deferred ticket 1206. The contradiction is unresolved and no BioMCP code
+reads DepMap. No DepMap bytes were recorded into this repository, and no licence
+row was added to `docs/reference/source-licensing.md` or
+`docs/reference/sources.json`, so nothing here asserts terms the publisher did
+not publish.
+
+Reopening needs two things: a ruling on whether the Figshare deposit's CC BY 4.0
+grant governs the mirrored 24Q4 bytes despite the site terms, and a reworded
+attribution line for acceptance item 11. The mirror's twenty-one-month staleness
+is the weaker of the two reasons but the easier one to watch: if Figshare group
+36075 gains 25Q2 or later, the data-age objection goes away on its own.
