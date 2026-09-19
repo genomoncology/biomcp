@@ -302,7 +302,9 @@ CELLOSAURUS_RECORDS = {
 # `experiments` query with different fields, so the router tells them apart by
 # the metric fields.
 PHARMACODB_CELL_LINE_BY_UID = {
-    "CVCL_2119": fixture("pharmacodb/cell_line_uid_molm13_20260918.json"),
+    # PharmacoDB's own UID for MOLM-13, which is the value the Cellosaurus
+    # PharmacoDB cross-reference carries.
+    "MOLM13_950_2019": fixture("pharmacodb/cell_line_uid_molm13_20260918.json"),
 }
 PHARMACODB_CELL_LINE_BY_NAME = {
     "HL-60(TB)": fixture("pharmacodb/cell_line_name_hl60tb_20260918.json"),

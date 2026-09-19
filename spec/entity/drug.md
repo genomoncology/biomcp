@@ -276,7 +276,7 @@ try:
     assert [tool["name"] for tool in tools] == ["biomcp", "search", "get", "variant_normalize_car", "variant_erepo", "gene_cspec", "variant_articles"]
     get_schema = next(tool["inputSchema"] for tool in tools if tool["name"] == "get")
     drug_branch = next(branch for branch in get_schema["oneOf"] if branch["properties"]["entity"]["const"] == "drug")
-    assert drug_branch["properties"]["sections"]["items"]["enum"] == ["label", "regulatory", "safety", "shortage", "targets", "indications", "interactions", "civic", "approvals", "all"]
+    assert drug_branch["properties"]["sections"]["items"]["enum"] == ["label", "regulatory", "safety", "shortage", "targets", "indications", "interactions", "civic", "approvals", "cell_lines", "all"]
 finally:
     server.terminate()
     server.wait(timeout=5)
