@@ -1,5 +1,11 @@
 # Review of tickets 1202 to 1216: cell line, dataset, import, compare, score
 
+**Status 2026-09-19: the cell line rows are settled. Tickets 1202, 1205, 1213
+and 1214 took their fixes, shipped, and gated green on the build host; each has
+a completion record in `sdlc/records/`. Ticket 1206 is deferred and held as a
+draft over the DepMap terms contradiction, so its findings F5, F11, F12, F24 and
+F25 are parked with it. The dataset rows below are untouched and still hold.**
+
 Written 2026-09-17 against main at `45d74711`. Reviewed: the fifteen tickets, the proposal `sdlc/planning/2026-09-17-dataset-storage-and-freshness.md`, the findings of workspace experiments 203 (GEO contract proof) and 204 (cell line source survey), and the code the tickets cite. Two read-only public requests filled gaps the experiments left: one GEO matrix header (GSE100446) and one `gds` ESummary record (GSE982). Nothing was edited in the tickets.
 
 Verdict scale: **ready** means an engineer can build it as written and the findings below are polish. **Needs a fix** means the ticket text must change before it is dispatched. **Needs a decision** means the lead or Ian has to choose.
@@ -8,23 +14,25 @@ Verdict scale: **ready** means an engineer can build it as written and the findi
 
 | Ticket | Verdict | Why |
 | --- | --- | --- |
-| 1202 cell-line entity | needs a fix | Skips `section_outcomes`. 1205 and 1214 then need it (F9). Missing one fixture the hyphen rule requires (F10). |
+| 1202 cell-line entity | needs a fix, fixed and shipped | Skipped `section_outcomes`. 1205 and 1214 then needed it (F9). Missing one fixture the hyphen rule requires (F10). Both applied; shipped 2026-09-18. |
 | 1203 search dataset | ready | Polish only (F7, F19). |
 | 1204 dataset card | needs a fix | The `Public` comparison is wrong (F1). `data_as_of` conflicts with 1207 (F3). Gettable flag and MCP arms unstated (F4, F5). |
-| 1205 PharmacoDB | needs a fix | Acceptance 6 contradicts the measured sizes (F8). MCP arms unstated (F5). |
-| 1206 DepMap | needs a fix | `data_as_of` format is defined three ways (F11). Acceptance 12 cannot hold as written (F12). MCP arms unstated (F5). |
+| 1205 PharmacoDB | needs a fix, fixed and shipped | Acceptance 6 contradicted the measured sizes (F8). MCP arms unstated (F5). Both applied; shipped 2026-09-19. |
+| 1206 DepMap | needs a fix, deferred | `data_as_of` format is defined three ways (F11). Acceptance 12 cannot hold as written (F12). MCP arms unstated (F5). Deferred 2026-09-19 over the DepMap terms contradiction; the findings are parked with the ticket. |
 | 1207 assets and products | needs a fix | The `Public` comparison is wrong (F1). `data_as_of` conflicts with 1204 (F3). |
 | 1208 dataset download | needs a fix | Manifest has no series-level date, so 1215 cannot work (F2). Lock PID order is racy (F13). Refresh conflict shape undefined (F14). |
 | 1209 study import | needs a decision | The error-rendering change is global and belongs in its own ticket (F6). Array table reader unnamed (F17). |
 | 1210 study compare | ready | No findings beyond its dependence on F6. |
 | 1211 series section | needs a fix | Owns the fix for F1. Its payload has no `data_as_of` (F18). |
 | 1212 study score | ready | Polish only (F5). |
-| 1213 HPA cell lines | needs a fix | The fixture covers one of five Cellosaurus batches the spec needs (F16). |
-| 1214 ChEMBL section | ready | No findings. |
+| 1213 HPA cell lines | needs a fix, fixed and shipped | The fixture covered one of five Cellosaurus batches the spec needs (F16). Applied; shipped 2026-09-19. |
+| 1214 ChEMBL section | ready, shipped | No findings. Shipped 2026-09-18. |
 | 1215 dataset check | needs a fix | The `Public` comparison is wrong (F1). It never reads a header for the motivating case (F2). |
 | 1216 dataset list | needs a fix | Shared lock on a file that hand-written fixtures do not have, and no wait bound (F15). |
 
-Counts: ready 4, needs a fix 10, needs a decision 1.
+Counts as reviewed on 2026-09-17: ready 4, needs a fix 10, needs a decision 1.
+
+Disposition of the five cell line rows as of 2026-09-19: 1202, 1205, 1213 and 1214 took their fixes and shipped, and 1206 is deferred. The eleven dataset rows are unchanged and still describe the tickets as they stand.
 
 ## Blocking findings
 

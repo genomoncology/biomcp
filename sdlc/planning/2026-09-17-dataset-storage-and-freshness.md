@@ -1,5 +1,12 @@
 # Change proposal: dataset storage, freshness, and source dates
 
+**Status 2026-09-19: the cell line half shipped. Tickets 1202, 1214, 1213 and
+1205 are merged to main with completion records in `sdlc/records/`. Ticket 1206
+(DepMap) is deferred and held as a draft, because DepMap's site terms contradict
+the Figshare CC BY 4.0 field this proposal relied on. The dataset tickets 1204
+and 1207 to 1212 are unstarted. Three source facts below were measured wrong and
+are corrected in place; see section 8.**
+
 Written 2026-09-17. It covers tickets 1204 to 1214, which add a `dataset` entity, local imports, and cell line sources. Evidence comes from two measured spikes: a GEO contract proof over 774 series matrix files, and a cell line source survey over 11 sources and 10 cell lines. Nothing here changes what the commands compute. It changes what BioMCP records, where it writes, and what it prints.
 
 ## Why
@@ -64,7 +71,9 @@ Every card, section, and JSON payload from these sources carries a `data_as_of` 
 
 ### 8. Print the license on every source output
 
-Terms differ, and one is not a plain open license: Cellosaurus CC BY 4.0, DepMap CC BY 4.0, HPA CC BY (the repo says CC BY-SA 4.0 and the survey read CC BY 4.0, so 1213 asks for a recheck), ChEMBL CC BY-SA 3.0, and PharmacoDB CC BY-NC 4.0.
+Terms differ, and three of the five readings here were wrong. The corrected set, each read from the provider's own terms page between 2026-09-17 and 2026-09-19: Cellosaurus CC BY 4.0, HPA CC BY 4.0, ChEMBL CC BY-SA 3.0 Unported, PharmacoDB no published licence and no terms page, and DepMap contradictory.
+
+The three corrections. HPA is CC BY 4.0, read at <https://www.proteinatlas.org/about/licence>; the CC BY-SA 4.0 this proposal carried was a third-party licence listed further down that same page. PharmacoDB publishes nothing: the CC BY-NC 4.0 here belongs to the describing NAR paper and the GPL-3.0 covers the source code, so ticket 1205 records tier 3 with a null terms URL and prints a line stating what the provider does and does not publish. DepMap's own terms at <https://depmap.org/portal/terms_text>, revised 2026-04-02, forbid commercial use and bind anyone who rehosts the data; the CC BY 4.0 here came from the Figshare mirror's metadata field. Ticket 1206 is deferred on that contradiction, recorded in `sdlc/issues/2026-09-18-depmap-site-terms-contradict-the-figshare-cc-by-4-0-field.md`.
 
 Every source output carries a short attribution line naming the license. A non-commercial source says so in that line, because a user cannot tell from the data.
 

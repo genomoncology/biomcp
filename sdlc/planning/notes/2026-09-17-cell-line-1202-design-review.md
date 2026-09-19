@@ -1,5 +1,10 @@
 # Design review: 1202 cell-line entity
 
+**Status 2026-09-19: all four blocking findings B1 to B4 were applied to the
+ticket and 1202 shipped. The work is merged to main and gated green on the build
+host at commit `37336c22`, with a completion record at
+`sdlc/records/1202-cell-line-entity-resolves-names-to-cellosaurus-accessions.md`.**
+
 Reviewed at main `e595cd15` on 2026-09-17, read-only, against the code, the 2026-09-17 ticket review (F9, F10), the dataset storage and freshness proposal (sections 7, 8, 12), workspace experiment 204, and tickets 1205, 1206, 1213, and 1214.
 
 **Verdict: needs a fix.** Four items would send an engineer back with a question. Each is a one- or two-sentence ticket edit. No decision for Ian.

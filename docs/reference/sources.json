@@ -132,12 +132,12 @@
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public API",
-    "license_summary": "EMBL-EBI open data service; ChEMBL is published for broad reuse",
-    "redistribution_summary": "reuse is generally allowed under the provider's open-data terms with attribution where required",
-    "terms_url": "https://www.ebi.ac.uk/chembl/",
+    "license_summary": "CC BY-SA 3.0 Unported",
+    "redistribution_summary": "reuse, redistribution and adaptation are allowed with attribution under ShareAlike; preserve ChEMBL IDs and name the release, and note that compound property calculations derived from commercial software carry their own terms",
+    "terms_url": "https://chembl.gitbook.io/chembl-interface-documentation/about",
     "key_url": null,
-    "reviewed_on": "2026-03-20",
-    "notes": "BioMCP only queries live ChEMBL endpoints and does not ship ChEMBL data in the repository. Drug target output keeps ChEMBL in the generic target/mechanism section while CIViC variant labels are rendered separately when present."
+    "reviewed_on": "2026-09-19",
+    "notes": "BioMCP only queries live ChEMBL endpoints and does not ship ChEMBL data in the repository. Drug target output keeps ChEMBL in the generic target/mechanism section while CIViC variant labels are rendered separately when present. The about page reads \"The ChEMBL data is made available on a Creative Commons Attribution-Share Alike 3.0 Unported License\", and the release LICENSE file at https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/LICENSE carries the same grant. The earlier summary named no licence version; the shipped ChEMBL attribution line has said CC BY-SA 3.0 since ticket 1214."
   },
   {
     "id": "civic",

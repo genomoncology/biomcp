@@ -44,7 +44,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | CDC CVX/MVX | 1 | direct_api | none | most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply | reuse is generally allowed with CDC attribution and non-endorsement language; avoid CDC logos and review exceptions before republishing | <https://www.cdc.gov/other/agencymaterials.html> |
 | CDC WONDER VAERS | 1 | direct_api | none | CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts | reuse is allowed for statistical reporting and analysis with source attribution, but do not try to identify individuals or publish identifying linkages | <https://wonder.cdc.gov/datause.html> |
 | Cellosaurus | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution and the requested citation; every BioMCP cell line output carries both | <https://www.cellosaurus.org/description.html> |
-| ChEMBL | 1 | direct_api | none | EMBL-EBI open data service; ChEMBL is published for broad reuse | reuse is generally allowed under the provider's open-data terms with attribution where required | <https://www.ebi.ac.uk/chembl/> |
+| ChEMBL | 1 | direct_api | none | CC BY-SA 3.0 Unported | reuse, redistribution and adaptation are allowed with attribution under ShareAlike; preserve ChEMBL IDs and name the release, and note that compound property calculations derived from commercial software carry their own terms | <https://chembl.gitbook.io/chembl-interface-documentation/about> |
 | CIViC | 1 | direct_api | none | open community knowledgebase; CIViC content is published for unrestricted reuse | reuse is broadly permitted; attribution remains best practice | <https://civicdb.org/home> |
 | ClinGen | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://clinicalgenome.org/> |
 | ClinGen LDH | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://ldh.genome.network> |
@@ -133,11 +133,11 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
-- License / terms summary: EMBL-EBI open data service; ChEMBL is published for broad reuse
-- Redistribution / reuse summary: reuse is generally allowed under the provider's open-data terms with attribution where required
-- Official terms URL: <https://www.ebi.ac.uk/chembl/>
-- Reviewed on: `2026-03-20`
-- Notes: `get drug <name> targets` keeps ChEMBL as the generic target/mechanism source; CIViC variant labels are rendered separately when present.
+- License / terms summary: CC BY-SA 3.0 Unported
+- Redistribution / reuse summary: reuse, redistribution and adaptation are allowed with attribution under ShareAlike; preserve ChEMBL IDs and name the release, and note that compound property calculations derived from commercial software carry their own terms
+- Official terms URL: <https://chembl.gitbook.io/chembl-interface-documentation/about>
+- Reviewed on: `2026-09-19`
+- Notes: `get drug <name> targets` keeps ChEMBL as the generic target/mechanism source; CIViC variant labels are rendered separately when present. The about page reads "The ChEMBL data is made available on a Creative Commons Attribution-Share Alike 3.0 Unported License", and the release LICENSE file at <https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/LICENSE> carries the same grant. The earlier summary named no licence version; the shipped ChEMBL attribution line has said CC BY-SA 3.0 since ticket 1214, and this row now agrees with it.
 
 ### CIViC
 
