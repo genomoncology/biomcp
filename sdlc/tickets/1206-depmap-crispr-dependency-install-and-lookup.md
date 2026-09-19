@@ -6,6 +6,28 @@ deps: [1202]
 
 # 1206: DepMap CRISPR dependency install and lookup
 
+## Deferred 2026-09-19
+
+Ian deferred this ticket. It is the only cell line ticket not built; 1202, 1205,
+1213, and 1214 are done. Nothing depends on it, so the deferral costs the other
+four nothing.
+
+Two reasons, both measured on 2026-09-18 and recorded under `## Blocked` below.
+
+DepMap's own terms forbid commercial use and require anyone rehosting the data to
+repost those terms and bind their users to them. BioMCP is MIT and grants the
+commercial rights DepMap withholds. Recorded fixture bytes in this public
+repository would be rehosting, and all fifteen acceptance items need them.
+
+The Figshare mirror stops at 24Q4, dated 2024-12-10, while DepMap itself has
+shipped 25Q2, 25Q3, and 26Q1. The newest release BioMCP could install is three
+releases and about twenty-one months old, and the mirror has not moved in that
+time.
+
+To resume: rule on which statement governs the mirrored bytes, then reword
+acceptance item 11, whose `CC BY 4.0` attribution line asserts rights the
+publisher denies. Revisit sooner if DepMap resumes mirroring to Figshare.
+
 ## Goal
 
 `biomcp depmap sync` installs the DepMap model table and CRISPR gene effect matrix from the Figshare mirror. `biomcp get gene <symbol> dependency` and `biomcp gene dependency <symbol> [--lineage <text>]` then print the models with the lowest gene effect scores. `biomcp get cell-line <CVCL id> depmap` prints the matching DepMap models and says by name when a line has no CRISPR screen. `biomcp cell-line dependency <CVCL id>` prints the genes with the lowest gene effect scores for that line. Every output names the DepMap release and its date. BioMCP reports the numbers as published and adds no labels or scores of its own.
