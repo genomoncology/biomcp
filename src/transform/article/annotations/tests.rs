@@ -5,7 +5,7 @@ use crate::entities::article::AnnotationCount;
 use crate::sources::pubtator::PubTatorDocument;
 
 #[test]
-fn extract_annotations_counts_mentions() {
+fn retained_extract_annotations_counts_mentions() {
     let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
         "pmid": 123,
         "pmcid": "PMC1",
@@ -36,7 +36,7 @@ fn extract_annotations_counts_mentions() {
     }))
     .expect("valid JSON");
 
-    let ann = extract_annotations(&doc).expect("annotations should exist");
+    let ann = retained_extract_annotations(&doc).expect("annotations should exist");
     assert_eq!(
         ann.genes,
         vec![
@@ -74,7 +74,7 @@ fn extract_annotations_counts_mentions() {
 }
 
 #[test]
-fn extract_annotations_preserves_first_seen_order_for_equal_counts() {
+fn retained_extract_annotations_preserves_first_seen_order_for_equal_counts() {
     let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
         "pmid": 22663011,
         "passages": [
@@ -92,7 +92,7 @@ fn extract_annotations_preserves_first_seen_order_for_equal_counts() {
     }))
     .expect("valid JSON");
 
-    let ann = extract_annotations(&doc).expect("annotations should exist");
+    let ann = retained_extract_annotations(&doc).expect("annotations should exist");
     assert_eq!(
         ann.genes,
         vec![

@@ -77,11 +77,11 @@ pub fn extract_detail_annotations(detail: &PubTatorDetail) -> Option<ArticleAnno
             }
             accumulator.finish()
         }
-        PubTatorDetail::Legacy { document, .. } => extract_annotations(document),
+        PubTatorDetail::Legacy { document, .. } => retained_extract_annotations(document),
     }
 }
 
-pub fn extract_annotations(doc: &PubTatorDocument) -> Option<ArticleAnnotations> {
+pub(crate) fn retained_extract_annotations(doc: &PubTatorDocument) -> Option<ArticleAnnotations> {
     aggregate_annotations(doc.passages.iter().flat_map(|passage| {
         passage.annotations.iter().filter_map(|annotation| {
             annotation

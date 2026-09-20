@@ -15,11 +15,14 @@ pub use self::anchors::{
     article_search_abstract_snippet, article_search_fallback_title, clean_abstract, clean_title,
     normalize_article_search_text,
 };
-pub use self::annotations::{extract_annotations, extract_detail_annotations};
+pub use self::annotations::extract_detail_annotations;
+pub(crate) use self::annotations::retained_extract_annotations;
 pub use self::europepmc::{from_europepmc_detail, merge_europepmc_detail_metadata};
 pub use self::federation::{
-    from_europepmc_result, from_europepmc_search_result, from_pubmed_esummary_entry,
-    from_pubtator_search_result, merge_europepmc_metadata,
+    from_europepmc_search_result, from_pubmed_esummary_entry, from_pubtator_search_result,
+};
+pub(crate) use self::federation::{
+    retained_from_europepmc_result, retained_merge_europepmc_metadata,
 };
 pub(crate) use self::html::{classify_html_document, extract_pmc_supplement_links};
 pub(crate) use self::jats::{
@@ -27,7 +30,8 @@ pub(crate) use self::jats::{
     extract_citation_evidence, extract_jats_supplement_links,
 };
 pub use self::pdf::extract_text_from_pdf;
-pub use self::pubtator::{from_pubtator_detail, from_pubtator_document};
+pub use self::pubtator::from_pubtator_detail;
+pub(crate) use self::pubtator::retained_from_pubtator_document;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ArticleSupplementLink {
@@ -100,10 +104,11 @@ mod tests {
         let _ = crate::transform::article::truncate_abstract as fn(&str) -> String;
         let _ = crate::transform::article::article_search_abstract_snippet
             as fn(&str) -> Option<String>;
-        let _ =
-            crate::transform::article::from_pubtator_document as fn(&PubTatorDocument) -> Article;
-        let _ = crate::transform::article::from_europepmc_result as fn(&EuropePmcResult) -> Article;
-        let _ = crate::transform::article::merge_europepmc_metadata
+        let _ = crate::transform::article::retained_from_pubtator_document
+            as fn(&PubTatorDocument) -> Article;
+        let _ = crate::transform::article::retained_from_europepmc_result
+            as fn(&EuropePmcResult) -> Article;
+        let _ = crate::transform::article::retained_merge_europepmc_metadata
             as fn(&mut Article, &EuropePmcResult);
         let _ = crate::transform::article::from_europepmc_search_result
             as fn(&EuropePmcResult) -> Option<ArticleSearchResult>;
@@ -111,7 +116,7 @@ mod tests {
             as fn(&PubTatorSearchResult) -> Option<ArticleSearchResult>;
         let _ = crate::transform::article::from_pubmed_esummary_entry
             as fn(&ESummaryEntry) -> Option<ArticleSearchResult>;
-        let _ = crate::transform::article::extract_annotations
+        let _ = crate::transform::article::retained_extract_annotations
             as fn(&PubTatorDocument) -> Option<ArticleAnnotations>;
         let _ = crate::transform::article::classify_jats_document
             as fn(&str) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable>;

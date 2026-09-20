@@ -12,7 +12,7 @@ use super::federation::{
 pub fn from_europepmc_detail(detail: &EuropePmcDetail) -> Article {
     match detail {
         EuropePmcDetail::Legacy { requested, result } => {
-            let mut article = super::federation::from_europepmc_result(result);
+            let mut article = super::federation::retained_from_europepmc_result(result);
             set_requested_identifier(&mut article, requested);
             article
         }
@@ -23,7 +23,7 @@ pub fn from_europepmc_detail(detail: &EuropePmcDetail) -> Article {
 pub fn merge_europepmc_detail_metadata(article: &mut Article, detail: &EuropePmcDetail) {
     match detail {
         EuropePmcDetail::Legacy { result, .. } => {
-            super::federation::merge_europepmc_metadata(article, result);
+            super::federation::retained_merge_europepmc_metadata(article, result);
         }
         EuropePmcDetail::Adopted(response) => merge_adopted(article, response),
     }

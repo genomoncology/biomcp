@@ -445,8 +445,8 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     # Main adds the supported cell-line, Cellosaurus, ChEMBL, HPA, and
     # PharmacoDB modules, documentation, templates, and focused tests. The
-    # exact merged package contains 1,383 files, with no spare capacity.
-    assert len(paths) == 1383
+    # exact merged package contains 1,384 files, with no spare capacity.
+    assert len(paths) == 1384
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

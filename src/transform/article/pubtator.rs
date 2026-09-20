@@ -54,7 +54,7 @@ pub fn from_pubtator_detail(detail: &PubTatorDetail) -> Article {
     }
 }
 
-pub fn from_pubtator_document(doc: &PubTatorDocument) -> Article {
+pub(crate) fn retained_from_pubtator_document(doc: &PubTatorDocument) -> Article {
     let pmid = doc.pmid.map(|value| value.to_string());
     from_legacy_pubtator_document(pmid, doc)
 }

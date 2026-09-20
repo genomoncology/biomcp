@@ -1730,3 +1730,73 @@ async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_
     let logged = requests.lock().unwrap().join("\n");
     assert!(!logged.contains("opencitations:"), "{logged}");
 }
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn pmcid_seed_resolves_through_the_retained_europepmc_first_row() {
+    let mut env = TestEnv::new();
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let logged = requests.clone();
+    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+        let mut parts = request.splitn(2, ' ');
+        parts.next();
+        let target = parts
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .next()
+            .unwrap_or_default()
+            .to_string();
+        logged.lock().unwrap().push(target.clone());
+        let body = if target.contains("query=PMCID%3APMC4199001") {
+            "{\"resultList\":{\"result\":[\
+{\"id\":\"41990001\",\"source\":\"MED\",\"pmid\":\"41990001\",\"doi\":\"10.1000/graph-pmcid\"},\
+{\"id\":\"999\",\"source\":\"MED\",\"pmid\":\"999\",\"doi\":\"10.1000/wrong-row\"}]}}"
+        } else {
+            "{\"resultList\":{\"result\":[\
+{\"id\":\"10.1000/graph-doi\",\"source\":\"MED\",\"doi\":\"10.1000/graph-doi\"},\
+{\"id\":\"888\",\"source\":\"MED\",\"pmid\":\"888\",\"doi\":\"10.1000/wrong-row\"}]}}"
+        };
+        super::super::test_support::TestHttpReply::Bytes(
+            super::super::test_support::test_http_response(
+                "200 OK",
+                "application/json",
+                body.as_bytes(),
+            ),
+        )
+    })
+    .await;
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    let europe = EuropePmcClient::new().unwrap();
+
+    assert_eq!(
+        resolve_semantic_scholar_input_id("PMC4199001", &europe)
+            .await
+            .unwrap(),
+        "PMID:41990001"
+    );
+    assert_eq!(
+        resolve_semantic_scholar_input_id("PMC42", &europe)
+            .await
+            .unwrap(),
+        "DOI:10.1000/graph-doi"
+    );
+
+    let targets = requests.lock().unwrap();
+    assert!(
+        targets
+            .iter()
+            .any(|target| target.contains("query=PMCID%3APMC4199001")),
+        "{targets:?}"
+    );
+    assert!(
+        targets
+            .iter()
+            .any(|target| target.contains("query=PMCID%3APMC42")),
+        "{targets:?}"
+    );
+    assert!(
+        targets.iter().all(|target| target.contains("pageSize=1")),
+        "{targets:?}"
+    );
+}

@@ -105,6 +105,35 @@ ADVERSE_EVENT_CONSUMERS = {
     Path("src/sources/clinicaltrials.rs"),
     Path("src/entities/adverse_event.rs"),
 }
+ORDINARY_ARTICLE_DETAIL = Path("src/entities/article/detail.rs")
+LEGACY_LITERATURE_MARKER_OWNERS = {
+    "export_biocjson": {"src/entities/article/detail/retained.rs", "src/entities/article/variant_search.rs", "src/sources/pubtator.rs"},
+    "search_by_pmid": {"src/entities/article/detail/retained.rs", "src/sources/europepmc.rs"},
+    "search_by_pmcid": {"src/entities/article/graph.rs", "src/sources/europepmc.rs"},
+    "search_by_doi_with_query": {"src/sources/europepmc.rs", "src/sources/europepmc/detail.rs"},
+    "first_europepmc_hit": {"src/entities/article/detail/retained.rs", "src/entities/article/graph.rs"},
+    "EuropePmcResult": {"src/entities/article/detail/retained.rs", "src/sources/europepmc.rs", "src/sources/europepmc/detail.rs", "src/transform/article.rs", "src/transform/article/federation.rs"},
+    "EuropePmcResultList": {"src/sources/europepmc.rs"},
+    "EuropePmcSearchResponse": {"src/entities/article/detail/retained.rs", "src/sources/europepmc.rs", "src/sources/europepmc/detail.rs"},
+    "EuropePmcLegacyRequest": {"src/sources/europepmc.rs", "src/sources/europepmc/detail.rs"},
+    "PubTatorDocument": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs", "src/sources/pubtator/detail.rs", "src/transform/article.rs", "src/transform/article/annotations.rs", "src/transform/article/pubtator.rs"},
+    "PubTatorExportResponse": {"src/entities/article/identity_verification.rs", "src/entities/article/variant_search.rs", "src/sources/pubtator.rs", "src/sources/pubtator/detail.rs"},
+    "PubTatorSearchResponse": {"src/sources/pubtator.rs"},
+    "PubTatorSearchResult": {"src/sources/pubtator.rs", "src/transform/article.rs", "src/transform/article/federation.rs"},
+    "PubTatorAnnotation": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs"},
+    "PubTatorNormalizedId": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs"},
+    "PubTatorPassage": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs"},
+    "PubTatorInfons": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs"},
+    "PubTatorRelation": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs"},
+    "PubTatorRelationNode": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs"},
+    "PubTatorAnnotationInfons": {"src/entities/article/identity_verification.rs", "src/sources/pubtator.rs"},
+    "retained_from_pubtator_document": {"src/entities/article/detail/retained.rs", "src/transform/article.rs", "src/transform/article/federation.rs", "src/transform/article/pubtator.rs"},
+    "retained_from_europepmc_result": {"src/entities/article/detail/retained.rs", "src/transform/article.rs", "src/transform/article/europepmc.rs", "src/transform/article/federation.rs"},
+    "retained_merge_europepmc_metadata": {"src/entities/article/detail/retained.rs", "src/transform/article.rs", "src/transform/article/europepmc.rs", "src/transform/article/federation.rs"},
+    "retained_extract_annotations": {"src/entities/article/detail/retained.rs", "src/transform/article.rs", "src/transform/article/annotations.rs"},
+}
+RETIRED_LITERATURE_NAMES = ("search_by_doi", "from_pubtator_document", "from_europepmc_result", "merge_europepmc_metadata", "extract_annotations")
+RETIRED_LITERATURE_FIELDS = ("full_text_id_list", "fullTextIdList")
 
 
 def require(condition: bool, message: str, failures: list[str]) -> None:
@@ -375,6 +404,38 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
             f"{relative} makes output-only provenance deserializable",
             failures,
         )
+
+    ordinary_detail = next(
+        (source for relative, source in sources if relative == ORDINARY_ARTICLE_DETAIL),
+        None,
+    )
+    if ordinary_detail is not None:
+        require(
+            ordinary_detail.count(".publication_detail(") >= 2,
+            "ordinary article detail must consume both provider publication_detail methods",
+            failures,
+        )
+    for relative, source in sources:
+        for marker in RETIRED_LITERATURE_FIELDS:
+            require(
+                marker not in source,
+                f"{relative} retains retired Europe PMC field ownership {marker}",
+                failures,
+            )
+        for marker in RETIRED_LITERATURE_NAMES:
+            require(
+                not re.search(rf"\b{marker}\b", source),
+                f"{relative} retains a retired literature API name {marker}",
+                failures,
+            )
+        for marker, owners in LEGACY_LITERATURE_MARKER_OWNERS.items():
+            if relative.as_posix() in owners:
+                continue
+            require(
+                not re.search(rf"\b{marker}\b", source),
+                f"{relative} uses retained literature marker {marker} outside its exact owners",
+                failures,
+            )
 
     for relative, source in sources:
         if relative in ADVERSE_EVENT_CONSUMERS:

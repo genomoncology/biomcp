@@ -9,9 +9,8 @@ use crate::sources::semantic_scholar::{
     SemanticScholarReferenceEdge,
 };
 
-use super::detail::{
-    article_not_found, first_europepmc_hit, is_doi, parse_arxiv_id, parse_pmcid, parse_pmid,
-};
+use super::detail::retained::first_europepmc_hit;
+use super::detail::{article_not_found, is_doi, parse_arxiv_id, parse_pmcid, parse_pmid};
 use super::{
     ArticleGraphEdge, ArticleGraphMeta, ArticleGraphPagination, ArticleGraphResult,
     ArticleRecommendationsResult, ArticleRelatedPaper, GraphCoverageStatus,

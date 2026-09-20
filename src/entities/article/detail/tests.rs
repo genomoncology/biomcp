@@ -1,3 +1,4 @@
+use super::retained::{article_from_europepmc_fallback, resolve_variant_article_from_pmid};
 use super::*;
 use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
 use crate::error::BioMcpError;

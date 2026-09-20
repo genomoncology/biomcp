@@ -134,13 +134,8 @@ impl EuropePmcClient {
         doi: &str,
     ) -> Result<(String, EuropePmcSearchResponse), BioMcpError> {
         let query = Self::doi_query(doi)?;
-        let response = self.search_by_doi(doi).await?;
+        let response = self.search_query(&query, 1, 1).await?;
         Ok((query, response))
-    }
-
-    pub async fn search_by_doi(&self, doi: &str) -> Result<EuropePmcSearchResponse, BioMcpError> {
-        let query = Self::doi_query(doi)?;
-        self.search_query(&query, 1, 1).await
     }
 
     pub async fn search_by_pmcid(
@@ -648,8 +643,6 @@ pub struct EuropePmcResult {
     #[serde(rename = "isOpenAccess")]
     pub is_open_access: Option<serde_json::Value>,
     pub license: Option<String>,
-    #[serde(rename = "fullTextIdList")]
-    pub full_text_id_list: Option<serde_json::Value>,
     #[serde(rename = "fullTextUrlList")]
     pub full_text_url_list: Option<serde_json::Value>,
     #[serde(rename = "abstractText")]

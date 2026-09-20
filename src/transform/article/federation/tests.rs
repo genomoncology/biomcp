@@ -23,7 +23,7 @@ fn article_sections_maps_egfr_review() {
     }))
     .expect("valid Europe PMC hit");
 
-    let article = from_europepmc_result(&hit);
+    let article = retained_from_europepmc_result(&hit);
     assert_eq!(article.pmid.as_deref(), Some("39876543"));
     assert!(article.title.contains("EGFR targeted therapy"));
     assert_eq!(article.publication_type.as_deref(), Some("Review"));
@@ -59,7 +59,7 @@ fn article_sections_maps_brca1_study() {
     }))
     .expect("valid PubTator document");
 
-    let article = from_pubtator_document(&doc);
+    let article = retained_from_pubtator_document(&doc);
     assert_eq!(article.pmid.as_deref(), Some("22663011"));
     assert_eq!(article.pmcid.as_deref(), Some("PMC1234567"));
     assert!(article.title.contains("BRCA1"));
@@ -85,7 +85,7 @@ fn article_authorship_preserves_large_source_lists_and_empty_state() {
         "authors": authors.clone()
     }))
     .expect("valid PubTator document");
-    let populated = from_pubtator_document(&populated_doc);
+    let populated = retained_from_pubtator_document(&populated_doc);
     assert_eq!(populated.authors, authors);
     assert_eq!(populated.author_count, populated.authors.len());
     assert_eq!(
@@ -95,7 +95,7 @@ fn article_authorship_preserves_large_source_lists_and_empty_state() {
 
     let empty_doc: PubTatorDocument =
         serde_json::from_value(serde_json::json!({})).expect("valid PubTator document");
-    let empty = from_pubtator_document(&empty_doc);
+    let empty = retained_from_pubtator_document(&empty_doc);
     assert!(empty.authors.is_empty());
     assert_eq!(empty.author_count, 0);
     assert_eq!(
@@ -114,7 +114,7 @@ fn europepmc_authorship_has_no_ten_name_cap_and_reports_empty_state() {
         "authorString": names.join(", ")
     }))
     .expect("valid Europe PMC hit");
-    let populated = from_europepmc_result(&populated_hit);
+    let populated = retained_from_europepmc_result(&populated_hit);
     assert_eq!(populated.authors, names);
     assert_eq!(populated.author_count, populated.authors.len());
     assert_eq!(
@@ -124,7 +124,7 @@ fn europepmc_authorship_has_no_ten_name_cap_and_reports_empty_state() {
 
     let empty_hit: EuropePmcResult =
         serde_json::from_value(serde_json::json!({"id": "2"})).expect("valid Europe PMC hit");
-    let empty = from_europepmc_result(&empty_hit);
+    let empty = retained_from_europepmc_result(&empty_hit);
     assert!(empty.authors.is_empty());
     assert_eq!(empty.author_count, 0);
     assert_eq!(
@@ -139,14 +139,14 @@ fn europepmc_metadata_merge_preserves_pubtator_authorship() {
         "authors": ["Structured One", "Structured Two"]
     }))
     .expect("valid PubTator document");
-    let mut article = from_pubtator_document(&doc);
+    let mut article = retained_from_pubtator_document(&doc);
     let hit: EuropePmcResult = serde_json::from_value(serde_json::json!({
         "id": "1",
         "authorString": "Display One, Display Two"
     }))
     .expect("valid Europe PMC hit");
 
-    merge_europepmc_metadata(&mut article, &hit);
+    retained_merge_europepmc_metadata(&mut article, &hit);
 
     assert_eq!(article.authors, doc.authors);
     assert_eq!(article.author_count, article.authors.len());

@@ -68,6 +68,33 @@ fn parses_search_response_from_real_fixture() {
 }
 
 #[test]
+fn europepmc_result_keeps_full_text_url_list_without_local_id_list() {
+    let result: EuropePmcResult = serde_json::from_value(serde_json::json!({
+        "id": "22663011",
+        "fullTextUrlList": {"url": [{"url": "https://example.test/fulltext.pdf"}]},
+        "fullTextIdList": {"fullTextId": ["PMC3040717"]}
+    }))
+    .expect("retained decoding should accept both provider lists");
+
+    assert_eq!(
+        result
+            .full_text_url_list
+            .as_ref()
+            .and_then(|value| value.get("url"))
+            .and_then(|value| value.get(0))
+            .and_then(|value| value.get("url"))
+            .and_then(|value| value.as_str()),
+        Some("https://example.test/fulltext.pdf")
+    );
+    let encoded = serde_json::to_value(&result).expect("result should serialize");
+    assert!(encoded.get("fullTextUrlList").is_some());
+    assert!(
+        encoded.get("fullTextIdList").is_none(),
+        "local fullTextIdList ownership is retired; BioData admits it"
+    );
+}
+
+#[test]
 fn europepmc_result_deserializes_first_index_date() {
     let result: EuropePmcResult = serde_json::from_value(serde_json::json!({
         "id": "22663011",

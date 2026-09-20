@@ -14,7 +14,7 @@ use super::anchors::{
     truncate_abstract,
 };
 #[cfg(test)]
-use super::pubtator::from_pubtator_document;
+use super::pubtator::retained_from_pubtator_document;
 
 fn parse_citation_count(value: Option<&serde_json::Value>) -> Option<u64> {
     let value = value?;
@@ -170,7 +170,7 @@ pub(super) fn split_author_string(value: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn from_europepmc_result(hit: &EuropePmcResult) -> Article {
+pub(crate) fn retained_from_europepmc_result(hit: &EuropePmcResult) -> Article {
     let authors = hit
         .author_string
         .as_deref()
@@ -231,7 +231,7 @@ pub fn from_europepmc_result(hit: &EuropePmcResult) -> Article {
     }
 }
 
-pub fn merge_europepmc_metadata(article: &mut Article, hit: &EuropePmcResult) {
+pub(crate) fn retained_merge_europepmc_metadata(article: &mut Article, hit: &EuropePmcResult) {
     if article.doi.is_none() {
         article.doi = hit.doi.clone();
     }

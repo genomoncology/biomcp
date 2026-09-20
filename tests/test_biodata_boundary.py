@@ -239,6 +239,121 @@ def test_biodata_boundary_rejects_owned_or_input_provenance(
     assert _run(tmp_path).returncode == 1
 
 
+@pytest.mark.parametrize(
+    "marker",
+    [
+        "export_biocjson",
+        "search_by_pmid",
+        "search_by_pmcid",
+        "search_by_doi",
+        "search_by_doi_with_query",
+        "EuropePmcResult",
+        "EuropePmcSearchResponse",
+        "first_europepmc_hit",
+        "retained_from_pubtator_document",
+        "retained_from_europepmc_result",
+        "retained_merge_europepmc_metadata",
+        "retained_extract_annotations",
+        "PubTatorDocument",
+        "PubTatorExportResponse",
+        "full_text_id_list",
+    ],
+)
+def test_biodata_boundary_rejects_retired_markers_in_ordinary_article_detail(
+    tmp_path: Path, marker: str
+) -> None:
+    _fixture(tmp_path)
+    _write(
+        tmp_path / "src/entities/article/detail.rs",
+        f"fn probe() {{ {marker}; }}\n",
+    )
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+def test_biodata_boundary_rejects_a_synthetic_extra_retained_owner(
+    tmp_path: Path,
+) -> None:
+    _fixture(tmp_path)
+    _write(
+        tmp_path / "src/entities/article/detail/retained.rs",
+        "fn keep() { retained_from_europepmc_result(hit); export_biocjson(pmid); }\n",
+    )
+    _write(
+        tmp_path / "src/entities/article/detail/extra.rs",
+        "fn extra() { retained_from_europepmc_result(hit); }\n",
+    )
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+@pytest.mark.parametrize(
+    ("relative", "marker"),
+    [
+        ("src/entities/article/detail/retained.rs", "export_biocjson"),
+        ("src/entities/article/detail/retained.rs", "search_by_pmid"),
+        ("src/entities/article/detail/retained.rs", "first_europepmc_hit"),
+        ("src/entities/article/detail/retained.rs", "EuropePmcResult"),
+        ("src/entities/article/detail/retained.rs", "EuropePmcSearchResponse"),
+        ("src/entities/article/detail/retained.rs", "retained_from_pubtator_document"),
+        ("src/entities/article/detail/retained.rs", "retained_from_europepmc_result"),
+        ("src/entities/article/detail/retained.rs", "retained_merge_europepmc_metadata"),
+        ("src/entities/article/detail/retained.rs", "retained_extract_annotations"),
+        ("src/entities/article/variant_search.rs", "export_biocjson"),
+        ("src/entities/article/variant_search.rs", "PubTatorExportResponse"),
+        ("src/entities/article/graph.rs", "search_by_pmcid"),
+        ("src/entities/article/graph.rs", "first_europepmc_hit"),
+        ("src/entities/article/identity_verification.rs", "PubTatorDocument"),
+        ("src/entities/article/identity_verification.rs", "PubTatorRelationNode"),
+        ("src/sources/europepmc.rs", "search_by_doi_with_query"),
+        ("src/sources/europepmc.rs", "EuropePmcResultList"),
+        ("src/sources/europepmc/detail.rs", "EuropePmcLegacyRequest"),
+        ("src/sources/pubtator.rs", "PubTatorSearchResponse"),
+        ("src/sources/pubtator/detail.rs", "PubTatorExportResponse"),
+        ("src/transform/article.rs", "retained_from_europepmc_result"),
+        ("src/transform/article/europepmc.rs", "retained_merge_europepmc_metadata"),
+        ("src/transform/article/federation.rs", "PubTatorSearchResult"),
+        ("src/transform/article/annotations.rs", "retained_extract_annotations"),
+        ("src/transform/article/pubtator.rs", "PubTatorDocument"),
+    ],
+)
+def test_biodata_boundary_accepts_exact_retained_marker_owner_pairs(
+    tmp_path: Path, relative: str, marker: str
+) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / relative, f"fn keep() {{ {marker}; }}\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 0
+
+
+@pytest.mark.parametrize(
+    ("relative", "marker"),
+    [
+        ("src/entities/article/graph.rs", "export_biocjson"),
+        ("src/entities/article/graph.rs", "search_by_pmid"),
+        ("src/entities/article/variant_search.rs", "search_by_pmcid"),
+        ("src/entities/article/variant_search.rs", "first_europepmc_hit"),
+        ("src/entities/article/detail/retained.rs", "search_by_pmcid"),
+        ("src/entities/article/detail/retained.rs", "search_by_doi_with_query"),
+        ("src/entities/article/identity_verification.rs", "export_biocjson"),
+        ("src/sources/europepmc.rs", "first_europepmc_hit"),
+        ("src/sources/europepmc/detail.rs", "export_biocjson"),
+        ("src/sources/pubtator.rs", "EuropePmcResult"),
+        ("src/transform/article/annotations.rs", "PubTatorSearchResult"),
+        ("src/transform/article/federation.rs", "PubTatorExportResponse"),
+        ("src/transform/article/europepmc.rs", "retained_from_pubtator_document"),
+        ("src/transform/article/pubtator.rs", "retained_extract_annotations"),
+    ],
+)
+def test_biodata_boundary_rejects_cross_owner_retained_markers(
+    tmp_path: Path, relative: str, marker: str
+) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / relative, f"fn keep() {{ {marker}; }}\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
 def test_biodata_boundary_rejects_a_widened_adverse_event_consumer(tmp_path: Path) -> None:
     _fixture(tmp_path)
     _write(
