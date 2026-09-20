@@ -1,0 +1,581 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2119"
+          }
+        ],
+        "age": "20Y",
+        "category": "Cancer cell line",
+        "disease-list": [
+          {
+            "accession": "C8263",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C8263",
+            "label": "Adult acute monocytic leukemia",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C8263"
+          },
+          {
+            "accession": "C3247",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C3247",
+            "label": "Myelodysplastic syndrome",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C3247"
+          },
+          {
+            "accession": "Orphanet_514",
+            "category": "Medical resources",
+            "database": "ORDO",
+            "iri": "http://www.orpha.net/ORDO/Orphanet_514",
+            "label": "Acute monoblastic/monocytic leukemia",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/ordo/classes/http%253A%252F%252Fwww.orpha.net%252FORDO%252FOrphanet_514"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "MOLM13"
+          },
+          {
+            "type": "synonym",
+            "value": "Molm13"
+          },
+          {
+            "type": "synonym",
+            "value": "Molm 13"
+          },
+          {
+            "type": "identifier",
+            "value": "MOLM-13"
+          }
+        ],
+        "sequence-variation-list": [
+          {
+            "mutation-description": "KMT2A-MLLT3, MLL-MLLT3, MLL-AF9",
+            "source-list": [
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=15381384"
+                }
+              },
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=14671638"
+                }
+              },
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=9305600"
+                }
+              }
+            ],
+            "variation-type": "Gene fusion",
+            "xref-list": [
+              {
+                "accession": "HGNC:7132",
+                "category": "Organism-specific databases",
+                "database": "HGNC",
+                "label": "KMT2A",
+                "url": "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:7132"
+              },
+              {
+                "accession": "HGNC:7136",
+                "category": "Organism-specific databases",
+                "database": "HGNC",
+                "label": "MLLT3",
+                "url": "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:7136"
+              }
+            ]
+          },
+          {
+            "mutation-description": "Internal tandem duplication (FLT3-ITD)",
+            "mutation-type": "Unexplicit",
+            "source-list": [
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=27750403"
+                }
+              },
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=12529668"
+                }
+              },
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=10233379"
+                }
+              },
+              {
+                "institution": "DepMap",
+                "value": "DepMap"
+              }
+            ],
+            "variation-type": "Mutation",
+            "xref-list": [
+              {
+                "accession": "HGNC:3765",
+                "category": "Organism-specific databases",
+                "database": "HGNC",
+                "label": "FLT3",
+                "url": "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:3765"
+              },
+              {
+                "accession": "VCV000016270",
+                "category": "Polymorphism and mutation databases",
+                "database": "ClinVar",
+                "url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/VCV000016270"
+              }
+            ],
+            "zygosity-type": "Heterozygous"
+          }
+        ],
+        "sex": "Male",
+        "species-list": [
+          {
+            "accession": "9606",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+            "label": "Homo sapiens (Human)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3"
+          }
+        ],
+        "xref-list": [
+          {
+            "accession": "BTO_0004175",
+            "category": "Anatomy/cell type resources",
+            "database": "BTO",
+            "iri": "http://purl.obolibrary.org/obo/BTO_0004175",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/bto/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FBTO_0004175"
+          },
+          {
+            "accession": "CLO_0009848",
+            "category": "Cell line databases/resources",
+            "database": "CLO",
+            "iri": "http://purl.obolibrary.org/obo/CLO_0009848",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/clo/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FCLO_0009848"
+          },
+          {
+            "accession": "EFO_0022694",
+            "category": "Experimental variables resources",
+            "database": "EFO",
+            "url": "https://www.ebi.ac.uk/efo/EFO_0022694"
+          },
+          {
+            "accession": "C0003003/60",
+            "category": "Cell line collections (Providers)",
+            "database": "AddexBio",
+            "url": "https://www.addexbio.com/productdetail?pid=60"
+          },
+          {
+            "accession": "E-MTAB-2770",
+            "category": "Gene expression databases",
+            "database": "ArrayExpress",
+            "url": "https://www.ebi.ac.uk/biostudies/ArrayExpress/studies/E-MTAB-2770"
+          },
+          {
+            "accession": "E-MTAB-3610",
+            "category": "Gene expression databases",
+            "database": "ArrayExpress",
+            "url": "https://www.ebi.ac.uk/biostudies/ArrayExpress/studies/E-MTAB-3610"
+          },
+          {
+            "accession": "E-MTAB-7721",
+            "category": "Gene expression databases",
+            "database": "ArrayExpress",
+            "url": "https://www.ebi.ac.uk/biostudies/ArrayExpress/studies/E-MTAB-7721"
+          },
+          {
+            "accession": "E-MTAB-7722",
+            "category": "Gene expression databases",
+            "database": "ArrayExpress",
+            "url": "https://www.ebi.ac.uk/biostudies/ArrayExpress/studies/E-MTAB-7722"
+          },
+          {
+            "accession": "403",
+            "category": "CRISP screens repositories",
+            "database": "BioGRID_ORCS_Cell_line",
+            "url": "https://orcs.thebiogrid.org/Search?searchType=10&search=403&organism=all"
+          },
+          {
+            "accession": "SAMN03473102",
+            "category": "Biological sample resources",
+            "database": "BioSample",
+            "url": "https://www.ncbi.nlm.nih.gov/biosample/?term=SAMN03473102"
+          },
+          {
+            "accession": "SAMN10988379",
+            "category": "Biological sample resources",
+            "database": "BioSample",
+            "url": "https://www.ncbi.nlm.nih.gov/biosample/?term=SAMN10988379"
+          },
+          {
+            "accession": "CVCL_2119",
+            "category": "Cell line databases/resources",
+            "database": "cancercelllines",
+            "url": "https://cancercelllines.org/cellline/?id=cellosaurus:CVCL_2119"
+          },
+          {
+            "accession": "SIDM00437",
+            "category": "Cell line databases/resources",
+            "database": "Cell_Model_Passport",
+            "url": "https://cellmodelpassports.sanger.ac.uk/passports/SIDM00437"
+          },
+          {
+            "accession": "CHEMBL3706573",
+            "category": "Chemistry resources",
+            "database": "ChEMBL-Cells",
+            "url": "https://www.ebi.ac.uk/chembldb/cell/inspect/CHEMBL3706573"
+          },
+          {
+            "accession": "CHEMBL3706572",
+            "category": "Chemistry resources",
+            "database": "ChEMBL-Targets",
+            "url": "https://www.ebi.ac.uk/chembldb/target/inspect/CHEMBL3706572"
+          },
+          {
+            "accession": "787417",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=787417"
+          },
+          {
+            "accession": "947367",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=947367"
+          },
+          {
+            "accession": "975274",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=975274"
+          },
+          {
+            "accession": "996319",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=996319"
+          },
+          {
+            "accession": "998754",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=998754"
+          },
+          {
+            "accession": "999722",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=999722"
+          },
+          {
+            "accession": "999772",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=999772"
+          },
+          {
+            "accession": "1012095",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1012095"
+          },
+          {
+            "accession": "1037671",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1037671"
+          },
+          {
+            "accession": "1078734",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1078734"
+          },
+          {
+            "accession": "1150897",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1150897"
+          },
+          {
+            "accession": "1152711",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1152711"
+          },
+          {
+            "accession": "1187863",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1187863"
+          },
+          {
+            "accession": "1197930",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1197930"
+          },
+          {
+            "accession": "1278778",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1278778"
+          },
+          {
+            "accession": "1281332",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1281332"
+          },
+          {
+            "accession": "1308222",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1308222"
+          },
+          {
+            "accession": "1465952",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1465952"
+          },
+          {
+            "accession": "1696139",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1696139"
+          },
+          {
+            "accession": "1741687",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=1741687"
+          },
+          {
+            "accession": "2089664",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=2089664"
+          },
+          {
+            "accession": "2131546",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=2131546"
+          },
+          {
+            "accession": "2306220",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=2306220"
+          },
+          {
+            "accession": "2750864",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=2750864"
+          },
+          {
+            "accession": "2842299",
+            "category": "Polymorphism and mutation databases",
+            "database": "Cosmic",
+            "url": "https://cancer.sanger.ac.uk/cosmic/sample/overview?id=2842299"
+          },
+          {
+            "accession": "1330947",
+            "category": "Cell line databases/resources",
+            "database": "Cosmic-CLP",
+            "url": "https://cancer.sanger.ac.uk/cell_lines/sample/overview?id=1330947"
+          },
+          {
+            "accession": "ACH-000362",
+            "category": "Cell line databases/resources",
+            "database": "DepMap",
+            "url": "https://depmap.org/portal/cell_line/ACH-000362"
+          },
+          {
+            "accession": "ACC-554",
+            "category": "Cell line collections (Providers)",
+            "database": "DSMZ",
+            "url": "https://www.dsmz.de/collection/catalogue/details/culture/ACC-554"
+          },
+          {
+            "accession": "ACC-554",
+            "category": "Cell line databases/resources",
+            "database": "DSMZCellDive",
+            "url": "https://celldive.dsmz.de/celllines/ACC-554"
+          },
+          {
+            "accession": "EDC00312",
+            "category": "Cell line collections (Providers)",
+            "database": "EDITGENE",
+            "url": "https://www.editxor.com/products/cat/?keyword=EDC00312"
+          },
+          {
+            "accession": "EGAS00001000978",
+            "category": "Sequence databases",
+            "database": "EGA",
+            "url": "https://ega-archive.org/studies/EGAS00001000978"
+          },
+          {
+            "accession": "EGAS00001002554",
+            "category": "Sequence databases",
+            "database": "EGA",
+            "url": "https://ega-archive.org/studies/EGAS00001002554"
+          },
+          {
+            "accession": "1330947",
+            "category": "Chemistry resources",
+            "database": "GDSC",
+            "url": "https://www.cancerrxgene.org/translation/CellLine/1330947"
+          },
+          {
+            "accession": "GSM482509",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM482509"
+          },
+          {
+            "accession": "GSM887329",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM887329"
+          },
+          {
+            "accession": "GSM888405",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM888405"
+          },
+          {
+            "accession": "GSM1374688",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1374688"
+          },
+          {
+            "accession": "GSM1374689",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1374689"
+          },
+          {
+            "accession": "GSM1446738",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1446738"
+          },
+          {
+            "accession": "GSM1670124",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM1670124"
+          },
+          {
+            "accession": "GSM2124117",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2124117"
+          },
+          {
+            "accession": "GSM2716691",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2716691"
+          },
+          {
+            "accession": "GSM2716692",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2716692"
+          },
+          {
+            "accession": "GSM2716748",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2716748"
+          },
+          {
+            "accession": "GSM2716749",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2716749"
+          },
+          {
+            "accession": "GSM2716750",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2716750"
+          },
+          {
+            "accession": "GSM2716751",
+            "category": "Gene expression databases",
+            "database": "GEO",
+            "url": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM2716751"
+          },
+          {
+            "accession": "30123",
+            "category": "Polymorphism and mutation databases",
+            "database": "IARC_TP53"
+          },
+          {
+            "accession": "JCRB1810",
+            "category": "Cell line collections (Providers)",
+            "database": "JCRB",
+            "url": "https://cellbank.nibiohn.go.jp//~cellbank/en/search_res_det.cgi?RNO=JCRB1810"
+          },
+          {
+            "accession": "CCLE_282",
+            "category": "Polymorphism and mutation databases",
+            "database": "LiGeA",
+            "url": "http://hpc-bioinformatics.cineca.it/fusion/cell_line/CCLE_282"
+          },
+          {
+            "accession": "LCL-1061",
+            "category": "Cell line databases/resources",
+            "database": "LINCS_LDP",
+            "url": "http://lincsportal.ccs.miami.edu/cells/#/view/LCL-1061"
+          },
+          {
+            "accession": "MOLM13_950_2019",
+            "category": "Chemistry resources",
+            "database": "PharmacoDB",
+            "url": "https://pharmacodb.ca/cell_lines/MOLM13_950_2019"
+          },
+          {
+            "accession": "PXD030304",
+            "category": "Proteomic databases",
+            "database": "PRIDE",
+            "url": "https://www.ebi.ac.uk/pride/archive/projects/PXD030304"
+          },
+          {
+            "accession": "CVCL_2119",
+            "category": "Polymorphism and mutation databases",
+            "database": "Progenetix",
+            "url": "https://progenetix.org/cellline/?id=cellosaurus:CVCL_2119"
+          },
+          {
+            "accession": "CVCL_2119",
+            "category": "Chemistry resources",
+            "database": "PubChem_Cell_line",
+            "url": "https://pubchem.ncbi.nlm.nih.gov/cell/CVCL_2119"
+          },
+          {
+            "accession": "Q54906320",
+            "category": "Encyclopedic resources",
+            "database": "Wikidata",
+            "url": "https://www.wikidata.org/wiki/Q54906320"
+          }
+        ]
+      }
+    ]
+  }
+}

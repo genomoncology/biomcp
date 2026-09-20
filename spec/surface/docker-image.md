@@ -27,23 +27,6 @@ cat ../../.dockerignore | mustmatch like '**
 !dist/container/**'
 ```
 
-## Stage And Promotion Stay Separate
-
-The private stage creates and smokes a two-platform OCI archive without a push.
-Only the protected promotion jobs can write the versioned GHCR tag. Both public
-architectures are then pulled, checked for the full revision label, run as
-non-root, and reconciled before `latest` moves.
-
-```bash
-cat ../../.github/workflows/release.yml | mustmatch like 'mode:
-container-artifact:
---output type=oci,dest=dist/oci/biomcp.oci.tar
-publish-versioned:
-public-container-smoke:
-org.opencontainers.image.revision
-advance-mutable-pointers:'
-```
-
 ## Documentation Shows CLI And Stdio MCP Use
 
 ```bash

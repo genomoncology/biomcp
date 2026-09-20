@@ -64,9 +64,9 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
 - **Edition:** Rust 2024
 - **Development candidate:** Rust `1.0.0-dev.1`; Python `1.0.0.dev1`. `scripts/check-version-sync.sh` validates that exact mapping and its lock files while public metadata remains at `0.8.25`.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
-- **Release state:** v0.8.25 is the latest published release. A protected
-  two-step workflow can privately stage a committed future version and, only
-  after separate approval, promote those exact bytes through public checks.
+- **Release state:** v0.8.25 is the latest published release. Publishing a
+  GitHub release or manually dispatching an exact `tag` runs the tag-driven
+  workflow, which publishes archives, wheels, and the Homebrew update directly.
 - **Metadata changes:** Commit synchronized metadata and changelog updates;
   package versions are never stamped from tags.
 - **Generated AlphaGenome client:** Normal builds do not run or require
@@ -267,15 +267,17 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `1.0.0-dev.1` and Python `1.0.0.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
 
-The manual release workflow has separate `stage` and `promote` modes. `stage`
-is read-only and privately builds, signs, inspects, and seals one exact commit.
-`promote` requires the protected release environment and Ian's approval,
-reconciles the sealed manifest, publishes immutable versioned bytes, installs
-those public bytes on every supported platform, and only then advances mutable
-`latest` pointers. A unique partial record is retained if promotion fails.
-Neither implementing the workflow nor staging a candidate publishes a release.
-The official MCP Registry submission remains a separate documented manual
-action. See [Release process](../../docs/reference/release-process.md).
+`.github/workflows/release.yml` runs when a GitHub release is published, or on
+`workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
+five platform archives with their `.sha256` sidecars, uploads them to the
+release, builds and publishes wheels through the protected `pypi` environment,
+and updates the `genomoncology/homebrew-biomcp` tap formula from the published
+checksums. There is no private preparation phase or later publication phase in
+this workflow: the selected tag publishes directly, so the release decision,
+stable metadata update, and repository gates must precede the trigger. The
+candidate tooling under `release/` is not wired into this workflow. The official
+MCP Registry submission remains a separate documented manual action. See
+[Release process](../../docs/reference/release-process.md).
 Existing installation documentation continues to describe the already
 published v0.8.25 channels; `install.sh` resolves the latest release with
 platform assets rather than the latest merge to `main`.

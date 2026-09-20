@@ -19,6 +19,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/discover.md
   spec/entity/diagnostic.md
   spec/entity/vaers.md
+  spec/entity/cell-line.md
   spec/entity/pathway.md
   spec/entity/trial.md
   spec/entity/drug.md
@@ -127,6 +128,21 @@ source_if_present() {
   if [[ -f "$path" ]]; then
     # shellcheck source=/dev/null
     . "$path"
+  fi
+}
+
+FAILED_SPEC_ENTRIES=()
+
+record_spec_failure() {
+  FAILED_SPEC_ENTRIES+=("$1")
+}
+
+# Run a stage to completion and remember its failure instead of aborting the
+# run. A stage that already named the pages it lost keeps that detail.
+run_spec_stage() {
+  local stage="$1" before="${#FAILED_SPEC_ENTRIES[@]}"
+  if ! "$stage"; then
+    ((${#FAILED_SPEC_ENTRIES[@]} > before)) || record_spec_failure "stage $stage"
   fi
 }
 
@@ -349,6 +365,7 @@ lock_routine_fixtures() {
 
 run_section_outcome_specs() {
   if ((${#SECTION_OUTCOME_MD_PATHS[@]})); then
+    printf '=== spec pages: %s ===\n' "${SECTION_OUTCOME_MD_PATHS[*]}"
     (
       bash spec/fixtures/setup-section-outcomes-spec-fixture.sh "$ROOT"
       source_if_present "$ROOT/.cache/spec-section-outcomes-env"
@@ -360,6 +377,7 @@ run_section_outcome_specs() {
 
 run_article_markdown_specs() {
   if ((${#ARTICLE_MD_PATHS[@]})); then
+    printf '=== spec pages: %s ===\n' "${ARTICLE_MD_PATHS[*]}"
     (
       unset BIOMCP_CACHE_MODE
       source_if_present "$ROOT/.cache/spec-article-fulltext-source-env"
@@ -445,7 +463,11 @@ run_markdown_specs() {
 
   case "$mode" in
     spec|spec-pr|spec-contracts) ;;
-    *) 8>&- mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"; return ;;
+    *)
+      printf '=== spec pages: %s ===\n' "${MD_PATHS[*]}"
+      8>&- mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+      return
+      ;;
   esac
 
   local worker_count="$SPEC_WORKER_COUNT"
@@ -455,7 +477,7 @@ run_markdown_specs() {
 
   local path log_path pid page_index=0 wait_index batch_size=0
   local -a batch_paths=() batch_logs=()
-  local batch_failed=0 exit_status=0
+  local any_failed=0 exit_status=0
   for path in "${MD_PATHS[@]}"; do
     log_path="$PARALLEL_SPEC_OUTPUT_DIR/$page_index.log"
     # Monitor mode gives each background page its own process group. That lets
@@ -482,29 +504,30 @@ run_markdown_specs() {
       continue
     fi
 
-    batch_failed=0
     for wait_index in "${!PARALLEL_SPEC_PIDS[@]}"; do
       if wait "${PARALLEL_SPEC_PIDS[$wait_index]}"; then
         exit_status=0
       else
         exit_status=$?
-        batch_failed=1
+        any_failed=1
       fi
+      printf '=== spec page: %s ===\n' "${batch_paths[$wait_index]}"
       cat "${batch_logs[$wait_index]}"
       if ((exit_status != 0)); then
         printf 'spec page failed: %s (exit %s)\n' \
           "${batch_paths[$wait_index]}" "$exit_status" >&2
+        record_spec_failure "page ${batch_paths[$wait_index]} (exit $exit_status)"
       fi
     done
     PARALLEL_SPEC_PIDS=()
     batch_paths=()
     batch_logs=()
     batch_size=0
-    ((batch_failed == 0)) || return 1
   done
 
   rm -r "$PARALLEL_SPEC_OUTPUT_DIR"
   PARALLEL_SPEC_OUTPUT_DIR=""
+  ((any_failed == 0))
 }
 
 run_python_contracts() {
@@ -709,7 +732,15 @@ else
 fi
 
 partition_paths "${paths[@]}"
-run_article_markdown_specs
-run_markdown_specs
-run_section_outcome_specs
-run_python_contracts
+run_spec_stage run_article_markdown_specs
+run_spec_stage run_markdown_specs
+run_spec_stage run_section_outcome_specs
+run_spec_stage run_python_contracts
+
+if ((${#FAILED_SPEC_ENTRIES[@]})); then
+  printf 'spec run failed (%s):\n' "${#FAILED_SPEC_ENTRIES[@]}" >&2
+  for failed_entry in "${FAILED_SPEC_ENTRIES[@]}"; do
+    printf '  %s\n' "$failed_entry" >&2
+  done
+  exit 1
+fi

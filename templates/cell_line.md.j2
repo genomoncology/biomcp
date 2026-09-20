@@ -1,0 +1,101 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ name }}
+
+Source: {{ source }}
+Accession: {{ accession }}
+RRID: {{ rrid }}
+{% if resolved_from %}Resolved from: {{ resolved_from }}
+{% endif -%}
+{% if secondary_accessions %}Secondary accessions: {{ secondary_accessions | join(", ") }}
+{% endif -%}
+{% if synonyms %}Synonyms: {{ synonyms | join(", ") }}
+{% endif -%}
+{% if species %}Species: {% for row in species %}{{ row.label }} (NCBI:txid{{ row.taxon_id }}){% if not loop.last %}; {% endif %}{% endfor %}
+{% endif -%}
+{% if category %}Category: {{ category }}
+{% endif -%}
+{% if sex %}Sex: {{ sex }}
+{% endif -%}
+{% if age %}Age: {{ age }}
+{% endif -%}
+{% if diseases %}
+## Disease
+
+| Database | Accession | Label |
+|---|---|---|
+{% for row in diseases -%}
+| {{ row.database }} | {{ row.accession }} | {{ row.label }} |
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+{% if show_variants_section and (variants or source_states.variants.status) -%}
+## Variants ({{ source }})
+
+{% if source_states.variants.status %}{{ source_states.variants.status }}
+{% endif -%}
+{% if source_states.variants.payload_allowed and variants -%}
+| Gene | HGNC | Type | Description | Zygosity | PubMed |
+|---|---|---|---|---|---|
+{% for row in variants -%}
+| {{ row.gene or "-" }} | {{ row.hgnc_id or "-" }} | {{ row.variation_type or "-" }} | {{ row.description or "-" }} | {{ row.zygosity or "-" }} | {{ row.pubmed_ids | join(", ") or "-" }} |
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+{% if show_xrefs_section and (xrefs or source_states.xrefs.status) -%}
+## Cross-references ({{ source }})
+
+{% if source_states.xrefs.status %}{{ source_states.xrefs.status }}
+{% endif -%}
+{% if source_states.xrefs.payload_allowed and xrefs -%}
+| Resource | IDs |
+|---|---|
+| DepMap | {{ xrefs.depmap | join(", ") or "-" }} |
+| COSMIC cell line | {{ xrefs.cosmic_clp | join(", ") or "-" }} |
+| ChEMBL | {{ xrefs.chembl | join(", ") or "-" }} |
+| Cell Model Passports | {{ xrefs.cell_model_passport | join(", ") or "-" }} |
+| GDSC | {{ xrefs.gdsc | join(", ") or "-" }} |
+| PharmacoDB | {{ xrefs.pharmacodb | join(", ") or "-" }} |
+| LINCS LDP | {{ xrefs.lincs_ldp | join(", ") or "-" }} |
+{% endif -%}
+{% endif -%}
+{% if show_chembl_section and (chembl or source_states.chembl.status) -%}
+## ChEMBL
+
+{% if source_states.chembl.status %}{{ source_states.chembl.status }}
+{% endif -%}
+{% if source_states.chembl.payload_allowed and chembl -%}
+{% if chembl.records -%}
+| ChEMBL ID | Name | EFO | CLO | Assays |
+|---|---|---|---|---|
+{% for row in chembl.records -%}
+| {{ row.chembl_id }} | {{ row.name or "-" }} | {{ row.efo_id or "-" }} | {{ row.clo_id or "-" }} | {{ row.assay_count }} |
+{% endfor -%}
+{% else -%}
+{{ chembl_empty_message }}
+{% endif %}
+{{ chembl_attribution }}
+{% endif -%}
+{% endif -%}
+{% if show_drug_response_section and (drug_response or source_states.drug_response.status) -%}
+## Drug response (PharmacoDB)
+
+{% if source_states.drug_response.status %}{{ source_states.drug_response.status }}
+{% endif -%}
+{% if source_states.drug_response.payload_allowed and drug_response -%}
+{% if drug_response.total -%}
+{{ drug_response_counts_line }}
+
+Next: `biomcp cell-line drug-response {{ accession }} --dataset {{ drug_response.datasets[0].name }}`
+{% else -%}
+{{ drug_response_empty_message }}
+{% endif %}
+{{ drug_response_attribution }}
+{% endif -%}
+{% endif -%}
+{% if sections_block %}{{ sections_block }}
+{% endif -%}
+{% if related_block %}{{ related_block }}
+{% endif %}
+{{ attribution }}

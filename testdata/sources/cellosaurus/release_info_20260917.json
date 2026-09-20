@@ -1,0 +1,12 @@
+{
+  "Cellosaurus": {
+    "header": {
+      "release": {
+        "nb-cell-lines": "168970",
+        "nb-publications": "29972",
+        "updated": "2026-06-25",
+        "version": "56.0"
+      }
+    }
+  }
+}

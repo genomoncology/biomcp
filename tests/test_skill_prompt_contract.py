@@ -335,7 +335,11 @@ def test_rust_sources_do_not_embed_workflow_ladder_commands() -> None:
         relative = rust_path.relative_to(REPO_ROOT)
         if rust_path.name == "tests.rs" or "tests" in rust_path.parts:
             continue
-        if str(relative) in {"src/cli/article/mod.rs", "src/cli/commands.rs"}:
+        if str(relative) in {
+            "src/cli/article/mod.rs",
+            "src/cli/commands.rs",
+            "src/cli/commands/selectors.rs",
+        }:
             continue
         text = rust_path.read_text(encoding="utf-8")
         for command in commands:

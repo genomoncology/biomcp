@@ -87,7 +87,7 @@ profile such as `EGFRvIII`.
 ## Request drug sections
 
 Supported sections: `label`, `regulatory`, `safety`, `shortage`, `targets`,
-`indications`, `interactions`, `civic`, `approvals`, `all`.
+`indications`, `interactions`, `civic`, `approvals`, `cell_lines`, `all`.
 
 FDA label section:
 
@@ -150,6 +150,14 @@ biomcp get drug dabrafenib approvals
 ```
 
 `approvals` remains a legacy U.S.-only section. Use `regulatory` for the region-aware regulatory view.
+
+PharmacoDB cell lines:
+
+```bash
+biomcp get drug venetoclax cell_lines
+```
+
+The section counts the experiments PharmacoDB published for the compound in each dataset. Venetoclax has 3608 across CTRPv2, GDSC1, GDSC2, NCI60, and PRISM. PharmacoDB publishes no ChEMBL or DrugBank key on a compound, so the join goes by name and BioMCP keeps the answer only when the name PharmacoDB returns is the name asked for. `all` leaves this section out, as it does `approvals`, because the rows behind it are large.
 
 ## EMA local data setup
 
@@ -320,6 +328,15 @@ DDInter row meanings:
 
 ## Helper commands
 
+PharmacoDB cell line pivot:
+
+```bash
+biomcp drug cell-lines venetoclax --cell-line CVCL_2119
+biomcp drug cell-lines venetoclax --dataset NCI60
+```
+
+One of `--cell-line` or `--dataset` is required, and passing both is refused. Without a scope the command fails before any request, because an unscoped compound listing is megabytes of body. Each row names the cell line, its tissue, the experiment ID, and the published AAC, IC50, EC50, Einf, HS, and DSS1. PharmacoDB gives no units and BioMCP interprets no value; an absent metric prints as `-`.
+
 Interaction pivot:
 
 ```bash
@@ -403,7 +420,7 @@ shortage follow-ups. Markdown renders the surviving commands under `More:`,
 ## Source-section outcomes
 
 JSON and MCP drug records include outcomes for `approvals`, `safety`, `targets`,
-`indications`, `interactions`, and `civic`. `empty` credits the providers that completed without
+`indications`, `interactions`, `civic`, and `cell_lines`. `empty` credits the providers that completed without
 evidence, `degraded` preserves usable evidence when an additive provider fails,
 and `unavailable` carries no failed-provider credit. Existing biomedical fields,
 including the compatible `approvals` array, remain at their current paths.

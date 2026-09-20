@@ -445,8 +445,10 @@ Current concrete examples:
 
 - KEGG uses plain-text flat-file / tab-separated style responses and parses
   them inline in `src/sources/kegg.rs`.
-- HPA uses XML and parses it with `roxmltree` behind `spawn_blocking` in
-  `src/sources/hpa.rs`.
+- HPA uses XML for the gene `hpa` section and parses it with `roxmltree` behind
+  `spawn_blocking` in `src/sources/hpa.rs`. Its search download endpoint answers
+  JSON whose object keys carry the cell line order, so `cell_line_rna` decodes
+  the object into an ordered key list rather than a map.
 
 ## Provenance and Rendering
 
@@ -508,6 +510,10 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | article | fulltext | canonical | fallback | Europe PMC / NCBI EFetch / PMC OA / PMC / Semantic Scholar | `fulltext` outcome and provenance projection |
 | article | indexing | canonical | fallback | PubMed | `indexing` outcome and provenance projection |
 | article | tldr | canonical | fallback | Semantic Scholar | `tldr` outcome and provenance projection |
+| cell_line | variants | canonical | additive | Cellosaurus | `variants` outcome and provenance projection |
+| cell_line | xrefs | canonical | additive | Cellosaurus | `xrefs` outcome and provenance projection |
+| cell_line | chembl | canonical | additive | ChEMBL | `chembl` outcome and provenance projection |
+| cell_line | drug_response | canonical | additive | PharmacoDB | `drug_response` outcome and provenance projection |
 | pathway | genes | canonical | fallback | Reactome / KEGG / WikiPathways / MyGene.info | `genes` outcome and provenance projection |
 | pathway | events | canonical | additive | Reactome | `events` outcome and provenance projection |
 | pathway | enrichment | canonical | additive | g:Profiler | `enrichment` outcome and provenance projection |
@@ -521,6 +527,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | drug | indications | canonical | additive | DrugCentral / Open Targets | `indications` outcome and provenance projection |
 | drug | interactions | canonical | additive | DDInter / DrugBank / OpenFDA label | `interactions` outcome and provenance projection |
 | drug | civic | canonical | fallback | CIViC | `civic` outcome and provenance projection |
+| drug | cell_lines | canonical | additive | PharmacoDB | `cell_lines` outcome and provenance projection |
 | adverse_event | faers | outcome-only | additive | OpenFDA FAERS | `faers` outcome and provenance projection |
 | adverse_event | vaers | outcome-only | additive | CDC CVX / CDC VAERS | `vaers` outcome and provenance projection |
 | disease | treatments | outcome-only | fallback | MyChem.info indication search | `treatments` outcome and provenance projection |

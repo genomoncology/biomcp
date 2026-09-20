@@ -34,6 +34,8 @@ pub fn drug_markdown_with_region(
     let show_shortage_section = !matches!(region, DrugRegion::Who)
         && (!section_only || include_all || has_requested("shortage"));
     let show_approvals_section = has_requested("approvals");
+    // `all` never includes the PharmacoDB section, following `approvals`.
+    let show_cell_lines_section = has_requested("cell_lines");
     // Suppress US-only header facts when rendering a full card (not section_only) for EU region.
     let show_us_header = section_only || region.includes_us();
     let approval_date_display: Option<&str> = if show_us_header {
@@ -109,6 +111,15 @@ pub fn drug_markdown_with_region(
         } else {
             String::new()
         },
+        show_cell_lines_section => show_cell_lines_section,
+        cell_lines => &drug.cell_lines,
+        cell_lines_counts_line => drug.cell_lines.as_ref().map(|section| {
+            crate::entities::pharmacodb::counts_line(section.total, &section.datasets)
+        }),
+        cell_lines_empty_message => crate::entities::drug::cell_lines::cell_lines_empty_message(),
+        cell_lines_attribution => drug.cell_lines.as_ref().map(|section| {
+            crate::entities::pharmacodb::pharmacodb_attribution(&section.data_as_of)
+        }),
         sections_block => format_drug_sections_block(&discovery),
         related_block => format_related_block(
             discovery

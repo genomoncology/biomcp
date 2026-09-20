@@ -1,0 +1,202 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1844"
+          }
+        ],
+        "age": "57Y",
+        "category": "Cancer cell line",
+        "disease-list": [
+          {
+            "accession": "C7962",
+            "category": "Medical resources",
+            "database": "NCIt",
+            "iri": "http://purl.obolibrary.org/obo/NCIT_C7962",
+            "label": "Adult acute myelomonocytic leukemia",
+            "url": "https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C7962"
+          },
+          {
+            "accession": "Orphanet_517",
+            "category": "Medical resources",
+            "database": "ORDO",
+            "iri": "http://www.orpha.net/ORDO/Orphanet_517",
+            "label": "Acute myelomonocytic leukemia",
+            "url": "https://www.ebi.ac.uk/ols4/ontologies/ordo/classes/http%253A%252F%252Fwww.orpha.net%252FORDO%252FOrphanet_517"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "synonym",
+            "value": "OCI-Aml-3"
+          },
+          {
+            "type": "synonym",
+            "value": "OCI/AML-3"
+          },
+          {
+            "type": "synonym",
+            "value": "OCI-AML3"
+          },
+          {
+            "type": "synonym",
+            "value": "OCI/AML3"
+          },
+          {
+            "type": "synonym",
+            "value": "OCI AML3"
+          },
+          {
+            "type": "synonym",
+            "value": "OCIAML3"
+          },
+          {
+            "type": "synonym",
+            "value": "Ontario Cancer Institute-Acute Myeloid Leukemia-3"
+          },
+          {
+            "type": "identifier",
+            "value": "OCI-AML-3"
+          }
+        ],
+        "sequence-variation-list": [
+          {
+            "mutation-description": "p.Arg882Cys (c.2644C>T)",
+            "mutation-type": "Simple",
+            "source-list": [
+              {
+                "xref": {
+                  "accession": "ACH-000336",
+                  "category": "Cell line databases/resources",
+                  "database": "DepMap",
+                  "url": "https://depmap.org/portal/cell_line/ACH-000336"
+                }
+              },
+              {
+                "xref": {
+                  "accession": "1290455",
+                  "category": "Cell line databases/resources",
+                  "database": "Cosmic-CLP",
+                  "url": "https://cancer.sanger.ac.uk/cell_lines/sample/overview?id=1290455"
+                }
+              },
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=31739141"
+                }
+              },
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=31160637"
+                }
+              },
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=26434589"
+                }
+              }
+            ],
+            "variation-type": "Mutation",
+            "xref-list": [
+              {
+                "accession": "HGNC:2978",
+                "category": "Organism-specific databases",
+                "database": "HGNC",
+                "label": "DNMT3A",
+                "url": "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:2978"
+              },
+              {
+                "accession": "VCV000375882",
+                "category": "Polymorphism and mutation databases",
+                "database": "ClinVar",
+                "url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/VCV000375882"
+              }
+            ],
+            "zygosity-type": "Heterozygous"
+          },
+          {
+            "mutation-description": "p.Trp288Cysfs*12 (c.860_863dupTCTG)",
+            "mutation-type": "Simple",
+            "source-list": [
+              {
+                "reference": {
+                  "resource-internal-ref": "PubMed=16079892"
+                }
+              }
+            ],
+            "variation-type": "Mutation",
+            "xref-list": [
+              {
+                "accession": "HGNC:7910",
+                "category": "Organism-specific databases",
+                "database": "HGNC",
+                "label": "NPM1",
+                "url": "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:7910"
+              },
+              {
+                "accession": "VCV000013998",
+                "category": "Polymorphism and mutation databases",
+                "database": "ClinVar",
+                "url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/VCV000013998"
+              }
+            ],
+            "zygosity-type": "Heterozygous"
+          },
+          {
+            "mutation-description": "p.Gln61Leu (c.182A>T)",
+            "mutation-type": "Simple",
+            "source-list": [
+              {
+                "xref": {
+                  "accession": "ACH-000336",
+                  "category": "Cell line databases/resources",
+                  "database": "DepMap",
+                  "url": "https://depmap.org/portal/cell_line/ACH-000336"
+                }
+              },
+              {
+                "xref": {
+                  "accession": "1290455",
+                  "category": "Cell line databases/resources",
+                  "database": "Cosmic-CLP",
+                  "url": "https://cancer.sanger.ac.uk/cell_lines/sample/overview?id=1290455"
+                }
+              }
+            ],
+            "variation-type": "Mutation",
+            "xref-list": [
+              {
+                "accession": "HGNC:7989",
+                "category": "Organism-specific databases",
+                "database": "HGNC",
+                "label": "NRAS",
+                "url": "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:7989"
+              },
+              {
+                "accession": "VCV000375874",
+                "category": "Polymorphism and mutation databases",
+                "database": "ClinVar",
+                "url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/VCV000375874"
+              }
+            ],
+            "zygosity-type": "Homozygous"
+          }
+        ],
+        "sex": "Male",
+        "species-list": [
+          {
+            "accession": "9606",
+            "category": "Taxonomy",
+            "database": "NCBI_TaxID",
+            "iri": "http://purl.obolibrary.org/obo/NCBITaxon_9606",
+            "label": "Homo sapiens (Human)",
+            "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3"
+          }
+        ]
+      }
+    ]
+  }
+}

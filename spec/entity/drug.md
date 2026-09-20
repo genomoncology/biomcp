@@ -276,7 +276,7 @@ try:
     assert [tool["name"] for tool in tools] == ["biomcp", "search", "get", "variant_normalize_car", "variant_erepo", "gene_cspec", "variant_articles"]
     get_schema = next(tool["inputSchema"] for tool in tools if tool["name"] == "get")
     drug_branch = next(branch for branch in get_schema["oneOf"] if branch["properties"]["entity"]["const"] == "drug")
-    assert drug_branch["properties"]["sections"]["items"]["enum"] == ["label", "regulatory", "safety", "shortage", "targets", "indications", "interactions", "civic", "approvals", "all"]
+    assert drug_branch["properties"]["sections"]["items"]["enum"] == ["label", "regulatory", "safety", "shortage", "targets", "indications", "interactions", "civic", "approvals", "cell_lines", "all"]
 finally:
     server.terminate()
     server.wait(timeout=5)
@@ -500,4 +500,24 @@ evidence.
 ../../tools/biomcp-ci drug interactions dabigatran | mustmatch like 'current DDInter download bundle has no matching rows
 not_in_ddinter_coverage
 source coverage miss'
+```
+
+## PharmacoDB Cell Lines Are Counted, Then Paged
+
+The drug side of the same PharmacoDB join reports counts per dataset on the card
+and needs one scope for a row listing.
+
+```bash
+(../../tools/biomcp-ci drug cell-lines venetoclax 2>&1 || true) | mustmatch like 'biomcp get drug <name> cell_lines'
+(../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 --dataset GDSC1 2>&1 || true) | mustmatch like 'Use --cell-line or --dataset for drug cell-lines, not both.'
+../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 --json | jq -r '.matched' | mustmatch '2'
+../../tools/biomcp-ci drug cell-lines venetoclax --cell-line CVCL_2119 | mustmatch like '| Experiment | Dataset | Cell line | Tissue | AAC | IC50 | EC50 | Einf | HS | DSS1 |'
+```
+
+A repeated cell line and compound pair inside one dataset stays as separate rows
+with separate experiment IDs, and an absent metric prints as `-`.
+
+```bash
+../../tools/biomcp-ci drug cell-lines venetoclax --dataset NCI60 --json | jq -r '.total' | mustmatch '3608'
+../../tools/biomcp-ci drug cell-lines venetoclax --dataset NCI60 --json | jq -r '.matched' | mustmatch '113'
 ```

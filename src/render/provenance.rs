@@ -462,6 +462,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         &drug.section_outcomes,
         &[
             ("approvals", "Drugs@FDA Approvals"),
+            ("cell_lines", "Cell lines"),
             ("safety", "Safety"),
             ("targets", "Targets"),
             ("indications", "Indications"),
@@ -660,6 +661,32 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
             ("fulltext", "Full Text"),
             ("indexing", "Article Indexing"),
             ("tldr", "Semantic Scholar"),
+        ],
+    ));
+    out
+}
+
+pub(crate) fn cell_line_section_sources(
+    cell_line: &crate::entities::cell_line::CellLine,
+) -> Vec<SectionSource> {
+    let mut out = Vec::new();
+    let source_ref = [cell_line.source.as_str()];
+    let identity_present = has_text(&cell_line.accession) || has_text(&cell_line.name);
+    push_section(
+        &mut out,
+        identity_present,
+        "identity",
+        "Identity",
+        source_ref,
+    );
+    out.extend(outcome_section_sources(
+        "cell_line",
+        &cell_line.section_outcomes,
+        &[
+            ("variants", "Variants"),
+            ("xrefs", "Cross-references"),
+            ("chembl", "ChEMBL"),
+            ("drug_response", "Drug response"),
         ],
     ));
     out
@@ -974,6 +1001,7 @@ mod tests {
             ema_shortage: None,
             who_prequalification: None,
             civic: None,
+            cell_lines: None,
         };
 
         let sources = drug_section_sources(&drug);
@@ -1047,6 +1075,7 @@ mod tests {
                 responsible_nra: None,
             }]),
             civic: None,
+            cell_lines: None,
         };
 
         let sources = drug_section_sources(&drug);
@@ -1095,6 +1124,7 @@ mod tests {
             ema_shortage: None,
             who_prequalification: None,
             civic: None,
+            cell_lines: None,
         };
 
         let sources = drug_section_sources(&drug);

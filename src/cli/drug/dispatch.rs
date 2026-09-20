@@ -525,6 +525,35 @@ pub(crate) async fn handle_command(
                         crate::render::markdown::drug_interaction_report_markdown(&report)?
                     }
                 }
+                DrugCommand::CellLines {
+                    name,
+                    cell_line,
+                    dataset,
+                    limit,
+                    offset,
+                } => {
+                    super::super::paged_fetch_limit(limit, offset, 100)?;
+                    let request =
+                        crate::entities::drug::cell_lines::DrugCellLinesRequest::from_args(
+                            cell_line.as_deref(),
+                            dataset.as_deref(),
+                        )?;
+                    let page = crate::entities::drug::cell_lines::load_cell_lines_rows(
+                        &name, request, offset, limit,
+                    )
+                    .await?;
+                    super::super::log_pagination_truncation(page.matched, offset, page.rows.len());
+                    if json {
+                        crate::render::json::to_pretty(&page)?
+                    } else {
+                        crate::render::markdown::pharmacodb_rows_markdown(
+                            &page,
+                            &format!("{} cell lines (PharmacoDB)", page.subject),
+                            "Cell line",
+                            true,
+                        )?
+                    }
+                }
                 DrugCommand::External(_) => unreachable!("handled above"),
             };
 

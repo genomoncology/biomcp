@@ -171,6 +171,23 @@ pub(super) async fn handle_related_command(
                 crate::render::markdown::gene_markdown(&gene, &sections)?
             }
         }
+        GeneCommand::CellLines {
+            symbol,
+            group,
+            limit,
+            offset,
+        } => {
+            super::super::paged_fetch_limit(limit, offset, 100)?;
+            let page = crate::entities::gene::cell_lines::load(&symbol, &group)
+                .await?
+                .page(offset, limit);
+            super::super::log_pagination_truncation(page.total, offset, page.rows.len());
+            if json {
+                crate::render::json::to_pretty(&page)?
+            } else {
+                crate::render::markdown::gene_cell_lines_markdown(&page)?
+            }
+        }
         GeneCommand::Cspec(_) | GeneCommand::Definition { .. } | GeneCommand::External(_) => {
             unreachable!("handled by gene dispatch")
         }

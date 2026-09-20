@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Advanced the development package identity to Rust `0.9.1-dev.1` and Python
+  `0.9.1.dev1` after the public 0.9.0 release. Citation, MCP directory,
+  registry, and Homebrew metadata stay on the latest published release, v0.9.0.
+
 ## 0.9.0 — 2026-09-16
 
 ### Breaking changes

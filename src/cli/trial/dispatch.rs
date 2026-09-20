@@ -455,6 +455,7 @@ fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
             workflow_playbook: None,
             section_sources: Vec::new(),
             upstream_total: None,
+            notes: Vec::new(),
         });
         meta.upstream_total = Some(n);
     }

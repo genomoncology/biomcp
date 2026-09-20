@@ -167,6 +167,7 @@ MYGENE = {
     "(symbol:PD\\-L1 OR alias:PD\\-L1)": fixture("mygene/search_pdl1_20260811.json"),
     'symbol:"CD274"': fixture("mygene/get_cd274_20260811.json"),
     'symbol:"BRCA1"': fixture("mygene/get_brca1_20260811.json"),
+    'symbol:"FLT3"': fixture("mygene/get_flt3_20260918.json"),
     'symbol:"EGFR"': fixture("mygene/get_egfr_20260811.json"),
     'symbol:"ERBB2"': fixture("mygene/get_erbb2_20260811.json"),
     'symbol:"ODC1"': json.dumps({
@@ -257,11 +258,25 @@ OPENFDA_FAERS_COUNT = fixture(
 )
 FDA_ORPHAN = fixture("fda_orphan/provider-shaped.html")
 CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
+CHEMBL_STATUS = fixture("chembl/status_20260918.json")
+CHEMBL_CELL_LINE_EMPTY = fixture("chembl/cell_line_none_20260918.json")
+CHEMBL_CELL_LINES = {
+    "CVCL_2119": fixture("chembl/cell_line_cvcl_2119_20260918.json"),
+    "CVCL_0004": fixture("chembl/cell_line_cvcl_0004_20260918.json"),
+}
+CHEMBL_ASSAY_COUNTS = {
+    "CHEMBL3706573": fixture("chembl/assay_count_chembl3706573_20260918.json"),
+}
 OPENTARGETS_DRUG = fixture("opentargets/drug_pembrolizumab_20260811.json")
 QUICKGO_ANNOTATIONS = fixture("quickgo/annotations_braf_20260811.json")
 QUICKGO_TERMS = fixture("quickgo/terms_braf_20260811.json")
 STRING_NETWORK = fixture("string/network_braf_20260811.json")
 HPA_BRAF = fixture("hpa/braf_20260811.xml")
+HPA_CELL_RNA = {
+    ("ENSG00000122025", "g,eg,cell_RNA_leukemia"): fixture(
+        "hpa/cell_rna_leukemia_flt3_20260918.json"
+    ),
+}
 DGIDB_EGFR = fixture("dgidb/gene_egfr_20260811.json")
 NIH_ERBB2 = fixture("nih_reporter/funding_erbb2_20260811.json")
 NIH_MARFAN = fixture("nih_reporter/funding_marfan_syndrome.json")
@@ -272,6 +287,64 @@ OPENTARGETS = {
     ("ENSG00000141736", False): fixture("opentargets/clinical_erbb2_20260811.json"),
     ("ENSG00000012048", False): fixture("opentargets/clinical_brca1_20260811.json"),
     ("ENSG00000141510", False): b'{"data":{"target":{"associatedDiseases":{"rows":[]},"drugAndClinicalCandidates":{"rows":[]}}}}',
+}
+CELLOSAURUS_RELEASE = fixture("cellosaurus/release_info_20260917.json")
+CELLOSAURUS_EMPTY = b'{"Cellosaurus":{"cell-line-list":[]}}'
+CELLOSAURUS_RECORDS = {
+    "CVCL_2119": fixture("cellosaurus/get_cvcl_2119_20260917.json"),
+    "CVCL_0064": fixture("cellosaurus/get_cvcl_0064_20260917.json"),
+    "CVCL_1844": fixture("cellosaurus/get_cvcl_1844_var_20260917.json"),
+    "CVCL_0007": fixture("cellosaurus/get_cvcl_0007_20260917.json"),
+    "CVCL_0005": fixture("cellosaurus/get_cvcl_0005_20260917.json"),
+}
+# Ticket 1205: PharmacoDB answers every lookup and both experiment reads from
+# recorded bodies. The counts projection and the row projection are the same
+# `experiments` query with different fields, so the router tells them apart by
+# the metric fields.
+PHARMACODB_CELL_LINE_BY_UID = {
+    # PharmacoDB's own UID for MOLM-13, which is the value the Cellosaurus
+    # PharmacoDB cross-reference carries.
+    "MOLM13_950_2019": fixture("pharmacodb/cell_line_uid_molm13_20260918.json"),
+}
+PHARMACODB_CELL_LINE_BY_NAME = {
+    "HL-60(TB)": fixture("pharmacodb/cell_line_name_hl60tb_20260918.json"),
+    "HL-60": fixture("pharmacodb/cell_line_name_hl60_20260918.json"),
+}
+PHARMACODB_CELL_LINE_MISSING = fixture("pharmacodb/cell_line_name_missing_20260918.json")
+PHARMACODB_COMPOUNDS = {
+    "venetoclax": fixture("pharmacodb/compound_venetoclax_20260918.json"),
+}
+PHARMACODB_COMPOUND_MISSING = fixture("pharmacodb/compound_missing_20260918.json")
+PHARMACODB_COUNTS = {
+    (1248, None): fixture("pharmacodb/experiment_counts_cell_line_1248_20260918.json"),
+    (None, 53572): fixture("pharmacodb/experiment_counts_compound_53572_20260918.json"),
+}
+PHARMACODB_EXPERIMENTS = {
+    (1248, None): fixture("pharmacodb/experiments_cell_line_1248_20260918.json"),
+    (None, 53572): fixture("pharmacodb/experiments_compound_53572_20260918.json"),
+    (1248, 53572): fixture("pharmacodb/experiments_pair_53572_1248_20260918.json"),
+}
+
+# Ticket 1213: the five identifier batches the 93-line leukemia group needs.
+# The key is the first name in the batch, which the query quotes first.
+CELLOSAURUS_ID_BATCHES = {
+    "697": fixture("cellosaurus/search_id_leukemia_batch1_20260918.json"),
+    "JK-1": fixture("cellosaurus/search_id_leukemia_batch2_20260918.json"),
+    "ME-1 [Human leukemia]": fixture("cellosaurus/search_id_leukemia_batch3_20260918.json"),
+    "NALM-19": fixture("cellosaurus/search_id_leukemia_batch4_20260918.json"),
+    "SEM": fixture("cellosaurus/search_id_leukemia_batch5_20260918.json"),
+}
+CELLOSAURUS_SEARCHES = {
+    'idsy:"MOLM13"': fixture("cellosaurus/search_idsy_molm13_20260917.json"),
+    'idsy:"MOLM-13"': fixture("cellosaurus/search_idsy_molm_13_20260917.json"),
+    'idsy:"MV4;11"': fixture("cellosaurus/search_idsy_mv4_11_semicolon_20260917.json"),
+    'idsy:"KG1"': fixture("cellosaurus/search_idsy_kg1_20260917.json"),
+    'idsy:"KG-1"': fixture("cellosaurus/search_idsy_kg_1_20260917.json"),
+    'idsy:"NB4"': fixture("cellosaurus/search_idsy_nb4_20260917.json"),
+    'dr:"ACH-000362"': fixture("cellosaurus/search_dr_ach_000362_20260917.json"),
+    'dr:"SIDM00437"': fixture("cellosaurus/search_dr_sidm00437_20260917.json"),
+    'dr:"CHEMBL3706573"': fixture("cellosaurus/search_dr_chembl3706573_20260917.json"),
+    'dr:"MOLM13_950_2019"': fixture("cellosaurus/search_dr_molm13_950_2019_20260917.json"),
 }
 KEGG_SEARCH = fixture("kegg/search_mapk_20260811.txt")
 KEGG_DETAIL = fixture("kegg/get_hsa05200_20260811.txt")
@@ -452,6 +525,21 @@ class Handler(BaseHTTPRequestHandler):
             if query.get("limit") == ["25"] and "BRCA1 Hereditary Cancer Panel" in query.get("search", [""])[0]:
                 send(self, 404, OPENFDA_DEVICE_PMA)
                 return
+        if parsed.path == "/chembl/status.json":
+            send(self, 200, CHEMBL_STATUS)
+            return
+        if parsed.path == "/chembl/cell_line.json":
+            # The join goes through the Cellosaurus accession alone. An
+            # accession ChEMBL does not list is a normal zero-row result.
+            accession = parse_qs(parsed.query).get("cellosaurus_id", [""])[0]
+            send(self, 200, CHEMBL_CELL_LINES.get(accession, CHEMBL_CELL_LINE_EMPTY))
+            return
+        if parsed.path == "/chembl/assay.json":
+            chembl_id = parse_qs(parsed.query).get("cell_chembl_id", [""])[0]
+            page = CHEMBL_ASSAY_COUNTS.get(chembl_id)
+            if page is not None:
+                send(self, 200, page)
+                return
         if parsed.path == "/chembl/mechanism.json":
             query = parse_qs(parsed.query)
             if query == {"molecule_chembl_id": ["CHEMBL3137343"], "limit": ["15"]}:
@@ -470,6 +558,34 @@ class Handler(BaseHTTPRequestHandler):
                 return
         if parsed.path == "/hpa/ENSG00000157764.xml":
             send(self, 200, HPA_BRAF, "application/xml")
+            return
+        if parsed.path == "/hpa/api/search_download.php":
+            params = parse_qs(parsed.query)
+            key = (params.get("search", [""])[0], params.get("columns", [""])[0])
+            send(self, 200, HPA_CELL_RNA.get(key, b"[]"))
+            return
+        if parsed.path == "/cellosaurus/release-info":
+            send(self, 200, CELLOSAURUS_RELEASE)
+            return
+        if parsed.path == "/cellosaurus/search/cell-line":
+            # The window is answered by the query alone. An unlisted ac:, dr:,
+            # idsy: or id: query is a normal zero-row result, never a failure.
+            query = parse_qs(parsed.query).get("q", [""])[0]
+            if query.startswith("id:("):
+                first_name = query.split('"')[1] if '"' in query else ""
+                send(self, 200, CELLOSAURUS_ID_BATCHES.get(first_name, CELLOSAURUS_EMPTY))
+                return
+            send(self, 200, CELLOSAURUS_SEARCHES.get(query, CELLOSAURUS_EMPTY))
+            return
+        if parsed.path.startswith("/cellosaurus/cell-line/"):
+            # Matched on the path alone. The fields parameter is ignored, so one
+            # recorded file answers every projection the command asks for.
+            accession = parsed.path.rsplit("/", 1)[-1]
+            record = CELLOSAURUS_RECORDS.get(accession)
+            if record is None:
+                send(self, 404, b'{"error":"cell line not found"}')
+                return
+            send(self, 200, record)
             return
         if parsed.path == "/kegg/find/pathway/MAPK%20signaling%20pathway":
             send(self, 200, KEGG_SEARCH, "text/plain")
@@ -557,6 +673,30 @@ class Handler(BaseHTTPRequestHandler):
             if response is not None:
                 send(self, 200, response)
                 return
+        if parsed.path == "/pharmacodb/graphql":
+            request = json.loads(body)
+            query = request.get("query", "")
+            variables = request.get("variables", {})
+            if "cell_line(" in query:
+                uid = variables.get("cellUID")
+                name = variables.get("cellName")
+                record = PHARMACODB_CELL_LINE_BY_UID.get(uid) if uid else PHARMACODB_CELL_LINE_BY_NAME.get(name)
+                send(self, 200, record or PHARMACODB_CELL_LINE_MISSING)
+                return
+            if "compound(" in query:
+                name = variables.get("compoundName", "")
+                record = PHARMACODB_COMPOUNDS.get(name.lower())
+                send(self, 200, record or PHARMACODB_COMPOUND_MISSING)
+                return
+            if "experiments(" in query:
+                key = (variables.get("cellLineId"), variables.get("compoundId"))
+                table = PHARMACODB_EXPERIMENTS if "AAC" in query else PHARMACODB_COUNTS
+                record = table.get(key)
+                if record is not None:
+                    send(self, 200, record)
+                    return
+                send(self, 200, b'{"data":{"experiments":[]}}')
+                return
         if parsed.path == "/dgidb/api/graphql":
             request = json.loads(body)
             if request.get("variables") == {"gene": "EGFR", "first": 1}:
@@ -628,6 +768,8 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_HPA_BASE=%q\n' "$base_url/hpa"
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/dgidb/api"
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih/v2"
+  printf 'export BIOMCP_CELLOSAURUS_BASE=%q\n' "$base_url/cellosaurus"
+  printf 'export BIOMCP_PHARMACODB_BASE=%q\n' "$base_url/pharmacodb"
   printf 'export BIOMCP_KEGG_BASE=%q\n' "$base_url/kegg"
   printf 'export BIOMCP_REACTOME_BASE=%q\n' "$base_url/reactome/ContentService"
   printf 'export BIOMCP_WIKIPATHWAYS_BASE=%q\n' "$base_url/wikipathways"

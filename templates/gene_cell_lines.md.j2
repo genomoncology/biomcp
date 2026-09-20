@@ -1,0 +1,21 @@
+# {{ gene }} cell lines: {{ group }}
+
+Ensembl: {{ ensembl_id }}
+Showing {{ rows | length }} of {{ total }} cell line{% if total != 1 %}s{% endif %} (HPA nTPM as published)
+
+{% if rows -%}
+| Cell line | Accession | nTPM |
+|---|---|---|
+{% for row in rows -%}
+| {{ row.name }} | {{ row.accession or "-" }} | {{ row.ntpm if row.ntpm is not none else "-" }} |
+{% endfor -%}
+{% else -%}
+No cell lines found
+{% endif -%}
+{% for note in notes %}
+Note: {{ note }}
+{% endfor %}
+{%- if next_command %}
+Next: `{{ next_command }}`
+{% endif %}
+{{ attribution }}

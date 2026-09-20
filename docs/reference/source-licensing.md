@@ -43,6 +43,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | cBioPortal | 3 | direct_api | none | public API with study-specific downstream terms | reuse depends on the specific study or consortium behind each dataset | <https://www.cbioportal.org/> |
 | CDC CVX/MVX | 1 | direct_api | none | most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply | reuse is generally allowed with CDC attribution and non-endorsement language; avoid CDC logos and review exceptions before republishing | <https://www.cdc.gov/other/agencymaterials.html> |
 | CDC WONDER VAERS | 1 | direct_api | none | CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts | reuse is allowed for statistical reporting and analysis with source attribution, but do not try to identify individuals or publish identifying linkages | <https://wonder.cdc.gov/datause.html> |
+| Cellosaurus | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution and the requested citation; every BioMCP cell line output carries both | <https://www.cellosaurus.org/description.html> |
 | ChEMBL | 1 | direct_api | none | EMBL-EBI open data service; ChEMBL is published for broad reuse | reuse is generally allowed under the provider's open-data terms with attribution where required | <https://www.ebi.ac.uk/chembl/> |
 | CIViC | 1 | direct_api | none | open community knowledgebase; CIViC content is published for unrestricted reuse | reuse is broadly permitted; attribution remains best practice | <https://civicdb.org/home> |
 | ClinGen | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://clinicalgenome.org/> |
@@ -65,7 +66,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | GTEx | 1 | direct_api | none | NIH-hosted public-access expression resource | public summary/expression views are broadly reusable; controlled-access data remains outside BioMCP's scope | <https://gtexportal.org/home/documentationPage> |
 | NCBI Genetic Testing Registry | 1 | direct_api | none | NLM/NCBI government data service with public bulk-export access | GTR records are broadly queryable and reusable, but preserve accession provenance and review any embedded third-party identifiers separately | <https://www.ncbi.nlm.nih.gov/gtr/docs/faq/> |
 | GWAS Catalog | 1 | direct_api | none | EMBL-EBI resource terms; summary statistics may carry separate licenses | query results are generally reusable, but dataset-level summary statistics can have separate downstream terms | <https://www.ebi.ac.uk/gwas/docs/about> |
-| Human Protein Atlas | 3 | direct_api | none | CC BY-SA 4.0 for copyrightable parts of the database | reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions | <https://www.proteinatlas.org/about/licence> |
+| Human Protein Atlas | 3 | direct_api | none | CC BY 4.0 for copyrightable parts of the database | reuse is allowed with attribution; third-party components may impose extra conditions | <https://www.proteinatlas.org/about/licence> |
 | HPO JAX API | 1 | direct_api | none | open HPO data with attribution and integrity requirements | reuse is allowed, but users should preserve attribution, version context, and source integrity | <https://human-phenotype-ontology.github.io/license.html> |
 | InterPro | 1 | direct_api | none | EMBL-EBI open data resource | reuse follows InterPro/EMBL-EBI resource terms and any embedded member-database obligations | <https://www.ebi.ac.uk/interpro/> |
 | KEGG | 3 | direct_api | none | custom KEGG terms; academic users may freely use the website, non-academic use requires a commercial license | do not assume commercial redistribution rights; query access does not grant a redistribution license | <https://www.kegg.jp/kegg/legal.html> |
@@ -87,6 +88,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | OpenCitations | 1 | direct_api | none | OpenCitations datasets are CC0 public domain; website text is CC BY 4.0 and the software is ISC | citation data may be freely reused, including commercially; the OpenCitations trademark policy still governs the name | <https://opencitations.net/> |
 | OpenFDA | 1 | direct_api | optional_env | FDA-origin public data and API terms | data is broadly reusable, but avoid implying FDA endorsement and preserve source context | <https://open.fda.gov/apis/authentication/> |
 | OpenTargets | 1 | direct_api | none | Open Targets data is CC0; platform code is Apache 2.0 | platform data is dedicated to the public domain, but linked evidence still carries source provenance | <https://platform-docs.opentargets.org/licence> |
+| PharmacoDB | 3 | direct_api | none | PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider | treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established | none published |
 | PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://api.pharmgkb.org/> |
 | PMC OA | 1 | direct_api | optional_env | open-access subset only; article licenses vary within PMC OA | full text is reusable only according to each article's specific PMC Open Access license | <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/> |
 | PubMed | 1 | direct_api | optional_env | NLM public-domain search and metadata service | search results are broadly reusable, but article-level abstracts, full text, and downstream reuse still depend on the returned record context | <https://www.ncbi.nlm.nih.gov/books/NBK25501/> |
@@ -112,6 +114,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | PDB | 1 | indirect_only | not_applicable | PDB archive data is CC0 1.0 | data is broadly reusable; attribution to original structure authors is encouraged | <https://www.rcsb.org/pages/usage-policy> |
 
 ## Tier 1 - Baseline use without credentials
+
+### Cellosaurus
+
+- BioMCP surfaces: `search cell-line <name>; get cell-line <id>; get cell-line <id> xrefs; get cell-line <id> variants`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public API, no key
+- License / terms summary: CC BY 4.0
+- Redistribution / reuse summary: reuse is allowed with attribution and the requested citation; every BioMCP cell line output names the release, the licence, and the citation
+- Official terms URL: <https://www.cellosaurus.org/description.html>
+- Reviewed on: `2026-09-16`
+- Notes: Cellosaurus is the RRID authority for cell lines, and the RRID is `RRID:` plus the primary accession. The requested citation is Bairoch A. "The Cellosaurus, a cell line knowledge resource." J. Biomol. Tech. 29:25-38 (2018).
 
 ### ChEMBL
 
@@ -887,15 +901,15 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### Human Protein Atlas
 
-- BioMCP surfaces: `get gene <symbol> hpa`
+- BioMCP surfaces: `get gene <symbol> hpa; gene cell-lines <symbol> --group <group>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public XML and web resources
-- License / terms summary: CC BY-SA 4.0 for copyrightable parts of the database
-- Redistribution / reuse summary: reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions
+- License / terms summary: CC BY 4.0 for copyrightable parts of the database
+- Redistribution / reuse summary: reuse is allowed with attribution; third-party components may impose extra conditions
 - Official terms URL: <https://www.proteinatlas.org/about/licence>
-- Reviewed on: `2026-03-20`
-- Notes: The licence page also requires clear citation for images and specific gene/data pages.
+- Reviewed on: `2026-09-18`
+- Notes: The terms page reads "The Human Protein Atlas is licensed under the Creative Commons Attribution 4.0 International License for all copyrightable parts of our database." The earlier CC BY-SA 4.0 reading was one of the external sources listed further down that page. The page also requires clear citation for images and specific gene/data pages.
 
 ### KEGG
 
@@ -920,6 +934,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://www.ncbi.nlm.nih.gov/research/litsense2-api/>
 - Reviewed on: `2026-04-10`
 - Notes: LitSense2 is individually selectable with `search article --source litsense2` and contributes semantic-signal metadata; it is not part of the default `--source all` federation.
+
+### PharmacoDB
+
+- BioMCP surfaces: `get cell-line <accession> drug_response; get drug <name> cell_lines; cell-line drug-response <accession> --dataset <name>; drug cell-lines <name> --cell-line <id>; drug cell-lines <name> --dataset <name>`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public GraphQL endpoint, no key
+- License / terms summary: PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider
+- Redistribution / reuse summary: treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established
+- Official terms URL: none published
+- Reviewed on: `2026-09-18`
+- Notes: Verified 2026-09-18. `pharmacodb.ca` serves the same 2,258-byte single-page shell on every path, including `/about`, `/documentation`, `/terms` and `/api`, and its application bundle carries no licence string, so the provider publishes no licence or terms page. The code licence is GPL-3.0 at <https://github.com/bhklab/PharmacoDB/blob/master/LICENSE>. The CC BY-NC 4.0 reading traces to the describing paper, Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which states "This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License". That covers the article and not the database, so BioMCP records the absence rather than a licence PharmacoDB never published. Every BioMCP output names the non-commercial term because a user cannot read it from the numbers.
 
 ### PharmGKB
 

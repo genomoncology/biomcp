@@ -85,6 +85,7 @@ const AUTHORS_PATH: JsonPath = &["authors"];
 const INTERACTIONS_PATH: JsonPath = &["interactions"];
 const STRUCTURES_PATH: JsonPath = &["structures"];
 const PATHWAYS_PATH: JsonPath = &["pathways"];
+const ROWS_PATH: JsonPath = &["rows"];
 const DOCUMENTS_PATH: JsonPath = &["documents"];
 const CONCEPTS_PATH: JsonPath = &["concepts"];
 const DRUG_US_RESULTS_PATH: JsonPath = &["regions", "us", "results"];
@@ -123,6 +124,7 @@ pub(super) fn command_requests_json(command: &Commands) -> bool {
             GetEntity::Trial(args) => sections_request_json(&args.sections),
             GetEntity::Variant(args) => sections_request_json(&args.sections),
             GetEntity::Drug(args) => sections_request_json(&args.args),
+            GetEntity::CellLine(args) => sections_request_json(&args.sections),
             GetEntity::Pathway(args) => sections_request_json(&args.sections),
             GetEntity::Protein(args) => sections_request_json(&args.sections),
             GetEntity::AdverseEvent(args) => sections_request_json(&args.sections),
@@ -170,7 +172,13 @@ impl JsonResponseContract {
                 super::DrugCommand::Interactions { .. } => Self {
                     collection_paths: &[INTERACTIONS_PATH],
                 },
+                super::DrugCommand::CellLines { .. } => Self {
+                    collection_paths: &[ROWS_PATH],
+                },
                 super::DrugCommand::External(_) => Self::NONE,
+            },
+            Commands::CellLine { .. } => Self {
+                collection_paths: &[ROWS_PATH],
             },
             Commands::Disease { .. } | Commands::Pathway { .. } => Self::RESULTS,
             Commands::Article { cmd } => match cmd {
@@ -199,6 +207,9 @@ impl JsonResponseContract {
                 | super::GeneCommand::Articles { .. } => Self::RESULTS,
                 super::GeneCommand::Pathways { .. } => Self {
                     collection_paths: &[PATHWAYS_PATH],
+                },
+                super::GeneCommand::CellLines { .. } => Self {
+                    collection_paths: &[ROWS_PATH],
                 },
                 super::GeneCommand::Cspec(_)
                 | super::GeneCommand::Definition { .. }
@@ -284,6 +295,7 @@ impl JsonResponseContract {
             | SearchEntity::Article(_)
             | SearchEntity::Trial(_)
             | SearchEntity::Variant(_)
+            | SearchEntity::CellLine(_)
             | SearchEntity::Pathway(_)
             | SearchEntity::Protein(_)
             | SearchEntity::AdverseEvent(_) => Self::RESULTS,

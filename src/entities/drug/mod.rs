@@ -1,5 +1,6 @@
 //! Drug entity models and workflows exposed through the stable drug facade.
 
+pub(crate) mod cell_lines;
 mod get;
 pub(crate) mod interactions;
 mod label;
@@ -123,6 +124,9 @@ pub struct Drug {
     pub who_prequalification: Option<Vec<WhoPrequalificationEntry>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub civic: Option<CivicContext>,
+    /// The PharmacoDB counts, asked for by name. `all` leaves it out.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cell_lines: Option<crate::entities::pharmacodb::PharmacoDbCounts>,
 }
 
 fn deserialize_drug_section_outcomes<'de, D>(deserializer: D) -> Result<SectionOutcomes, D::Error>
@@ -616,6 +620,7 @@ const DRUG_SECTION_INDICATIONS: &str = "indications";
 const DRUG_SECTION_INTERACTIONS: &str = "interactions";
 const DRUG_SECTION_CIVIC: &str = "civic";
 const DRUG_SECTION_APPROVALS: &str = "approvals";
+pub(crate) const DRUG_SECTION_CELL_LINES: &str = "cell_lines";
 const DRUG_SECTION_ALL: &str = "all";
 
 pub const DRUG_SECTION_NAMES: &[&str] = &[
@@ -628,6 +633,7 @@ pub const DRUG_SECTION_NAMES: &[&str] = &[
     DRUG_SECTION_INTERACTIONS,
     DRUG_SECTION_CIVIC,
     DRUG_SECTION_APPROVALS,
+    DRUG_SECTION_CELL_LINES,
     DRUG_SECTION_ALL,
 ];
 
@@ -660,6 +666,7 @@ mod outcome_tests {
             keys,
             vec![
                 "approvals",
+                "cell_lines",
                 "civic",
                 "indications",
                 "interactions",

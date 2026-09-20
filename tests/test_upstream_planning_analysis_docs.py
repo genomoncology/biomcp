@@ -449,8 +449,10 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     article_graph = _read_repo("src/entities/article/graph.rs")
     article_usage = _read_repo("tests/article_usage_stderr.rs")
     release_workflow = _read_repo(".github/workflows/release.yml")
+    release_process = _read_repo("docs/reference/release-process.md")
     install_script = _read_repo("install.sh")
     technical_ws = _normalize_ws(technical)
+    release_process_ws = _normalize_ws(release_process)
     ux_ws = _normalize_ws(ux)
     article_guide_ws = _normalize_ws(article_guide)
     cli_reference_guide_ws = _normalize_ws(cli_reference_guide)
@@ -676,16 +678,36 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "Package versions are committed metadata, not values stamped from tags."
         in release_pipeline_section
     )
-    assert "separate `stage` and `promote` modes" in release_pipeline_section
-    assert "only then advances mutable" in release_pipeline_section
     assert "scripts/check-version-sync.sh" in release_pipeline_section
-    assert "privately builds, signs, inspects, and seals" in technical_ws
     assert "release workflow stamps" not in technical_ws
+    assert "five platform archives" in release_pipeline_section
+    assert "protected `pypi` environment" in release_pipeline_section
     assert "workflow_dispatch:" in release_workflow
-    assert "contents: read" in release_workflow
-    assert "promotion-preflight:" in release_workflow
-    assert "reconcile-public-release:" in release_workflow
-    assert "advance-mutable-pointers:" in release_workflow
+    assert "types: [published]" in release_workflow
+    assert "tag:" in release_workflow
+    assert "ref: ${{ github.event.release.tag_name || inputs.tag }}" in release_workflow
+    assert "environment: pypi" in release_workflow
+    assert "homebrew-tap:" in release_workflow
+    for retired in (
+        "`stage` mode",
+        "run `promote`",
+        "stage run ID",
+        "biomcp-release-promotion",
+        "sealed candidate",
+    ):
+        assert retired not in release_process_ws
+        assert retired not in release_pipeline_section
+    for retired_summary in (
+        "protected two-step workflow",
+        "privately stage a committed future version",
+        "promote those exact bytes",
+    ):
+        assert retired_summary not in technical_ws
+        assert retired_summary not in release_process_ws
+    assert "published GitHub release or a manual `tag` input" in release_process_ws
+    assert "five platform archives" in release_process_ws
+    assert "protected `pypi` environment" in release_process_ws
+    assert "updates the `genomoncology/homebrew-biomcp` formula" in release_process_ws
     assert (
         'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"'
         in install_script
@@ -871,7 +893,9 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     source_integration = _read_repo("architecture/technical/source-integration.md")
     drug_guide = _read_repo("docs/user-guide/drug.md")
     bioasq_reference = _read_repo("docs/reference/bioasq-benchmark.md")
-    cli_commands = _read_repo("src/cli/commands.rs")
+    # Ticket 1205 split the get/search selectors out of src/cli/commands.rs to
+    # stay under the CLI line cap; their long-form help moved with them.
+    cli_commands = _read_repo("src/cli/commands/selectors.rs")
     cli_drug_mod = _read_repo("src/cli/drug/mod.rs")
     cli_list_clinical = _read_repo("src/cli/list/clinical.rs")
     cli_list_reference = _read_repo("src/cli/list_reference.md")
@@ -1139,9 +1163,9 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ]
 
     assert "workflow_dispatch:" in release
-    assert "promotion-preflight:" in release
-    assert "environment: biomcp-release-promotion" in release
-    assert "advance-mutable-pointers:" in release
+    assert "types: [published]" in release
+    assert "environment: pypi" in release
+    assert "make lint" not in release and "make test" not in release
 
     assert "name: Contract Smoke Tests" in contracts_smoke
     assert "schedule:" not in contracts_smoke

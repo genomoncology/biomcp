@@ -1,0 +1,748 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1410"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MHH-CALL-4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0089"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MHH-CALL-3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1409"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MHH-CALL-2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1426"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Mono-Mac-6"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1425"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Mono-Mac-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2110"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "ME-1 [Human leukemia]"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0064"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MV4-11"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0425"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MEG-01"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2120"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-16"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2119"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-13"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1424"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-16"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1873"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MUTZ-5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1422"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-13"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2122"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-6"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1433"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MUTZ-3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0013"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1870"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MEC-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D779"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-13-RES"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0WJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-13/AZA"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0WK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-13/DAC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0624"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8AS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4 Ma"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E7JC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4(Cas9)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_5J16"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4-luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WU92"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4.CCR5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_4Y72"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4/ADR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S545"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4/CCR5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3D7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4/R7hyg"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0091"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "NALM-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5QZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE MOLM-13-Cas9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6CH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE MOLM-13-CopGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5V0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE MOLM-13-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D780"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-13-RES-AC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1418"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "ML-2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S658"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/MTX10000"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S659"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/MTX200"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S652"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/MTXt"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S653"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/TMQ200"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S655"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/TMQ2500"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S656"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/TMQ800"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_M774"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/Z29"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4H4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte MEG-01 KO-hCST7"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F827"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-4 clone 8"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1S3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte MOLM-13 KO-hADGRE2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1S4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte MOLM-13 KO-hPTEN"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1S5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte MV4-11 KO-hCEBPA-DT"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E2Q6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte MEG-01 hJAK2_p.V617F_c.1849G>T"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S660"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/MTX.P-9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S654"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/TMQ200-CB371730"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S657"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/TMQ200-MTX500"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S661"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/ZD1694.C"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S662"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLT-3/ZD1694.P9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4CE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Human TP53 Knockout Cell Line - MV4-11"
+          }
+        ]
+      }
+    ]
+  }
+}

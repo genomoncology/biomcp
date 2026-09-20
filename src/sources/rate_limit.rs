@@ -170,6 +170,18 @@ impl RateLimiter {
                 "https://rest.kegg.jp",
                 Duration::from_millis(334),
             ),
+            policy(
+                "pharmacodb",
+                "BIOMCP_PHARMACODB_BASE",
+                "https://pharmacodb.ca",
+                Duration::from_millis(334),
+            ),
+            policy(
+                "cellosaurus",
+                "BIOMCP_CELLOSAURUS_BASE",
+                "https://api.cellosaurus.org",
+                Duration::from_millis(334),
+            ),
         ];
         Self::new(
             policies,
@@ -584,6 +596,26 @@ mod tests {
             .resolve_key_for_str("https://example.org/api/v1/resource")
             .unwrap();
         assert_eq!(key, "policy:long");
+    }
+
+    #[test]
+    fn cellosaurus_urls_resolve_to_the_cellosaurus_policy() {
+        let limiter = RateLimiter::from_env();
+        let policy = limiter
+            .policies
+            .iter()
+            .find(|policy| policy.key == "cellosaurus")
+            .expect("the production policy set names cellosaurus");
+        let url = Url::parse(&format!(
+            "{}/search/cell-line",
+            policy.prefix.trim_end_matches('/')
+        ))
+        .expect("policy prefix parses");
+
+        let (key, interval) = limiter.resolve_key_and_interval(&url);
+
+        assert_eq!(key, "policy:cellosaurus");
+        assert_eq!(interval, Duration::from_millis(334));
     }
 
     #[test]

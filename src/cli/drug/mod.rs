@@ -186,6 +186,34 @@ See also: biomcp list drug")]
         #[arg(long, default_value = "0")]
         offset: usize,
     },
+    /// Show published PharmacoDB drug-response rows for this drug
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp drug cell-lines venetoclax --cell-line CVCL_2119
+  biomcp drug cell-lines venetoclax --dataset GDSC2
+  biomcp drug cell-lines cytarabine --dataset CTRPv2 --limit 50 --offset 50
+
+Note: `--cell-line` or `--dataset` is required. One drug can hold over a hundred
+thousand experiments, so BioMCP never lists a whole drug. Use
+`biomcp get drug <name> cell_lines` for the counts per dataset. Values are
+PharmacoDB metrics as published; BioMCP adds no units and no sensitivity labels.
+See also: biomcp list drug")]
+    CellLines {
+        /// Drug name (e.g., venetoclax)
+        name: String,
+        /// Cellosaurus accession or any source ID `get cell-line` accepts
+        #[arg(long = "cell-line")]
+        cell_line: Option<String>,
+        /// PharmacoDB dataset name (e.g., GDSC2)
+        #[arg(long)]
+        dataset: Option<String>,
+        /// Maximum rows, 1-100 (default: 25)
+        #[arg(short, long, default_value = "25")]
+        limit: usize,
+        /// Skip the first N rows
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
     #[command(external_subcommand)]
     External(Vec<String>),
 }

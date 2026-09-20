@@ -52,6 +52,23 @@ Use `--raw` for the full truncated FDA label text.
 {% endif -%}
 {% if approvals_block %}{{ approvals_block }}
 {% endif -%}
+{% if show_cell_lines_section and (cell_lines or source_states.cell_lines.status) -%}
+## Cell lines (PharmacoDB)
+
+{% if source_states.cell_lines.status %}{{ source_states.cell_lines.status }}
+{% endif -%}
+{% if source_states.cell_lines.payload_allowed and cell_lines -%}
+{% if cell_lines.total -%}
+{{ cell_lines_counts_line }}
+
+Next: `biomcp drug cell-lines {{ name }} --cell-line <CVCL accession>`
+Next: `biomcp drug cell-lines {{ name }} --dataset {{ cell_lines.datasets[0].name }}`
+{% else -%}
+{{ cell_lines_empty_message }}
+{% endif %}
+{{ cell_lines_attribution }}
+{% endif -%}
+{% endif -%}
 {% if show_civic_section -%}
 ## CIViC
 

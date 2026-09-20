@@ -429,6 +429,16 @@ biomcp search pathway -q "Pathways in cancer" --limit 5 --offset 0
 
 `search pathway --limit` accepts 1-25; pathway pivot helpers accept 1-50. Out-of-range errors state the range.
 
+### Cell Line
+
+```bash
+biomcp search cell-line MOLM13 --limit 5 --offset 0
+biomcp search cell-line "MV4;11" --limit 5 --offset 0
+biomcp search cell-line CVCL_2119
+```
+
+`search cell-line --limit` accepts 1-25. Search takes no other filters.
+
 ### Protein
 
 ```bash
@@ -677,6 +687,7 @@ biomcp get drug Dupixent regulatory --region ema
 biomcp get drug Ozempic safety --region eu
 biomcp get drug carboplatin shortage
 biomcp get drug --name "tepotinib hydrochloride" label
+biomcp get drug venetoclax cell_lines
 ```
 
 Use `--name` when a multi-word drug name would otherwise be confused with section tokens.
@@ -737,6 +748,27 @@ biomcp get pathway rs113488022     # hints to use `biomcp get variant rs11348802
 Reactome lookup failures for IDs that look like UniProt accessions, Ensembl IDs, gene symbols,
 or dbSNP rsIDs include a redirect hint to the matching `get protein`, `get gene`, or
 `get variant` command.
+
+### Cell Line
+
+```bash
+biomcp get cell-line CVCL_2119
+biomcp get cell-line CVCL_2119 xrefs
+biomcp get cell-line CVCL_1844 variants
+biomcp get cell-line CVCL_2119 chembl
+biomcp get cell-line CVCL_2119 drug_response
+biomcp get cell-line CVCL_2119 all
+biomcp get cell-line ACH-000362      # DepMap ID resolves to CVCL_2119
+biomcp get cell-line SIDM00437       # Cell Model Passports ID
+biomcp get cell-line CHEMBL3706573   # ChEMBL ID
+biomcp get cell-line MOLM13_950_2019 # PharmacoDB ID
+```
+
+An ID that is not a CVCL accession is treated as a source ID and resolved through a
+cross-reference search. No match gives the not-found error with a `search cell-line` hint.
+
+`all` covers the Cellosaurus sections `variants` and `xrefs`. The `chembl` section reads
+ChEMBL and is asked for by name, and the `drug_response` section reads PharmacoDB the same way.
 
 ### Protein
 
@@ -896,6 +928,11 @@ biomcp gene trials BRAF
 biomcp gene drugs BRAF
 biomcp gene articles BRCA1
 biomcp gene pathways BRAF
+biomcp gene cell-lines FLT3 --group leukemia
+biomcp gene cell-lines MYCN --group neuroblastoma --limit 20 --offset 0
+biomcp cell-line drug-response CVCL_2119 --dataset GDSC1
+biomcp drug cell-lines venetoclax --cell-line CVCL_2119
+biomcp drug cell-lines venetoclax --dataset NCI60 --limit 25 --offset 0
 biomcp pathway drugs R-HSA-5673001
 biomcp pathway drugs hsa05200
 biomcp pathway articles R-HSA-5673001
@@ -906,6 +943,13 @@ biomcp article citations 22663011 --limit 3 --offset 0
 biomcp article references 22663011 --limit 3 --offset 0
 biomcp article recommendations 22663011 --limit 3
 ```
+
+The two PharmacoDB row helpers each demand a scope. `cell-line drug-response`
+requires `--dataset`, and `drug cell-lines` requires exactly one of
+`--cell-line` or `--dataset`. Without one the command fails before any request,
+because an unscoped listing is megabytes of body. Rows carry the published AAC,
+IC50, EC50, Einf, HS, and DSS1 with no units and no interpretation, and an
+absent metric prints as `-`.
 
 Citation and reference graph pages accept `--offset <u64>` (default `0`) and
 make exactly one graph request after resolving the seed. JSON reports the

@@ -105,18 +105,23 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1094,
+      "baseline_lines": 1103,
       "floor_lines": 1094,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1205",
+        "delta": 9,
+        "reason": "Ticket 1205 adds the drug cell_lines section flag, its parse arm, and its load call.",
+        "removal_condition": "Extract the drug section flags and their loads when the drug get path is next decomposed."
+      }
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3857,
+      "baseline_lines": 3858,
       "floor_lines": 3812,
       "authorized_increase": {
-        "ticket": "0973",
-        "delta": 45,
-        "reason": "Canonical MyGene alias identity reuses the existing gene query and ambiguity rules rather than duplicating them in discovery.",
+        "ticket": "0973, 1213",
+        "delta": 46,
+        "reason": "Canonical MyGene alias identity reuses the existing gene query and ambiguity rules rather than duplicating them in discovery, and the cell_lines helper module declaration (ticket 1213, +1).",
         "removal_condition": "Extract MyGene identity resolution when the gene entity provider helpers are next decomposed."
       }
     },
@@ -212,12 +217,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1119,
+      "baseline_lines": 1122,
       "floor_lines": 1109,
       "authorized_increase": {
-        "ticket": "1142, biodata-0144, 1200",
-        "delta": 10,
-        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate ticket 1196 GenCC source registration (+3), and register OpenCitations as the confirmation source (+3).",
+        "ticket": "1142, biodata-0144, 1196, 1200, 1202, 1205",
+        "delta": 13,
+        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate the GenCC source registration (+3), register OpenCitations as the confirmation source (+3), and add Cellosaurus (+1) and PharmacoDB (+2) provider registrations.",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
       }
     },
@@ -229,13 +234,13 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2159,
+      "baseline_lines": 2172,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "0127",
-        "delta": 203,
-        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract.",
-        "removal_condition": "Extract trial paging and count schema transforms when the typed shell contract is decomposed."
+        "ticket": "0127, 1031, 1150, 1158, 1202, 1213, 1205",
+        "delta": 216,
+        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract, together with the typed cell-line get branch, gene cell-lines allowlist arm, and PharmacoDB row helpers.",
+        "removal_condition": "Extract trial paging, typed tool schema transforms, and count schema transforms when the MCP shell is decomposed."
       }
     },
     {
@@ -257,12 +262,12 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1559,
+      "baseline_lines": 1561,
       "floor_lines": 1555,
       "authorized_increase": {
-        "ticket": "1158, 1201",
-        "delta": 4,
-        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests.",
+        "ticket": "1158, 1201, 1205",
+        "delta": 6,
+        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests, and the PharmacoDB section fields on the cell line and drug JSON shapes (ticket 1205, +2).",
         "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
       }
     },
@@ -279,9 +284,14 @@
     },
     {
       "path": "src/render/markdown/related.rs",
-      "baseline_lines": 1064,
+      "baseline_lines": 1081,
       "floor_lines": 1064,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1202",
+        "delta": 17,
+        "reason": "Keep cell-line next commands beside the other entity related-command builders.",
+        "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed."
+      }
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
@@ -296,9 +306,14 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1745,
+      "baseline_lines": 1775,
       "floor_lines": 1745,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1202, 1214, 1205",
+        "delta": 30,
+        "reason": "Add the cell-line section-sources builder and its ChEMBL and PharmacoDB outcome sections while retaining the dedicated trial provenance module.",
+        "removal_condition": "Extract cell-line provenance when the renderer is next decomposed."
+      }
     },
     {
       "path": "src/sources/cbioportal_study.rs",
@@ -341,12 +356,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2288,
+      "baseline_lines": 2290,
       "floor_lines": 2274,
       "authorized_increase": {
-        "ticket": "1199, 1200",
-        "delta": 14,
-        "reason": "Resolve the citation-evidence sidecar cache mode and register the OpenCitations reference client.",
+        "ticket": "1199, 1200, 1202, 1205",
+        "delta": 16,
+        "reason": "Resolve the citation-evidence sidecar cache mode, register the OpenCitations reference client, and register the Cellosaurus and PharmacoDB source modules.",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },

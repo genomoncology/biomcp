@@ -33,6 +33,7 @@ nav:
       - Drug: user-guide/drug.md
       - Disease: user-guide/disease.md
       - Pathway: user-guide/pathway.md
+      - Cell Line: user-guide/cell-line.md
       - Protein: user-guide/protein.md
       - Adverse Event: user-guide/adverse-event.md
       - PGx: user-guide/pgx.md
@@ -71,6 +72,8 @@ nav:
       - PharmGKB / CPIC: sources/pharmgkb.md
       - Human Protein Atlas: sources/human-protein-atlas.md
       - Monarch Initiative: sources/monarch-initiative.md
+      - Cellosaurus: sources/cellosaurus.md
+      - PharmacoDB: sources/pharmacodb.md
   - How-To:
       - Annotate Variants: how-to/annotate-variants.md
       - Annotate Variant Structure: how-to/annotate-variant-structure.md

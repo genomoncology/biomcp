@@ -1,0 +1,6670 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1736"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TALL-1 [Human adult T-ALL]"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1694"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SIG-M5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0103"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SUP-B15"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2210"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SUP-T11"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1714"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SUP-T1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_S642"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SUP-B15/RI"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0007"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2196"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SKNO-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0104"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "UKE-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2187"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SET-2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0098"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SKM-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0095"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SEM"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_X633"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Sup-T1-CCR5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_M773"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Sup-T1/JI"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_M772"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SUP-T1/Z29"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_U631"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937 GTB"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WV56"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937 RERC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_X000"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937-AG"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8Y0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937-Luc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WV55"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937/CR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0559"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_4Z62"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "UKE-1/TGR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A9NU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Sup-T1 CCR5+ H6"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A9NV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Sup-T1 CCR5+ L23"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A9NW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Sup-T1 CCR5+ M10"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_IM24"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SKM-1/HHT"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_T013"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SEM-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6BN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE U-937-CopGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5U4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE U-937-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2810"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937 cl1-14"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2811"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937 cl1-22"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_8765"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937 DE-4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8E1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "U-937 INPP5D KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_1H35"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Sup-T1 Nef-ER 31"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_8059"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1 D2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_8060"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1 D8"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4BP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_RM06"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1/TPO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte U-937 KO-hCRBN"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte U-937 KO-hIL1RAP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte U-937 KO-hPTPRA"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_6444"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "SC [Human contaminated U-937]"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0006"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_ZJ11"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "LanthaScreen STAT5 TF-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_J294"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1 BCR/ABL"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_UE10"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1 IDH2 p.R140Q"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_3607"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1.CN5a.1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4BL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "TF-1 IDH2 p.R140Q-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0R19"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "B-THP-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_5115"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "A-THP-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0R25"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1(NCI)"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0YT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1-Cs5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8WG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1-EGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C8WH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1-Luc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0YQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1-R"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_WI26"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1/AR"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A1RT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1/E"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_XD94"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1/IL15"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_XD95"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1/IL21"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4MX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte U-937 stable cell line for hHIF1A overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4M0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte U-937 stable cell line for hIL1RAP overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5Q8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE THP-1-Cas9"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6A1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE THP-1-CopGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5SJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE THP-1-FLUC"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E3IS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1-Luc"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4CA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 AP1-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4CB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 CRE-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4CD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 GAS-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E7CQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 IQAD biosensor"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4CC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 ISRE-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1K6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 K5 WT"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B5NS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 NFAT-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_DF52"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 NucLight Red"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_XI47"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 TLR9 mCherry"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_4V22"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1/ara-C"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0R21"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1/DC-SIGN"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0R20"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "B-THP-1/DC-SIGN"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KB46"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "CellSensor NFkB-bla THP-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KS29"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "CellSensor SIE-bla THP-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KS30"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "CellSensor TNFalpha-bla THP-1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1TU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hACSL4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4GH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hAIM2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D6CN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCASP1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1TV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCD22"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D6CP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCD274"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1TW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCD33"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D6CQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCD44"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1TX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCEBPB"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1TY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCGAS"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4FR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCNDP2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4F3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hCYBB"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1TZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hDAPP1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4JG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hDNASE2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1MY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hELF4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hFPR2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4IQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hGPI"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hGPR39"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1MZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hGSDMD"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hGSDME"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hHNRNPA2B1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hIFI27"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hIL6R"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hIRAK4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hITGAM"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4FB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hIVNS1ABP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hLAMTOR2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hLINC01355"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hMCFD2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hMLKL"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4H1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hMT1G"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4J7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hN4BP3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hNCF1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4GC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hNEDD4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hNR1H3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1U9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hNSUN3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hOASL"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hOSM"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hPGAM5"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4HL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hPI4KA"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hPLD3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hPYCARD"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hSERPINB3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hSETDB2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4GV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hSIRPA"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1N7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hSMAD3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hTARM1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hTBK1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hTGFBR1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D6CR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hTHRAP3"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hTLR4"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D6CS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hTNF"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D6CT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hUSP10"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1UJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hVCPIP1"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_KZ70"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "PathHunter THP-1 IkappaB Degradation"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1K5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 K5 P/A"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F1K7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 K5 Y/A"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E2QQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 NF-kappaB-eGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_A4CE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 NF-kB-Luc2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E7B2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 PSMB9-eGFP-His"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_0R26"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1(NCI)/DC-SIGN"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9W7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 AATF KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9W8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ABCB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9W9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ABL1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ACVR1B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ADGRG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 AGER KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 AGTR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 AHR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 AIM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 AKR1B1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ALCAM KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ALKBH1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ALYREF KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ANPEP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ANXA2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ANXA5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 APAF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 APOBEC3B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ASAH1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATF5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATG12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATG14 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATG16L1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATG3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATG5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATG7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ATG9A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BAK1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BCL2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BMPR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BRD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BRD2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BRD9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BTG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BTK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 BTRC KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 C3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CASP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CASP3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CASP4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1A9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CASP9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CAST KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CCL22 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CCL3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CCL4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9WZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CCR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CCRL2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CD36 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CD46 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CD48 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CD58 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CD59 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CD81 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CES1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CHI3L1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CITED2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CLU KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9X9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CMKLR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CMTM6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CNR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CST3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CTSB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2N9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CTSG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CTSS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CUL2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CUL3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CUL4A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CUL4B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CX3CR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CXCL10 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CXCR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 CXXC1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 DCK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 DCP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 DLL1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 DVL3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 EGLN1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 EHMT2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 EIF2AK4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ENG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 EPHB4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ERAP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ETS2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 EXO1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 EZH2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FABP4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D5HB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FCER1G KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FCGR1A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2ND"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FDFT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FGF23 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9XZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FKBP5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FOXO1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FOXO3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FST KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FTL KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 FZD7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GAB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GCLM KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GGT1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GHR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GLB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GPR132 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GSTP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 GZMA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 HMMR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 HNF1B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 HSPG2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ID2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 IL17RB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 IL1B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 IRAK3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ITGA5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ITPR3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 JAG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 JAK2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 JMJD6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 KAT7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 KDM1B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 KDM6B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 KPNA2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LAIR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LAMP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LATS1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LDHA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LGALS9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LGMN KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LGR6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LMNB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LOX KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 LYZ KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MACROH2A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MAD1L1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MAGEA3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MAP2K3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MAP3K3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MAPK7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MARCKS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MBD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MBD3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MBNL1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9YZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MME KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MMP13 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MMP3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MMP8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 MTA3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NAMPT KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NBR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NCR3LG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NFKB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NLRC4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NLRP3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NOTCH3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Z9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NOTCH4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NQO1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NR1H4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 NR3C2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ODC1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 P2RX7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 P2RY12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PDCD1LG2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PDIA3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PGK1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PHF8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PHGDH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PIK3CA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PIK3CD KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PIK3R4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PLA2G4A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PLAU KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PLAUR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PLCB3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PLCG1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E7C2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PLCG2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 POU2F1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D1YJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PRDX6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PRMT7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PSEN1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PSMB9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PTGER4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PTGES2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PTK2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2NZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PTK2B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PTP4A3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PTPN12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PTPN6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 PUS1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RAB5A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RAC2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RBL2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RETN KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RING1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RIPK1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ROCK1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ROCK2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ROR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9ZZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RUNX2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RYBP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 RYR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 S100A8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SATB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SCARB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SDC4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SETD2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SKP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SLC12A5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SLC16A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SLC29A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SLC9A1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SLFN11 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SMARCAL1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SMARCC2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SMARCE1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7ER"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SMPD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0A9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SMURF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SMYD2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SMYD3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SOCS3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SPHK1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SRF KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SRPK1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 STAT4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 STAT5A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2P9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 STIM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 STING1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2PA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 STIP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 STK4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SUV39H1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SUZ12 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E7C4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 SYK KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TAPBP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TBK1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TBP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TCF7L2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TFDP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 THBS1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7ES"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TIMP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TIMP3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TLN1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TNF KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TNFRSF10B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TNFRSF1B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TP73 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2PB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TPM1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TRADD KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TRAF2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7ET"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TRAP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B1AM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TREM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TRMT2A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2PC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TUBA4A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0AZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TWIST1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TWIST2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TXNIP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C7EU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TXNRD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2PD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TYMS KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B7TG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 TYROBP KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 U2AF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 UBA1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 UBE2D2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 UCHL5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2PE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 UCP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ULBP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ULBP3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 UVRAG KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 VAV1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0B9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 VCAN KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0BA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 WDR77 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0BB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 WNT11 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2PF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 XBP1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_D2PG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 XDH KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0BC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 YTHDC2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0BD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 YTHDF1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0BE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 YTHDF3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0BF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 YY1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C0BG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 ZEB2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 ACOD1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 ADA2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 AHR KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 C15orf48 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 CARD8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 CES1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 CLEC10A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 CLEC4A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 EGR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 GLP1R KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 GPNMB KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CY"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 GSDMD KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1CZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 HERC5 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D0"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 IFI35 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 ISG15 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D2"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 MCU KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D3"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 MILR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D4"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 NFE2L2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D5"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 NLRP3 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 NMI KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D7"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 PIGA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 PTPN11 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1D9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 RNASE1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 SIGLEC9 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 SLAMF7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DC"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 SLC37A4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DD"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 SLC39A8 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DE"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 SLC6A6 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DF"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 TCN2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DG"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 TET2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DH"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 TLR1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 TLR2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 TLR4 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 TREM2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 UBA7 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DM"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 USP22 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DN"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 VAMP2 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E1DP"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Ubigene THP-1 ZEB1 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8DQ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience THP-1 B2M KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8DS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience THP-1 CD36 KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8DT"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience THP-1 CIITA KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8DU"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience THP-1 FCGR1A KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E2QA"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 hADAP1_p.P14R_c.41C>G"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E2QB"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 hKDM6A_p.A694T_c.2080G>A"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_XZ65"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 NF-kb-Luc2 reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_C3EW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 Safe Harbor Landing Pad"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E2QR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "THP-1 TLR4-CD14 NFkappaB-eGFP"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_B9Y9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "Abcam THP-1 HLA-B KO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_E8DR"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience THP-1 B2M/CIITA dKO"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6J1"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE CD63 Knockout THP-1 Cell Line"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F5BW"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE IL4I1 Knockout THP-1 Cell Line"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4HZ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 KO-hTRAF2 and hTRAF2"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F0PJ"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "BPS Bioscience THP-1 ISRE-driven luciferase reporter"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4KL"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 hLACC1_p.V254I_c.760G\uff1eA cell line"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F6JI"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "EDITGENE TLR7 and TLR8 Knockout THP-1 Cell Line"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4SV"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 stable cell line for hCHRM3 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4NX"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 stable cell line for hDAPP1 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4PK"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 stable cell line for hNR1H3 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4R9"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 stable cell line for hPDHA1 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4T6"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 stable cell line for hSTING1 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4MS"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 stable cell line for hSYVN1 overexpression"
+          }
+        ]
+      },
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_F4K8"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "HyCyte THP-1 hIRF8_c.1278/insT/c.1279 cell line"
+          }
+        ]
+      }
+    ]
+  }
+}

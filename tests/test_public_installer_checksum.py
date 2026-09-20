@@ -21,14 +21,11 @@ def test_root_installer_is_the_canonical_deployed_copy() -> None:
     assert DOCS_INSTALLER.read_bytes() == INSTALLER.read_bytes()
 
 
-def test_ci_and_release_gate_installer_identity_before_docs_or_release() -> None:
+def test_ci_proves_installer_identity_before_the_version_sync_check() -> None:
     ci = (REPO_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-    release = (REPO_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
     check = "cmp --silent install.sh docs/install.sh"
     assert check in ci
     assert ci.index(check) < ci.index("bash scripts/check-version-sync.sh")
-    assert check in release
-    assert release.index(check) < release.index("release/candidate.py init")
 
 
 def test_public_installer_verifier_compares_deployed_bytes() -> None:

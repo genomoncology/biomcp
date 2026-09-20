@@ -2294,6 +2294,474 @@
         "minimization_or_redaction": "No fields removed and no values redacted. JSON whitespace normalized after capture. The document is a field schema and carries no study data and no personal data.",
         "provider_origin_statement": "The provider's own published field schema, recorded from the public ClinicalTrials.gov v2 API on 2026-09-03. It documents 278 fields with their nesting and types. It attests a field name at its path, which a sampled study record cannot: a sample proves a key is present and never proves a key is absent."
       }
+    },
+    {
+      "path": "cellosaurus/search_idsy_molm13_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22MOLM13%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "8e9c8cb7854e48e8d0da28740f57bc668231e0930d0f85f3b0664f669fb2cfec",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_idsy_molm_13_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22MOLM-13%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "a62584e9dc0a451273ccdd7c1b5a6a6f7c387e4709a5ac6c4035af64e6edd873",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_idsy_mv4_11_semicolon_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22MV4%3B11%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "edc976db17aa04dd007cab4a86d405cd5e9bba6f891c5b3ae1aeeb2d48762c77",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present. The ticket's 2026-09-16 survey recorded three rows for this query. On 2026-09-17 Cellosaurus returned one row, CVCL_0064. The recorded body is what the provider sent."
+      }
+    },
+    {
+      "path": "cellosaurus/search_idsy_kg1_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22KG1%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "820f745be6426b4a12c38885a8c4510a246b496f6ae763e6f6d061c88e51d30f",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_idsy_kg_1_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22KG-1%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "5df670fdf34abcc2a3c42594fc992cf8ecf632a34c8086bdaac1e192ebde9f47",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_idsy_nb4_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=idsy%3A%22NB4%22&format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca&rows=1000",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "18bc4c18f1cfaf0aa7dbda3674a831bcb855626a8b1ce6e865c640bd29100233",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present. 25 rows. SJNB-4 (CVCL_8821) sits at position 17 and NB4 (CVCL_0005) at position 22. The ticket's 2026-09-16 survey put them at 16 and 21. The recorded body is what the provider sent."
+      }
+    },
+    {
+      "path": "cellosaurus/search_dr_ach_000362_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=dr%3A%22ACH-000362%22&format=json&fields=ac%2Cid&rows=10",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "5e13955799b50da51e3522d00025adea9303f6793b318ed2ea10661ac20ff77b",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_dr_sidm00437_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=dr%3A%22SIDM00437%22&format=json&fields=ac%2Cid&rows=10",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "5e13955799b50da51e3522d00025adea9303f6793b318ed2ea10661ac20ff77b",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_dr_chembl3706573_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=dr%3A%22CHEMBL3706573%22&format=json&fields=ac%2Cid&rows=10",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "5e13955799b50da51e3522d00025adea9303f6793b318ed2ea10661ac20ff77b",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_dr_molm13_950_2019_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=dr%3A%22MOLM13_950_2019%22&format=json&fields=ac%2Cid&rows=10",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "5e13955799b50da51e3522d00025adea9303f6793b318ed2ea10661ac20ff77b",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/get_cvcl_2119_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_2119?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "21f9560a9d94ea9346dc4e1258b7b6cf61228aa2a16761c8a9bccfb6e6d72ba9",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/get_cvcl_0064_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_0064?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "7763e4192d58c82d8de46eadd0409d8c7d0645d3724dc7212bbf5617285f012a",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/get_cvcl_1844_var_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_1844?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cvar",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "0c7126fee37146b353c92c8bc6219a5ae935c2b614fbb140104faee62b8cf4fa",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/get_cvcl_0007_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_0007?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "c0721f21084bb99530731f62160a3d86ac239cb30b55fd046b19bcc953b37dae",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present. Recorded with the card projection plus dr and without var, so this record is the empty-variants case. U-937 carries no GDSC and no Cosmic-CLP cross-reference."
+      }
+    },
+    {
+      "path": "cellosaurus/get_cvcl_0005_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/cell-line/CVCL_0005?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag%2Cdr",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "924eacf6cf358a4b9f46a2cd45451f5f5e97965e831d6bbbf12b2c49cb81398f",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present. Recorded with the card projection plus dr and without var."
+      }
+    },
+    {
+      "path": "cellosaurus/release_info_20260917.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/release-info?format=json",
+        "captured_at": "2026-09-17T18:40:00Z",
+        "sha256": "91b0cf0539b7e22f3bad72480f5e89ce2513cae8eaafcc4ebc6875bba02a148c",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-17, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. Cellosaurus release 56.0 (2026-06-25). The projection is the one the command sends; within that projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/cell_line_cvcl_2119_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/cell_line.json?cellosaurus_id=CVCL_2119",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "4644e6f654efe411382e0151030cba545a6adf7094afa3d022e27cfa4d4944d8",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/cell_line_cvcl_0004_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/cell_line.json?cellosaurus_id=CVCL_0004",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "6ed4e97e57eb1bdc59db13f92d007f7b7e6f5cea90c4f6a0f9d78487f1185409",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/cell_line_none_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/cell_line.json?cellosaurus_id=CVCL_UD72",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "71272fe8ce740e7eb02600ffb850e1c418c29875f69bd64907dedb28cef20576",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/assay_count_chembl3706573_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/assay.json?cell_chembl_id=CHEMBL3706573&limit=1",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "842266634bf4a11c02b3e8872f6165798f0ed6bc36efb753c5c374e395498dc1",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "chembl/status_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/status.json",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "29dc1fb09487a8d2962253a4d0d92c4ded0aa0d831effab42445d0c3483d4740",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. ChEMBL publishes bioactivity facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP ChemblClient production request path against the public ChEMBL REST API on 2026-09-18. The API is unauthenticated and read-only. ChEMBL release ChEMBL_37 (2026-05-01). Every key the provider returned is present."
+      }
+    },
+  {
+      "path": "hpa/cell_rna_leukemia_flt3_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Human Protein Atlas",
+        "request": "https://www.proteinatlas.org/api/search_download.php?search=ENSG00000122025&format=json&columns=g%2Ceg%2Ccell_RNA_leukemia&compress=no",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "54e1c69e0ca672cd0bc3024c40e28a03581459f229aed8b3cd7f0db0e8ed3eb1",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. The Human Protein Atlas publishes cell line RNA levels and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP HpaClient production request path against the public Human Protein Atlas search download API on 2026-09-18. The API is unauthenticated and read-only and publishes no rate limit. The cell line RNA file behind the response is dated 2025-11-05. Every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch1_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22697%22+OR+%22ALL-SIL%22+OR+%22AML-193%22+OR+%22BDCM%22+OR+%22BV-173%22+OR+%22CCRF-SB%22+OR+%22CMK%22+OR+%22CML-T1%22+OR+%22DND-41%22+OR+%22EM-2%22+OR+%22EoL-1%22+OR+%22F-36P%22+OR+%22GDM-1%22+OR+%22HAP1%22+OR+%22HEL%22+OR+%22HEL+92.1.7%22+OR+%22HL-60%22+OR+%22HMC-1%22+OR+%22HNT-34%22+OR+%22HPB-ALL%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "75cdd2ba8bd663d2c47de174ba2282e8155e14b7cf1b3d215dfec62b3acbc7af",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch2_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22JK-1%22+OR+%22JM-1%22+OR+%22JURKAT%22+OR+%22Jurkat+E6.1%22+OR+%22JURL-MK1%22+OR+%22JVM-3%22+OR+%22K-562%22+OR+%22Kasumi-1%22+OR+%22Kasumi-2%22+OR+%22Kasumi-6%22+OR+%22KCL-22%22+OR+%22KE-37%22+OR+%22KG-1%22+OR+%22KO52%22+OR+%22KOPN-8%22+OR+%22Ku812%22+OR+%22KYO-1%22+OR+%22LAMA-84%22+OR+%22Loucy%22+OR+%22M-07e%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "2f3666fc5118f40190d5fd75cadf00118e400949e388d6e7cda09960b4375234",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch3_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22ME-1+%5BHuman+leukemia%5D%22+OR+%22MEC-1%22+OR+%22MEG-01%22+OR+%22MHH-CALL-2%22+OR+%22MHH-CALL-3%22+OR+%22MHH-CALL-4%22+OR+%22ML-2%22+OR+%22MOLM-13%22+OR+%22MOLM-16%22+OR+%22MOLM-6%22+OR+%22MOLT-13%22+OR+%22MOLT-16%22+OR+%22MOLT-3%22+OR+%22MOLT-4%22+OR+%22Mono-Mac-1%22+OR+%22Mono-Mac-6%22+OR+%22MUTZ-3%22+OR+%22MUTZ-5%22+OR+%22MV4-11%22+OR+%22NALM-1%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "f04f99e09e5be3662a39ea07626ea9d2d844bcd83b564a06f322802588acf9db",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch4_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22NALM-19%22+OR+%22NALM-6%22+OR+%22NB4%22+OR+%22NCO2%22+OR+%22NOMO-1%22+OR+%22OCI-AML-2%22+OR+%22OCI-AML-3%22+OR+%22OCI-AML-5%22+OR+%22OCI-M1%22+OR+%22OCI-M2%22+OR+%22P12-Ichikawa%22+OR+%22P31%2FFUJ%22+OR+%22Peer%22+OR+%22PF-382%22+OR+%22PL-21%22+OR+%22PLB-985%22+OR+%22RCH-ACV%22+OR+%22REH%22+OR+%22RPMI-8402%22+OR+%22RS4%3B11%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "9d1052000de24d92ca87b6dd02d2ea46f480203a7fb8272f2b5e5f456b66de61",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "cellosaurus/search_id_leukemia_batch5_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Cellosaurus",
+        "request": "https://api.cellosaurus.org/search/cell-line?q=id%3A%28%22SEM%22+OR+%22SET-2%22+OR+%22SIG-M5%22+OR+%22SKM-1%22+OR+%22SKNO-1%22+OR+%22SUP-B15%22+OR+%22SUP-T1%22+OR+%22SUP-T11%22+OR+%22TALL-1+%5BHuman+adult+T-ALL%5D%22+OR+%22TF-1%22+OR+%22THP-1%22+OR+%22U-937%22+OR+%22UKE-1%22%29+AND+ox%3A9606&format=json&fields=ac%2Cid&rows=1000",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "456efcd6db83cd2eb371d4adf6473837acaf632428bb24c207ec2df7827deafa",
+        "minimization_or_redaction": "No field was removed and no value was redacted. The bytes are the provider response for the projection named in the request. Cellosaurus publishes cell line facts and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP CellosaurusClient production request path against the public Cellosaurus REST API on 2026-09-18, paced at 334 ms. The API is unauthenticated, read-only and publishes no rate limit. The first batch window filled at 1000 rows, which is the provider's own answer for that query. Within the projection every key the provider returned is present."
+      }
+    },
+    {
+      "path": "mygene/get_flt3_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22FLT3%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "4a02539067d9b4a5e77bed89fafde70286532a78ef42b49c640a4fc7f3e0b2ae",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. MyGene.info publishes gene annotation and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP MyGeneClient production request path against the public MyGene.info API on 2026-09-18. The API is unauthenticated and read-only. The field list is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/cell_line_uid_molm13_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "50664dfff78b3379d11afa6adc8d615b1067cc91d9f84ee298b2644ce0b93b39",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellUID \"CVCL_2119\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/cell_line_name_hl60tb_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "fe4321db2f797cdc304a0323f693d6dcdf1055b9f7a4466a55424b49a16f51be",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellName \"HL-60(TB)\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/cell_line_name_hl60_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "e81934f762718bdb421f2d0b39f0276e1077881f28a3417e1727cfd67557f349",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellName \"HL-60\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/cell_line_name_missing_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "4612b04c6f3a3a463e8f22330948ae8adf577e46e8165fbb5cfb766d369ca5ed",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `cell_line` query with cellName \"NOT-A-CELL-LINE\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/compound_venetoclax_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "af6f80b9a09da3185c3eb20a1aea3e90c3a3508708bf942bc779225c224974d0",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `compound` query with compoundName \"venetoclax\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/compound_missing_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "00c1da4a813007566aa9fe5dac893024838b6ead8a47599b51fb7eb8e99646f8",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `compound` query with compoundName \"not-a-compound\". The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiment_counts_cell_line_1248_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "63b789d66029d4cf33358668f68245303620f5ddfcf8e3f0b85bdb5c0a80058b",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` counts projection, which asks for the experiment id and the dataset name only, with cellLineId 1248 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiment_counts_compound_53572_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "0e9329e0c5303f7c888ac2635215e5244c4de1dd362f05fc48bb59dfef9eb0f6",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` counts projection, which asks for the experiment id and the dataset name only, with compoundId 53572 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiments_cell_line_1248_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "452441f1cf24b6e890f89034908a4cb9c4bd0d2f9248b5e226efb9e5da4fc50e",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` row projection with cellLineId 1248 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiments_compound_53572_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "9210cbd840176882adf2b366fab4352058db00f99d1699ef87fde3df491c8c95",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` row projection with compoundId 53572 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
+    },
+    {
+      "path": "pharmacodb/experiments_pair_53572_1248_20260918.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PharmacoDB",
+        "request": "https://pharmacodb.ca/graphql",
+        "captured_at": "2026-09-18T00:00:00Z",
+        "sha256": "6e64724d0dca7e2601caf88ba2b8dbb0fa34370f953603df1e30766b73595126",
+        "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
+        "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` row projection with cellLineId 1248 and compoundId 53572 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
+      }
     }
   ],
   "fixture_key_contract": {

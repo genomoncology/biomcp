@@ -48,6 +48,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
@@ -97,6 +98,7 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
@@ -184,6 +186,7 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown(&drug, &["targets".to_string()]).expect("markdown");
@@ -231,6 +234,7 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown(&drug, &["targets".to_string()]).expect("markdown");
@@ -279,6 +283,7 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown(&drug, &["targets".to_string()]).expect("markdown");
@@ -373,6 +378,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
         }]),
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown_with_region(&drug, &["all".to_string()], DrugRegion::All, false)
@@ -481,6 +487,7 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
             responsible_nra: None,
         }]),
         civic: None,
+        cell_lines: None,
     };
 
     let markdown =
@@ -672,6 +679,7 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         ema_shortage: Some(Vec::new()),
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown_with_region(&drug, &["all".to_string()], DrugRegion::Eu, false)
@@ -742,6 +750,7 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         ema_shortage: None,
         who_prequalification: None,
         civic: None,
+        cell_lines: None,
     };
 
     let markdown = drug_markdown_with_region(&drug, &["safety".to_string()], DrugRegion::Eu, false)

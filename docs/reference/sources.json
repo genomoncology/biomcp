@@ -746,17 +746,18 @@
     "integration_mode": "direct_api",
     "via": null,
     "bioMcp_surfaces": [
-      "get gene <symbol> hpa"
+      "get gene <symbol> hpa",
+      "gene cell-lines <symbol> --group <group>"
     ],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public XML and web resources",
-    "license_summary": "CC BY-SA 4.0 for copyrightable parts of the database",
-    "redistribution_summary": "reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions",
+    "license_summary": "CC BY 4.0 for copyrightable parts of the database",
+    "redistribution_summary": "reuse is allowed with attribution; third-party components may impose extra conditions",
     "terms_url": "https://www.proteinatlas.org/about/licence",
     "key_url": null,
-    "reviewed_on": "2026-03-20",
-    "notes": "The licence page also requires clear citation for images and specific gene/data pages."
+    "reviewed_on": "2026-09-18",
+    "notes": "The terms page reads \"The Human Protein Atlas is licensed under the Creative Commons Attribution 4.0 International License for all copyrightable parts of our database.\" The earlier CC BY-SA 4.0 reading was one of the external sources listed further down that page. The page also requires clear citation for images and specific gene/data pages."
   },
   {
     "id": "interpro",
@@ -776,6 +777,28 @@
     "key_url": null,
     "reviewed_on": "2026-03-20",
     "notes": "InterPro aggregates signatures from multiple member databases; downstream interpretation should keep that provenance."
+  },
+  {
+    "id": "cellosaurus",
+    "name": "Cellosaurus",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "search cell-line <name>",
+      "get cell-line <id>",
+      "get cell-line <id> xrefs",
+      "get cell-line <id> variants"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public API, no key and no published rate limit",
+    "license_summary": "CC BY 4.0",
+    "redistribution_summary": "reuse is allowed with attribution and the requested citation on reuse",
+    "terms_url": "https://www.cellosaurus.org/description.html",
+    "key_url": null,
+    "reviewed_on": "2026-09-16",
+    "notes": "Cellosaurus is the identity source for cell lines and the RRID authority. Every BioMCP cell line output names the release, CC BY 4.0, and the citation Bairoch A. J. Biomol. Tech. 29:25-38 (2018)."
   },
   {
     "id": "kegg",
@@ -1521,5 +1544,28 @@
     "key_url": null,
     "reviewed_on": "2026-03-20",
     "notes": "The current license statement is still hosted on the WikiPathways classic site."
+  },
+  {
+    "id": "pharmacodb",
+    "name": "PharmacoDB",
+    "tier": 3,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "get cell-line <accession> drug_response",
+      "get drug <name> cell_lines",
+      "cell-line drug-response <accession> --dataset <name>",
+      "drug cell-lines <name> --cell-line <id>",
+      "drug cell-lines <name> --dataset <name>"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public GraphQL endpoint, no key",
+    "license_summary": "PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider",
+    "redistribution_summary": "treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established",
+    "terms_url": null,
+    "key_url": null,
+    "reviewed_on": "2026-09-18",
+    "notes": "Verified 2026-09-18: pharmacodb.ca serves the same 2,258-byte single-page shell on every path (/about, /documentation, /terms, /api) and its application bundle contains no licence string, so the provider publishes no licence or terms page. The code licence is GPL-3.0 at https://github.com/bhklab/PharmacoDB/blob/master/LICENSE. The CC BY-NC 4.0 reading traces to the describing paper, Feizi N, et al. PharmacoDB 2.0. Nucleic Acids Research 2022;50(D1):D1348-D1357, doi:10.1093/nar/gkab1084, which states \"This is an Open Access article distributed under the terms of the Creative Commons Attribution-NonCommercial License\"; that covers the article, not the database. PharmacoDB publishes no version or release date, so every output carries the retrieval time."
   }
 ]

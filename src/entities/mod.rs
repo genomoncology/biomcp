@@ -3,6 +3,7 @@
 pub(crate) mod adverse_event;
 pub(crate) mod article;
 pub(crate) mod author;
+pub(crate) mod cell_line;
 pub(crate) mod diagnostic;
 pub(crate) mod discover;
 pub(crate) mod disease;
@@ -10,6 +11,7 @@ pub(crate) mod drug;
 pub(crate) mod gene;
 pub(crate) mod pathway;
 pub(crate) mod pgx;
+pub(crate) mod pharmacodb;
 pub(crate) mod protein;
 pub(crate) mod section_outcome;
 pub(crate) mod source_state_registry;

@@ -103,3 +103,29 @@ pub fn gene_search_markdown_with_footer(
     })?;
     Ok(with_pagination_footer(body, pagination_footer))
 }
+
+/// The HPA cell line rows for one gene and one cancer group.
+pub fn gene_cell_lines_markdown(
+    page: &crate::entities::gene::cell_lines::GeneCellLines,
+) -> Result<String, BioMcpError> {
+    let tmpl = env()?.get_template("gene_cell_lines.md.j2")?;
+    // The next command opens the first row that carries an accession.
+    let next_command = page
+        .rows
+        .iter()
+        .find_map(|row| row.accession.as_ref())
+        .map(|accession| format!("biomcp get cell-line {accession}"));
+    let body = tmpl.render(context! {
+        gene => &page.gene,
+        group => &page.group,
+        ensembl_id => &page.ensembl_id,
+        total => page.total,
+        rows => &page.rows,
+        notes => &page.notes,
+        next_command => next_command,
+        attribution => crate::entities::gene::cell_lines::gene_cell_lines_attribution(
+            &page.data_as_of,
+        ),
+    })?;
+    Ok(body)
+}

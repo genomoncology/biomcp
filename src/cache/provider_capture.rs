@@ -747,7 +747,7 @@ impl CaptureDirectory {
                 self.file.as_raw_fd(),
                 name.as_ptr(),
                 flags | libc::O_CLOEXEC | libc::O_NOFOLLOW,
-                mode,
+                mode as libc::c_uint,
             )
         };
         if fd < 0 {

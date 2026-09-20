@@ -55,6 +55,7 @@ fn health_inventory_includes_all_expected_sources() {
             "QuickGO",
             "STRING",
             "Reactome",
+            "Cellosaurus",
             "KEGG",
             "WikiPathways",
             "g:Profiler",
@@ -67,6 +68,7 @@ fn health_inventory_includes_all_expected_sources() {
             "UMLS",
             "MedlinePlus",
             "cBioPortal",
+            "PharmacoDB",
         ]
     );
 }
@@ -183,9 +185,12 @@ fn markdown_shows_new_affects_mappings() {
         affects_for_api("KEGG"),
         Some("pathway search and detail sections")
     );
+    // Ticket 1213 acceptance 6: the HPA row names the cell line surface.
     assert_eq!(
         affects_for_api("HPA"),
-        Some("gene protein tissue expression and localization section")
+        Some(
+            "gene protein tissue expression and localization section, and gene cell-lines RNA expression"
+        )
     );
     assert_eq!(
         affects_for_api("ComplexPortal"),

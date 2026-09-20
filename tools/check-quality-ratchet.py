@@ -1191,7 +1191,9 @@ def check_runnable_helpers_are_discoverable_in_list_pages(
 def check_json_next_commands(
     root_dir: Path, exceptions: list[dict[str, object]]
 ) -> dict[str, object]:
-    shared = (root_dir / "src" / "cli" / "shared.rs").read_text(encoding="utf-8")
+    payloads = (
+        root_dir / "src" / "cli" / "shared" / "search_payloads.rs"
+    ).read_text(encoding="utf-8")
     render_json = (root_dir / "src" / "render" / "json.rs").read_text(encoding="utf-8")
     findings: list[dict[str, object]] = []
     required_source_markers = [
@@ -1200,10 +1202,10 @@ def check_json_next_commands(
         "search_json_with_meta",
     ]
     for marker in required_source_markers:
-        if marker not in shared:
+        if marker not in payloads:
             findings.append(
                 {
-                    "source": "src/cli/shared.rs",
+                    "source": "src/cli/shared/search_payloads.rs",
                     "marker": marker,
                     "message": "search JSON metadata seam is missing",
                 }
@@ -1225,7 +1227,10 @@ def check_json_next_commands(
     return {
         "name": "json_entity_surfaces_include_next_commands_or_exception",
         "status": "fail" if findings else "pass",
-        "checked_surfaces": ["src/cli/shared.rs", "src/render/json.rs"],
+        "checked_surfaces": [
+            "src/cli/shared/search_payloads.rs",
+            "src/render/json.rs",
+        ],
         "applied_exceptions": [
             entry
             for entry in exceptions
@@ -2338,6 +2343,7 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
     entity_paths = {
         "adverse_event": "src/entities/adverse_event.rs",
         "article": "src/entities/article/mod.rs",
+        "cell_line": "src/entities/cell_line.rs",
         "diagnostic": "src/entities/diagnostic/mod.rs",
         "disease": "src/entities/disease/mod.rs",
         "drug": "src/entities/drug/mod.rs",

@@ -408,6 +408,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "Cellosaurus",
+        affects: Some("cell-line search and detail"),
+        probe: ProbeKind::Get {
+            url: "https://api.cellosaurus.org/release-info?format=json",
+        },
+    },
+    SourceDescriptor {
         api: "KEGG",
         affects: Some("pathway search and detail sections"),
         probe: ProbeKind::Get {
@@ -439,14 +446,16 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
     },
     SourceDescriptor {
         api: "ChEMBL",
-        affects: Some("drug targets and indications sections"),
+        affects: Some("drug targets and indications sections, and the cell line ChEMBL section"),
         probe: ProbeKind::Get {
             url: "https://www.ebi.ac.uk/chembl/api/data/molecule/CHEMBL25.json",
         },
     },
     SourceDescriptor {
         api: "HPA",
-        affects: Some("gene protein tissue expression and localization section"),
+        affects: Some(
+            "gene protein tissue expression and localization section, and gene cell-lines RNA expression",
+        ),
         probe: ProbeKind::Get {
             url: "https://www.proteinatlas.org/ENSG00000157764.xml",
         },
@@ -493,6 +502,16 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         affects: Some("cohort frequency section"),
         probe: ProbeKind::Get {
             url: "https://www.cbioportal.org/api/studies?projection=SUMMARY&pageSize=1",
+        },
+    },
+    SourceDescriptor {
+        api: "PharmacoDB",
+        affects: Some(
+            "cell line drug response section and drug cell lines section, and both PharmacoDB row helpers",
+        ),
+        probe: ProbeKind::PostJson {
+            url: "https://pharmacodb.ca/graphql",
+            payload: r#"{"query":"{ datasets { id } }"}"#,
         },
     },
 ];

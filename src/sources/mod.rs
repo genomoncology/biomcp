@@ -259,6 +259,7 @@ pub(crate) mod cancerhotspots;
 pub(crate) mod cbioportal;
 pub(crate) mod cbioportal_download;
 pub(crate) mod cbioportal_study;
+pub(crate) mod cellosaurus;
 pub(crate) mod chembl;
 pub(crate) mod civic;
 pub(crate) mod clingen;
@@ -312,6 +313,7 @@ mod ordinary_url_policy;
 pub(crate) use ordinary_url_policy::{
     ordinary_middleware_client_for_base, provider_policy_client_builder,
 };
+pub(crate) mod pharmacodb;
 pub(crate) mod pharmgkb;
 pub(crate) mod pmc_article;
 pub(crate) mod pmc_oa;
@@ -565,7 +567,7 @@ impl RequestPlan {
     }
 }
 
-fn join_base_path(base: &str, path: &str) -> String {
+pub(crate) fn join_base_path(base: &str, path: &str) -> String {
     format!(
         "{}/{}",
         base.trim_end_matches('/'),

@@ -635,6 +635,23 @@ pub(super) fn search_next_commands_pathway(results: &[PathwaySearchResult]) -> V
     dedupe_markdown_commands(out)
 }
 
+pub(super) fn search_next_commands_cell_line(
+    results: &[crate::entities::cell_line::CellLineSearchResult],
+) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Some(accession) = results
+        .iter()
+        .find(|result| result.match_kind == "exact")
+        .or_else(|| results.first())
+        .map(|result| quote_arg(&result.accession))
+        .filter(|accession| !accession.is_empty())
+    {
+        out.push(format!("biomcp get cell-line {accession}"));
+    }
+    out.push("biomcp list cell-line".to_string());
+    dedupe_markdown_commands(out)
+}
+
 pub(super) fn search_next_commands_faers(results: &[AdverseEventSearchResult]) -> Vec<String> {
     if results.is_empty() {
         return Vec::new();

@@ -383,14 +383,14 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         previous_release_block, "### New features"
     )
 
-    assert changelog.startswith("# Changelog\n\n## 0.9.0 — 2026-09-16\n")
+    assert changelog.startswith("# Changelog\n\n## Unreleased\n")
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
     assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
     assert "## 0.8.20 — 2026-03-30" in changelog
     assert "## 0.8.19 — 2026-03-26" in changelog
     assert "## 0.8.18 — 2026-03-25" in changelog
-    assert "## Unreleased" not in changelog
+    assert changelog.index("## Unreleased") < changelog.index(current_release_heading)
 
     assert "article date-range filtering" in previous_release_block
     assert "Expanded trial search with drug alias union" in previous_release_block
@@ -817,19 +817,27 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
     assert "MCP chart responses can now return SVG inline" in v0_8_17_block
 
 
-def test_release_overview_describes_committed_metadata_and_protected_promotion() -> None:
+def test_release_overview_describes_committed_metadata_and_tag_publication() -> None:
     overview = _read("architecture/technical/overview.md")
 
-    assert "**Development candidate:** Rust `1.0.0-dev.1`; Python `1.0.0.dev1`" in overview
+    assert (
+        "**Development candidate:** Rust `1.0.0-dev.1`; Python `1.0.0.dev1`" in overview
+    )
     assert "validates that exact mapping and its lock files" in overview
     assert "both `server.json` version fields" in overview
     assert "`CITATION.cff`" in overview
     assert "v0.8.25 is the latest published release." in overview
     assert "public metadata remains at `0.8.25`" in overview
-    assert "Package versions are committed metadata, not values stamped from tags." in overview
-    assert "separate `stage` and `promote` modes" in overview
-    assert "only then advances mutable" in overview
-    assert "Neither implementing the workflow nor staging a candidate publishes" in overview
+    assert (
+        "Package versions are committed metadata, not values stamped from tags."
+        in overview
+    )
+    assert "five platform archives" in overview
+    assert "protected `pypi` environment" in overview
+    assert "the selected tag publishes directly" in overview
+    assert (
+        "candidate tooling under `release/` is not wired into this workflow" in overview
+    )
 
 
 def test_gene_guide_includes_new_sections_and_positional_search() -> None:

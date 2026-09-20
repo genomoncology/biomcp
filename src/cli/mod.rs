@@ -10,6 +10,7 @@ mod author;
 #[allow(dead_code)]
 mod benchmark;
 pub mod cache;
+pub(crate) mod cell_line;
 pub mod chart;
 mod commands;
 pub mod debug_plan;
@@ -85,9 +86,9 @@ use self::shared::search_meta_with_suggestions;
 use self::shared::{
     PaginationMeta, SearchJsonMeta, empty_sections, extract_json_from_sections,
     normalize_cli_query, normalize_cli_tokens, normalize_next_commands, pagination_footer_offset,
-    related_article_filters, resolve_query_input, search_json_with_meta,
-    search_json_with_meta_and_suggestions, search_meta, search_meta_with_section_sources,
-    search_meta_with_workflow, try_alias_fallback_outcome,
+    related_article_filters, resolve_query_input, search_json_with_data_as_of,
+    search_json_with_meta, search_json_with_meta_and_suggestions, search_meta,
+    search_meta_with_section_sources, search_meta_with_workflow, try_alias_fallback_outcome,
 };
 
 #[cfg(test)]

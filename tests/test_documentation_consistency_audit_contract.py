@@ -63,6 +63,15 @@ ENTITY_GUIDE_HEADINGS = {
         "## Practical tips",
         "## Related guides",
     ],
+    "docs/user-guide/cell-line.md": [
+        "## Search cell lines",
+        "## Get cell line records",
+        "## Request cell line sections",
+        "## Helper commands",
+        "## JSON mode",
+        "## Practical tips",
+        "## Related guides",
+    ],
     "docs/user-guide/pathway.md": [
         "## Search pathways",
         "## Get pathway records",

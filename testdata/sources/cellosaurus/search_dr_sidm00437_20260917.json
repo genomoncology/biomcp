@@ -1,0 +1,20 @@
+{
+  "Cellosaurus": {
+    "cell-line-list": [
+      {
+        "accession-list": [
+          {
+            "type": "primary",
+            "value": "CVCL_2119"
+          }
+        ],
+        "name-list": [
+          {
+            "type": "identifier",
+            "value": "MOLM-13"
+          }
+        ]
+      }
+    ]
+  }
+}

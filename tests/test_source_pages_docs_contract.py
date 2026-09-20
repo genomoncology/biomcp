@@ -290,11 +290,13 @@ SOURCE_PAGE_SPECS = {
         "exposes": [
             "get drug <name> targets",
             "get drug <name> indications",
+            "get cell-line <accession> chembl",
         ],
         "example_commands": [
             "biomcp get drug pembrolizumab targets",
             "biomcp get drug pembrolizumab indications",
             "biomcp get drug dabrafenib targets",
+            "biomcp get cell-line CVCL_2119 chembl",
         ],
     },
     "opentargets.md": {
@@ -585,6 +587,30 @@ SOURCE_PAGE_SPECS = {
             "biomcp discover \"Marfan syndrome\"",
         ],
     },
+    "cellosaurus.md": {
+        "title": "Cellosaurus MCP Tool for Cell Line Lookup | BioMCP",
+        "description": "Use BioMCP to turn any common spelling of a cell line into its Cellosaurus accession, then read species, disease, cross-references, and curated variants.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://www.cellosaurus.org/",
+        "required_intro_phrases": [
+            "Cellosaurus is the identity source for cell lines",
+            "the base card stays small",
+            "3 requests / second",
+        ],
+        "exposes": [
+            "search cell-line <name>",
+            "get cell-line <accession>",
+            "get cell-line <accession> xrefs",
+            "get cell-line <accession> variants",
+        ],
+        "example_commands": [
+            "biomcp search cell-line MOLM13",
+            'biomcp search cell-line "MV4;11"',
+            "biomcp get cell-line CVCL_2119",
+            "biomcp get cell-line CVCL_2119 xrefs",
+            "biomcp get cell-line CVCL_1844 variants",
+        ],
+    },
     "kegg.md": {
         "title": "KEGG MCP Tool for Pathway Search | BioMCP",
         "description": "Use BioMCP to search KEGG pathways, fetch KEGG pathway summaries, and expand to pathway genes without learning KEGG's flat-file API.",
@@ -650,11 +676,13 @@ SOURCE_PAGE_SPECS = {
         ],
         "exposes": [
             "get gene <symbol> hpa",
+            "gene cell-lines <symbol> --group <group>",
         ],
         "example_commands": [
             "biomcp get gene BRAF hpa",
             "biomcp get gene EGFR hpa",
             "biomcp get gene TP53 hpa",
+            "biomcp gene cell-lines FLT3 --group leukemia",
         ],
     },
     "monarch-initiative.md": {
@@ -734,6 +762,32 @@ SOURCE_PAGE_SPECS = {
             "biomcp --json variant articles --input variants.json --verify-identity",
         ],
     },
+    "pharmacodb.md": {
+        "title": "PharmacoDB MCP Tool for Cell Line Drug Response | BioMCP",
+        "description": "Use BioMCP to read published PharmacoDB drug sensitivity experiments for a cell line or a compound, scoped by dataset, without writing GraphQL.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://pharmacodb.ca/",
+        "required_intro_phrases": [
+            "one GraphQL endpoint",
+            "asked for by name and never load under `all`",
+            "19.4 MB of body",
+            "There are no units",
+        ],
+        "exposes": [
+            "get cell-line <accession> drug_response",
+            "get drug <name> cell_lines",
+            "cell-line drug-response <accession> --dataset <name>",
+            "drug cell-lines <name> --cell-line <accession>",
+            "drug cell-lines <name> --dataset <name>",
+        ],
+        "example_commands": [
+            "biomcp get cell-line CVCL_2119 drug_response",
+            "biomcp cell-line drug-response CVCL_2119 --dataset GDSC1",
+            "biomcp get drug venetoclax cell_lines",
+            "biomcp drug cell-lines venetoclax --cell-line CVCL_2119",
+            "biomcp drug cell-lines venetoclax --dataset NCI60",
+        ],
+    },
 }
 
 EXPECTED_SOURCE_FILES = [OVERVIEW_FILE, *SOURCE_PAGE_SPECS, "gencc.md"]
@@ -771,6 +825,8 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - PharmGKB / CPIC: sources/pharmgkb.md
       - Human Protein Atlas: sources/human-protein-atlas.md
       - Monarch Initiative: sources/monarch-initiative.md
+      - Cellosaurus: sources/cellosaurus.md
+      - PharmacoDB: sources/pharmacodb.md
 """
 
 

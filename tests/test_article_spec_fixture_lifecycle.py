@@ -228,7 +228,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == (3 if mode == "spec-contracts" else 28)
+    assert len(invocations) == (3 if mode == "spec-contracts" else 29)
     article_args, article_base, article_origin = invocations[0]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args
@@ -788,7 +788,7 @@ def test_static_pages_keep_their_single_serial_invocation(tmp_path: Path) -> Non
     assert "spec/surface/docker-image.md spec/surface/homebrew.md" in invocations[0]
 
 
-def test_failing_parallel_pages_are_aggregated_and_stop_new_batches(
+def test_failing_parallel_pages_are_named_without_stopping_later_batches(
     tmp_path: Path,
 ) -> None:
     workspace, env = _runner_workspace(tmp_path)
@@ -810,9 +810,12 @@ def test_failing_parallel_pages_are_aggregated_and_stop_new_batches(
     assert result.returncode != 0
     for failed_page in failed_pages:
         assert f"spec page failed: {failed_page} (exit 7)" in result.stderr
+        assert f"page {failed_page} (exit 7)" in result.stderr
+        assert f"=== spec page: {failed_page} ===" in result.stdout
         assert f"mustmatch-output:test {failed_page}" in result.stdout
+    # A failing batch must not hide the pages behind it.
     invocations = (workspace / "mustmatch-invocation-log").read_text()
-    assert "spec/entity/pgx.md" not in invocations
+    assert "spec/entity/pgx.md" in invocations
     assert result.stdout.index(failed_pages[0]) < result.stdout.index(failed_pages[1])
 
 

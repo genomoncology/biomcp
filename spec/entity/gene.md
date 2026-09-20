@@ -780,3 +780,25 @@ downloading provider data during the routine gate.
 GTR000000001.1
 NCBI Genetic Testing Registry'
 ```
+
+## Cell Line Expression Across One Cancer Group
+
+`gene cell-lines` reports the HPA nTPM of one gene in every cell line of one
+cancer group and joins each name to Cellosaurus in batches of twenty. The whole
+group answers in five identifier searches.
+
+```bash
+../../tools/biomcp-ci --json gene cell-lines FLT3 --group leukemia \
+  | jq -e '.total == 93 and (.rows | map(select(.name == "MOLM-13")) | .[0].accession) == "CVCL_2119"' \
+  | mustmatch 'true'
+grep -c 'GET /cellosaurus/search/cell-line?q=id%3A%28' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch '5'
+```
+
+The Markdown ends with the Human Protein Atlas attribution line, naming the
+recorded file date and the licence the Atlas publishes.
+
+```bash
+../../tools/biomcp-ci gene cell-lines FLT3 --group leukemia --offset 47 --limit 2 \
+  | mustmatch like '| MOLM-13 | CVCL_2119 | 166.1 |
+Human Protein Atlas, files dated 2025-11-05, CC BY 4.0. proteinatlas.org'
+```
