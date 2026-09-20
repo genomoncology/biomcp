@@ -1,0 +1,405 @@
+{
+  "$defs": {
+    "abstract": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "null"
+            },
+            "raw": {
+              "type": "null"
+            },
+            "state": {
+              "const": "missing"
+            }
+          },
+          "required": [
+            "state",
+            "label",
+            "raw"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/label"
+            },
+            "raw": {
+              "type": "null"
+            },
+            "state": {
+              "const": "null"
+            }
+          },
+          "required": [
+            "state",
+            "label",
+            "raw"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/label"
+            },
+            "raw": {
+              "$ref": "#/$defs/raw"
+            },
+            "state": {
+              "const": "blank"
+            }
+          },
+          "required": [
+            "state",
+            "label",
+            "raw"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/label"
+            },
+            "raw": {
+              "$ref": "#/$defs/raw"
+            },
+            "state": {
+              "const": "usable"
+            }
+          },
+          "required": [
+            "state",
+            "label",
+            "raw"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "authorship": {
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "raw": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "properties": {
+            "ordered_display_names": {
+              "type": "array"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "completeness": {
+          "const": "unknown"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "ordered_display_names": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/raw"
+              },
+              "maxItems": 1024,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "raw": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/raw"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "raw",
+        "ordered_display_names",
+        "completeness"
+      ],
+      "type": "object"
+    },
+    "identifier": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "authority": {
+              "const": "pmid"
+            },
+            "identifier": {
+              "maxLength": 16,
+              "pattern": "^[1-9][0-9]{0,15}(?![\\s\\S])",
+              "type": "string"
+            }
+          },
+          "required": [
+            "authority",
+            "identifier"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "authority": {
+              "const": "pmcid"
+            },
+            "identifier": {
+              "maxLength": 19,
+              "pattern": "^PMC[1-9][0-9]{0,15}(?![\\s\\S])",
+              "type": "string"
+            }
+          },
+          "required": [
+            "authority",
+            "identifier"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "authority": {
+              "const": "doi"
+            },
+            "identifier": {
+              "maxLength": 1024,
+              "pattern": "^10\\.[0-9]+(?:\\.[0-9]+)*/[^\\u0000-\\u0020\\u007f-\\u009f\\u00a0\\u1680\\u2000-\\u200a\\u2028-\\u2029\\u202f\\u205f\\u3000A-Z]+(?![\\s\\S])",
+              "type": "string"
+            }
+          },
+          "required": [
+            "authority",
+            "identifier"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "label": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9_.-]*(?![\\s\\S])",
+      "type": "string"
+    },
+    "labeledRaw": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw"
+        }
+      },
+      "required": [
+        "label",
+        "raw"
+      ],
+      "type": "object"
+    },
+    "raw": {
+      "maxLength": 262144,
+      "type": "string"
+    },
+    "title": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "null"
+            },
+            "raw": {
+              "type": "null"
+            },
+            "state": {
+              "const": "missing"
+            }
+          },
+          "required": [
+            "state",
+            "label",
+            "raw"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/label"
+            },
+            "raw": {
+              "$ref": "#/$defs/raw"
+            },
+            "state": {
+              "const": "blank"
+            }
+          },
+          "required": [
+            "state",
+            "label",
+            "raw"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/label"
+            },
+            "raw": {
+              "$ref": "#/$defs/raw"
+            },
+            "state": {
+              "const": "usable"
+            }
+          },
+          "required": [
+            "state",
+            "label",
+            "raw"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$id": "https://genomoncology.github.io/biodata/schemas/scientific-publication.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Structural schema for source-labeled bibliographic assertions. Rust decoding and constructors remain authoritative for duplicate members, UTF-8 byte totals, Unicode text classification, and cross-field identity rules.",
+  "properties": {
+    "type": {
+      "const": "biodata/scientific-publication"
+    },
+    "value": {
+      "additionalProperties": false,
+      "properties": {
+        "abstract_text": {
+          "$ref": "#/$defs/abstract"
+        },
+        "authorships": {
+          "items": {
+            "$ref": "#/$defs/authorship"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "identifiers": {
+          "allOf": [
+            {
+              "contains": {
+                "properties": {
+                  "authority": {
+                    "const": "pmid"
+                  }
+                },
+                "required": [
+                  "authority"
+                ],
+                "type": "object"
+              },
+              "maxContains": 1,
+              "minContains": 0
+            },
+            {
+              "contains": {
+                "properties": {
+                  "authority": {
+                    "const": "pmcid"
+                  }
+                },
+                "required": [
+                  "authority"
+                ],
+                "type": "object"
+              },
+              "maxContains": 1,
+              "minContains": 0
+            },
+            {
+              "contains": {
+                "properties": {
+                  "authority": {
+                    "const": "doi"
+                  }
+                },
+                "required": [
+                  "authority"
+                ],
+                "type": "object"
+              },
+              "maxContains": 1,
+              "minContains": 0
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/identifier"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "type": "array"
+        },
+        "journals": {
+          "items": {
+            "$ref": "#/$defs/labeledRaw"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "named_dates": {
+          "items": {
+            "$ref": "#/$defs/labeledRaw"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "title": {
+          "$ref": "#/$defs/title"
+        }
+      },
+      "required": [
+        "identifiers",
+        "title",
+        "abstract_text",
+        "journals",
+        "authorships",
+        "named_dates"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "type",
+    "value"
+  ],
+  "title": "BioData Scientific Publication (provisional and unreleased)",
+  "type": "object"
+}

@@ -13,7 +13,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 WEBSITE = ROOT / "website"
 GENERATOR = WEBSITE / "generate.py"
-EXPECTED_REVISION = "30581f0c4b3b44de9631568d6cf3f1fd1df06839"
+EXPECTED_REVISION = "c9938b99bd091ab4bf6da8b909ed239826e5ab6d"
 EXPECTED_BUNDLE_SHA256 = (
     "874989aa405aae4b505f74e13d0f85189692f526e84c84fc29a45e8bc2690854"
 )
@@ -33,15 +33,26 @@ def _module():
 
 
 def test_adoption_pin_bundle_and_dependency_agree() -> None:
-    manifest = json.loads((WEBSITE / "biodata-adoption.json").read_text())
-    bundle = WEBSITE / manifest["bundle_path"]
-    assert manifest == {
-        "catalog_format": 1,
-        "biodata_revision": EXPECTED_REVISION,
-        "bundle_path": "catalog/v1/clinical-trial.bundle.json",
-        "bundle_sha256": EXPECTED_BUNDLE_SHA256,
+    expected_manifests = {
+        "biodata-adoption.json": (
+            "catalog/v1/clinical-trial.bundle.json",
+            EXPECTED_BUNDLE_SHA256,
+        ),
+        "biodata-adoption-scientific-publication.json": (
+            "catalog/v1/scientific-publication.bundle.json",
+            "8edcaa628b092ff9120c9358d4c0bb1f6fac5dff4d5bf8926a40e0af9a5e3eb7",
+        ),
     }
-    assert hashlib.sha256(bundle.read_bytes()).hexdigest() == EXPECTED_BUNDLE_SHA256
+    for name, (bundle_path, digest) in expected_manifests.items():
+        manifest = json.loads((WEBSITE / name).read_text())
+        assert manifest == {
+            "catalog_format": 1,
+            "biodata_revision": EXPECTED_REVISION,
+            "bundle_path": bundle_path,
+            "bundle_sha256": digest,
+        }
+        bundle = WEBSITE / manifest["bundle_path"]
+        assert hashlib.sha256(bundle.read_bytes()).hexdigest() == digest
     cargo = (ROOT / "Cargo.toml").read_text()
     lock = (ROOT / "Cargo.lock").read_text()
     assert f'rev = "{EXPECTED_REVISION}"' in cargo
@@ -56,9 +67,10 @@ def test_generated_outputs_are_current_and_cover_the_catalog() -> None:
     bundle = json.loads((WEBSITE / "catalog/v1/clinical-trial.bundle.json").read_text())
     page = (WEBSITE / "src/content/docs/biodata/models/clinical-trial.md").read_text()
     module = _module()
-    loaded_catalog, bundle_bytes, recorded_input = module.load()
-    assert loaded_catalog == bundle
-    generated = module.outputs(bundle, bundle_bytes, recorded_input)
+    loaded = module.load()
+    clinical = next(item for item in loaded if item[0]["slug"] == "clinical-trial")
+    assert clinical[1] == bundle
+    generated = module.outputs(loaded)
     assert {path.relative_to(WEBSITE).as_posix() for path in generated} == {
         "src/content/docs/biodata/models/clinical-trial.md",
         "public/biodata/models/clinical-trial.md",
@@ -71,6 +83,13 @@ def test_generated_outputs_are_current_and_cover_the_catalog() -> None:
         "public/downloads/biodata/nct02576665-provider-types.json",
         "public/downloads/biodata/ctgov-clinical-trial-projection.json",
         "public/downloads/biodata/clinical-trial-v1.bundle.json",
+        "src/content/docs/biodata/models/scientific-publication.md",
+        "public/biodata/models/scientific-publication.md",
+        "public/biodata/discovery/scientific-publication.json",
+        "public/downloads/biodata/scientific-publication.schema.json",
+        "public/downloads/biodata/pubtator3-scientific-publication.json",
+        "public/downloads/biodata/scientific-publication-relationships.svg",
+        "public/downloads/biodata/scientific-publication-v1.bundle.json",
     }
     assert all(
         module.safe_text(field["name"]) in page

@@ -15,7 +15,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 WEBSITE = ROOT / "website"
 GENERATOR = WEBSITE / "generate.py"
-EXPECTED_REVISION = "30581f0c4b3b44de9631568d6cf3f1fd1df06839"
+EXPECTED_REVISION = "c9938b99bd091ab4bf6da8b909ed239826e5ab6d"
 EXPECTED_INPUT_SHA256 = (
     "b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e"
 )
@@ -302,20 +302,19 @@ def test_ordinary_website_check_enforces_biodata_artifact_pins() -> None:
     assert completed.stderr == ""
 
 
-@pytest.mark.parametrize(
-    "relative",
-    [
-        "public/downloads/biodata/clinical-trial-relationships.svg",
-        "public/biodata/discovery/clinical-trial.json",
-    ],
+PINNED_ARTIFACTS = (
+    "public/downloads/biodata/clinical-trial-relationships.svg",
+    "public/biodata/discovery/clinical-trial.json",
+    "public/downloads/biodata/scientific-publication-relationships.svg",
+    "public/biodata/discovery/scientific-publication.json",
 )
+
+
+@pytest.mark.parametrize("relative", PINNED_ARTIFACTS)
 def test_biodata_artifact_pin_rejects_a_one_byte_mutation(
     tmp_path: Path, relative: str
 ) -> None:
-    for artifact in (
-        "public/downloads/biodata/clinical-trial-relationships.svg",
-        "public/biodata/discovery/clinical-trial.json",
-    ):
+    for artifact in PINNED_ARTIFACTS:
         destination = tmp_path / artifact
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(WEBSITE / artifact, destination)

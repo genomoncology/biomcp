@@ -1,0 +1,115 @@
+{
+  "format_version": 1,
+  "model": "model:ScientificPublication",
+  "routes": {
+    "html": "https://biomcp.org/biodata/models/scientific-publication/",
+    "raw_markdown": "https://biomcp.org/biodata/models/scientific-publication.md",
+    "diagram": "https://biomcp.org/downloads/biodata/scientific-publication-relationships.svg",
+    "schema": "https://biomcp.org/downloads/biodata/scientific-publication.schema.json",
+    "example": "https://biomcp.org/downloads/biodata/pubtator3-scientific-publication.json",
+    "catalog": "https://biomcp.org/downloads/biodata/scientific-publication-v1.bundle.json"
+  },
+  "diagram_relationships": [
+    {
+      "id": "publication-identifiers",
+      "source": "model:ScientificPublication/field:identifiers",
+      "target": "model:PublicationIdentifier",
+      "kind": "contains",
+      "explanation": "The publication retains one to three authority-qualified identifiers in canonical order.",
+      "contract_revision": "sha256:7b2d67216fae2ca03e1711cc1f06f79e3f99bafd8fb67663521d6014fc9d118d"
+    },
+    {
+      "id": "publication-title",
+      "source": "model:ScientificPublication/field:title",
+      "target": "model:PublicationTitle",
+      "kind": "contains",
+      "explanation": "The publication preserves the source-observed title state without inventing text.",
+      "contract_revision": "sha256:71dde4866f0e70a49825d11972dcced9e7ba64da51db1651921e4d5717c9eafc"
+    },
+    {
+      "id": "publication-abstract",
+      "source": "model:ScientificPublication/field:abstract_text",
+      "target": "model:PublicationAbstract",
+      "kind": "contains",
+      "explanation": "The publication preserves the source-observed abstract state without inventing text.",
+      "contract_revision": "sha256:3c1d65bce7ae886f86a0f3b2f5c7cb2b469e78e5e2324af80ebecc68f2d763dd"
+    },
+    {
+      "id": "publication-journals",
+      "source": "model:ScientificPublication/field:journals",
+      "target": "model:JournalAssertion",
+      "kind": "contains",
+      "explanation": "Opaque journal assertions retain source order.",
+      "contract_revision": "sha256:18fa5e42829420247fb86e907f2f8dcd887c0a75e7c5f485f7c1dda8685d6364"
+    },
+    {
+      "id": "publication-authorships",
+      "source": "model:ScientificPublication/field:authorships",
+      "target": "model:AuthorshipAssertion",
+      "kind": "contains",
+      "explanation": "Opaque authorship assertions retain source order and unknown completeness.",
+      "contract_revision": "sha256:7efc6c5e5cdafbacf7522e0bf91d200f754aff51c1b1b7ee46c1192ad6f9860f"
+    },
+    {
+      "id": "publication-named-dates",
+      "source": "model:ScientificPublication/field:named_dates",
+      "target": "model:NamedDateAssertion",
+      "kind": "contains",
+      "explanation": "Opaque named-date assertions retain source order.",
+      "contract_revision": "sha256:6b4aba6c6a25ee42ab1130d018c2cc105aa4fc75d7973a5f8fdb3f968091b6eb"
+    }
+  ],
+  "support": [
+    {
+      "id": "support:scientific-publication",
+      "maturity": "unsettled",
+      "executable_proof": "proof:scientific-publication-document-roundtrip",
+      "exclusion": null,
+      "label": "provisional"
+    },
+    {
+      "id": "support:pubtator3-pmid-projection",
+      "maturity": "accepted",
+      "executable_proof": "proof:pubtator3-recorded-pmid-projection",
+      "exclusion": null,
+      "label": "implemented"
+    },
+    {
+      "id": "support:europepmc-lite-pmid-projection",
+      "maturity": "accepted",
+      "executable_proof": "proof:europepmc-lite-recorded-pmid-projection",
+      "exclusion": null,
+      "label": "implemented"
+    },
+    {
+      "id": "support:europepmc-core",
+      "maturity": "accepted",
+      "executable_proof": null,
+      "exclusion": "No Europe PMC CORE plan, adapter, or admitted capture exists; only the recorded LITE PMID row is supported.",
+      "label": "unsupported"
+    }
+  ],
+  "crosswalks": [],
+  "tasks": [
+    {
+      "question": "What fields describe a scientific publication?",
+      "route": "https://biomcp.org/biodata/models/scientific-publication/",
+      "answer": "The generated model reference lists every ScientificPublication field and absence rule."
+    },
+    {
+      "question": "How is a scientific publication related to its component records?",
+      "route": "https://biomcp.org/downloads/biodata/scientific-publication-relationships.svg",
+      "answer": "The diagram and adjacent text describe six direct relationships; the model page describes all six catalog relationships."
+    },
+    {
+      "question": "How does BioMCP resolve a publication identifier?",
+      "route": "https://biomcp.org/biodata/models/scientific-publication/",
+      "answer": "A PMID normally uses the PubTator detail path; DOI and PMCID inputs use Europe PMC resolution and may reuse a resolved PMID. Identifiers do not prove cross-provider equivalence."
+    },
+    {
+      "question": "Which publication projections and crosswalks are supported?",
+      "route": "https://biomcp.org/biodata/models/scientific-publication/",
+      "answer": "Catalog support: support:scientific-publication: provisional; support:pubtator3-pmid-projection: implemented; support:europepmc-lite-pmid-projection: implemented; support:europepmc-core: unsupported. No reviewed crosswalks are recorded."
+    }
+  ]
+}

@@ -14,6 +14,12 @@ PINS = {
     "public/biodata/discovery/clinical-trial.json": (
         "31f344dec1469d5309f1f8dd5c1e8680139600b1727270907aba357b2cb31dd6"
     ),
+    "public/downloads/biodata/scientific-publication-relationships.svg": (
+        "afcb973f9629cf69f0821e9c47d1dc26d885de572cb51f7b8c2c7bd4ba81972a"
+    ),
+    "public/biodata/discovery/scientific-publication.json": (
+        "6da784d7613178ae80b24357f1da3468f7151ff72990b3f9dffbfafb47b71728"
+    ),
 }
 
 

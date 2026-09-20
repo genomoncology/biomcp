@@ -6,7 +6,7 @@ import html
 import json
 from typing import Any
 
-EXPECTED_REVISION = "30581f0c4b3b44de9631568d6cf3f1fd1df06839"
+EXPECTED_REVISION = "c9938b99bd091ab4bf6da8b909ed239826e5ab6d"
 EXPECTED_INPUT_DIGEST = "b579ab9ae785d77c228dde7e8c7a6ec43ade347805a8d6f2c9bcadbcf6303f5e"
 RECEIPT_URL = (
     "https://github.com/genomoncology/biodata/blob/"
@@ -43,14 +43,23 @@ def direct_relationships(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     return [
         item
         for item in catalog["relationships"]
-        if item["source"].startswith("model:ClinicalTrial/field:")
+        if item["source"].startswith(f"{catalog['root_model']}/field:")
     ]
 
 
-def render_relationship_svg(catalog: dict[str, Any]) -> str:
+_COUNT_WORDS = {6: "Six", 10: "Ten"}
+
+
+def relationship_svg(catalog: dict[str, Any], expected_count: int) -> str:
+    root_name = catalog["root_model"].removeprefix("model:")
     relationships = direct_relationships(catalog)
-    if len(relationships) != 10:
-        raise ValueError("ClinicalTrial diagram requires ten direct relationships")
+    if (
+        expected_count not in _COUNT_WORDS
+        or len(relationships) != expected_count
+    ):
+        raise ValueError(
+            f"{root_name} diagram requires {expected_count} direct relationships"
+        )
     width = 1600
     row_height = 136
     height = 72 + row_height * len(relationships)
@@ -61,13 +70,14 @@ def render_relationship_svg(catalog: dict[str, Any]) -> str:
             f'height="{height}" viewBox="0 0 {width} {height}" role="img" '
             'aria-labelledby="relationship-title relationship-description">'
         ),
-        '<title id="relationship-title">ClinicalTrial direct relationships</title>',
+        f'<title id="relationship-title">{root_name} direct relationships</title>',
         (
-            '<desc id="relationship-description">Ten direct relationships from ClinicalTrial '
-            'fields to component models, in adopted catalog order. Equivalent text follows the image.</desc>'
+            f'<desc id="relationship-description">{_COUNT_WORDS[expected_count]} '
+            f'direct relationships from {root_name} fields to component models, '
+            'in adopted catalog order. Equivalent text follows the image.</desc>'
         ),
         '<rect x="24" y="30" width="250" height="56" rx="8" fill="#eef5ff" stroke="#315c8c"/>',
-        '<text x="149" y="64" text-anchor="middle" font-family="sans-serif" font-size="20">ClinicalTrial</text>',
+        f'<text x="149" y="64" text-anchor="middle" font-family="sans-serif" font-size="20">{root_name}</text>',
     ]
     for index, item in enumerate(relationships):
         y = 28 + index * row_height
@@ -121,6 +131,45 @@ def relationship_line(item: dict[str, Any]) -> str:
     return f"- `{safe_text(item['id'])}`: `{safe_text(item['source'])}` {safe_text(item['kind'])} `{safe_text(item['target'])}`. {safe_text(item['explanation'])}"
 
 
+def support_lines(catalog: dict[str, Any]) -> list[str]:
+    lines = ["## Support and exclusions", ""]
+    for item in catalog["support"]:
+        detail = item.get("exclusion") or item.get("executable_proof")
+        lines.append(
+            f"- **{safe_text(item['label'])}** `{safe_text(item['id'])}`: {safe_text(detail)}"
+        )
+    return lines
+
+
+def field_rows(model: dict[str, Any]) -> list[str]:
+    rows = [
+        "| Field | Absence | Description | Constraints |",
+        "| --- | --- | --- | --- |",
+    ]
+    for field in model["fields"]:
+        description = field.get("description") or "No separate catalog description."
+        rows.append(
+            f"| `{safe_text(field['name'])}` | `{safe_text(field['absence'])}` | {safe_text(description)} | `{_constraint(field['constraints'])}` |"
+        )
+    return rows
+
+
+def component_lines(catalog: dict[str, Any], root: dict[str, Any]) -> list[str]:
+    lines = ["## Component models", ""]
+    for model in catalog["models"]:
+        if model["id"] == root["id"]:
+            continue
+        lines += [
+            f"### {safe_text(model['id'].removeprefix('model:'))}",
+            "",
+            safe_text(model["explanation"]),
+            "",
+            *field_rows(model),
+            "",
+        ]
+    return lines
+
+
 def render(catalog: dict[str, Any]) -> str:
     root = next(
         model for model in catalog["models"] if model["id"] == catalog["root_model"]
@@ -132,50 +181,16 @@ def render(catalog: dict[str, Any]) -> str:
         "",
         f"The stable catalog identity is `{safe_text(root['id'])}`.",
         "",
-        "## Support and exclusions",
-        "",
-    ]
-    for item in catalog["support"]:
-        detail = item.get("exclusion") or item.get("executable_proof")
-        lines.append(
-            f"- **{safe_text(item['label'])}** `{safe_text(item['id'])}`: {safe_text(detail)}"
-        )
-    lines += [
+        *support_lines(catalog),
         "",
         "## Fields and absence rules",
         "",
-        "| Field | Absence | Description | Constraints |",
-        "| --- | --- | --- | --- |",
-    ]
-    for field in root["fields"]:
-        description = field.get("description") or "No separate catalog description."
-        lines.append(
-            f"| `{safe_text(field['name'])}` | `{safe_text(field['absence'])}` | {safe_text(description)} | `{_constraint(field['constraints'])}` |"
-        )
-    lines += [
+        *field_rows(root),
         "",
         "Every listed member follows its stated absence rule. Required nullable members distinguish an explicit null from a missing member. Rust validation remains authoritative.",
         "",
-        "## Component models",
-        "",
+        *component_lines(catalog, root),
     ]
-    for model in catalog["models"]:
-        if model["id"] == root["id"]:
-            continue
-        lines += [
-            f"### {safe_text(model['id'].removeprefix('model:'))}",
-            "",
-            safe_text(model["explanation"]),
-            "",
-            "| Field | Absence | Description | Constraints |",
-            "| --- | --- | --- | --- |",
-        ]
-        for field in model["fields"]:
-            description = field.get("description") or "No separate catalog description."
-            lines.append(
-                f"| `{safe_text(field['name'])}` | `{safe_text(field['absence'])}` | {safe_text(description)} | `{_constraint(field['constraints'])}` |"
-            )
-        lines.append("")
     lines += [
         "## Direct relationship diagram",
         "",

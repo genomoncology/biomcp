@@ -6,7 +6,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'BioMCP',
-      sidebar: [{ label: 'BioData models', items: [{ label: 'ClinicalTrial', slug: 'biodata/models/clinical-trial' }] }],
+      sidebar: [{ label: 'BioData models', items: [{ label: 'ClinicalTrial', slug: 'biodata/models/clinical-trial' }, { label: 'ScientificPublication', slug: 'biodata/models/scientific-publication' }] }],
     }),
   ],
 });

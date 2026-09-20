@@ -17,7 +17,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-BIODATA_REVISION = "30581f0c4b3b44de9631568d6cf3f1fd1df06839"
+BIODATA_REVISION = "c9938b99bd091ab4bf6da8b909ed239826e5ab6d"
 REVIEWED_TOP_LEVEL_DIRECTORIES = {
     ".claude-plugin",
     ".github",
@@ -79,10 +79,13 @@ REQUIRED_PACKAGE_MEMBERS = {
     "tests/test_gencc_docs_contract.py",
     "tests/test_biodata_model_reference.py",
     "tests/test_biodata_model_reference_surfaces.py",
+    "tests/test_biodata_publication_reference.py",
     "examples/biodata-clinical-trial-recorded.rs",
     "website/astro.config.mjs",
     "website/biodata-adoption.json",
+    "website/biodata-adoption-scientific-publication.json",
     "website/catalog/v1/clinical-trial.bundle.json",
+    "website/catalog/v1/scientific-publication.bundle.json",
     "website/check",
     "website/generate.py",
     "website/model_reference.py",
@@ -90,17 +93,25 @@ REQUIRED_PACKAGE_MEMBERS = {
     "website/package.json",
     "website/prepare",
     "website/public/biodata/discovery/clinical-trial.json",
+    "website/public/biodata/discovery/scientific-publication.json",
     "website/public/biodata/models/clinical-trial.md",
+    "website/public/biodata/models/scientific-publication.md",
     "website/public/downloads/biodata/clinical-trial-projection.schema.json",
     "website/public/downloads/biodata/clinical-trial-relationships.svg",
     "website/public/downloads/biodata/clinical-trial-v1.bundle.json",
     "website/public/downloads/biodata/clinical-trial.schema.json",
     "website/public/downloads/biodata/ctgov-clinical-trial-projection.json",
     "website/public/downloads/biodata/nct02576665-provider-types.json",
+    "website/public/downloads/biodata/pubtator3-scientific-publication.json",
+    "website/public/downloads/biodata/scientific-publication-relationships.svg",
+    "website/public/downloads/biodata/scientific-publication-v1.bundle.json",
+    "website/public/downloads/biodata/scientific-publication.schema.json",
     "website/public/llms-full.txt",
     "website/public/llms.txt",
+    "website/publication_reference.py",
     "website/src/content.config.ts",
     "website/src/content/docs/biodata/models/clinical-trial.md",
+    "website/src/content/docs/biodata/models/scientific-publication.md",
     "website/src/content/docs/index.md",
     "website/verify-built-site.py",
 }
@@ -445,8 +456,8 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     # Main adds the supported cell-line, Cellosaurus, ChEMBL, HPA, and
     # PharmacoDB modules, documentation, templates, and focused tests. The
-    # exact merged package contains 1,384 files, with no spare capacity.
-    assert len(paths) == 1384
+    # exact merged package contains 1,395 files, with no spare capacity.
+    assert len(paths) == 1395
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

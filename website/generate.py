@@ -14,25 +14,80 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
-MANIFEST = ROOT / "biodata-adoption.json"
 sys.path.insert(0, str(ROOT))
 import model_reference  # noqa: E402
+import publication_reference  # noqa: E402
 
-EXPECTED_INPUT_DIGEST = model_reference.EXPECTED_INPUT_DIGEST
 EXPECTED_REVISION = model_reference.EXPECTED_REVISION
+EXPECTED_INPUT_DIGEST = model_reference.EXPECTED_INPUT_DIGEST
 
 EXPECTED_DIGEST = "874989aa405aae4b505f74e13d0f85189692f526e84c84fc29a45e8bc2690854"
-RECORDED_INPUT = ROOT / "public/downloads/biodata/nct02576665-provider-types.json"
+PUBLICATION_DIGEST = "8edcaa628b092ff9120c9358d4c0bb1f6fac5dff4d5bf8926a40e0af9a5e3eb7"
 # The producer hashes an evidence locator before stripping its optional URL fragment.
 # Format 1 does not expose that original locator, so the consumer pins the complete
 # emitted evidence table after validating each stored binding's shape.
 EXPECTED_EVIDENCE_CONTRACT_DIGEST = (
     "sha256:8f802135025d6d42e38b392c9ff93af88c3402ed3230ecdae511328e8f616f1a"
 )
+EMPTY_EVIDENCE_CONTRACT_DIGEST = (
+    "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+)
 
 
 class GenerationError(ValueError):
     """The adopted input cannot safely generate the public reference."""
+
+
+CT_IMPLEMENTATIONS = {
+    "clinicaltrials-gov-api-v2 source-to-hub": {
+        "proof:ctgov-recorded-nct-id-and-report",
+        "proof:ctgov-recorded-brief-title-and-report",
+        "proof:ctgov-recorded-overall-status-and-report",
+    }
+}
+CT_SUPPORT_PROOFS = {
+    "proof:clinical-trial-document-roundtrip",
+    "proof:ctgov-recorded-core-and-report",
+    "proof:nci-recorded-core-and-report",
+}
+PUBLICATION_SUPPORT_PROOFS = {
+    "proof:scientific-publication-document-roundtrip",
+    "proof:pubtator3-recorded-pmid-projection",
+    "proof:europepmc-lite-recorded-pmid-projection",
+}
+
+ROOT_SPECS = (
+    {
+        "slug": "clinical-trial", "root_model": "model:ClinicalTrial",
+        "manifest": "biodata-adoption.json",
+        "bundle_path": "catalog/v1/clinical-trial.bundle.json",
+        "bundle_sha256": EXPECTED_DIGEST, "source_sha256": EXPECTED_INPUT_DIGEST,
+        "recorded_input": "public/downloads/biodata/nct02576665-provider-types.json",
+        "support_proofs": CT_SUPPORT_PROOFS,
+        "evidence_digest": EXPECTED_EVIDENCE_CONTRACT_DIGEST,
+        "implementations": CT_IMPLEMENTATIONS,
+        "diagram_count": 10, "renderer": model_reference,
+        "downloads": {
+            "schemas/clinical-trial.schema.json": "clinical-trial.schema.json",
+            "schemas/clinical-trial-projection.schema.json": "clinical-trial-projection.schema.json",
+            "examples/ctgov-clinical-trial-projection.json": "ctgov-clinical-trial-projection.json",
+        },
+    },
+    {
+        "slug": "scientific-publication", "root_model": "model:ScientificPublication",
+        "manifest": "biodata-adoption-scientific-publication.json",
+        "bundle_path": "catalog/v1/scientific-publication.bundle.json",
+        "bundle_sha256": PUBLICATION_DIGEST,
+        "source_sha256": publication_reference.EXPECTED_SOURCE_DIGEST,
+        "recorded_input": None, "support_proofs": PUBLICATION_SUPPORT_PROOFS,
+        "evidence_digest": EMPTY_EVIDENCE_CONTRACT_DIGEST,
+        "implementations": {}, "diagram_count": 6, "renderer": publication_reference,
+        "downloads": {
+            "schemas/scientific-publication.schema.json": "scientific-publication.schema.json",
+            "examples/pubtator3-scientific-publication.json": "pubtator3-scientific-publication.json",
+        },
+    },
+)
 
 
 def _object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -116,6 +171,13 @@ def _safe_path(value: Any) -> PurePosixPath:
     return path
 
 
+def _spec_for(catalog: dict[str, Any]) -> dict[str, Any]:
+    for spec in ROOT_SPECS:
+        if spec["root_model"] == catalog.get("root_model"):
+            return spec
+    raise GenerationError("unsupported catalog root")
+
+
 def validate_catalog(catalog: dict[str, Any]) -> None:
     if catalog.get("format_version") != 1:
         raise GenerationError("unsupported catalog format")
@@ -136,6 +198,7 @@ def validate_catalog(catalog: dict[str, Any]) -> None:
     fields_by_id = {field["id"]: field for model in models for field in model["fields"]}
     if catalog.get("root_model") not in model_ids:
         raise GenerationError("missing root model identity")
+    spec = _spec_for(catalog)
 
     relationships = catalog.get("relationships")
     if not isinstance(relationships, list):
@@ -173,14 +236,9 @@ def validate_catalog(catalog: dict[str, Any]) -> None:
     if not isinstance(support, list):
         raise GenerationError("support must be a list")
     _unique(support, "support")
-    known_support_proofs = {
-        "proof:clinical-trial-document-roundtrip",
-        "proof:ctgov-recorded-core-and-report",
-        "proof:nci-recorded-core-and-report",
-    }
     for item in support:
         proof = item.get("executable_proof")
-        if proof is not None and proof not in known_support_proofs:
+        if proof is not None and proof not in spec["support_proofs"]:
             raise GenerationError("support contract has an unknown executable proof")
         support_state = (
             item.get("maturity"),
@@ -261,15 +319,9 @@ def validate_catalog(catalog: dict[str, Any]) -> None:
             or not implementation.get("executable_proof")
         ):
             raise GenerationError("implementation requires executable proof")
-        if implementation is not None and (
-            implementation.get("operation") != "clinicaltrials-gov-api-v2 source-to-hub"
-            or implementation.get("executable_proof")
-            not in {
-                "proof:ctgov-recorded-nct-id-and-report",
-                "proof:ctgov-recorded-brief-title-and-report",
-                "proof:ctgov-recorded-overall-status-and-report",
-            }
-        ):
+        if implementation is not None and implementation.get(
+            "executable_proof"
+        ) not in spec["implementations"].get(implementation.get("operation"), ()):
             raise GenerationError("implementation contract is unknown")
         local_contract = [
             _locator_contract(locator, models_by_id, fields_by_id) for locator in path
@@ -296,7 +348,7 @@ def validate_catalog(catalog: dict[str, Any]) -> None:
             raise GenerationError("crosswalk review contract revision is stale")
 
     evidence_contract = {item["id"]: item["evidence"] for item in crosswalks}
-    if _contract_digest(evidence_contract) != EXPECTED_EVIDENCE_CONTRACT_DIGEST:
+    if _contract_digest(evidence_contract) != spec["evidence_digest"]:
         raise GenerationError("evidence binding does not match the pinned catalog")
     artifacts = catalog.get("artifacts")
     if not isinstance(artifacts, list):
@@ -312,27 +364,33 @@ def validate_catalog(catalog: dict[str, Any]) -> None:
             raise GenerationError("artifact digest mismatch")
 
 
-def validate_recorded_input(catalog: dict[str, Any], recorded_input: bytes) -> None:
+def validate_recorded_input(catalog: dict[str, Any], recorded_input: bytes | None) -> None:
+    spec = _spec_for(catalog)
     receipt = catalog.get("example_receipt")
     if not isinstance(receipt, dict):
         raise GenerationError("missing example receipt")
-    if receipt.get("source_sha256") != "sha256:" + EXPECTED_INPUT_DIGEST:
+    if receipt.get("source_sha256") != "sha256:" + spec["source_sha256"]:
         raise GenerationError("catalog recorded input digest does not match accepted pin")
-    if hashlib.sha256(recorded_input).hexdigest() != EXPECTED_INPUT_DIGEST:
+    if spec["recorded_input"] is None:
+        if recorded_input is not None:
+            raise GenerationError("unpublished recorded input")
+        return
+    if recorded_input is None or hashlib.sha256(recorded_input).hexdigest() != spec["source_sha256"]:
         raise GenerationError("recorded input digest mismatch")
 
 
 def render_relationship_svg(catalog: dict[str, Any]) -> str:
+    spec = _spec_for(catalog)
     validate_catalog(catalog)
     try:
-        return model_reference.render_relationship_svg(catalog)
+        return model_reference.relationship_svg(catalog, spec["diagram_count"])
     except ValueError as error:
         raise GenerationError(str(error)) from error
 
 
 def render(catalog: dict[str, Any]) -> str:
     validate_catalog(catalog)
-    return model_reference.render(catalog)
+    return _spec_for(catalog)["renderer"].render(catalog)
 
 
 def safe_text(value: Any) -> str:
@@ -345,67 +403,66 @@ def relationship_line(item: dict[str, Any]) -> str:
 
 def discovery_contract(catalog: dict[str, Any]) -> dict[str, Any]:
     validate_catalog(catalog)
-    return model_reference.discovery_contract(catalog)
+    return _spec_for(catalog)["renderer"].discovery_contract(catalog)
+
+
+def _page_outputs(
+    spec: dict[str, Any],
+    catalog: dict[str, Any],
+    bundle_bytes: bytes,
+    recorded_input: bytes | None,
+) -> tuple[dict[Path, bytes], str, dict[str, Any]]:
+    validate_recorded_input(catalog, recorded_input)
+    body = render(catalog)
+    slug = spec["slug"]
+    title = spec["root_model"].removeprefix("model:")
+    frontmatter = (
+        f"---\ntitle: {title}\n"
+        f"description: Generated BioData {title} model reference.\n---\n\n"
+    )
+    discovery = discovery_contract(catalog)
+    result = {
+        ROOT / f"src/content/docs/biodata/models/{slug}.md": (frontmatter + body).encode(),
+        ROOT / f"public/biodata/models/{slug}.md": body.encode(),
+        ROOT / f"public/downloads/biodata/{slug}-v1.bundle.json": bundle_bytes,
+        ROOT / f"public/downloads/biodata/{slug}-relationships.svg": render_relationship_svg(catalog).encode(),
+        ROOT / f"public/biodata/discovery/{slug}.json": (json.dumps(discovery, indent=2, ensure_ascii=False) + "\n").encode(),
+    }
+    if spec["recorded_input"] is not None and recorded_input is not None:
+        result[ROOT / spec["recorded_input"]] = recorded_input
+    for artifact in catalog["artifacts"]:
+        result[ROOT / "public/downloads/biodata" / spec["downloads"][artifact["path"]]] = artifact["content"].encode()
+    return result, body, discovery
 
 
 def outputs(
-    catalog: dict[str, Any], bundle_bytes: bytes, recorded_input: bytes
+    loaded: list[tuple[dict[str, Any], dict[str, Any], bytes, bytes | None]],
 ) -> dict[Path, bytes]:
-    validate_recorded_input(catalog, recorded_input)
-    body = render(catalog)
-    frontmatter = "---\ntitle: ClinicalTrial\ndescription: Generated BioData ClinicalTrial model reference.\n---\n\n"
-    page = frontmatter + body
-    model_url = "https://biomcp.org/biodata/models/clinical-trial/"
-    raw_url = "https://biomcp.org/biodata/models/clinical-trial.md"
-    discovery = discovery_contract(catalog)
-    route_lines = "\n".join(
-        f"- [{name.replace('_', ' ').title()}]({url})"
-        for name, url in discovery["routes"].items()
-    )
-    result = {
-        ROOT / "src/content/docs/biodata/models/clinical-trial.md": page.encode(),
-        ROOT / "public/biodata/models/clinical-trial.md": body.encode(),
-        ROOT / "public/llms.txt": (
-            f"# BioMCP\n\n- [ClinicalTrial]({model_url})\n- [ClinicalTrial raw Markdown]({raw_url})\n{route_lines}\n"
-        ).encode(),
-        ROOT / "public/llms-full.txt": (
-            f"# BioMCP model reference\n\nSource: {model_url}\nRaw: {raw_url}\n\n{route_lines}\n\n{body}"
-        ).encode(),
-        ROOT / "public/downloads/biodata/clinical-trial-v1.bundle.json": bundle_bytes,
-        ROOT / "public/downloads/biodata/clinical-trial-relationships.svg": render_relationship_svg(catalog).encode(),
-        RECORDED_INPUT: recorded_input,
-        ROOT / "public/biodata/discovery/clinical-trial.json": (
-            json.dumps(discovery, indent=2, ensure_ascii=False) + "\n"
-        ).encode(),
-    }
-    names = {
-        "schemas/clinical-trial.schema.json": "clinical-trial.schema.json",
-        "schemas/clinical-trial-projection.schema.json": "clinical-trial-projection.schema.json",
-        "examples/ctgov-clinical-trial-projection.json": "ctgov-clinical-trial-projection.json",
-    }
-    for artifact in catalog["artifacts"]:
-        result[ROOT / "public/downloads/biodata" / names[artifact["path"]]] = artifact[
-            "content"
-        ].encode()
+    result: dict[Path, bytes] = {}
+    index_entries: list[str] = []
+    full_parts: list[str] = []
+    for spec, catalog, bundle_bytes, recorded_input in loaded:
+        pages, body, discovery = _page_outputs(spec, catalog, bundle_bytes, recorded_input)
+        result.update(pages)
+        title = spec["root_model"].removeprefix("model:")
+        model_url = f"https://biomcp.org/biodata/models/{spec['slug']}/"
+        raw_url = f"https://biomcp.org/biodata/models/{spec['slug']}.md"
+        route_lines = "\n".join(
+            f"- [{name.replace('_', ' ').title()}]({url})"
+            for name, url in discovery["routes"].items()
+        )
+        index_entries.append(f"- [{title}]({model_url})\n- [{title} raw Markdown]({raw_url})\n{route_lines}")
+        full_parts.append(f"Source: {model_url}\nRaw: {raw_url}\n\n{route_lines}\n\n{body}")
+    result[ROOT / "public/llms.txt"] = (
+        "# BioMCP\n\n" + "\n".join(index_entries) + "\n"
+    ).encode()
+    result[ROOT / "public/llms-full.txt"] = (
+        "# BioMCP model reference\n\n" + "\n\n".join(full_parts)
+    ).encode()
     return result
 
 
-def load() -> tuple[dict[str, Any], bytes, bytes]:
-    manifest = parse_json_strict(MANIFEST.read_text())
-    expected = {
-        "catalog_format": 1,
-        "biodata_revision": EXPECTED_REVISION,
-        "bundle_path": "catalog/v1/clinical-trial.bundle.json",
-        "bundle_sha256": EXPECTED_DIGEST,
-    }
-    if manifest != expected:
-        raise GenerationError("adoption manifest does not match the accepted pin")
-    bundle_path = ROOT / _safe_path(manifest["bundle_path"])
-    bundle_bytes = bundle_path.read_bytes()
-    if hashlib.sha256(bundle_bytes).hexdigest() != EXPECTED_DIGEST:
-        raise GenerationError("adopted bundle digest mismatch")
-    catalog = parse_json_strict(bundle_bytes.decode())
-    validate_catalog(catalog)
+def load() -> list[tuple[dict[str, Any], dict[str, Any], bytes, bytes | None]]:
     cargo = (REPO / "Cargo.toml").read_text()
     lock = (REPO / "Cargo.lock").read_text()
     if (
@@ -413,9 +470,24 @@ def load() -> tuple[dict[str, Any], bytes, bytes]:
         or f"?rev={EXPECTED_REVISION}#{EXPECTED_REVISION}" not in lock
     ):
         raise GenerationError("BioData dependency does not match adoption manifest")
-    recorded_input = RECORDED_INPUT.read_bytes()
-    validate_recorded_input(catalog, recorded_input)
-    return catalog, bundle_bytes, recorded_input
+    loaded = []
+    for spec in ROOT_SPECS:
+        manifest = parse_json_strict((ROOT / spec["manifest"]).read_text())
+        expected = {"catalog_format": 1, "biodata_revision": EXPECTED_REVISION, "bundle_path": spec["bundle_path"], "bundle_sha256": spec["bundle_sha256"]}
+        if manifest != expected:
+            raise GenerationError("adoption manifest does not match the accepted pin")
+        bundle_path = ROOT / _safe_path(manifest["bundle_path"])
+        bundle_bytes = bundle_path.read_bytes()
+        if hashlib.sha256(bundle_bytes).hexdigest() != spec["bundle_sha256"]:
+            raise GenerationError("adopted bundle digest mismatch")
+        catalog = parse_json_strict(bundle_bytes.decode())
+        if catalog.get("root_model") != spec["root_model"]:
+            raise GenerationError("catalog root does not match the adoption manifest")
+        validate_catalog(catalog)
+        recorded_input = (ROOT / spec["recorded_input"]).read_bytes() if spec["recorded_input"] else None
+        validate_recorded_input(catalog, recorded_input)
+        loaded.append((spec, catalog, bundle_bytes, recorded_input))
+    return loaded
 
 
 def stale_outputs(generated: dict[Path, bytes]) -> list[str]:
@@ -448,8 +520,8 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     try:
-        catalog, bundle_bytes, recorded_input = load()
-        generated = outputs(catalog, bundle_bytes, recorded_input)
+        loaded = load()
+        generated = outputs(loaded)
         if args.check:
             stale = stale_outputs(generated)
             if stale:

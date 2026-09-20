@@ -3,4 +3,4 @@ title: BioMCP model reference
 description: Generated references for BioData models used by BioMCP.
 ---
 
-The preview contains the generated [ClinicalTrial reference](/biodata/models/clinical-trial/).
+The preview contains the generated [ClinicalTrial reference](/biodata/models/clinical-trial/) and [ScientificPublication reference](/biodata/models/scientific-publication/).

@@ -1,0 +1,545 @@
+{
+  "format_version": 1,
+  "root_model": "model:ScientificPublication",
+  "models": [
+    {
+      "id": "model:ScientificPublication",
+      "explanation": "One shared publication value preserving source-labeled bibliographic assertions without reconciliation.",
+      "fields": [
+        {
+          "id": "model:ScientificPublication/field:abstract_text",
+          "name": "abstract_text",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "$ref": "#/$defs/abstract"
+          },
+          "relationship_ids": [
+            "publication-abstract"
+          ]
+        },
+        {
+          "id": "model:ScientificPublication/field:authorships",
+          "name": "authorships",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "items": {
+              "$ref": "#/$defs/authorship"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          "relationship_ids": [
+            "publication-authorships"
+          ]
+        },
+        {
+          "id": "model:ScientificPublication/field:identifiers",
+          "name": "identifiers",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "authority": {
+                      "const": "pmid"
+                    }
+                  },
+                  "required": [
+                    "authority"
+                  ],
+                  "type": "object"
+                },
+                "maxContains": 1,
+                "minContains": 0
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "authority": {
+                      "const": "pmcid"
+                    }
+                  },
+                  "required": [
+                    "authority"
+                  ],
+                  "type": "object"
+                },
+                "maxContains": 1,
+                "minContains": 0
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "authority": {
+                      "const": "doi"
+                    }
+                  },
+                  "required": [
+                    "authority"
+                  ],
+                  "type": "object"
+                },
+                "maxContains": 1,
+                "minContains": 0
+              }
+            ],
+            "items": {
+              "$ref": "#/$defs/identifier"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "type": "array"
+          },
+          "relationship_ids": [
+            "publication-identifiers"
+          ]
+        },
+        {
+          "id": "model:ScientificPublication/field:journals",
+          "name": "journals",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "items": {
+              "$ref": "#/$defs/labeledRaw"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          "relationship_ids": [
+            "publication-journals"
+          ]
+        },
+        {
+          "id": "model:ScientificPublication/field:named_dates",
+          "name": "named_dates",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "items": {
+              "$ref": "#/$defs/labeledRaw"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
+          "relationship_ids": [
+            "publication-named-dates"
+          ]
+        },
+        {
+          "id": "model:ScientificPublication/field:title",
+          "name": "title",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "$ref": "#/$defs/title"
+          },
+          "relationship_ids": [
+            "publication-title"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "model:PublicationIdentifier",
+      "explanation": "An identifier qualified by its authority; pmid, pmcid, and doi remain distinct authorities.",
+      "fields": [
+        {
+          "id": "model:PublicationIdentifier/field:authority",
+          "name": "authority",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "const": "pmid"
+              },
+              {
+                "const": "pmcid"
+              },
+              {
+                "const": "doi"
+              }
+            ]
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:PublicationIdentifier/field:identifier",
+          "name": "identifier",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "maxLength": 16,
+                "pattern": "^[1-9][0-9]{0,15}(?![\\s\\S])",
+                "type": "string"
+              },
+              {
+                "maxLength": 19,
+                "pattern": "^PMC[1-9][0-9]{0,15}(?![\\s\\S])",
+                "type": "string"
+              },
+              {
+                "maxLength": 1024,
+                "pattern": "^10\\.[0-9]+(?:\\.[0-9]+)*/[^\\u0000-\\u0020\\u007f-\\u009f\\u00a0\\u1680\\u2000-\\u200a\\u2028-\\u2029\\u202f\\u205f\\u3000A-Z]+(?![\\s\\S])",
+                "type": "string"
+              }
+            ]
+          },
+          "relationship_ids": []
+        }
+      ]
+    },
+    {
+      "id": "model:PublicationTitle",
+      "explanation": "A source-labeled title with missing, blank, and usable states; a title is never null.",
+      "fields": [
+        {
+          "id": "model:PublicationTitle/field:label",
+          "name": "label",
+          "description": null,
+          "absence": "required_member_nullable_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/label"
+              }
+            ]
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:PublicationTitle/field:raw",
+          "name": "raw",
+          "description": null,
+          "absence": "required_member_nullable_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/raw"
+              }
+            ]
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:PublicationTitle/field:state",
+          "name": "state",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "const": "missing"
+              },
+              {
+                "const": "blank"
+              },
+              {
+                "const": "usable"
+              }
+            ]
+          },
+          "relationship_ids": []
+        }
+      ]
+    },
+    {
+      "id": "model:PublicationAbstract",
+      "explanation": "A source-labeled abstract with missing, null, blank, and usable states; missing never confirms unavailability.",
+      "fields": [
+        {
+          "id": "model:PublicationAbstract/field:label",
+          "name": "label",
+          "description": null,
+          "absence": "required_member_nullable_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/label"
+              }
+            ]
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:PublicationAbstract/field:raw",
+          "name": "raw",
+          "description": null,
+          "absence": "required_member_nullable_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/raw"
+              }
+            ]
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:PublicationAbstract/field:state",
+          "name": "state",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "const": "missing"
+              },
+              {
+                "const": "null"
+              },
+              {
+                "const": "blank"
+              },
+              {
+                "const": "usable"
+              }
+            ]
+          },
+          "relationship_ids": []
+        }
+      ]
+    },
+    {
+      "id": "model:JournalAssertion",
+      "explanation": "An opaque source-labeled journal assertion; no journal identity or equivalence is inferred.",
+      "fields": [
+        {
+          "id": "model:JournalAssertion/field:label",
+          "name": "label",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "$ref": "#/$defs/label"
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:JournalAssertion/field:raw",
+          "name": "raw",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "$ref": "#/$defs/raw"
+          },
+          "relationship_ids": []
+        }
+      ]
+    },
+    {
+      "id": "model:AuthorshipAssertion",
+      "explanation": "An opaque source-labeled authorship assertion whose completeness stays unknown.",
+      "fields": [
+        {
+          "id": "model:AuthorshipAssertion/field:completeness",
+          "name": "completeness",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "const": "unknown"
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:AuthorshipAssertion/field:label",
+          "name": "label",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "$ref": "#/$defs/label"
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:AuthorshipAssertion/field:ordered_display_names",
+          "name": "ordered_display_names",
+          "description": null,
+          "absence": "required_member_nullable_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/raw"
+                },
+                "maxItems": 1024,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:AuthorshipAssertion/field:raw",
+          "name": "raw",
+          "description": null,
+          "absence": "required_member_nullable_value",
+          "constraints": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/raw"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "relationship_ids": []
+        }
+      ]
+    },
+    {
+      "id": "model:NamedDateAssertion",
+      "explanation": "An opaque source-labeled named-date assertion; equal raw text asserts no date meaning or equivalence.",
+      "fields": [
+        {
+          "id": "model:NamedDateAssertion/field:label",
+          "name": "label",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "$ref": "#/$defs/label"
+          },
+          "relationship_ids": []
+        },
+        {
+          "id": "model:NamedDateAssertion/field:raw",
+          "name": "raw",
+          "description": null,
+          "absence": "required_member_non_null_value",
+          "constraints": {
+            "$ref": "#/$defs/raw"
+          },
+          "relationship_ids": []
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "publication-identifiers",
+      "source": "model:ScientificPublication/field:identifiers",
+      "target": "model:PublicationIdentifier",
+      "kind": "contains",
+      "explanation": "The publication retains one to three authority-qualified identifiers in canonical order.",
+      "contract_revision": "sha256:7b2d67216fae2ca03e1711cc1f06f79e3f99bafd8fb67663521d6014fc9d118d"
+    },
+    {
+      "id": "publication-title",
+      "source": "model:ScientificPublication/field:title",
+      "target": "model:PublicationTitle",
+      "kind": "contains",
+      "explanation": "The publication preserves the source-observed title state without inventing text.",
+      "contract_revision": "sha256:71dde4866f0e70a49825d11972dcced9e7ba64da51db1651921e4d5717c9eafc"
+    },
+    {
+      "id": "publication-abstract",
+      "source": "model:ScientificPublication/field:abstract_text",
+      "target": "model:PublicationAbstract",
+      "kind": "contains",
+      "explanation": "The publication preserves the source-observed abstract state without inventing text.",
+      "contract_revision": "sha256:3c1d65bce7ae886f86a0f3b2f5c7cb2b469e78e5e2324af80ebecc68f2d763dd"
+    },
+    {
+      "id": "publication-journals",
+      "source": "model:ScientificPublication/field:journals",
+      "target": "model:JournalAssertion",
+      "kind": "contains",
+      "explanation": "Opaque journal assertions retain source order.",
+      "contract_revision": "sha256:18fa5e42829420247fb86e907f2f8dcd887c0a75e7c5f485f7c1dda8685d6364"
+    },
+    {
+      "id": "publication-authorships",
+      "source": "model:ScientificPublication/field:authorships",
+      "target": "model:AuthorshipAssertion",
+      "kind": "contains",
+      "explanation": "Opaque authorship assertions retain source order and unknown completeness.",
+      "contract_revision": "sha256:7efc6c5e5cdafbacf7522e0bf91d200f754aff51c1b1b7ee46c1192ad6f9860f"
+    },
+    {
+      "id": "publication-named-dates",
+      "source": "model:ScientificPublication/field:named_dates",
+      "target": "model:NamedDateAssertion",
+      "kind": "contains",
+      "explanation": "Opaque named-date assertions retain source order.",
+      "contract_revision": "sha256:6b4aba6c6a25ee42ab1130d018c2cc105aa4fc75d7973a5f8fdb3f968091b6eb"
+    }
+  ],
+  "support": [
+    {
+      "id": "support:scientific-publication",
+      "maturity": "unsettled",
+      "executable_proof": "proof:scientific-publication-document-roundtrip",
+      "exclusion": null,
+      "label": "provisional"
+    },
+    {
+      "id": "support:pubtator3-pmid-projection",
+      "maturity": "accepted",
+      "executable_proof": "proof:pubtator3-recorded-pmid-projection",
+      "exclusion": null,
+      "label": "implemented"
+    },
+    {
+      "id": "support:europepmc-lite-pmid-projection",
+      "maturity": "accepted",
+      "executable_proof": "proof:europepmc-lite-recorded-pmid-projection",
+      "exclusion": null,
+      "label": "implemented"
+    },
+    {
+      "id": "support:europepmc-core",
+      "maturity": "accepted",
+      "executable_proof": null,
+      "exclusion": "No Europe PMC CORE plan, adapter, or admitted capture exists; only the recorded LITE PMID row is supported.",
+      "label": "unsupported"
+    }
+  ],
+  "crosswalks": [],
+  "artifacts": [
+    {
+      "id": "schema:scientific-publication",
+      "path": "schemas/scientific-publication.schema.json",
+      "media_type": "application/schema+json",
+      "sha256": "sha256:3cd4928fda50e080ab7e05fff66eedc92dd8240fd86bdd12d96240b73823055b",
+      "content": "{\n  \"$defs\": {\n    \"abstract\": {\n      \"oneOf\": [\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"label\": {\n              \"type\": \"null\"\n            },\n            \"raw\": {\n              \"type\": \"null\"\n            },\n            \"state\": {\n              \"const\": \"missing\"\n            }\n          },\n          \"required\": [\n            \"state\",\n            \"label\",\n            \"raw\"\n          ],\n          \"type\": \"object\"\n        },\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"label\": {\n              \"$ref\": \"#/$defs/label\"\n            },\n            \"raw\": {\n              \"type\": \"null\"\n            },\n            \"state\": {\n              \"const\": \"null\"\n            }\n          },\n          \"required\": [\n            \"state\",\n            \"label\",\n            \"raw\"\n          ],\n          \"type\": \"object\"\n        },\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"label\": {\n              \"$ref\": \"#/$defs/label\"\n            },\n            \"raw\": {\n              \"$ref\": \"#/$defs/raw\"\n            },\n            \"state\": {\n              \"const\": \"blank\"\n            }\n          },\n          \"required\": [\n            \"state\",\n            \"label\",\n            \"raw\"\n          ],\n          \"type\": \"object\"\n        },\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"label\": {\n              \"$ref\": \"#/$defs/label\"\n            },\n            \"raw\": {\n              \"$ref\": \"#/$defs/raw\"\n            },\n            \"state\": {\n              \"const\": \"usable\"\n            }\n          },\n          \"required\": [\n            \"state\",\n            \"label\",\n            \"raw\"\n          ],\n          \"type\": \"object\"\n        }\n      ]\n    },\n    \"authorship\": {\n      \"additionalProperties\": false,\n      \"anyOf\": [\n        {\n          \"properties\": {\n            \"raw\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        {\n          \"properties\": {\n            \"ordered_display_names\": {\n              \"type\": \"array\"\n            }\n          }\n        }\n      ],\n      \"properties\": {\n        \"completeness\": {\n          \"const\": \"unknown\"\n        },\n        \"label\": {\n          \"$ref\": \"#/$defs/label\"\n        },\n        \"ordered_display_names\": {\n          \"oneOf\": [\n            {\n              \"items\": {\n                \"$ref\": \"#/$defs/raw\"\n              },\n              \"maxItems\": 1024,\n              \"type\": \"array\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ]\n        },\n        \"raw\": {\n          \"oneOf\": [\n            {\n              \"$ref\": \"#/$defs/raw\"\n            },\n            {\n              \"type\": \"null\"\n            }\n          ]\n        }\n      },\n      \"required\": [\n        \"label\",\n        \"raw\",\n        \"ordered_display_names\",\n        \"completeness\"\n      ],\n      \"type\": \"object\"\n    },\n    \"identifier\": {\n      \"oneOf\": [\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"authority\": {\n              \"const\": \"pmid\"\n            },\n            \"identifier\": {\n              \"maxLength\": 16,\n              \"pattern\": \"^[1-9][0-9]{0,15}(?![\\\\s\\\\S])\",\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"authority\",\n            \"identifier\"\n          ],\n          \"type\": \"object\"\n        },\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"authority\": {\n              \"const\": \"pmcid\"\n            },\n            \"identifier\": {\n              \"maxLength\": 19,\n              \"pattern\": \"^PMC[1-9][0-9]{0,15}(?![\\\\s\\\\S])\",\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"authority\",\n            \"identifier\"\n          ],\n          \"type\": \"object\"\n        },\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"authority\": {\n              \"const\": \"doi\"\n            },\n            \"identifier\": {\n              \"maxLength\": 1024,\n              \"pattern\": \"^10\\\\.[0-9]+(?:\\\\.[0-9]+)*/[^\\\\u0000-\\\\u0020\\\\u007f-\\\\u009f\\\\u00a0\\\\u1680\\\\u2000-\\\\u200a\\\\u2028-\\\\u2029\\\\u202f\\\\u205f\\\\u3000A-Z]+(?![\\\\s\\\\S])\",\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"authority\",\n            \"identifier\"\n          ],\n          \"type\": \"object\"\n        }\n      ]\n    },\n    \"label\": {\n      \"maxLength\": 128,\n      \"minLength\": 1,\n      \"pattern\": \"^[a-z][a-z0-9_.-]*(?![\\\\s\\\\S])\",\n      \"type\": \"string\"\n    },\n    \"labeledRaw\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"label\": {\n          \"$ref\": \"#/$defs/label\"\n        },\n        \"raw\": {\n          \"$ref\": \"#/$defs/raw\"\n        }\n      },\n      \"required\": [\n        \"label\",\n        \"raw\"\n      ],\n      \"type\": \"object\"\n    },\n    \"raw\": {\n      \"maxLength\": 262144,\n      \"type\": \"string\"\n    },\n    \"title\": {\n      \"oneOf\": [\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"label\": {\n              \"type\": \"null\"\n            },\n            \"raw\": {\n              \"type\": \"null\"\n            },\n            \"state\": {\n              \"const\": \"missing\"\n            }\n          },\n          \"required\": [\n            \"state\",\n            \"label\",\n            \"raw\"\n          ],\n          \"type\": \"object\"\n        },\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"label\": {\n              \"$ref\": \"#/$defs/label\"\n            },\n            \"raw\": {\n              \"$ref\": \"#/$defs/raw\"\n            },\n            \"state\": {\n              \"const\": \"blank\"\n            }\n          },\n          \"required\": [\n            \"state\",\n            \"label\",\n            \"raw\"\n          ],\n          \"type\": \"object\"\n        },\n        {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"label\": {\n              \"$ref\": \"#/$defs/label\"\n            },\n            \"raw\": {\n              \"$ref\": \"#/$defs/raw\"\n            },\n            \"state\": {\n              \"const\": \"usable\"\n            }\n          },\n          \"required\": [\n            \"state\",\n            \"label\",\n            \"raw\"\n          ],\n          \"type\": \"object\"\n        }\n      ]\n    }\n  },\n  \"$id\": \"https://genomoncology.github.io/biodata/schemas/scientific-publication.schema.json\",\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"additionalProperties\": false,\n  \"description\": \"Structural schema for source-labeled bibliographic assertions. Rust decoding and constructors remain authoritative for duplicate members, UTF-8 byte totals, Unicode text classification, and cross-field identity rules.\",\n  \"properties\": {\n    \"type\": {\n      \"const\": \"biodata/scientific-publication\"\n    },\n    \"value\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"abstract_text\": {\n          \"$ref\": \"#/$defs/abstract\"\n        },\n        \"authorships\": {\n          \"items\": {\n            \"$ref\": \"#/$defs/authorship\"\n          },\n          \"maxItems\": 32,\n          \"type\": \"array\"\n        },\n        \"identifiers\": {\n          \"allOf\": [\n            {\n              \"contains\": {\n                \"properties\": {\n                  \"authority\": {\n                    \"const\": \"pmid\"\n                  }\n                },\n                \"required\": [\n                  \"authority\"\n                ],\n                \"type\": \"object\"\n              },\n              \"maxContains\": 1,\n              \"minContains\": 0\n            },\n            {\n              \"contains\": {\n                \"properties\": {\n                  \"authority\": {\n                    \"const\": \"pmcid\"\n                  }\n                },\n                \"required\": [\n                  \"authority\"\n                ],\n                \"type\": \"object\"\n              },\n              \"maxContains\": 1,\n              \"minContains\": 0\n            },\n            {\n              \"contains\": {\n                \"properties\": {\n                  \"authority\": {\n                    \"const\": \"doi\"\n                  }\n                },\n                \"required\": [\n                  \"authority\"\n                ],\n                \"type\": \"object\"\n              },\n              \"maxContains\": 1,\n              \"minContains\": 0\n            }\n          ],\n          \"items\": {\n            \"$ref\": \"#/$defs/identifier\"\n          },\n          \"maxItems\": 3,\n          \"minItems\": 1,\n          \"type\": \"array\"\n        },\n        \"journals\": {\n          \"items\": {\n            \"$ref\": \"#/$defs/labeledRaw\"\n          },\n          \"maxItems\": 32,\n          \"type\": \"array\"\n        },\n        \"named_dates\": {\n          \"items\": {\n            \"$ref\": \"#/$defs/labeledRaw\"\n          },\n          \"maxItems\": 32,\n          \"type\": \"array\"\n        },\n        \"title\": {\n          \"$ref\": \"#/$defs/title\"\n        }\n      },\n      \"required\": [\n        \"identifiers\",\n        \"title\",\n        \"abstract_text\",\n        \"journals\",\n        \"authorships\",\n        \"named_dates\"\n      ],\n      \"type\": \"object\"\n    }\n  },\n  \"required\": [\n    \"type\",\n    \"value\"\n  ],\n  \"title\": \"BioData Scientific Publication (provisional and unreleased)\",\n  \"type\": \"object\"\n}\n"
+    },
+    {
+      "id": "example:pubtator3-scientific-publication",
+      "path": "examples/pubtator3-scientific-publication.json",
+      "media_type": "application/json",
+      "sha256": "sha256:33df8e820b97eb7e7e2d708182ccffc0ed77bc5945f8cef40b22c04549a95639",
+      "content": "{\"type\":\"biodata/scientific-publication\",\"value\":{\"identifiers\":[{\"authority\":\"pmid\",\"identifier\":\"39325770\"}],\"title\":{\"state\":\"usable\",\"label\":\"pubtator3.passage.title\",\"raw\":\"Enabling preprint discovery, evaluation, and analysis with Europe PMC.\"},\"abstract_text\":{\"state\":\"usable\",\"label\":\"pubtator3.passage.abstract\",\"raw\":\"Preprints provide an indispensable tool for rapid and open communication of early research findings. Preprints can also be revised and improved based on scientific commentary uncoupled from journal-organised peer review. The uptake of preprints in the life sciences has increased significantly in recent years, especially during the COVID-19 pandemic, when immediate access to research findings became crucial to address the global health emergency. With ongoing expansion of new preprint servers, improving discoverability of preprints is a necessary step to facilitate wider sharing of the science reported in preprints. To address the challenges of preprint visibility and reuse, Europe PMC, an open database of life science literature, began indexing preprint abstracts and metadata from several platforms in July 2018. Since then, Europe PMC has continued to increase coverage through addition of new servers, and expanded its preprint initiative to include the full text of preprints related to COVID-19 in July 2020 and then the full text of preprints supported by the Europe PMC funder consortium in April 2022. The preprint collection can be searched via the website and programmatically, with abstracts and the open access full text of COVID-19 and Europe PMC funder preprint subsets available for bulk download in a standard machine-readable JATS XML format. This enables automated information extraction for large-scale analyses of the preprint corpus, accelerating scientific research of the preprint literature itself. This publication describes steps taken to build trust, improve discoverability, and support reuse of life science preprints in Europe PMC. Here we discuss the benefits of indexing preprints alongside peer-reviewed publications, and challenges associated with this process.\"},\"journals\":[{\"label\":\"pubtator3.document.journal\",\"raw\":\"PLoS One\"},{\"label\":\"pubtator3.passage.journal\",\"raw\":\"PLoS One;2024; 19 (9) 0303005. doi:10.1371/journal.pone.0303005\"}],\"authorships\":[{\"label\":\"pubtator3.document.authors\",\"raw\":null,\"ordered_display_names\":[\"Levchenko M\",\"Parkin M\",\"McEntyre J\",\"Harrison M\"],\"completeness\":\"unknown\"},{\"label\":\"pubtator3.passage.authors\",\"raw\":\"Levchenko M, Parkin M, McEntyre J, Harrison M, \",\"ordered_display_names\":null,\"completeness\":\"unknown\"}],\"named_dates\":[{\"label\":\"pubtator3.document.date\",\"raw\":\"2024-09-26T00:00:00Z\"},{\"label\":\"pubtator3.passage.year\",\"raw\":\"2024\"}]}}"
+    }
+  ],
+  "example_receipt": {
+    "fixture": "export_39325770.json",
+    "origin": "Exact response body captured directly from the public PubTator3 API under Ian Maurer's authorization on 2026-09-15",
+    "license": "The article title and abstract are from © 2024 Levchenko et al., licensed CC BY 4.0 at https://creativecommons.org/licenses/by/4.0/. The three captured annotation text and infons.name values are each COVID-19, which is also present in that licensed abstract; this scoped text determination does not assert provider derivation or general annotation-name licensing. Article CC BY does not blanket-license provider additions; source-generated annotations, identifiers, and technical metadata use the separately recorded factual and provider basis.",
+    "attribution": "Levchenko M, Parkin M, McEntyre J, Harrison M (2024), Enabling preprint discovery, evaluation, and analysis with Europe PMC, PLOS ONE 19(9): e0303005, https://doi.org/10.1371/journal.pone.0303005; PubTator3 and the U.S. National Library of Medicine",
+    "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=39325770",
+    "source_sha256": "sha256:4ab5cb9a467342d0e7c902a5f6328652c36f67d255c5d3c147b04cfebf0e2f40",
+    "transformation": "None; the committed response body bytes are untouched"
+  }
+}
