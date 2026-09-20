@@ -14,7 +14,7 @@ does not submit BioMCP to the official MCP Registry. After a promoted release
 passes its public-artifact checks, an operator must separately review the
 committed metadata and submit it to the official registry. That manual action
 must not be described as complete until the registry accepts it. The committed
-metadata remains the truthful record for the already published v0.8.25 release.
+metadata remains the truthful record for the already published v0.9.0 release.
 
 ## Which server mode should I use?
 

@@ -62,9 +62,9 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
 ```
 
 - **Edition:** Rust 2024
-- **Development candidate:** Rust `1.0.0-dev.1`; Python `1.0.0.dev1`. `scripts/check-version-sync.sh` validates that exact mapping and its lock files while public metadata remains at `0.8.25`.
+- **Development candidate:** Rust `1.0.0-dev.1`; Python `1.0.0.dev1`. `scripts/check-version-sync.sh` validates that exact mapping and its lock files while public metadata remains at `0.9.0`.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
-- **Release state:** v0.8.25 is the latest published release. Publishing a
+- **Release state:** v0.9.0 is the latest published release. Publishing a
   GitHub release or manually dispatching an exact `tag` runs the tag-driven
   workflow, which publishes archives, wheels, and the Homebrew update directly.
 - **Metadata changes:** Commit synchronized metadata and changelog updates;
@@ -265,7 +265,7 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 ## Release Pipeline
 
-v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `1.0.0-dev.1` and Python `1.0.0.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
+v0.9.0 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `1.0.0-dev.1` and Python `1.0.0.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
 
 `.github/workflows/release.yml` runs when a GitHub release is published, or on
 `workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
@@ -279,7 +279,7 @@ candidate tooling under `release/` is not wired into this workflow. The official
 MCP Registry submission remains a separate documented manual action. See
 [Release process](../../docs/reference/release-process.md).
 Existing installation documentation continues to describe the already
-published v0.8.25 channels; `install.sh` resolves the latest release with
+published v0.9.0 channels; `install.sh` resolves the latest release with
 platform assets rather than the latest merge to `main`.
 
 CI (`.github/workflows/ci.yml`) runs for pull requests and every push to

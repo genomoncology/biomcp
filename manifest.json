@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "biomcp",
   "display_name": "BioMCP",
-  "version": "0.8.25",
+  "version": "0.9.0",
   "description": "Portable read-only biomedical search and retrieval for desktop MCP clients.",
   "long_description": "BioMCP bundles verified macOS and Windows executables as a local read-only MCP server. The separate PyPI distribution remains biomcp-cli; the unrelated biomcp PyPI package is not this project.",
   "author": {

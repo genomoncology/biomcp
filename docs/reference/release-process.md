@@ -5,12 +5,12 @@ published or when an operator supplies a `tag` through `workflow_dispatch`.
 Either trigger publishes directly; there is no private workflow phase followed
 by a separate publication phase.
 
-The repository currently records v0.8.25 as the latest published release. The
+The repository currently records v0.9.0 as the latest published release. The
 Rust package can move ahead as a private development candidate without changing
 that public claim. The current candidate uses `1.0.0-dev.1`, while Python
 packaging uses its canonical PEP 440 equivalent, `1.0.0.dev1`. The committed
 citation, MCP directory manifests, and other public metadata continue to
-identify v0.8.25 until a reviewed stable release commit updates them together.
+identify v0.9.0 until a reviewed stable release commit updates them together.
 Development-candidate metadata is not a releasable tag.
 
 ## Before triggering publication

@@ -362,7 +362,7 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     maintenance_version = "0.9.0"
     maintenance_heading = "## 0.9.0 — 2026-09-16"
 
-    assert current_release_version == "0.8.25"
+    assert current_release_version == "0.9.0"
     assert maintenance_version in EXPECTED_RELEASE_TICKETS
     assert maintenance_version in EXPECTED_RELEASE_MARKERS
 
@@ -826,8 +826,8 @@ def test_release_overview_describes_committed_metadata_and_tag_publication() -> 
     assert "validates that exact mapping and its lock files" in overview
     assert "both `server.json` version fields" in overview
     assert "`CITATION.cff`" in overview
-    assert "v0.8.25 is the latest published release." in overview
-    assert "public metadata remains at `0.8.25`" in overview
+    assert "v0.9.0 is the latest published release." in overview
+    assert "public metadata remains at `0.9.0`" in overview
     assert (
         "Package versions are committed metadata, not values stamped from tags."
         in overview

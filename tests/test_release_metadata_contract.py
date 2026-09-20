@@ -26,6 +26,13 @@ def _copy_release_metadata_fixture(tmp_path: Path) -> Path:
         destination = repo / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
+    _set_public_metadata_version(repo, "0.8.25")
+    citation = repo / "CITATION.cff"
+    citation_text = citation.read_text(encoding="utf-8").replace(
+        "date-released: 2026-09-16", "date-released: 2026-07-07", 1
+    )
+    citation.write_text(citation_text, encoding="utf-8")
+    assert "date-released: 2026-07-07" in citation_text
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     subprocess.run(
         ["git", "config", "user.email", "test@example.com"], cwd=repo, check=True
@@ -59,17 +66,7 @@ def _replace_root_package_version(path: Path, version: str) -> None:
     path.write_text(updated, encoding="utf-8")
 
 
-def _set_every_concrete_version(repo: Path, version: str) -> None:
-    for relative in ("Cargo.toml", "pyproject.toml"):
-        path = repo / relative
-        text = path.read_text(encoding="utf-8")
-        updated, replacements = re.subn(
-            r'(?m)^version = "[^"]+"', f'version = "{version}"', text, count=1
-        )
-        assert replacements == 1
-        path.write_text(updated, encoding="utf-8")
-    for relative in ("Cargo.lock", "uv.lock"):
-        _replace_root_package_version(repo / relative, version)
+def _set_public_metadata_version(repo: Path, version: str) -> None:
     for relative in ("manifest.json", "server.json"):
         path = repo / relative
         metadata = json.loads(path.read_text(encoding="utf-8"))
@@ -92,6 +89,20 @@ def _set_every_concrete_version(repo: Path, version: str) -> None:
         ),
         encoding="utf-8",
     )
+
+
+def _set_every_concrete_version(repo: Path, version: str) -> None:
+    for relative in ("Cargo.toml", "pyproject.toml"):
+        path = repo / relative
+        text = path.read_text(encoding="utf-8")
+        updated, replacements = re.subn(
+            r'(?m)^version = "[^"]+"', f'version = "{version}"', text, count=1
+        )
+        assert replacements == 1
+        path.write_text(updated, encoding="utf-8")
+    for relative in ("Cargo.lock", "uv.lock"):
+        _replace_root_package_version(repo / relative, version)
+    _set_public_metadata_version(repo, version)
     formula = repo / "Formula/biomcp.rb"
     updated, replacements = re.subn(
         r'(?m)^  version "(?:__VERSION__|[^"]+)"$',
