@@ -41,6 +41,30 @@ def test_container_publish_platforms_and_latest_guard() -> None:
     assert "docker buildx imagetools create --tag" in container_publish
 
 
+def test_container_publish_checks_out_the_packaging_ref() -> None:
+    container_publish = _job_block(
+        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "container-publish"
+    )
+    checkout_steps = [
+        step
+        for step in container_publish.split("\n      - ")
+        if "uses: actions/checkout@v4" in step
+    ]
+
+    assert len(checkout_steps) == 1
+    assert "ref:" not in checkout_steps[0]
+
+
+def test_container_publish_resolves_the_revision_from_the_tag() -> None:
+    container_publish = _job_block(
+        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "container-publish"
+    )
+
+    assert "SOURCE_SHA=" in container_publish
+    assert "repos/${GITHUB_REPOSITORY}/commits/${TAG}" in container_publish
+    assert "git rev-parse HEAD" not in container_publish
+
+
 def test_no_other_workflow_exposes_release_publication() -> None:
     routes = (
         "gh release create",
