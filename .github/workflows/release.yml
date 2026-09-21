@@ -245,21 +245,22 @@ jobs:
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Check out the packaging ref
+        uses: actions/checkout@v4
 
       - name: Resolve the image version and source revision
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${TAG#v}"
-          SOURCE_SHA="$(git rev-parse HEAD)"
+          SOURCE_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha)"
           CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           {
             echo "VERSION=${VERSION}"
             echo "SOURCE_SHA=${SOURCE_SHA}"
             echo "CREATED=${CREATED}"
           } >> "$GITHUB_ENV"
-          echo "Publishing ghcr.io/genomoncology/biomcp:${VERSION} from ${SOURCE_SHA}"
+          echo "Packaging from ${GITHUB_REF_NAME} (${GITHUB_SHA}); content from ${TAG} (${SOURCE_SHA})"
 
       - name: Stage the released Linux executables
         env:

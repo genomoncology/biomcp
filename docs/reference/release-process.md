@@ -27,12 +27,17 @@ A `release` event with `types: [published]` starts five jobs:
 
 ## Container publication
 
-`container-publish` checks out the release tag, downloads the release's two
-Linux tarballs, and verifies them against their published sidecars before it
-unpacks each `biomcp` executable into the image build context. It then pushes
-one image index to `ghcr.io/genomoncology/biomcp:<version>` that carries
-`linux/amd64` and `linux/arm64`, assembled from those executables rather than
-recompiled in the job.
+`container-publish` checks out the packaging ref, which is the workflow's own
+ref rather than the release tag. A `release: published` event runs from the tag,
+so the packaging is the tag's; a manual dispatch runs from the ref it was
+started on, so main's `Dockerfile` and `.dockerignore` build the tag's content.
+The job downloads the release's two Linux tarballs and verifies them against
+their published sidecars before it unpacks each `biomcp` executable into the
+image build context, and it reads the revision label from the tag's commit with
+`gh api`. It then pushes one image index to
+`ghcr.io/genomoncology/biomcp:<version>` that carries `linux/amd64` and
+`linux/arm64`, assembled from those executables rather than recompiled in the
+job.
 
 After the push, the job pulls both platforms back from the registry and runs
 `biomcp --version`; the arm64 run goes through QEMU. Both runs must show a
