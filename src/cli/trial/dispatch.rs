@@ -1,3 +1,4 @@
+use super::search_summary::trial_search_query_summary;
 use super::zero_result::{
     has_active_trial_filters, verification_emptied_trial_hint, zero_result_trial_broadening_hints,
     zero_result_trial_next_commands,
@@ -610,88 +611,6 @@ pub(super) fn paginate_trial_locations(
         has_more,
         continuation_command: None,
     }
-}
-
-pub(super) fn trial_search_query_summary(
-    filters: &crate::entities::trial::TrialSearchFilters,
-    query_intervention: Option<&str>,
-    offset: usize,
-    next_page: Option<&str>,
-) -> String {
-    let is_ctgov = matches!(
-        filters.source,
-        crate::entities::trial::TrialSource::ClinicalTrialsGov
-    );
-    let shows_alias_opt_out = filters.no_alias_expand
-        && is_ctgov
-        && filters
-            .intervention
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|value| !value.is_empty());
-
-    vec![
-        filters
-            .condition
-            .as_deref()
-            .map(|v| format!("condition={v}")),
-        query_intervention.map(|v| format!("intervention={v}")),
-        shows_alias_opt_out.then(|| "alias_expand=off".to_string()),
-        filters.facility.as_deref().map(|v| format!("facility={v}")),
-        filters.age.map(|v| format!("age={v}")),
-        filters.sex.as_deref().map(|v| format!("sex={v}")),
-        filters.status.as_deref().map(|v| format!("status={v}")),
-        filters.phase.as_deref().map(|v| format!("phase={v}")),
-        filters
-            .study_type
-            .as_deref()
-            .map(|v| format!("study_type={v}")),
-        filters.sponsor.as_deref().map(|v| format!("sponsor={v}")),
-        filters
-            .sponsor_type
-            .as_deref()
-            .map(|v| format!("sponsor_type={v}")),
-        filters
-            .date_from
-            .as_deref()
-            .map(|v| format!("date_from={v}")),
-        filters.date_to.as_deref().map(|v| format!("date_to={v}")),
-        filters.mutation.as_deref().map(|v| format!("mutation={v}")),
-        filters.criteria.as_deref().map(|v| format!("criteria={v}")),
-        filters
-            .biomarker
-            .as_deref()
-            .map(|v| format!("biomarker={v}")),
-        filters
-            .prior_therapies
-            .as_deref()
-            .map(|v| format!("prior_therapies={v}")),
-        filters
-            .progression_on
-            .as_deref()
-            .map(|v| format!("progression_on={v}")),
-        filters
-            .line_of_therapy
-            .as_deref()
-            .map(|v| format!("line_of_therapy={v}")),
-        filters.lat.map(|v| format!("lat={v}")),
-        filters.lon.map(|v| format!("lon={v}")),
-        filters.distance.map(|v| format!("distance={v}")),
-        matches!(filters.source, crate::entities::trial::TrialSource::NciCts)
-            .then(|| "source=nci".to_string()),
-        filters
-            .results_available
-            .then(|| "has_results=true".to_string()),
-        (offset > 0).then(|| format!("offset={offset}")),
-        next_page
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(|value| format!("next_page={value}")),
-    ]
-    .into_iter()
-    .flatten()
-    .collect::<Vec<_>>()
-    .join(", ")
 }
 
 pub(super) fn should_show_trial_zero_result_nickname_hint(

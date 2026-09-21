@@ -77,6 +77,7 @@ REQUIRED_PACKAGE_MEMBERS = {
     "src/sources/gencc/tests.rs",
     "src/sources/mygene/tests/live.rs",
     "tests/test_gencc_docs_contract.py",
+    "src/cli/trial/search_summary.rs",
     "tests/test_biodata_model_reference.py",
     "tests/test_biodata_model_reference_surfaces.py",
     "tests/test_biodata_publication_reference.py",
@@ -455,9 +456,10 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     # Main adds the supported cell-line, Cellosaurus, ChEMBL, HPA, and
-    # PharmacoDB modules, documentation, templates, and focused tests. The
-    # exact merged package contains 1,395 files, with no spare capacity.
-    assert len(paths) == 1395
+    # PharmacoDB modules, documentation, templates, and focused tests; the
+    # cli/trial/search_summary.rs module is the added member. The exact
+    # merged package contains 1,396 files, with no spare capacity.
+    assert len(paths) == 1396
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

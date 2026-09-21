@@ -628,6 +628,39 @@ def test_rust_source_size_rejects_an_unexplained_raised_baseline(
     assert "lacks exact authorization" in "\n".join(payload["errors"])
 
 
+def test_graph_inventory_pins_exact_cumulative_provenance(tmp_path: Path) -> None:
+    ratchet = _load_ratchet_module()
+    graph = "src/entities/article/graph/tests.rs"
+    inventory = REPO_ROOT / "tools" / "rust-source-size-inventory.json"
+    source = inventory.read_text(encoding="utf-8")
+    entry = next(r for r in json.loads(source)["entries"] if r["path"] == graph)
+    auth = entry["authorized_increase"]
+    assert (entry["baseline_lines"], entry["floor_lines"]) == (1802, 998)
+    assert (auth["ticket"], auth["delta"]) == ("1200, biodata-0152", 804)
+    assert all(part in auth["reason"] for part in ("1200", "734", "0152", "70"))
+    for needle, replacement in (
+        ('"baseline_lines": 1802', '"baseline_lines": 1803'),
+        ('"delta": 804', '"delta": 805'),
+        (graph, graph.replace("tests.rs", "test.rs")),
+    ):
+        mutated = tmp_path / "inventory.json"
+        mutated.write_text(source.replace(needle, replacement, 1), encoding="utf-8")
+        assert ratchet.check_rust_source_size(REPO_ROOT, mutated)["status"] != "pass"
+
+
+def test_trial_dispatch_cap_allowlist_and_single_summary_owner() -> None:
+    ratchet = _load_ratchet_module()
+    allowlist = REPO_ROOT / "tools" / "cli-line-cap-allowlist.json"
+    assert ratchet.check_cli_line_cap(REPO_ROOT, allowlist)["status"] == "pass"
+    assert json.loads(allowlist.read_text(encoding="utf-8"))["entries"] == []
+    owners = [
+        path.relative_to(REPO_ROOT).as_posix()
+        for path in (REPO_ROOT / "src").rglob("*.rs")
+        if "fn trial_search_query_summary" in path.read_text(encoding="utf-8")
+    ]
+    assert owners == ["src/cli/trial/search_summary.rs"]
+
+
 def test_dead_code_inventory_covers_item_file_reason_stale_and_generated_paths(
     tmp_path: Path,
 ) -> None:

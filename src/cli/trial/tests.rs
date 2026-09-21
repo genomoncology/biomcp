@@ -129,9 +129,20 @@ fn trial_age_help_explains_age_only_count_is_approximate() {
 }
 
 #[test]
-fn search_trial_parses_positional_query() {
-    let cli = Cli::try_parse_from(["biomcp", "search", "trial", "melanoma", "--limit", "2"])
-        .expect("search trial should parse");
+fn search_trial_parses_positional_query_and_since_until_aliases() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "search",
+        "trial",
+        "melanoma",
+        "--since",
+        "2024-01-01",
+        "--until",
+        "2025-01-01",
+        "--limit",
+        "2",
+    ])
+    .expect("search trial should parse");
 
     let Cli {
         command:
@@ -193,8 +204,8 @@ fn search_trial_parses_positional_query() {
     assert_eq!(line_of_therapy, None);
     assert!(sponsor.is_empty());
     assert_eq!(sponsor_type, None);
-    assert_eq!(date_from, None);
-    assert_eq!(date_to, None);
+    assert_eq!(date_from.as_deref(), Some("2024-01-01"));
+    assert_eq!(date_to.as_deref(), Some("2025-01-01"));
     assert_eq!(lat, None);
     assert_eq!(lon, None);
     assert_eq!(distance, None);
