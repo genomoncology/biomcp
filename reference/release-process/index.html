@@ -4353,12 +4353,17 @@ release, the tag, or the public-version commit.</p>
   next section covers it.</li>
 </ul>
 <h2 id="container-publication">Container publication<a class="headerlink" href="#container-publication" title="Permanent link">&para;</a></h2>
-<p><code>container-publish</code> checks out the release tag, downloads the release's two
-Linux tarballs, and verifies them against their published sidecars before it
-unpacks each <code>biomcp</code> executable into the image build context. It then pushes
-one image index to <code>ghcr.io/genomoncology/biomcp:&lt;version&gt;</code> that carries
-<code>linux/amd64</code> and <code>linux/arm64</code>, assembled from those executables rather than
-recompiled in the job.</p>
+<p><code>container-publish</code> checks out the packaging ref, which is the workflow's own
+ref rather than the release tag. A <code>release: published</code> event runs from the tag,
+so the packaging is the tag's; a manual dispatch runs from the ref it was
+started on, so main's <code>Dockerfile</code> and <code>.dockerignore</code> build the tag's content.
+The job downloads the release's two Linux tarballs and verifies them against
+their published sidecars before it unpacks each <code>biomcp</code> executable into the
+image build context, and it reads the revision label from the tag's commit with
+<code>gh api</code>. It then pushes one image index to
+<code>ghcr.io/genomoncology/biomcp:&lt;version&gt;</code> that carries <code>linux/amd64</code> and
+<code>linux/arm64</code>, assembled from those executables rather than recompiled in the
+job.</p>
 <p>After the push, the job pulls both platforms back from the registry and runs
 <code>biomcp --version</code>; the arm64 run goes through QEMU. Both runs must show a
 non-root user and an <code>org.opencontainers.image.revision</code> label equal to the
