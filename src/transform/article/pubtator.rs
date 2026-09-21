@@ -1,3 +1,5 @@
+//! PubTator detail and document mapping into article entities.
+
 use crate::entities::article::{Article, ArticleAuthorCompleteness, ArticleSource};
 use crate::sources::pubtator::{PubTatorDetail, PubTatorDocument};
 

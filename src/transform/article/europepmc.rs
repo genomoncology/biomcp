@@ -1,3 +1,5 @@
+//! Europe PMC detail-to-article mapping and metadata merge helpers.
+
 use biodata::{PublicationIdentifier, ScientificPublication};
 
 use crate::entities::article::{Article, ArticleAuthorCompleteness, ArticleSource};
