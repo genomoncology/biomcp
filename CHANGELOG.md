@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Fixes
+
+- Restored container image publication on release. The `Release` workflow
+  pushes `ghcr.io/genomoncology/biomcp:<version>` with `linux/amd64` and
+  `linux/arm64` in one image index, assembled from the release's published
+  Linux tarballs, smokes both platforms from the registry, and moves `latest`
+  only after those smokes pass. A `container_only` dispatch rebuilds the image
+  for an already-published release, starting with v0.9.0. (1219)
+
 ### Internal
 
 - Advanced the development package identity to Rust `0.9.1-dev.1` and Python
