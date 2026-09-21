@@ -1,56 +1,77 @@
 # Release Process
 
-BioMCP uses one manually started workflow with two deliberately separate modes.
-The repository currently records v0.9.0 as the latest published release. The
-workflow code does not approve or start a release on its own.
+BioMCP publishes from one workflow, `Release` in
+`.github/workflows/release.yml`. The workflow runs when a GitHub release is
+published, and an operator can start it by hand to publish only the container
+image for a release that is already public. The workflow never creates the
+release, the tag, or the public-version commit.
 
-The Rust package can move ahead as a private development candidate without changing public release claims. The current candidate uses `0.9.1-dev.1`, while Python packaging uses its canonical PEP 440 equivalent, `0.9.1.dev1`. The committed citation, MCP directory manifests, and other public metadata continue to identify v0.9.0 until a reviewed stable release commit updates them together. Development candidates may be staged privately but are rejected by promotion and publication.
+## What a published release runs
 
-A schema-2 signing policy can allow one narrow development exception: the outer MCPB archive may remain unsigned for private desktop testing only. The macOS executable inside must still carry its real Developer ID signature and accepted notarization, and the Windows executable must still carry its real Authenticode signature and timestamp. The candidate records the unsigned outer archive, exact exception, and non-promotable status. Stable 0.9.0 still requires a valid outer MCPB signature and real MCPB identity. Unpacking and executing the archive on the three hosted runners proves the archive and signed inner binaries; it does not prove installation compatibility with a particular Claude Desktop build, which remains a separate manual check.
+A `release` event with `types: [published]` starts five jobs:
 
-## Go/no-go checkpoint
+- `build` compiles the five shipped targets, packages each artifact, writes a
+  `.sha256` sidecar, and uploads both files to the GitHub release. The five
+  artifacts are `biomcp-linux-x86_64.tar.gz`, `biomcp-linux-arm64.tar.gz`,
+  `biomcp-darwin-arm64.tar.gz`, `biomcp-darwin-x86_64.tar.gz`, and
+  `biomcp-windows-x86_64.zip`.
+- `pypi-build` builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
+  Windows x86_64 and uploads them as workflow artifacts.
+- `pypi-publish` runs after `pypi-build` in the protected `pypi` environment and
+  uploads those wheels to PyPI.
+- `homebrew-tap` runs after `build`, downloads the published checksums, and
+  updates the formula in `genomoncology/homebrew-biomcp`. Without a
+  `HOMEBREW_TAP_TOKEN` secret the job logs the skip and exits clean.
+- `container-publish` runs after `build` and publishes the container image; the
+  next section covers it.
 
-Ian creates and reviews the single commit that changes the public version to
-v0.9.0 or later. All committed version fields, changelog text, citation data,
-and install metadata must agree. From that full commit SHA:
+## Container publication
 
-1. Run `Release candidate` in `stage` mode. This builds one private candidate,
-   signs its native executables and MCPB bundle, and seals a checksummed
-   manifest. It does not tag, publish, or update a tap.
-2. Review that exact successful run, its 13 registered artifacts, signing and
-   notarization evidence, SBOM, provenance, and live-provider result.
-3. Record the exact MCPB SHA-256 from Ian's Claude Desktop smoke on Windows 10
-   or 11. Record the immediately previous public version's updater and verified
-   installer result, including executable hashes before the attempt, after the
-   updater, and after the installer. These records must identify the same source
-   commit and the final hash must match the sealed Linux executable.
-4. Make one go/no-go decision. On “go,” run `promote` with the source SHA,
-   successful stage run ID, and both records. The protected
-   `biomcp-release-promotion` environment supplies publisher credentials and a
-   separately pinned signing-policy hash.
+`container-publish` checks out the release tag, downloads the release's two
+Linux tarballs, and unpacks each `biomcp` executable into the image build
+context. It then pushes one image index to
+`ghcr.io/genomoncology/biomcp:<version>` that carries `linux/amd64` and
+`linux/arm64`, assembled from those executables rather than recompiled in the
+job.
 
-Promotion writes versioned GitHub, PyPI, GHCR, and Homebrew objects first. It
-then downloads or installs from those public locations on all five platform
-targets, both container architectures, both Homebrew runners, and all three
-MCPB paths. The public installer and live provider contracts are also checked.
-Only the last job marks the GitHub release latest, adds the GHCR `latest` tag,
-and advances the Homebrew tap's main branch. Failed attempts retain a unique
-partial record and do not move those pointers. Replaying identical versioned
-bytes is a no-op; conflicting bytes stop promotion.
+After the push, the job pulls both platforms back from the registry and runs
+`biomcp --version`; the arm64 run goes through QEMU. Both runs must show a
+non-root user and an `org.opencontainers.image.revision` label equal to the
+tag's commit. Only then does the job move `latest` with
+`docker buildx imagetools create`. A failed or cancelled `build` skips the
+job. If the push succeeds but a smoke fails, the workflow stops, `latest`
+stays on the previous image, and the versioned tag holds the unverified push
+until a rerun replaces it.
 
-## Provisioning required before a real release
+## Container-only dispatch
 
-- Provision reviewed Apple and Windows identities for a development candidate; a stable candidate also requires the real MCPB identity and working outer-signature path. Enable the top-level `release/signing-policy.json` only with those real identities and pin its SHA-256 in the protected environment. Because the protected-policy check compares the staging commit with its parent, the identity and policy activation must land in a predecessor commit, followed by a staging commit that does not change the policy bytes.
-- Provision the protected signing and promotion environments, required
-  publisher tokens, Apple notarization credentials, Windows signing material,
-  and the MCPB certificate chain.
-- Confirm the existing `genomoncology/homebrew-biomcp` tap and its protected
-  main branch accept only the workflow's final fast-forward.
+A manual run takes two inputs. `tag` (required) names the release tag to
+publish from. `container_only` (boolean, default `false`) skips `build` and
+`pypi-build`.
+
+With `container_only: true`, `pypi-publish` and `homebrew-tap` are skipped
+because their `needs` are skipped, so only `container-publish` runs. That path
+rebuilds the image for an already-published release, for example to backfill
+v0.9.0, and cannot touch PyPI, the release assets, or the tap.
+
+A manual run has no release upload URL, so a dispatch without `container_only`
+fails at the `build` job's asset upload. Use `container_only: true` for manual
+runs that only need the image.
+
+## Version metadata
+
+Package versions are committed metadata, not values stamped from tags.
+`scripts/check-version-sync.sh` checks the mapping from `Cargo.toml`,
+`pyproject.toml`, `manifest.json`, both `server.json` version fields,
+`CITATION.cff`, and any concrete Homebrew formula version while those files
+track the latest reachable stable tag. The private development candidate is
+Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`; public metadata stays on the latest
+published release, v0.9.0, until one reviewed commit moves it.
 
 ## Separate manual directory actions
 
 The release workflow does not publish `server.json` to the official MCP
-Registry or submit BioMCP to third-party directories. After public promotion,
-an operator reviews the committed registry metadata and performs each official
+Registry or submit BioMCP to third-party directories. After a release, an
+operator reviews the committed registry metadata and performs each official
 submission separately. Record acceptance before describing any directory as
 updated.
