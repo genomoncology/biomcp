@@ -36,7 +36,7 @@ Every published release pushes `ghcr.io/genomoncology/biomcp:<version>` and move
 - Raise the runtime image to `debian:trixie-slim` with a pinned index digest, and pin the two Linux `build` matrix legs to `ubuntu-24.04`. The v0.9.0 Linux binaries require GLIBC_2.39, which `debian:bookworm-slim` (glibc 2.36) does not provide, and `ubuntu-latest` would move the release binaries' glibc floor without warning.
 - Extend `spec/surface/docker-image.md` with an executable block asserting `release.yml` carries the container job, `platforms: linux/amd64,linux/arm64`, the revision label, both platform smokes, and the latest promotion. Reword the leading prose from "already registered in the sealed candidate" to the release's published Linux tarballs. `make spec` proves both.
 - Extend `tests/test_release_workflow_provenance.py::test_no_other_workflow_exposes_release_publication` with the container publication routes (`docker push`, `imagetools create`) so the intent Decision 2 leans on stays enforced.
-- Rewrite `docs/reference/release-process.md` to the single-workflow process that exists, including container publication and the dispatch path, and mark `sdlc/planning/release-0.9-runbook.md` as historical with its retired `stage`/`promote` steps named. Do not reintroduce the staged pipeline.
+- Rewrite `docs/reference/release-process.md` to the single-workflow process that exists, including container publication and the dispatch path, and mark `sdlc/planning/release-0.9-runbook.md` as historical with its retired `stage`/`promote` steps named. Do not reintroduce the staged pipeline. Add a `## Releases` section to `AGENTS.md` that names the container channel and points at that page, so a future agent does not drop container publication again.
 - Add a CHANGELOG entry under Unreleased.
 
 ## Acceptance
@@ -46,6 +46,7 @@ Every published release pushes `ghcr.io/genomoncology/biomcp:<version>` and move
 3. A `workflow_dispatch` with `container_only: true` and `tag: v0.9.0` passes with only the container job and its smoke steps running.
 4. After the dispatch, GHCR serves `0.9.0` and `latest` with equal per-platform manifest digests, verified with `docker buildx imagetools inspect --raw`, and the index contains `linux/amd64` and `linux/arm64`. Each platform's config carries the v0.9.0 commit in `org.opencontainers.image.revision`, read during the smoke pull. Arm64 resolves without a platform error. If the v0.9.0 arm64 asset fails to run, stop and report that; do not recompile in the container job.
 5. The rewritten `release-process.md` describes only current jobs and channels; the runbook carries a historical banner naming its retired steps and points at the rewritten page.
+6. `AGENTS.md` names the container channel and points at `docs/reference/release-process.md`.
 
 ## Out of scope
 

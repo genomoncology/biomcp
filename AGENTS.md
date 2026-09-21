@@ -82,6 +82,18 @@ Use this hybrid repo rail for dispatched work:
 - mustmatch
 - testing-mindset
 
+## Releases
+
+`docs/reference/release-process.md` is the release runbook of record. A
+published release builds five platform archives, publishes PyPI wheels through
+the protected `pypi` environment, updates the Homebrew tap, and publishes
+`ghcr.io/genomoncology/biomcp` for `linux/amd64` and `linux/arm64` with the
+`<version>` and `latest` tags. A manual `workflow_dispatch` with
+`container_only: true` republishes only the container image for an already
+published tag. Keep container publication in `.github/workflows/release.yml`;
+`spec/surface/docker-image.md` and `tests/test_release_workflow_provenance.py`
+enforce it.
+
 ## Hygiene
 
 Do not commit secrets, PHI, absolute local paths, planning notes, or March
