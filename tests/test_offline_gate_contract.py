@@ -40,8 +40,9 @@ def test_authoritative_linux_job_installs_unpinned_gate_tools() -> None:
     assert "sudo apt-get install --no-install-recommends" in canonical
     install = canonical.split("sudo apt-get install", 1)[1]
     install = install.split("sudo install", 1)[0]
-    for package in ("bubblewrap", "apparmor", "apparmor-profiles", "ripgrep"):
-        assert package in install
+    assert "=" not in install
+    packages = set(install.replace("\\", " ").split()) - {"--no-install-recommends"}
+    assert packages == {"bubblewrap", "apparmor", "apparmor-profiles", "ripgrep"}
     assert "make test" in canonical
     assert "make spec" in canonical
 
