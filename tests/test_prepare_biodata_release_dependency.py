@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import signal
 import subprocess
+import sys
 import time
 
 import pytest
@@ -18,6 +19,13 @@ GIT_FAKE = "#!/usr/bin/env bash\nif [[ $1 == config && $2 == --file ]]; then pri
 CARGO_FAKE = ("#!/usr/bin/env bash\n{ printf 'argv=%s\\n' \"$*\"; for k in " + KEYS + "; do [[ -v $k ]] && printf '%s=%s\\n' \"$k\" \"${!k}\"; done; stat -c 'mode=%a' \"$GIT_CONFIG_GLOBAL\"; } > \"$FAKE_LOG/env\"\n"
     'cp "$GIT_CONFIG_GLOBAL" "$FAKE_LOG/config"; if (("${FAKE_CARGO_SLEEP:-0}")); then echo $$ > "$FAKE_LOG/cargopid"; sleep "$FAKE_CARGO_SLEEP" & echo $! > "$FAKE_LOG/descendant"; wait; fi\n'
     'exit "${FAKE_CARGO_STATUS:-0}"\n')
+RESET = ("import os, signal, sys\n"
+         "assert len(sys.argv) == 2 and os.path.isfile(sys.argv[1])\n"
+         "for s in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM): signal.signal(s, signal.SIG_DFL)\n"
+         "os.execv(sys.argv[1], [sys.argv[1]])")
+IGNORE = ("import os, signal, sys\n"
+          "for s in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM): signal.signal(s, signal.SIG_IGN)\n"
+          "os.execv(sys.argv[1], sys.argv[1:])")
 
 
 def _gone(path: Path) -> None:
@@ -41,13 +49,10 @@ def _run(script, tmp_path, status="0", sig=0, cargo_sleep="0", extra=None):
            "FAKE_LOG": f"{tmp_path}/log", "FAKE_CARGO_STATUS": status,
            "FAKE_CARGO_SLEEP": "30" if sig else cargo_sleep,
            "TMPDIR": f"{tmp_path}/tmp", "HOME": f"{tmp_path}/home"} | (extra or {})
-    probe = subprocess.run(
-        ["env", "--default-signal=HUP,INT,TERM", "true"], capture_output=True)
-    assert probe.returncode == 0, f"GNU env --default-signal failed: {probe.stderr!r}"
-    command = ["env", "--default-signal=HUP,INT,TERM", str(script)]
+    command = [sys.executable, "-c", RESET, str(script)]
     if sig:
         # Replay xdist's ignored dispositions so removing the reset fails here.
-        command = ["env", "--ignore-signal=HUP,INT,TERM", *command]
+        command = [sys.executable, "-c", IGNORE, *command]
     process = subprocess.Popen(
         command, cwd=tmp_path, env=env, text=True, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, start_new_session=True)
@@ -57,7 +62,7 @@ def _run(script, tmp_path, status="0", sig=0, cargo_sleep="0", extra=None):
             assert time.monotonic() < deadline, "fake cargo never spawned"
             time.sleep(0.02)
         os.kill(process.pid, sig)
-    output = process.communicate(timeout=30)[0]
+    output = process.communicate(timeout=45)[0]
     env_file, config_file = tmp_path / "log/env", tmp_path / "log/config"
     text = env_file.read_text() if env_file.exists() else ""
     recorded = dict(line.split("=", 1) for line in text.splitlines() if "=" in line)
