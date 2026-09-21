@@ -11,7 +11,7 @@ roots, creates private state directories, declares no service port, and runs as
 the dedicated non-root account.
 
 ```bash
-cat ../../Dockerfile | mustmatch like 'debian:bookworm-slim@sha256:
+cat ../../Dockerfile | mustmatch like 'debian:trixie-slim@sha256:
 ca-certificates
 sha256sum -c
 USER 65532:65532
