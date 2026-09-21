@@ -30,14 +30,18 @@ def test_live_verify_lane_is_not_network_isolated() -> None:
     assert "tools/run-offline" not in verify
 
 
-def test_authoritative_linux_job_installs_pinned_bubblewrap() -> None:
+def test_authoritative_linux_job_installs_unpinned_gate_tools() -> None:
     canonical = WORKFLOW.split("  canonical-gates:\n", 1)[1].split(
         "\n  full-features:", 1
     )[0]
-    assert "BUBBLEWRAP_VERSION:" in WORKFLOW
-    assert '"bubblewrap=$BUBBLEWRAP_VERSION"' in canonical
-    assert "RIPGREP_VERSION: 14.1.0-1" in WORKFLOW
-    assert '"ripgrep=$RIPGREP_VERSION"' in canonical
+    assert "BUBBLEWRAP_VERSION" not in WORKFLOW
+    assert "APPARMOR_VERSION" not in WORKFLOW
+    assert "RIPGREP_VERSION" not in WORKFLOW
+    assert "sudo apt-get install --no-install-recommends" in canonical
+    install = canonical.split("sudo apt-get install", 1)[1]
+    install = install.split("sudo install", 1)[0]
+    for package in ("bubblewrap", "apparmor", "apparmor-profiles", "ripgrep"):
+        assert package in install
     assert "make test" in canonical
     assert "make spec" in canonical
 
@@ -67,10 +71,10 @@ def test_authoritative_linux_job_loads_scoped_apparmor_before_compilation() -> N
     canonical = WORKFLOW.split("  canonical-gates:\n", 1)[1].split(
         "\n  full-features:", 1
     )[0]
-    assert "APPARMOR_VERSION: 4.0.1really4.0.1-0ubuntu0.24.04.7" in WORKFLOW
+    assert "APPARMOR_VERSION" not in WORKFLOW
     expected = (
-        '"apparmor=$APPARMOR_VERSION"',
-        '"apparmor-profiles=$APPARMOR_VERSION"',
+        "apparmor",
+        "apparmor-profiles",
         "/usr/share/apparmor/extra-profiles/bwrap-userns-restrict",
         "/etc/apparmor.d/bwrap-userns-restrict",
         "apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict",
