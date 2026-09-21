@@ -25,7 +25,7 @@ Every published release pushes `ghcr.io/genomoncology/biomcp:<version>` and move
 ## Design
 
 - Add a `container-publish` job to `release.yml`:
-  - `needs: [build]`, `runs-on: ubuntu-latest`, `if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')` so a `container_only` dispatch that skips `build` still publishes while a failed or cancelled build does not, and `permissions: contents: read, packages: write`.
+  - `needs: [build]`, `runs-on: ubuntu-latest`, `if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')` so a `container_only` dispatch that skips `build` still publishes while a failed or cancelled build does not, `permissions: contents: read, packages: write`, and `concurrency: {group: container-publish-<tag>, cancel-in-progress: false}` so two publishes for one tag cannot race `latest`.
   - Resolve the tag once as `github.event.release.tag_name || inputs.tag`. On `workflow_dispatch`, `GITHUB_REF_NAME` is the branch and `github.sha` is main, so `SOURCE_SHA` is `git rev-parse HEAD` after the tag checkout and the image tags come from the resolved tag.
   - Check out the release tag, `gh release download` the two Linux tarballs, extract each `biomcp` into `dist/container/{amd64,arm64}/`, and write the sidecar from inside that directory, `(cd dist/container/$arch && sha256sum biomcp > biomcp.sha256)`. `Dockerfile:18` runs `sha256sum -c /tmp/biomcp.sha256` from `/usr/local/bin`, so a path-qualified line fails the build.
   - `docker/setup-qemu-action@v3`, `docker/setup-buildx-action@v3`, `docker/login-action@v3` (ghcr, `GITHUB_TOKEN`), then `docker/build-push-action@v6` with `platforms: linux/amd64,linux/arm64`, `push: true`, and the `<version>` tag only. Pass `SOURCE_SHA`, `VERSION`, and `CREATED` build args so the Dockerfile's revision and version labels are populated.
@@ -40,9 +40,9 @@ Every published release pushes `ghcr.io/genomoncology/biomcp:<version>` and move
 
 1. `release.yml` has the container job above and a release event still runs every previous job unchanged.
 2. `make lint` (actionlint over the workflows), `make test`, and `make spec` pass at the pushed SHA on the gate host. The extended provenance test and the markers pinned in `test_upstream_planning_analysis_docs.py` still pass.
-3. A `workflow_dispatch` with `container_only: true` and `tag: v0.9.0` completes with only the container job and its smoke steps started.
-4. After the dispatch, GHCR serves `0.9.0` and `latest` with equal per-platform manifest digests and equal `org.opencontainers.image.revision` values, verified with `docker buildx imagetools inspect --raw`, and the index contains `linux/amd64` and `linux/arm64`. Arm64 resolves without a platform error. If the v0.9.0 arm64 asset fails to run, stop and report that; do not recompile in the container job.
-5. The rewritten `release-process.md` and the marked runbook describe only jobs and channels the workflow has.
+3. A `workflow_dispatch` with `container_only: true` and `tag: v0.9.0` passes with only the container job and its smoke steps running.
+4. After the dispatch, GHCR serves `0.9.0` and `latest` with equal per-platform manifest digests, verified with `docker buildx imagetools inspect --raw`, and the index contains `linux/amd64` and `linux/arm64`. Each platform's config carries the v0.9.0 commit in `org.opencontainers.image.revision`, read during the smoke pull. Arm64 resolves without a platform error. If the v0.9.0 arm64 asset fails to run, stop and report that; do not recompile in the container job.
+5. The rewritten `release-process.md` describes only current jobs and channels; the runbook carries a historical banner naming its retired steps and points at the rewritten page.
 
 ## Out of scope
 
@@ -59,7 +59,7 @@ Every published release pushes `ghcr.io/genomoncology/biomcp:<version>` and move
 - Proof score: 2 (hosted dispatch plus registry inspection on two platforms, not a local test)
 - Cost of error score: 2 (a wrong push publishes a public artifact and can move `latest`)
 - Total: 7
-- Minimum level floor: none (no concurrency, credential, or durable-state change)
+- Minimum level floor: none (no concurrency, credential, or durable-state change; the job-level concurrency fence removes the one shared-pointer race)
 - Final level: 3
 - Reasons: public artifact publication with two-platform proof and a mutable `latest` pointer
 - Selected model: gpt-5.6-sol, medium reasoning (level 3 implementer)
@@ -75,5 +75,5 @@ Open to Ian's overturn.
 
 ## Review
 
-- Design review: pending
+- Design review: ACCEPT 2026-09-21 (gpt-5.6-sol, medium) — first round raised five P1 and six P2 findings; all resolved in 562c15ee, re-review confirmed with three acceptance clarifications folded
 - Code review: pending
