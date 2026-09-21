@@ -25,6 +25,10 @@ out. Docker users cannot pull 0.9.0.
 **Estimated complexity:** Level 1 (restore the docker-publish job from the
 0.8.25 workflow).
 
+**Shipped:** ticket 1219 (2026-09-21) restored publication for both Linux
+architectures, added the `container_only` dispatch, the latest-release guard,
+and the spec and provenance-test pins.
+
 ### P3: No macOS or Linux ARM64 CI runner
 
 The gencc store and provider capture code had platform-specific type
@@ -45,6 +49,10 @@ restored from 0.8.25. The docs mislead the next operator.
 
 **Estimated complexity:** Level 1 (rewrite the docs to match the actual
 process).
+
+**Shipped:** ticket 1219 (2026-09-21) rewrote `release-process.md` to the single
+workflow, marked the 0.9 runbook historical, moved the overview to v0.9.0, and
+documented the container channel in `AGENTS.md`.
 
 ## 1.0 feature track — deferred backlog and new capabilities
 

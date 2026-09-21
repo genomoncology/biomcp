@@ -80,4 +80,4 @@ Open to Ian's overturn.
 ## Review
 
 - Design review: ACCEPT 2026-09-21 (gpt-5.6-sol, medium) — first round raised five P1 and six P2 findings; all resolved in 562c15ee, re-review confirmed with three acceptance clarifications folded
-- Code review: pending
+- Code review: ACCEPT 2026-09-21 (gpt-5.6-sol, medium) — four review rounds; remediated the published-sidecar check, the latest-release guard, the packaging-ref fix found by the failed dispatches, and the provenance/spec pins. Gate and dispatch evidence in `sdlc/records/1219-release-publishes-the-container-image-for-both-linux-architectures.md`.
