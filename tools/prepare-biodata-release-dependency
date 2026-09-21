@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+umask 077
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+git_config="$(mktemp "${TMPDIR:-/tmp}/biomcp-biodata-gitconfig.XXXXXX")"
+cleanup() {
+  rm -f -- "$git_config"
+}
+trap cleanup EXIT
+
+unset GIT_CONFIG_PARAMETERS GIT_CONFIG
+export GIT_CONFIG_COUNT=0
+
+cargo_pid=
+pending_sig='' pending_status=''
+forward() {
+  if [[ -z $cargo_pid ]]; then
+    pending_sig=$1 pending_status=$2
+    return
+  fi
+  kill -"$1" -- "$cargo_pid" "-$cargo_pid" 2>/dev/null || true
+  wait "$cargo_pid" 2>/dev/null || true
+  exit "$2"
+}
+trap 'forward HUP 129' HUP
+trap 'forward INT 130' INT
+trap 'forward TERM 143' TERM
+
+git config --file "$git_config" \
+  url."git@github.com:genomoncology/biodata.git".insteadOf \
+  https://github.com/genomoncology/biodata
+
+export GIT_CONFIG_GLOBAL="$git_config"
+export GIT_CONFIG_NOSYSTEM=1
+export GIT_TERMINAL_PROMPT=0
+export GIT_SSH_COMMAND="ssh -oBatchMode=yes"
+export CARGO_NET_GIT_FETCH_WITH_CLI=true
+
+status=0
+setsid cargo fetch --manifest-path "$root/Cargo.toml" --locked &
+cargo_pid=$!
+[[ -z $pending_sig ]] || forward "$pending_sig" "$pending_status"
+wait "$cargo_pid" || status=$?
+exit "$status"

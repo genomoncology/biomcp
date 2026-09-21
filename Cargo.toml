@@ -21,7 +21,9 @@ exclude = [
     "tools/biodata-1.0-focused.toml",
     "tools/biodata_focused_pytest.py",
     "tools/biodata_focused_selection.py",
+    "tools/prepare-biodata-release-dependency",
     "tests/test_biodata_boundary.py",
+    "tests/test_prepare_biodata_release_dependency.py",
 ]
 
 [package.metadata.biodata-development]
