@@ -48,3 +48,14 @@ Residual: the `release: published` path has not yet run for a real release; the
 pre-existing package-boundary failures need their own fix; `release/container.py`
 still names the retired bookworm base and is inert. GitHub issue #281 is
 answered by the published image; the reply is Ian's.
+
+Verified on the M5 over Tailscale (imaurer-m5, macOS 26.4, Docker 29.4.3 arm64):
+`docker pull ghcr.io/genomoncology/biomcp` resolved `linux/arm64` natively and
+`docker run --rm ghcr.io/genomoncology/biomcp --version` printed `biomcp 0.9.0`,
+`list` worked, and the running UID was 65532. The plain pull on that machine
+currently hangs in Docker Desktop's credential helper
+(`docker-credential-desktop list` times out; Docker Desktop reports running
+after a restart), a local keychain or prompt state unrelated to the image. The
+image was pulled with an empty Docker config to bypass the helper, the bypass
+directory was removed, and the image is left in the local store so `docker run`
+works there.
