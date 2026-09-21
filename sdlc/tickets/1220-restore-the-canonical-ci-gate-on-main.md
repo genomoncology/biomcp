@@ -33,4 +33,5 @@ deps: []
 ## Review
 
 - Design review: not required, mechanical fix forced by the observed CI failure
-- Code review: pending
+- Code review: ACCEPT 2026-09-21 (gpt-5.6-sol, medium); the two assertion-strength notes were remediated in d5e563e5
+- CI: run 35660647512 succeeded on d5e563e5 with `canonical-gates` passing lint, test, and spec
