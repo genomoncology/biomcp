@@ -64,7 +64,7 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
 - **Edition:** Rust 2024
 - **Released:** Rust `0.9.0`; Python `0.9.0`. `scripts/check-version-sync.sh` validates that exact agreement across lock files and public metadata.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
-- **Release state:** v0.8.25 is the latest published release. A protected
+- **Release state:** v0.9.0 is the latest published release. A protected
   two-step workflow can privately stage a committed future version and, only
   after separate approval, promote those exact bytes through public checks.
 - **Metadata changes:** Commit synchronized metadata and changelog updates;
@@ -265,7 +265,7 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 ## Release Pipeline
 
-v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
+v0.9.0 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
 
 `.github/workflows/release.yml` runs when a GitHub release is published, or on
 `workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
@@ -282,7 +282,7 @@ it is not wired into this workflow. The official MCP Registry submission remains
 a separate documented manual action. See
 [Release process](../../docs/reference/release-process.md).
 Existing installation documentation continues to describe the already
-published v0.8.25 channels; `install.sh` resolves the latest release with
+published v0.9.0 channels; `install.sh` resolves the latest release with
 platform assets rather than the latest merge to `main`.
 
 CI (`.github/workflows/ci.yml`) runs for pull requests and every push to
