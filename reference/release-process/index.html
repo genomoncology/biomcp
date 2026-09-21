@@ -3484,10 +3484,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gono-go-checkpoint" class="md-nav__link">
+  <a href="#what-a-published-release-runs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Go/no-go checkpoint
+        What a published release runs
       
     </span>
   </a>
@@ -3495,10 +3495,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#provisioning-required-before-a-real-release" class="md-nav__link">
+  <a href="#container-publication" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Provisioning required before a real release
+        Container publication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-only-dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container-only dispatch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version metadata
       
     </span>
   </a>
@@ -4232,10 +4254,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gono-go-checkpoint" class="md-nav__link">
+  <a href="#what-a-published-release-runs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Go/no-go checkpoint
+        What a published release runs
       
     </span>
   </a>
@@ -4243,10 +4265,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#provisioning-required-before-a-real-release" class="md-nav__link">
+  <a href="#container-publication" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Provisioning required before a real release
+        Container publication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-only-dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container-only dispatch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version metadata
       
     </span>
   </a>
@@ -4285,52 +4329,69 @@
 
 
 <h1 id="release-process">Release Process<a class="headerlink" href="#release-process" title="Permanent link">&para;</a></h1>
-<p>BioMCP uses one manually started workflow with two deliberately separate modes.
-The repository currently records v0.9.0 as the latest published release. The
-workflow code does not approve or start a release on its own.</p>
-<p>The Rust package can move ahead as a private development candidate without changing public release claims. The current candidate uses <code>0.9.1-dev.1</code>, while Python packaging uses its canonical PEP 440 equivalent, <code>0.9.1.dev1</code>. The committed citation, MCP directory manifests, and other public metadata continue to identify v0.9.0 until a reviewed stable release commit updates them together. Development candidates may be staged privately but are rejected by promotion and publication.</p>
-<p>A schema-2 signing policy can allow one narrow development exception: the outer MCPB archive may remain unsigned for private desktop testing only. The macOS executable inside must still carry its real Developer ID signature and accepted notarization, and the Windows executable must still carry its real Authenticode signature and timestamp. The candidate records the unsigned outer archive, exact exception, and non-promotable status. Stable 0.9.0 still requires a valid outer MCPB signature and real MCPB identity. Unpacking and executing the archive on the three hosted runners proves the archive and signed inner binaries; it does not prove installation compatibility with a particular Claude Desktop build, which remains a separate manual check.</p>
-<h2 id="gono-go-checkpoint">Go/no-go checkpoint<a class="headerlink" href="#gono-go-checkpoint" title="Permanent link">&para;</a></h2>
-<p>Ian creates and reviews the single commit that changes the public version to
-v0.9.0 or later. All committed version fields, changelog text, citation data,
-and install metadata must agree. From that full commit SHA:</p>
-<ol>
-<li>Run <code>Release candidate</code> in <code>stage</code> mode. This builds one private candidate,
-   signs its native executables and MCPB bundle, and seals a checksummed
-   manifest. It does not tag, publish, or update a tap.</li>
-<li>Review that exact successful run, its 13 registered artifacts, signing and
-   notarization evidence, SBOM, provenance, and live-provider result.</li>
-<li>Record the exact MCPB SHA-256 from Ian's Claude Desktop smoke on Windows 10
-   or 11. Record the immediately previous public version's updater and verified
-   installer result, including executable hashes before the attempt, after the
-   updater, and after the installer. These records must identify the same source
-   commit and the final hash must match the sealed Linux executable.</li>
-<li>Make one go/no-go decision. On “go,” run <code>promote</code> with the source SHA,
-   successful stage run ID, and both records. The protected
-   <code>biomcp-release-promotion</code> environment supplies publisher credentials and a
-   separately pinned signing-policy hash.</li>
-</ol>
-<p>Promotion writes versioned GitHub, PyPI, GHCR, and Homebrew objects first. It
-then downloads or installs from those public locations on all five platform
-targets, both container architectures, both Homebrew runners, and all three
-MCPB paths. The public installer and live provider contracts are also checked.
-Only the last job marks the GitHub release latest, adds the GHCR <code>latest</code> tag,
-and advances the Homebrew tap's main branch. Failed attempts retain a unique
-partial record and do not move those pointers. Replaying identical versioned
-bytes is a no-op; conflicting bytes stop promotion.</p>
-<h2 id="provisioning-required-before-a-real-release">Provisioning required before a real release<a class="headerlink" href="#provisioning-required-before-a-real-release" title="Permanent link">&para;</a></h2>
+<p>BioMCP publishes from one workflow, <code>Release</code> in
+<code>.github/workflows/release.yml</code>. The workflow runs when a GitHub release is
+published, and an operator can start it by hand to publish only the container
+image for a release that is already public. The workflow never creates the
+release, the tag, or the public-version commit.</p>
+<h2 id="what-a-published-release-runs">What a published release runs<a class="headerlink" href="#what-a-published-release-runs" title="Permanent link">&para;</a></h2>
+<p>A <code>release</code> event with <code>types: [published]</code> starts five jobs:</p>
 <ul>
-<li>Provision reviewed Apple and Windows identities for a development candidate; a stable candidate also requires the real MCPB identity and working outer-signature path. Enable the top-level <code>release/signing-policy.json</code> only with those real identities and pin its SHA-256 in the protected environment. Because the protected-policy check compares the staging commit with its parent, the identity and policy activation must land in a predecessor commit, followed by a staging commit that does not change the policy bytes.</li>
-<li>Provision the protected signing and promotion environments, required
-  publisher tokens, Apple notarization credentials, Windows signing material,
-  and the MCPB certificate chain.</li>
-<li>Confirm the existing <code>genomoncology/homebrew-biomcp</code> tap and its protected
-  main branch accept only the workflow's final fast-forward.</li>
+<li><code>build</code> compiles the five shipped targets, packages each artifact, writes a
+  <code>.sha256</code> sidecar, and uploads both files to the GitHub release. The five
+  artifacts are <code>biomcp-linux-x86_64.tar.gz</code>, <code>biomcp-linux-arm64.tar.gz</code>,
+  <code>biomcp-darwin-arm64.tar.gz</code>, <code>biomcp-darwin-x86_64.tar.gz</code>, and
+  <code>biomcp-windows-x86_64.zip</code>.</li>
+<li><code>pypi-build</code> builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
+  Windows x86_64 and uploads them as workflow artifacts.</li>
+<li><code>pypi-publish</code> runs after <code>pypi-build</code> in the protected <code>pypi</code> environment and
+  uploads those wheels to PyPI.</li>
+<li><code>homebrew-tap</code> runs after <code>build</code>, downloads the published checksums, and
+  updates the formula in <code>genomoncology/homebrew-biomcp</code>. Without a
+  <code>HOMEBREW_TAP_TOKEN</code> secret the job logs the skip and exits clean.</li>
+<li><code>container-publish</code> runs after <code>build</code> and publishes the container image; the
+  next section covers it.</li>
 </ul>
+<h2 id="container-publication">Container publication<a class="headerlink" href="#container-publication" title="Permanent link">&para;</a></h2>
+<p><code>container-publish</code> checks out the release tag, downloads the release's two
+Linux tarballs, and verifies them against their published sidecars before it
+unpacks each <code>biomcp</code> executable into the image build context. It then pushes
+one image index to <code>ghcr.io/genomoncology/biomcp:&lt;version&gt;</code> that carries
+<code>linux/amd64</code> and <code>linux/arm64</code>, assembled from those executables rather than
+recompiled in the job.</p>
+<p>After the push, the job pulls both platforms back from the registry and runs
+<code>biomcp --version</code>; the arm64 run goes through QEMU. Both runs must show a
+non-root user and an <code>org.opencontainers.image.revision</code> label equal to the
+tag's commit. Only then does the job move <code>latest</code> with
+<code>docker buildx imagetools create</code>, and only when <code>gh release view</code> reports the
+tag as the repository's latest release. A backfill for an older release keeps
+its versioned tag and leaves <code>latest</code> alone. A failed or cancelled <code>build</code>
+skips the job. If the push succeeds but a smoke fails, the workflow stops,
+<code>latest</code> stays on the previous image, and the versioned tag holds the
+unverified push until a rerun replaces it.</p>
+<h2 id="container-only-dispatch">Container-only dispatch<a class="headerlink" href="#container-only-dispatch" title="Permanent link">&para;</a></h2>
+<p>A manual run takes two inputs. <code>tag</code> (required) names the release tag to
+publish from. <code>container_only</code> (boolean, default <code>false</code>) skips <code>build</code> and
+<code>pypi-build</code>.</p>
+<p>With <code>container_only: true</code>, <code>pypi-publish</code> and <code>homebrew-tap</code> are skipped
+because their <code>needs</code> are skipped, so only <code>container-publish</code> runs. That path
+rebuilds the image for an already-published release, for example to backfill
+v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
+<p>A manual run has no release upload URL, so a dispatch without <code>container_only</code>
+fails at the <code>build</code> job's asset upload. Use <code>container_only: true</code> for manual
+runs that only need the image.</p>
+<h2 id="version-metadata">Version metadata<a class="headerlink" href="#version-metadata" title="Permanent link">&para;</a></h2>
+<p>Package versions are committed metadata, not values stamped from tags.
+<code>scripts/check-version-sync.sh</code> checks the mapping from <code>Cargo.toml</code>,
+<code>pyproject.toml</code>, <code>manifest.json</code>, both <code>server.json</code> version fields,
+<code>CITATION.cff</code>, and any concrete Homebrew formula version while those files
+track the latest reachable stable tag. The private development candidate is
+Cargo <code>0.9.1-dev.1</code> and Python <code>0.9.1.dev1</code>; public metadata stays on the latest
+published release, v0.9.0, until one reviewed commit moves it.</p>
 <h2 id="separate-manual-directory-actions">Separate manual directory actions<a class="headerlink" href="#separate-manual-directory-actions" title="Permanent link">&para;</a></h2>
 <p>The release workflow does not publish <code>server.json</code> to the official MCP
-Registry or submit BioMCP to third-party directories. After public promotion,
-an operator reviews the committed registry metadata and performs each official
+Registry or submit BioMCP to third-party directories. After a release, an
+operator reviews the committed registry metadata and performs each official
 submission separately. Record acceptance before describing any directory as
 updated.</p>
 
