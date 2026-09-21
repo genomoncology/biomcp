@@ -271,10 +271,15 @@ v0.8.25 is the latest published release. Package versions are committed metadata
 `workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
 five platform archives with their `.sha256` sidecars, uploads them to the
 release, builds and publishes wheels through the protected `pypi` environment,
-and updates the `genomoncology/homebrew-biomcp` tap formula from the published
-checksums. The `release/` Python package holds the staged candidate tooling; it
-is not wired into this workflow. The official MCP Registry submission remains a
-separate documented manual action. See
+updates the `genomoncology/homebrew-biomcp` tap formula from the published
+checksums, and publishes the container image to `ghcr.io/genomoncology/biomcp`
+for `linux/amd64` and `linux/arm64` from the release's Linux tarballs once their
+published sidecars verify. A `container_only` dispatch input gates `build` and
+`pypi-build` off so an already-published release can rebuild just the image. The
+workflow moves the image's `latest` tag only when the tag is the repository's
+latest release. The `release/` Python package holds the staged candidate tooling;
+it is not wired into this workflow. The official MCP Registry submission remains
+a separate documented manual action. See
 [Release process](../../docs/reference/release-process.md).
 Existing installation documentation continues to describe the already
 published v0.8.25 channels; `install.sh` resolves the latest release with
