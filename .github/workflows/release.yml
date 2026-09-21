@@ -268,9 +268,9 @@ jobs:
           mkdir -p dist/container/amd64 dist/container/arm64
           gh release download "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            --pattern biomcp-linux-x86_64.tar.gz \
-            --pattern biomcp-linux-arm64.tar.gz \
+            --pattern 'biomcp-linux-*' \
             --dir dist
+          (cd dist && sha256sum -c biomcp-linux-x86_64.tar.gz.sha256 biomcp-linux-arm64.tar.gz.sha256)
           tar -xzf dist/biomcp-linux-x86_64.tar.gz -C dist/container/amd64 biomcp
           tar -xzf dist/biomcp-linux-arm64.tar.gz -C dist/container/arm64 biomcp
           (cd dist/container/amd64 && sha256sum biomcp > biomcp.sha256)
@@ -341,7 +341,14 @@ jobs:
           echo "linux/arm64 $IMAGE runs as uid $UID_IN_CONTAINER with revision $REVISION"
 
       - name: Move latest after both platform smokes pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           IMAGE="ghcr.io/genomoncology/biomcp"
+          LATEST_RELEASE="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
+          if [ "$LATEST_RELEASE" != "$TAG" ]; then
+            echo "$TAG is not the latest release ($LATEST_RELEASE); skip the latest tag."
+            exit 0
+          fi
           docker buildx imagetools create --tag "${IMAGE}:latest" "${IMAGE}:${VERSION}"
           docker buildx imagetools inspect "${IMAGE}:latest"

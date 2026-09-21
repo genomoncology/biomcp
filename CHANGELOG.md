@@ -5,11 +5,13 @@
 ### Fixes
 
 - Restored container image publication on release. The `Release` workflow
-  pushes `ghcr.io/genomoncology/biomcp:<version>` with `linux/amd64` and
-  `linux/arm64` in one image index, assembled from the release's published
-  Linux tarballs, smokes both platforms from the registry, and moves `latest`
-  only after those smokes pass. A `container_only` dispatch rebuilds the image
-  for an already-published release, starting with v0.9.0. (1219)
+  verifies the published sidecars of the release's Linux tarballs, pushes
+  `ghcr.io/genomoncology/biomcp:<version>` with `linux/amd64` and `linux/arm64`
+  in one image index, and smokes both platforms from the registry. It moves
+  `latest` only after those smokes pass and only when the tag is the
+  repository's latest release, so a `container_only` dispatch can rebuild the
+  image for an already-published release, starting with v0.9.0, without moving
+  the shared pointer. (1219)
 
 ### Internal
 

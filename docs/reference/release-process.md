@@ -28,20 +28,22 @@ A `release` event with `types: [published]` starts five jobs:
 ## Container publication
 
 `container-publish` checks out the release tag, downloads the release's two
-Linux tarballs, and unpacks each `biomcp` executable into the image build
-context. It then pushes one image index to
-`ghcr.io/genomoncology/biomcp:<version>` that carries `linux/amd64` and
-`linux/arm64`, assembled from those executables rather than recompiled in the
-job.
+Linux tarballs, and verifies them against their published sidecars before it
+unpacks each `biomcp` executable into the image build context. It then pushes
+one image index to `ghcr.io/genomoncology/biomcp:<version>` that carries
+`linux/amd64` and `linux/arm64`, assembled from those executables rather than
+recompiled in the job.
 
 After the push, the job pulls both platforms back from the registry and runs
 `biomcp --version`; the arm64 run goes through QEMU. Both runs must show a
 non-root user and an `org.opencontainers.image.revision` label equal to the
 tag's commit. Only then does the job move `latest` with
-`docker buildx imagetools create`. A failed or cancelled `build` skips the
-job. If the push succeeds but a smoke fails, the workflow stops, `latest`
-stays on the previous image, and the versioned tag holds the unverified push
-until a rerun replaces it.
+`docker buildx imagetools create`, and only when `gh release view` reports the
+tag as the repository's latest release. A backfill for an older release keeps
+its versioned tag and leaves `latest` alone. A failed or cancelled `build`
+skips the job. If the push succeeds but a smoke fails, the workflow stops,
+`latest` stays on the previous image, and the versioned tag holds the
+unverified push until a rerun replaces it.
 
 ## Container-only dispatch
 
