@@ -29,15 +29,20 @@ cat ../../.dockerignore | mustmatch like '**
 
 ## The Release Publishes Both Linux Architectures
 
-The release workflow stages the release's Linux tarballs, pushes one image
-index for both architectures under the release's version tag, smokes each
-platform from the registry, and moves `latest` only after both smokes pass.
+The release workflow verifies the release's Linux tarballs against their
+published sidecars, stages them, pushes one image index for both architectures
+under the release's version tag, smokes each platform from the registry, and
+moves `latest` only after both smokes pass and only when the tag is the
+repository's latest release.
 
 ```bash
 cat ../../.github/workflows/release.yml | mustmatch like 'container-publish:
 concurrency:
 group: container-publish-
 platforms: linux/amd64,linux/arm64
+sha256sum -c biomcp-linux-x86_64.tar.gz.sha256
+gh release view
+--jq .tagName
 org.opencontainers.image.revision
 Smoke the linux/amd64 image from the registry
 Smoke the linux/arm64 image from the registry
