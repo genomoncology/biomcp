@@ -59,3 +59,8 @@ after a restart), a local keychain or prompt state unrelated to the image. The
 image was pulled with an empty Docker config to bypass the helper, the bypass
 directory was removed, and the image is left in the local store so `docker run`
 works there.
+
+The same tag was pulled and run natively on Blink (`linux/amd64`):
+`biomcp 0.9.0`, revision `a450303872b7`, UID 65532. The release smoke covers
+`linux/arm64` on every publish. A reporter on Mac or Linux therefore gets a
+native image; the M5 credential-helper hang is local to that machine.
