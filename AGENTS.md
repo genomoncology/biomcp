@@ -88,7 +88,9 @@ Use this hybrid repo rail for dispatched work:
 published release builds five platform archives, publishes PyPI wheels through
 the protected `pypi` environment, updates the Homebrew tap, and publishes
 `ghcr.io/genomoncology/biomcp` for `linux/amd64` and `linux/arm64` with the
-`<version>` and `latest` tags. A manual `workflow_dispatch` with
+`<version>` and `latest` tags; `latest` moves only when the tag is the
+repository's latest release and both platform smokes pass. A manual
+`workflow_dispatch` with
 `container_only: true` republishes only the container image for an already
 published tag. Keep container publication in `.github/workflows/release.yml`;
 `spec/surface/docker-image.md` and `tests/test_release_workflow_provenance.py`
