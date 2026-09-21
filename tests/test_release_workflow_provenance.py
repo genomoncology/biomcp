@@ -9,7 +9,14 @@ RELEASE_WORKFLOW = WORKFLOWS / "release.yml"
 
 
 def test_no_other_workflow_exposes_release_publication() -> None:
-    routes = ("gh release create", "uv publish", "skopeo copy", "git push")
+    routes = (
+        "gh release create",
+        "uv publish",
+        "skopeo copy",
+        "git push",
+        "docker push",
+        "imagetools create",
+    )
     for path in WORKFLOWS.glob("*.yml"):
         if path == RELEASE_WORKFLOW:
             continue

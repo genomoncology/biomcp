@@ -1,8 +1,8 @@
 # Docker Image
 
-BioMCP's release image is assembled only from the two Linux executables already
-registered in the sealed candidate. The container build does not compile source
-or download a different BioMCP executable.
+BioMCP's release image is assembled only from the two Linux executables the
+release publishes. The container build does not compile source or download a
+different BioMCP executable.
 
 ## Runtime Image Is Bounded And Non-Root
 
@@ -25,6 +25,23 @@ ENTRYPOINT ["biomcp"]'
 cat ../../.dockerignore | mustmatch like '**
 !Dockerfile
 !dist/container/**'
+```
+
+## The Release Publishes Both Linux Architectures
+
+The release workflow stages the release's Linux tarballs, pushes one image
+index for both architectures under the release's version tag, smokes each
+platform from the registry, and moves `latest` only after both smokes pass.
+
+```bash
+cat ../../.github/workflows/release.yml | mustmatch like 'container-publish:
+concurrency:
+group: container-publish-
+platforms: linux/amd64,linux/arm64
+org.opencontainers.image.revision
+Smoke the linux/amd64 image from the registry
+Smoke the linux/arm64 image from the registry
+docker buildx imagetools create'
 ```
 
 ## Documentation Shows CLI And Stdio MCP Use
