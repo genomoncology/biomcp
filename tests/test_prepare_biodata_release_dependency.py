@@ -41,8 +41,15 @@ def _run(script, tmp_path, status="0", sig=0, cargo_sleep="0", extra=None):
            "FAKE_LOG": f"{tmp_path}/log", "FAKE_CARGO_STATUS": status,
            "FAKE_CARGO_SLEEP": "30" if sig else cargo_sleep,
            "TMPDIR": f"{tmp_path}/tmp", "HOME": f"{tmp_path}/home"} | (extra or {})
+    probe = subprocess.run(
+        ["env", "--default-signal=HUP,INT,TERM", "true"], capture_output=True)
+    assert probe.returncode == 0, f"GNU env --default-signal failed: {probe.stderr!r}"
+    command = ["env", "--default-signal=HUP,INT,TERM", str(script)]
+    if sig:
+        # Replay xdist's ignored dispositions so removing the reset fails here.
+        command = ["env", "--ignore-signal=HUP,INT,TERM", *command]
     process = subprocess.Popen(
-        [str(script)], cwd=tmp_path, env=env, text=True, stdout=subprocess.PIPE,
+        command, cwd=tmp_path, env=env, text=True, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, start_new_session=True)
     if sig:
         deadline = time.monotonic() + 10
