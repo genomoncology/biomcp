@@ -68,8 +68,9 @@ An opted-in type the server supports therefore belongs in the acknowledgment,
 and the empty object was a divergence. `src/mcp/shell/modern.rs` now reports
 `toolsListChanged` and `resourcesListChanged` when the client opts in, because
 the server advertises tools and resources. It omits `promptsListChanged` (no
-prompts capability) and `resourceSubscriptions` (its resources never update),
-and it never acknowledges a type the client did not request. Pinned by
+prompts capability) and `resourceSubscriptions` (no resource-subscription
+surface; `resources/subscribe` returns `-32601`), and it never acknowledges a
+type the client did not request. Pinned by
 `tests/test_mcp_2026_protocol.py` and `spec/surface/mcp.md`.
 
 ### Stateless 2025-11-25
