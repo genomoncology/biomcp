@@ -90,6 +90,7 @@ def test_recorded_base_image_matches_the_dockerfile_runtime_image(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     dockerfile = (ROOT / "Dockerfile").read_text()
+    assert "FROM ${RUNTIME_IMAGE}" in dockerfile
     declared = next(
         line.removeprefix("ARG RUNTIME_IMAGE=")
         for line in dockerfile.splitlines()
