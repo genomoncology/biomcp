@@ -15,7 +15,7 @@ The release workflow loses its unmaintained pieces and its stale claims. Nothing
 - `release.yml` uploads assets with `actions/upload-release-asset@v1`, which is archived and only works on `release: published` because it reads `github.event.release.upload_url`.
 - `homebrew-tap` computes `VERSION="${GITHUB_REF_NAME#v}"` (`release.yml:181`). On `workflow_dispatch`, `GITHUB_REF_NAME` is the branch, so a manual run could write a formula versioned `main` into the tap.
 - A full `workflow_dispatch` fails at the asset upload for the same missing URL; the container-only path avoids it and the release page documents that.
-- `docs/reference/mcp-server.md:17` says the metadata is truthful for "the already published v0.8.25 release".
+- `docs/reference/mcp-server.md:17` said the metadata was truthful for "the already published v0.8.25 release"; ticket 1224 landed that fix. 1222 keeps the stale architecture-document facts (`architecture/technical/overview.md:67-69` and `:268`).
 - `architecture/technical/overview.md:67-69` still describes the retired two-step stage/promote workflow.
 - `tests/test_docs_changelog_refresh.py:824-825` contains `... or True` and `assert True`, which cannot fail.
 - `tests/test_source_package_boundary.py` counts `cargo package` output exactly; untracked files in the yellow gate clone inflated it to 1,347 against the correct 1,342 and produced a false failure there.
