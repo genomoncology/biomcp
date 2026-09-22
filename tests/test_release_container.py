@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import io
+import json
 import sys
 import tarfile
 from pathlib import Path
@@ -83,6 +84,46 @@ def test_oci_layout_rejects_root_and_missing_architecture(tmp_path: Path) -> Non
         container.inspect_layout(
             _layout(tmp_path / "one", platforms=("amd64",)), "a" * 40, "1.2.3"
         )
+
+
+def test_recorded_base_image_matches_the_dockerfile_runtime_image(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text()
+    declared = next(
+        line.removeprefix("ARG RUNTIME_IMAGE=")
+        for line in dockerfile.splitlines()
+        if line.startswith("ARG RUNTIME_IMAGE=")
+    )
+    sbom = tmp_path / "sbom.json"
+    sbom.write_text("{}")
+    record = tmp_path / "record.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "container.py",
+            "--layout",
+            str(_layout(tmp_path / "layout")),
+            "--record",
+            str(record),
+            "--source-sha",
+            "a" * 40,
+            "--version",
+            "1.2.3",
+            "--run-id",
+            "1",
+            "--amd64-sha256",
+            "b" * 64,
+            "--arm64-sha256",
+            "c" * 64,
+            "--sbom",
+            str(sbom),
+        ],
+    )
+
+    assert container.main() == 0
+    assert json.loads(record.read_text())["provenance"]["base"] == declared
 
 
 def test_dockerfile_only_copies_staged_bytes_and_context_excludes_source() -> None:
