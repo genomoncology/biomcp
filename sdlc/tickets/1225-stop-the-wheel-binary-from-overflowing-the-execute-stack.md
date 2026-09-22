@@ -56,5 +56,6 @@ The published PyPI wheel is built in the release profile, runs `search trial`, `
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — two rounds; the first blocked on choosing a remedy before measuring, and the ticket was rebased on the measured dev-profile wheel with the profile fix, the pre-publish smoke, and the 16 MiB stop rule
+- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — the Linux leg pin and the smoke's failure-check pin were applied in de21f89e
+- Verification: release wheel `.text` 24,429,584 bytes (byte-identical to the cargo release binary) against 61,894,848 for a dev wheel; three commands exit 0 and `drug interactions` exits 1 cleanly on the release wheel, all four exit 134 on the dev wheel; gate on yellow at de8ffda8 lint/test/spec OK, and lint plus provenance 8/8 at de21f89e; see `sdlc/records/1225-stop-the-wheel-binary-from-overflowing-the-execute-stack.md`
