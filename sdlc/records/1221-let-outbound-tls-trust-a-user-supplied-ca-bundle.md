@@ -37,7 +37,8 @@ policy tests pass locally. The live docs pointer and CI `canonical-gates` were
 green on the merged main before this branch. The first `canonical-gates` run
 after the merge failed on the licensing inventory test, which needed
 `ca_bundle` added to its helper-module exclusion set; that fix landed on main
-as `91c0322a`.
+as `91c0322a`, and `canonical-gates` is green at the wave's final head
+`d2e180ec` (run 35795837337).
 
 Reviews: the design review rejected the first draft and required the full
 client-coverage list, in-process DER validation, defined precedence, and a

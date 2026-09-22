@@ -33,5 +33,8 @@ fixes, both applied.
 
 Residual: the fail branch needs a stale live site or a hosted dispatch to be
 proven end to end, and the pointer only appears on biomcp.org after this lands
-and the docs workflow deploys. The architecture overview's release paragraph
-still omits the gate; the runbook is the source of record.
+and the docs workflow deploys (verified live at `c6da3ef7`, whose pointer
+returns that commit). The architecture overview's release paragraph gained the
+gate sentence in the record commit. The ticket's two new packaged files raised
+`MAX_PACKAGE_FILES` from 1,342 to 1,344 in main commit `c6da3ef7` after the
+first post-merge `canonical-gates` run failed on the count.
