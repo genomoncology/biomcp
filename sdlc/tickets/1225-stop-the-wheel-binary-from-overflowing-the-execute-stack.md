@@ -21,16 +21,17 @@ The published PyPI wheel is built in the release profile, runs `search trial`, `
 
 ## Design
 
-- Pass `args: --release --locked` to `PyO3/maturin-action@v1` in the `pypi-build` matrix so every wheel matches the release profile the tarballs use (`Cargo.toml:141-145`). Verify by rebuilding the x86_64 wheel on the gate host and comparing its size and `.text` size against the tarball binary, not by reading the action input alone.
+- Pass `args: --release --locked` to `PyO3/maturin-action@v1` in the `pypi-build` matrix so every wheel matches the release profile the tarballs use (`Cargo.toml:141-145`). `--locked` matches `ci.yml`'s lockfile discipline, so a drifted lockfile fails the release build by design. Verify by rebuilding the x86_64 wheel on the gate host and comparing its size and `.text` size against the tarball binary, not by reading the action input alone.
 - Keep `EXECUTE_STACK_BYTES` at 8 MiB, per ticket 1191. If a release-profile wheel still overflows on the four commands, capture a gdb stack watermark on the gate host and stop and report with the measurement before considering any constant change; any such change is capped at 16 MiB with the same stop rule.
-- Add a pre-publish smoke to `release.yml` between `pypi-build` and `pypi-publish`: install the built `wheel-x86_64-unknown-linux-gnu` artifact into a clean venv outside the repo tree (RUN.md warns that in-tree `uv run` rebuilds instead of proving the wheel) and run the four exact commands from Current Facts, failing on SIGABRT or a `stack overflow` message. Make `pypi-publish` need it.
+- Add a pre-publish smoke to `release.yml` between `pypi-build` and `pypi-publish`: install the built `wheel-x86_64-unknown-linux-gnu` artifact into a clean venv outside the repo tree (RUN.md warns that in-tree `uv run` rebuilds instead of proving the wheel) and run the four exact commands from Current Facts, failing on SIGABRT or a `stack overflow` message. Make `pypi-publish` need it. The smoke carries the `container_only` gate so a container-only dispatch still skips PyPI work.
+- Update `docs/reference/release-process.md`'s job list and `tests/test_release_workflow_provenance.py` for the smoke job and its gating.
 - Record the pre/post wheel size and `.text` size for the fix SHA as the profile evidence.
 
 ## Acceptance
 
 1. A release-profile wheel built from the pushed SHA on the gate host has a `.text` section within a small margin of the 24,055,888-byte tarball binary (not the 68,281,008-byte dev build) and runs the four commands without a stack overflow.
 2. `EXECUTE_STACK_BYTES` stays 8 MiB; any change requires the measured watermark, is capped at 16 MiB, and stops and reports if the cap does not clear the commands.
-3. The release workflow's smoke fails on a dev-profile wheel and passes on the release-profile wheel, with the negative control (building without `--release`) shown; `pypi-publish` depends on the smoke.
+3. The release workflow's smoke fails on a dev-profile wheel and passes on the release-profile wheel, with the negative control recorded as a one-time gate-host demonstration (not a second dev-profile build on every release); `pypi-publish` depends on the smoke.
 4. `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA.
 
 ## Out of scope
@@ -42,7 +43,7 @@ The published PyPI wheel is built in the release profile, runs `search trial`, `
 
 ## Complexity
 
-- Contract score: 1 (one exact existing rule: shipped binaries come from the release profile)
+- Contract score: 1 (several explicit cases: the four command paths plus the two-binary `.text` size comparison)
 - State and timing score: 0 (build configuration, no runtime state change)
 - Reach score: 1 (the PyPI install channel)
 - Proof score: 2 (wheel rebuild plus four command paths and a negative control, not a unit test)
