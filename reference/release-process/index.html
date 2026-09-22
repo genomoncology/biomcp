@@ -3517,6 +3517,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#documentation-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation publication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4287,6 +4298,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#documentation-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation publication
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4385,6 +4407,17 @@ v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
 <p>A manual run has no release upload URL, so a dispatch without <code>container_only</code>
 fails at the <code>build</code> job's asset upload. Use <code>container_only: true</code> for manual
 runs that only need the image.</p>
+<h2 id="documentation-publication">Documentation publication<a class="headerlink" href="#documentation-publication" title="Permanent link">&para;</a></h2>
+<p>The site publishes from pushes to <code>main</code>, not from the release event. The
+release commit lands on <code>main</code> before the release is published, so its push
+runs <code>Publish documentation</code>: it builds the site strictly from that exact SHA,
+deploys it to the <code>gh-pages</code> branch, requests a Pages build, and verifies the
+live revision witness <code>https://biomcp.org/__biomcp_revision__/&lt;sha&gt;.txt</code> and
+the published Markdown bytes against the local build. Confirm that run
+succeeded for the release SHA before announcing the release. The site is edge
+documentation and tracks <code>main</code>, not the latest tag; ticket 1222 adds a
+release-time check for the same witness so a release fails when the site is
+behind.</p>
 <h2 id="version-metadata">Version metadata<a class="headerlink" href="#version-metadata" title="Permanent link">&para;</a></h2>
 <p>Package versions are committed metadata, not values stamped from tags.
 <code>scripts/check-version-sync.sh</code> checks the mapping from <code>Cargo.toml</code>,
