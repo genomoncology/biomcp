@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### New features
+
+- Added the `cell-line` entity: `search cell-line <name>` resolves common
+  spellings to Cellosaurus accessions, and `get cell-line <CVCL_xxxx>` returns
+  name, synonyms, species, disease, category, sex, age, cross-references, and
+  curated variants. DepMap, Cell Model Passports, ChEMBL, and PharmacoDB IDs
+  resolve through one cross-reference search, and every output names the
+  Cellosaurus release with its CC BY 4.0 attribution. (1202)
+
 ### Fixes
 
 - Restored container image publication on release. The `Release` workflow

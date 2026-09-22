@@ -53,7 +53,7 @@ def test_installation_doc_covers_binary_first_and_pypi_command_contract() -> Non
         "\n## Option 2: PyPI package",
     )
     assert INSTALLER_COMMAND in installer_block
-    assert "bash -s -- --version 0.8.0" in installer_block
+    assert "bash -s -- --version 0.9.0" in installer_block
     assert "fails closed" in installer_block
     assert "sha256sum" in installer_block
     assert "shasum -a 256" in installer_block

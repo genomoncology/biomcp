@@ -483,15 +483,18 @@ def test_blog_try_it_and_install_copy_are_consistent() -> None:
             assert "## Try It" not in blog_text
 
 
-def test_mcp_catalog_docs_name_the_development_build_they_measure() -> None:
+def test_mcp_catalog_docs_name_the_released_build_budget_without_stale_counts() -> None:
     for path in (
         "docs/getting-started/claude-desktop.md",
         "docs/reference/mcp-server.md",
     ):
         text = _normalize_whitespace(_read(path))
         assert "0.9.0 released build" in text
-        assert "15,841-byte, 3,996-token catalog" in text
         assert "22,600-byte / 5,800-token CI budget" in text
+        # The released 0.9.0 image measures 16,052 bytes and 4,083 tokens, so
+        # hand-copied catalog counts must not come back.
+        assert "15,841" not in text
+        assert "3,996" not in text
 
 
 def test_examples_and_operator_readmes_use_plain_runtime_copy() -> None:
