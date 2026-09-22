@@ -8,7 +8,7 @@ deps: []
 
 ## Goal
 
-Close the actionable cases the 0.1.5 conformance suite flags against 0.9.0 after the eight findings in GitHub issue #248 were fixed. The tool-schema cases are fixed in code; the subscription case closes by a fixed shape or a recorded decision; the not-verified and recommended cases are recorded. The reporter's cases pass; these are new.
+Close the actionable cases the 0.1.5 conformance suite flags against 0.9.0 after the eight findings in GitHub issue #248 were fixed. The tool-schema cases close by declaring `type: object`; the subscription case closes by a fixed shape or a recorded decision; the not-verified and recommended cases are recorded. The reporter's cases pass; these are new.
 
 ## Current Facts
 
@@ -28,7 +28,7 @@ Run of `npx @hasmcp/mcp-spec-test@latest -c "docker run -i --rm ghcr.io/genomonc
 
 ## Acceptance
 
-1. A manual suite run against a working-tree image (`docker build -t biomcp:1223 . && npx -y @hasmcp/mcp-spec-test@latest -c "docker run -i --rm biomcp:1223 serve"`, off the gate host) reports no failures in `tools/list` schema conformance or the official-SDK tool listing, with the raw summary line pasted into the record.
+1. A manual suite run against a working-tree build, off the gate host, reports no failures in `tools/list` schema conformance or the official-SDK tool listing, with the raw summary line pasted into the record. Use `npx -y @hasmcp/mcp-spec-test@latest -c "$PWD/target/spec/biomcp serve"` after `make prepare-spec`; the Dockerfile needs staged per-arch binaries, so a local image is optional.
 2. The `subscriptions/listen` case passes, or the divergence is recorded with the quoted spec sentence and the pinning test updated or explicitly reaffirmed.
 3. The stateless 2025-11-25 decision is recorded and pinned, or moved to Out of scope with the reason.
 4. `spec/surface/mcp.md` pins the tool schema shape and the subscription behavior, and `scripts/release-smoke.sh` reads the schema it now advertises.
