@@ -14,7 +14,8 @@ knows which source failed. Legacy source-shaped errors with an unknown name use
 the safe fallback described below. The human diagnostic uses the same source
 and recovery policy; neither output
 includes request destinations, credentials, provider bodies, parser details,
-or local paths.
+or local paths, except the operator-supplied CA bundle path that a `ca_bundle`
+failure names so the misconfiguration can be fixed.
 
 ## Process exit codes
 
@@ -37,7 +38,8 @@ execution failures:
 
 | Error variant | Meaning | Recovery guidance |
 |---------------|---------|-------------------|
-| `HttpClientInit` | HTTP client could not initialize | Check the TLS/network stack and local certificate configuration; ordinary provider clients intentionally ignore ambient proxy settings |
+| `HttpClientInit` | HTTP client could not initialize | Check the TLS/network stack and certificate configuration; set `BIOMCP_CA_BUNDLE` when the network uses a private root CA, and note that ordinary provider clients intentionally ignore ambient proxy settings |
+| `CaBundle` | An operator-supplied TLS CA bundle could not be read, parsed, or validated | Fix the bundle named in the message; `BIOMCP_CA_BUNDLE` is read first and `SSL_CERT_FILE` is the fallback |
 | `Http` | HTTP request failed before receiving a successful response | Retry the command and verify network connectivity |
 | `HttpMiddleware` | Retry/cache middleware failed | Retry; if persistent, clear cache and re-run with `--no-cache` |
 | `Api` | Upstream API returned an error response | Check API status, input values, and any source-specific constraints |

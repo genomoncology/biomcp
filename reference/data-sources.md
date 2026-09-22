@@ -89,8 +89,12 @@ must use HTTPS and resolve only to public addresses; redirects stay on the exact
 scheme, host, and effective port of the initial request. An explicit
 `BIOMCP_*_BASE` or `BIOMCP_*_BASE_URL` setting is a process-level trusted origin,
 so an operator can deliberately select HTTP or private/on-prem addresses, but
-the exception does not allow a redirect to another origin. AlphaGenome is the
-single separate authenticated gRPC/Tonic provider transport and is not part of
+the exception does not allow a redirect to another origin. Clients trust the
+bundled webpki roots plus any operator PEM bundle named by `BIOMCP_CA_BUNDLE`,
+falling back to `SSL_CERT_FILE` only when that variable is unset; the bundle
+only adds roots and never disables verification. AlphaGenome is the
+single separate authenticated gRPC/Tonic provider transport, reads the native
+OS trust store, and is not part of
 this ordinary Reqwest boundary.
 
 Provider-returned URL fetches share one outbound policy across Semantic Scholar

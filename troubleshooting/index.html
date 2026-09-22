@@ -4363,6 +4363,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#18-https-fails-on-a-network-with-a-private-certificate-authority" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18) HTTPS fails on a network with a private certificate authority
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4611,6 +4622,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#18-https-fails-on-a-network-with-a-private-certificate-authority" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18) HTTPS fails on a network with a private certificate authority
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4656,7 +4678,9 @@ legacy source-shaped errors with an unknown name use <code>BioMCP source</code>.
 diagnostics intentionally do not echo request URLs, credentials, provider
 response bodies, parser detail,
 or local paths, so use the canonical source label rather than expecting raw
-transport detail.</p>
+transport detail. The one deliberate exception is the operator-configured CA
+bundle path named by a <code>ca_bundle</code> failure, which the operator needs in order
+to fix the file.</p>
 <h2 id="1-validate-connectivity-first">1) Validate connectivity first<a class="headerlink" href="#1-validate-connectivity-first" title="Permanent link">&para;</a></h2>
 <p>Run API-level checks before debugging entity-specific commands:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
@@ -4964,6 +4988,22 @@ complete GTR root must contain:</p>
 <ul>
 <li><code>who_ivd.csv</code></li>
 </ul>
+<h2 id="18-https-fails-on-a-network-with-a-private-certificate-authority">18) HTTPS fails on a network with a private certificate authority<a class="headerlink" href="#18-https-fails-on-a-network-with-a-private-certificate-authority" title="Permanent link">&para;</a></h2>
+<p>When the network routes outbound HTTPS through a corporate or internal root CA,
+every provider request fails at the TLS handshake because that CA is not in
+BioMCP's bundled roots. Point BioMCP at the PEM bundle that holds it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_CA_BUNDLE</span><span class="o">=</span><span class="s2">&quot;/etc/pki/corp-root-ca.pem&quot;</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
+</code></pre></div>
+<p>The bundle only adds roots: bundled roots stay trusted and certificate
+verification stays on. <code>SSL_CERT_FILE</code> is read only when <code>BIOMCP_CA_BUNDLE</code> is
+unset; a blank or unreadable <code>SSL_CERT_FILE</code> warns and continues, while a
+readable but malformed one fails. A missing, unreadable, malformed, or
+certificate-less <code>BIOMCP_CA_BUNDLE</code> fails before any request and names the path
+in both text and <code>--json</code> errors, so confirm the path holds PEM <code>CERTIFICATE</code>
+blocks and is readable by the user running BioMCP. Client certificates, mTLS,
+and <code>SSL_CERT_DIR</code> are out of scope. AlphaGenome's gRPC client already reads
+the native OS trust store.</p>
 
 
 

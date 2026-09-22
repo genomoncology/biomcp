@@ -4512,6 +4512,10 @@ internal fixture overrides and release/install variables.</p>
 <td>Local WHO IVD download root</td>
 </tr>
 <tr>
+<td><code>BIOMCP_CA_BUNDLE</code></td>
+<td>PEM bundle of extra trusted TLS roots for ordinary provider HTTPS; <code>SSL_CERT_FILE</code> is the fallback</td>
+</tr>
+<tr>
 <td><code>cache.toml</code></td>
 <td>Persistent cache defaults under the resolved config root</td>
 </tr>
@@ -4536,6 +4540,17 @@ retention. In particular, it neither deletes nor force-refreshes the GenCC
 durable dataset; use <code>biomcp gencc sync</code> for explicit revalidation.
 <code>BIOMCP_CACHE_MAX_AGE</code> overrides <code>[cache].max_age_secs</code>; both values are
 positive integer seconds.</p>
+<p>Ordinary provider HTTPS trusts the bundled webpki roots plus any operator PEM
+bundle. <code>BIOMCP_CA_BUNDLE</code> is read first, and a blank or whitespace-only value
+counts as unset. <code>SSL_CERT_FILE</code> is read only when <code>BIOMCP_CA_BUNDLE</code> is unset;
+a blank or unreadable <code>SSL_CERT_FILE</code> warns and continues, while a readable but
+malformed bundle fails. A missing, unreadable, malformed, or certificate-less
+<code>BIOMCP_CA_BUNDLE</code> fails the command before any request and names the path in
+both text and <code>--json</code> errors. The bundle only adds roots: certificate
+verification and the bundled roots stay in place. Client certificates, mTLS,
+and <code>SSL_CERT_DIR</code> are out of scope. AlphaGenome's gRPC client already reads
+the native OS trust store. The shared and health HTTP clients are built once,
+so set the variable before starting BioMCP.</p>
 <h2 id="internal-and-measurement-controls">Internal and Measurement Controls<a class="headerlink" href="#internal-and-measurement-controls" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

@@ -4410,7 +4410,8 @@ knows which source failed. Legacy source-shaped errors with an unknown name use
 the safe fallback described below. The human diagnostic uses the same source
 and recovery policy; neither output
 includes request destinations, credentials, provider bodies, parser details,
-or local paths.</p>
+or local paths, except the operator-supplied CA bundle path that a <code>ca_bundle</code>
+failure names so the misconfiguration can be fixed.</p>
 <h2 id="process-exit-codes">Process exit codes<a class="headerlink" href="#process-exit-codes" title="Permanent link">&para;</a></h2>
 <p>BioMCP uses process exit codes to distinguish invalid usage from command
 execution failures:</p>
@@ -4440,7 +4441,12 @@ execution failures:</p>
 <tr>
 <td><code>HttpClientInit</code></td>
 <td>HTTP client could not initialize</td>
-<td>Check the TLS/network stack and local certificate configuration; ordinary provider clients intentionally ignore ambient proxy settings</td>
+<td>Check the TLS/network stack and certificate configuration; set <code>BIOMCP_CA_BUNDLE</code> when the network uses a private root CA, and note that ordinary provider clients intentionally ignore ambient proxy settings</td>
+</tr>
+<tr>
+<td><code>CaBundle</code></td>
+<td>An operator-supplied TLS CA bundle could not be read, parsed, or validated</td>
+<td>Fix the bundle named in the message; <code>BIOMCP_CA_BUNDLE</code> is read first and <code>SSL_CERT_FILE</code> is the fallback</td>
 </tr>
 <tr>
 <td><code>Http</code></td>
