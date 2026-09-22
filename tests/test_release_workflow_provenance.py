@@ -62,6 +62,7 @@ def test_homebrew_tap_resolves_the_tag_once_for_every_use() -> None:
         RELEASE_WORKFLOW.read_text(encoding="utf-8"), "homebrew-tap"
     )
 
+    assert "needs: [build, docs-live]" in homebrew_tap
     assert "GITHUB_REF_NAME" not in homebrew_tap
     assert homebrew_tap.count("github.event.release.tag_name || inputs.tag") == 1
     assert "TAG: ${{ github.event.release.tag_name || inputs.tag }}" in homebrew_tap
@@ -93,7 +94,7 @@ def test_wheel_smoke_runs_the_built_wheel_and_gates_pypi_publish() -> None:
     assert "name: wheel-x86_64-unknown-linux-gnu" in wheel_smoke
     assert 'BIOMCP="$RUNNER_TEMP/wheel-venv/bin/biomcp"' in wheel_smoke
     assert "uses: PyO3/maturin-action@v1" not in wheel_smoke
-    assert "needs: [pypi-build, wheel-smoke]" in pypi_publish
+    assert "needs: [pypi-build, wheel-smoke, docs-live]" in pypi_publish
 
 
 def test_wheel_smoke_fails_on_a_stack_overflow_and_runs_the_deep_paths() -> None:
@@ -163,3 +164,38 @@ def test_no_other_workflow_exposes_release_publication() -> None:
             continue
         text = path.read_text(encoding="utf-8")
         assert not any(route in text for route in routes), path.name
+
+
+def test_docs_live_reads_the_pointer_on_both_triggers() -> None:
+    docs_live = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "docs-live")
+
+    container_only_gate = (
+        "if: github.event_name == 'release' || inputs.container_only != true"
+    )
+    assert container_only_gate not in docs_live
+    assert "permissions:\n      contents: read" in docs_live
+    assert "TAG: ${{ github.event.release.tag_name || inputs.tag }}" in docs_live
+    assert (
+        "LIVE_REVISION_URL: https://biomcp.org/__biomcp_revision__/latest.txt"
+        in docs_live
+    )
+    assert 'gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha' in docs_live
+    assert "Cache-Control: no-cache" in docs_live
+    assert "Pragma: no-cache" in docs_live
+    assert "check-docs-live-revision.py" in docs_live
+    assert "--tag-sha \"$TAG_SHA\"" in docs_live
+    assert '--live-revision "$live_revision"' in docs_live
+    assert 'RETRY_WINDOW_SECONDS: "600"' in docs_live
+    assert 'RETRY_INTERVAL_SECONDS: "30"' in docs_live
+
+
+def test_docs_live_gates_every_publisher() -> None:
+    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    container_publish = _job_block(release, "container-publish")
+
+    assert "needs: [pypi-build, wheel-smoke, docs-live]" in _job_block(
+        release, "pypi-publish"
+    )
+    assert "needs: [build, docs-live]" in _job_block(release, "homebrew-tap")
+    assert "needs: [build, docs-live]" in container_publish
+    assert "needs.docs-live.result == 'success'" in container_publish

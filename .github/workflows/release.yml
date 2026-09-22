@@ -202,8 +202,59 @@ jobs:
           run_smoke drug interactions apixaban
           run_smoke drug trials imatinib
 
+  docs-live:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      LIVE_REVISION_URL: https://biomcp.org/__biomcp_revision__/latest.txt
+      RETRY_WINDOW_SECONDS: "600"
+      RETRY_INTERVAL_SECONDS: "30"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve the tag commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha)"
+          echo "TAG_SHA=${TAG_SHA}" >> "$GITHUB_ENV"
+          echo "release tag ${TAG} resolves to ${TAG_SHA}"
+
+      - name: Require the live documentation revision to equal or descend from the tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          deadline=$(( $(date +%s) + RETRY_WINDOW_SECONDS ))
+          attempt=0
+          while true; do
+            attempt=$(( attempt + 1 ))
+            live_revision="$(
+              curl --fail --silent --show-error \
+                --header 'Cache-Control: no-cache' \
+                --header 'Pragma: no-cache' \
+                --header 'User-Agent: BioMCP-docs-live-gate/1' \
+                "${LIVE_REVISION_URL}?biomcp_verify=$(date +%s%N)-${attempt}"
+            )" || live_revision=""
+            if [[ ! "$live_revision" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "attempt ${attempt}: ${LIVE_REVISION_URL} did not serve a 40-character revision"
+            elif python3 scripts/check-docs-live-revision.py \
+              --repository "$GITHUB_REPOSITORY" \
+              --tag-sha "$TAG_SHA" \
+              --live-revision "$live_revision"; then
+              echo "live documentation revision ${live_revision} is at or past ${TAG_SHA}"
+              exit 0
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "the live documentation revision did not reach ${TAG_SHA} within ${RETRY_WINDOW_SECONDS}s" >&2
+              exit 1
+            fi
+            sleep "$RETRY_INTERVAL_SECONDS"
+          done
+
   pypi-publish:
-    needs: [pypi-build, wheel-smoke]
+    needs: [pypi-build, wheel-smoke, docs-live]
     runs-on: ubuntu-latest
     environment: pypi
     steps:
@@ -217,7 +268,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
 
   homebrew-tap:
-    needs: [build]
+    needs: [build, docs-live]
     runs-on: ubuntu-latest
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -277,8 +328,8 @@ jobs:
           git push origin HEAD:main
 
   container-publish:
-    needs: [build]
-    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    needs: [build, docs-live]
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped') && needs.docs-live.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
