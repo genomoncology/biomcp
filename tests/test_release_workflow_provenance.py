@@ -44,11 +44,13 @@ def test_release_upload_step_uses_gh_and_runs_only_on_a_release() -> None:
         step for step in build.split("\n      - ") if "gh release upload" in step
     ]
 
+    assert "TAG: ${{ github.event.release.tag_name || inputs.tag }}" in build
     assert len(upload_steps) == 1
     upload = upload_steps[0]
     assert "if: github.event_name == 'release'" in upload
     # The Windows matrix leg defaults to PowerShell, which does not expand $TAG.
     assert "shell: bash" in upload
+    assert "GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}" in upload
     assert 'gh release upload "$TAG"' in upload
     assert '"${{ matrix.artifact }}"' in upload
     assert '"${{ matrix.artifact }}.sha256"' in upload

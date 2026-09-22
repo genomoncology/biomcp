@@ -74,8 +74,11 @@ backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.
 A dispatch without `container_only` builds and packages the artifacts but
 uploads nothing, because the upload step is guarded on the `release` event. The
 run then fails at `pypi-publish`, where PyPI rejects the version the release
-already published. Use `container_only: true` for manual runs that only need the
-image.
+already published. `homebrew-tap` and `container-publish` still run, so a
+dispatch that names an older tag rewrites the public Homebrew formula backwards
+and republishes that tag's image; the old early failure at the asset upload
+stopped a dispatch before either job. Use `container_only: true` for manual runs
+that only need the image.
 
 ## Documentation publication
 
