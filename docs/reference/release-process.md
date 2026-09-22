@@ -8,7 +8,7 @@ release, the tag, or the public-version commit.
 
 ## What a published release runs
 
-A `release` event with `types: [published]` starts six jobs:
+A `release` event with `types: [published]` starts seven jobs:
 
 - `build` compiles the five shipped targets, packages each artifact, writes a
   `.sha256` sidecar, and uploads both files to the GitHub release with
@@ -27,13 +27,19 @@ A `release` event with `types: [published]` starts six jobs:
   `drug interactions`, and `drug trials` through the installed `biomcp` binary.
   It fails on SIGABRT, on a stack-overflow message, and on any other crash, so a
   dev-profile wheel cannot reach PyPI. A clean source error still passes.
-- `pypi-publish` runs after `pypi-build` and `wheel-smoke` in the protected
-  `pypi` environment and uploads those wheels to PyPI.
-- `homebrew-tap` runs after `build`, downloads the published checksums, and
-  updates the formula in `genomoncology/homebrew-biomcp`. Without a
-  `HOMEBREW_TAP_TOKEN` secret the job logs the skip and exits clean.
-- `container-publish` runs after `build` and publishes the container image; the
-  next section covers it.
+- `docs-live` runs on both triggers, resolves the tag's commit, and reads the
+  pointer `https://biomcp.org/__biomcp_revision__/latest.txt` with no-cache
+  request headers and a fresh cache-busting query on every attempt. It retries
+  for up to ten minutes while the site deploy and the Pages cache catch up, and
+  it passes when the live revision equals the tag's commit or is a descendant
+  of it. A live revision behind or divergent from the tag fails the job.
+- `pypi-publish` runs after `pypi-build`, `wheel-smoke`, and `docs-live` in the
+  protected `pypi` environment and uploads those wheels to PyPI.
+- `homebrew-tap` runs after `build` and `docs-live`, downloads the published
+  checksums, and updates the formula in `genomoncology/homebrew-biomcp`. Without
+  a `HOMEBREW_TAP_TOKEN` secret the job logs the skip and exits clean.
+- `container-publish` runs after `build` and `docs-live` and publishes the
+  container image; the next section covers it.
 
 ## Container publication
 
@@ -56,9 +62,9 @@ tag's commit. Only then does the job move `latest` with
 `docker buildx imagetools create`, and only when `gh release view` reports the
 tag as the repository's latest release. A backfill for an older release keeps
 its versioned tag and leaves `latest` alone. A failed or cancelled `build`
-skips the job. If the push succeeds but a smoke fails, the workflow stops,
-`latest` stays on the previous image, and the versioned tag holds the
-unverified push until a rerun replaces it.
+skips the job, and so does a failed `docs-live`. If the push succeeds but a
+smoke fails, the workflow stops, `latest` stays on the previous image, and the
+versioned tag holds the unverified push until a rerun replaces it.
 
 ## Container-only dispatch
 
@@ -67,18 +73,21 @@ publish from. `container_only` (boolean, default `false`) skips `build` and
 `pypi-build`.
 
 With `container_only: true`, `wheel-smoke`, `pypi-publish`, and `homebrew-tap`
-are skipped because their `needs` are skipped, so only `container-publish` runs.
-That path rebuilds the image for an already-published release, for example to
+are skipped because their `needs` are skipped. `docs-live` has no
+`container_only` gate, so it still runs and `container-publish` waits for it: a
+backfill also requires the live site to be at or past the tag's commit. That
+path rebuilds the image for an already-published release, for example to
 backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.
 
 A dispatch without `container_only` builds and packages the artifacts but
 uploads nothing, because the upload step is guarded on the `release` event. The
 run then fails at `pypi-publish`, where PyPI rejects the version the release
-already published. `homebrew-tap` and `container-publish` still run, so a
-dispatch that names an older tag rewrites the public Homebrew formula backwards
-and republishes that tag's image; the old early failure at the asset upload
-stopped a dispatch before either job. Use `container_only: true` for manual runs
-that only need the image.
+already published; it fails earlier at `docs-live` when the site has not
+reached that tag's commit. When `docs-live` passes, `homebrew-tap` and
+`container-publish` still run, so a dispatch that names an older tag rewrites
+the public Homebrew formula backwards and republishes that tag's image; the old
+early failure at the asset upload stopped a dispatch before either job. Use
+`container_only: true` for manual runs that only need the image.
 
 ## Documentation publication
 
@@ -89,9 +98,16 @@ deploys it to the `gh-pages` branch, requests a Pages build, and verifies the
 live revision witness `https://biomcp.org/__biomcp_revision__/<sha>.txt` and
 the published Markdown bytes against the local build. Confirm that run
 succeeded for the release SHA before announcing the release. The site is edge
-documentation and tracks `main`, not the latest tag; ticket 1226 adds a
-release-time check for the same witness so a release fails when the site is
-behind.
+documentation and tracks `main`, not the latest tag.
+
+Every deploy also rewrites the pointer at
+`https://biomcp.org/__biomcp_revision__/latest.txt` with the same SHA, so the
+newest deploy stays readable after a later push removes the per-revision file.
+The `docs-live` job reads that pointer and retries for up to ten minutes while
+the deploy and the Pages cache catch up. The job passes when the live revision
+equals the tag's commit or is a descendant of it, and fails when the live
+revision is behind or divergent. A release therefore stops before PyPI, the
+tap, and the container image publish against stale documentation.
 
 ## Version metadata
 

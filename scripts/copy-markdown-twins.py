@@ -6,6 +6,7 @@ import shutil
 
 REVISION = re.compile(r"^[0-9a-f]{40}$")
 REVISION_DIRECTORY = "__biomcp_revision__"
+REVISION_POINTER = "latest.txt"
 
 
 def on_post_build(config, **kwargs) -> None:
@@ -27,4 +28,8 @@ def on_post_build(config, **kwargs) -> None:
             "BIOMCP_DOCS_REVISION must be a 40-character lowercase hexadecimal SHA"
         )
     witness_dir.mkdir()
-    (witness_dir / f"{revision}.txt").write_text(f"{revision}\n", encoding="utf-8")
+    witness = f"{revision}\n"
+    (witness_dir / f"{revision}.txt").write_text(witness, encoding="utf-8")
+    # The revision file names one deploy; the pointer keeps naming the newest
+    # deploy after a later push removes that file.
+    (witness_dir / REVISION_POINTER).write_text(witness, encoding="utf-8")
