@@ -65,6 +65,19 @@ A manual run has no release upload URL, so a dispatch without `container_only`
 fails at the `build` job's asset upload. Use `container_only: true` for manual
 runs that only need the image.
 
+## Documentation publication
+
+The site publishes from pushes to `main`, not from the release event. The
+release commit lands on `main` before the release is published, so its push
+runs `Publish documentation`: it builds the site strictly from that exact SHA,
+deploys it to the `gh-pages` branch, requests a Pages build, and verifies the
+live revision witness `https://biomcp.org/__biomcp_revision__/<sha>.txt` and
+the published Markdown bytes against the local build. Confirm that run
+succeeded for the release SHA before announcing the release. The site is edge
+documentation and tracks `main`, not the latest tag; ticket 1222 adds a
+release-time check for the same witness so a release fails when the site is
+behind.
+
 ## Version metadata
 
 Package versions are committed metadata, not values stamped from tags.
