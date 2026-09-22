@@ -45,5 +45,6 @@ The architecture document stops describing a workflow that no longer exists, the
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: REJECT 2026-09-22 (gpt-5.6-sol, medium) — the original bundle mixed five subsystems; this ticket keeps the stale facts and vacuous assertions
+- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — three notes; the guard now pins stable fragments, the container test asserts the Dockerfile consumes `RUNTIME_IMAGE`, and the stale test name stays because an issue still cites it
+- Verification: 46 focused Python tests with mutation checks, yellow `make lint` and `make test` OK at e8094a1d; see `sdlc/records/1227-retire-the-stale-release-facts-and-the-vacuous-assertions.md`

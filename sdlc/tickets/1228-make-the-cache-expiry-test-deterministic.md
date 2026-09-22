@@ -14,14 +14,14 @@ The cache-expiry test stops racing real file IO against a paused clock, so it ei
 
 - `cache::migration::tests::async_io_crossing_expiry_settles_without_admitting_a_mutation` (`src/cache/migration.rs:862-889`) failed once in a full nextest run, passed on rerun, and passed 20/20 in isolation (record 1219).
 - `deadline_io` accepts any `impl Future<Output = io::Result<T>>` (`src/cache/migration.rs:205-221`), so an in-memory completion can replace the real `tokio::fs::read` at `:879`.
-- The flake window is the non-biased `select` at `:883-886` racing the registered ten-second timer against paused-clock auto-advance; `:887-889` is the only explicit clock control.
+- The flake window is tokio's inner-first timeout poll in `timeout_at` plus a blocking read that can resolve before the join-handle poll; the non-biased `select` at `:883-886` and the paused-clock auto-advance widen it, and `:887-889` is the only explicit clock control.
 - `VariantArticleDeadline::run` is `timeout_at`, which polls the operation first (`src/sources/mod.rs:80-87`), so an operation that stays pending hangs the test and one that is ready on the first poll can beat the expired timer.
 
 ## Design
 
 - Reproduce the failure first with a starvation simulation: an operation that is ready on its first poll races the expired `timeout_at` timer (`src/sources/mod.rs:80-87`) and the old assertion fails with an unexpected `Ok`. That is the observable the red repro must show, and the red output stays in the record.
 - Keep the `entered` handshake outside the deadline-wrapped future, or bias the select on `entered`, and replace the real file read with an in-memory completion (a `Notify` or `oneshot`) that stays pending on the poll where the timer is checked, then yields and completes.
-- Removing the real read also removes the only real async-IO crossing, so say which assertion still carries the refusal evidence: the `untouched` marker and the epoch check at `src/cache/migration.rs:890-891` must still prove that no mutation landed.
+- Removing the real read also removes the only real async-IO crossing, so say which assertion still carries the refusal evidence: the `Err(TimedOut)` assertion at `src/cache/migration.rs:889` carries it, and the record must say so; the `untouched` marker and the epoch check at `:890-891` stay, but the in-memory operation never touches them. Real async-IO deadline coverage survives in `epoch_cleanup_stops_mutating_after_a_mid_traversal_deadline`.
 - Do not change `deadline_io`'s production semantics or any code outside the test module.
 
 ## Acceptance
@@ -43,5 +43,6 @@ The cache-expiry test stops racing real file IO against a paused clock, so it ei
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: REJECT 2026-09-22 (gpt-5.6-sol, medium) — the first draft's acceptance criterion had no bound; the rewrite named the red repro and three consecutive runs
+- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — confirmed the race is removed rather than narrowed; the record names `src/cache/migration.rs:889` as the refusal evidence
+- Verification: red repro panicked with `unwrap_err()` on an `Ok`, fmt and clippy clean, isolated test passes, three consecutive full nextest runs 3756/3756, yellow `make lint` and `make test` OK at 76633b95; see `sdlc/records/1228-make-the-cache-expiry-test-deterministic.md`

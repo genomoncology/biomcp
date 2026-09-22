@@ -821,12 +821,25 @@ def test_release_overview_describes_committed_metadata_and_protected_promotion()
     assert "validates that exact agreement across lock files" in overview
     assert "both `server.json` version fields" in overview
     assert "`CITATION.cff`" in overview
-    assert "v0.9.0 is the latest published release." in overview or True
-    assert True  # release mode: public metadata matches the release version
+    assert "v0.9.0 is the latest published release." in overview
     assert "Package versions are committed metadata, not values stamped from tags." in overview
     assert "five platform archives" in overview
     assert "protected `pypi` environment" in overview
-    assert "`release/` Python package holds the staged candidate tooling" in overview
+    assert "`release/` Python package stays on disk but is not" in overview
+
+
+def test_release_overview_names_the_single_release_workflow() -> None:
+    overview = re.sub(r"\s+", " ", _read("architecture/technical/overview.md"))
+
+    assert "`Release` in `.github/workflows/release.yml`" in overview
+    assert "runs when GitHub publishes a release" in overview
+    for retired in (
+        "protected two-step workflow",
+        "privately stage a committed future version",
+        "promote those exact bytes",
+        "holds the staged candidate tooling",
+    ):
+        assert retired not in overview, f"retired wording returned: {retired}"
 
 
 def test_gene_guide_includes_new_sections_and_positional_search() -> None:

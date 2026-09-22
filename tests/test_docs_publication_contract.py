@@ -131,7 +131,18 @@ def test_revision_witness_is_absent_or_exact_and_stale_files_are_removed(
     monkeypatch.setenv("BIOMCP_DOCS_REVISION", SHA)
     hook.on_post_build(config)
     assert (stale / f"{SHA}.txt").read_bytes() == f"{SHA}\n".encode()
-    assert list(stale.iterdir()) == [stale / f"{SHA}.txt"]
+    assert (stale / "latest.txt").read_bytes() == f"{SHA}\n".encode()
+    assert sorted(path.name for path in stale.iterdir()) == [f"{SHA}.txt", "latest.txt"]
+
+    # The release gate reads the pointer; the revision files keep one survivor.
+    next_sha = "b" * 40
+    monkeypatch.setenv("BIOMCP_DOCS_REVISION", next_sha)
+    hook.on_post_build(config)
+    assert (stale / "latest.txt").read_bytes() == f"{next_sha}\n".encode()
+    assert sorted(path.name for path in stale.iterdir()) == [
+        f"{next_sha}.txt",
+        "latest.txt",
+    ]
 
     monkeypatch.setenv("BIOMCP_DOCS_REVISION", "not-a-sha")
     with pytest.raises(ValueError, match="40-character lowercase"):

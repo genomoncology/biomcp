@@ -64,9 +64,10 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
 - **Edition:** Rust 2024
 - **Released:** Rust `0.9.0`; Python `0.9.0`. `scripts/check-version-sync.sh` validates that exact agreement across lock files and public metadata.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
-- **Release state:** v0.9.0 is the latest published release. A protected
-  two-step workflow can privately stage a committed future version and, only
-  after separate approval, promote those exact bytes through public checks.
+- **Release state:** v0.9.0 is the latest published release. One workflow,
+  `Release` in `.github/workflows/release.yml`, runs when GitHub publishes a
+  release, and an operator can start it by hand to publish only the container
+  image for a release that is already public.
 - **Metadata changes:** Commit synchronized metadata and changelog updates;
   package versions are never stamped from tags.
 - **Generated AlphaGenome client:** Normal builds do not run or require
@@ -277,9 +278,10 @@ for `linux/amd64` and `linux/arm64` from the release's Linux tarballs once their
 published sidecars verify. A `container_only` dispatch input gates `build` and
 `pypi-build` off so an already-published release can rebuild just the image. The
 workflow moves the image's `latest` tag only when the tag is the repository's
-latest release. The `release/` Python package holds the staged candidate tooling;
-it is not wired into this workflow. The official MCP Registry submission remains
-a separate documented manual action. See
+latest release, and it gates every publisher on a `docs-live` check that the
+live documentation revision is the tag commit or a descendant of it. The retired `release/` Python package stays on disk but is not
+the release path and is not wired into this workflow. The official MCP Registry
+submission remains a separate documented manual action. See
 [Release process](../../docs/reference/release-process.md).
 Existing installation documentation continues to describe the already
 published v0.9.0 channels; `install.sh` resolves the latest release with

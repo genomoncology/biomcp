@@ -49,5 +49,6 @@ A release stops publishing while biomcp.org serves documentation older than the 
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: REJECT 2026-09-22 (gpt-5.6-sol, medium) — required the stable pointer and gating all three publishers; the split moved this work out of the original 1222 bundle
+- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — two P2 fixes applied in 73bfc267 (bounded fetch timeouts, default-branch helper checkout)
+- Verification: actionlint clean, 43 focused Python tests with mutation checks, fake-`gh` gate test over equal, descendant, behind, divergent, and error cases; see `sdlc/records/1226-gate-a-release-on-the-live-documentation-revision.md`
