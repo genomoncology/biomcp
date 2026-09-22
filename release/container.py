@@ -12,6 +12,7 @@ from typing import Any
 
 from candidate import ARTIFACTS, canonical_bytes, sha256_file
 
+DOCKERFILE = Path(__file__).resolve().parents[1] / "Dockerfile"
 PLATFORMS = {("linux", "amd64"), ("linux", "arm64")}
 REQUIRED_LABELS = {
     "org.opencontainers.image.source",
@@ -24,6 +25,14 @@ REQUIRED_LABELS = {
 
 class ContainerError(ValueError):
     pass
+
+
+def runtime_image() -> str:
+    """Return the base image the shipped Dockerfile declares."""
+    for line in DOCKERFILE.read_text(encoding="utf-8").splitlines():
+        if line.startswith("ARG RUNTIME_IMAGE="):
+            return line.removeprefix("ARG RUNTIME_IMAGE=").strip()
+    raise ContainerError(f"Dockerfile lacks an ARG RUNTIME_IMAGE default: {DOCKERFILE}")
 
 
 def _json_member(archive: tarfile.TarFile, name: str) -> dict[str, Any]:
@@ -114,7 +123,7 @@ def main() -> int:
         "provenance": {
             "builder": "docker buildx",
             "build_count": 1,
-            "base": "debian:bookworm-slim@sha256:abd67ffcfa541b485a3dff59865ab629aa048a6c613e639d36e7456b0b229241",
+            "base": runtime_image(),
             "sbom_sha256": sha256_file(args.sbom),
         },
         "evidence": evidence,
