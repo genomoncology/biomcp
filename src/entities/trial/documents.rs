@@ -224,14 +224,15 @@ async fn download_document_with_policy(
 ) -> Result<Vec<u8>, BioMcpError> {
     let url = download_url(&base, nct_id, filename);
     policy.validate_url(&url)?;
-    let client = reqwest::Client::builder()
-        .connect_timeout(DOCUMENT_CONNECT_TIMEOUT)
-        .timeout(DOCUMENT_REQUEST_TIMEOUT)
-        .gzip(false)
-        .no_proxy()
-        .dns_resolver(policy.dns_resolver())
-        .redirect(policy.redirect_policy())
-        .build()?;
+    let client = crate::sources::ca_bundle::build_client(
+        reqwest::Client::builder()
+            .connect_timeout(DOCUMENT_CONNECT_TIMEOUT)
+            .timeout(DOCUMENT_REQUEST_TIMEOUT)
+            .gzip(false)
+            .no_proxy()
+            .dns_resolver(policy.dns_resolver())
+            .redirect(policy.redirect_policy()),
+    )?;
     let response = client
         .get(url)
         .send_with_source_context(crate::error::SourceContext::retry(

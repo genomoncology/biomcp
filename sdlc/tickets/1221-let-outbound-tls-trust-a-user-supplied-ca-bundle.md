@@ -49,6 +49,25 @@ BioMCP works on networks that route outbound HTTPS through a corporate or intern
 - Level 3 (contract 1, state and timing 1, reach 1, proof 2, cost of error 1 = 6)
 - Reasons: explicit precedence cases in text and `--json`; the `OnceLock` client build order makes the environment timing-sensitive; proof needs a private-CA loopback fixture, hostile inputs, failure injection, and a subprocess. No floor applies: the work is process-local and not durable or concurrent. The security clause does not force level 4 because nothing is removed, no credential is handled, verification stays on, and the roots stay additive.
 
+## Implementation record
+
+- Precedence as implemented: `BIOMCP_CA_BUNDLE` first, a blank or whitespace-only
+  value counts as unset; `SSL_CERT_FILE` applies only when the former is unset,
+  where a blank or unreadable file warns and continues and a readable but
+  malformed file fails naming the path. Every explicit-bundle problem fails
+  before any request as `BioMcpError::CaBundle` (`error.code: "ca_bundle"`),
+  which names the path in text and `--json`.
+- The helper lives in `src/sources/ca_bundle.rs`; `rustls` and `rustls-pemfile`
+  became direct dependencies so DER validation can happen before any client
+  build, and `rcgen` and `tokio-rustls` are the offline TLS fixture's
+  dev-dependencies.
+- The FDA orphan acquisition lane now returns `Result` from its fetch chain so
+  an unusable operator bundle fails the command; its other client-build
+  failures keep the lane's degraded `unavailable` contract.
+- `tools/rust-source-size-inventory.json` carries the exact post-change
+  baselines for `src/error.rs`, `src/sources/mod.rs`,
+  `src/sources/fda_orphan.rs`, and `src/sources/tests/provider_network.rs`.
+
 ## Review
 
 - Design review: pending

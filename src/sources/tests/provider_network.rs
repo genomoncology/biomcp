@@ -130,7 +130,8 @@ async fn fda_orphan_caps_forms_concurrency_and_off_bypasses_cache() {
         (0..8).map(|index| format!("candidate {index}")).collect(),
         super::super::fda_orphan::SourceCacheMode::Off,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     server.abort();
     assert_eq!(
         result.outcome,
@@ -163,12 +164,14 @@ async fn fda_orphan_normal_cache_is_fresh_then_refreshes_when_expired() {
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     let second = super::super::fda_orphan::fetch_with_mode(
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     assert_eq!(first, second);
     assert_eq!(state.requests.load(Ordering::SeqCst), 1);
     let manager = crate::cache::SizeAwareCacheManager::new(
@@ -183,7 +186,8 @@ async fn fda_orphan_normal_cache_is_fresh_then_refreshes_when_expired() {
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     assert_eq!(
         expired.outcome,
         super::super::fda_orphan::FdaOrphanOutcome::Unavailable
@@ -230,13 +234,15 @@ async fn fda_orphan_form_cache_is_independent_of_prior_candidate_set() {
         vec!["eflornithine hydrochloride".into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     assert_eq!(first.records.len(), 1);
     let later = super::super::fda_orphan::fetch_with_mode(
         vec!["eflornithine hydrochloride".into(), "other drug".into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     server.abort();
     assert_eq!(
         later.outcome,
@@ -267,13 +273,15 @@ async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Infinite,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     server.abort();
     let second = super::super::fda_orphan::fetch_with_mode(
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Infinite,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     assert_eq!(first, second);
     let bad_root = TempDirGuard::new("fda-orphan-http-failure");
     let (bad_base, _, bad_server) =
@@ -286,7 +294,8 @@ async fn fda_orphan_infinite_miss_stores_and_failed_http_does_not_cache() {
         vec![candidate.into()],
         super::super::fda_orphan::SourceCacheMode::Normal,
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     bad_server.abort();
     assert_eq!(
         failed.outcome,
@@ -327,7 +336,8 @@ async fn fda_orphan_contended_key_lock_cancels_without_a_late_write() {
         super::super::fda_orphan::SourceCacheMode::Normal,
         std::time::Duration::from_millis(40),
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     assert_eq!(
         result.outcome,
         super::super::fda_orphan::FdaOrphanOutcome::Unavailable
@@ -364,7 +374,8 @@ async fn fda_orphan_missing_post_write_metadata_fails_closed() {
         std::time::Duration::from_secs(2),
         Arc::new(manager),
     )
-    .await;
+    .await
+    .expect("fda orphan fetch");
     server.abort();
     assert_eq!(
         result.outcome,

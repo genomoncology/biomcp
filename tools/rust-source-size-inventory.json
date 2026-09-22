@@ -228,12 +228,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1138,
+      "baseline_lines": 1150,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1142, 1196, 1200, 1202, 1205",
-        "delta": 16,
-        "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules), the GenCC provider label for the sync initialization error (ticket 1196, +3), and the OpenCitations provider registration as the confirmation phase source (ticket 1200, +3), and the Cellosaurus provider registration for the cell-line source (ticket 1202, +1), and the PharmacoDB source provider constant (ticket 1205, +2).",
+        "ticket": "1142, 1196, 1200, 1202, 1205, 1221",
+        "delta": 28,
+        "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules), the GenCC provider label for the sync initialization error (ticket 1196, +3), and the OpenCitations provider registration as the confirmation phase source (ticket 1200, +3), and the Cellosaurus provider registration for the cell-line source (ticket 1202, +1), and the PharmacoDB source provider constant (ticket 1205, +2), and the CA bundle variant with its path-carrying projection for operator TLS trust (ticket 1221, +12).",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
       }
     },
@@ -333,6 +333,17 @@
       }
     },
     {
+      "path": "src/sources/fda_orphan.rs",
+      "baseline_lines": 1003,
+      "floor_lines": 999,
+      "authorized_increase": {
+        "ticket": "1221",
+        "delta": 4,
+        "reason": "The bounded acquisition and health-probe clients route through the shared operator CA bundle helper so a private root CA is trusted without disabling verification.",
+        "removal_condition": "Fold the two fixed-route clients into the shared bounded client builder when the FDA orphan lane is decomposed."
+      }
+    },
+    {
       "path": "src/sources/gencc/store.rs",
       "baseline_lines": 1039,
       "floor_lines": 1000,
@@ -356,12 +367,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2291,
+      "baseline_lines": 2292,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1022, 1150, 1158, 1199, 1200, 1202, 1205",
-        "delta": 444,
-        "reason": "Register dbSNP and GenCC, carry the task-local variant deadline through shared request, retry, and provider-admission utilities, resolve the citation-evidence sidecar cache mode, and register the OpenCitations reference client, and register the Cellosaurus client (ticket 1202, +1), and the pharmacodb module declaration (ticket 1205, +1).",
+        "ticket": "1022, 1150, 1158, 1199, 1200, 1202, 1205, 1221",
+        "delta": 445,
+        "reason": "Register dbSNP and GenCC, carry the task-local variant deadline through shared request, retry, and provider-admission utilities, resolve the citation-evidence sidecar cache mode, and register the OpenCitations reference client, and register the Cellosaurus client (ticket 1202, +1), and the pharmacodb module declaration (ticket 1205, +1), and the operator CA bundle module declaration (ticket 1221, +1).",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },
@@ -402,6 +413,17 @@
         "delta": 44,
         "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
         "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
+      }
+    },
+    {
+      "path": "src/sources/tests/provider_network.rs",
+      "baseline_lines": 1005,
+      "floor_lines": 994,
+      "authorized_increase": {
+        "ticket": "1221",
+        "delta": 11,
+        "reason": "The FDA orphan fetch chain now returns a result so an unusable operator CA bundle fails the command; each existing fetch assertion unwraps that result explicitly.",
+        "removal_condition": "Return to a single fetch helper when the FDA orphan cache and client fixtures are consolidated."
       }
     },
     {

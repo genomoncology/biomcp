@@ -126,13 +126,15 @@ fn orcid_http_client(base: &str) -> Result<reqwest_middleware::ClientWithMiddlew
         reqwest::header::CACHE_CONTROL,
         reqwest::header::HeaderValue::from_static("no-store"),
     );
-    let client = crate::sources::ordinary_url_policy::http_client_builder(Some(&policy))
-        .timeout(Duration::from_secs(30))
-        .connect_timeout(Duration::from_secs(10))
-        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
-        .default_headers(headers)
-        .build()
-        .map_err(BioMcpError::HttpClientInit)?;
+    let (client, bundle) = crate::sources::ordinary_url_policy::http_client_builder(Some(&policy))?;
+    let client = crate::sources::ca_bundle::build(
+        client
+            .timeout(Duration::from_secs(30))
+            .connect_timeout(Duration::from_secs(10))
+            .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
+            .default_headers(headers),
+        bundle,
+    )?;
     let builder = reqwest_middleware::ClientBuilder::new(client);
     let builder = crate::sources::ordinary_url_policy::with_initial_policy(builder, Some(&policy));
     Ok(builder

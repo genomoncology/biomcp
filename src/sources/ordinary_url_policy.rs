@@ -8,6 +8,7 @@ use reqwest::Url;
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 use reqwest_middleware::{ClientBuilder, Middleware, Next};
 
+use super::ca_bundle::{self, CaBundle};
 use super::provider_url_policy::{ProviderUrlPolicy, is_forbidden_address};
 use crate::error::BioMcpError;
 
@@ -181,19 +182,22 @@ pub(crate) fn with_initial_policy(
 
 pub(crate) fn http_client_builder(
     provider_policy: Option<&ProviderUrlPolicy>,
-) -> reqwest::ClientBuilder {
+) -> Result<(reqwest::ClientBuilder, Option<CaBundle>), BioMcpError> {
     match provider_policy {
         Some(policy) => provider_policy_client_builder(policy),
         None => ordinary_http_client_builder(),
     }
 }
 
-pub(crate) fn ordinary_http_client_builder() -> reqwest::ClientBuilder {
+pub(crate) fn ordinary_http_client_builder()
+-> Result<(reqwest::ClientBuilder, Option<CaBundle>), BioMcpError> {
     let policy = OrdinaryProviderPolicy::default();
-    reqwest::Client::builder()
-        .no_proxy()
-        .dns_resolver(policy.dns_resolver())
-        .redirect(policy.redirect_policy())
+    ca_bundle::configure(
+        reqwest::Client::builder()
+            .no_proxy()
+            .dns_resolver(policy.dns_resolver())
+            .redirect(policy.redirect_policy()),
+    )
 }
 
 pub(crate) fn ordinary_middleware_client_for_base<F>(
@@ -245,14 +249,12 @@ where
         policy.validate_url(&url)?;
     }
 
-    let client = configure(
+    let client = ca_bundle::build_client(configure(
         reqwest::Client::builder()
             .no_proxy()
             .dns_resolver(policy.dns_resolver())
             .redirect(policy.redirect_policy()),
-    )
-    .build()
-    .map_err(BioMcpError::HttpClientInit)?;
+    ))?;
     Ok(ClientBuilder::new(client)
         .with(BoundProviderPolicyMiddleware(policy))
         .build())
@@ -276,11 +278,15 @@ impl Middleware for BoundProviderPolicyMiddleware {
     }
 }
 
-pub(crate) fn provider_policy_client_builder(policy: &ProviderUrlPolicy) -> reqwest::ClientBuilder {
-    reqwest::Client::builder()
-        .no_proxy()
-        .dns_resolver(policy.dns_resolver())
-        .redirect(policy.redirect_policy())
+pub(crate) fn provider_policy_client_builder(
+    policy: &ProviderUrlPolicy,
+) -> Result<(reqwest::ClientBuilder, Option<CaBundle>), BioMcpError> {
+    ca_bundle::configure(
+        reqwest::Client::builder()
+            .no_proxy()
+            .dns_resolver(policy.dns_resolver())
+            .redirect(policy.redirect_policy()),
+    )
 }
 
 fn redirect_target_is_allowed(target: &Url, previous: &[Url]) -> bool {
