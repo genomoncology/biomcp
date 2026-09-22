@@ -154,14 +154,63 @@ jobs:
         with:
           toolchain: 1.93.1
           target: ${{ matrix.target }}
+          args: --release --locked
 
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.target }}
           path: target/wheels/*.whl
 
-  pypi-publish:
+  wheel-smoke:
     needs: [pypi-build]
+    if: github.event_name == 'release' || inputs.container_only != true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-x86_64-unknown-linux-gnu
+          path: ${{ runner.temp }}/wheel
+
+      - name: Install the wheel into a clean venv
+        run: |
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          "$RUNNER_TEMP/wheel-venv/bin/python" -m pip install "$RUNNER_TEMP"/wheel/*.whl
+          "$RUNNER_TEMP/wheel-venv/bin/biomcp" --version
+
+      - name: Smoke the installed wheel on the deep command paths
+        run: |
+          BIOMCP="$RUNNER_TEMP/wheel-venv/bin/biomcp"
+
+          run_smoke() {
+            status=0
+            output="$("$BIOMCP" "$@" 2>&1)" || status=$?
+            printf '%s\n' "$output" | head -n 20
+            if [ "$status" -eq 134 ]; then
+              echo "SIGABRT (exit 134) from: biomcp $*" >&2
+              return 1
+            fi
+            if printf '%s\n' "$output" | grep -q "has overflowed its stack"; then
+              echo "stack overflow from: biomcp $*" >&2
+              return 1
+            fi
+            if [ "$status" -ge 128 ]; then
+              echo "crash (exit $status) from: biomcp $*" >&2
+              return 1
+            fi
+            echo "biomcp $* exited $status"
+          }
+
+          run_smoke search trial --condition diabetes --limit 1
+          run_smoke search trial --criteria "anti-PD-1 therapy" --limit 3
+          run_smoke drug interactions apixaban
+          run_smoke drug trials imatinib
+
+  pypi-publish:
+    needs: [pypi-build, wheel-smoke]
     runs-on: ubuntu-latest
     environment: pypi
     steps:

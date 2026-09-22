@@ -8,7 +8,7 @@ release, the tag, or the public-version commit.
 
 ## What a published release runs
 
-A `release` event with `types: [published]` starts five jobs:
+A `release` event with `types: [published]` starts six jobs:
 
 - `build` compiles the five shipped targets, packages each artifact, writes a
   `.sha256` sidecar, and uploads both files to the GitHub release. The five
@@ -16,9 +16,17 @@ A `release` event with `types: [published]` starts five jobs:
   `biomcp-darwin-arm64.tar.gz`, `biomcp-darwin-x86_64.tar.gz`, and
   `biomcp-windows-x86_64.zip`.
 - `pypi-build` builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
-  Windows x86_64 and uploads them as workflow artifacts.
-- `pypi-publish` runs after `pypi-build` in the protected `pypi` environment and
-  uploads those wheels to PyPI.
+  Windows x86_64 and uploads them as workflow artifacts. Every wheel builds with
+  `args: --release --locked`, so the wheel binary carries the same release
+  profile as the tarball executables instead of a dev build with unoptimized
+  frames.
+- `wheel-smoke` runs after `pypi-build`, installs the Linux x86_64 wheel into a
+  virtual environment outside the checkout, and runs `search trial`,
+  `drug interactions`, and `drug trials` through the installed `biomcp` binary.
+  It fails on SIGABRT, on a stack-overflow message, and on any other crash, so a
+  dev-profile wheel cannot reach PyPI. A clean source error still passes.
+- `pypi-publish` runs after `pypi-build` and `wheel-smoke` in the protected
+  `pypi` environment and uploads those wheels to PyPI.
 - `homebrew-tap` runs after `build`, downloads the published checksums, and
   updates the formula in `genomoncology/homebrew-biomcp`. Without a
   `HOMEBREW_TAP_TOKEN` secret the job logs the skip and exits clean.
@@ -56,10 +64,10 @@ A manual run takes two inputs. `tag` (required) names the release tag to
 publish from. `container_only` (boolean, default `false`) skips `build` and
 `pypi-build`.
 
-With `container_only: true`, `pypi-publish` and `homebrew-tap` are skipped
-because their `needs` are skipped, so only `container-publish` runs. That path
-rebuilds the image for an already-published release, for example to backfill
-v0.9.0, and cannot touch PyPI, the release assets, or the tap.
+With `container_only: true`, `wheel-smoke`, `pypi-publish`, and `homebrew-tap`
+are skipped because their `needs` are skipped, so only `container-publish` runs.
+That path rebuilds the image for an already-published release, for example to
+backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.
 
 A manual run has no release upload URL, so a dispatch without `container_only`
 fails at the `build` job's asset upload. Use `container_only: true` for manual
