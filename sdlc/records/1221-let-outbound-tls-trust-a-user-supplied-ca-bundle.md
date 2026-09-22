@@ -34,7 +34,10 @@ certificate-less, unreadable, plus JSON path naming) passes three times, the
 full nextest run passes 3776/3776, `make lint` passes, and the package-boundary
 lane passes 9/9 with `TMPDIR` inside the worktree. 85 focused Python docs and
 policy tests pass locally. The live docs pointer and CI `canonical-gates` were
-green on the merged main before this branch.
+green on the merged main before this branch. The first `canonical-gates` run
+after the merge failed on the licensing inventory test, which needed
+`ca_bundle` added to its helper-module exclusion set; that fix landed on main
+as `91c0322a`.
 
 Reviews: the design review rejected the first draft and required the full
 client-coverage list, in-process DER validation, defined precedence, and a
