@@ -27,7 +27,7 @@ Wrong or stale:
 
 - `docs/reference/quick-reference.md:235` lists `unknown status` as a valid `--status` value; the binary rejects it.
 - `docs/getting-started/installation.md:22` pins the install example to `--version 0.8.0`.
-- `docs/reference/mcp-server.md:17` still says v0.8.25. Ticket 1222 owns the fix; 1224 only verifies it.
+- `docs/reference/mcp-server.md:17` still said v0.8.25 at audit time; 1224 corrects it here because the 1222 dependency had not landed.
 - `docs/reference/mcp-server.md:146-148` and `docs/getting-started/claude-desktop.md:47-50` carry hand-copied catalog numbers (15,841 bytes, 3,996 tokens) pinned as literals by `tests/test_documentation_consistency_audit_contract.py:492-494`, with nothing measuring them against the binary.
 - `docs/reference/sources.json` `reviewed_on` dates are format-checked but not age-checked (`tests/test_source_licensing_docs_contract.py:182`); many read `2026-03-20`.
 - `docs/reference/release-process.md:87-89` version facts have no mechanical check; the same facts in `architecture/technical/overview.md:268` are ticket 1222's.
