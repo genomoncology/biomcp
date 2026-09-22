@@ -2,6 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
+use rustls::pki_types::pem::PemObject;
 use tracing::warn;
 
 use crate::error::BioMcpError;
@@ -136,7 +137,7 @@ fn parse_certificates(path: &Path, bytes: &[u8]) -> Result<Vec<reqwest::Certific
     let mut trusted = rustls::RootCertStore::empty();
     let mut certificates = Vec::new();
     for item in rustls::pki_types::CertificateDer::pem_slice_iter(bytes) {
-        let certificate = item
+        let certificate: rustls::pki_types::CertificateDer<'static> = item
             .map_err(|error| bundle_error(path, format!("the PEM content is invalid: {error}")))?
             .into_owned();
         trusted
