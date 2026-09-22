@@ -47,7 +47,7 @@ Enforcement gap:
 
 - Fix the shipped-but-undocumented items in the owning pages: trial guide and quick reference (status values, the bare `active` refusal, zero-result hint, `upstream_total`, hyphenated-term behavior); entity tables in `README.md` and `docs/index.md`; quick reference and CLI reference (`author`, `study top-mutated`, `mcp tools`); `docs/policies.md` for the provider-capture store.
 - Correct the wrong values: drop `unknown status`, update the install example, move the version facts to v0.9.0, and replace the hand-copied catalog numbers with a measured value or remove the exact numbers.
-- Add `exclude_docs` for `docs/conftest.py`, and publish `CHANGELOG.md` as a docs page in the nav with its described entry in `docs/llms-full.txt`.
+- Add `exclude_docs` for `docs/conftest.py`, and add a Release notes nav entry pointing at the repository's GitHub Releases, so release notes live there without a duplicated page that can drift.
 - Extend the ratchet with the cheapest guards that bite: the trial status vocabulary, the `author` entity in the entity tables, and the release-process version facts compared against `Cargo.toml` and `pyproject.toml` rather than hard-coded. Keep each guard scoped so it fails on a wrong sentence, not on reflow.
 - Refresh the `sources.json` review dates or add an age check, and add the Unreleased CHANGELOG entry for the cell-line entity.
 
@@ -56,7 +56,7 @@ Enforcement gap:
 1. Every fact named in the findings is documented correctly or removed from the docs.
 2. `docs/reference/quick-reference.md` and the trial guide agree with `biomcp search trial --help` and the bare `--status active` refusal, and keep the `active, not recruiting` alias.
 3. The ratchet carries at least the status vocabulary, the `author` entity, and the release-process version facts, with the versions compared to `Cargo.toml` and `pyproject.toml`.
-4. `https://biomcp.org/conftest.py` is gone after the next deploy, the changelog page is in the nav and in `llms-full.txt`, and `mkdocs build --strict` passes.
+4. `https://biomcp.org/conftest.py` is gone after the next deploy, the nav links to the release notes, and `mkdocs build --strict` passes.
 5. The Unreleased CHANGELOG names the cell-line entity, and every `reviewed_on` date is refreshed or an age check rejects a stale one.
 6. `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA.
 
