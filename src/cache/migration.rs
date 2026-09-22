@@ -862,9 +862,7 @@ mod tests {
     #[tokio::test(start_paused = true)]
     async fn async_io_crossing_expiry_settles_without_admitting_a_mutation() {
         let root = TempDirGuard::new("epoch-io-crossing-deadline");
-        let source = root.path().join("source");
         let untouched = root.path().join("untouched");
-        fs::write(&source, b"read-only").unwrap();
         fs::write(&untouched, b"preserve").unwrap();
         let entered = std::sync::Arc::new(tokio::sync::Notify::new());
         let release = std::sync::Arc::new(tokio::sync::Notify::new());
@@ -876,11 +874,13 @@ mod tests {
             async move {
                 entered.notify_one();
                 release.notified().await;
-                tokio::fs::read(source).await.map(|_| ())
+                tokio::task::yield_now().await; // pending while the expired timer is checked
+                Ok(())
             }
         });
         tokio::pin!(io);
         tokio::select! {
+            biased;
             () = entered.notified() => {}
             result = &mut io => panic!("I/O settled before injected pause: {result:?}"),
         }
