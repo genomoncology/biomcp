@@ -65,6 +65,7 @@ def test_wheel_smoke_fails_on_a_stack_overflow_and_runs_the_deep_paths() -> None
     assert 'grep -q "has overflowed its stack"' in wheel_smoke
     assert '"$status" -eq 134' in wheel_smoke
     assert '"$status" -ge 128' in wheel_smoke
+    assert wheel_smoke.count("return 1") == 3
     for command in (
         "run_smoke search trial --condition diabetes --limit 1",
         'run_smoke search trial --criteria "anti-PD-1 therapy" --limit 3',
