@@ -46,7 +46,8 @@ the real local `tools/list` response with
 `uv run --no-sync python scripts/measure-mcp-tools.py` and rejects catalogs over
 22,600 UTF-8 bytes or 5,800 `cl100k_base` tokens; `biomcp mcp tools` prints the
 same catalog as a JSON array. The 22,600-byte / 5,800-token CI budget applies
-to the 0.9.0 released build.
+to the 0.9.0 released build. Exact current counts belong to that executable
+measurement rather than hand-copied documentation.
 
 ## Operational tips
 

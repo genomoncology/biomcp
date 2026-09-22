@@ -41,10 +41,10 @@ TRIAL_STATUS_HELP_PATH = "src/cli/trial/mod.rs"
 TRIAL_STATUS_HELP_RE = re.compile(
     r"Filter by trial status \[values: (?P<values>[^\]]+)\]"
 )
-TRIAL_STATUS_DOC_PAGES = [
-    "docs/user-guide/trial.md",
-    "docs/reference/quick-reference.md",
-]
+TRIAL_STATUS_DOC_SECTIONS = {
+    "docs/user-guide/trial.md": "### Status values",
+    "docs/reference/quick-reference.md": "## Trial status values",
+}
 TRIAL_STATUS_REFUSAL_FRAGMENTS = [
     "bare `--status active`",
     "ambiguous",
@@ -1566,31 +1566,58 @@ def trial_status_values(root_dir: Path) -> tuple[list[str], list[str]]:
     return [value.strip() for value in match.group("values").split(",")], []
 
 
+def _document_section(text: str, heading: str) -> str | None:
+    marker = re.search(rf"^{re.escape(heading)}\s*$", text, flags=re.M)
+    if marker is None:
+        return None
+    level = len(heading) - len(heading.lstrip("#"))
+    body = text[marker.end() :]
+    next_heading = re.search(rf"^#{{1,{level}}} ", body, flags=re.M)
+    if next_heading is not None:
+        body = body[: next_heading.start()]
+    return body
+
+
 def check_trial_status_vocabulary_documented(root_dir: Path) -> dict[str, object]:
     """The trial guide and quick reference must carry the shipped --status contract.
 
     The vocabulary is read from the clap help text, so adding a status value in
-    Rust fails the gate until both docs pages list it. The refusal fragments pin
-    the breaking 0.9.0 change and its replacement guidance, and the comma alias,
-    to prose rather than to a hand-copied table row.
+    Rust fails the gate until both docs pages list it. The scan is limited to the
+    status section: a value repeated in another section must not satisfy the
+    guard after the headline list drops it. The refusal fragments pin the
+    breaking 0.9.0 change and its replacement guidance, and the comma alias, to
+    prose rather than to a hand-copied table row.
     """
     values, errors = trial_status_values(root_dir)
     findings: list[dict[str, object]] = [
         {"path": TRIAL_STATUS_HELP_PATH, "message": error} for error in errors
     ]
-    for relative in TRIAL_STATUS_DOC_PAGES:
-        text, read_errors = _normalized_page_text(root_dir, relative)
-        for error in read_errors:
-            findings.append({"path": relative, "message": error})
-        if read_errors:
+    for relative, heading in TRIAL_STATUS_DOC_SECTIONS.items():
+        try:
+            page = (root_dir / relative).read_text(encoding="utf-8")
+        except OSError as exc:
+            findings.append(
+                {"path": relative, "message": f"failed to read {relative}: {exc}"}
+            )
             continue
+        section = _document_section(page, heading)
+        if section is None:
+            findings.append(
+                {
+                    "path": relative,
+                    "heading": heading,
+                    "message": "trial status section heading is missing",
+                }
+            )
+            continue
+        text = " ".join(section.split())
         for value in values:
             if value not in text:
                 findings.append(
                     {
                         "path": relative,
                         "value": value,
-                        "message": "shipped --status value is missing from the docs page",
+                        "message": "shipped --status value is missing from the status section",
                     }
                 )
         for fragment in TRIAL_STATUS_REFUSAL_FRAGMENTS:
@@ -1599,26 +1626,22 @@ def check_trial_status_vocabulary_documented(root_dir: Path) -> dict[str, object
                     {
                         "path": relative,
                         "fragment": fragment,
-                        "message": "the bare --status active refusal or its replacement guidance is missing from the docs page",
+                        "message": "the bare --status active refusal or its replacement guidance is missing from the status section",
                     }
                 )
     return {
         "name": "trial_status_vocabulary_documented",
         "status": "fail" if findings else "pass",
-        "checked_surfaces": [TRIAL_STATUS_HELP_PATH, *TRIAL_STATUS_DOC_PAGES],
+        "checked_surfaces": [TRIAL_STATUS_HELP_PATH, *TRIAL_STATUS_DOC_SECTIONS],
         "status_values": values,
         "findings": findings,
     }
 
 
 def _entity_table_first_cells(text: str, heading: str) -> list[str] | None:
-    marker = re.search(rf"^{re.escape(heading)}\s*$", text, flags=re.M)
-    if marker is None:
+    body = _document_section(text, heading)
+    if body is None:
         return None
-    body = text[marker.end() :]
-    next_heading = re.search(r"^#{2,3} ", body, flags=re.M)
-    if next_heading is not None:
-        body = body[: next_heading.start()]
     cells: list[str] = []
     for line in body.splitlines():
         match = re.match(r"^\|\s*`?([A-Za-z0-9-]+)`?\s*\|", line)

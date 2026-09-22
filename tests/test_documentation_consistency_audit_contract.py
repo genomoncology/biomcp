@@ -483,6 +483,17 @@ def test_blog_try_it_and_install_copy_are_consistent() -> None:
             assert "## Try It" not in blog_text
 
 
+HAND_COPIED_CATALOG_RE = re.compile(r"\d[\d,]*-byte,\s*\d[\d,]*-token catalog")
+
+
+def test_hand_copied_catalog_pattern_rejects_count_pairs_only() -> None:
+    assert HAND_COPIED_CATALOG_RE.search(
+        "its current 15,841-byte, 3,996-token catalog"
+    )
+    assert HAND_COPIED_CATALOG_RE.search("16,052-byte, 4,083-token catalog")
+    assert HAND_COPIED_CATALOG_RE.search("22,600-byte / 5,800-token CI budget") is None
+
+
 def test_mcp_catalog_docs_name_the_released_build_budget_without_stale_counts() -> None:
     for path in (
         "docs/getting-started/claude-desktop.md",
@@ -491,10 +502,20 @@ def test_mcp_catalog_docs_name_the_released_build_budget_without_stale_counts() 
         text = _normalize_whitespace(_read(path))
         assert "0.9.0 released build" in text
         assert "22,600-byte / 5,800-token CI budget" in text
-        # The released 0.9.0 image measures 16,052 bytes and 4,083 tokens, so
-        # hand-copied catalog counts must not come back.
-        assert "15,841" not in text
-        assert "3,996" not in text
+        assert (
+            "Exact current counts belong to that executable measurement rather "
+            "than hand-copied documentation." in text
+        )
+        assert HAND_COPIED_CATALOG_RE.search(text) is None, (
+            f"{path} must not hand-copy a released catalog measurement"
+        )
+
+    blog = _normalize_whitespace(_read("docs/blog/we-deleted-35-tools.md"))
+    assert "0.9.0 released build" in blog
+    assert "22,600 bytes and 5,800 tokens" in blog
+    assert HAND_COPIED_CATALOG_RE.search(blog) is None, (
+        "docs/blog/we-deleted-35-tools.md must not hand-copy a released catalog measurement"
+    )
 
 
 def test_examples_and_operator_readmes_use_plain_runtime_copy() -> None:

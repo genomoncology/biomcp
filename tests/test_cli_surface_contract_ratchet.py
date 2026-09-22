@@ -210,10 +210,21 @@ def test_cli_surface_contract_pins_trial_status_vocabulary_and_active_refusal(
         "and no longer accruing trials. The comma form `active, not recruiting` "
         "is still accepted."
     )
-    (docs / "user-guide" / "trial.md").write_text(contract, encoding="utf-8")
+    (docs / "user-guide" / "trial.md").write_text(
+        f"### Status values\n\n{contract}\n", encoding="utf-8"
+    )
     quick_reference = docs / "reference" / "quick-reference.md"
     # Reflowing the contract across lines must not trip the guard.
-    quick_reference.write_text(contract.replace(" ", "\n"), encoding="utf-8")
+    repeated_elsewhere = (
+        "\n\n## Other section\n\n"
+        "A recruiting note repeats active_not_recruiting.\n"
+    )
+    quick_reference.write_text(
+        "## Trial status values\n\n"
+        + contract.replace(" ", "\n")
+        + repeated_elsewhere,
+        encoding="utf-8",
+    )
 
     module = _load_quality_ratchet_module()
     result = module.check_trial_status_vocabulary_documented(root)
@@ -222,11 +233,29 @@ def test_cli_surface_contract_pins_trial_status_vocabulary_and_active_refusal(
     assert result["status_values"] == ["recruiting", "active_not_recruiting"]
     assert result["findings"] == []
 
+    # A value that disappears from the status section must fail even when the
+    # page still repeats it under another heading.
     quick_reference.write_text(
-        contract.replace(
+        "## Trial status values\n\n"
+        + contract.replace("active_not_recruiting", "on_hold")
+        + repeated_elsewhere,
+        encoding="utf-8",
+    )
+    result = module.check_trial_status_vocabulary_documented(root)
+
+    assert result["status"] == "fail"
+    assert any(
+        finding.get("value") == "active_not_recruiting"
+        for finding in result["findings"]
+    )
+
+    quick_reference.write_text(
+        "## Trial status values\n\n"
+        + contract.replace(
             "A bare `--status active` is refused as ambiguous",
             "`--status active` is accepted",
-        ),
+        )
+        + repeated_elsewhere,
         encoding="utf-8",
     )
     result = module.check_trial_status_vocabulary_documented(root)
