@@ -9,6 +9,7 @@ from pathlib import Path
 
 HELPER_MODULES = {
     "archive_budget",
+    "ca_bundle",
     "cbioportal_download",
     "cbioportal_study",
     "pmc_article",

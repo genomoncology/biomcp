@@ -64,7 +64,8 @@ malformed bundle fails. A missing, unreadable, malformed, or certificate-less
 both text and `--json` errors. The bundle only adds roots: certificate
 verification and the bundled roots stay in place. Client certificates, mTLS,
 and `SSL_CERT_DIR` are out of scope. AlphaGenome's gRPC client already reads
-the native OS trust store.
+the native OS trust store. BioMCP reads these variables when it first builds an
+HTTP client, so exporting one into an already-running process has no effect.
 
 ## Internal and Measurement Controls
 

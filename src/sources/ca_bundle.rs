@@ -113,12 +113,12 @@ fn load() -> Result<Option<LoadedBundle>, BioMcpError> {
 fn configured_source() -> Option<BundleSource> {
     // A blank or whitespace-only BIOMCP_CA_BUNDLE counts as unset, following
     // the provider base override reads.
-    if let Some(value) = std::env::var(CA_BUNDLE_ENV)
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-    {
-        return Some(BundleSource::Explicit(PathBuf::from(value)));
+    if let Some(value) = std::env::var_os(CA_BUNDLE_ENV) {
+        let value = value.to_string_lossy();
+        let value = value.trim();
+        if !value.is_empty() {
+            return Some(BundleSource::Explicit(PathBuf::from(value)));
+        }
     }
     let value = std::env::var_os(CA_BUNDLE_FALLBACK_ENV)?;
     let value = value.to_string_lossy();
@@ -135,10 +135,10 @@ fn configured_source() -> Option<BundleSource> {
 fn parse_certificates(path: &Path, bytes: &[u8]) -> Result<Vec<reqwest::Certificate>, BioMcpError> {
     let mut trusted = rustls::RootCertStore::empty();
     let mut certificates = Vec::new();
-    let mut reader = bytes;
-    for item in rustls_pemfile::certs(&mut reader) {
+    for item in rustls::pki_types::CertificateDer::pem_slice_iter(bytes) {
         let certificate = item
-            .map_err(|error| bundle_error(path, format!("the PEM content is invalid: {error}")))?;
+            .map_err(|error| bundle_error(path, format!("the PEM content is invalid: {error}")))?
+            .into_owned();
         trusted
             .add(certificate.clone())
             .map_err(|error| bundle_error(path, format!("a certificate is invalid: {error}")))?;

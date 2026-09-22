@@ -213,6 +213,28 @@ async fn broken_bundles_fail_before_any_connection() {
     assert_eq!(fixture.sessions.load(Ordering::SeqCst), 0);
 }
 
+#[cfg(unix)]
+#[tokio::test]
+async fn unreadable_bundle_fails_before_any_connection() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let fixture = TlsFixture::start().await;
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let unreadable = dir.path().join("unreadable.pem");
+    std::fs::write(&unreadable, b"unused").expect("write unreadable bundle");
+    std::fs::set_permissions(&unreadable, std::fs::Permissions::from_mode(0o000))
+        .expect("make bundle unreadable");
+    if std::fs::read(&unreadable).is_ok() {
+        // A privileged runner ignores the mode, so this case proves nothing.
+        return;
+    }
+
+    let output = fixture.run(Some(&unreadable), false).await;
+    assert_named_path(&output, &unreadable);
+    assert_eq!(fixture.connections.load(Ordering::SeqCst), 0);
+    assert_eq!(fixture.sessions.load(Ordering::SeqCst), 0);
+}
+
 #[tokio::test]
 async fn broken_bundle_json_names_the_path() {
     let fixture = TlsFixture::start().await;

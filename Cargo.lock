@@ -334,7 +334,6 @@ dependencies = [
  "roxmltree",
  "rust-embed",
  "rustls",
- "rustls-pemfile",
  "scraper",
  "semver",
  "serde",
