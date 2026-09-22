@@ -19,7 +19,7 @@ The installer never edits shell startup files. If `~/.local/bin` is missing from
 Pin a specific version:
 
 ```bash
-curl -fsSL https://biomcp.org/install.sh | bash -s -- --version 0.8.0
+curl -fsSL https://biomcp.org/install.sh | bash -s -- --version 0.9.0
 ```
 
 Verify:

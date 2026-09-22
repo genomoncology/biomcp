@@ -108,6 +108,7 @@ biomcp skill install [--force] [dir]
 biomcp skill status [dir]
 biomcp skill list                 # list embedded worked examples
 biomcp mcp
+biomcp mcp tools
 biomcp serve
 biomcp mcp-config [--client <client>] [--absolute-path]
 biomcp serve-http [--host 127.0.0.1] [--port 8080] [--allowed-hosts <hosts> | --unsafe-allow-any-host]
@@ -817,6 +818,7 @@ biomcp batch variant "BRAF V600E","KRAS G12D" --json
 ## MCP mode
 
 - `biomcp serve` runs the stdio MCP server.
+- `biomcp mcp tools` prints the MCP tool catalog as a JSON array, the same catalog the server advertises from `tools/list`.
 - `biomcp mcp-config --client <codex|claude-desktop|claude-code|cursor|cline|vscode|json>` prints copy-paste local stdio MCP client config using `biomcp serve`; add `--absolute-path` when the client cannot see your shell `PATH`.
 - `biomcp serve-http` runs the MCP Streamable HTTP server.
 - Loopback binds accept local Host headers by default. Non-loopback binds require `--allowed-hosts`; `--unsafe-allow-any-host` explicitly disables only that check and adds no authentication or encryption. Each allowlist entry is an exact hostname or IP address with an optional port; IPv6 entries with ports use brackets, such as `[::1]:8080`.
@@ -989,7 +991,7 @@ as if it had been analyzed.
 |----------|------|
 | `biomcp search/get/<entity>` | You want discovery or detail across the public entity surface |
 | `biomcp study download` | You need to fetch a cBioPortal-style study dataset into your local study root |
-| `biomcp study ...` analytics commands | You already have local study files and want cohort, query, survival, compare, or co-occurrence analysis |
+| `biomcp study ...` analytics commands | You already have local study files and want cohort, query, top-mutated, survival, compare, or co-occurrence analysis |
 
 ### Study command examples
 
@@ -997,6 +999,7 @@ as if it had been analyzed.
 biomcp study list
 biomcp study download --list
 biomcp study download msk_impact_2017
+biomcp study top-mutated --study msk_impact_2017 --limit 10
 biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
 biomcp study query --study msk_impact_2017 --gene RET --type sv
 biomcp study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar --theme dark --palette wong -o docs/blog/images/tp53-mutation-bar.svg

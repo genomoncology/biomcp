@@ -437,6 +437,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Release notes
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -4227,6 +4246,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -4362,10 +4408,10 @@ worked-example catalog before execution.</p>
 hatch, beginning with <code>biomcp list</code> for compact command discovery. CI measures
 the real local <code>tools/list</code> response with
 <code>uv run --no-sync python scripts/measure-mcp-tools.py</code> and rejects catalogs over
-22,600 UTF-8 bytes or 5,800 <code>cl100k_base</code> tokens. The 22,600-byte /
-5,800-token CI budget applies to the 0.9.0 released build. Those
-ceilings combine its current 15,841-byte, 3,996-token catalog with the largest
-typed entry (<code>search</code>) and leave 99 bytes and 52 tokens of margin.</p>
+22,600 UTF-8 bytes or 5,800 <code>cl100k_base</code> tokens; <code>biomcp mcp tools</code> prints the
+same catalog as a JSON array. The 22,600-byte / 5,800-token CI budget applies
+to the 0.9.0 released build. Exact current counts belong to that executable
+measurement rather than hand-copied documentation.</p>
 <h2 id="operational-tips">Operational tips<a class="headerlink" href="#operational-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Keep API keys in the client launch environment.</li>

@@ -437,6 +437,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Release notes
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -4233,6 +4252,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -4379,16 +4425,21 @@ provider-specific terms that still apply when a query touches an upstream API.</
   organization allows.</li>
 </ul>
 <h2 id="retention-and-sensitive-data">Retention and sensitive data<a class="headerlink" href="#retention-and-sensitive-data" title="Permanent link">&para;</a></h2>
-<p>BioMCP keeps three kinds of managed local request state: HTTP provider responses
+<p>BioMCP keeps four kinds of managed local request state: HTTP provider responses
 under the resolved cache root's <code>http/</code> directory, article-search session
 records containing a session token, query terms, PMIDs, and update time under
-<code>sessions/</code>, and recovered directed citation evidence under
-<code>citation-evidence/</code>. HTTP entries expire at configured <code>max_age_secs</code> (one day by
-default); article sessions expire after ten minutes; citation-evidence records
-expire after thirty days. Opening either store for
-normal use or inspection physically removes expired records. <code>biomcp cache
-clean</code> performs targeted maintenance and <code>biomcp cache clear --yes</code> removes
-all three managed trees.</p>
+<code>sessions/</code>, recovered directed citation evidence under
+<code>citation-evidence/</code>, and exact provider documents under <code>captures/</code>, such as
+the ClinGen CSpec specification document bound to a capture ID. HTTP entries
+expire at configured <code>max_age_secs</code> (one day by default); article sessions
+expire after ten minutes; citation-evidence records expire after thirty days;
+provider captures expire after seven days, are capped at 4 MiB each, and retain
+at most 64 MiB in total. Opening a store for normal use or inspection physically
+removes expired records. <code>biomcp --json cache stats</code> reports retained capture
+bytes as <code>provider_capture_bytes</code>, and <code>biomcp cache clean</code> reports the bytes it
+frees as <code>provider_capture_bytes_freed</code>. <code>biomcp cache clear --yes</code> removes the
+HTTP, session, and citation-evidence trees; retained provider captures are
+bounded by maintenance instead.</p>
 <p>BioMCP creates managed local-state directories for the current user only. On
 Unix, directories are mode <code>0700</code> and regular files are <code>0600</code>; on Windows,
 the managed root uses a current-user ACL. Reopening a store narrows managed

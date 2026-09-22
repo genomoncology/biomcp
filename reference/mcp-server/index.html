@@ -437,6 +437,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Release notes
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -4338,6 +4357,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -4562,7 +4608,7 @@ does not submit BioMCP to the official MCP Registry. After a promoted release
 passes its public-artifact checks, an operator must separately review the
 committed metadata and submit it to the official registry. That manual action
 must not be described as complete until the registry accepts it. The committed
-metadata remains the truthful record for the already published v0.8.25 release.</p>
+metadata remains the truthful record for the already published v0.9.0 release.</p>
 <h2 id="which-server-mode-should-i-use">Which server mode should I use?<a class="headerlink" href="#which-server-mode-should-i-use" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4670,14 +4716,12 @@ outcomes.</p>
 <h3 id="raw-command-escape-hatch">Raw command escape hatch<a class="headerlink" href="#raw-command-escape-hatch" title="Permanent link">&para;</a></h3>
 <p>The raw <code>biomcp</code> tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as <code>discover</code>, <code>biomcp skill list</code>, <code>biomcp skill render</code>, embedded <code>biomcp skill &lt;number-or-slug&gt;</code> lookups, the catalog-only <code>study download --list</code> form, and one-page <code>article citations|references &lt;id&gt; --limit N --offset N</code> graph traversal. Graph pages expose provider-relative continuation in JSON and Markdown; citation and reference graph tools are not added to the typed catalog.</p>
 <p>The seven-tool catalog is intentionally bounded. Reproduce its current local
-measurement with <code>uv run --no-sync python scripts/measure-mcp-tools.py</code>. CI
-rejects the full catalog above 22,600 UTF-8 bytes or 5,800 <code>cl100k_base</code> tokens,
-and rejects the raw <code>biomcp</code> description above 4,000 bytes. The 22,600-byte /
-5,800-token CI budget applies to the 0.9.0 released build. The
-aggregate ceilings combine its current 15,841-byte, 3,996-token catalog with
-the largest typed entry (<code>search</code>), leaving 99 bytes and 52 tokens of margin.
-Exact current counts belong to that executable measurement rather than
-hand-copied documentation.</p>
+measurement with <code>uv run --no-sync python scripts/measure-mcp-tools.py</code>, or
+print the same JSON array from the binary with <code>biomcp mcp tools</code>. CI rejects
+the full catalog above 22,600 UTF-8 bytes or 5,800 <code>cl100k_base</code> tokens, and
+rejects the raw <code>biomcp</code> description above 4,000 bytes. The 22,600-byte /
+5,800-token CI budget applies to the 0.9.0 released build. Exact current counts
+belong to that executable measurement rather than hand-copied documentation.</p>
 <p>Mutating or workstation-local commands are blocked in MCP mode. Examples include <code>skill install</code>, <code>skill status</code>, local source sync commands, <code>update</code>, <code>uninstall</code>, and <code>study download &lt;study_id&gt;</code>. Status remains CLI-only because probing an arbitrary skill directory can reveal workstation-local paths. Cache-family commands such as <code>cache path</code>, <code>cache stats</code>, <code>cache clean</code>, and <code>cache clear</code> are also rejected because they reveal workstation-local paths and filesystem context.</p>
 <h3 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h3>
 <p>Current builds always publish the help resource and one markdown resource per embedded skill use-case.</p>

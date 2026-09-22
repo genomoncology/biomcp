@@ -437,6 +437,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Release notes
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -4674,6 +4693,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/genomoncology/biomcp/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -5308,12 +5354,13 @@ an extra provider request merely to decide whether to show it.</p>
 <a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>biomcp skill status [dir]
 <a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>biomcp skill list                 # list embedded worked examples
 <a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>biomcp mcp
-<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>biomcp serve
-<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>biomcp mcp-config [--client &lt;client&gt;] [--absolute-path]
-<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080] [--allowed-hosts &lt;hosts&gt; | --unsafe-allow-any-host]
-<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>biomcp update [--check]
-<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>biomcp uninstall
-<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a>biomcp version [--verbose]
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>biomcp mcp tools
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>biomcp serve
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>biomcp mcp-config [--client &lt;client&gt;] [--absolute-path]
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080] [--allowed-hosts &lt;hosts&gt; | --unsafe-allow-any-host]
+<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>biomcp update [--check]
+<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a>biomcp uninstall
+<a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a>biomcp version [--verbose]
 </code></pre></div>
 <p>Worked examples are also addressable directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp skill 01
@@ -5861,6 +5908,7 @@ Named sections are entity-dependent. Adverse-event batches do not support <code>
 <h2 id="mcp-mode">MCP mode<a class="headerlink" href="#mcp-mode" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>biomcp serve</code> runs the stdio MCP server.</li>
+<li><code>biomcp mcp tools</code> prints the MCP tool catalog as a JSON array, the same catalog the server advertises from <code>tools/list</code>.</li>
 <li><code>biomcp mcp-config --client &lt;codex|claude-desktop|claude-code|cursor|cline|vscode|json&gt;</code> prints copy-paste local stdio MCP client config using <code>biomcp serve</code>; add <code>--absolute-path</code> when the client cannot see your shell <code>PATH</code>.</li>
 <li><code>biomcp serve-http</code> runs the MCP Streamable HTTP server.</li>
 <li>Loopback binds accept local Host headers by default. Non-loopback binds require <code>--allowed-hosts</code>; <code>--unsafe-allow-any-host</code> explicitly disables only that check and adds no authentication or encryption. Each allowlist entry is an exact hostname or IP address with an optional port; IPv6 entries with ports use brackets, such as <code>[::1]:8080</code>.</li>
@@ -6047,7 +6095,7 @@ as if it had been analyzed.</p>
 </tr>
 <tr>
 <td><code>biomcp study ...</code> analytics commands</td>
-<td>You already have local study files and want cohort, query, survival, compare, or co-occurrence analysis</td>
+<td>You already have local study files and want cohort, query, top-mutated, survival, compare, or co-occurrence analysis</td>
 </tr>
 </tbody>
 </table>
@@ -6055,15 +6103,16 @@ as if it had been analyzed.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>biomcp<span class="w"> </span>study<span class="w"> </span>list
 <a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>--list
 <a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>msk_impact_2017
-<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations
-<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>RET<span class="w"> </span>--type<span class="w"> </span>sv
-<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--chart<span class="w"> </span>bar<span class="w"> </span>--theme<span class="w"> </span>dark<span class="w"> </span>--palette<span class="w"> </span>wong<span class="w"> </span>-o<span class="w"> </span>docs/blog/images/tp53-mutation-bar.svg
-<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>biomcp<span class="w"> </span>study<span class="w"> </span>filter<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--mutated<span class="w"> </span>TP53<span class="w"> </span>--amplified<span class="w"> </span>ERBB2<span class="w"> </span>--expression-above<span class="w"> </span>ERBB2:1.5
-<a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a>biomcp<span class="w"> </span>study<span class="w"> </span>cohort<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53
-<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--endpoint<span class="w"> </span>os
-<a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>expression<span class="w"> </span>--target<span class="w"> </span>ERBB2
-<a id="__codelineno-40-11" name="__codelineno-40-11" href="#__codelineno-40-11"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--target<span class="w"> </span>PIK3CA
-<a id="__codelineno-40-12" name="__codelineno-40-12" href="#__codelineno-40-12"></a>biomcp<span class="w"> </span>study<span class="w"> </span>co-occurrence<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--genes<span class="w"> </span>TP53,KRAS
+<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>biomcp<span class="w"> </span>study<span class="w"> </span>top-mutated<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations
+<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>RET<span class="w"> </span>--type<span class="w"> </span>sv
+<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--chart<span class="w"> </span>bar<span class="w"> </span>--theme<span class="w"> </span>dark<span class="w"> </span>--palette<span class="w"> </span>wong<span class="w"> </span>-o<span class="w"> </span>docs/blog/images/tp53-mutation-bar.svg
+<a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a>biomcp<span class="w"> </span>study<span class="w"> </span>filter<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--mutated<span class="w"> </span>TP53<span class="w"> </span>--amplified<span class="w"> </span>ERBB2<span class="w"> </span>--expression-above<span class="w"> </span>ERBB2:1.5
+<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a>biomcp<span class="w"> </span>study<span class="w"> </span>cohort<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53
+<a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--endpoint<span class="w"> </span>os
+<a id="__codelineno-40-11" name="__codelineno-40-11" href="#__codelineno-40-11"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>expression<span class="w"> </span>--target<span class="w"> </span>ERBB2
+<a id="__codelineno-40-12" name="__codelineno-40-12" href="#__codelineno-40-12"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--target<span class="w"> </span>PIK3CA
+<a id="__codelineno-40-13" name="__codelineno-40-13" href="#__codelineno-40-13"></a>biomcp<span class="w"> </span>study<span class="w"> </span>co-occurrence<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--genes<span class="w"> </span>TP53,KRAS
 </code></pre></div>
 <h3 id="dataset-requirements">Dataset requirements<a class="headerlink" href="#dataset-requirements" title="Permanent link">&para;</a></h3>
 <ul>
