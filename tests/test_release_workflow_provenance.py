@@ -182,11 +182,24 @@ def test_docs_live_reads_the_pointer_on_both_triggers() -> None:
     assert 'gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha' in docs_live
     assert "Cache-Control: no-cache" in docs_live
     assert "Pragma: no-cache" in docs_live
+    assert "--connect-timeout 10 --max-time 30" in docs_live
     assert "check-docs-live-revision.py" in docs_live
     assert "--tag-sha \"$TAG_SHA\"" in docs_live
     assert '--live-revision "$live_revision"' in docs_live
     assert 'RETRY_WINDOW_SECONDS: "600"' in docs_live
     assert 'RETRY_INTERVAL_SECONDS: "30"' in docs_live
+
+
+def test_docs_live_checks_out_the_gate_helper_from_the_default_branch() -> None:
+    docs_live = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "docs-live")
+    checkout_steps = [
+        step
+        for step in docs_live.split("\n      - ")
+        if "uses: actions/checkout@v4" in step
+    ]
+
+    assert len(checkout_steps) == 1
+    assert "ref: ${{ github.event.repository.default_branch }}" in checkout_steps[0]
 
 
 def test_docs_live_gates_every_publisher() -> None:

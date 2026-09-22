@@ -212,7 +212,10 @@ jobs:
       RETRY_WINDOW_SECONDS: "600"
       RETRY_INTERVAL_SECONDS: "30"
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the gate helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Resolve the tag commit
         env:
@@ -232,6 +235,7 @@ jobs:
             attempt=$(( attempt + 1 ))
             live_revision="$(
               curl --fail --silent --show-error \
+                --connect-timeout 10 --max-time 30 \
                 --header 'Cache-Control: no-cache' \
                 --header 'Pragma: no-cache' \
                 --header 'User-Agent: BioMCP-docs-live-gate/1' \
