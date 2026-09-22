@@ -4,48 +4,41 @@ priority: 4
 deps: []
 ---
 
-# 1222: Harden the release path and retire stale release facts
+# 1222: Keep the release uploads working and the Homebrew formula honest
 
 ## Goal
 
-The release workflow loses its unmaintained pieces and its stale claims. Nothing here changes published artifacts; it removes the next failures before they happen and the drift that hid the dropped container job.
+The release workflow stops depending on an archived action and stops being able to write a branch-named Homebrew formula. Published artifacts and their bytes do not change.
 
 ## Current Facts
 
-- `release.yml` uploads assets with `actions/upload-release-asset@v1`, which is archived and only works on `release: published` because it reads `github.event.release.upload_url`.
-- `homebrew-tap` computes `VERSION="${GITHUB_REF_NAME#v}"` (`release.yml:181`). On `workflow_dispatch`, `GITHUB_REF_NAME` is the branch, so a manual run could write a formula versioned `main` into the tap.
-- A full `workflow_dispatch` fails at the asset upload for the same missing URL; the container-only path avoids it and the release page documents that.
-- `docs/reference/mcp-server.md:17` said the metadata was truthful for "the already published v0.8.25 release"; ticket 1224 landed that fix. 1222 keeps the stale architecture-document facts (`architecture/technical/overview.md:67-69` and `:268`).
-- `architecture/technical/overview.md:67-69` still describes the retired two-step stage/promote workflow.
-- `tests/test_docs_changelog_refresh.py:824-825` contains `... or True` and `assert True`, which cannot fail.
-- `tests/test_source_package_boundary.py` counts `cargo package` output exactly; untracked files in the yellow gate clone inflated it to 1,347 against the correct 1,342 and produced a false failure there.
-- `release/container.py:117` records the retired `debian:bookworm-slim` base, which the Dockerfile no longer uses.
-- `cache::migration::tests::async_io_crossing_expiry_settles_without_admitting_a_mutation` (`src/cache/migration.rs:889`) failed once in a full nextest run and passed on rerun and 20/20 in isolation.
+- `.github/workflows/release.yml:98,108` upload assets with `actions/upload-release-asset@v1`, which is archived, and both steps read `github.event.release.upload_url` (`:102`, `:112`). A full `workflow_dispatch` therefore fails at the upload.
+- The uploaded assets are the build-matrix artifacts (`release.yml:33-46`) and their `.sha256` sidecars (`:76-96`), produced by the upload step at `:97-116`.
+- `homebrew-tap` computes `VERSION="${GITHUB_REF_NAME#v}"` (`release.yml:253`) and commits with `git commit -m "Update biomcp formula for ${GITHUB_REF_NAME}"` (`:281`). On `workflow_dispatch`, `GITHUB_REF_NAME` is the branch, so a manual run can write a formula versioned `main`.
+- `container-publish` already resolves the tag once, as `TAG: ${{ github.event.release.tag_name || inputs.tag }}` (`release.yml:289`) with `VERSION="${TAG#v}"` (`:303`). That is the pattern to copy.
+- `docs/reference/release-process.md:72-74` states that a dispatch without `container_only` fails at the build job's asset upload. This ticket makes that sentence false.
+- Ticket 1220 settled `MAX_PACKAGE_FILES = 1_342` against the correct clean-clone count, so the package-boundary concern in an earlier draft of this ticket needs no work here.
 
 ## Design
 
-- `build`: upload with `gh release upload "$TAG" <assets> --clobber` and guard the step on `github.event_name == 'release'`; keep the existing packaging and checksums.
-- `homebrew-tap`: resolve the tag once as `github.event.release.tag_name || inputs.tag` and use it for the download and the formula version, the way `container-publish` does.
-- `release.yml`: verify the live documentation witness for the tag commit after the build (`https://biomcp.org/__biomcp_revision__/<sha>.txt` must equal the tag commit, with bounded retries), so a release fails when biomcp.org is behind instead of shipping while the site is stale.
-- Correct the stale architecture document and remove the vacuous test lines, keeping the assertions that can fail.
-- Make the package-boundary count compare tracked files only, or document and enforce a clean-tree requirement so the gate clone cannot inflate it.
-- Update or delete the `release/container.py` base constant together with a decision on the retired staged tooling.
-- Stabilize the cache-expiry test with deterministic IO completion instead of real file IO racing a paused clock.
+- Replace both `actions/upload-release-asset@v1` steps with one `gh release upload "$TAG" <files> --clobber` step guarded on `github.event_name == 'release'`, keeping the existing tarball and `.sha256` selection.
+- With that guard, a full dispatch proceeds past the upload. PyPI rejects a duplicate version, so name the duplicate-version failure as the dispatch outcome in the runbook rather than leaving the old claim.
+- Resolve the tag once in `homebrew-tap` as `github.event.release.tag_name || inputs.tag` and use it for the download URL, `VERSION="${TAG#v}"`, and the commit message.
+- Extend `tests/test_release_workflow_provenance.py`: no reference to `actions/upload-release-asset`; the upload step uses `gh release upload` and is release-guarded; `homebrew-tap` derives the tag once and uses it in all three places.
+- Update `docs/reference/release-process.md`: the job list at `:11`, the dispatch semantics at `:72-74`, and the witness-gate paragraph at `:82-87` so it points at ticket 1226.
 
 ## Acceptance
 
-1. No workflow uses `actions/upload-release-asset@v1`; `actionlint` and the provenance tests pass.
-2. The Homebrew job uses the resolved tag on both triggers; a dispatch cannot write a branch-named formula.
-3. The architecture document names v0.9.0 and the single workflow; the vacuous assertions are gone and the surviving ones still fail on a wrong sentence.
-4. The package-boundary test passes on a clean checkout and does not depend on untracked files.
-5. A release whose site revision is not live fails the documentation check instead of publishing silently.
-6. The cache-expiry test passes repeatedly under the full nextest run.
-7. CI `canonical-gates` is green on main at the pushed SHA.
+1. No workflow references `actions/upload-release-asset@v1`; `actionlint` and the new provenance guards pass.
+2. `homebrew-tap` uses the resolved tag for the download, the formula version, and the commit message, and a dispatch cannot write a branch-named formula.
+3. `docs/reference/release-process.md` describes the new dispatch behavior and no longer claims the asset upload fails.
+4. `make lint` passes and CI `canonical-gates` is green on main at the pushed SHA.
 
 ## Out of scope
 
-- Deleting the retired `release/` package; that decision is recorded but not taken here.
-- Other CI jobs.
+- The docs-live release gate (ticket 1226).
+- The retired `release/` package and the stale architecture facts (ticket 1227).
+- The cache-expiry flake and any artifact publication change.
 
 ## Review
 
