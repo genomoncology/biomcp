@@ -28,6 +28,54 @@ Condition searches send the supplied label literally.
 biomcp search trial -c "Rett Syndrome" --limit 20
 ```
 
+### Status values
+
+`--status` accepts eight normalized recruitment states: `recruiting`,
+`not_yet_recruiting`, `enrolling_by_invitation`, `active_not_recruiting`,
+`completed`, `suspended`, `terminated`, and `withdrawn`.
+
+BioMCP refuses a bare `--status active` as ambiguous, because the two sources
+mean different things by it: NCI uses "active" for a trial that is open and
+accruing, while ClinicalTrials.gov uses it for one that has stopped accruing.
+Use `--status recruiting` for open and accruing trials, or
+`--status active_not_recruiting` for enrolled and no longer accruing trials.
+The comma form `--status "active, not recruiting"` is still accepted as an
+alias for `active_not_recruiting`.
+
+### Empty filtered searches
+
+A filtered search that returns zero rows prints a broadening hint instead of
+implying that no trials exist:
+
+```text
+No trials found matching the filters.
+Try broadening the filtered search:
+- loosen or drop `--mutation`; it is an exact free-text boolean search
+- widen `--distance` or remove the geo filter
+- relax `--status` to include non-recruiting or not-yet-recruiting trials
+- try `--biomarker <gene>`
+```
+
+The JSON response carries the same relaxations as runnable commands in
+`_meta.next_commands`.
+
+When `--criteria` supplies eligibility text, registry eligibility verification
+can remove every provider match because the term appears only in exclusion
+criteria or outside the inclusion section. The Markdown hint then names the
+upstream count, and JSON adds `_meta.upstream_total`:
+
+```text
+ClinicalTrials.gov matched 2 trial(s) on this eligibility text, but registry
+eligibility verification removed all of them (the term appears only in
+exclusion criteria or outside the inclusion section). Try a shorter phrase or
+`--mutation` for broader field coverage.
+```
+
+The suggested relaxation moves the eligibility text from `--criteria` to
+`--mutation`, which searches the title, summary, eligibility, and keyword
+fields. `_meta.upstream_total` appears only on an empty page whose upstream
+total is greater than zero.
+
 ### Pagination termination
 
 For JSON ClinicalTrials.gov trial searches, continue only while
@@ -70,6 +118,14 @@ biomcp search trial -c melanoma --biomarker BRAF --limit 5
 fields. After broad discovery, simple mutation text receives a registry eligibility
 check that removes exclusion-only matches. Trials where the term is absent remain
 discoverable, and boolean expressions are discovery-only.
+
+Hyphenated terms reach the registry exactly as typed. BioMCP does not
+backslash-escape hyphens in ClinicalTrials.gov ESSIE literals, because the
+registry treats an escaped hyphen as a different, far narrower phrase. Terms
+such as `anti-PD-1`, `CAR-T`, `PD-L1`, and combined labels such as `dMMR/MSI-H`
+therefore search the same text the registry holds, in `--criteria`,
+`--mutation`, `--biomarker`, `--sponsor`, `--study-type`, `--prior-therapies`,
+`--progression-on`, and quoted `--intervention` literals.
 
 `--age` accepts finite patient ages from 0 through 150 years, including
 fractional ages. A registry bound must match the exact numeric grammar
