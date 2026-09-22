@@ -4,50 +4,53 @@ priority: 5
 deps: []
 ---
 
-# 1225: Stop the wheel binary from overflowing the execute stack
+# 1225: Ship the wheel in the release profile so it stops overflowing the stack
 
 ## Goal
 
-The published PyPI wheel binary completes `search trial`, `drug trials`, and `drug interactions` without a stack overflow, and CI catches a wheel-only stack regression before publish. The 0.9.0 wheel aborts on those paths while the cargo release binary survives, so Python users on the primary install channel crash.
+The published PyPI wheel is built in the release profile, runs `search trial`, `drug trials`, and `drug interactions` without a stack overflow, and a pre-publish smoke catches a dev-profile wheel before it reaches PyPI.
 
 ## Current Facts
 
-- GitHub issue #282 (2026-09-22) reports the trial search, `drug trials`, and `drug interactions` paths aborting on `uv tool install biomcp-cli` (0.9.0, Ubuntu 24.04 x86_64).
+- GitHub issue #282 (2026-09-22) reports the trial search, `drug trials`, and `drug interactions` paths aborting on `uv tool install biomcp-cli` 0.9.0 (Ubuntu 24.04 x86_64).
 - Reproduced from the published wheel: `uvx --from biomcp-cli==0.9.0 biomcp search trial --condition diabetes --limit 1`, `... search trial --criteria "anti-PD-1 therapy" --limit 3`, `... drug interactions apixaban`, and `... drug trials imatinib` all exit 134 with `thread 'biomcp-cli-execute' has overflowed its stack`; `get trial NCT04280705` works.
-- `src/cli/outcome.rs:599` sets `EXECUTE_STACK_BYTES = 8 * 1024 * 1024` and spawns the execute thread with that explicit `.stack_size()`, so `RUST_MIN_STACK` cannot raise it.
-- Branches `biodata/0132` and `biodata/0133` already carry a 16 MiB stopgap; `sdlc/issues/2026-09-17-pypi-wheel-binary-stack-overflows-on-trial-search.md` and the 0.9.1 backlog P1 record the fix direction.
-- Maturin builds the same release profile (`pyproject.toml:45-48`, `Cargo.toml:142-146`), so the overflow is frame-size-sensitive across build environments rather than a second code path.
+- The wheel is built in the dev profile. `.github/workflows/release.yml:151-156` calls `PyO3/maturin-action@v1` with only `toolchain` and `target`; the action's `args` input has no default, so `maturin build` runs without `--release`. The published `biomcp_cli-0.9.0-py3-none-manylinux_2_39_x86_64.whl` binary is 97,338,024 bytes with a 68,281,008-byte `.text`, while the release tarball binary is 32,526,272 bytes with a 24,055,888-byte `.text`. Unoptimized frames overflow the fixed stack on the deep paths; the release-profile tarball binary works.
+- `src/cli/outcome.rs:599` sets `EXECUTE_STACK_BYTES = 8 * 1024 * 1024` with an explicit `.stack_size()`, so `RUST_MIN_STACK` cannot raise it.
+- Ticket 1191 measured the debug-build margin and fixed the structural seam with `Box::pin` at `src/cli/outcome.rs:647`; it explicitly rejected raising the stack as papering over the margin. The 16 MiB stopgap exists on `biodata/0132` and `biodata/0133` (`src/cli/outcome.rs:637`), not on main, and should not become main's fix.
+- `sdlc/issues/2026-09-17-pypi-wheel-binary-stack-overflows-on-trial-search.md` and the 0.9.1 backlog P1 record the wheel smoke direction.
 
 ## Design
 
-- Raise `EXECUTE_STACK_BYTES` in `src/cli/outcome.rs` to 16 MiB, matching the downstream stopgap. If a wheel built on the gate host still overflows, raise it until the four commands pass and record the measured need.
-- Add a CI job that builds the wheel (maturin on ubuntu-24.04), installs it into a clean venv, and runs the affected commands, failing on SIGABRT or a `stack overflow` message. Accept exit 0 or a clean source error; the smoke checks the stack, not live data.
-- Record the wheel build and command results for the fix SHA so the next reader sees the margin that was needed.
+- Pass `args: --release --locked` to `PyO3/maturin-action@v1` in the `pypi-build` matrix so every wheel matches the release profile the tarballs use (`Cargo.toml:141-145`). Verify by rebuilding the x86_64 wheel on the gate host and comparing its size and `.text` size against the tarball binary, not by reading the action input alone.
+- Keep `EXECUTE_STACK_BYTES` at 8 MiB, per ticket 1191. If a release-profile wheel still overflows on the four commands, capture a gdb stack watermark on the gate host and stop and report with the measurement before considering any constant change; any such change is capped at 16 MiB with the same stop rule.
+- Add a pre-publish smoke to `release.yml` between `pypi-build` and `pypi-publish`: install the built `wheel-x86_64-unknown-linux-gnu` artifact into a clean venv outside the repo tree (RUN.md warns that in-tree `uv run` rebuilds instead of proving the wheel) and run the four exact commands from Current Facts, failing on SIGABRT or a `stack overflow` message. Make `pypi-publish` need it.
+- Record the pre/post wheel size and `.text` size for the fix SHA as the profile evidence.
 
 ## Acceptance
 
-1. A wheel built from the pushed SHA on the gate host runs the four commands without a stack overflow.
-2. `EXECUTE_STACK_BYTES` is 16 MiB or the measured value, with the reason recorded.
-3. CI has a wheel-install smoke job that fails on a wheel reproducing the 0.9.0 overflow and passes on the fix, with the negative control shown.
+1. A release-profile wheel built from the pushed SHA on the gate host has a `.text` section within a small margin of the 24,055,888-byte tarball binary (not the 68,281,008-byte dev build) and runs the four commands without a stack overflow.
+2. `EXECUTE_STACK_BYTES` stays 8 MiB; any change requires the measured watermark, is capped at 16 MiB, and stops and reports if the cap does not clear the commands.
+3. The release workflow's smoke fails on a dev-profile wheel and passes on the release-profile wheel, with the negative control (building without `--release`) shown; `pypi-publish` depends on the smoke.
 4. `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA.
 
 ## Out of scope
 
+- The missing Linux aarch64 wheel on PyPI.
 - Refactoring the recursion or the execute-thread model.
-- The BioData integration branches.
+- The BioData integration branches and their 16 MiB stopgap.
 - Republishing 0.9.0; the fix ships in 0.9.1.
 
 ## Complexity
 
-- Contract score: 1 (one exact existing rule: the execute thread's explicit stack margin)
-- State and timing score: 1 (thread stack state across the wheel and release builds)
+- Contract score: 1 (one exact existing rule: shipped binaries come from the release profile)
+- State and timing score: 0 (build configuration, no runtime state change)
 - Reach score: 1 (the PyPI install channel)
-- Proof score: 2 (a wheel build plus four command paths, not a unit test)
-- Cost of error score: 2 (the primary install path ships broken to users)
-- Total: 7
+- Proof score: 2 (wheel rebuild plus four command paths and a negative control, not a unit test)
+- Cost of error score: 2 (the primary install path ships broken wheels to users)
+- Total: 6
 - Minimum level floor: none
 - Final level: 3
-- Reasons: build-specific runtime failure with external wheel proof and a published-artifact cost
+- Reasons: build-profile defect in the published artifact with external wheel proof; the 0.9.1 backlog scored the outcome Level 2, but the rubric's proof and cost rows put it at 6
 - Selected model: gpt-5.6-sol, medium reasoning (level 3 implementer)
 
 ## Review
