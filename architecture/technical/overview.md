@@ -278,7 +278,8 @@ for `linux/amd64` and `linux/arm64` from the release's Linux tarballs once their
 published sidecars verify. A `container_only` dispatch input gates `build` and
 `pypi-build` off so an already-published release can rebuild just the image. The
 workflow moves the image's `latest` tag only when the tag is the repository's
-latest release. The retired `release/` Python package stays on disk but is not
+latest release, and it gates every publisher on a `docs-live` check that the
+live documentation revision is the tag commit or a descendant of it. The retired `release/` Python package stays on disk but is not
 the release path and is not wired into this workflow. The official MCP Registry
 submission remains a separate documented manual action. See
 [Release process](../../docs/reference/release-process.md).
