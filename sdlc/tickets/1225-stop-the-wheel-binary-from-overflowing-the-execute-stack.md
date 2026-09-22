@@ -38,7 +38,7 @@ The published PyPI wheel is built in the release profile, runs `search trial`, `
 
 - The missing Linux aarch64 wheel on PyPI.
 - Refactoring the recursion or the execute-thread model.
-- The BioData integration branches and their 16 MiB stopgap.
+- The downstream integration branches and their 16 MiB stopgap.
 - Republishing 0.9.0; the fix ships in 0.9.1.
 
 ## Complexity
