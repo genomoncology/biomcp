@@ -83,5 +83,6 @@ in `spec/surface/mcp.md`, which pins the rejection, and by
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — one round; the working-tree suite command, the pinned acknowledgment decision, the stateless case, and the schema citations were corrected before implementation
+- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — one round; the resource-subscription rationale and the record were corrected in 73195a46
+- Verification: manual suite 31 passed / 0 failed / 5 not verified / 1 recommended not met at 73195a46; focused nextest 39/39; focused pytest 7/7; fmt, clippy, and `make spec` clean; see `sdlc/records/1223-mcp-conformance-follow-ups-from-the-2026-07-28-suite.md`
