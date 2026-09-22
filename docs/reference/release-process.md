@@ -11,8 +11,10 @@ release, the tag, or the public-version commit.
 A `release` event with `types: [published]` starts six jobs:
 
 - `build` compiles the five shipped targets, packages each artifact, writes a
-  `.sha256` sidecar, and uploads both files to the GitHub release. The five
-  artifacts are `biomcp-linux-x86_64.tar.gz`, `biomcp-linux-arm64.tar.gz`,
+  `.sha256` sidecar, and uploads both files to the GitHub release with
+  `gh release upload`. The upload step runs only for a `release` event, so a
+  manual dispatch stops after packaging. The five artifacts are
+  `biomcp-linux-x86_64.tar.gz`, `biomcp-linux-arm64.tar.gz`,
   `biomcp-darwin-arm64.tar.gz`, `biomcp-darwin-x86_64.tar.gz`, and
   `biomcp-windows-x86_64.zip`.
 - `pypi-build` builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
@@ -69,9 +71,11 @@ are skipped because their `needs` are skipped, so only `container-publish` runs.
 That path rebuilds the image for an already-published release, for example to
 backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.
 
-A manual run has no release upload URL, so a dispatch without `container_only`
-fails at the `build` job's asset upload. Use `container_only: true` for manual
-runs that only need the image.
+A dispatch without `container_only` builds and packages the artifacts but
+uploads nothing, because the upload step is guarded on the `release` event. The
+run then fails at `pypi-publish`, where PyPI rejects the version the release
+already published. Use `container_only: true` for manual runs that only need the
+image.
 
 ## Documentation publication
 
@@ -82,7 +86,7 @@ deploys it to the `gh-pages` branch, requests a Pages build, and verifies the
 live revision witness `https://biomcp.org/__biomcp_revision__/<sha>.txt` and
 the published Markdown bytes against the local build. Confirm that run
 succeeded for the release SHA before announcing the release. The site is edge
-documentation and tracks `main`, not the latest tag; ticket 1222 adds a
+documentation and tracks `main`, not the latest tag; ticket 1226 adds a
 release-time check for the same witness so a release fails when the site is
 behind.
 

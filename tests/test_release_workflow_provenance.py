@@ -31,6 +31,43 @@ def test_container_only_dispatch_gates_the_release_jobs() -> None:
     assert container_only_gate in _job_block(release, "wheel-smoke")
 
 
+def test_no_reference_to_the_archived_release_asset_action() -> None:
+    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "actions/upload-release-asset" not in release
+    assert "github.event.release.upload_url" not in release
+
+
+def test_release_upload_step_uses_gh_and_runs_only_on_a_release() -> None:
+    build = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "build")
+    upload_steps = [
+        step for step in build.split("\n      - ") if "gh release upload" in step
+    ]
+
+    assert len(upload_steps) == 1
+    upload = upload_steps[0]
+    assert "if: github.event_name == 'release'" in upload
+    # The Windows matrix leg defaults to PowerShell, which does not expand $TAG.
+    assert "shell: bash" in upload
+    assert 'gh release upload "$TAG"' in upload
+    assert '"${{ matrix.artifact }}"' in upload
+    assert '"${{ matrix.artifact }}.sha256"' in upload
+    assert "--clobber" in upload
+
+
+def test_homebrew_tap_resolves_the_tag_once_for_every_use() -> None:
+    homebrew_tap = _job_block(
+        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "homebrew-tap"
+    )
+
+    assert "GITHUB_REF_NAME" not in homebrew_tap
+    assert homebrew_tap.count("github.event.release.tag_name || inputs.tag") == 1
+    assert "TAG: ${{ github.event.release.tag_name || inputs.tag }}" in homebrew_tap
+    assert 'gh release download "$TAG"' in homebrew_tap
+    assert 'VERSION="${TAG#v}"' in homebrew_tap
+    assert 'git commit -m "Update biomcp formula for ${TAG}"' in homebrew_tap
+
+
 def test_pypi_wheels_build_in_the_release_profile() -> None:
     pypi_build = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "pypi-build")
     maturin_steps = [

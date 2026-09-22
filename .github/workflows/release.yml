@@ -47,6 +47,8 @@ jobs:
             target: x86_64-pc-windows-msvc
             artifact: biomcp-windows-x86_64.zip
     runs-on: ${{ matrix.os }}
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,25 +96,16 @@ jobs:
           sha256sum ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
         shell: bash
 
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload release assets
+        if: github.event_name == 'release'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ matrix.artifact }}
-          asset_name: ${{ matrix.artifact }}
-          asset_content_type: application/octet-stream
-
-      - name: Upload checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ matrix.artifact }}.sha256
-          asset_name: ${{ matrix.artifact }}.sha256
-          asset_content_type: text/plain
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release upload "$TAG" \
+            "${{ matrix.artifact }}" \
+            "${{ matrix.artifact }}.sha256" \
+            --clobber
 
   pypi-build:
     if: github.event_name == 'release' || inputs.container_only != true
@@ -226,17 +219,19 @@ jobs:
   homebrew-tap:
     needs: [build]
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ref: ${{ env.TAG }}
 
       - name: Download checksums from the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p dist
-          gh release download "${{ github.event.release.tag_name || inputs.tag }}" --repo "$GITHUB_REPOSITORY" --pattern "*.sha256" --dir dist
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "*.sha256" --dir dist
 
       - name: Update Homebrew tap
         env:
@@ -250,7 +245,7 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" tap
           mkdir -p tap/Formula
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG#v}"
           X86_SHA256="$(awk '{print $1}' dist/biomcp-darwin-x86_64.tar.gz.sha256)"
           ARM64_SHA256="$(awk '{print $1}' dist/biomcp-darwin-arm64.tar.gz.sha256)"
           cat > tap/Formula/biomcp.rb << FORMULA
@@ -278,7 +273,7 @@ jobs:
             echo "Homebrew tap formula is already current."
             exit 0
           fi
-          git commit -m "Update biomcp formula for ${GITHUB_REF_NAME}"
+          git commit -m "Update biomcp formula for ${TAG}"
           git push origin HEAD:main
 
   container-publish:
