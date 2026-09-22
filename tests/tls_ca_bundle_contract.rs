@@ -143,7 +143,7 @@ fn tls_material() -> TlsMaterial {
     let ca_cert = ca_params.self_signed(&ca_key).expect("CA certificate");
 
     let leaf_key = rcgen::KeyPair::generate().expect("leaf key");
-    let mut leaf_params =
+    let leaf_params =
         rcgen::CertificateParams::new(vec!["127.0.0.1".to_string()]).expect("leaf parameters");
     let leaf_cert = leaf_params
         .signed_by(&leaf_key, &ca_cert, &ca_key)
@@ -168,7 +168,7 @@ fn assert_named_path(output: &Output, bundle: &Path) {
 #[tokio::test]
 async fn configured_bundle_reaches_the_private_ca_fixture() {
     let fixture = TlsFixture::start().await;
-    let output = fixture.run(Some(&fixture.bundle), false);
+    let output = fixture.run(Some(&fixture.bundle), false).await;
     assert!(
         output.status.success(),
         "stderr={}",
@@ -182,7 +182,7 @@ async fn configured_bundle_reaches_the_private_ca_fixture() {
 #[tokio::test]
 async fn missing_bundle_fails_before_a_completed_handshake() {
     let fixture = TlsFixture::start().await;
-    let output = fixture.run(None, false);
+    let output = fixture.run(None, false).await;
     assert_eq!(output.status.code(), Some(1));
     assert!(
         fixture.connections.load(Ordering::SeqCst) >= 1,
@@ -206,7 +206,7 @@ async fn broken_bundles_fail_before_any_connection() {
     std::fs::write(&empty, b"").expect("write certificate-less bundle");
 
     for bundle in [&missing, &malformed, &empty] {
-        let output = fixture.run(Some(bundle), false);
+        let output = fixture.run(Some(bundle), false).await;
         assert_named_path(&output, bundle);
     }
     assert_eq!(fixture.connections.load(Ordering::SeqCst), 0);
@@ -218,7 +218,7 @@ async fn broken_bundle_json_names_the_path() {
     let fixture = TlsFixture::start().await;
     let dir = tempfile::tempdir().expect("bundle directory");
     let missing = dir.path().join("absent.pem");
-    let output = fixture.run(Some(&missing), true);
+    let output = fixture.run(Some(&missing), true).await;
     assert_eq!(output.status.code(), Some(1));
     let value: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON error");
     assert_eq!(value["error"]["code"], "ca_bundle");
