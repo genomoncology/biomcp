@@ -4403,7 +4403,7 @@ published, and an operator can start it by hand to publish only the container
 image for a release that is already public. The workflow never creates the
 release, the tag, or the public-version commit.</p>
 <h2 id="what-a-published-release-runs">What a published release runs<a class="headerlink" href="#what-a-published-release-runs" title="Permanent link">&para;</a></h2>
-<p>A <code>release</code> event with <code>types: [published]</code> starts five jobs:</p>
+<p>A <code>release</code> event with <code>types: [published]</code> starts six jobs:</p>
 <ul>
 <li><code>build</code> compiles the five shipped targets, packages each artifact, writes a
   <code>.sha256</code> sidecar, and uploads both files to the GitHub release. The five
@@ -4411,9 +4411,17 @@ release, the tag, or the public-version commit.</p>
   <code>biomcp-darwin-arm64.tar.gz</code>, <code>biomcp-darwin-x86_64.tar.gz</code>, and
   <code>biomcp-windows-x86_64.zip</code>.</li>
 <li><code>pypi-build</code> builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
-  Windows x86_64 and uploads them as workflow artifacts.</li>
-<li><code>pypi-publish</code> runs after <code>pypi-build</code> in the protected <code>pypi</code> environment and
-  uploads those wheels to PyPI.</li>
+  Windows x86_64 and uploads them as workflow artifacts. Every wheel builds with
+  <code>args: --release --locked</code>, so the wheel binary carries the same release
+  profile as the tarball executables instead of a dev build with unoptimized
+  frames.</li>
+<li><code>wheel-smoke</code> runs after <code>pypi-build</code>, installs the Linux x86_64 wheel into a
+  virtual environment outside the checkout, and runs <code>search trial</code>,
+  <code>drug interactions</code>, and <code>drug trials</code> through the installed <code>biomcp</code> binary.
+  It fails on SIGABRT, on a stack-overflow message, and on any other crash, so a
+  dev-profile wheel cannot reach PyPI. A clean source error still passes.</li>
+<li><code>pypi-publish</code> runs after <code>pypi-build</code> and <code>wheel-smoke</code> in the protected
+  <code>pypi</code> environment and uploads those wheels to PyPI.</li>
 <li><code>homebrew-tap</code> runs after <code>build</code>, downloads the published checksums, and
   updates the formula in <code>genomoncology/homebrew-biomcp</code>. Without a
   <code>HOMEBREW_TAP_TOKEN</code> secret the job logs the skip and exits clean.</li>
@@ -4446,10 +4454,10 @@ unverified push until a rerun replaces it.</p>
 <p>A manual run takes two inputs. <code>tag</code> (required) names the release tag to
 publish from. <code>container_only</code> (boolean, default <code>false</code>) skips <code>build</code> and
 <code>pypi-build</code>.</p>
-<p>With <code>container_only: true</code>, <code>pypi-publish</code> and <code>homebrew-tap</code> are skipped
-because their <code>needs</code> are skipped, so only <code>container-publish</code> runs. That path
-rebuilds the image for an already-published release, for example to backfill
-v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
+<p>With <code>container_only: true</code>, <code>wheel-smoke</code>, <code>pypi-publish</code>, and <code>homebrew-tap</code>
+are skipped because their <code>needs</code> are skipped, so only <code>container-publish</code> runs.
+That path rebuilds the image for an already-published release, for example to
+backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
 <p>A manual run has no release upload URL, so a dispatch without <code>container_only</code>
 fails at the <code>build</code> job's asset upload. Use <code>container_only: true</code> for manual
 runs that only need the image.</p>
