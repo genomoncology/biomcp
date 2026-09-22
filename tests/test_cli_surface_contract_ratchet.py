@@ -59,6 +59,9 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
         "json_entity_surfaces_include_next_commands_or_exception",
         "copy_paste_examples_are_shell_safe",
         "entities_do_not_depend_on_markdown_shell_quoting",
+        "trial_status_vocabulary_documented",
+        "author_entity_present_in_entity_tables",
+        "release_process_versions_match_package_metadata",
     ]
     checked_surfaces = set(detail["checked_surfaces"])
     assert "docs/user-guide/variant.md" in checked_surfaces
@@ -183,6 +186,146 @@ def test_cli_surface_contract_rejects_entity_markdown_quoting_imports(tmp_path: 
     }
     paths = {finding["path"] for finding in result["findings"]}
     assert paths == {"src/entities/brace.rs", "src/entities/direct.rs"}
+
+
+def test_cli_surface_contract_pins_trial_status_vocabulary_and_active_refusal(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "repo"
+    trial_dir = root / "src" / "cli" / "trial"
+    trial_dir.mkdir(parents=True)
+    (trial_dir / "mod.rs").write_text(
+        "    /// Filter by trial status [values: recruiting, active_not_recruiting]\n",
+        encoding="utf-8",
+    )
+    docs = root / "docs"
+    (docs / "user-guide").mkdir(parents=True)
+    (docs / "reference").mkdir(parents=True)
+    contract = (
+        "`recruiting` and `active_not_recruiting` are accepted. A bare "
+        '`--status active` is refused as ambiguous because NCI uses "active" '
+        "for a trial that is open and accruing, while ClinicalTrials.gov uses it "
+        "for one that has stopped accruing. Use `--status recruiting` for open "
+        "and accruing trials, or `--status active_not_recruiting` for enrolled "
+        "and no longer accruing trials. The comma form `active, not recruiting` "
+        "is still accepted."
+    )
+    (docs / "user-guide" / "trial.md").write_text(contract, encoding="utf-8")
+    quick_reference = docs / "reference" / "quick-reference.md"
+    # Reflowing the contract across lines must not trip the guard.
+    quick_reference.write_text(contract.replace(" ", "\n"), encoding="utf-8")
+
+    module = _load_quality_ratchet_module()
+    result = module.check_trial_status_vocabulary_documented(root)
+
+    assert result["status"] == "pass"
+    assert result["status_values"] == ["recruiting", "active_not_recruiting"]
+    assert result["findings"] == []
+
+    quick_reference.write_text(
+        contract.replace(
+            "A bare `--status active` is refused as ambiguous",
+            "`--status active` is accepted",
+        ),
+        encoding="utf-8",
+    )
+    result = module.check_trial_status_vocabulary_documented(root)
+
+    assert result["status"] == "fail"
+    assert any(
+        finding.get("fragment") == "bare `--status active`"
+        for finding in result["findings"]
+    )
+
+
+def test_cli_surface_contract_requires_author_in_entity_tables(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    (root / "docs").mkdir(parents=True)
+    table = (
+        "## Entities and sources\n\n### Gettable entities\n\n"
+        "| Entity | Upstream providers used by BioMCP | Example |\n"
+        "|--------|-----------------------------------|---------|\n"
+        "| gene | MyGene.info | `biomcp get gene BRAF` |\n"
+        "| author | Semantic Scholar, ORCID | `biomcp get author semanticscholar:1716151` |\n\n"
+        "### Search-only entities\n\n"
+        "| Entity | Upstream providers used by BioMCP | Example |\n"
+        "|--------|-----------------------------------|---------|\n"
+        "| gwas | GWAS Catalog | `biomcp search gwas --trait \"type 2 diabetes\"` |\n"
+    )
+    (root / "README.md").write_text(table, encoding="utf-8")
+    index = root / "docs" / "index.md"
+    index.write_text(table, encoding="utf-8")
+
+    module = _load_quality_ratchet_module()
+    assert module.check_author_entity_present_in_entity_tables(root)["status"] == "pass"
+
+    index.write_text(table.replace("| author |", "| authors |"), encoding="utf-8")
+    result = module.check_author_entity_present_in_entity_tables(root)
+
+    assert result["status"] == "fail"
+    assert result["findings"] == [
+        {
+            "path": "docs/index.md",
+            "entity": "author",
+            "message": "gettable entity is missing from the entity table",
+        }
+    ]
+
+
+def test_cli_surface_contract_compares_release_process_versions_to_metadata(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "repo"
+    (root / "docs" / "reference").mkdir(parents=True)
+    cargo = root / "Cargo.toml"
+    cargo.write_text(
+        '[package]\nname = "biomcp-cli"\nversion = "0.9.1-dev.1"\n',
+        encoding="utf-8",
+    )
+    (root / "pyproject.toml").write_text(
+        '[project]\nname = "biomcp-cli"\nversion = "0.9.1.dev1"\n',
+        encoding="utf-8",
+    )
+    release_process = root / "docs" / "reference" / "release-process.md"
+    release_process.write_text(
+        "The private development candidate is Cargo `0.9.1-dev.1` and Python\n"
+        "`0.9.1.dev1`; public metadata stays on the latest published release.\n",
+        encoding="utf-8",
+    )
+
+    module = _load_quality_ratchet_module()
+    assert (
+        module.check_release_process_versions_match_package_metadata(root)["status"]
+        == "pass"
+    )
+
+    release_process.write_text(
+        "The private development candidate is Cargo `0.8.0` and Python `0.9.1.dev1`.\n",
+        encoding="utf-8",
+    )
+    result = module.check_release_process_versions_match_package_metadata(root)
+
+    assert result["status"] == "fail"
+    assert any(
+        finding.get("fragment") == "Cargo `0.9.1-dev.1`"
+        for finding in result["findings"]
+    )
+
+    release_process.write_text(
+        "The private development candidate is Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`.\n",
+        encoding="utf-8",
+    )
+    cargo.write_text(
+        '[package]\nname = "biomcp-cli"\nversion = "0.9.2-dev.1"\n',
+        encoding="utf-8",
+    )
+    result = module.check_release_process_versions_match_package_metadata(root)
+
+    assert result["status"] == "fail"
+    assert any(
+        finding.get("fragment") == "Cargo `0.9.2-dev.1`"
+        for finding in result["findings"]
+    )
 
 
 def test_cli_surface_contract_exception_registry_names_initial_exceptions() -> None:
