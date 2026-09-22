@@ -65,6 +65,19 @@ Enforcement gap:
 - Cell-line pages for surfaces merged after v0.9.0; they ship in the next release.
 - The MCP conformance findings in ticket 1223.
 
+## Complexity
+
+- Contract score: 1 (several explicit public cases: documented values, entities, and version facts)
+- State and timing score: 0 (documentation and guards only)
+- Reach score: 1 (one public surface, the published site, plus the ratchet)
+- Proof score: 1 (focused doc and ratchet checks against the released binary)
+- Cost of error score: 1 (a reader follows a wrong value or misses a breaking change)
+- Total: 4
+- Minimum level floor: none
+- Final level: 2
+- Reasons: many small public-content corrections with deterministic doc and ratchet proof; no state, concurrency, or external effect
+- Selected model: gpt-5.6-luna, high reasoning (level 2 implementer)
+
 ## Review
 
 - Design review: pending
