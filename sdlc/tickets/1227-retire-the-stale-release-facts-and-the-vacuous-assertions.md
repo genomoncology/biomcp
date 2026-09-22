@@ -38,6 +38,11 @@ The architecture document stops describing a workflow that no longer exists, the
 - Deleting the retired `release/` package.
 - The release workflow behavior (tickets 1222 and 1226).
 
+## Complexity
+
+- Level 2 (contract 1, state and timing 0, reach 1, proof 1, cost of error 1 = 4)
+- Reasons: explicit documentation pins and one code constant; a wrong sentence is caught by a mutation-checked assertion and corrected locally.
+
 ## Review
 
 - Design review: pending

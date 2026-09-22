@@ -19,8 +19,9 @@ The cache-expiry test stops racing real file IO against a paused clock, so it ei
 
 ## Design
 
-- Reproduce the failure first with a starvation simulation and keep the red output in the record.
+- Reproduce the failure first with a starvation simulation: an operation that is ready on its first poll races the expired `timeout_at` timer (`src/sources/mod.rs:80-87`) and the old assertion fails with an unexpected `Ok`. That is the observable the red repro must show, and the red output stays in the record.
 - Keep the `entered` handshake outside the deadline-wrapped future, or bias the select on `entered`, and replace the real file read with an in-memory completion (a `Notify` or `oneshot`) that stays pending on the poll where the timer is checked, then yields and completes.
+- Removing the real read also removes the only real async-IO crossing, so say which assertion still carries the refusal evidence: the `untouched` marker and the epoch check at `src/cache/migration.rs:890-891` must still prove that no mutation landed.
 - Do not change `deadline_io`'s production semantics or any code outside the test module.
 
 ## Acceptance
@@ -34,6 +35,11 @@ The cache-expiry test stops racing real file IO against a paused clock, so it ei
 
 - Cache-migration behavior changes.
 - Other flaky tests.
+
+## Complexity
+
+- Level 2 (contract 0, state and timing 2, reach 0, proof 1, cost of error 1 = 4)
+- Reasons: paused clock, select ordering, and a timer race are the whole problem; the change is confined to one test module and a wrong fix hides the ordering hazard.
 
 ## Review
 

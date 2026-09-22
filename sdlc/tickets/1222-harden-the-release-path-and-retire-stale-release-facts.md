@@ -13,9 +13,9 @@ The release workflow stops depending on an archived action and stops being able 
 ## Current Facts
 
 - `.github/workflows/release.yml:98,108` upload assets with `actions/upload-release-asset@v1`, which is archived, and both steps read `github.event.release.upload_url` (`:102`, `:112`). A full `workflow_dispatch` therefore fails at the upload.
-- The uploaded assets are the build-matrix artifacts (`release.yml:33-46`) and their `.sha256` sidecars (`:76-96`), produced by the upload step at `:97-116`.
+- The uploaded assets are the build-matrix artifacts (`release.yml:33-48`) and their `.sha256` sidecars (`:76-96`), produced by the upload step at `:97-116`.
 - `homebrew-tap` computes `VERSION="${GITHUB_REF_NAME#v}"` (`release.yml:253`) and commits with `git commit -m "Update biomcp formula for ${GITHUB_REF_NAME}"` (`:281`). On `workflow_dispatch`, `GITHUB_REF_NAME` is the branch, so a manual run can write a formula versioned `main`.
-- `container-publish` already resolves the tag once, as `TAG: ${{ github.event.release.tag_name || inputs.tag }}` (`release.yml:289`) with `VERSION="${TAG#v}"` (`:303`). That is the pattern to copy.
+- `container-publish` already resolves the tag once, as `TAG: ${{ github.event.release.tag_name || inputs.tag }}` (`release.yml:295`) with `VERSION="${TAG#v}"` (`:304`). That is the pattern to copy.
 - `docs/reference/release-process.md:72-74` states that a dispatch without `container_only` fails at the build job's asset upload. This ticket makes that sentence false.
 - Ticket 1220 settled `MAX_PACKAGE_FILES = 1_342` against the correct clean-clone count, so the package-boundary concern in an earlier draft of this ticket needs no work here.
 
@@ -39,6 +39,11 @@ The release workflow stops depending on an archived action and stops being able 
 - The docs-live release gate (ticket 1226).
 - The retired `release/` package and the stale architecture facts (ticket 1227).
 - The cache-expiry flake and any artifact publication change.
+
+## Complexity
+
+- Level 3 (contract 1, state and timing 1, reach 1, proof 1, cost of error 1 = 5)
+- Reasons: two trigger paths with an explicit runbook contract; proof is pins and gates, and the upload path is only proven by a real release.
 
 ## Review
 

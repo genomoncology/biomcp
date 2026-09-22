@@ -30,7 +30,7 @@ Wrong or stale:
 - `docs/reference/mcp-server.md:17` still said v0.8.25 at audit time; 1224 corrects it here because the 1222 dependency had not landed.
 - `docs/reference/mcp-server.md:146-148` and `docs/getting-started/claude-desktop.md:47-50` carry hand-copied catalog numbers (15,841 bytes, 3,996 tokens) pinned as literals by `tests/test_documentation_consistency_audit_contract.py:492-494`, with nothing measuring them against the binary.
 - `docs/reference/sources.json` `reviewed_on` dates are format-checked but not age-checked (`tests/test_source_licensing_docs_contract.py:182`); many read `2026-03-20`.
-- `docs/reference/release-process.md:87-89` version facts have no mechanical check; the same facts in `architecture/technical/overview.md:268` are ticket 1222's.
+- `docs/reference/release-process.md:87-89` version facts have no mechanical check; the same facts in `architecture/technical/overview.md:268` are ticket 1227's.
 - The cell-line entity merged to main after v0.9.0 (`eed4f2c1`) has no Unreleased CHANGELOG entry.
 
 Site structure:
@@ -62,7 +62,7 @@ Enforcement gap:
 
 ## Out of scope
 
-- The release and docs coupling, which is ticket 1222.
+- The release and docs coupling, which is ticket 1226.
 - Cell-line pages for surfaces merged after v0.9.0; they ship in the next release.
 - The MCP conformance findings in ticket 1223.
 
