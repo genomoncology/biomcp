@@ -53,6 +53,33 @@ Run of `npx @hasmcp/mcp-spec-test@latest -c "docker run -i --rm ghcr.io/genomonc
 - Reasons: protocol-level compatibility decisions with multi-case external proof
 - Selected model: gpt-5.6-sol, medium reasoning (level 3 implementer)
 
+## Decisions
+
+### `subscriptions/listen` acknowledgment
+
+The 2026-07-28 published schema defines the acknowledgment payload as:
+
+> The subset of requested notification types the server agreed to honor. Only includes notification types the server actually supports; if the client requested an unsupported type (e.g., `promptsListChanged` when the server has no prompts), it is omitted from this set.
+
+(`SubscriptionsAcknowledgedNotificationParams.notifications` description in
+`spec/2026-07-28/schema.json`, vendored by `@hasmcp/mcp-spec-test@0.1.5`.)
+
+An opted-in type the server supports therefore belongs in the acknowledgment,
+and the empty object was a divergence. `src/mcp/shell/modern.rs` now reports
+`toolsListChanged` and `resourcesListChanged` when the client opts in, because
+the server advertises tools and resources. It omits `promptsListChanged` (no
+prompts capability) and `resourceSubscriptions` (its resources never update),
+and it never acknowledges a type the client did not request. Pinned by
+`tests/test_mcp_2026_protocol.py` and `spec/surface/mcp.md`.
+
+### Stateless 2025-11-25
+
+Per-request metadata is the 2026-07-28 stateless mode, so a request whose
+metadata names a legacy revision is not a legacy session. BioMCP keeps rejecting
+it with `-32022` and serves legacy revisions only through `initialize`. Recorded
+in `spec/surface/mcp.md`, which pins the rejection, and by
+`tests/test_mcp_2026_protocol.py`.
+
 ## Review
 
 - Design review: pending

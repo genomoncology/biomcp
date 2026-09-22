@@ -154,7 +154,7 @@ async fn dispatch_result(
                 "jsonrpc": "2.0",
                 "method": "notifications/subscriptions/acknowledged",
                 "params": {
-                    "notifications": {},
+                    "notifications": acknowledged_notifications(params),
                     "_meta": {"io.modelcontextprotocol/subscriptionId": id}
                 }
             })));
@@ -172,6 +172,27 @@ async fn dispatch_result(
                 | "resources/read"
         ),
     ))
+}
+
+fn acknowledged_notifications(params: &Map<String, Value>) -> Value {
+    // 2026-07-28: the acknowledgment reports the subset of requested notification
+    // types the server agreed to honor, so it must never add a type the client
+    // did not ask for. BioMCP advertises tools and resources, so it honors both
+    // list-changed types when they are requested; it has no prompts and its
+    // resources never update, so `promptsListChanged` and `resourceSubscriptions`
+    // stay out of the acknowledgment.
+    let requested = params.get("notifications").and_then(Value::as_object);
+    let mut acknowledged = Map::new();
+    for name in ["toolsListChanged", "resourcesListChanged"] {
+        if requested
+            .and_then(|requested| requested.get(name))
+            .and_then(Value::as_bool)
+            == Some(true)
+        {
+            acknowledged.insert(name.into(), json!(true));
+        }
+    }
+    Value::Object(acknowledged)
 }
 
 fn required_string<'a>(params: &'a Map<String, Value>, name: &str) -> Result<&'a str, Value> {

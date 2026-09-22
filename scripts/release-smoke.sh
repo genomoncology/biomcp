@@ -271,9 +271,17 @@ try:
     by_name = {tool['name']: tool for tool in tools}
     expected = ['biomcp', 'search', 'get', 'variant_normalize_car', 'variant_erepo', 'gene_cspec', 'variant_articles']
     typed_ok = [tool['name'] for tool in tools] == expected
-    typed_ok = typed_ok and 'enum' in by_name['search']['inputSchema']['properties']['entity']
-    typed_ok = typed_ok and 'enum' in by_name['get']['inputSchema']['properties']['entity']
-    print('435 typed MCP tool surface\t' + ('PASS' if typed_ok else 'FAIL') + '\tsearch/get tools with entity enum schemas')
+    def entity_schema(tool):
+        for branch in by_name[tool]['inputSchema']['oneOf']:
+            entity = branch['properties']['entity']
+            if entity.get('const') == 'gene':
+                return entity
+        return None
+    typed_ok = typed_ok and by_name['search']['inputSchema']['type'] == 'object'
+    typed_ok = typed_ok and entity_schema('search') == {'const': 'gene'}
+    typed_ok = typed_ok and by_name['get']['inputSchema']['type'] == 'object'
+    typed_ok = typed_ok and entity_schema('get') == {'const': 'gene'}
+    print('435 typed MCP tool surface\t' + ('PASS' if typed_ok else 'FAIL') + '\tsearch/get tools declare object schemas with entity branches')
 
     call = request({'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'get','arguments':{'entity':'gene','id':'BRAF','json':False}}})
     text = '\n'.join(item.get('text','') for item in call.get('result',{}).get('content',[]) if item.get('type') == 'text')

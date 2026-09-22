@@ -49,7 +49,7 @@ def _fake_biomcp_script(git_sha: str, build_date: str = "2026-06-24T00:00:00Z") 
                 if method == "initialize":
                     print(json.dumps({{"jsonrpc":"2.0","id":msg["id"],"result":{{"capabilities":{{}}}}}}), flush=True)
                 elif method == "tools/list":
-                    schema = {{"type":"object","properties":{{"entity":{{"enum":["gene"]}}}}}}
+                    schema = {{"type":"object","oneOf":[{{"type":"object","properties":{{"entity":{{"const":"gene"}}}}}}]}}
                     tools = [
                         {{"name":"biomcp","inputSchema":{{"type":"object"}}}},
                         {{"name":"search","inputSchema":schema}},

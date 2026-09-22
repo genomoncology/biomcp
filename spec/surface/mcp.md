@@ -145,12 +145,98 @@ ClinGen schemas validate their named properties
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search and get schemas use entity-specific branches
+search and get schemas declare object roots
 search schema includes a bounded limit
 get schema assigns sections only to their owning entities
 article schema exposes assets manifest but not asset download
 search and get schemas include author entity
 variant_articles schema includes identity verification controls
 indexing'
+```
+
+## Stateless Metadata Names Only The Modern Revision
+
+Per-request metadata is the 2026-07-28 way to ask for stateless service, and that
+mode does not exist on the legacy revisions. A request whose metadata names a
+legacy revision is not the legacy handshake path, so BioMCP rejects it with
+`UnsupportedProtocolVersionError` instead of serving it statelessly. Legacy
+clients keep their `initialize` handshake, and discovery still advertises every
+supported revision.
+
+```bash
+python3 - <<'PY' | mustmatch like 'legacy metadata cannot request stateless service'
+import json, os, subprocess
+
+proc = subprocess.Popen(
+    [os.environ["BIOMCP_BIN"], "serve"],
+    stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+    env=os.environ.copy(),
+)
+
+def call(message):
+    proc.stdin.write(json.dumps(message) + "\n")
+    proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+
+response = call({"jsonrpc":"2.0","id":"legacy","method":"tools/list","params":{"_meta":{
+    "io.modelcontextprotocol/protocolVersion":"2025-11-25",
+    "io.modelcontextprotocol/clientCapabilities":{}}}})
+assert response["error"]["code"] == -32022
+assert response["error"]["data"]["requested"] == "2025-11-25"
+assert set(response["error"]["data"]["supported"]) == {
+    "2025-06-18", "2025-11-25", "2026-07-28"}
+proc.terminate()
+proc.wait(timeout=5)
+print("legacy metadata cannot request stateless service")
+PY
+```
+
+## Subscriptions Acknowledge Opted-In Types They Honor
+
+`subscriptions/listen` opens a 2026-07-28 subscription with the notification
+types the client opts into, and the acknowledgment reports the subset the server
+agreed to honor. BioMCP advertises tools and resources, so it acknowledges those
+list-change types when the client asks for them. It has no prompts and its
+resources never update, so `promptsListChanged` and `resourceSubscriptions` stay
+out of the acknowledgment, as does any type the client did not request.
+
+```bash
+python3 - <<'PY' | mustmatch like 'subscription acknowledgment honors opted-in types'
+import json, os, subprocess
+
+meta = {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {},
+}
+proc = subprocess.Popen(
+    [os.environ["BIOMCP_BIN"], "serve"],
+    stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+    env=os.environ.copy(),
+)
+
+def listen(identifier, notifications):
+    proc.stdin.write(json.dumps({
+        "jsonrpc": "2.0", "id": identifier, "method": "subscriptions/listen",
+        "params": {"_meta": meta, "notifications": notifications},
+    }) + "\n")
+    proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+
+ack = listen("listen", {
+    "toolsListChanged": True, "promptsListChanged": True,
+    "resourcesListChanged": True, "resourceSubscriptions": ["biomcp://help"],
+})
+assert ack["method"] == "notifications/subscriptions/acknowledged"
+assert ack["params"]["notifications"] == {
+    "toolsListChanged": True, "resourcesListChanged": True}
+assert ack["params"]["_meta"]["io.modelcontextprotocol/subscriptionId"] == "listen"
+assert listen("tools-only", {"toolsListChanged": True})["params"]["notifications"] == {
+    "toolsListChanged": True}
+assert listen("empty", {})["params"]["notifications"] == {}
+proc.terminate()
+proc.wait(timeout=5)
+print("subscription acknowledgment honors opted-in types")
+PY
 ```
 
 ## Article Query Validation Converges Across MCP Tools
