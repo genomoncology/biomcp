@@ -19,6 +19,10 @@ Safety (OpenFDA FAERS): unavailable
 {% if show_label_section and label -%}
 ## FDA Label
 
+{% if label.boxed_warning -%}
+### Boxed Warning
+{{ label.boxed_warning }}
+{% endif -%}
 {% if raw_label -%}
 {% if label.indications -%}
 ### Indications and Usage

@@ -115,6 +115,8 @@ pub struct Drug {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub us_safety_warnings: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub us_boxed_warning: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ema_regulatory: Option<Vec<EmaRegulatoryRow>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ema_safety: Option<EmaSafetyInfo>,
@@ -168,6 +170,8 @@ pub struct DrugLabel {
     pub indication_summary: Vec<DrugLabelIndication>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub indications: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub boxed_warning: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub warnings: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

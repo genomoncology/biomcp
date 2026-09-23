@@ -165,6 +165,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         approvals: Some(Vec::new()),
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
