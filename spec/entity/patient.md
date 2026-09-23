@@ -47,9 +47,7 @@ message names no URL.
 
 ```bash
 export BIOMCP_FHIR_BASE="${BIOMCP_PROVIDER_CONTRACT_BASE:?provider fixture base is not configured}/fhir"
-out="$(../../tools/biomcp-ci --json get patient SYNTH-PT-OFFSITE conditions)"
-echo "$out" | jq -c '[(.conditions | length), .section_outcomes.conditions.outcome]' | mustmatch '[1,"degraded"]'
-echo "$out" | jq -r '.section_outcomes.conditions.message' | mustmatch 'The condition list stopped at a link or redirect off the configured server and may be incomplete.'
+../../tools/biomcp-ci --json get patient SYNTH-PT-OFFSITE conditions | jq -c '[(.conditions | length), .section_outcomes.conditions.outcome, .section_outcomes.conditions.message]' | mustmatch '[1,"degraded","The condition list stopped at a link or redirect off the configured server and may be incomplete."]'
 ```
 
 ## Errors Name No Patient Or Server
@@ -59,36 +57,24 @@ any request.
 
 ```bash
 export BIOMCP_FHIR_BASE="${BIOMCP_PROVIDER_CONTRACT_BASE:?provider fixture base is not configured}/fhir"
-set +e
-out="$(../../tools/biomcp-ci get patient SYNTH-PT-MISSING 2>&1)"; status=$?
-set -e
-test "$status" -ne 0
-echo "$out" | mustmatch 'Error: the FHIR server has no record with that patient ID.'
-set +e
-out="$(../../tools/biomcp-ci get patient 'a/b' 2>&1)"; status=$?
-set -e
-test "$status" -ne 0
-echo "$out" | mustmatch like 'a patient ID must be 1-64 characters of letters, digits, hyphens, or periods'
+../../tools/biomcp-ci get patient SYNTH-PT-MISSING >/dev/null 2>&1 && exit 1
+(../../tools/biomcp-ci get patient SYNTH-PT-MISSING 2>&1 || true) | mustmatch 'Error: the FHIR server has no record with that patient ID.'
+../../tools/biomcp-ci get patient 'a/b' >/dev/null 2>&1 && exit 1
+(../../tools/biomcp-ci get patient 'a/b' 2>&1 || true) | mustmatch like 'a patient ID must be 1-64 characters of letters, digits, hyphens, or periods'
 ```
 
 ## An Unset Base Names The Variable
 
 ```bash
-set +e
-out="$(env -u BIOMCP_FHIR_BASE ../../tools/biomcp-ci get patient SYNTH-PT-1 2>&1)"; status=$?
-set -e
-test "$status" -ne 0
-echo "$out" | mustmatch like 'set BIOMCP_FHIR_BASE to its base URL'
+env -u BIOMCP_FHIR_BASE ../../tools/biomcp-ci get patient SYNTH-PT-1 >/dev/null 2>&1 && exit 1
+(env -u BIOMCP_FHIR_BASE ../../tools/biomcp-ci get patient SYNTH-PT-1 2>&1 || true) | mustmatch like 'set BIOMCP_FHIR_BASE to its base URL'
 ```
 
 ## Patient Search Waits For Its Ticket
 
 ```bash
-set +e
-out="$(../../tools/biomcp-ci search patient 2>&1)"; status=$?
-set -e
-test "$status" -ne 0
-echo "$out" | mustmatch like 'search patient is not yet available.'
+../../tools/biomcp-ci search patient >/dev/null 2>&1 && exit 1
+(../../tools/biomcp-ci search patient 2>&1 || true) | mustmatch like 'search patient is not yet available.'
 ```
 
 ## Discovery Names The Command And Its Limits

@@ -339,9 +339,9 @@ async fn print_typed_tool_surface(
     if search_schema
         .get("oneOf")
         .and_then(serde_json::Value::as_array)
-        .is_none_or(|branches| branches.len() != 8)
+        .is_none_or(|branches| branches.len() != 9)
     {
-        anyhow::bail!("search schema must have eight entity-specific branches");
+        anyhow::bail!("search schema must have nine entity-specific branches");
     }
     for (tool, schema) in [("search", &search_schema), ("get", &get_schema)] {
         if schema.get("type").and_then(serde_json::Value::as_str) != Some("object") {
