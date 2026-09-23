@@ -4470,9 +4470,9 @@ path rebuilds the image for an already-published release, for example to
 backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
 <p>A dispatch without <code>container_only</code> builds and packages the artifacts but
 uploads nothing, because the upload step is guarded on the <code>release</code> event. The
-run then fails at <code>pypi-publish</code>, where PyPI rejects the version the release
-already published; it fails earlier at <code>docs-live</code> when the site has not
-reached that tag's commit. When <code>docs-live</code> passes, <code>homebrew-tap</code> and
+run never reaches PyPI: <code>pypi-publish</code> is gated on the <code>release</code> event as well,
+so a dispatch skips it on every input. It fails at <code>docs-live</code> when the site
+has not reached that tag's commit. When <code>docs-live</code> passes, <code>homebrew-tap</code> and
 <code>container-publish</code> still run, so a dispatch that names an older tag rewrites
 the public Homebrew formula backwards and republishes that tag's image; the old
 early failure at the asset upload stopped a dispatch before either job. Use
