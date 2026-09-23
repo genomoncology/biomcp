@@ -23,21 +23,26 @@ Filed from `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJ
 3. **One-parse measurement and test isolation**: `ca_bundle` keeps a
    process-wide parse counter (an atomic incremented only around real
    certificate parsing, not cache reads). Because the `OnceLock` freezes
-   the first resolution for the process life, the existing
-   environment-dependent loader tests (`ca_bundle.rs:188-350`) and the
-   new multi-builder one-parse measurement run in fresh child processes
-   through the established `CARGO_BIN_EXE_biomcp` harness
-   (`tests/tls_ca_bundle_contract.rs:77-91`): each case spawns a child
-   with its own variable set, one child drives several builders and
+   the first resolution for the process life, the environment-dependent
+   loader tests (`ca_bundle.rs:188-350`) and the multi-builder one-parse
+   measurement run in fresh child processes of the unit-test executable
+   itself — the `current_exe()` reentry pattern with env-selected child
+   cases, as `src/entities/gene/gencc/tests.rs:606` already does — so a
+   child case can invoke the private `load()` path and read the private
+   counter. The `CARGO_BIN_EXE_biomcp` harness is reserved for public
+   behavior and the startup tests. One child drives several builders and
    asserts the counter equals one with a single fallback warning. No
    production state seam is added.
 4. **Startup tests, all four combinations**: binary tests through the
    existing harness spawn each transport and assert — stdio with an
    invalid explicit bundle exits non-zero before accepting a session;
-   stdio with a bad fallback starts and logs one warning (stdin held
-   open, then the child is terminated); HTTP with an invalid explicit
-   bundle exits non-zero before binding; HTTP with a bad fallback binds
-   and logs one warning (readiness polled, then terminated).
+   stdio with a bad fallback starts and logs one warning; HTTP with an
+   invalid explicit bundle exits non-zero before binding; HTTP with a
+   bad fallback binds and logs one warning. Both stdio cases hold stdin
+   open and assert the expected bundle diagnostic on stderr, so EOF
+   guidance cannot satisfy a failure assertion; the HTTP success case
+   polls readiness. Every poll, wait, and termination carries a bounded
+   deadline with forced child cleanup, so no case can hang.
 5. **AlphaGenome stays documented, not wired**: for 0.9.1 the gRPC
    client keeps Tonic's native-roots path, which rustls-native-certs
    replaces with `SSL_CERT_FILE`/`SSL_CERT_DIR` when set.
@@ -56,12 +61,14 @@ Filed from `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJ
    clean-bundle path. Non-UTF-8 values keep the raw OS string for
    opening the file; only the error text is lossy.
 7. **Root additivity by dependency contract**: Reqwest's builder hides
-   its effective root configuration, so the proof is a source-contract
-   test pinning the exact builder calls in `ca_bundle` to the additive
-   set — the bundled Mozilla roots stay the base and the bundle is
-   added, with no roots-disabling or verification-disabling call —
-   alongside the private-CA handshake tests that prove the bundle
-   actually participates.
+   its effective root configuration, and `configure` accepts an
+   already-configured builder (`ca_bundle.rs:25-36`), so pinning
+   `ca_bundle` alone cannot prove retention. The proof is threefold: a
+   source-contract test asserting repository-wide absence of
+   root-disabling or verification-disabling builder calls; a pin on the
+   Reqwest TLS-root feature in `Cargo.toml:49`; and the private-CA
+   handshake tests proving the bundle participates alongside the
+   default roots.
 8. **Tests**: contract additions for missing, unreadable, directory, and
    blank fallbacks; an invalid explicit bundle with a valid fallback
    fails closed; handshake tests for the health client, fda_orphan,
@@ -88,12 +95,14 @@ Filed from `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJ
 
 ## Review
 
-- Design review: REJECT twice 2026-09-23 (gpt-5.6-sol, medium). First:
-  AlphaGenome documented rather than wired, binary startup tests, a
-  parse counter, and a structural root assertion. Second: the OnceLock
-  conflicts with the env-dependent loader tests (cases now run in fresh
-  children), the structural assertion is unimplementable against
-  Reqwest's private builder (now a source-contract pin plus handshakes),
-  and all four startup combinations are enumerated. Third review
-  pending.
+- Design review: REJECT three times 2026-09-23 (gpt-5.6-sol, medium).
+  First: AlphaGenome documented rather than wired, binary startup tests,
+  a parse counter, structural root assertion. Second: child-process
+  isolation for loader tests, source-contract over builder introspection,
+  four startup combinations. Third: the one-parse child is the
+  unit-test executable via `current_exe()` reentry (not the production
+  binary), the root pin covers repository-wide disabling calls plus the
+  Reqwest feature, both stdio cases hold stdin and assert the
+  diagnostic, and every wait is deadline-bounded with forced cleanup.
+  Fourth review pending.
 - Code review: pending
