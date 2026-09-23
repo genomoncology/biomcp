@@ -23,7 +23,7 @@ pub(super) const TOOLS: &[ToolCatalogEntry] = &[
     ToolCatalogEntry {
         name: "get",
         title: "BioMCP get",
-        description: "Get one biomedical record with typed inputs. Binary assets are CLI-only.",
+        description: "Get one biomedical record with typed inputs. Binary assets are CLI-only. Patient records run on stdio only.",
     },
     ToolCatalogEntry {
         name: "variant_normalize_car",

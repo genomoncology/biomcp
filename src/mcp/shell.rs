@@ -233,6 +233,8 @@ fn typed_search_branch(entity: &str) -> Value {
             ],
             &["query"],
         ),
+        // Patient search takes no filters until it ships; the CLI refuses it.
+        "patient" => (&[], &[]),
         _ => unreachable!(),
     };
     let mut properties = serde_json::Map::from_iter([
@@ -247,6 +249,10 @@ fn typed_search_branch(entity: &str) -> Value {
         ),
         ("json".into(), json!({"type":"boolean","default":false})),
     ]);
+    if entity == "patient" {
+        properties.remove("limit");
+        properties.remove("offset");
+    }
     for &(name, kind) in fields {
         let value = match kind {
             "array" => string_array_schema(),
@@ -277,16 +283,20 @@ fn typed_search_branch(entity: &str) -> Value {
         };
         properties.insert(name.into(), value);
     }
-    let any_of = required
-        .iter()
-        .map(|name| json!({"required":[name]}))
-        .collect::<Vec<_>>();
-    json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity"],"anyOf":any_of})
+    let mut branch = json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity"]});
+    if !required.is_empty() {
+        let any_of = required
+            .iter()
+            .map(|name| json!({"required":[name]}))
+            .collect::<Vec<_>>();
+        branch["anyOf"] = Value::Array(any_of);
+    }
+    branch
 }
 
 fn typed_search_schema(schema: &mut schemars::Schema) {
     let branches = [
-        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
+        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein", "patient",
     ]
     .into_iter()
     .map(typed_search_branch)
@@ -330,6 +340,35 @@ const RESOURCE_HELP_URI: &str = "biomcp://help";
 const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
 const CACHE_FAMILY_MCP_REJECTION_MESSAGE: &str = "Error: biomcp cache commands are CLI-only over MCP because they reveal workstation-local filesystem paths.";
 const LOCAL_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: --input file and stdin arguments are CLI-only over raw MCP because they read server-local state; use the matching typed MCP tool instead.";
+const PATIENT_HTTP_REJECTION_MESSAGE: &str = "Error: patient records are available on the CLI and stdio MCP only. `serve-http` refuses them until the HTTP transport has authenticated per-user sessions. See sdlc/issues/2026-09-11-health-record-entity-needs-authenticated-http-transport.md.";
+
+/// Set once when this process starts `serve-http`. A process that serves HTTP
+/// never serves stdio, so one process-wide marker covers every HTTP path,
+/// including the modern-protocol dispatcher.
+static HTTP_TRANSPORT: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+
+pub(super) fn mark_http_transport() {
+    let _ = HTTP_TRANSPORT.set(());
+}
+
+fn serving_http() -> bool {
+    HTTP_TRANSPORT.get().is_some()
+}
+
+/// True when the parsed command reads a patient record: `get patient`,
+/// `search patient`, or `batch patient`.
+fn reads_patient_record(cli: &crate::cli::Cli) -> bool {
+    match &cli.command {
+        crate::cli::Commands::Get {
+            entity: crate::cli::GetEntity::Patient(_),
+        }
+        | crate::cli::Commands::Search {
+            entity: crate::cli::SearchEntity::Patient(_),
+        } => true,
+        crate::cli::Commands::Batch(args) => args.entity.trim().eq_ignore_ascii_case("patient"),
+        _ => false,
+    }
+}
 impl BioMcpServer {
     pub fn new() -> Self {
         let mut tool_router = Self::tool_router();
@@ -355,6 +394,10 @@ impl BioMcpServer {
         args: Vec<String>,
         json: bool,
     ) -> Result<CallToolResult, McpError> {
+        // The one transport check for patient records. Every tool reaches it.
+        if serving_http() && reads_patient_record(&cli) {
+            return Ok(Self::tool_error(PATIENT_HTTP_REJECTION_MESSAGE));
+        }
         let command_requests_json = json || cli.json;
         if let Some(message) = binary_download_rejection(&cli, &args) {
             return structured_error::binary_download_rejection(message, command_requests_json);
@@ -659,7 +702,7 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
         .ok_or_else(|| input_error("typed search input must be an object"))?;
     let entity = checked_text(object.get("entity").unwrap_or(&Value::Null), "entity", 256)?;
     if ![
-        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
+        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein", "patient",
     ]
     .contains(&entity.as_str())
     {
@@ -669,6 +712,16 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
     let allowed = branch["properties"].as_object().expect("branch properties");
     if let Some(key) = object.keys().find(|key| !allowed.contains_key(*key)) {
         return Err(input_error(format!("unknown {entity} search field: {key}")));
+    }
+    if entity == "patient" {
+        let args = vec!["biomcp".into(), "search".into(), entity];
+        return Ok(
+            if object.get("json").and_then(Value::as_bool) == Some(true) {
+                args_with_json(args)
+            } else {
+                args
+            },
+        );
     }
     let required = branch["anyOf"].as_array().expect("required choices");
     if !required.iter().any(|choice| {
@@ -1492,7 +1545,8 @@ mod tests {
         LOCAL_INPUT_MCP_REJECTION_MESSAGE, ShellCommand, TypedGeneCspec, TypedGet, TypedSearch,
         TypedVariantArticles, TypedVariantCar, binary_download_rejection_for_args,
         cli_may_return_article_fulltext, get_args, is_allowed_mcp_args,
-        mcp_rejection_message_for_args, redact_mcp_json_text, redact_mcp_text, search_args,
+        mcp_rejection_message_for_args, reads_patient_record, redact_mcp_json_text,
+        redact_mcp_text, search_args,
     };
     use serde_json::json;
     mod ticket_0117;
@@ -1627,7 +1681,7 @@ mod tests {
     #[test]
     fn typed_schemas_are_entity_specific() {
         let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
-        assert_eq!(search["oneOf"].as_array().unwrap().len(), 8);
+        assert_eq!(search["oneOf"].as_array().unwrap().len(), 9);
         let gwas = search["oneOf"]
             .as_array()
             .unwrap()
@@ -1637,7 +1691,7 @@ mod tests {
         assert!(gwas["properties"].get("trait").is_some());
         assert!(gwas["properties"].get("region").is_none());
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
-        assert_eq!(get["oneOf"].as_array().unwrap().len(), 13);
+        assert_eq!(get["oneOf"].as_array().unwrap().len(), 14);
         let cell_line = get["oneOf"]
             .as_array()
             .unwrap()
@@ -1683,13 +1737,44 @@ mod tests {
     }
 
     #[test]
+    fn patient_record_commands_are_recognized_for_the_http_refusal() {
+        let parse = |args: &[&str]| crate::cli::try_parse_cli(args.iter().copied()).expect("parse");
+        for args in [
+            &["biomcp", "get", "patient", "SYNTH-1"][..],
+            &["biomcp", "get", "patient", "SYNTH-1", "conditions"],
+            &["biomcp", "search", "patient"],
+            &["biomcp", "batch", "patient", "SYNTH-1,SYNTH-2"],
+            &["biomcp", "batch", " Patient ", "SYNTH-1"],
+        ] {
+            assert!(reads_patient_record(&parse(args)), "{args:?}");
+        }
+        for args in [
+            &["biomcp", "get", "gene", "BRAF"][..],
+            &["biomcp", "batch", "gene", "BRAF"],
+            &["biomcp", "list", "patient"],
+        ] {
+            assert!(!reads_patient_record(&parse(args)), "{args:?}");
+        }
+    }
+
+    #[test]
+    fn typed_patient_search_maps_to_the_cli_refusal_without_filters() {
+        assert_eq!(
+            search_args(TypedSearch(json!({"entity":"patient"}))).unwrap(),
+            vec!["biomcp", "search", "patient"]
+        );
+        assert!(search_args(TypedSearch(json!({"entity":"patient","query":"x"}))).is_err());
+        assert!(search_args(TypedSearch(json!({"entity":"patient","limit":5}))).is_err());
+    }
+
+    #[test]
     fn typed_search_and_get_schemas_declare_object_roots_and_reject_bad_input() {
         let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
         assert_eq!(search["type"], json!("object"));
-        assert_eq!(search["oneOf"].as_array().unwrap().len(), 8);
+        assert_eq!(search["oneOf"].as_array().unwrap().len(), 9);
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
         assert_eq!(get["type"], json!("object"));
-        assert_eq!(get["oneOf"].as_array().unwrap().len(), 13);
+        assert_eq!(get["oneOf"].as_array().unwrap().len(), 14);
 
         assert!(search_args(TypedSearch(json!({"entity":"pathway","query":"MAPK"}))).is_err());
         assert!(
