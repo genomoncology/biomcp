@@ -10,6 +10,22 @@
   curated variants. DepMap, Cell Model Passports, ChEMBL, and PharmacoDB IDs
   resolve through one cross-reference search, and every output names the
   Cellosaurus release with its CC BY 4.0 attribution. (1202)
+- Added PharmacoDB drug-response evidence: `get cell-line <CVCL_xxxx>
+  drug_response` counts the experiments per dataset for the line with a
+  per-dataset drill-down, and `get drug <name> cell_lines` resolves to the
+  matched lines and per-experiment metrics (AAC, IC50, EC50, Einf, HS, DSS1)
+  filterable by cell line or dataset. (bccd2871)
+- Added `gene cell-lines <symbol> --group <cancer>` for Human Protein Atlas
+  expression across one cancer group of cell lines, paginated with the
+  per-line expression level and the HPA attribution. (6d8fd435)
+- Added `get cell-line <CVCL_xxxx> chembl` for the ChEMBL molecule record
+  behind a Cellosaurus cross-reference. (fd6a100c)
+- Added `BIOMCP_CA_BUNDLE` for outbound TLS behind a private root: the bundle
+  adds to the built-in Mozilla roots for every ordinary HTTP client, is
+  validated in-process before any request, and fails closed naming the path.
+  A set `SSL_CERT_FILE` is honored as a fallback when it parses; a fallback
+  that cannot be parsed warns and continues with the bundled roots. GitHub
+  #250. (1221)
 
 ### Fixes
 
@@ -21,6 +37,16 @@
   repository's latest release, so a `container_only` dispatch can rebuild the
   image for an already-published release, starting with v0.9.0, without moving
   the shared pointer. (1219)
+- Fixed the PyPI wheel binary aborting with a stack overflow on the trial
+  search, drug trial, and adverse-event paths and failing in JSON mode with a
+  missing skill-asset error. The wheel was built in the debug profile; wheels
+  now build with `--release --locked` like the tarballs, the skills tree is
+  compiled into the binary, and a pre-publish smoke runs the deep paths, the
+  not-found adverse-event fallback, and JSON-mode commands from the installed
+  wheel. The execute stack keeps its designed 8 MiB. GitHub #282. (1225)
+- Declared a top-level `"type": "object"` on the typed MCP `search` and `get`
+  tool schemas, so strict clients validate arguments as objects instead of
+  accepting any value. (e559cae2)
 
 ### Internal
 
