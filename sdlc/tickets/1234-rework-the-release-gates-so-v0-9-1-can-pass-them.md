@@ -1,6 +1,6 @@
 # Rework the release gates so v0.9.1 can pass them
 
-Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test-nothing.md` and revised after a REJECT design review (2026-09-23). Blocks 0.9.1.
+Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test-nothing.md`; revised after two REJECT design reviews (2026-09-23). Blocks 0.9.1.
 
 ## Design
 
@@ -8,86 +8,120 @@ Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test
 
 1. The workflow triggers on `push: tags: ['v*']` and keeps
    `workflow_dispatch` solely for published-release container backfills.
-   `TAG` derives per trigger: `github.ref_name || inputs.tag`.
-2. A `create-draft` job (needs `version-check`) creates the GitHub release
-   as a draft, so `gh release upload` has a target before `build` runs.
-   The upload step's event guard moves from `release` to `push`.
-3. A final `publish-release` job runs `gh release edit --draft=false` and
-   needs every publisher: `build` (assets), `pypi-publish`,
-   `homebrew-tap`, `container-publish`, and `docs-live`. It carries
-   job-level `contents: write` after the top-level permissions are
-   narrowed. No artifact is public before every check passes.
-4. The container `latest` move leaves `container-publish` and lands in
-   `publish-release`, after the release is public: the current unqualified
-   `gh release view` guard reads the prior published release while the
-   draft exists and would skip moving `latest` forever. The same
-   latest-release check runs there against the now-public release.
-5. Dispatch backfills keep the `container_only` contract; no draft is
-   created (the release already exists).
+   `TAG` is `inputs.tag || github.ref_name` (dispatch names its tag
+   explicitly; a push has no inputs, so `ref_name` applies).
+2. A `create-draft` job runs `if: github.event_name == 'push'`, needs
+   `version-check`, and creates the GitHub release as a draft so
+   `gh release upload` has a target. `build` needs
+   `[version-check, create-draft]`; its upload step's guard moves from
+   the `release` event to `push`.
+3. A final `publish-release` job needs
+   `[build, pypi-publish, homebrew-tap, container-publish, docs-live]`,
+   carries job-level `contents: write`, and runs `gh release edit
+   --draft=false` plus the container `latest` move (the unqualified
+   release lookup is only valid once the release is public).
+4. Guarantee, stated precisely: the GitHub release, its assets, and the
+   container `latest` pointer stay non-public until every check passes.
+   PyPI and the Homebrew tap publish after their own gates and can
+   briefly precede the GitHub release if a later job fails — the same
+   channel exposure as today, now recorded here instead of implied away.
+5. Dispatch: no draft exists (the release is published), so every publish
+   job carries an explicit condition over its needs results. On dispatch
+   with `container_only: true`, `create-draft` skips and
+   `container-publish` runs only under
+   `needs.create-draft.result == 'skipped'`; build-side and PyPI-side
+   jobs skip through their existing `container_only` conditions. The
+   exact per-job `if` expressions are enumerated in the implementation
+   and pinned by tests; no job relies on implicit skipped-needs
+   suppression alone.
 
 ### Version and changelog gates
 
-6. `scripts/check-release-versions.py` requires a `^v` tag, compares the
-   tag to the committed Cargo and pyproject versions, and runs
-   `scripts/check-version-sync.sh` from the tag ref (the workflow checks
-   out with `fetch-depth: 0` because the script inspects reachable tags).
+6. `scripts/check-release-versions.py` requires a `^v` tag, compares it
+   to the committed Cargo and pyproject versions, and runs
+   `scripts/check-version-sync.sh` from the tag ref (`fetch-depth: 0`).
    Behavior tests cover match, mismatch, missing `v`, and stable-only
-   rejection: a pre-release tag fails with a clear message, and
-   `check-version-sync.sh` keeps accepting only stable or `-dev.N` Cargo
-   forms. Recorded decision: the release workflow supports stable tags
-   only; pre-release support becomes its own ticket if ever needed.
+   rejection with a clear message; `check-version-sync.sh` keeps its
+   stable/`-dev.N` forms. Recorded decision: stable tags only; rc support
+   becomes its own ticket if ever needed.
 7. `scripts/check-changelog-coverage.py` reads the `## <tag version>`
    section first (stripping `v`, allowing the date suffix, escaping the
-   version) and falls back to `## Unreleased`, matching up to the next
-   heading or end of file, with a clear failure when neither exists.
+   version) and falls back to `## Unreleased`, matching to the next
+   heading or end of file, failing clearly when neither exists.
 8. Tickets come only from `Merge ... tickets/NNNN-` commit subjects via
-   `git log <previous>..<tag>` on the full checkout; numbers of any
-   length; each needs a described bullet; an explicit internal-only
-   marker bullet covers tickets with no user-visible change.
+   `git log <previous>..<tag>` on the full checkout; any-length numbers;
+   each needs a described bullet; an internal-only marker bullet covers
+   tickets with no user-visible change.
+
+### Event gates for publishers
+
+9. `pypi-publish` and `homebrew-tap` gate on
+   `github.event_name == 'push'` (replacing the 1229 `release` gate), so
+   a dispatch still cannot reach PyPI or the tap on any input.
 
 ### Smoke and permissions
 
-9. The wheel smoke runs as a matrix over all four built wheels; Unix legs
-   use `bin/biomcp`, Windows uses `Scripts/biomcp.exe`. Deep-path
-   commands exit 0; the not-found adverse-event command exits with its
-   exact expected code and text; exit 101 and any crash fail. Platform
-   legs share live providers, so a transient provider outage fails the
-   release (accepted, fail-closed).
-10. The permissions package from
-    `2026-09-23-release-workflow-gating-and-permissions.md` lands in the
-    same pass, all of it: the Homebrew release-event gate, upload
-    `skip-existing` semantics, `!cancelled()` where a needed-job chain
-    requires it, tag-resolution retry, workflow-level concurrency, action
-    SHA pinning, and the PyPI trusted-publisher confirmation.
+10. The wheel smoke runs as a matrix over all four built wheels; Unix
+    legs use `bin/biomcp`, Windows uses `Scripts/biomcp.exe`. Deep-path
+    commands exit 0; the not-found adverse-event command exits with its
+    exact expected code and text; exit 101 and any crash fail. Platform
+    legs share live providers; a transient provider outage fails the
+    release (accepted, fail-closed).
+11. The permissions package lands in full: top-level `permissions: {}`;
+    per-job grants — `contents: write` for `create-draft` and the
+    asset-uploading `build`, `contents: read` for `version-check`,
+    `docs-live`, and `homebrew-tap` (tap writes go through
+    `HOMEBREW_TAP_TOKEN`), `id-token: write` plus `contents: read` for
+    `pypi-publish`, `packages: write` plus `contents: read` for
+    `container-publish` and `publish-release` (`contents: write` there);
+    no permissions for `wheel-smoke`. Also: the Homebrew push-event gate,
+    upload `skip-existing` semantics, tag-resolution retry,
+    workflow-level concurrency, action SHA pinning, and the PyPI
+    trusted-publisher confirmation.
 
-### Tests
+### Expected needs adjacency (all edges mutation-tested)
 
-11. Workflow mutation tests prove each gate: every gate step has no
-    `continue-on-error`, no `if:` escape, no `|| true`; removing any
-    required direct or transitive publish-dependency edge (`version-check`,
-    `wheel-smoke`, `create-draft`, `publish-release` needs) fails a test;
-    each assertion is proven by mutating the workflow inside the test.
+```
+version-check:            (none)
+create-draft:             version-check
+build:                    version-check, create-draft
+pypi-build:               version-check
+wheel-smoke:              pypi-build
+docs-live:                version-check
+pypi-publish:             pypi-build, wheel-smoke, docs-live
+homebrew-tap:             build, docs-live, wheel-smoke
+container-publish:        build, docs-live, version-check, wheel-smoke
+publish-release:          build, pypi-publish, homebrew-tap,
+                          container-publish, docs-live
+```
+
+12. Workflow mutation tests prove: every gate step has no
+    `continue-on-error`, no `if:` escape, no `|| true`; removing ANY edge
+    above fails a test, including the dispatch skipped-draft route
+    (`container-publish` under dispatch); the mutation list covers the
+    full adjacency exactly, one test per edge.
 
 ## Acceptance
 
-- The coverage script passes against a changelog whose Unreleased section
-  was renamed to the release heading and against an Unreleased section at
-  end of file, and discovers tickets from merge subjects only.
+- The coverage script passes against a renamed-heading changelog and an
+  end-of-file Unreleased section, discovering tickets from merge subjects
+  only.
 - The version script behavior tests pass, including the stable-only
-  rejection message.
-- Mutation tests fail for each neutering edit the reviewer used and for
-  each removed needs edge.
+  rejection.
+- Mutation tests fail for each neutering edit and for each removed edge.
 - Every wheel is smoked with the stricter exit criteria.
-- Full yellow gate at the head SHA; the runbook describes the tag-push,
-  draft-last flow and the dispatch backfill; both issue files (this one
-  and the permissions file) gain Resolved sections; a record lands.
+- Full yellow gate at the head SHA; the runbook describes the tag-push
+  draft-last flow and the dispatch backfill; this issue file, the
+  permissions file, and the tests-pass-with-behavior-broken file gain
+  Resolved sections; a record lands.
 
 ## Review
 
-- Design review: REJECT 2026-09-23 (gpt-5.6-sol, medium) — six findings:
-  tag-push with an explicit draft job (not a bare tag trigger); the
-  container latest guard breaks under drafts; keep dispatch backfills;
-  the permissions package was not fully covered; check-version-sync.sh
-  rejects rc forms the ticket promised; mutation coverage missed the
-  needs edges. All folded into this revision; second review pending.
+- Design review: REJECT twice 2026-09-23 (gpt-5.6-sol, medium). First:
+  draft-creation job, latest-guard-under-draft, dispatch survival,
+  permissions package, rc contradiction, needs-edge mutations. Second:
+  `inputs.tag ||` order, push-only publisher gates, the false
+  nothing-public claim, per-job permission grants, explicit skip
+  semantics, and an exact adjacency list. All folded in; third review
+  pending.
 - Code review: pending
