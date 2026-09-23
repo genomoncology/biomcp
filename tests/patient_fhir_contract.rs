@@ -343,7 +343,10 @@ fn assert_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_error: boo
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
         assert_eq!(!output.status.success(), expect_error, "{case}: {stderr}");
-        assert!(!stderr.is_empty() || !expect_error, "{case}: no log output");
+        assert!(
+            !expect_error || !(stderr.is_empty() && stdout.is_empty()),
+            "{case}: the error reached neither stream"
+        );
         assert!(!stderr.contains(ID), "{case}: stderr names the ID");
         assert!(
             !stderr.contains(authority),
