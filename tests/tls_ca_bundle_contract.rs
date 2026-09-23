@@ -74,7 +74,7 @@ impl TlsFixture {
         }
     }
 
-    async fn run(&self, bundle: Option<&Path>, json: bool) -> Output {
+    async fn run(&self, explicit: Option<&Path>, fallback: Option<&Path>, json: bool) -> Output {
         let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_biomcp"));
         command
             .env_remove("BIOMCP_CA_BUNDLE")
@@ -82,8 +82,11 @@ impl TlsFixture {
             .env("BIOMCP_OPENFDA_BASE", &self.origin)
             .env("NO_PROXY", "*")
             .env("no_proxy", "*");
-        if let Some(bundle) = bundle {
+        if let Some(bundle) = explicit {
             command.env("BIOMCP_CA_BUNDLE", bundle);
+        }
+        if let Some(bundle) = fallback {
+            command.env("SSL_CERT_FILE", bundle);
         }
         if json {
             command.arg("--json");
@@ -165,10 +168,42 @@ fn assert_named_path(output: &Output, bundle: &Path) {
     );
 }
 
+/// Writes the five confirmed-unparseable bundle inputs: an empty file, one
+/// bad certificate among good ones, a leading byte-order mark, an OpenSSL
+/// `BEGIN TRUSTED CERTIFICATE` file, and a raw DER file.
+fn write_broken_bundles(dir: &Path, good_pem: &[u8], der: &[u8]) -> Vec<PathBuf> {
+    let empty = dir.join("empty.pem");
+    std::fs::write(&empty, b"").expect("write empty bundle");
+
+    let mixed = dir.join("mixed.pem");
+    let mut contents = good_pem.to_vec();
+    contents.extend_from_slice(
+        b"-----BEGIN CERTIFICATE-----\nnot base64\n-----END CERTIFICATE-----\n",
+    );
+    std::fs::write(&mixed, contents).expect("write mixed bundle");
+
+    let bom = dir.join("bom.pem");
+    let mut contents = b"\xEF\xBB\xBF".to_vec();
+    contents.extend_from_slice(good_pem);
+    std::fs::write(&bom, contents).expect("write BOM bundle");
+
+    let trusted = dir.join("trusted.pem");
+    std::fs::write(
+        &trusted,
+        b"-----BEGIN TRUSTED CERTIFICATE-----\nb3RoZXJjZXJ0\n-----END TRUSTED CERTIFICATE-----\n",
+    )
+    .expect("write trusted bundle");
+
+    let der_file = dir.join("der.pem");
+    std::fs::write(&der_file, der).expect("write DER bundle");
+
+    vec![empty, mixed, bom, trusted, der_file]
+}
+
 #[tokio::test]
 async fn configured_bundle_reaches_the_private_ca_fixture() {
     let fixture = TlsFixture::start().await;
-    let output = fixture.run(Some(&fixture.bundle), false).await;
+    let output = fixture.run(Some(&fixture.bundle), None, false).await;
     assert!(
         output.status.success(),
         "stderr={}",
@@ -182,7 +217,7 @@ async fn configured_bundle_reaches_the_private_ca_fixture() {
 #[tokio::test]
 async fn missing_bundle_fails_before_a_completed_handshake() {
     let fixture = TlsFixture::start().await;
-    let output = fixture.run(None, false).await;
+    let output = fixture.run(None, None, false).await;
     assert_eq!(output.status.code(), Some(1));
     assert!(
         fixture.connections.load(Ordering::SeqCst) >= 1,
@@ -196,17 +231,12 @@ async fn broken_bundles_fail_before_any_connection() {
     let fixture = TlsFixture::start().await;
     let dir = tempfile::tempdir().expect("bundle directory");
     let missing = dir.path().join("absent.pem");
-    let malformed = dir.path().join("malformed.pem");
-    std::fs::write(
-        &malformed,
-        b"-----BEGIN CERTIFICATE-----\nnot base64\n-----END CERTIFICATE-----\n",
-    )
-    .expect("write malformed bundle");
-    let empty = dir.path().join("empty.pem");
-    std::fs::write(&empty, b"").expect("write certificate-less bundle");
+    let good_pem = std::fs::read(&fixture.bundle).expect("read good bundle");
+    let der = tls_material().leaf_der;
+    let broken = write_broken_bundles(dir.path(), &good_pem, &der);
 
-    for bundle in [&missing, &malformed, &empty] {
-        let output = fixture.run(Some(bundle), false).await;
+    for bundle in std::iter::once(&missing).chain(broken.iter()) {
+        let output = fixture.run(Some(bundle), None, false).await;
         assert_named_path(&output, bundle);
     }
     assert_eq!(fixture.connections.load(Ordering::SeqCst), 0);
@@ -229,7 +259,7 @@ async fn unreadable_bundle_fails_before_any_connection() {
         return;
     }
 
-    let output = fixture.run(Some(&unreadable), false).await;
+    let output = fixture.run(Some(&unreadable), None, false).await;
     assert_named_path(&output, &unreadable);
     assert_eq!(fixture.connections.load(Ordering::SeqCst), 0);
     assert_eq!(fixture.sessions.load(Ordering::SeqCst), 0);
@@ -240,7 +270,7 @@ async fn broken_bundle_json_names_the_path() {
     let fixture = TlsFixture::start().await;
     let dir = tempfile::tempdir().expect("bundle directory");
     let missing = dir.path().join("absent.pem");
-    let output = fixture.run(Some(&missing), true).await;
+    let output = fixture.run(Some(&missing), None, true).await;
     assert_eq!(output.status.code(), Some(1));
     let value: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON error");
     assert_eq!(value["error"]["code"], "ca_bundle");
@@ -248,6 +278,66 @@ async fn broken_bundle_json_names_the_path() {
         value["error"]["message"]
             .as_str()
             .is_some_and(|message| message.contains(missing.to_str().expect("bundle path"))),
+        "message did not name the bundle: {}",
+        value["error"]["message"]
+    );
+    assert_eq!(fixture.connections.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn fallback_bundle_parses_and_reaches_the_private_ca_fixture() {
+    let fixture = TlsFixture::start().await;
+    let output = fixture.run(None, Some(&fixture.bundle), false).await;
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Rash"), "stdout={stdout}");
+    assert_eq!(fixture.sessions.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn broken_fallback_bundles_warn_and_continue() {
+    let fixture = TlsFixture::start().await;
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let good_pem = std::fs::read(&fixture.bundle).expect("read good bundle");
+    let der = tls_material().leaf_der;
+    let broken = write_broken_bundles(dir.path(), &good_pem, &der);
+
+    for bundle in &broken {
+        let output = fixture.run(None, Some(bundle), false).await;
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // The dropped fallback degrades to an ordinary untrusted-connection
+        // failure: the client builds with the bundled roots and attempts the
+        // handshake (connections advance, no session completes). A fail-closed
+        // bundle error aborts before any connection. The degrade warning
+        // names the path too, so stderr content is not the discriminator;
+        // the connection counters are.
+        assert_eq!(output.status.code(), Some(1), "stderr={stderr}");
+        assert!(
+            fixture.connections.load(Ordering::SeqCst) >= 1,
+            "the dropped fallback must still attempt the connection"
+        );
+        assert_eq!(fixture.sessions.load(Ordering::SeqCst), 0);
+    }
+}
+
+#[tokio::test]
+async fn broken_bundle_json_parse_failure_names_the_path() {
+    let fixture = TlsFixture::start().await;
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let der_file = dir.path().join("der.pem");
+    std::fs::write(&der_file, tls_material().leaf_der).expect("write DER bundle");
+    let output = fixture.run(Some(&der_file), None, true).await;
+    assert_eq!(output.status.code(), Some(1));
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON error");
+    assert_eq!(value["error"]["code"], "ca_bundle");
+    assert!(
+        value["error"]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains(der_file.to_str().expect("bundle path"))),
         "message did not name the bundle: {}",
         value["error"]["message"]
     );
