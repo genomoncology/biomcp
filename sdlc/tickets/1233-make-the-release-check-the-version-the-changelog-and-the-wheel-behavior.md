@@ -55,5 +55,12 @@ with `-j`.
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: self-verified by the orchestrator 2026-09-23 against the
+  reviewer checklist (job graph, version shapes, smoke fit, helper style,
+  missing entries, runbook paragraphs) because the subagent harness broke
+  mid-ticket; an independent review is queued before the 0.9.1 tag
+- Code review: same deviation; enforcement is mechanical (provenance
+  mutation pins, fake-gh coverage tests, exact package-boundary count)
+- Verification: yellow at 379dc571 lint/spec OK and Rust 3,780/3,780
+  twice; boundary pins fixed at 086f40e5, 40/40; see
+  `sdlc/records/1233-make-the-release-check-the-version-the-changelog-and-the-wheel-behavior.md`
