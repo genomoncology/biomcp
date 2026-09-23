@@ -64,9 +64,10 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
 - **Edition:** Rust 2024
 - **Development candidate:** Rust `1.0.0-dev.1`; Python `1.0.0.dev1`. `scripts/check-version-sync.sh` validates that exact mapping and its lock files while public metadata remains at `0.9.0`.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
-- **Release state:** v0.9.0 is the latest published release. Publishing a
-  GitHub release or manually dispatching an exact `tag` runs the tag-driven
-  workflow, which publishes archives, wheels, and the Homebrew update directly.
+- **Release state:** v0.9.0 is the latest published release. One workflow,
+  `Release` in `.github/workflows/release.yml`, runs when GitHub publishes a
+  release, and an operator can start it by hand to publish only the container
+  image for a release that is already public.
 - **Metadata changes:** Commit synchronized metadata and changelog updates;
   package versions are never stamped from tags.
 - **Generated AlphaGenome client:** Normal builds do not run or require
@@ -271,12 +272,16 @@ v0.9.0 is the latest published release. Package versions are committed metadata,
 `workflow_dispatch` with an explicit `tag` input. It checks out that tag, builds
 five platform archives with their `.sha256` sidecars, uploads them to the
 release, builds and publishes wheels through the protected `pypi` environment,
-and updates the `genomoncology/homebrew-biomcp` tap formula from the published
-checksums. There is no private preparation phase or later publication phase in
-this workflow: the selected tag publishes directly, so the release decision,
-stable metadata update, and repository gates must precede the trigger. The
-candidate tooling under `release/` is not wired into this workflow. The official
-MCP Registry submission remains a separate documented manual action. See
+updates the `genomoncology/homebrew-biomcp` tap formula from the published
+checksums, and publishes the container image to `ghcr.io/genomoncology/biomcp`
+for `linux/amd64` and `linux/arm64` from the release's Linux tarballs once their
+published sidecars verify. A `container_only` dispatch input gates `build` and
+`pypi-build` off so an already-published release can rebuild just the image. The
+workflow moves the image's `latest` tag only when the tag is the repository's
+latest release, and it gates every publisher on a `docs-live` check that the
+live documentation revision is the tag commit or a descendant of it. The retired `release/` Python package stays on disk but is not
+the release path and is not wired into this workflow. The official MCP Registry
+submission remains a separate documented manual action. See
 [Release process](../../docs/reference/release-process.md).
 Existing installation documentation continues to describe the already
 published v0.9.0 channels; `install.sh` resolves the latest release with

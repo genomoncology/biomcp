@@ -78,5 +78,6 @@ pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
             }
             json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity","id"]})
         }).collect::<Vec<_>>();
-    *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed get schema");
+    *schema = serde_json::from_value(json!({"type":"object","oneOf":branches}))
+        .expect("valid typed get schema");
 }

@@ -72,6 +72,7 @@ fn card() -> Drug {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,

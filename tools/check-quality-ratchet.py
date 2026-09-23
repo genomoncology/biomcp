@@ -33,7 +33,31 @@ CLI_SURFACE_CONTRACT_CHECKS = [
     "json_entity_surfaces_include_next_commands_or_exception",
     "copy_paste_examples_are_shell_safe",
     "entities_do_not_depend_on_markdown_shell_quoting",
+    "trial_status_vocabulary_documented",
+    "author_entity_present_in_entity_tables",
+    "release_process_versions_match_package_metadata",
 ]
+TRIAL_STATUS_HELP_PATH = "src/cli/trial/mod.rs"
+TRIAL_STATUS_HELP_RE = re.compile(
+    r"Filter by trial status \[values: (?P<values>[^\]]+)\]"
+)
+TRIAL_STATUS_DOC_SECTIONS = {
+    "docs/user-guide/trial.md": "### Status values",
+    "docs/reference/quick-reference.md": "## Trial status values",
+}
+TRIAL_STATUS_REFUSAL_FRAGMENTS = [
+    "bare `--status active`",
+    "ambiguous",
+    'NCI uses "active"',
+    "ClinicalTrials.gov uses it for one that has stopped accruing",
+    "Use `--status recruiting` for open and accruing",
+    "`--status active_not_recruiting` for enrolled and no longer accruing",
+    "active, not recruiting",
+]
+ENTITY_TABLE_PAGES = ["README.md", "docs/index.md"]
+ENTITY_TABLE_HEADING = "### Gettable entities"
+ENTITY_TABLE_REQUIRED_ENTITIES = ["author"]
+RELEASE_PROCESS_PAGE = "docs/reference/release-process.md"
 CLI_SURFACE_EXCEPTION_REGISTRY = "tools/cli-surface-contract-exceptions.json"
 CLI_SURFACE_REQUIRED_EXCEPTIONS = {
     "biomcp --json list": "command_reference_payload",
@@ -1533,6 +1557,215 @@ def check_profile_independent_specs(root_dir: Path) -> dict[str, object]:
     }
 
 
+def _normalized_page_text(root_dir: Path, relative: str) -> tuple[str, list[str]]:
+    try:
+        text = (root_dir / relative).read_text(encoding="utf-8")
+    except OSError as exc:
+        return "", [f"failed to read {relative}: {exc}"]
+    return " ".join(text.split()), []
+
+
+def trial_status_values(root_dir: Path) -> tuple[list[str], list[str]]:
+    try:
+        text = (root_dir / TRIAL_STATUS_HELP_PATH).read_text(encoding="utf-8")
+    except OSError as exc:
+        return [], [f"failed to read {TRIAL_STATUS_HELP_PATH}: {exc}"]
+    match = TRIAL_STATUS_HELP_RE.search(text)
+    if match is None:
+        return [], [
+            f"{TRIAL_STATUS_HELP_PATH} no longer states the --status vocabulary in its help text"
+        ]
+    return [value.strip() for value in match.group("values").split(",")], []
+
+
+def _document_section(text: str, heading: str) -> str | None:
+    marker = re.search(rf"^{re.escape(heading)}\s*$", text, flags=re.M)
+    if marker is None:
+        return None
+    level = len(heading) - len(heading.lstrip("#"))
+    body = text[marker.end() :]
+    next_heading = re.search(rf"^#{{1,{level}}} ", body, flags=re.M)
+    if next_heading is not None:
+        body = body[: next_heading.start()]
+    return body
+
+
+def check_trial_status_vocabulary_documented(root_dir: Path) -> dict[str, object]:
+    """The trial guide and quick reference must carry the shipped --status contract.
+
+    The vocabulary is read from the clap help text, so adding a status value in
+    Rust fails the gate until both docs pages list it. The scan is limited to the
+    status section: a value repeated in another section must not satisfy the
+    guard after the headline list drops it. The refusal fragments pin the
+    breaking 0.9.0 change and its replacement guidance, and the comma alias, to
+    prose rather than to a hand-copied table row.
+    """
+    values, errors = trial_status_values(root_dir)
+    findings: list[dict[str, object]] = [
+        {"path": TRIAL_STATUS_HELP_PATH, "message": error} for error in errors
+    ]
+    for relative, heading in TRIAL_STATUS_DOC_SECTIONS.items():
+        try:
+            page = (root_dir / relative).read_text(encoding="utf-8")
+        except OSError as exc:
+            findings.append(
+                {"path": relative, "message": f"failed to read {relative}: {exc}"}
+            )
+            continue
+        section = _document_section(page, heading)
+        if section is None:
+            findings.append(
+                {
+                    "path": relative,
+                    "heading": heading,
+                    "message": "trial status section heading is missing",
+                }
+            )
+            continue
+        text = " ".join(section.split())
+        for value in values:
+            if value not in text:
+                findings.append(
+                    {
+                        "path": relative,
+                        "value": value,
+                        "message": "shipped --status value is missing from the status section",
+                    }
+                )
+        for fragment in TRIAL_STATUS_REFUSAL_FRAGMENTS:
+            if fragment not in text:
+                findings.append(
+                    {
+                        "path": relative,
+                        "fragment": fragment,
+                        "message": "the bare --status active refusal or its replacement guidance is missing from the status section",
+                    }
+                )
+    return {
+        "name": "trial_status_vocabulary_documented",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [TRIAL_STATUS_HELP_PATH, *TRIAL_STATUS_DOC_SECTIONS],
+        "status_values": values,
+        "findings": findings,
+    }
+
+
+def _entity_table_first_cells(text: str, heading: str) -> list[str] | None:
+    body = _document_section(text, heading)
+    if body is None:
+        return None
+    cells: list[str] = []
+    for line in body.splitlines():
+        match = re.match(r"^\|\s*`?([A-Za-z0-9-]+)`?\s*\|", line)
+        if match is None:
+            continue
+        cell = match.group(1)
+        if any(character.isalnum() for character in cell):
+            cells.append(cell.lower())
+    return cells
+
+
+def check_author_entity_present_in_entity_tables(root_dir: Path) -> dict[str, object]:
+    """Gettable entities must appear in the README and docs index tables.
+
+    The table row is the reader's only evidence that `get author` is a supported
+    command, so a missing row is a discovery failure rather than a wording nit.
+    """
+    findings: list[dict[str, object]] = []
+    checked: list[str] = []
+    for relative in ENTITY_TABLE_PAGES:
+        try:
+            text = (root_dir / relative).read_text(encoding="utf-8")
+        except OSError as exc:
+            findings.append({"path": relative, "message": f"failed to read {relative}: {exc}"})
+            continue
+        checked.append(relative)
+        cells = _entity_table_first_cells(text, ENTITY_TABLE_HEADING)
+        if cells is None:
+            findings.append(
+                {
+                    "path": relative,
+                    "heading": ENTITY_TABLE_HEADING,
+                    "message": "entity table heading is missing",
+                }
+            )
+            continue
+        for entity in ENTITY_TABLE_REQUIRED_ENTITIES:
+            if entity not in cells:
+                findings.append(
+                    {
+                        "path": relative,
+                        "entity": entity,
+                        "message": "gettable entity is missing from the entity table",
+                    }
+                )
+    return {
+        "name": "author_entity_present_in_entity_tables",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": checked,
+        "required_entities": ENTITY_TABLE_REQUIRED_ENTITIES,
+        "findings": findings,
+    }
+
+
+def _toml_section_value(
+    root_dir: Path, relative: str, section: str, key: str = "version"
+) -> tuple[str, list[str]]:
+    try:
+        text = (root_dir / relative).read_text(encoding="utf-8")
+    except OSError as exc:
+        return "", [f"failed to read {relative}: {exc}"]
+    marker = re.search(rf"^\[{re.escape(section)}\]\s*$", text, flags=re.M)
+    if marker is None:
+        return "", [f"{relative} has no [{section}] section"]
+    body = text[marker.end() :]
+    next_section = re.search(r"^\[", body, flags=re.M)
+    if next_section is not None:
+        body = body[: next_section.start()]
+    value = re.search(rf'^{re.escape(key)}\s*=\s*"([^"]+)"', body, flags=re.M)
+    if value is None:
+        return "", [f"{relative} [{section}] has no {key}"]
+    return value.group(1), []
+
+
+def check_release_process_versions_match_package_metadata(
+    root_dir: Path,
+) -> dict[str, object]:
+    """Release-process version facts must match the committed package metadata.
+
+    The page names the private development candidate for both ecosystems. Reading
+    the versions from Cargo.toml and pyproject.toml keeps the page from keeping a
+    stale pair after the candidate advances.
+    """
+    cargo_version, cargo_errors = _toml_section_value(root_dir, "Cargo.toml", "package")
+    python_version, python_errors = _toml_section_value(
+        root_dir, "pyproject.toml", "project"
+    )
+    findings: list[dict[str, object]] = []
+    for error in [*cargo_errors, *python_errors]:
+        findings.append({"path": RELEASE_PROCESS_PAGE, "message": error})
+    text, read_errors = _normalized_page_text(root_dir, RELEASE_PROCESS_PAGE)
+    for error in read_errors:
+        findings.append({"path": RELEASE_PROCESS_PAGE, "message": error})
+    if not read_errors and not cargo_errors and not python_errors:
+        for label, version in (("Cargo", cargo_version), ("Python", python_version)):
+            fragment = f"{label} `{version}`"
+            if fragment not in text:
+                findings.append(
+                    {
+                        "path": RELEASE_PROCESS_PAGE,
+                        "fragment": fragment,
+                        "message": "release-process version fact does not match the committed package metadata",
+                    }
+                )
+    return {
+        "name": "release_process_versions_match_package_metadata",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["Cargo.toml", "pyproject.toml", RELEASE_PROCESS_PAGE],
+        "findings": findings,
+    }
+
+
 def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
     exceptions, errors = load_cli_surface_exceptions(root_dir)
     text_paths, path_errors = tracked_static_text_paths(root_dir)
@@ -1555,6 +1788,9 @@ def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
         check_copy_paste_examples_are_shell_safe(root_dir, texts),
         check_entity_markdown_quoting_dependencies(root_dir),
         check_profile_independent_specs(root_dir),
+        check_trial_status_vocabulary_documented(root_dir),
+        check_author_entity_present_in_entity_tables(root_dir),
+        check_release_process_versions_match_package_metadata(root_dir),
     ]
     statuses = [payload["status"] for payload in check_payloads]
     status = "pass" if all(value == "pass" for value in statuses) else "fail"

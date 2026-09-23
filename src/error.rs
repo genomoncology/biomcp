@@ -346,6 +346,10 @@ pub(crate) fn debug_external_failure(
 #[non_exhaustive]
 pub enum BioMcpError {
     HttpClientInit(reqwest::Error),
+    CaBundle {
+        path: String,
+        reason: String,
+    },
     Http(reqwest::Error),
     HttpMiddleware(reqwest_middleware::Error),
     Api {
@@ -463,6 +467,7 @@ impl BioMcpError {
     fn message_for_source(&self, source: &'static str) -> String {
         match self.underlying() {
             Self::HttpClientInit(_) => "HTTP client initialization failed.".to_string(),
+            Self::CaBundle { path, reason } => Self::ca_bundle_message(path, reason),
             Self::Http(_) | Self::HttpMiddleware(_) => format!("HTTP request to {source} failed."),
             Self::Api { message, .. }
                 if message.starts_with("PMC OA package-route resolution failed:") =>
@@ -510,6 +515,7 @@ impl BioMcpError {
     fn non_source_message(&self) -> String {
         match self {
             Self::HttpClientInit(_) => "HTTP client initialization failed.".to_string(),
+            Self::CaBundle { path, reason } => Self::ca_bundle_message(path, reason),
             Self::Http(_) | Self::HttpMiddleware(_) => "HTTP request failed.".to_string(),
             Self::Api { api, .. } => format!("API request to {api} failed."),
             Self::ApiJson { api, .. } => format!("API response from {api} could not be decoded."),
@@ -572,6 +578,10 @@ impl BioMcpError {
             Self::Io(_) => "I/O operation failed.".to_string(),
             Self::WithSourceContext { source, .. } => source.non_source_message(),
         }
+    }
+
+    fn ca_bundle_message(path: &str, reason: &str) -> String {
+        format!("CA bundle {path} is unusable: {reason}")
     }
 
     fn legacy_recovery(name: &str, known: RecoveryAction) -> RecoveryAction {
@@ -643,6 +653,7 @@ impl BioMcpError {
         match self {
             Self::WithSourceContext { source, .. } => source.code(),
             Self::HttpClientInit(_) => "http_client_init",
+            Self::CaBundle { .. } => "ca_bundle",
             Self::Http(_) => "http",
             Self::HttpMiddleware(_) => "http_middleware",
             Self::Api { .. } | Self::CtGovInterventionQueryRejected => "api",
@@ -698,6 +709,7 @@ impl fmt::Display for BioMcpError {
             | Self::BodyLimit { .. }
             | Self::ProviderResponseLimit { .. }
             | Self::SourceUnavailable { .. }
+            | Self::CaBundle { .. }
             | Self::WithSourceContext { .. } => {
                 let projection = self.public_projection();
                 formatter.write_str(&projection.message)?;

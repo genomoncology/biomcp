@@ -9,6 +9,11 @@ on:
         description: Tag to upload assets to (e.g. v0.9.0)
         required: true
         type: string
+      container_only:
+        description: Build and push only the container image for an already-published release
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -20,14 +25,15 @@ env:
 
 jobs:
   build:
+    if: github.event_name == 'release' || inputs.container_only != true
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             artifact: biomcp-linux-x86_64.tar.gz
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             target: aarch64-unknown-linux-gnu
             artifact: biomcp-linux-arm64.tar.gz
             cross: true
@@ -41,6 +47,8 @@ jobs:
             target: x86_64-pc-windows-msvc
             artifact: biomcp-windows-x86_64.zip
     runs-on: ${{ matrix.os }}
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -88,32 +96,24 @@ jobs:
           sha256sum ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
         shell: bash
 
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload release assets
+        if: github.event_name == 'release'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ matrix.artifact }}
-          asset_name: ${{ matrix.artifact }}
-          asset_content_type: application/octet-stream
-
-      - name: Upload checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ matrix.artifact }}.sha256
-          asset_name: ${{ matrix.artifact }}.sha256
-          asset_content_type: text/plain
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release upload "$TAG" \
+            "${{ matrix.artifact }}" \
+            "${{ matrix.artifact }}.sha256" \
+            --clobber
 
   pypi-build:
+    if: github.event_name == 'release' || inputs.container_only != true
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
           - os: macos-14
             target: aarch64-apple-darwin
@@ -147,14 +147,119 @@ jobs:
         with:
           toolchain: 1.93.1
           target: ${{ matrix.target }}
+          args: --release --locked
 
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-${{ matrix.target }}
           path: target/wheels/*.whl
 
-  pypi-publish:
+  wheel-smoke:
     needs: [pypi-build]
+    if: github.event_name == 'release' || inputs.container_only != true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-x86_64-unknown-linux-gnu
+          path: ${{ runner.temp }}/wheel
+
+      - name: Install the wheel into a clean venv
+        run: |
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          "$RUNNER_TEMP/wheel-venv/bin/python" -m pip install "$RUNNER_TEMP"/wheel/*.whl
+          "$RUNNER_TEMP/wheel-venv/bin/biomcp" --version
+
+      - name: Smoke the installed wheel on the deep command paths
+        run: |
+          BIOMCP="$RUNNER_TEMP/wheel-venv/bin/biomcp"
+
+          run_smoke() {
+            status=0
+            output="$("$BIOMCP" "$@" 2>&1)" || status=$?
+            printf '%s\n' "$output" | head -n 20
+            if [ "$status" -eq 134 ]; then
+              echo "SIGABRT (exit 134) from: biomcp $*" >&2
+              return 1
+            fi
+            if printf '%s\n' "$output" | grep -q "has overflowed its stack"; then
+              echo "stack overflow from: biomcp $*" >&2
+              return 1
+            fi
+            if [ "$status" -ge 128 ]; then
+              echo "crash (exit $status) from: biomcp $*" >&2
+              return 1
+            fi
+            echo "biomcp $* exited $status"
+          }
+
+          run_smoke search trial --condition diabetes --limit 1
+          run_smoke search trial --criteria "anti-PD-1 therapy" --limit 3
+          run_smoke drug interactions apixaban
+          run_smoke drug trials imatinib
+
+  docs-live:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      LIVE_REVISION_URL: https://biomcp.org/__biomcp_revision__/latest.txt
+      RETRY_WINDOW_SECONDS: "600"
+      RETRY_INTERVAL_SECONDS: "30"
+    steps:
+      - name: Check out the gate helper
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Resolve the tag commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha)"
+          echo "TAG_SHA=${TAG_SHA}" >> "$GITHUB_ENV"
+          echo "release tag ${TAG} resolves to ${TAG_SHA}"
+
+      - name: Require the live documentation revision to equal or descend from the tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          deadline=$(( $(date +%s) + RETRY_WINDOW_SECONDS ))
+          attempt=0
+          while true; do
+            attempt=$(( attempt + 1 ))
+            live_revision="$(
+              curl --fail --silent --show-error \
+                --connect-timeout 10 --max-time 30 \
+                --header 'Cache-Control: no-cache' \
+                --header 'Pragma: no-cache' \
+                --header 'User-Agent: BioMCP-docs-live-gate/1' \
+                "${LIVE_REVISION_URL}?biomcp_verify=$(date +%s%N)-${attempt}"
+            )" || live_revision=""
+            if [[ ! "$live_revision" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "attempt ${attempt}: ${LIVE_REVISION_URL} did not serve a 40-character revision"
+            elif python3 scripts/check-docs-live-revision.py \
+              --repository "$GITHUB_REPOSITORY" \
+              --tag-sha "$TAG_SHA" \
+              --live-revision "$live_revision"; then
+              echo "live documentation revision ${live_revision} is at or past ${TAG_SHA}"
+              exit 0
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "the live documentation revision did not reach ${TAG_SHA} within ${RETRY_WINDOW_SECONDS}s" >&2
+              exit 1
+            fi
+            sleep "$RETRY_INTERVAL_SECONDS"
+          done
+
+  pypi-publish:
+    needs: [pypi-build, wheel-smoke, docs-live]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     environment: pypi
     steps:
@@ -168,19 +273,21 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
 
   homebrew-tap:
-    needs: [build]
+    needs: [build, docs-live]
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ref: ${{ env.TAG }}
 
       - name: Download checksums from the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p dist
-          gh release download "${{ github.event.release.tag_name || inputs.tag }}" --repo "$GITHUB_REPOSITORY" --pattern "*.sha256" --dir dist
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "*.sha256" --dir dist
 
       - name: Update Homebrew tap
         env:
@@ -194,7 +301,7 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" tap
           mkdir -p tap/Formula
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG#v}"
           X86_SHA256="$(awk '{print $1}' dist/biomcp-darwin-x86_64.tar.gz.sha256)"
           ARM64_SHA256="$(awk '{print $1}' dist/biomcp-darwin-arm64.tar.gz.sha256)"
           cat > tap/Formula/biomcp.rb << FORMULA
@@ -222,5 +329,127 @@ jobs:
             echo "Homebrew tap formula is already current."
             exit 0
           fi
-          git commit -m "Update biomcp formula for ${GITHUB_REF_NAME}"
+          git commit -m "Update biomcp formula for ${TAG}"
           git push origin HEAD:main
+
+  container-publish:
+    needs: [build, docs-live]
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped') && needs.docs-live.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    concurrency:
+      group: container-publish-${{ github.event.release.tag_name || inputs.tag }}
+      cancel-in-progress: false
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Check out the packaging ref
+        uses: actions/checkout@v4
+
+      - name: Resolve the image version and source revision
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${TAG#v}"
+          SOURCE_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha)"
+          CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          {
+            echo "VERSION=${VERSION}"
+            echo "SOURCE_SHA=${SOURCE_SHA}"
+            echo "CREATED=${CREATED}"
+          } >> "$GITHUB_ENV"
+          echo "Packaging from ${GITHUB_REF_NAME} (${GITHUB_SHA}); content from ${TAG} (${SOURCE_SHA})"
+
+      - name: Stage the released Linux executables
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p dist/container/amd64 dist/container/arm64
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'biomcp-linux-*' \
+            --dir dist
+          (cd dist && sha256sum -c biomcp-linux-x86_64.tar.gz.sha256 biomcp-linux-arm64.tar.gz.sha256)
+          tar -xzf dist/biomcp-linux-x86_64.tar.gz -C dist/container/amd64 biomcp
+          tar -xzf dist/biomcp-linux-arm64.tar.gz -C dist/container/arm64 biomcp
+          (cd dist/container/amd64 && sha256sum biomcp > biomcp.sha256)
+          (cd dist/container/arm64 && sha256sum biomcp > biomcp.sha256)
+          ls -l dist/container/amd64 dist/container/arm64
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the versioned image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/genomoncology/biomcp:${{ env.VERSION }}
+          build-args: |
+            SOURCE_SHA=${{ env.SOURCE_SHA }}
+            VERSION=${{ env.VERSION }}
+            CREATED=${{ env.CREATED }}
+
+      - name: Smoke the linux/amd64 image from the registry
+        run: |
+          IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
+          docker pull --platform linux/amd64 "$IMAGE"
+          docker run --rm --platform linux/amd64 "$IMAGE" --version
+          UID_IN_CONTAINER="$(docker run --rm --platform linux/amd64 --entrypoint id "$IMAGE" -u)"
+          if [ "$UID_IN_CONTAINER" = "0" ]; then
+            echo "$IMAGE runs as root" >&2
+            exit 1
+          fi
+          CONTAINER="$(docker create --platform linux/amd64 "$IMAGE")"
+          REVISION="$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$CONTAINER")"
+          docker rm "$CONTAINER" > /dev/null
+          if [ "$REVISION" != "$SOURCE_SHA" ]; then
+            echo "$IMAGE revision label $REVISION does not match $SOURCE_SHA" >&2
+            exit 1
+          fi
+          echo "linux/amd64 $IMAGE runs as uid $UID_IN_CONTAINER with revision $REVISION"
+
+      - name: Smoke the linux/arm64 image from the registry
+        run: |
+          IMAGE="ghcr.io/genomoncology/biomcp:${VERSION}"
+          docker pull --platform linux/arm64 "$IMAGE"
+          docker run --rm --platform linux/arm64 "$IMAGE" --version
+          UID_IN_CONTAINER="$(docker run --rm --platform linux/arm64 --entrypoint id "$IMAGE" -u)"
+          if [ "$UID_IN_CONTAINER" = "0" ]; then
+            echo "$IMAGE runs as root" >&2
+            exit 1
+          fi
+          CONTAINER="$(docker create --platform linux/arm64 "$IMAGE")"
+          REVISION="$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$CONTAINER")"
+          docker rm "$CONTAINER" > /dev/null
+          if [ "$REVISION" != "$SOURCE_SHA" ]; then
+            echo "$IMAGE revision label $REVISION does not match $SOURCE_SHA" >&2
+            exit 1
+          fi
+          echo "linux/arm64 $IMAGE runs as uid $UID_IN_CONTAINER with revision $REVISION"
+
+      - name: Move latest after both platform smokes pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IMAGE="ghcr.io/genomoncology/biomcp"
+          LATEST_RELEASE="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
+          if [ "$LATEST_RELEASE" != "$TAG" ]; then
+            echo "$TAG is not the latest release ($LATEST_RELEASE); skip the latest tag."
+            exit 0
+          fi
+          docker buildx imagetools create --tag "${IMAGE}:latest" "${IMAGE}:${VERSION}"
+          docker buildx imagetools inspect "${IMAGE}:latest"

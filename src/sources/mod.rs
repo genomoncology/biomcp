@@ -255,6 +255,7 @@ mod archive_budget;
 
 #[cfg(feature = "alphagenome")]
 pub(crate) mod alphagenome;
+pub(crate) mod ca_bundle;
 pub(crate) mod cancerhotspots;
 pub(crate) mod cbioportal;
 pub(crate) mod cbioportal_download;
@@ -888,13 +889,13 @@ pub(crate) fn build_uncached_http_client(
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     let mut headers = HeaderMap::new();
     headers.insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
-    let base = ordinary_url_policy::http_client_builder(provider_policy);
+    let (base, bundle) = ordinary_url_policy::http_client_builder(provider_policy)?;
     let base = base
         .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(headers);
-    let base = base.build().map_err(BioMcpError::HttpClientInit)?;
+    let base = ca_bundle::build(base, bundle)?;
     let retry = ExponentialBackoff::builder().build_with_max_retries(3);
     let builder = ClientBuilder::new(base);
     let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
@@ -971,13 +972,13 @@ pub(crate) fn finish_cached_http_client(
     let mut default_headers = HeaderMap::new();
     default_headers.insert(CACHE_CONTROL, HeaderValue::from_static("max-stale=86400"));
 
-    let base_client = ordinary_url_policy::http_client_builder(provider_policy);
+    let (base_client, bundle) = ordinary_url_policy::http_client_builder(provider_policy)?;
     let base_client = base_client
         .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(default_headers);
-    let base_client = base_client.build().map_err(BioMcpError::HttpClientInit)?;
+    let base_client = ca_bundle::build(base_client, bundle)?;
 
     let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
 

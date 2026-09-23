@@ -105,12 +105,12 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1103,
+      "baseline_lines": 1117,
       "floor_lines": 1094,
       "authorized_increase": {
-        "ticket": "1205",
-        "delta": 9,
-        "reason": "Ticket 1205 adds the drug cell_lines section flag, its parse arm, and its load call.",
+        "ticket": "1205, 1232",
+        "delta": 23,
+        "reason": "Ticket 1205 adds the drug cell_lines section flag, its parse arm, and its load call. Main ticket 1232 adds boxed-warning population, region zeroing, and the safety contributor check beside the US safety assembly (+14).",
         "removal_condition": "Extract the drug section flags and their loads when the drug get path is next decomposed."
       }
     },
@@ -217,12 +217,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1122,
+      "baseline_lines": 1134,
       "floor_lines": 1109,
       "authorized_increase": {
-        "ticket": "1142, biodata-0144, 1196, 1200, 1202, 1205",
-        "delta": 13,
-        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate the GenCC source registration (+3), register OpenCitations as the confirmation source (+3), and add Cellosaurus (+1) and PharmacoDB (+2) provider registrations.",
+        "ticket": "1142, biodata-0144, 1196, 1200, 1202, 1205, 1221",
+        "delta": 25,
+        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate the GenCC source registration (+3), register OpenCitations as the confirmation source (+3), and add Cellosaurus (+1) and PharmacoDB (+2) provider registrations. Main ticket 1221 adds the CA bundle variant with its path-carrying projection for operator TLS trust (+12).",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
       }
     },
@@ -234,12 +234,12 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2172,
+      "baseline_lines": 2191,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "0127, 1031, 1150, 1158, 1202, 1213, 1205",
-        "delta": 216,
-        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract, together with the typed cell-line get branch, gene cell-lines allowlist arm, and PharmacoDB row helpers.",
+        "ticket": "0127, 1031, 1150, 1158, 1202, 1213, 1205, 1223, 1230",
+        "delta": 235,
+        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract, together with the typed cell-line get branch, gene cell-lines allowlist arm, and PharmacoDB row helpers. Main tickets 1223 and 1230 add the typed search and get object roots with their rejection test and the panic-survival path for tool calls.",
         "removal_condition": "Extract trial paging, typed tool schema transforms, and count schema transforms when the MCP shell is decomposed."
       }
     },
@@ -262,12 +262,12 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1561,
+      "baseline_lines": 1563,
       "floor_lines": 1555,
       "authorized_increase": {
-        "ticket": "1158, 1201, 1205",
-        "delta": 6,
-        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests, and the PharmacoDB section fields on the cell line and drug JSON shapes (ticket 1205, +2).",
+        "ticket": "1158, 1201, 1205, 1232",
+        "delta": 8,
+        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests, and the PharmacoDB section fields on the cell line and drug JSON shapes (ticket 1205, +2). Main ticket 1232 carries the boxed-warning field through the drug JSON serializer (+2).",
         "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
       }
     },
@@ -280,6 +280,17 @@
         "delta": 55,
         "reason": "Pin the graph pagination footer and shared continuation command beside the existing article Markdown renderer coverage; ticket 1201 adds the header parameter to every article render context literal.",
         "removal_condition": "Extract graph renderer tests when the article Markdown renderer tests are next decomposed."
+      }
+    },
+    {
+      "path": "src/render/markdown/drug/tests.rs",
+      "baseline_lines": 1084,
+      "floor_lines": 943,
+      "authorized_increase": {
+        "ticket": "1232",
+        "delta": 141,
+        "reason": "Two render-order tests pin the boxed warning ahead of the ordinary warnings in raw, summary, and safety modes.",
+        "removal_condition": "Move the render-order tests into the drug renderer suite when it is next decomposed."
       }
     },
     {
@@ -306,12 +317,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1775,
+      "baseline_lines": 1778,
       "floor_lines": 1745,
       "authorized_increase": {
-        "ticket": "1202, 1214, 1205",
-        "delta": 30,
-        "reason": "Add the cell-line section-sources builder and its ChEMBL and PharmacoDB outcome sections while retaining the dedicated trial provenance module.",
+        "ticket": "1202, 1214, 1205, 1232",
+        "delta": 33,
+        "reason": "Add the cell-line section-sources builder and its ChEMBL and PharmacoDB outcome sections while retaining the dedicated trial provenance module. Main ticket 1232 records the boxed-warning contributor in section provenance (+3).",
         "removal_condition": "Extract cell-line provenance when the renderer is next decomposed."
       }
     },
@@ -330,6 +341,17 @@
         "delta": 3,
         "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so EMA sync reports a real changed value.",
         "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+      }
+    },
+    {
+      "path": "src/sources/fda_orphan.rs",
+      "baseline_lines": 1003,
+      "floor_lines": 999,
+      "authorized_increase": {
+        "ticket": "1221",
+        "delta": 4,
+        "reason": "The bounded acquisition and health-probe clients route through the shared operator CA bundle helper so a private root CA is trusted without disabling verification.",
+        "removal_condition": "Fold the two fixed-route clients into the shared bounded client builder when the FDA orphan lane is decomposed."
       }
     },
     {
@@ -356,12 +378,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2290,
+      "baseline_lines": 2291,
       "floor_lines": 2274,
       "authorized_increase": {
-        "ticket": "1199, 1200, 1202, 1205",
-        "delta": 16,
-        "reason": "Resolve the citation-evidence sidecar cache mode, register the OpenCitations reference client, and register the Cellosaurus and PharmacoDB source modules.",
+        "ticket": "1199, 1200, 1202, 1205, 1221",
+        "delta": 17,
+        "reason": "Resolve the citation-evidence sidecar cache mode, register the OpenCitations reference client, and register the Cellosaurus and PharmacoDB source modules. Main ticket 1221 declares the operator CA bundle module (+1).",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },
@@ -402,6 +424,17 @@
         "delta": 44,
         "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
         "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
+      }
+    },
+    {
+      "path": "src/sources/tests/provider_network.rs",
+      "baseline_lines": 1005,
+      "floor_lines": 994,
+      "authorized_increase": {
+        "ticket": "1221",
+        "delta": 11,
+        "reason": "The FDA orphan fetch chain now returns a result so an unusable operator CA bundle fails the command; each existing fetch assertion unwraps that result explicitly.",
+        "removal_condition": "Return to a single fetch helper when the FDA orphan cache and client fixtures are consolidated."
       }
     },
     {

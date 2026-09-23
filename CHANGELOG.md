@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### New features
+
+- Added the `cell-line` entity: `search cell-line <name>` resolves common
+  spellings to Cellosaurus accessions, and `get cell-line <CVCL_xxxx>` returns
+  name, synonyms, species, disease, category, sex, age, cross-references, and
+  curated variants. DepMap, Cell Model Passports, ChEMBL, and PharmacoDB IDs
+  resolve through one cross-reference search, and every output names the
+  Cellosaurus release with its CC BY 4.0 attribution. (1202)
+
+### Fixes
+
+- Restored container image publication on release. The `Release` workflow
+  verifies the published sidecars of the release's Linux tarballs, pushes
+  `ghcr.io/genomoncology/biomcp:<version>` with `linux/amd64` and `linux/arm64`
+  in one image index, and smokes both platforms from the registry. It moves
+  `latest` only after those smokes pass and only when the tag is the
+  repository's latest release, so a `container_only` dispatch can rebuild the
+  image for an already-published release, starting with v0.9.0, without moving
+  the shared pointer. (1219)
+
 ### Internal
 
 - Advanced the development package identity to Rust `0.9.1-dev.1` and Python

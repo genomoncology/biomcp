@@ -162,6 +162,26 @@ def test_stdio_enforces_modern_metadata_and_removed_methods(
     assert unsupported["data"]["requested"] == "1900-01-01"
     assert MODERN_VERSION in unsupported["data"]["supported"]
 
+    # Stateless per-request metadata exists only in 2026-07-28, so a legacy
+    # revision named in that metadata is rejected instead of served statelessly.
+    legacy_stateless = modern_stdio.call(
+        "legacy-stateless",
+        "tools/list",
+        {
+            "_meta": {
+                "io.modelcontextprotocol/protocolVersion": "2025-11-25",
+                "io.modelcontextprotocol/clientCapabilities": {},
+            }
+        },
+    )["error"]
+    assert legacy_stateless["code"] == -32022
+    assert legacy_stateless["data"]["requested"] == "2025-11-25"
+    assert set(legacy_stateless["data"]["supported"]) == {
+        "2025-06-18",
+        "2025-11-25",
+        MODERN_VERSION,
+    }
+
     for request_id, meta in [
         ("missing-version", {}),
         (
@@ -188,7 +208,7 @@ def test_stdio_enforces_modern_metadata_and_removed_methods(
         assert "result" not in response
 
 
-def test_stdio_listen_acknowledges_only_emitted_notifications(
+def test_stdio_listen_acknowledges_only_opted_in_supported_notifications(
     modern_stdio: RawStdioMcp,
 ) -> None:
     modern_stdio.send(
@@ -209,11 +229,39 @@ def test_stdio_listen_acknowledges_only_emitted_notifications(
     )
     acknowledged = modern_stdio.receive()
     assert acknowledged.get("method") == "notifications/subscriptions/acknowledged"
-    assert acknowledged["params"]["notifications"] == {}
+    assert acknowledged["params"]["notifications"] == {
+        "toolsListChanged": True,
+        "resourcesListChanged": True,
+    }
     assert (
         acknowledged["params"]["_meta"]["io.modelcontextprotocol/subscriptionId"]
         == "listen"
     )
+
+    modern_stdio.send(
+        {
+            "jsonrpc": "2.0",
+            "id": "listen-tools-only",
+            "method": "subscriptions/listen",
+            "params": {
+                "_meta": META,
+                "notifications": {"toolsListChanged": True},
+            },
+        }
+    )
+    tools_only = modern_stdio.receive()
+    assert tools_only["params"]["notifications"] == {"toolsListChanged": True}
+
+    modern_stdio.send(
+        {
+            "jsonrpc": "2.0",
+            "id": "listen-empty",
+            "method": "subscriptions/listen",
+            "params": {"_meta": META, "notifications": {}},
+        }
+    )
+    empty = modern_stdio.receive()
+    assert empty["params"]["notifications"] == {}
 
     modern_stdio.send(
         {

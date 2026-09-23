@@ -635,7 +635,7 @@ fn normalize_review_date(value: &str) -> Option<String> {
     if value.len() < 10 {
         return None;
     }
-    let prefix = &value[..10];
+    let prefix = value.get(..10)?;
     let bytes = prefix.as_bytes();
     let valid = bytes.len() == 10
         && bytes[0..4].iter().all(|b| b.is_ascii_digit())

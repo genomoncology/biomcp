@@ -43,6 +43,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
@@ -93,6 +94,7 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
@@ -181,6 +183,7 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
@@ -229,6 +232,7 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
@@ -278,6 +282,7 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
@@ -342,6 +347,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
         }]),
         fda_orphan_designations: None,
         us_safety_warnings: Some("Immune-mediated adverse reactions.".to_string()),
+        us_boxed_warning: None,
         ema_regulatory: Some(vec![EmaRegulatoryRow {
             medicine_name: "Keytruda".to_string(),
             active_substance: "pembrolizumab".to_string(),
@@ -460,6 +466,7 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
@@ -661,6 +668,7 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: Some(vec![EmaRegulatoryRow {
             medicine_name: "Keytruda".to_string(),
             active_substance: "pembrolizumab".to_string(),
@@ -735,6 +743,7 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: Some(EmaSafetyInfo {
             dhpcs: vec![crate::entities::drug::EmaDhpcEntry {
@@ -940,4 +949,136 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
             .unwrap()
             .contains("Continue this region")
     );
+}
+
+#[test]
+fn drug_markdown_renders_label_boxed_warning_ahead_of_other_label_sections() {
+    let drug = Drug {
+        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
+        name: "pembrolizumab".to_string(),
+        drugbank_id: None,
+        chembl_id: None,
+        unii: None,
+        drug_type: None,
+        mechanism: None,
+        mechanisms: Vec::new(),
+        approval_date: None,
+        approval_date_raw: None,
+        approval_date_display: None,
+        approval_summary: None,
+        brand_names: Vec::new(),
+        route: None,
+        targets: Vec::new(),
+        variant_targets: Vec::new(),
+        target_family: None,
+        target_family_name: None,
+        indications: Vec::new(),
+        interactions: Vec::new(),
+        interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
+        pharm_classes: Vec::new(),
+        top_adverse_events: Vec::new(),
+        faers_query: None,
+        label: Some(crate::entities::drug::DrugLabel {
+            indication_summary: vec![crate::entities::drug::DrugLabelIndication {
+                name: "melanoma".to_string(),
+                approval_date: None,
+                pivotal_trial: None,
+            }],
+            indications: None,
+            boxed_warning: Some("WARNING: SERIOUS SKIN REACTIONS".to_string()),
+            warnings: Some("Immune-mediated adverse reactions.".to_string()),
+            dosage: None,
+        }),
+        label_set_id: None,
+        shortage: None,
+        approvals: None,
+        fda_orphan_designations: None,
+        us_safety_warnings: None,
+        us_boxed_warning: None,
+        ema_regulatory: None,
+        ema_safety: None,
+        ema_shortage: None,
+        who_prequalification: None,
+        civic: None,
+        cell_lines: None,
+    };
+
+    let raw = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, true)
+        .expect("markdown");
+    let boxed_at = raw
+        .find("### Boxed Warning\nWARNING: SERIOUS SKIN REACTIONS")
+        .expect("boxed block in raw mode");
+    let warnings_at = raw
+        .find("### Warnings and Precautions")
+        .expect("warnings heading in raw mode");
+    assert!(boxed_at < warnings_at);
+    assert!(raw.contains("Immune-mediated adverse reactions."));
+
+    let summary = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, false)
+        .expect("markdown");
+    let boxed_at = summary
+        .find("### Boxed Warning\nWARNING: SERIOUS SKIN REACTIONS")
+        .expect("boxed block in summary mode");
+    let indications_at = summary
+        .find("### Approved Indications")
+        .expect("indications heading in summary mode");
+    assert!(boxed_at < indications_at);
+}
+
+#[test]
+fn drug_markdown_us_safety_block_renders_boxed_warning_first() {
+    let drug = Drug {
+        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
+        name: "pembrolizumab".to_string(),
+        drugbank_id: None,
+        chembl_id: None,
+        unii: None,
+        drug_type: None,
+        mechanism: None,
+        mechanisms: Vec::new(),
+        approval_date: None,
+        approval_date_raw: None,
+        approval_date_display: None,
+        approval_summary: None,
+        brand_names: Vec::new(),
+        route: None,
+        targets: Vec::new(),
+        variant_targets: Vec::new(),
+        target_family: None,
+        target_family_name: None,
+        indications: Vec::new(),
+        interactions: Vec::new(),
+        interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
+        pharm_classes: Vec::new(),
+        top_adverse_events: vec!["Rash".to_string()],
+        faers_query: None,
+        label: None,
+        label_set_id: None,
+        shortage: None,
+        approvals: None,
+        fda_orphan_designations: None,
+        us_safety_warnings: Some("Immune-mediated adverse reactions.".to_string()),
+        us_boxed_warning: Some("WARNING: SERIOUS SKIN REACTIONS".to_string()),
+        ema_regulatory: None,
+        ema_safety: None,
+        ema_shortage: None,
+        who_prequalification: None,
+        civic: None,
+        cell_lines: None,
+    };
+
+    let markdown = drug_markdown_with_region(&drug, &["safety".to_string()], DrugRegion::Us, false)
+        .expect("markdown");
+    let boxed_at = markdown
+        .find("### FDA boxed warning\nWARNING: SERIOUS SKIN REACTIONS")
+        .expect("boxed subsection in safety block");
+    let warnings_at = markdown
+        .find("### FDA label warnings")
+        .expect("warnings subsection in safety block");
+    assert!(boxed_at < warnings_at);
+    assert!(markdown.contains("Immune-mediated adverse reactions."));
 }

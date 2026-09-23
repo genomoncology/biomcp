@@ -457,9 +457,12 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     # Main adds the supported cell-line, Cellosaurus, ChEMBL, HPA, and
     # PharmacoDB modules, documentation, templates, and focused tests; the
-    # cli/trial/search_summary.rs module is the added member. The exact
-    # merged package contains 1,396 files, with no spare capacity.
-    assert len(paths) == 1396
+    # cli/trial/search_summary.rs module is the added member. The main merge
+    # for ticket 1234 adds the docs-live gate helper and its contract test
+    # (ticket 1226) and the CA-bundle helper and its TLS contract test
+    # (ticket 1221). The exact merged package contains 1,400 files, with no
+    # spare capacity.
+    assert len(paths) == 1400
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

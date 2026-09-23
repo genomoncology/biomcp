@@ -1,11 +1,16 @@
 # Publish 0.9 — release and site runbook
 
+> **Historical.** This runbook records the 0.9 planning cycle and the retired
+> `stage`/`promote` release pipeline. Phase 1 steps 2 and 5 name the removed
+> `stage` and `promote` modes. The current process is the single `Release`
+> workflow in
+> [`docs/reference/release-process.md`](../../docs/reference/release-process.md).
+> The phases below stay as written for the record.
+
 Written 2026-08-28, promoted into the repository 2026-09-09 from a working
 note. Pre-flight was verified on the machine during 2026-08-27/28; anything
 below dated then must be re-checked before the release is cut. Phase 1 is
 Ian's by hand — it needs account access the factory does not have.
-
-See `docs/reference/release-process.md` for the mechanics this runbook drives.
 
 ## Phase 0 — pre-flight (verified green 2026-08-27/28)
 

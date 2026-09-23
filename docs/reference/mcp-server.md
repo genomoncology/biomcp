@@ -140,15 +140,12 @@ Their schemas enumerate valid entity names, valid get section tokens, and the bo
 The raw `biomcp` tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as `discover`, `biomcp skill list`, `biomcp skill render`, embedded `biomcp skill <number-or-slug>` lookups, the catalog-only `study download --list` form, and one-page `article citations|references <id> --limit N --offset N` graph traversal. Graph pages expose provider-relative continuation in JSON and Markdown; citation and reference graph tools are not added to the typed catalog.
 
 The seven-tool catalog is intentionally bounded. Reproduce its current local
-measurement with `uv run --no-sync python scripts/measure-mcp-tools.py`. CI
-rejects the full catalog above 22,600 UTF-8 bytes or 5,800 `cl100k_base` tokens,
-and rejects the raw `biomcp` description above 4,000 bytes. The 22,600-byte /
-5,800-token CI budget applies to the current 1.0.0-dev.1 development build. The
-recorded 0.9.0-dev.5 measurement was a 15,841-byte, 3,996-token catalog. The
-aggregate ceilings combined that catalog with the largest typed entry
-(`search`), leaving 99 bytes and 52 tokens of margin.
-Exact current counts belong to that executable measurement rather than
-hand-copied documentation.
+measurement with `uv run --no-sync python scripts/measure-mcp-tools.py`, or
+print the same JSON array from the binary with `biomcp mcp tools`. CI rejects
+the full catalog above 22,600 UTF-8 bytes or 5,800 `cl100k_base` tokens, and
+rejects the raw `biomcp` description above 4,000 bytes. The 22,600-byte /
+5,800-token CI budget applies to the current 1.0.0-dev.1 development build. Exact current counts
+belong to that executable measurement rather than hand-copied documentation.
 
 Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, `skill status`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Status remains CLI-only because probing an arbitrary skill directory can reveal workstation-local paths. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
 

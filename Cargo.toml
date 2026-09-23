@@ -65,6 +65,9 @@ http-cache-semantics = "2"
 http = "1"
 http-body-util = "0.1"
 
+# TLS trust for an operator-supplied CA bundle
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+
 # gRPC (AlphaGenome)
 tonic = { version = "0.12", features = ["tls", "tls-roots"], optional = true }
 prost = { version = "0.13", optional = true }
@@ -140,8 +143,10 @@ charts-png = ["kuva/png"]
 
 [dev-dependencies]
 biomcp-mcp-contract-client = { path = "crates/biomcp-mcp-contract-client" }
+rcgen = { version = "0.13", default-features = false, features = ["pem", "ring"] }
 serial_test = "3"
 tempfile = "3"
+tokio-rustls = { version = "0.26", default-features = false, features = ["logging", "ring", "tls12"] }
 
 [target.'cfg(unix)'.dev-dependencies]
 rexpect = "0.7.0"
@@ -152,7 +157,7 @@ windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Securit
 [profile.release]
 lto = "thin"
 codegen-units = 1
-panic = "abort"
+panic = "unwind"
 strip = true
 
 [profile.spec]

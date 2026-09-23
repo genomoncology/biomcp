@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import io
+import json
 import sys
 import tarfile
 from pathlib import Path
@@ -10,6 +11,10 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+RUNTIME_IMAGE = (
+    "debian:trixie-slim@sha256:"
+    "a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a"
+)
 
 
 def _module(name: str, relative: str):
@@ -83,6 +88,85 @@ def test_oci_layout_rejects_root_and_missing_architecture(tmp_path: Path) -> Non
         container.inspect_layout(
             _layout(tmp_path / "one", platforms=("amd64",)), "a" * 40, "1.2.3"
         )
+
+
+def test_recorded_base_image_matches_the_dockerfile_runtime_image(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text()
+    assert "FROM ${RUNTIME_IMAGE}" in dockerfile
+    assert dockerfile.startswith(f"ARG RUNTIME_IMAGE={RUNTIME_IMAGE}\n")
+    sbom = tmp_path / "sbom.json"
+    sbom.write_text("{}")
+    record = tmp_path / "record.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "container.py",
+            "--layout",
+            str(_layout(tmp_path / "layout")),
+            "--record",
+            str(record),
+            "--source-sha",
+            "a" * 40,
+            "--version",
+            "1.2.3",
+            "--run-id",
+            "1",
+            "--amd64-sha256",
+            "b" * 64,
+            "--arm64-sha256",
+            "c" * 64,
+            "--sbom",
+            str(sbom),
+        ],
+    )
+
+    assert container.main() == 0
+    assert json.loads(record.read_text())["provenance"]["base"] == RUNTIME_IMAGE
+
+
+def test_runtime_image_strips_an_inline_comment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dockerfile = tmp_path / "Dockerfile"
+    dockerfile.write_text(
+        f"ARG RUNTIME_IMAGE={RUNTIME_IMAGE} # pinned trixie digest\n"
+        "FROM ${RUNTIME_IMAGE}\n"
+    )
+    monkeypatch.setattr(container, "DOCKERFILE", dockerfile)
+
+    assert container.runtime_image() == RUNTIME_IMAGE
+
+
+@pytest.mark.parametrize(
+    "declaration",
+    [
+        "ARG RUNTIME_IMAGE=\n",
+        "ARG RUNTIME_IMAGE=   \n",
+        "ARG RUNTIME_IMAGE=# digest recorded elsewhere\n",
+        "ARG RUNTIME_IMAGE=   # pinned trixie digest\n",
+    ],
+)
+def test_runtime_image_rejects_an_empty_or_commented_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, declaration: str
+) -> None:
+    dockerfile = tmp_path / "Dockerfile"
+    dockerfile.write_text(f"{declaration}FROM ${{RUNTIME_IMAGE}}\n")
+    monkeypatch.setattr(container, "DOCKERFILE", dockerfile)
+
+    with pytest.raises(container.ContainerError, match="empty ARG RUNTIME_IMAGE"):
+        container.runtime_image()
+
+
+def test_runtime_image_maps_a_missing_dockerfile_to_container_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(container, "DOCKERFILE", tmp_path / "absent-Dockerfile")
+
+    with pytest.raises(container.ContainerError, match="cannot read the Dockerfile"):
+        container.runtime_image()
 
 
 def test_dockerfile_only_copies_staged_bytes_and_context_excludes_source() -> None:

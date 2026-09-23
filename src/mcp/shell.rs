@@ -291,7 +291,8 @@ fn typed_search_schema(schema: &mut schemars::Schema) {
     .into_iter()
     .map(typed_search_branch)
     .collect::<Vec<_>>();
-    *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed search schema");
+    *schema = serde_json::from_value(json!({"type":"object","oneOf":branches}))
+        .expect("valid typed search schema");
 }
 
 fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
@@ -1678,6 +1679,24 @@ mod tests {
         assert_eq!(
             variant["properties"]["assembly"]["enum"],
             json!(["grch37", "hg19", "grch38", "hg38"])
+        );
+    }
+
+    #[test]
+    fn typed_search_and_get_schemas_declare_object_roots_and_reject_bad_input() {
+        let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
+        assert_eq!(search["type"], json!("object"));
+        assert_eq!(search["oneOf"].as_array().unwrap().len(), 8);
+        let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
+        assert_eq!(get["type"], json!("object"));
+        assert_eq!(get["oneOf"].as_array().unwrap().len(), 13);
+
+        assert!(search_args(TypedSearch(json!({"entity":"pathway","query":"MAPK"}))).is_err());
+        assert!(
+            get_args(TypedGet(
+                json!({"entity":"gene","id":"BRAF","sections":["population"]})
+            ))
+            .is_err()
         );
     }
 

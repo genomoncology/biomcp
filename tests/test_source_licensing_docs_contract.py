@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from datetime import date
 import json
 import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+SOURCE_REVIEW_MAX_AGE_DAYS = 365
 
 DIRECT_SOURCE_MODULES = {
     "alphagenome": "AlphaGenome",
@@ -137,6 +139,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             "pmc_article",
             "ordinary_url_policy",
             "provider_url_policy",
+            "ca_bundle",
         }
     ]
     assert sorted(discovered_modules) == sorted(DIRECT_SOURCE_MODULES)
@@ -191,6 +194,25 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             assert item["bioMcp_auth"] == "not_applicable"
         else:
             assert item["name"] in {*DIRECT_SOURCE_MODULES.values(), *NESTED_DIRECT_SOURCES}
+
+
+def _review_age_days(reviewed_on: str, today: date) -> int:
+    reviewed = date.fromisoformat(reviewed_on)
+    return (today - reviewed).days
+
+
+def test_source_review_dates_are_not_stale() -> None:
+    today = date.today()
+    stale = [
+        f"{item['id']} reviewed_on={item['reviewed_on']} ({_review_age_days(str(item['reviewed_on']), today)} days)"
+        for item in _source_inventory()
+        if _review_age_days(str(item["reviewed_on"]), today)
+        > SOURCE_REVIEW_MAX_AGE_DAYS
+    ]
+    assert not stale, (
+        "source licensing reviews expire after 12 months; re-read each provider's terms "
+        f"and refresh these reviewed_on dates: {stale}"
+    )
 
 
 def test_orcid_is_a_direct_exact_record_source() -> None:

@@ -40,11 +40,13 @@ impl Default for CspecTimeouts {
 impl CspecClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::cspec()?;
-        let client = crate::sources::provider_policy_client_builder(&policy)
-            .connect_timeout(CspecTimeouts::default().connect)
-            .timeout(CspecTimeouts::default().request)
-            .build()
-            .map_err(BioMcpError::from)?;
+        let (client, bundle) = crate::sources::provider_policy_client_builder(&policy)?;
+        let client = crate::sources::ca_bundle::build(
+            client
+                .connect_timeout(CspecTimeouts::default().connect)
+                .timeout(CspecTimeouts::default().request),
+            bundle,
+        )?;
         Ok(Self {
             client: reqwest_middleware::ClientBuilder::new(client).build(),
             base: Cow::Borrowed(CSPEC_BASE),

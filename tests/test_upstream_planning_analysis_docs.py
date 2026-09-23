@@ -704,10 +704,10 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     ):
         assert retired_summary not in technical_ws
         assert retired_summary not in release_process_ws
-    assert "published GitHub release or a manual `tag` input" in release_process_ws
-    assert "five platform archives" in release_process_ws
+    assert "`tag` (required) names the release tag" in release_process_ws
+    assert "five shipped targets" in release_process_ws
     assert "protected `pypi` environment" in release_process_ws
-    assert "updates the `genomoncology/homebrew-biomcp` formula" in release_process_ws
+    assert "updates the formula in `genomoncology/homebrew-biomcp`" in release_process_ws
     assert (
         'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"'
         in install_script
@@ -1205,7 +1205,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r"^\[profile\.release\]\n"
         r'lto = "thin"\n'
         r"codegen-units = 1\n"
-        r'panic = "abort"\n'
+        r'panic = "unwind"\n'
         r"strip = true\n\n"
         r"^\[profile\.spec\]\n"
         r'inherits = "release"\n'

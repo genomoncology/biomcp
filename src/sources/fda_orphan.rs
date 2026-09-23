@@ -454,14 +454,14 @@ async fn query(
     Ok(filter_records(records, &all_candidates))
 }
 
-pub(crate) async fn fetch(candidates: Vec<String>) -> FdaOrphanDesignations {
+pub(crate) async fn fetch(candidates: Vec<String>) -> Result<FdaOrphanDesignations, BioMcpError> {
     fetch_with_mode(candidates, cache_mode()).await
 }
 
 pub(crate) async fn fetch_with_mode(
     candidates: Vec<String>,
     mode: SourceCacheMode,
-) -> FdaOrphanDesignations {
+) -> Result<FdaOrphanDesignations, BioMcpError> {
     fetch_with_mode_and_deadline(candidates, mode, DEADLINE).await
 }
 
@@ -469,7 +469,7 @@ pub(crate) async fn fetch_with_mode_and_deadline(
     candidates: Vec<String>,
     mode: SourceCacheMode,
     deadline: Duration,
-) -> FdaOrphanDesignations {
+) -> Result<FdaOrphanDesignations, BioMcpError> {
     let deadline = crate::sources::VariantArticleDeadline::from_now(deadline);
     crate::sources::with_variant_article_deadline(deadline.clone(), async move {
         fetch_with_deadline(candidates, mode, deadline, None).await
@@ -482,7 +482,7 @@ async fn fetch_with_deadline(
     mode: SourceCacheMode,
     deadline: crate::sources::VariantArticleDeadline,
     cache_override: Option<Arc<crate::cache::SizeAwareCacheManager>>,
-) -> FdaOrphanDesignations {
+) -> Result<FdaOrphanDesignations, BioMcpError> {
     let candidates = normalize_candidates(candidates);
     let base = crate::sources::env_base(BASE, BASE_ENV).into_owned();
     let cache = match (mode, cache_override) {
@@ -491,7 +491,7 @@ async fn fetch_with_deadline(
         (_, None) => {
             let config = match crate::cache::resolve_cache_config() {
                 Ok(config) => config,
-                Err(_) => return unavailable(),
+                Err(_) => return Ok(unavailable()),
             };
             match crate::cache::SizeAwareCacheManager::new_with_deadline(
                 config.cache_root.join("http"),
@@ -501,18 +501,22 @@ async fn fetch_with_deadline(
             .await
             {
                 Ok(manager) => Some(Arc::new(manager)),
-                Err(_) => return unavailable(),
+                Err(_) => return Ok(unavailable()),
             }
         }
     };
-    let client = match reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .timeout(deadline.remaining())
-        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
-        .build()
-    {
+    // An unusable operator CA bundle is a process configuration error, so it
+    // fails the command. Every other client-build failure keeps this optional
+    // lane's degraded contract.
+    let (builder, bundle) = crate::sources::ca_bundle::configure(
+        reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .timeout(deadline.remaining())
+            .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION"))),
+    )?;
+    let client = match crate::sources::ca_bundle::build(builder, bundle) {
         Ok(client) => client,
-        Err(_) => return unavailable(),
+        Err(_) => return Ok(unavailable()),
     };
     let count = candidates.len();
     let work = stream::iter(candidates.iter().cloned().map(|candidate| {
@@ -529,14 +533,14 @@ async fn fetch_with_deadline(
     .collect::<Vec<_>>();
     let results = match deadline.run(work).await {
         Ok(results) => results,
-        Err(_) => return unavailable(),
+        Err(_) => return Ok(unavailable()),
     };
     let failures = results.iter().filter(|result| result.is_err()).count();
     let successes = results
         .into_iter()
         .filter_map(Result::ok)
         .collect::<Vec<_>>();
-    merge(successes, failures, count)
+    Ok(merge(successes, failures, count))
 }
 
 #[cfg(test)]
@@ -545,7 +549,7 @@ pub(crate) async fn fetch_with_manager_for_test(
     mode: SourceCacheMode,
     limit: Duration,
     manager: Arc<crate::cache::SizeAwareCacheManager>,
-) -> FdaOrphanDesignations {
+) -> Result<FdaOrphanDesignations, BioMcpError> {
     let deadline = crate::sources::VariantArticleDeadline::from_now(limit);
     crate::sources::with_variant_article_deadline(deadline.clone(), async move {
         fetch_with_deadline(candidates, mode, deadline, Some(manager)).await
@@ -661,11 +665,11 @@ fn unavailable() -> FdaOrphanDesignations {
 }
 
 pub(crate) async fn health_probe(_client: reqwest::Client) -> Result<(), BioMcpError> {
-    let client = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .map_err(BioMcpError::HttpClientInit)?;
+    let client = crate::sources::ca_bundle::build_client(
+        reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION"))),
+    )?;
     let base = crate::sources::env_base(BASE, BASE_ENV);
     let url = format!("{}/OOPD_Results.cfm", base.trim_end_matches('/'));
     let response = client

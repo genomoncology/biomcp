@@ -32,7 +32,11 @@ def _reqwest_client_constructions(text: str) -> int:
 
 def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     found: Counter[str] = Counter()
-    for root in (ROOT / "src/sources", ROOT / "src/entities"):
+    for root in (
+        ROOT / "src/sources",
+        ROOT / "src/entities",
+        ROOT / "src/cli/health",
+    ):
         for path in root.rglob("*.rs"):
             text = path.read_text()
             count = _reqwest_client_constructions(text)
@@ -46,6 +50,7 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # fda_orphan.rs owns two bounded, fixed-route form clients: acquisition and
     # its uncached health probe. Both reject redirects, cap response bytes, and
     # accept a private base only through the documented fixture override seam.
+    # cli/health owns the bounded probe client and its stub-client test fixtures.
     assert found == Counter(
         {
             "src/sources/mod.rs": 3,
@@ -57,6 +62,9 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
             "src/sources/pubmed/tests/parsing.rs": 1,
             "src/entities/trial/documents.rs": 1,
             "src/entities/trial/search/ctgov/tests.rs": 1,
+            "src/cli/health/runner.rs": 1,
+            "src/cli/health/tests/http.rs": 1,
+            "src/cli/health/tests/runner.rs": 3,
         }
     )
 
@@ -99,3 +107,34 @@ def test_alphagenome_is_the_single_documented_non_reqwest_provider_transport() -
     reference = (ROOT / "docs/reference/data-sources.md").read_text()
     assert "authenticated gRPC/Tonic provider transport" in reference
     assert "not part of this ordinary Reqwest boundary" in " ".join(reference.split())
+
+
+def test_no_path_disables_certificate_verification_or_replaces_bundled_roots() -> None:
+    for path in (ROOT / "src").rglob("*.rs"):
+        text = path.read_text()
+        relative = str(path.relative_to(ROOT))
+        for marker in (
+            "danger_accept_invalid_certs",
+            "danger_accept_invalid_hostnames",
+            "tls_built_in_root_certs(false)",
+        ):
+            assert marker not in text, f"{relative} weakens TLS trust: {marker}"
+
+    helper = (ROOT / "src/sources/ca_bundle.rs").read_text()
+    assert "add_root_certificate" in helper
+    assert "RootCertStore::empty()" in helper
+    assert "tls_built_in_root_certs" not in helper
+
+
+def test_every_touched_production_builder_applies_the_operator_ca_bundle() -> None:
+    # The inventory above counts constructions; this pins that every builder
+    # this ticket touched routes through the shared CA-bundle helper so an
+    # operator-supplied private root is trusted without disabling verification.
+    for relative, expected in {
+        "src/sources/ordinary_url_policy.rs": 3,
+        "src/sources/fda_orphan.rs": 2,
+        "src/entities/trial/documents.rs": 1,
+        "src/cli/health/runner.rs": 1,
+    }.items():
+        text = (ROOT / relative).read_text()
+        assert text.count("ca_bundle::") >= expected, relative

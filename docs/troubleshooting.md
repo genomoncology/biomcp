@@ -27,7 +27,9 @@ legacy source-shaped errors with an unknown name use `BioMCP source`. Public
 diagnostics intentionally do not echo request URLs, credentials, provider
 response bodies, parser detail,
 or local paths, so use the canonical source label rather than expecting raw
-transport detail.
+transport detail. The one deliberate exception is the operator-configured CA
+bundle path named by a `ca_bundle` failure, which the operator needs in order
+to fix the file.
 
 ## 1) Validate connectivity first
 
@@ -448,3 +450,24 @@ complete GTR root must contain:
 A complete WHO IVD root must contain:
 
 - `who_ivd.csv`
+
+## 18) HTTPS fails on a network with a private certificate authority
+
+When the network routes outbound HTTPS through a corporate or internal root CA,
+every provider request fails at the TLS handshake because that CA is not in
+BioMCP's bundled roots. Point BioMCP at the PEM bundle that holds it:
+
+```bash
+export BIOMCP_CA_BUNDLE="/etc/pki/corp-root-ca.pem"
+biomcp health --apis-only
+```
+
+The bundle only adds roots: bundled roots stay trusted and certificate
+verification stays on. `SSL_CERT_FILE` is read only when `BIOMCP_CA_BUNDLE` is
+unset; a blank or unreadable `SSL_CERT_FILE` warns and continues, while a
+readable but malformed one fails. A missing, unreadable, malformed, or
+certificate-less `BIOMCP_CA_BUNDLE` fails before any request and names the path
+in both text and `--json` errors, so confirm the path holds PEM `CERTIFICATE`
+blocks and is readable by the user running BioMCP. Client certificates, mTLS,
+and `SSL_CERT_DIR` are out of scope. AlphaGenome's gRPC client already reads
+the native OS trust store.

@@ -343,6 +343,11 @@ async fn print_typed_tool_surface(
     {
         anyhow::bail!("search schema must have eight entity-specific branches");
     }
+    for (tool, schema) in [("search", &search_schema), ("get", &get_schema)] {
+        if schema.get("type").and_then(serde_json::Value::as_str) != Some("object") {
+            anyhow::bail!("{tool} schema must declare a top-level object type");
+        }
+    }
     if !json_property_contains(&search_schema, "entity", "gwas") {
         anyhow::bail!("search entity schema missing gwas branch");
     }
@@ -418,6 +423,7 @@ async fn print_typed_tool_surface(
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
     println!("search and get schemas use entity-specific branches");
+    println!("search and get schemas declare object roots");
     println!("search schema includes a bounded limit");
     println!("search and get schemas include author entity");
     println!("get schema assigns sections only to their owning entities");

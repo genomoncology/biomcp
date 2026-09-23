@@ -35,6 +35,7 @@ internal fixture overrides and release/install variables.
 | `BIOMCP_GTR_DIR` | Local GTR download root |
 | `BIOMCP_GENCC_DIR` | Private durable GenCC normalized-dataset root; defaults to the platform data directory under `biomcp/gencc` |
 | `BIOMCP_WHO_IVD_DIR` | Local WHO IVD download root |
+| `BIOMCP_CA_BUNDLE` | PEM bundle of extra trusted TLS roots for ordinary provider HTTPS; `SSL_CERT_FILE` is the fallback |
 | `cache.toml` | Persistent cache defaults under the resolved config root |
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
 
@@ -53,6 +54,19 @@ retention. In particular, it neither deletes nor force-refreshes the GenCC
 durable dataset; use `biomcp gencc sync` for explicit revalidation.
 `BIOMCP_CACHE_MAX_AGE` overrides `[cache].max_age_secs`; both values are
 positive integer seconds.
+
+Ordinary provider HTTPS trusts the bundled webpki roots plus any operator PEM
+bundle. `BIOMCP_CA_BUNDLE` is read first, and a blank or whitespace-only value
+counts as unset. `SSL_CERT_FILE` is read only when `BIOMCP_CA_BUNDLE` is unset;
+a blank, unreadable, or unparseable `SSL_CERT_FILE` warns and continues. An
+unparseable fallback is dropped whole, good certificates included, and the
+command runs with the bundled roots. A missing, unreadable, malformed, or
+certificate-less `BIOMCP_CA_BUNDLE` fails the command before any request and
+names the path in both text and `--json` errors. The bundle only adds roots: certificate
+verification and the bundled roots stay in place. Client certificates, mTLS,
+and `SSL_CERT_DIR` are out of scope. AlphaGenome's gRPC client already reads
+the native OS trust store. The shared and health HTTP clients are built once,
+so set the variable before starting BioMCP.
 
 ## Internal and Measurement Controls
 

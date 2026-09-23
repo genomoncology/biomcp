@@ -129,6 +129,10 @@ nav:
       - blog/st-jude-2025-hackathon-talk.md
   - Privacy Policy: policies.md
   - Troubleshooting: troubleshooting.md
+  - Release notes: https://github.com/genomoncology/biomcp/releases
+
+exclude_docs: |
+  conftest.py
 
 hooks:
   - scripts/copy-markdown-twins.py

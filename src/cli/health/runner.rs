@@ -299,12 +299,12 @@ fn health_http_client() -> Result<reqwest::Client, BioMcpError> {
         return Ok(client.clone());
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(10))
-        .connect_timeout(Duration::from_secs(5))
-        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .map_err(BioMcpError::HttpClientInit)?;
+    let client = crate::sources::ca_bundle::build_client(
+        reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .connect_timeout(Duration::from_secs(5))
+            .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION"))),
+    )?;
 
     match HEALTH_HTTP_CLIENT.set(client.clone()) {
         Ok(()) => Ok(client),

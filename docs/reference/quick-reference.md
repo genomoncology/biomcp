@@ -154,6 +154,7 @@ analysis; if it is unset, BioMCP uses its default study root.
 |---------|---------|
 | `biomcp study list` | List locally available studies |
 | `biomcp study download [--list] [<study_id>]` | List downloadable study IDs or install a study locally |
+| `biomcp study top-mutated --study <id> [--limit <N>]` | Rank the most frequently mutated genes in a study |
 | `biomcp study filter --study <id> [--mutated <symbol>] [--amplified <symbol>] [--deleted <symbol>] [--expression-above <gene:threshold>] [--expression-below <gene:threshold>] [--cancer-type <type>]` | Intersect mutation, CNA, expression, and clinical sample filters |
 | `biomcp study query --study <id> --gene <symbol> --type <mutations|cna|expression|sv>` | Summarize one gene within one study, including local structural variants/fusions from `data_sv.txt` |
 | `biomcp study cohort --study <id> --gene <symbol>` | Split a cohort into mutant vs wildtype groups |
@@ -166,6 +167,7 @@ Examples:
 ```bash
 biomcp study download --list
 biomcp study download msk_impact_2017
+biomcp study top-mutated --study msk_impact_2017 --limit 10
 biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
 biomcp study query --study msk_impact_2017 --gene RET --type fusion
 biomcp study filter --study brca_tcga_pan_can_atlas_2018 --mutated TP53 --amplified ERBB2 --expression-above ERBB2:1.5
@@ -221,18 +223,26 @@ biomcp search trial -c melanoma --lat 42.3601 --lon -71.0589 --distance 50 --lim
 
 ## Trial status values
 
-`--status` accepts ClinicalTrials.gov style recruitment states. Common values:
+`--status` accepts ClinicalTrials.gov style recruitment states:
 
 | Status value | Meaning |
 |--------------|---------|
 | recruiting | Currently enrolling participants |
-| not yet recruiting | Opened but enrollment not started |
-| active, not recruiting | Ongoing study, enrollment closed |
+| not_yet_recruiting | Opened but enrollment not started |
+| enrolling_by_invitation | Enrollment by invitation only |
+| active_not_recruiting | Ongoing study, enrollment closed |
 | completed | Study finished |
-| terminated | Stopped early |
 | suspended | Temporarily paused |
+| terminated | Stopped early |
 | withdrawn | Stopped before enrollment |
-| unknown status | Last known status is unclear |
+
+A bare `--status active` is refused as ambiguous because NCI and
+ClinicalTrials.gov mean different things by it: NCI uses "active" for a trial
+that is open and accruing, while ClinicalTrials.gov uses it for one that has
+stopped accruing. Use `--status recruiting` for open and accruing trials, or
+`--status active_not_recruiting` for enrolled and no longer accruing trials.
+The comma form `active, not recruiting` is still accepted as an alias for
+`active_not_recruiting`.
 
 ## Trial phase values
 
