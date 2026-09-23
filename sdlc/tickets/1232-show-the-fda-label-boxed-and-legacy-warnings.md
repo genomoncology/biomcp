@@ -47,9 +47,10 @@ warnings: No data found" for a label that was fetched successfully.
 
 ## Review
 
-- Design review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — seams confirmed
-  (`label.rs:362/:396`, `templates/drug.md.j2:22-26`,
-  `drug_regulatory.rs:342`, `get.rs:821-825`); both P1 clarifications and
-  the fixture notes are folded into the design above; no provider change
-  needed since fetch already returns full labels (`openfda.rs:123-130`).
-- Code review: pending
+- Design review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — both P1
+  clarifications folded in before implementation
+- Code review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — P2 truncate fix
+  applied in 934f44aa and 88cdca4b
+- Verification: yellow gate at abade1b4 lint/spec OK and `make test` green
+  (one documented GenCC load flake on the first run, 3/3 isolated passes);
+  see `sdlc/records/1232-show-the-fda-label-boxed-and-legacy-warnings.md`
