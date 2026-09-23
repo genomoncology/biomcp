@@ -89,11 +89,13 @@ profile such as `EGFRvIII`.
 Supported sections: `label`, `regulatory`, `safety`, `shortage`, `targets`,
 `indications`, `interactions`, `civic`, `approvals`, `cell_lines`, `all`.
 
-FDA label section:
+FDA label section, including boxed warnings when OpenFDA provides them:
 
 ```bash
 biomcp get drug vemurafenib label
 ```
+
+Long warning sections are truncated in the card and link to the full DailyMed label.
 
 Shortage section:
 

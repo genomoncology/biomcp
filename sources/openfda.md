@@ -21,12 +21,12 @@ those U.S. safety and approval workflows.
 | `search adverse-event --type recall --drug <name>` | Drug recall search results | OpenFDA recall path |
 | `search adverse-event --type device --device <name>` | MAUDE device-event search results | OpenFDA device-event path |
 | `get adverse-event <report_id>` | Source-aware adverse-event detail card | Resolves the report against the relevant OpenFDA-backed dataset |
-| `get drug <name> label` | FDA public label text and sections | OpenFDA label path |
+| `get drug <name> label` | FDA public label text, boxed warnings, and other warning sections | OpenFDA label path; truncated warnings link to the full DailyMed label |
 | `get drug <name> shortage` | Current U.S. shortage status and availability context | Default shortage path is OpenFDA-backed |
 | `get drug <name> approvals` | U.S. approval and application details | Drugs@FDA-derived approval context surfaced through BioMCP |
 | `get drug <name> regulatory --region us|all` | U.S. regulatory context | Also includes a separately labeled, exact-alias overlay from FDA Orphan Drug Designations and Approvals; designation is not approval |
 | `get drug <name> interactions` | Public interaction text when labels expose it | Uses label-backed interaction content or a truthful fallback |
-| `get drug <name> safety --region us` | U.S. safety summary and recall context | OpenFDA-backed U.S. safety workflow |
+| `get drug <name> safety --region us` | U.S. safety summary, including boxed and other label warnings | OpenFDA-backed U.S. safety workflow |
 | `get diagnostic <id> regulatory` | FDA device 510(k)/PMA status overlay | Exact-name-first live lookup over device regulatory records |
 
 ## Example commands
