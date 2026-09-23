@@ -2,9 +2,10 @@
 //! operator CA bundle names that certificate authority.
 
 use std::path::{Path, PathBuf};
-use std::process::Output;
+use std::process::{Output, Stdio};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::{Duration, Instant};
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
@@ -80,6 +81,7 @@ impl TlsFixture {
             .env_remove("BIOMCP_CA_BUNDLE")
             .env_remove("SSL_CERT_FILE")
             .env("BIOMCP_OPENFDA_BASE", &self.origin)
+            .env("RUST_LOG", "warn")
             .env("NO_PROXY", "*")
             .env("no_proxy", "*");
         if let Some(bundle) = explicit {
@@ -284,6 +286,19 @@ async fn broken_bundle_json_names_the_path() {
 }
 
 #[tokio::test]
+async fn invalid_explicit_bundle_fails_closed_even_with_a_valid_fallback() {
+    let fixture = TlsFixture::start().await;
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let invalid = dir.path().join("invalid.pem");
+    std::fs::write(&invalid, b"not a certificate").expect("write invalid bundle");
+    let output = fixture
+        .run(Some(&invalid), Some(&fixture.bundle), false)
+        .await;
+    assert_named_path(&output, &invalid);
+    assert_eq!(fixture.connections.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
 async fn fallback_bundle_parses_and_reaches_the_private_ca_fixture() {
     let fixture = TlsFixture::start().await;
     let output = fixture.run(None, Some(&fixture.bundle), false).await;
@@ -303,7 +318,11 @@ async fn broken_fallback_bundles_warn_and_continue() {
     let dir = tempfile::tempdir().expect("bundle directory");
     let good_pem = std::fs::read(&fixture.bundle).expect("read good bundle");
     let der = tls_material().leaf_der;
-    let broken = write_broken_bundles(dir.path(), &good_pem, &der);
+    let mut broken = write_broken_bundles(dir.path(), &good_pem, &der);
+    broken.push(dir.path().join("missing.pem"));
+    broken.push(dir.path().join("directory"));
+    std::fs::create_dir(broken.last().expect("directory path")).expect("create directory");
+    broken.push(PathBuf::from("   "));
 
     for bundle in &broken {
         let before = fixture.connections.load(Ordering::SeqCst);
@@ -317,7 +336,9 @@ async fn broken_fallback_bundles_warn_and_continue() {
         // degrade warning text are asserted.
         assert_eq!(output.status.code(), Some(1), "stderr={stderr}");
         assert!(
-            stderr.contains("SSL_CERT_FILE is not a usable certificate bundle"),
+            stderr.contains("SSL_CERT_FILE is not a usable certificate bundle")
+                || stderr.contains("SSL_CERT_FILE could not be read")
+                || stderr.contains("SSL_CERT_FILE is blank"),
             "expected the degrade warning on stderr, got: {stderr}"
         );
         assert!(
@@ -330,6 +351,147 @@ async fn broken_fallback_bundles_warn_and_continue() {
         );
         assert_eq!(fixture.sessions.load(Ordering::SeqCst), 0);
     }
+}
+
+fn server_command(
+    args: &[&str],
+    explicit: Option<&Path>,
+    fallback: Option<&Path>,
+) -> tokio::process::Command {
+    let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    command
+        .args(args)
+        .env_remove("BIOMCP_CA_BUNDLE")
+        .env_remove("SSL_CERT_FILE")
+        .env("RUST_LOG", "warn")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    if let Some(path) = explicit {
+        command.env("BIOMCP_CA_BUNDLE", path);
+    }
+    if let Some(path) = fallback {
+        command.env("SSL_CERT_FILE", path);
+    }
+    command
+}
+
+async fn stop_and_stderr(child: &mut tokio::process::Child) -> String {
+    let _ = tokio::time::timeout(Duration::from_secs(2), child.kill()).await;
+    let _ = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
+    let mut stderr = String::new();
+    if let Some(mut pipe) = child.stderr.take() {
+        let _ =
+            tokio::time::timeout(Duration::from_secs(2), pipe.read_to_string(&mut stderr)).await;
+    }
+    stderr
+}
+
+#[tokio::test]
+async fn stdio_rejects_invalid_explicit_bundle_before_session_acceptance() {
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let missing = dir.path().join("missing.pem");
+    let mut child = server_command(&["serve"], Some(&missing), None)
+        .spawn()
+        .expect("spawn stdio");
+    let status = tokio::time::timeout(Duration::from_secs(3), child.wait())
+        .await
+        .expect("stdio exit deadline")
+        .expect("stdio exit");
+    assert!(!status.success());
+    let stderr = stop_and_stderr(&mut child).await;
+    assert!(
+        stderr.contains("CA bundle") && stderr.contains("could not be read"),
+        "{stderr}"
+    );
+}
+
+#[tokio::test]
+async fn stdio_bad_fallback_starts_and_warns_once() {
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let missing = dir.path().join("missing.pem");
+    let mut child = server_command(&["serve"], None, Some(&missing))
+        .spawn()
+        .expect("spawn stdio");
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    assert!(child.try_wait().expect("poll stdio").is_none());
+    let stderr = stop_and_stderr(&mut child).await;
+    assert_eq!(
+        stderr.matches("SSL_CERT_FILE could not be read").count(),
+        1,
+        "{stderr}"
+    );
+}
+
+fn unused_port() -> u16 {
+    std::net::TcpListener::bind(("127.0.0.1", 0))
+        .expect("reserve port")
+        .local_addr()
+        .expect("port")
+        .port()
+}
+
+#[tokio::test]
+async fn http_rejects_invalid_explicit_bundle_before_bind() {
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let missing = dir.path().join("missing.pem");
+    let port = unused_port();
+    let port_text = port.to_string();
+    let mut child = server_command(
+        &["serve-http", "--host", "127.0.0.1", "--port", &port_text],
+        Some(&missing),
+        None,
+    )
+    .spawn()
+    .expect("spawn HTTP");
+    let status = tokio::time::timeout(Duration::from_secs(3), child.wait())
+        .await
+        .expect("HTTP exit deadline")
+        .expect("HTTP exit");
+    assert!(!status.success());
+    assert!(
+        tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .is_err()
+    );
+    let stderr = stop_and_stderr(&mut child).await;
+    assert!(
+        stderr.contains("CA bundle") && stderr.contains("could not be read"),
+        "{stderr}"
+    );
+}
+
+#[tokio::test]
+async fn http_bad_fallback_binds_and_warns_once() {
+    let dir = tempfile::tempdir().expect("bundle directory");
+    let missing = dir.path().join("missing.pem");
+    let port = unused_port();
+    let port_text = port.to_string();
+    let mut child = server_command(
+        &["serve-http", "--host", "127.0.0.1", "--port", &port_text],
+        None,
+        Some(&missing),
+    )
+    .spawn()
+    .expect("spawn HTTP");
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        if tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .is_ok()
+        {
+            break;
+        }
+        assert!(Instant::now() < deadline, "HTTP readiness deadline");
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    }
+    let stderr = stop_and_stderr(&mut child).await;
+    assert_eq!(
+        stderr.matches("SSL_CERT_FILE could not be read").count(),
+        1,
+        "{stderr}"
+    );
 }
 
 #[tokio::test]
