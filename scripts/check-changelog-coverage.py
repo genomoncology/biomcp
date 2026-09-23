@@ -1,99 +1,130 @@
 #!/usr/bin/env python3
-"""Require the CHANGELOG Unreleased section to name every ticket merged since the previous release."""
+"""Require a described changelog bullet for every ticket merged since the prior release."""
 
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import re
 import subprocess
 import sys
 
-TICKET_PATTERN = re.compile(r"(?<![0-9])(1[0-9]{3})(?![0-9])")
+MERGE_TICKET = re.compile(r"^Merge .*\btickets/([0-9]+)-")
+STABLE_TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repository", required=True)
     parser.add_argument("--tag", required=True)
-    parser.add_argument("--changelog", default="CHANGELOG.md")
+    parser.add_argument("--changelog", type=Path, default=Path("CHANGELOG.md"))
     return parser.parse_args()
 
 
-def run_gh(*arguments: str) -> str:
-    completed = subprocess.run(
-        ["gh", "api", *arguments],
-        capture_output=True,
-        text=True,
-    )
+def run_git(*arguments: str) -> str:
+    completed = subprocess.run(["git", *arguments], capture_output=True, text=True)
     if completed.returncode != 0:
-        raise RuntimeError(completed.stderr.strip() or "gh api failed")
+        raise RuntimeError(completed.stderr.strip() or "git failed")
     return completed.stdout
 
 
-def version_key(tag: str) -> list[int]:
-    return [int(part) for part in re.findall(r"[0-9]+", tag)]
+def version_key(tag: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in tag[1:].split("."))
 
 
-def previous_release_tag(repository: str, tag: str) -> str | None:
-    """Return the newest published release tag strictly older than this tag."""
-    listing = run_gh(f"repos/{repository}/releases", "--jq", ".[].tag_name")
-    older = [candidate for candidate in listing.splitlines()
-             if candidate.strip() and candidate != tag
-             and version_key(candidate) < version_key(tag)]
-    if not older:
-        return None
-    return max(older, key=version_key)
+def previous_tag(tag: str) -> str | None:
+    tags = run_git("tag", "--merged", tag, "--sort=version:refname").splitlines()
+    older = [
+        candidate
+        for candidate in tags
+        if STABLE_TAG.fullmatch(candidate) and version_key(candidate) < version_key(tag)
+    ]
+    return max(older, key=version_key) if older else None
 
 
-def merged_tickets(repository: str, previous: str, tag: str) -> set[str]:
-    """Collect ticket references from every commit between the previous release and this tag."""
-    listing = run_gh(
-        f"repos/{repository}/compare/{previous}...{tag}",
-        "--jq",
-        ".commits[].commit.message",
-    )
-    tickets: set[str] = set()
-    for message in listing.splitlines():
-        tickets.update(TICKET_PATTERN.findall(message))
-    return tickets
+def merged_tickets(previous: str, tag: str) -> set[str]:
+    subjects = run_git("log", "--format=%s", f"{previous}..{tag}").splitlines()
+    return {
+        match.group(1) for subject in subjects if (match := MERGE_TICKET.match(subject))
+    }
 
 
-def unreleased_text(changelog_path: str) -> str:
+def section_text(path: Path, tag: str) -> tuple[str, str]:
     try:
-        content = open(changelog_path, encoding="utf-8").read()
+        content = path.read_text(encoding="utf-8")
     except OSError as error:
-        raise RuntimeError(f"cannot read {changelog_path}: {error}") from error
-    match = re.search(r"^## Unreleased\s*$([\s\S]*?)(?=^## )", content, re.MULTILINE)
-    if match is None:
-        raise RuntimeError(f"{changelog_path} has no Unreleased section")
-    return match.group(1)
+        raise RuntimeError(f"cannot read {path}: {error}") from error
+    version = re.escape(tag.removeprefix("v"))
+    headings = (
+        (rf"^## {version}(?:\s+—[^\n]*)?\s*$", tag.removeprefix("v")),
+        (r"^## Unreleased\s*$", "Unreleased"),
+    )
+    for heading, label in headings:
+        match = re.search(heading + r"([\s\S]*?)(?=^## |\Z)", content, re.MULTILINE)
+        if match is not None:
+            return label, match.group(1)
+    raise RuntimeError(
+        f"{path} has neither a {tag.removeprefix('v')} nor an Unreleased section"
+    )
+
+
+def described_tickets(section: str) -> set[str]:
+    found: set[str] = set()
+    bullets: list[str] = []
+    current: list[str] = []
+    for line in section.splitlines():
+        bullet = re.match(r"^\s*[-*]\s+(.+)$", line)
+        if bullet is not None:
+            if current:
+                bullets.append(" ".join(current))
+            current = [bullet.group(1).strip()]
+        elif current and (line.startswith("  ") or line.strip()):
+            current.append(line.strip())
+        elif current:
+            bullets.append(" ".join(current))
+            current = []
+    if current:
+        bullets.append(" ".join(current))
+    for text in bullets:
+        for ticket in re.findall(r"(?<![0-9])([0-9]+)(?![0-9])", text):
+            marker = re.compile(
+                rf"(?:\(#?{re.escape(ticket)}\)|#{re.escape(ticket)}\b|\b{re.escape(ticket)}\b)"
+            )
+            remainder = marker.sub("", text).strip(" .:-")
+            if remainder and not remainder.isdigit():
+                found.add(ticket)
+    return found
 
 
 def main() -> int:
-    arguments = parse_args()
-    try:
-        previous = previous_release_tag(arguments.repository, arguments.tag)
-        if previous is None:
-            print("no previous release; nothing to cover")
-            return 0
-        tickets = merged_tickets(arguments.repository, previous, arguments.tag)
-        if not tickets:
-            print(f"no ticket-bearing commits between {previous} and {arguments.tag}")
-            return 0
-        recorded = unreleased_text(arguments.changelog)
-        missing = sorted(ticket for ticket in tickets
-                         if not re.search(rf"(?<![0-9]){ticket}(?![0-9])", recorded))
-    except RuntimeError as error:
-        print(f"changelog coverage check failed: {error}", file=sys.stderr)
-        return 1
-    if missing:
+    args = parse_args()
+    if not STABLE_TAG.fullmatch(args.tag):
         print(
-            "CHANGELOG Unreleased is missing tickets merged since "
-            f"{previous}: {', '.join(missing)}",
+            f"changelog coverage check failed: stable v-prefixed tag required: {args.tag}",
             file=sys.stderr,
         )
         return 1
-    print(f"changelog covers all {len(tickets)} tickets merged since {previous}")
+    try:
+        previous = previous_tag(args.tag)
+        if previous is None:
+            print("no previous release; nothing to cover")
+            return 0
+        tickets = merged_tickets(previous, args.tag)
+        label, section = section_text(args.changelog, args.tag)
+        described = described_tickets(section)
+    except RuntimeError as error:
+        print(f"changelog coverage check failed: {error}", file=sys.stderr)
+        return 1
+    missing = sorted(tickets - described, key=int)
+    if missing:
+        print(
+            f"CHANGELOG {label} is missing described bullets for tickets merged since {previous}: "
+            + ", ".join(missing),
+            file=sys.stderr,
+        )
+        return 1
+    print(
+        f"changelog {label} covers all {len(tickets)} tickets merged since {previous}"
+    )
     return 0
 
 
