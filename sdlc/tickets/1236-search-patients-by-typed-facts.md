@@ -24,9 +24,9 @@ biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 
 ## Scope
 
-- `search patient` takes `--gender`, `--born-after`, `--born-before`, `--condition <system|code>`, `--limit`, and `--count`. It rejects free text and requires at least one filter.
+- `search patient` takes `--gender`, `--born-after`, `--born-before`, `--condition <system|code>`, `--limit`, and `--count`. `--limit` runs 1 to 50 with a default of 10, as other search commands do. It rejects free text and requires at least one filter.
 - `--born-after D` sends `birthdate=gtD`. `--born-before D` sends `birthdate=ltD`. Both bounds exclude the given date, as the flag names say.
-- Before a condition search, read `metadata`. If `Patient` does not declare `_has`, refuse the filter with a clear message and send no search.
+- Before a condition search, read `metadata`. `_has` counts as declared only when the `rest` entry with mode `server` has a `resource` of type `Patient` whose `searchParam` list holds an entry named `_has`. Otherwise refuse the filter with a clear message and send no search.
 - List query: `Patient?gender=..&birthdate=gt..&birthdate=lt..&_has:Condition:patient:code=..&_elements=id,gender,birthDate&_count=<limit>`. It reads one page only.
 - `--count` sends the same filters with `_summary=count` and prints `Bundle.total` labeled server-reported. When the server sends no `total`, the output says the server reported no count. It never counts returned entries. `--limit` does not apply with `--count`.
 - Search results list id, gender, and birth date, each with a `get patient <id>` next command.
@@ -43,11 +43,11 @@ Synthetic bundles only, served by the existing spec fixture runner:
 1. Each filter combination maps to the exact query string above. A test pins the strings, including encoded `|` in the condition value.
 2. A capability statement without `_has` makes `--condition` fail with the refusal message. The fixture request log shows no Patient search.
 3. `--count` prints the `Bundle.total` value labeled server-reported. A bundle with no `total` prints the no-count message.
-4. `--limit 3` sends `_count=3`. A search with no filter fails before any request.
+4. `--limit 3` sends `_count=3`. `--limit 0` and `--limit 51` fail before any request. A search with no filter fails before any request.
 5. Over `serve-http`, typed `search patient` is refused by the 1235 check.
 6. `spec/entity/patient.md` gains search cases.
 
-`make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA. The manual smoke run against the live HAPI server confirms that its CapabilityStatement declares `_has` and that a condition search returns results.
+`make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA. The manual smoke run against the live HAPI server confirms that its CapabilityStatement declares `_has` in the same place the refusal test checks and that a condition search returns results.
 
 ## Dependencies
 
@@ -69,4 +69,5 @@ Synthetic bundles only, served by the existing spec fixture runner:
 ## Review
 
 - Design review: split from 1235 (2026-09-23). Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
+- Design re-review: accepted (2026-09-23). Stated the `--limit` range and where `_has` must be declared.
 - Code review: pending
