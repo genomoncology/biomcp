@@ -92,7 +92,9 @@ Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test
     `pypi-build`, `docs-live`, and `homebrew-tap` (tap writes go through
     `HOMEBREW_TAP_TOKEN`); `id-token: write` plus `contents: read` for
     `pypi-publish`; `packages: write` plus `contents: read` for
-    `container-publish`; `contents: write` for `publish-release`; no
+    `container-publish`; `contents: write` plus `packages: write` for
+    `publish-release`, because item 3 moves the container `latest`
+    registry operation there; no
     permissions for `wheel-smoke`. Also: the Homebrew push-event gate,
     tag-resolution retry, workflow-level concurrency, action SHA
     pinning, and the PyPI trusted-publisher confirmation.
