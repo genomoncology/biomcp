@@ -138,18 +138,20 @@ publish-release:          build, pypi-publish, homebrew-tap,
 
 ## Review
 
-- Design review: REJECT three times 2026-09-23 (gpt-5.6-sol, medium).
-  First: draft-creation job, latest-guard-under-draft, dispatch survival,
-  permissions package, rc contradiction, needs-edge mutations. Second:
-  `inputs.tag ||` order, push-only publisher gates, the false
-  nothing-public claim, per-job permission grants, explicit skip
-  semantics, and an exact adjacency list. Third: `create-draft` in
-  container-publish's adjacency (direct needs only), full `if`
-  enumeration in the ticket, `pypi-build` contents:read, `!cancelled()`
-  everywhere, and the skip-existing choice. Fourth: `container_only`
-  required in the dispatch clause, and explicit `success()` beside
-  `!cancelled()` so a failed need can never publish on push. Fifth:
-  `success()` is false for skipped needs, so it is branch-local (push
-  only) and the dispatch branch names each required success and each
-  required skip; numbering fixed. All folded in; sixth review pending.
+- Design review: REJECT six times, ACCEPT on the seventh 2026-09-23
+  (gpt-5.6-sol, medium). First: draft-creation job, latest-guard-under-
+  draft, dispatch survival, permissions package, rc contradiction,
+  needs-edge mutations. Second: `inputs.tag ||` order, push-only
+  publisher gates, the false nothing-public claim, per-job permission
+  grants, explicit skip semantics, and an exact adjacency list. Third:
+  `create-draft` in container-publish's adjacency (direct needs only),
+  full `if` enumeration in the ticket, `pypi-build` contents:read,
+  `!cancelled()` everywhere, and the skip-existing choice. Fourth:
+  `container_only` required in the dispatch clause, and explicit
+  `success()` beside `!cancelled()` so a failed need can never publish
+  on push. Fifth: `success()` is false for skipped needs, so it is
+  branch-local (push only) and the dispatch branch names each required
+  success and each required skip; numbering fixed. Sixth: caught that the
+  fifth-round condition edit never landed. Seventh: ACCEPT; one P2
+  bookkeeping note, fixed here.
 - Code review: pending
