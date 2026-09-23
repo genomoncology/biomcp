@@ -364,10 +364,10 @@ async fn print_typed_tool_surface(
         anyhow::bail!("search limit schema missing 25 bound");
     }
     for (section, owner) in [
-        ("ontology", "gene"),
-        ("conditions", "diagnostic"),
-        ("guidelines", "pgx"),
-        ("guidance", "adverse-event"),
+        ("ontology", &["gene"][..]),
+        ("conditions", &["diagnostic", "patient"][..]),
+        ("guidelines", &["pgx"][..]),
+        ("guidance", &["adverse-event"][..]),
     ] {
         let owners = get_schema["oneOf"]
             .as_array()
@@ -379,8 +379,8 @@ async fn print_typed_tool_surface(
                 sections.contains(&json!(section)).then_some(entity)
             })
             .collect::<Vec<_>>();
-        if owners != [owner] {
-            anyhow::bail!("get section {section} must belong only to {owner}; got {owners:?}");
+        if owners != owner {
+            anyhow::bail!("get section {section} must belong only to {owner:?}; got {owners:?}");
         }
     }
     let article_sections = get_schema_sections(&get_schema, "article")?;
