@@ -35,14 +35,19 @@ Filed from `sdlc/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised a
    tool dispatch, behind the new `catch_unwind`. The variable is unset in
    every gate, release, and production path, so the artifact carries an
    inert registration branch and the public surface stays exactly the
-   seven catalog tools, pinned by the existing contract test
-   (`tests/rmcp_client_contract.rs:652-654`, which runs with the variable
-   unset). The test drives the built binary over MCP stdio with the
-   existing contract client
-   (`crates/biomcp-mcp-contract-client/src/lib.rs:56-64`, same-session
-   calls per `tests/rmcp_client_contract.rs:1491-1496`): the panicking
-   call returns an `isError` result, then a normal call on the same
-   session succeeds. The old thread-join copy test is removed.
+   seven catalog tools. The exact value `"1"` alone enables it. The
+   contract client removes the variable for every spawned child
+   (`env_remove("BIOMCP_TEST_PANIC_TOOL")` before applying `extra_env` in
+   `crates/biomcp-mcp-contract-client/src/lib.rs`), so the seven-tool
+   contract test (`tests/rmcp_client_contract.rs:652-654`) cannot inherit
+   a parent setting, and only the panic test adds the variable. The hook
+   is documented as internal and narrowly scoped, following the precedent
+   of the shipped test signal in `spec/README-timings.md:206-208`. The
+   test drives the built binary over MCP stdio with the existing contract
+   client (same-session calls per
+   `tests/rmcp_client_contract.rs:1491-1496`): the panicking call returns
+   an `isError` result, then a normal call on the same session succeeds.
+   The old thread-join copy test is removed.
 4. **Margin on the unwind build**: rerun the deep trial and drug smoke
    commands on yellow against the unwind release binary and record the
    result; the shipped profile stays pinned by the Python profile pin
@@ -72,7 +77,9 @@ Filed from `sdlc/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised a
 - A panic in any typed tool handler returns a tool error with the panic
   message and leaves the session usable.
 - The unwind-build deep-command results are recorded.
-- Every listed lock site recovers from poison, proven by tests.
+- Every listed lock site calls the shared recovery helper, whose behavior
+  is tested directly; the non-Unix GenCC call site remains compile-only
+  residual on the Linux gate host.
 - Full yellow gate at the head SHA; the issue file gains a Resolved
   section; a record lands.
 
