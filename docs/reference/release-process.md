@@ -37,7 +37,7 @@ The site publishes from pushes to `main`, not from the release workflow. Every d
 
 ## Version metadata
 
-Package versions are committed metadata, not values stamped from tags. `scripts/check-version-sync.sh` checks Cargo, Python, lockfiles, `manifest.json`, both `server.json` fields, `CITATION.cff`, and the concrete Homebrew version. `scripts/check-release-versions.py` adds tag equality and stable-tag enforcement. Commit the complete version change before pushing the tag.
+Package versions are committed metadata, not values stamped from tags. `scripts/check-version-sync.sh` checks Cargo, Python, lockfiles, `manifest.json`, both `server.json` fields, `CITATION.cff`, and the concrete Homebrew version. `scripts/check-release-versions.py` adds tag equality and stable-tag enforcement. Commit the complete version change before pushing the tag. The private development candidate is Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`; public metadata stays on the latest published release, v0.9.0, until one reviewed commit moves it.
 
 ## Permissions and concurrency
 

@@ -681,7 +681,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "five platform archives" in release_pipeline_section
     assert "protected `pypi` environment" in release_pipeline_section
     assert "workflow_dispatch:" in release_workflow
-    assert "types: [published]" in release_workflow
+    assert "push:\n    tags: ['v*']" in release_workflow
     assert "environment: pypi" in release_workflow
     assert "homebrew-tap:" in release_workflow
     assert (
@@ -1139,7 +1139,7 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ]
 
     assert "workflow_dispatch:" in release
-    assert "types: [published]" in release
+    assert "push:\n    tags: ['v*']" in release
     assert "environment: pypi" in release
     assert "make lint" not in release and "make test" not in release
 
