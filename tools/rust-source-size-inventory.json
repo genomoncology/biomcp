@@ -283,17 +283,6 @@
       }
     },
     {
-      "path": "src/render/markdown/drug/tests.rs",
-      "baseline_lines": 1084,
-      "floor_lines": 943,
-      "authorized_increase": {
-        "ticket": "1232",
-        "delta": 141,
-        "reason": "Two render-order tests pin the boxed warning ahead of the ordinary warnings in raw, summary, and safety modes.",
-        "removal_condition": "Move the render-order tests into the drug renderer suite when it is next decomposed."
-      }
-    },
-    {
       "path": "src/render/markdown/related.rs",
       "baseline_lines": 1140,
       "floor_lines": 1123,
@@ -322,7 +311,7 @@
       "authorized_increase": {
         "ticket": "1232",
         "delta": 3,
-        "reason": "Section provenance records the boxed-warning contributor alongside the existing label warnings contributor.",
+        "reason": "Three section-provenance test fixtures initialize the boxed-warning field added by ticket 1232.",
         "removal_condition": "Remove when section provenance moves beside its renderer."
       }
     },

@@ -30,14 +30,26 @@ fn label_text(value: Option<&serde_json::Value>) -> Option<String> {
     }
 }
 
-fn truncate_with_note(value: &str, max_chars: usize) -> String {
+fn truncate_with_note(value: &str, max_chars: usize, label_set_id: Option<&str>) -> String {
     if value.chars().count() <= max_chars {
         return value.to_string();
     }
 
     let truncated = value.chars().take(max_chars).collect::<String>();
     let total = value.chars().count();
-    format!("{truncated}\n\n(truncated, {total} chars total)")
+    let full_label = label_set_id
+        .map(str::trim)
+        .filter(|set_id| !set_id.is_empty())
+        .and_then(|set_id| {
+            let mut url =
+                reqwest::Url::parse("https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm").ok()?;
+            url.query_pairs_mut().append_pair("setid", set_id);
+            Some(url.to_string())
+        });
+    match full_label {
+        Some(url) => format!("{truncated}\n\n(truncated, {total} chars total; full label: {url})"),
+        None => format!("{truncated}\n\n(truncated, {total} chars total)"),
+    }
 }
 
 fn label_subsection_boundary_regex() -> &'static Regex {
@@ -357,15 +369,37 @@ pub(super) fn extract_inline_label(
         .and_then(|v| v.first())?;
 
     let indication_summary = extract_label_indication_summary(label_response);
-    let raw_indications = label_text(top.get("indications_and_usage"))
-        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
-    let boxed_warning = label_text(top.get("boxed_warning"))
-        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
+    let label_set_id = label_set_id_from_result(top);
+    let raw_indications = label_text(top.get("indications_and_usage")).map(|v| {
+        truncate_with_note(
+            &normalize_label_whitespace(&v),
+            LABEL_MAX_CHARS,
+            label_set_id,
+        )
+    });
+    let boxed_warning = label_text(top.get("boxed_warning")).map(|v| {
+        truncate_with_note(
+            &normalize_label_whitespace(&v),
+            LABEL_MAX_CHARS,
+            label_set_id,
+        )
+    });
     let raw_warnings = label_text(top.get("warnings_and_cautions"))
         .or_else(|| label_text(top.get("warnings")))
-        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
-    let raw_dosage = label_text(top.get("dosage_and_administration"))
-        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
+        .map(|v| {
+            truncate_with_note(
+                &normalize_label_whitespace(&v),
+                LABEL_MAX_CHARS,
+                label_set_id,
+            )
+        });
+    let raw_dosage = label_text(top.get("dosage_and_administration")).map(|v| {
+        truncate_with_note(
+            &normalize_label_whitespace(&v),
+            LABEL_MAX_CHARS,
+            label_set_id,
+        )
+    });
 
     let indications = if raw_mode || indication_summary.is_empty() {
         raw_indications
@@ -394,30 +428,36 @@ pub(super) fn extract_inline_label(
 }
 
 pub(super) fn extract_label_warnings_text(label_response: &serde_json::Value) -> Option<String> {
-    label_response
-        .get("results")
-        .and_then(|v| v.as_array())
-        .and_then(|v| v.first())
-        .and_then(|top| {
-            label_text(top.get("warnings_and_cautions")).or_else(|| label_text(top.get("warnings")))
-        })
-}
-
-pub(super) fn extract_label_boxed_warning(label_response: &serde_json::Value) -> Option<String> {
-    label_response
-        .get("results")
-        .and_then(|v| v.as_array())
-        .and_then(|v| v.first())
-        .and_then(|top| label_text(top.get("boxed_warning")))
-        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS))
-}
-
-pub(super) fn extract_label_set_id(label_response: &serde_json::Value) -> Option<String> {
     let top = label_response
         .get("results")
         .and_then(|v| v.as_array())
         .and_then(|v| v.first())?;
+    label_text(top.get("warnings_and_cautions"))
+        .or_else(|| label_text(top.get("warnings")))
+        .map(|value| {
+            truncate_with_note(
+                &normalize_label_whitespace(&value),
+                LABEL_MAX_CHARS,
+                label_set_id_from_result(top),
+            )
+        })
+}
 
+pub(super) fn extract_label_boxed_warning(label_response: &serde_json::Value) -> Option<String> {
+    let top = label_response
+        .get("results")
+        .and_then(|v| v.as_array())
+        .and_then(|v| v.first())?;
+    label_text(top.get("boxed_warning")).map(|value| {
+        truncate_with_note(
+            &normalize_label_whitespace(&value),
+            LABEL_MAX_CHARS,
+            label_set_id_from_result(top),
+        )
+    })
+}
+
+fn label_set_id_from_result(top: &serde_json::Value) -> Option<&str> {
     top.get("set_id")
         .and_then(serde_json::Value::as_str)
         .or_else(|| {
@@ -431,7 +471,15 @@ pub(super) fn extract_label_set_id(label_response: &serde_json::Value) -> Option
         })
         .map(str::trim)
         .filter(|v| !v.is_empty())
-        .map(str::to_string)
+}
+
+pub(super) fn extract_label_set_id(label_response: &serde_json::Value) -> Option<String> {
+    let top = label_response
+        .get("results")
+        .and_then(|v| v.as_array())
+        .and_then(|v| v.first())?;
+
+    label_set_id_from_result(top).map(str::to_string)
 }
 
 pub(super) fn extract_interaction_text_from_label(
@@ -444,7 +492,8 @@ pub(super) fn extract_interaction_text_from_label(
         .and_then(|v| v.as_array())
         .and_then(|v| v.first())?;
 
-    label_text(top.get("drug_interactions")).map(|v| truncate_with_note(&v, LABEL_MAX_CHARS))
+    label_text(top.get("drug_interactions"))
+        .map(|v| truncate_with_note(&v, LABEL_MAX_CHARS, label_set_id_from_result(top)))
 }
 
 pub(super) fn extract_openfda_values_from_result(

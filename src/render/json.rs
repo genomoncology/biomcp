@@ -1005,7 +1005,13 @@ mod tests {
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
-            label: None,
+            label: Some(crate::entities::drug::DrugLabel {
+                indication_summary: Vec::new(),
+                indications: None,
+                boxed_warning: Some("WARNING: QT PROLONGATION".to_string()),
+                warnings: None,
+                dosage: None,
+            }),
             label_set_id: None,
             shortage: None,
             approvals: None,
@@ -1025,6 +1031,7 @@ mod tests {
         assert!(json.contains("\"target_family\": \"PARP\""));
         assert!(json.contains("\"target_family_name\": \"poly(ADP-ribose) polymerase\""));
         assert!(json.contains("\"targets\""));
+        assert!(json.contains("\"boxed_warning\": \"WARNING: QT PROLONGATION\""));
     }
 
     #[test]
