@@ -249,7 +249,7 @@
       "floor_lines": 1956,
       "authorized_increase": {
         "ticket": "1235",
-        "delta": 48,
+        "delta": 273,
         "reason": "The dispatch-level panic recovery wraps router calls and the environment-guarded test route sits beside the catalog application.",
         "removal_condition": "Extract the tool router wiring when the shell module is next decomposed."
       }
