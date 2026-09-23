@@ -71,6 +71,16 @@ def test_homebrew_tap_resolves_the_tag_once_for_every_use() -> None:
     assert 'git commit -m "Update biomcp formula for ${TAG}"' in homebrew_tap
 
 
+def test_pypi_publish_requires_a_release_event() -> None:
+    pypi_publish = _job_block(
+        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "pypi-publish"
+    )
+
+    assert "needs: [pypi-build, wheel-smoke, docs-live]" in pypi_publish
+    # A workflow_dispatch names any ref; only a release event may publish wheels.
+    assert "if: github.event_name == 'release'\n" in pypi_publish
+
+
 def test_pypi_wheels_build_in_the_release_profile() -> None:
     pypi_build = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "pypi-build")
     maturin_steps = [

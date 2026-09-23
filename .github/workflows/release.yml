@@ -259,6 +259,7 @@ jobs:
 
   pypi-publish:
     needs: [pypi-build, wheel-smoke, docs-live]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     environment: pypi
     steps:

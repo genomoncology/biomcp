@@ -29,9 +29,16 @@ class ContainerError(ValueError):
 
 def runtime_image() -> str:
     """Return the base image the shipped Dockerfile declares."""
-    for line in DOCKERFILE.read_text(encoding="utf-8").splitlines():
+    try:
+        text = DOCKERFILE.read_text(encoding="utf-8")
+    except OSError as error:
+        raise ContainerError(f"cannot read the Dockerfile: {DOCKERFILE}") from error
+    for line in text.splitlines():
         if line.startswith("ARG RUNTIME_IMAGE="):
-            return line.removeprefix("ARG RUNTIME_IMAGE=").strip()
+            value = line.removeprefix("ARG RUNTIME_IMAGE=").split("#", 1)[0].strip()
+            if not value:
+                raise ContainerError(f"empty ARG RUNTIME_IMAGE default: {DOCKERFILE}")
+            return value
     raise ContainerError(f"Dockerfile lacks an ARG RUNTIME_IMAGE default: {DOCKERFILE}")
 
 
