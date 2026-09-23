@@ -17,6 +17,13 @@ A `release` event with `types: [published]` starts seven jobs:
   `biomcp-linux-x86_64.tar.gz`, `biomcp-linux-arm64.tar.gz`,
   `biomcp-darwin-arm64.tar.gz`, `biomcp-darwin-x86_64.tar.gz`, and
   `biomcp-windows-x86_64.zip`.
+- `version-check` runs first on both triggers. It checks out the tag ref and
+  fails unless `${TAG#v}` equals the committed `Cargo.toml` and
+  `pyproject.toml` versions, so a tag pushed before the version-bump commit
+  cannot publish dev-versioned artifacts. It also runs
+  `scripts/check-changelog-coverage.py`, which fails when the CHANGELOG
+  Unreleased section names no ticket merged since the previous release. Every
+  job that builds or gates a publish path needs it.
 - `pypi-build` builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
   Windows x86_64 and uploads them as workflow artifacts. Every wheel builds with
   `args: --release --locked`, so the wheel binary carries the same release
@@ -24,9 +31,14 @@ A `release` event with `types: [published]` starts seven jobs:
   frames.
 - `wheel-smoke` runs after `pypi-build`, installs the Linux x86_64 wheel into a
   virtual environment outside the checkout, and runs `search trial`,
-  `drug interactions`, and `drug trials` through the installed `biomcp` binary.
-  It fails on SIGABRT, on a stack-overflow message, and on any other crash, so a
-  dev-profile wheel cannot reach PyPI. A clean source error still passes.
+  `drug interactions`, `drug trials`, and the not-found `drug adverse-events`
+  fallback through the installed `biomcp` binary. It fails on SIGABRT, on a
+  stack-overflow message, and on any other crash, so a dev-profile wheel
+  cannot reach PyPI. A clean source error still passes. JSON-mode legs run
+  `get drug ... regulatory -j` and a `search trial -j` command that must exit
+  0, print an object, and never mention a missing skill asset, which is the
+  failure mode a debug-profile wheel shows on machines other than the build
+  runner.
 - `docs-live` runs on both triggers, resolves the tag's commit, and reads the
   pointer `https://biomcp.org/__biomcp_revision__/latest.txt` with no-cache
   request headers and a fresh cache-busting query on every attempt. It retries
@@ -73,11 +85,12 @@ publish from. `container_only` (boolean, default `false`) skips `build` and
 `pypi-build`.
 
 With `container_only: true`, `wheel-smoke`, `pypi-publish`, and `homebrew-tap`
-are skipped because their `needs` are skipped. `docs-live` has no
-`container_only` gate, so it still runs and `container-publish` waits for it: a
-backfill also requires the live site to be at or past the tag's commit. That
-path rebuilds the image for an already-published release, for example to
-backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.
+are skipped because their `needs` are skipped. `version-check` and `docs-live`
+have no `container_only` gate, so both still run and `container-publish` waits
+for them: a backfill requires the committed versions at the tag ref to match
+the tag and the live site to be at or past the tag's commit. That path
+rebuilds the image for an already-published release, for example to backfill
+v0.9.0, and cannot touch PyPI, the release assets, or the tap.
 
 A dispatch without `container_only` builds and packages the artifacts but
 uploads nothing, because the upload step is guarded on the `release` event. The
@@ -111,8 +124,11 @@ tap, and the container image publish against stale documentation.
 
 ## Version metadata
 
-Package versions are committed metadata, not values stamped from tags.
-`scripts/check-version-sync.sh` checks the mapping from `Cargo.toml`,
+Package versions are committed metadata, not values stamped from tags. At
+release time the `version-check` job fails the workflow unless the tag equals
+both committed versions, on the tag ref itself, so a backfill dispatch on an
+older tag also passes. `scripts/check-version-sync.sh` checks the mapping from
+`Cargo.toml`,
 `pyproject.toml`, `manifest.json`, both `server.json` version fields,
 `CITATION.cff`, and any concrete Homebrew formula version while those files
 track the latest reachable stable tag. The private development candidate is

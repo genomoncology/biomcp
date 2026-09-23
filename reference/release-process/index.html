@@ -4412,6 +4412,13 @@ release, the tag, or the public-version commit.</p>
   <code>biomcp-linux-x86_64.tar.gz</code>, <code>biomcp-linux-arm64.tar.gz</code>,
   <code>biomcp-darwin-arm64.tar.gz</code>, <code>biomcp-darwin-x86_64.tar.gz</code>, and
   <code>biomcp-windows-x86_64.zip</code>.</li>
+<li><code>version-check</code> runs first on both triggers. It checks out the tag ref and
+  fails unless <code>${TAG#v}</code> equals the committed <code>Cargo.toml</code> and
+  <code>pyproject.toml</code> versions, so a tag pushed before the version-bump commit
+  cannot publish dev-versioned artifacts. It also runs
+  <code>scripts/check-changelog-coverage.py</code>, which fails when the CHANGELOG
+  Unreleased section names no ticket merged since the previous release. Every
+  job that builds or gates a publish path needs it.</li>
 <li><code>pypi-build</code> builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
   Windows x86_64 and uploads them as workflow artifacts. Every wheel builds with
   <code>args: --release --locked</code>, so the wheel binary carries the same release
@@ -4419,9 +4426,14 @@ release, the tag, or the public-version commit.</p>
   frames.</li>
 <li><code>wheel-smoke</code> runs after <code>pypi-build</code>, installs the Linux x86_64 wheel into a
   virtual environment outside the checkout, and runs <code>search trial</code>,
-  <code>drug interactions</code>, and <code>drug trials</code> through the installed <code>biomcp</code> binary.
-  It fails on SIGABRT, on a stack-overflow message, and on any other crash, so a
-  dev-profile wheel cannot reach PyPI. A clean source error still passes.</li>
+  <code>drug interactions</code>, <code>drug trials</code>, and the not-found <code>drug adverse-events</code>
+  fallback through the installed <code>biomcp</code> binary. It fails on SIGABRT, on a
+  stack-overflow message, and on any other crash, so a dev-profile wheel
+  cannot reach PyPI. A clean source error still passes. JSON-mode legs run
+  <code>get drug ... regulatory -j</code> and a <code>search trial -j</code> command that must exit
+  0, print an object, and never mention a missing skill asset, which is the
+  failure mode a debug-profile wheel shows on machines other than the build
+  runner.</li>
 <li><code>docs-live</code> runs on both triggers, resolves the tag's commit, and reads the
   pointer <code>https://biomcp.org/__biomcp_revision__/latest.txt</code> with no-cache
   request headers and a fresh cache-busting query on every attempt. It retries
@@ -4463,11 +4475,12 @@ versioned tag holds the unverified push until a rerun replaces it.</p>
 publish from. <code>container_only</code> (boolean, default <code>false</code>) skips <code>build</code> and
 <code>pypi-build</code>.</p>
 <p>With <code>container_only: true</code>, <code>wheel-smoke</code>, <code>pypi-publish</code>, and <code>homebrew-tap</code>
-are skipped because their <code>needs</code> are skipped. <code>docs-live</code> has no
-<code>container_only</code> gate, so it still runs and <code>container-publish</code> waits for it: a
-backfill also requires the live site to be at or past the tag's commit. That
-path rebuilds the image for an already-published release, for example to
-backfill v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
+are skipped because their <code>needs</code> are skipped. <code>version-check</code> and <code>docs-live</code>
+have no <code>container_only</code> gate, so both still run and <code>container-publish</code> waits
+for them: a backfill requires the committed versions at the tag ref to match
+the tag and the live site to be at or past the tag's commit. That path
+rebuilds the image for an already-published release, for example to backfill
+v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
 <p>A dispatch without <code>container_only</code> builds and packages the artifacts but
 uploads nothing, because the upload step is guarded on the <code>release</code> event. The
 run never reaches PyPI: <code>pypi-publish</code> is gated on the <code>release</code> event as well,
@@ -4495,8 +4508,11 @@ equals the tag's commit or is a descendant of it, and fails when the live
 revision is behind or divergent. A release therefore stops before PyPI, the
 tap, and the container image publish against stale documentation.</p>
 <h2 id="version-metadata">Version metadata<a class="headerlink" href="#version-metadata" title="Permanent link">&para;</a></h2>
-<p>Package versions are committed metadata, not values stamped from tags.
-<code>scripts/check-version-sync.sh</code> checks the mapping from <code>Cargo.toml</code>,
+<p>Package versions are committed metadata, not values stamped from tags. At
+release time the <code>version-check</code> job fails the workflow unless the tag equals
+both committed versions, on the tag ref itself, so a backfill dispatch on an
+older tag also passes. <code>scripts/check-version-sync.sh</code> checks the mapping from
+<code>Cargo.toml</code>,
 <code>pyproject.toml</code>, <code>manifest.json</code>, both <code>server.json</code> version fields,
 <code>CITATION.cff</code>, and any concrete Homebrew formula version while those files
 track the latest reachable stable tag. The private development candidate is
