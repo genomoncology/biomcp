@@ -39,6 +39,7 @@ nav:
       - PGx: user-guide/pgx.md
       - GWAS: user-guide/gwas.md
       - Phenotype: user-guide/phenotype.md
+      - Patient: user-guide/patient.md
   - Sources:
       - Overview: sources/index.md
       - PubMed: sources/pubmed.md

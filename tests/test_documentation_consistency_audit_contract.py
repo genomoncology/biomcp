@@ -72,6 +72,15 @@ ENTITY_GUIDE_HEADINGS = {
         "## Practical tips",
         "## Related guides",
     ],
+    "docs/user-guide/patient.md": [
+        "## Configure the FHIR server",
+        "## Get a patient record",
+        "## Request patient sections",
+        "## Helper commands",
+        "## JSON mode",
+        "## Practical tips",
+        "## Related guides",
+    ],
     "docs/user-guide/pathway.md": [
         "## Search pathways",
         "## Get pathway records",

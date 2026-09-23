@@ -4,6 +4,14 @@
 
 ### New features
 
+- Added `get patient <id>` with a `conditions` section. It reads one patient
+  from the FHIR R4 server in `BIOMCP_FHIR_BASE`, validates the ID before any
+  request, sends every request with no-store, and follows next links and
+  redirects only on the configured server for at most 20 pages. Errors name no
+  URL or patient ID. Patient commands run on the CLI and stdio MCP only, and
+  `serve-http` refuses them. `biomcp health` reports the FHIR row as
+  configured or not configured. `search patient` is not yet available. (2002)
+
 - Added the `cell-line` entity: `search cell-line <name>` resolves common
   spellings to Cellosaurus accessions, and `get cell-line <CVCL_xxxx>` returns
   name, synonyms, species, disease, category, sex, age, cross-references, and

@@ -771,6 +771,18 @@ cross-reference search. No match gives the not-found error with a `search cell-l
 `all` covers the Cellosaurus sections `variants` and `xrefs`. The `chembl` section reads
 ChEMBL and is asked for by name, and the `drug_response` section reads PharmacoDB the same way.
 
+### Patient
+
+```bash
+biomcp get patient <id>
+biomcp get patient <id> conditions
+biomcp get patient <id> all
+```
+
+Reads one patient from the FHIR server in `BIOMCP_FHIR_BASE`. A patient ID is 1-64 letters,
+digits, hyphens, or periods. `serve-http` refuses patient commands. `search patient` is not yet
+available.
+
 ### Protein
 
 ```bash

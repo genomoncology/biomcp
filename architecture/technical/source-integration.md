@@ -517,6 +517,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | pathway | genes | canonical | fallback | Reactome / KEGG / WikiPathways / MyGene.info | `genes` outcome and provenance projection |
 | pathway | events | canonical | additive | Reactome | `events` outcome and provenance projection |
 | pathway | enrichment | canonical | additive | g:Profiler | `enrichment` outcome and provenance projection |
+| patient | conditions | canonical | additive | FHIR | `conditions` outcome and provenance projection |
 | protein | domains | canonical | additive | InterPro | `domains` outcome and provenance projection |
 | protein | interactions | canonical | additive | STRING | `interactions` outcome and provenance projection |
 | protein | complexes | canonical | additive | Complex Portal | `complexes` outcome and provenance projection |

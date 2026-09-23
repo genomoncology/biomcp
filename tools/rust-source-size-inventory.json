@@ -217,12 +217,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1134,
+      "baseline_lines": 1140,
       "floor_lines": 1109,
       "authorized_increase": {
-        "ticket": "1142, biodata-0144, 1196, 1200, 1202, 1205, 1221",
-        "delta": 25,
-        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate the GenCC source registration (+3), register OpenCitations as the confirmation source (+3), and add Cellosaurus (+1) and PharmacoDB (+2) provider registrations. Main ticket 1221 adds the CA bundle variant with its path-carrying projection for operator TLS trust (+12).",
+        "ticket": "1142, biodata-0144, 1196, 1200, 1202, 1205, 1221, 2002",
+        "delta": 31,
+        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate the GenCC source registration (+3), register OpenCitations as the confirmation source (+3), and add Cellosaurus (+1) and PharmacoDB (+2) provider registrations. Main ticket 1221 adds the CA bundle variant with its path-carrying projection for operator TLS trust (+12). Ticket 2002 adds the FHIR error variant and its projections (+6).",
         "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
       }
     },
@@ -234,12 +234,12 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2191,
+      "baseline_lines": 2216,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "0127, 1031, 1150, 1158, 1202, 1213, 1205, 1223, 1230",
-        "delta": 235,
-        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract, together with the typed cell-line get branch, gene cell-lines allowlist arm, and PharmacoDB row helpers. Main tickets 1223 and 1230 add the typed search and get object roots with their rejection test and the panic-survival path for tool calls.",
+        "ticket": "0127, 1031, 1150, 1158, 1202, 1213, 1205, 1223, 1230, 2002",
+        "delta": 260,
+        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract, together with the typed cell-line get branch, gene cell-lines allowlist arm, and PharmacoDB row helpers. Main tickets 1223 and 1230 add the typed search and get object roots with their rejection test and the panic-survival path for tool calls. Ticket 2002 adds the filterless typed patient search branch and the one call into the patient transport gate.",
         "removal_condition": "Extract trial paging, typed tool schema transforms, and count schema transforms when the MCP shell is decomposed."
       }
     },
@@ -317,12 +317,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1778,
+      "baseline_lines": 1797,
       "floor_lines": 1745,
       "authorized_increase": {
-        "ticket": "1202, 1214, 1205, 1232",
-        "delta": 33,
-        "reason": "Add the cell-line section-sources builder and its ChEMBL and PharmacoDB outcome sections while retaining the dedicated trial provenance module. Main ticket 1232 records the boxed-warning contributor in section provenance (+3).",
+        "ticket": "1202, 1214, 1205, 1232, 2002",
+        "delta": 52,
+        "reason": "Add the cell-line section-sources builder and its ChEMBL and PharmacoDB outcome sections while retaining the dedicated trial provenance module. Main ticket 1232 records the boxed-warning contributor in section provenance (+3). Ticket 2002 adds the patient section-sources builder.",
         "removal_condition": "Extract cell-line provenance when the renderer is next decomposed."
       }
     },
@@ -378,14 +378,9 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2291,
-      "floor_lines": 2274,
-      "authorized_increase": {
-        "ticket": "1199, 1200, 1202, 1205, 1221",
-        "delta": 17,
-        "reason": "Resolve the citation-evidence sidecar cache mode, register the OpenCitations reference client, and register the Cellosaurus and PharmacoDB source modules. Main ticket 1221 declares the operator CA bundle module (+1).",
-        "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
-      }
+      "baseline_lines": 2290,
+      "floor_lines": 2290,
+      "authorized_increase": null
     },
     {
       "path": "src/sources/myvariant.rs",

@@ -17,6 +17,7 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
+mod patient_gate;
 mod structured_error;
 mod typed_get;
 use self::typed_get::{
@@ -340,35 +341,6 @@ const RESOURCE_HELP_URI: &str = "biomcp://help";
 const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
 const CACHE_FAMILY_MCP_REJECTION_MESSAGE: &str = "Error: biomcp cache commands are CLI-only over MCP because they reveal workstation-local filesystem paths.";
 const LOCAL_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: --input file and stdin arguments are CLI-only over raw MCP because they read server-local state; use the matching typed MCP tool instead.";
-const PATIENT_HTTP_REJECTION_MESSAGE: &str = "Error: patient records are available on the CLI and stdio MCP only. `serve-http` refuses them until the HTTP transport has authenticated per-user sessions. See sdlc/issues/2026-09-11-health-record-entity-needs-authenticated-http-transport.md.";
-
-/// Set once when this process starts `serve-http`. A process that serves HTTP
-/// never serves stdio, so one process-wide marker covers every HTTP path,
-/// including the modern-protocol dispatcher.
-static HTTP_TRANSPORT: std::sync::OnceLock<()> = std::sync::OnceLock::new();
-
-pub(super) fn mark_http_transport() {
-    let _ = HTTP_TRANSPORT.set(());
-}
-
-fn serving_http() -> bool {
-    HTTP_TRANSPORT.get().is_some()
-}
-
-/// True when the parsed command reads a patient record: `get patient`,
-/// `search patient`, or `batch patient`.
-fn reads_patient_record(cli: &crate::cli::Cli) -> bool {
-    match &cli.command {
-        crate::cli::Commands::Get {
-            entity: crate::cli::GetEntity::Patient(_),
-        }
-        | crate::cli::Commands::Search {
-            entity: crate::cli::SearchEntity::Patient(_),
-        } => true,
-        crate::cli::Commands::Batch(args) => args.entity.trim().eq_ignore_ascii_case("patient"),
-        _ => false,
-    }
-}
 impl BioMcpServer {
     pub fn new() -> Self {
         let mut tool_router = Self::tool_router();
@@ -395,8 +367,8 @@ impl BioMcpServer {
         json: bool,
     ) -> Result<CallToolResult, McpError> {
         // The one transport check for patient records. Every tool reaches it.
-        if serving_http() && reads_patient_record(&cli) {
-            return Ok(Self::tool_error(PATIENT_HTTP_REJECTION_MESSAGE));
+        if let Some(message) = patient_gate::http_refusal(&cli) {
+            return Ok(Self::tool_error(message));
         }
         let command_requests_json = json || cli.json;
         if let Some(message) = binary_download_rejection(&cli, &args) {
@@ -1545,8 +1517,7 @@ mod tests {
         LOCAL_INPUT_MCP_REJECTION_MESSAGE, ShellCommand, TypedGeneCspec, TypedGet, TypedSearch,
         TypedVariantArticles, TypedVariantCar, binary_download_rejection_for_args,
         cli_may_return_article_fulltext, get_args, is_allowed_mcp_args,
-        mcp_rejection_message_for_args, reads_patient_record, redact_mcp_json_text,
-        redact_mcp_text, search_args,
+        mcp_rejection_message_for_args, redact_mcp_json_text, redact_mcp_text, search_args,
     };
     use serde_json::json;
     mod ticket_0117;
@@ -1734,37 +1705,6 @@ mod tests {
             variant["properties"]["assembly"]["enum"],
             json!(["grch37", "hg19", "grch38", "hg38"])
         );
-    }
-
-    #[test]
-    fn patient_record_commands_are_recognized_for_the_http_refusal() {
-        let parse = |args: &[&str]| crate::cli::try_parse_cli(args.iter().copied()).expect("parse");
-        for args in [
-            &["biomcp", "get", "patient", "SYNTH-1"][..],
-            &["biomcp", "get", "patient", "SYNTH-1", "conditions"],
-            &["biomcp", "search", "patient"],
-            &["biomcp", "batch", "patient", "SYNTH-1,SYNTH-2"],
-            &["biomcp", "batch", " Patient ", "SYNTH-1"],
-        ] {
-            assert!(reads_patient_record(&parse(args)), "{args:?}");
-        }
-        for args in [
-            &["biomcp", "get", "gene", "BRAF"][..],
-            &["biomcp", "batch", "gene", "BRAF"],
-            &["biomcp", "list", "patient"],
-        ] {
-            assert!(!reads_patient_record(&parse(args)), "{args:?}");
-        }
-    }
-
-    #[test]
-    fn typed_patient_search_maps_to_the_cli_refusal_without_filters() {
-        assert_eq!(
-            search_args(TypedSearch(json!({"entity":"patient"}))).unwrap(),
-            vec!["biomcp", "search", "patient"]
-        );
-        assert!(search_args(TypedSearch(json!({"entity":"patient","query":"x"}))).is_err());
-        assert!(search_args(TypedSearch(json!({"entity":"patient","limit":5}))).is_err());
     }
 
     #[test]

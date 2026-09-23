@@ -2585,6 +2585,7 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
         "drug": "src/entities/drug/mod.rs",
         "gene": "src/entities/gene.rs",
         "pathway": "src/entities/pathway.rs",
+        "patient": "src/entities/patient.rs",
         "pgx": "src/entities/pgx.rs",
         "protein": "src/entities/protein.rs",
         "trial": "src/entities/trial/mod.rs",
@@ -2640,6 +2641,7 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
         "diagnostic": "src/entities/diagnostic/mod.rs",
         "disease": "src/entities/disease/mod.rs",
         "drug": "src/entities/drug/mod.rs",
+        "patient": "src/entities/patient.rs",
         "pgx": "src/entities/pgx.rs",
         "variant": "src/entities/variant/mod.rs",
     }

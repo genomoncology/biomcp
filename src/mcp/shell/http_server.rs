@@ -438,7 +438,7 @@ pub(in crate::mcp) async fn run_http(
     let bind = std::net::SocketAddr::new(ip, port);
     let allowed_hosts = http_allowed_hosts(ip, allowed_hosts, unsafe_allow_any_host)?;
     let shutdown = CancellationToken::new();
-    super::mark_http_transport();
+    super::patient_gate::mark_http_transport();
 
     #[allow(clippy::field_reassign_with_default)]
     let http_config = {

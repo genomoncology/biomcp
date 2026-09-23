@@ -11,6 +11,7 @@ Birth date: {{ birth_date or "-" }}
 ## Conditions ({{ source }})
 
 {% if source_states.conditions.status %}{{ source_states.conditions.status }}
+
 {% endif -%}
 {% if source_states.conditions.payload_allowed and conditions -%}
 | Condition | Codes | Clinical status | Verification | Onset | Recorded |

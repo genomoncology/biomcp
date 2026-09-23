@@ -359,6 +359,59 @@ WIKIPATHWAYS_SEARCH = b'{"result":[]}'
 NCI_MELANOMA = fixture("nci_cts/search_melanoma_20260811.json")
 
 
+# Synthetic FHIR R4 patients for spec/entity/patient.md. No real or demo
+# server data: every ID, date, and condition here is invented.
+def fhir_condition(cid, text, status="active"):
+    resource = {
+        "resourceType": "Condition",
+        "id": cid,
+        "code": {"text": text},
+        "onsetDateTime": "2020-01-01",
+    }
+    if status:
+        resource["clinicalStatus"] = {"coding": [{"code": status}]}
+    return resource
+
+
+def fhir_bundle(conditions, next_url=None):
+    bundle = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "entry": [{"resource": c, "search": {"mode": "match"}} for c in conditions],
+    }
+    if next_url:
+        bundle["link"] = [{"relation": "next", "url": next_url}]
+    return json.dumps(bundle).encode("utf-8")
+
+
+FHIR_PATIENTS = {"SYNTH-PT-1", "SYNTH-PT-EMPTY", "SYNTH-PT-OFFSITE"}
+FHIR_PAGE_TWO = "/fhir?_getpages=synth-pt-1&_getpagesoffset=1"
+
+
+def fhir_response(parsed):
+    path = parsed.path
+    if path.startswith("/fhir/Patient/"):
+        pid = path.rsplit("/", 1)[1]
+        if pid in FHIR_PATIENTS:
+            body = {"resourceType": "Patient", "id": pid, "gender": "female", "birthDate": "1970-01-01"}
+            return 200, json.dumps(body).encode("utf-8")
+        return 404, b'{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found"}]}'
+    params = parse_qs(parsed.query)
+    if path == "/fhir/Condition":
+        pid = params.get("patient", [""])[0]
+        if pid == "SYNTH-PT-1":
+            return 200, fhir_bundle([fhir_condition("synth-c1", "Synthetic condition one")], FHIR_PAGE_TWO)
+        if pid == "SYNTH-PT-OFFSITE":
+            return 200, fhir_bundle(
+                [fhir_condition("synth-c3", "Synthetic condition three")],
+                "http://offsite.invalid/fhir?page=2",
+            )
+        return 200, fhir_bundle([])
+    if path == "/fhir" and params.get("_getpages") == ["synth-pt-1"]:
+        return 200, fhir_bundle([fhir_condition("synth-c2", "Synthetic condition two", "resolved")])
+    return None
+
+
 def send(handler, status, body, content_type="application/json"):
     handler.send_response(status)
     handler.send_header("Content-Type", content_type)
@@ -407,6 +460,11 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/healthz":
             send(self, 200, b'{"status":"ok"}')
             return
+        if parsed.path == "/fhir" or parsed.path.startswith("/fhir/"):
+            answer = fhir_response(parsed)
+            if answer is not None:
+                send(self, answer[0], answer[1], "application/fhir+json")
+                return
         if parsed.path == "/mychem/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
             if query == "fixture-provider-failure":

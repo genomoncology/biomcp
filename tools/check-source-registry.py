@@ -22,6 +22,9 @@ EXEMPT_MODULES = {
     "cvx",
     "ddinter",
     "ema",
+    # The operator's own server. Health reports it as configured or not
+    # configured from a local check and never probes it.
+    "fhir",
     "gtr",
     "mutalyzer",
     "variantvalidator",
