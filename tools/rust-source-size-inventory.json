@@ -262,12 +262,12 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1563,
+      "baseline_lines": 1570,
       "floor_lines": 1561,
       "authorized_increase": {
-        "ticket": "1232",
-        "delta": 2,
-        "reason": "The drug JSON serializer carries the boxed-warning field through the existing direct Drug serialization.",
+        "ticket": "1237",
+        "delta": 9,
+        "reason": "The JSON serializer test pins the boxed-warning field on the drug output.",
         "removal_condition": "None expected; remove when the serializer is decomposed."
       }
     },
