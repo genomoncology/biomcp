@@ -307,18 +307,28 @@ async fn broken_fallback_bundles_warn_and_continue() {
     let broken = write_broken_bundles(dir.path(), &good_pem, &der);
 
     for bundle in &broken {
+        let before = fixture.connections.load(Ordering::SeqCst);
         let output = fixture.run(None, Some(bundle), false).await;
         let stderr = String::from_utf8_lossy(&output.stderr);
         // The dropped fallback degrades to an ordinary untrusted-connection
         // failure: the client builds with the bundled roots and attempts the
         // handshake (connections advance, no session completes). A fail-closed
-        // bundle error aborts before any connection. The degrade warning
-        // names the path too, so stderr content is not the discriminator;
-        // the connection counters are.
+        // bundle error aborts before any connection, and a silent drop would
+        // leave no warning, so both the per-case connection delta and the
+        // degrade warning text are asserted.
         assert_eq!(output.status.code(), Some(1), "stderr={stderr}");
         assert!(
-            fixture.connections.load(Ordering::SeqCst) >= 1,
-            "the dropped fallback must still attempt the connection"
+            stderr.contains("SSL_CERT_FILE is not a usable certificate bundle"),
+            "expected the degrade warning on stderr, got: {stderr}"
+        );
+        assert!(
+            stderr.contains("continuing with the bundled TLS roots"),
+            "expected the continue note on stderr, got: {stderr}"
+        );
+        assert_eq!(
+            fixture.connections.load(Ordering::SeqCst),
+            before + 1,
+            "each dropped fallback must still attempt exactly one connection"
         );
         assert_eq!(fixture.sessions.load(Ordering::SeqCst), 0);
     }
