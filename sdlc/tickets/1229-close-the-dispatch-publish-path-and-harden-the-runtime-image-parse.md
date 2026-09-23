@@ -33,5 +33,6 @@ A `workflow_dispatch` can no longer publish wheels for a ref that was never rele
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: the 2026-09-22 full review of the release wave (gpt-5.6-sol, medium) found the ungated dispatch publish path and the loose runtime image parse
+- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — one report-only note on the substring pin
+- Verification: yellow gate at 3fba56e3 lint/test/spec OK (986 Python passed, 3 skipped); mutation checks on the gate and the parse; see `sdlc/records/1229-close-the-dispatch-publish-path-and-harden-the-runtime-image-parse.md`
