@@ -74,5 +74,13 @@ still fails the smoke's success requirement for the swept commands).
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — P1 additions folded
+  in (the profile-pin test must flip with Cargo.toml; three more genuine
+  slice sites; the pin is the real abort-regression enforcement)
+- Code review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — all six fix sites
+  verified; P2 notes: the panic test mirrors the seam rather than calling
+  it, and the DrugCentral guard tightens 10-byte non-date values
+- Verification: yellow gate at 6f3dffb3 lint/test/spec OK; focused
+  release-profile `nextest -E 'test(worker_panic)'` OK; unwind size cost
+  measured (text +5,557,831, file +5,559,048, about +17 percent); see
+  `sdlc/records/1230-make-the-mcp-server-survive-a-panicking-tool-call.md`

@@ -19,3 +19,11 @@ One reachable trigger: `src/sources/clingen.rs:638` slices an external date with
 - Replace the ClinGen slice with `value.get(..10)?`.
 - Search for other byte-index slices on external strings and fix them the same way.
 - Add a release-profile test that a panicking worker yields an error result and the process survives.
+
+## Resolved
+
+Ticket 1230, branch `tickets/1230-panic-survival`, main merge of
+`6f3dffb3`. The release profile unwinds, the ClinGen, DrugCentral,
+Europe PMC, and benchmark slice panics are closed, and the profile pin in
+`tests/test_upstream_planning_analysis_docs.py` now enforces unwind. See
+`sdlc/records/1230-make-the-mcp-server-survive-a-panicking-tool-call.md`.
