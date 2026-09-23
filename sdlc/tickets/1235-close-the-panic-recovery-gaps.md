@@ -98,4 +98,9 @@ Filed from `sdlc/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised a
   compile-only residual. Fourth: REJECT on stale review bookkeeping only
   (the history said "third review pending"); fixed in the same commit.
   Fifth: ACCEPT 2026-09-23 — history accurate, design complete, no P2s.
-- Code review: pending
+- Code review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — full-diff review;
+  route stripped before catalog validation and restored after; count
+  assertions pin every lock site to the helper
+- Verification: yellow gate at f9c6839e lint/test/spec OK; release-profile
+  stdio panic test OK; unwind-build margin rerun clean; see
+  `sdlc/records/1235-close-the-panic-recovery-gaps.md`
