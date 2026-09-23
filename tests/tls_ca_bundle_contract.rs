@@ -260,7 +260,12 @@ async fn configured_bundle_reaches_the_private_ca_fixture() {
 }
 
 #[tokio::test]
-async fn health_client_reaches_a_private_ca_provider() {
+async fn health_probe_reaches_a_private_ca_provider_through_the_orphan_client() {
+    // The health runner probes the orphan endpoint through its own client
+    // construction (src/sources/fda_orphan.rs:667-672), not the shared
+    // health HTTP client, so this pins the probe path rather than
+    // health_http_client's transport; that client has no endpoint
+    // override and stays covered by the startup and policy tests.
     let fixture = TlsFixture::start().await;
     let output = fixture
         .run_command(
@@ -605,9 +610,13 @@ async fn http_rejects_invalid_explicit_bundle_before_bind() {
         .expect("HTTP exit");
     assert!(!status.success());
     assert!(
-        tokio::net::TcpStream::connect(("127.0.0.1", port))
-            .await
-            .is_err()
+        tokio::time::timeout(
+            Duration::from_secs(1),
+            tokio::net::TcpStream::connect(("127.0.0.1", port)),
+        )
+        .await
+        .expect("pre-bind connect deadline")
+        .is_err()
     );
     let stderr = stop_and_stderr(&mut child).await;
     assert!(
@@ -631,9 +640,13 @@ async fn http_bad_fallback_binds_and_warns_once() {
     .expect("spawn HTTP");
     let deadline = Instant::now() + Duration::from_secs(3);
     loop {
-        if tokio::net::TcpStream::connect(("127.0.0.1", port))
-            .await
-            .is_ok()
+        if tokio::time::timeout(
+            Duration::from_secs(1),
+            tokio::net::TcpStream::connect(("127.0.0.1", port)),
+        )
+        .await
+        .expect("readiness connect deadline")
+        .is_ok()
         {
             break;
         }
