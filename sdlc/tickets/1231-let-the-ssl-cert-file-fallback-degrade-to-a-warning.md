@@ -45,9 +45,11 @@ bad certificate among good ones, a leading byte-order mark, an OpenSSL
 
 ## Review
 
-- Design review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — the single seam
-  is the parse failure at `ca_bundle.rs:107` calling `parse_certificates`
-  (`:136`), whose three error exits cover all five inputs; the unreadable
-  fallback already warns and continues at `:92-99`, so one change covers
-  the policy split. P2 notes folded above.
-- Code review: pending
+- Design review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — single-seam finding
+  and P2 notes folded above
+- Code review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — two test-strength
+  findings (per-case connection delta, degrade warning asserted on stderr)
+  applied in 63678004 and 5e712966
+- Verification: yellow gate at 5e712966 lint/test/spec OK; TLS contract
+  suite 8/8 three times; see
+  `sdlc/records/1231-let-the-ssl-cert-file-fallback-degrade-to-a-warning.md`
