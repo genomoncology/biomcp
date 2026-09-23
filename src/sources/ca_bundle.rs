@@ -74,7 +74,9 @@ struct LoadedBundle {
 enum BundleSource {
     /// `BIOMCP_CA_BUNDLE`: every problem is fatal and names the path.
     Explicit(PathBuf),
-    /// `SSL_CERT_FILE`: an unreadable or blank value warns and continues.
+    /// `SSL_CERT_FILE`: an unreadable, blank, or unparseable value warns and
+    /// continues. An unparseable fallback is dropped whole, good certificates
+    /// included, because the operator never pointed BioMCP at it.
     Fallback(PathBuf),
 }
 
@@ -104,7 +106,18 @@ fn load() -> Result<Option<LoadedBundle>, BioMcpError> {
             ));
         }
     };
-    let certificates = parse_certificates(&path, &bytes)?;
+    let certificates = match parse_certificates(&path, &bytes) {
+        Ok(certificates) => certificates,
+        Err(error) if !required => {
+            warn!(
+                path = %path.display(),
+                %error,
+                "SSL_CERT_FILE is not a usable certificate bundle; continuing with the bundled TLS roots"
+            );
+            return Ok(None);
+        }
+        Err(error) => return Err(error),
+    };
     Ok(Some(LoadedBundle {
         bundle: CaBundle { path },
         certificates,
@@ -322,7 +335,7 @@ mod tests {
 
     #[test]
     #[serial_test::serial(source_env)]
-    fn malformed_ssl_cert_file_fails_with_its_path() {
+    fn malformed_ssl_cert_file_warns_and_continues() {
         let dir = tempfile::tempdir().expect("bundle directory");
         let path = write_bundle(
             dir.path(),
@@ -333,7 +346,10 @@ mod tests {
             ("BIOMCP_CA_BUNDLE", None),
             ("SSL_CERT_FILE", Some(path.to_str().unwrap())),
         ]);
-        let error = load().err().expect("malformed fallback fails");
-        assert_bundle_error(&error, &path, "PEM content is invalid");
+        assert!(
+            load()
+                .expect("malformed fallback continues with bundled roots")
+                .is_none()
+        );
     }
 }

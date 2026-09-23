@@ -17,3 +17,11 @@ The stock Ubuntu bundle loads fine. A user with a system-wide `SSL_CERT_FILE` in
 ## Fix
 
 A problem with the `SSL_CERT_FILE` fallback warns and continues, as a missing file already does. Only `BIOMCP_CA_BUNDLE` fails closed. Add a subprocess test for each input above under both variables.
+
+## Resolved
+
+Resolved by ticket 1231
+(`sdlc/tickets/1231-let-the-ssl-cert-file-fallback-degrade-to-a-warning.md`)
+on branch `tickets/1231-ca-fallback-warn`: a parse failure in the
+`SSL_CERT_FILE` fallback now warns and continues with the bundled roots,
+while `BIOMCP_CA_BUNDLE` keeps failing closed with the path named.
