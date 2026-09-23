@@ -22,12 +22,19 @@ bad certificate among good ones, a leading byte-order mark, an OpenSSL
    fallback already does.
 2. Extend the TLS contract tests so each confirmed bad input runs under both
    variables: explicit fails closed with the `ca_bundle` code and the path;
-   fallback succeeds with a warning. The tests use the subprocess reentry
-   pattern (set the variable per child process, since resolution is cached
-   per process).
-3. Update the precedence paragraph in `docs/reference/configuration.md`.
+   fallback succeeds with a warning. The existing contract tests already
+   spawn the real binary per case with the bundle variable set per child
+   (`tests/tls_ca_bundle_contract.rs:59-77`); the `run()` helper needs only
+   an `SSL_CERT_FILE` variant. Add one `--json` explicit-variable case (the
+   JSON path is proven at `:249`).
+3. Update the precedence paragraph in `docs/reference/configuration.md:59-66`:
+   the sentence at `:61-62` ("a readable but malformed bundle fails") is the
+   contradiction. State plainly that a fallback bundle that cannot be parsed
+   is dropped whole, good certificates included, after one warning.
 4. Append the Resolved section to the issue file and note the policy
-   reversal in this ticket's Review section.
+   reversal in this ticket's Review section. The health runner
+   (`src/cli/health/runner.rs:296-304`) picks up the new policy through the
+   same `ca_bundle::build_client` path with no code change; record that.
 
 ## Acceptance
 
@@ -38,5 +45,9 @@ bad certificate among good ones, a leading byte-order mark, an OpenSSL
 
 ## Review
 
-- Design review: pending
+- Design review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — the single seam
+  is the parse failure at `ca_bundle.rs:107` calling `parse_certificates`
+  (`:136`), whose three error exits cover all five inputs; the unreadable
+  fallback already warns and continues at `:92-99`, so one change covers
+  the policy split. P2 notes folded above.
 - Code review: pending
