@@ -85,12 +85,17 @@ Filed from `sdlc/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised a
 
 ## Review
 
-- Design review: REJECT twice 2026-09-23 (gpt-5.6-sol, medium). First:
-  the panic test must exercise the outer dispatch, the injection must be
-  gated rather than `#[cfg(test)]` or a hidden command, and poison
-  recovery covers all five acquisition sites. Second: a cargo feature
-  would enter `--all-features` release builds and conflict with the
-  seven-tool `catalog::apply` invariant — the injection is now an
+- Design review: REJECT three times 2026-09-23 (gpt-5.6-sol, medium).
+  First: the panic test must exercise the outer dispatch, the injection
+  must be gated rather than `#[cfg(test)]` or a hidden command, and
+  poison recovery covers all five acquisition sites. Second: a cargo
+  feature would enter `--all-features` release builds and conflict with
+  the seven-tool `catalog::apply` invariant — the injection became an
   environment-guarded registration outside the catalog, and the poison
-  sites share one tested helper. Third review pending.
+  sites share one tested helper. Third: the contract client must
+  `env_remove` the variable for every child, and the acceptance wording
+  must state helper-tested recovery with the non-Unix GenCC site as
+  compile-only residual. Fourth: REJECT on stale review bookkeeping only
+  (the history said "third review pending"); fixed here. Fifth review
+  pending.
 - Code review: pending
