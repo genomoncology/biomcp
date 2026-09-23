@@ -1,14 +1,14 @@
 ---
 flow: build
 priority: 2
-deps: [1234]
+deps: [2001]
 ---
 
-# 1235: Get one patient and their conditions from one FHIR server
+# 2002: Get one patient and their conditions from one FHIR server
 
 ## Outcome
 
-An agent on stdio MCP or the CLI reads one patient and that patient's conditions from the FHIR server the operator configured. `serve-http` refuses. Decision record: `sdlc/planning/adr/0002-read-one-patient-fhir-record-as-the-patient-entity.md`. Search is ticket 1236.
+An agent on stdio MCP or the CLI reads one patient and that patient's conditions from the FHIR server the operator configured. `serve-http` refuses. Decision record: `sdlc/planning/adr/0002-read-one-patient-fhir-record-as-the-patient-entity.md`. Search is ticket 2003.
 
 ```
 BIOMCP_FHIR_BASE=https://fhir.example.org/fhir biomcp get patient <id>
@@ -33,7 +33,7 @@ biomcp get patient <id> conditions
 - A patient ID must match `[A-Za-z0-9\-.]{1,64}`. Anything else is refused before a request. Every query value is URL-encoded.
 - Next links and redirects must stay on the origin and base path of `BIOMCP_FHIR_BASE`. Anything else stops the walk and marks the section `degraded`.
 - `get patient <id>` reads `Patient/{id}`, shows id, gender, and birth date, and lists `conditions` as a section. A redirect of `Patient/{id}` to another host fails with an error that names no URL.
-- Until ticket 1236 lands, `search patient` on the CLI and the typed `search` tool fails with a message that search is not yet available. On `serve-http`, the transport refusal checks the entity first, before any search runs.
+- Until ticket 2003 lands, `search patient` on the CLI and the typed `search` tool fails with a message that search is not yet available. On `serve-http`, the transport refusal checks the entity first, before any search runs.
 - The `conditions` section reads `Condition?patient={id}&_count=100` and follows next links up to 20 pages. A repeated link or the page cap stops the walk and marks the section `degraded`. A condition without `clinicalStatus` marks it `degraded`. No matches is `empty`. A transport or status failure is `unavailable`.
 - One transport check refuses patient calls on `serve-http`. It covers the shell tool, typed `search` and `get`, and `batch`. The message cites `sdlc/issues/2026-09-11-health-record-entity-needs-authenticated-http-transport.md`.
 - `patient` becomes a valid entity for the existing typed `search` and `get` tools on stdio. No new MCP tool is added.
@@ -41,7 +41,7 @@ biomcp get patient <id> conditions
 
 ## Exclusions
 
-No search, which is ticket 1236. No FHIRPath evaluator. No sign-in or token. No section beyond `conditions`. No BioData dependency. No new MCP tool. No live server in any gate.
+No search, which is ticket 2003. No FHIRPath evaluator. No sign-in or token. No section beyond `conditions`. No BioData dependency. No new MCP tool. No live server in any gate.
 
 ## Acceptance
 
@@ -62,7 +62,7 @@ Synthetic bundles only, served by the existing spec fixture runner:
 
 ## Dependencies
 
-1234. The merge brings the operator CA bundle and the MCP panic survival this entity relies on.
+2001. The merge brings the operator CA bundle and the MCP panic survival this entity relies on.
 
 ## Complexity
 
@@ -79,6 +79,6 @@ Synthetic bundles only, served by the existing spec fixture runner:
 
 ## Review
 
-- Design review: rejected and split (2026-09-23). Search moved to 1236. Added ID validation, same-origin paging and redirects, a page cap, one retry layer, one no-store request function, trace-level leak proof, and one serve-http check with a test per MCP path.
-- Design re-review: accepted with required change (2026-09-23). Set level 4 by the security floor, defined `search patient` before 1236, restored the CA-bundle client with its own redirect policy, added the `Patient/{id}` redirect case.
+- Design review: rejected and split (2026-09-23). Search moved to 2003. Added ID validation, same-origin paging and redirects, a page cap, one retry layer, one no-store request function, trace-level leak proof, and one serve-http check with a test per MCP path.
+- Design re-review: accepted with required change (2026-09-23). Set level 4 by the security floor, defined `search patient` before 2003, restored the CA-bundle client with its own redirect policy, added the `Patient/{id}` redirect case.
 - Code review: pending

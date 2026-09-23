@@ -4,11 +4,11 @@ priority: 1
 deps: []
 ---
 
-# 1234: Merge current main into the 1.0 line
+# 2001: Merge current main into the 1.0 line
 
 ## Outcome
 
-The 1.0 line contains main's tip and keeps every 1.0 behavior, including its BioData dependency. New 1.0 work, starting with ticket 1235, builds on main's crash, TLS, and label fixes.
+The 1.0 line contains main's tip and keeps every 1.0 behavior, including its BioData dependency. New 1.0 work, starting with ticket 2002, builds on main's crash, TLS, and label fixes.
 
 ## Current Facts
 
@@ -69,4 +69,4 @@ None.
 ## Review
 
 - Design review: accepted with edits (2026-09-23). Dropped the moot BioData-wins rule, named the BioData guard conflicts, added workflow trigger and panic strategy checks, corrected the cache migration fact, named the test commands.
-- Code review: pending. Completion record: `sdlc/records/1234-merge-current-main-into-the-1-0-line.md`.
+- Code review: accepted (2026-09-23). Completion record: `sdlc/records/2001-merge-current-main-into-the-1-0-line.md`.

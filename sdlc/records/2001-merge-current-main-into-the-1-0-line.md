@@ -3,7 +3,7 @@ base: 38b9411e
 head: cc0ea39c
 ---
 
-Merged `origin/main` at `43edc43c` into `biodata/biomcp-1.0` as one merge commit, `749d67fd`. A second merge, `cc0ea39c`, brought in the concurrent docs-only commit `153b1016` for tickets 1235 and 1236. Main is untouched.
+Merged `origin/main` at `43edc43c` into `biodata/biomcp-1.0` as one merge commit, `749d67fd`. A second merge, `cc0ea39c`, brought in the concurrent docs-only commit `153b1016` for tickets 2002 and 2003. Main is untouched.
 
 ## Conflicts
 

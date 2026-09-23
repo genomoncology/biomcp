@@ -1,10 +1,10 @@
 ---
 flow: build
 priority: 2
-deps: [1235]
+deps: [2002]
 ---
 
-# 1236: Search patients by typed facts
+# 2003: Search patients by typed facts
 
 ## Outcome
 
@@ -17,7 +17,7 @@ biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 
 ## Current Facts
 
-- Ticket 1235 supplies the FHIR request function, `BIOMCP_FHIR_BASE`, value encoding, and the serve-http refusal. This ticket adds no transport code.
+- Ticket 2002 supplies the FHIR request function, `BIOMCP_FHIR_BASE`, value encoding, and the serve-http refusal. This ticket adds no transport code.
 - Other `search` commands take `-l/--limit` with a default of 10 (`src/cli/disease/mod.rs:29`).
 - FHIR date search uses prefixes. `gt` means strictly after and `lt` means strictly before.
 - `_has` reverse chaining is optional in FHIR R4. A server declares it in its CapabilityStatement.
@@ -44,14 +44,14 @@ Synthetic bundles only, served by the existing spec fixture runner:
 2. A capability statement without `_has` makes `--condition` fail with the refusal message. The fixture request log shows no Patient search.
 3. `--count` prints the `Bundle.total` value labeled server-reported. A bundle with no `total` prints the no-count message.
 4. `--limit 3` sends `_count=3`. `--limit 0` and `--limit 51` fail before any request. A search with no filter fails before any request.
-5. Over `serve-http`, typed `search patient` is refused by the 1235 check.
+5. Over `serve-http`, typed `search patient` is refused by the 2002 check.
 6. `spec/entity/patient.md` gains search cases.
 
 `make lint`, `make test`, and `make spec` pass on the gate host at the pushed SHA. The manual smoke run against the live HAPI server confirms that its CapabilityStatement declares `_has` in the same place the refusal test checks and that a condition search returns results.
 
 ## Dependencies
 
-1235.
+2002.
 
 ## Complexity
 
@@ -63,11 +63,11 @@ Synthetic bundles only, served by the existing spec fixture runner:
 - Total: 5
 - Minimum level floor: none
 - Final level: 2
-- Reasons: new query grammar and count labeling on top of the 1235 transport
+- Reasons: new query grammar and count labeling on top of the 2002 transport
 - Selected model: claude-opus
 
 ## Review
 
-- Design review: split from 1235 (2026-09-23). Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
+- Design review: split from 2002 (2026-09-23). Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
 - Design re-review: accepted (2026-09-23). Stated the `--limit` range and where `_has` must be declared.
 - Code review: pending
