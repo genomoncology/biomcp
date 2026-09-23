@@ -23,3 +23,10 @@ Only the shared cached client and the health client are built once. `provider_ur
 - `tests/test_provider_network_policy.py:129-140` counts `ca_bundle::` text. Deleting the `build_client` call at `src/sources/fda_orphan.rs:668` still passes. It also skips `clingen_cspec`, `orcid`, and `sources/mod.rs`. Match real calls with an exact count per builder.
 - Only the openFDA shared client has a real handshake test. Add handshake tests for the health client, fda_orphan, trial documents, ORCID, CSPEC, and the `SSL_CERT_FILE` path, plus one proving the bundled roots stay trusted alongside the bundle.
 - `fda_orphan.rs:517` turns a client build failure into `unavailable()` even when a bundle is loaded.
+
+## Found in the ticket 1231 review
+
+- The fallback warning prints on every client build, so once per MCP tool call. `docs/reference/configuration.md:68` says the clients "are built once". The `OnceLock` fix above resolves both; until then correct the docs line.
+- The warning at `src/sources/ca_bundle.rs:115` drops a whole mixed bundle, corporate root included. Tell the user to set `BIOMCP_CA_BUNDLE` to a clean bundle.
+- The missing-file fallback has no test. Missing, unreadable, directory, and blank fallbacks are tested only in the loader. No test covers an invalid `BIOMCP_CA_BUNDLE` with a valid `SSL_CERT_FILE`, which must fail closed. Add them to `broken_fallback_bundles_warn_and_continue` and the contract suite.
+- `tests/tls_ca_bundle_contract.rs:78-84` inherits `RUST_LOG`. With `RUST_LOG=error` the warning is hidden and the test fails. Set `RUST_LOG=warn` on the child.
