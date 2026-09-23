@@ -49,4 +49,7 @@ Filed from `sdlc/issues/2026-09-23-fda-label-warning-follow-ups.md`. Before 0.9.
   added (combined-section single heading; truncated safety warning with
   the exact DailyMed URL and no `drug.label`), and the retained
   inventory reason is corrected. Second: ACCEPT 2026-09-23 — renderer seam confirmed, no P2s.
-- Code review: pending
+- Code review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — no P2s
+- Verification: yellow gate at a71b0e98 lint/test/spec OK (first run hit
+  only the GenCC flake, now ticket 1239, and the json.rs baseline);
+  see `sdlc/records/1237-finish-the-label-warnings-work.md`
