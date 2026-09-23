@@ -4543,10 +4543,11 @@ positive integer seconds.</p>
 <p>Ordinary provider HTTPS trusts the bundled webpki roots plus any operator PEM
 bundle. <code>BIOMCP_CA_BUNDLE</code> is read first, and a blank or whitespace-only value
 counts as unset. <code>SSL_CERT_FILE</code> is read only when <code>BIOMCP_CA_BUNDLE</code> is unset;
-a blank or unreadable <code>SSL_CERT_FILE</code> warns and continues, while a readable but
-malformed bundle fails. A missing, unreadable, malformed, or certificate-less
-<code>BIOMCP_CA_BUNDLE</code> fails the command before any request and names the path in
-both text and <code>--json</code> errors. The bundle only adds roots: certificate
+a blank, unreadable, or unparseable <code>SSL_CERT_FILE</code> warns and continues. An
+unparseable fallback is dropped whole, good certificates included, and the
+command runs with the bundled roots. A missing, unreadable, malformed, or
+certificate-less <code>BIOMCP_CA_BUNDLE</code> fails the command before any request and
+names the path in both text and <code>--json</code> errors. The bundle only adds roots: certificate
 verification and the bundled roots stay in place. Client certificates, mTLS,
 and <code>SSL_CERT_DIR</code> are out of scope. AlphaGenome's gRPC client already reads
 the native OS trust store. The shared and health HTTP clients are built once,
