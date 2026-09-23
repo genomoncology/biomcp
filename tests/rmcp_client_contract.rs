@@ -1488,6 +1488,29 @@ async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> 
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness
+        .spawn_stdio_client(&[("BIOMCP_TEST_PANIC_TOOL", "1".to_string())])
+        .await?;
+
+    let panic_result = client
+        .peer()
+        .call_tool(CallToolRequestParams::new("__biomcp_test_panic"))
+        .await?;
+    assert_eq!(panic_result.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&panic_result.content)
+            .contains("injected MCP tool panic")
+    );
+
+    let success = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
+    assert_eq!(success.is_error, Some(false));
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness.spawn_stdio_client(&[]).await?;

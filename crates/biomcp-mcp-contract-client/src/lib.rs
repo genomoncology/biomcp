@@ -1055,6 +1055,7 @@ impl ContractHarness {
     fn base_server_command(&self, extra_env: &[EnvVar]) -> Command {
         let mut command = Command::new(&self.biomcp_bin);
         command.env_remove("RUST_MIN_STACK");
+        command.env_remove("BIOMCP_TEST_PANIC_TOOL");
         command.env("UMLS_API_KEY", "");
         for (key, value) in extra_env {
             command.env(key, value);

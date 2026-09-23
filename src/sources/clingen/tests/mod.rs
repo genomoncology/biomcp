@@ -14,6 +14,11 @@ const LOOKUP_PATH: &str = "/api/genes/look/TP53";
 const VALIDITY_PATH: &str = "/kb/gene-validity/download";
 const DOSAGE_PATH: &str = "/kb/gene-dosage/download";
 
+#[test]
+fn review_date_rejects_a_multibyte_boundary_without_panicking() {
+    assert_eq!(normalize_review_date("123456789β"), None);
+}
+
 #[derive(Clone)]
 struct ResponseSpec {
     status: StatusCode,

@@ -206,17 +206,14 @@ fn cached_index_map() -> &'static Mutex<HashMap<PathBuf, Arc<DdinterIndex>>> {
 }
 
 fn cached_index_for_root(root: &Path) -> Result<Arc<DdinterIndex>, BioMcpError> {
-    if let Ok(cache) = cached_index_map().lock()
-        && let Some(index) = cache.get(root)
-    {
+    let cache = crate::utils::sync::recover_poison(cached_index_map().lock());
+    if let Some(index) = cache.get(root) {
         return Ok(index.clone());
     }
+    drop(cache);
 
     let parsed = Arc::new(load_index(root)?);
-    let mut cache = cached_index_map().lock().map_err(|_| BioMcpError::Api {
-        api: DDINTER_API.to_string(),
-        message: "DDInter index cache lock poisoned".into(),
-    })?;
+    let mut cache = crate::utils::sync::recover_poison(cached_index_map().lock());
     Ok(cache
         .entry(root.to_path_buf())
         .or_insert_with(|| parsed.clone())
@@ -224,9 +221,8 @@ fn cached_index_for_root(root: &Path) -> Result<Arc<DdinterIndex>, BioMcpError> 
 }
 
 fn evict_cached_index(root: &Path) {
-    if let Ok(mut cache) = cached_index_map().lock() {
-        cache.remove(root);
-    }
+    let mut cache = crate::utils::sync::recover_poison(cached_index_map().lock());
+    cache.remove(root);
 }
 
 fn load_index(root: &Path) -> Result<DdinterIndex, BioMcpError> {

@@ -89,6 +89,10 @@ fn supplementary_files_plan_validates_and_normalizes_pmcid() {
         EuropePmcClient::supplementary_files_plan("PMC../unsafe"),
         Err(BioMcpError::InvalidArgument(_))
     ));
+    assert!(matches!(
+        EuropePmcClient::supplementary_files_plan("PMβ123"),
+        Err(BioMcpError::InvalidArgument(_))
+    ));
 }
 
 #[test]

@@ -669,6 +669,11 @@ mod tests {
     use super::*;
 
     #[test]
+    fn approval_date_rejects_multibyte_input_with_matching_byte_length() {
+        assert_eq!(normalize_approval_date("β23456789"), None);
+    }
+
+    #[test]
     fn search_mechanism_ranking_prefers_kinase_moa_and_rejects_metabolism_only() {
         let fixtures = [
             serde_json::json!({

@@ -896,7 +896,7 @@ fn acquire_generation_lease_at(
     deadline: std::time::Instant,
 ) -> Result<Arc<File>, StoreError> {
     let leases = GENERATION_LEASES.get_or_init(|| Mutex::new(HashMap::new()));
-    let mut leases = leases.lock().map_err(|_| StoreError::Unavailable)?;
+    let mut leases = crate::utils::sync::recover_poison(leases.lock());
     if let Some(lease) = leases.get(key).and_then(Weak::upgrade)
         && validate_at_identity(directory, "lease.lock", &lease).is_ok()
     {
@@ -915,7 +915,7 @@ fn acquire_generation_lease(
     deadline: std::time::Instant,
 ) -> Result<Arc<File>, StoreError> {
     let leases = GENERATION_LEASES.get_or_init(|| Mutex::new(HashMap::new()));
-    let mut leases = leases.lock().map_err(|_| StoreError::Unavailable)?;
+    let mut leases = crate::utils::sync::recover_poison(leases.lock());
     if let Some(lease) = leases.get(path).and_then(Weak::upgrade)
         && validate_open_identity(&lease, path).is_ok()
     {

@@ -1,11 +1,14 @@
 use std::collections::BTreeSet;
 use std::future::Future;
+use std::panic::AssertUnwindSafe;
 use std::time::Duration;
 
 use base64::Engine;
+use futures::FutureExt;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
-    AnnotateAble, CallToolResult, Content, Implementation, ListResourcesResult, ListToolsResult,
+    AnnotateAble, CallToolRequestParams, CallToolResult, Content, Implementation,
+    ListResourcesResult, ListToolsResult,
     PaginatedRequestParams, RawResource, ReadResourceRequestParams, ReadResourceResult,
     ResourceContents, ServerCapabilities, ServerInfo,
 };
@@ -17,6 +20,8 @@ use rmcp::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
+
+const TEST_PANIC_TOOL: &str = "__biomcp_test_panic";
 
 mod typed_get;
 use self::typed_get::{
@@ -330,7 +335,16 @@ const LOCAL_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: --input file and stdin a
 impl BioMcpServer {
     pub fn new() -> Self {
         let mut tool_router = Self::tool_router();
+        let panic_route = tool_router
+            .map
+            .remove(TEST_PANIC_TOOL)
+            .expect("test panic route should be generated");
         super::catalog::apply(&mut tool_router);
+        // Internal panic-recovery test hook. Only the exact value enables this
+        // route, and the contract harness clears inherited values from children.
+        if std::env::var("BIOMCP_TEST_PANIC_TOOL").as_deref() == Ok("1") {
+            tool_router.add_route(panic_route);
+        }
         Self { tool_router }
     }
 
@@ -1049,6 +1063,11 @@ fn append_default_mcp_footer(text: String, json_text: &str) -> String {
 
 #[tool_router]
 impl BioMcpServer {
+    #[tool(name = "__biomcp_test_panic", description = "Internal panic recovery test hook")]
+    async fn test_panic(&self) -> Result<CallToolResult, McpError> {
+        panic!("injected MCP tool panic")
+    }
+
     #[tool]
     async fn biomcp(
         &self,
@@ -1342,6 +1361,30 @@ impl BioMcpServer {
 
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for BioMcpServer {
+    async fn call_tool(
+        &self,
+        request: CallToolRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, McpError> {
+        let context = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
+        match AssertUnwindSafe(self.tool_router.call(context))
+            .catch_unwind()
+            .await
+        {
+            Ok(result) => result,
+            Err(payload) => {
+                let message = if let Some(message) = payload.downcast_ref::<String>() {
+                    message.as_str()
+                } else if let Some(message) = payload.downcast_ref::<&str>() {
+                    message
+                } else {
+                    "unknown panic payload"
+                };
+                Ok(Self::tool_error(format!("Error: MCP tool panicked: {message}")))
+            }
+        }
+    }
+
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(
             ServerCapabilities::builder()

@@ -28,3 +28,7 @@ The 8 MiB worker stack from #282 was proven on abort builds. The binary grew abo
 
 - The join discards the panic message (`outcome.rs:617`). Put it in the error text.
 - A poisoned lock after a panic disables the DDInter index cache (`src/sources/ddinter.rs:216`) and GenCC leases (`src/sources/gencc/store.rs:899`) until restart. Recover with `PoisonError::into_inner`.
+
+## Resolved
+
+Ticket 1235 advances rejected matches by a UTF-8 character, catches panics at the outer MCP tool dispatch, proves same-session recovery through an internal environment-guarded tool, preserves panic payload text, and routes all five reconstructible lock acquisitions through one tested poison-recovery helper. The yellow gate and unwind release-binary margin run remain the ticket's merge checks.
