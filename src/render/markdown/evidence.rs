@@ -349,12 +349,15 @@ pub(super) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
     {
         urls.push(("OpenFDA FAERS", url));
     }
-    if drug.label.is_some()
-        && let Some(url) = drug
-            .label_set_id
-            .as_deref()
-            .and_then(dailymed_setid_url)
-            .or_else(|| dailymed_search_url(&drug.name))
+    if let Some(url) = drug
+        .label_set_id
+        .as_deref()
+        .and_then(dailymed_setid_url)
+        .or_else(|| {
+            drug.label
+                .as_ref()
+                .and_then(|_| dailymed_search_url(&drug.name))
+        })
     {
         urls.push(("DailyMed", url));
     }

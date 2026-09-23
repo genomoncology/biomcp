@@ -328,7 +328,7 @@ fn render_who_regulatory_block(heading: &str, rows: Option<&[WhoPrequalification
     out
 }
 
-fn render_us_safety_block(drug: &Drug, heading: &str) -> String {
+fn render_us_safety_block(drug: &Drug, heading: &str, show_boxed_warning: bool) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "{heading}\n");
 
@@ -339,13 +339,13 @@ fn render_us_safety_block(drug: &Drug, heading: &str) -> String {
         let _ = writeln!(out, "{}", drug.top_adverse_events.join(", "));
     }
 
-    if let Some(boxed) = drug.us_boxed_warning.as_deref() {
-        out.push_str("\n### FDA boxed warning\n");
+    if show_boxed_warning && let Some(boxed) = drug.us_boxed_warning.as_deref() {
+        out.push_str("\n### Boxed Warning\n");
         out.push_str(boxed);
         out.push('\n');
     }
 
-    out.push_str("\n### FDA label warnings\n");
+    out.push_str("\n### Warnings\n");
     if let Some(warnings) = drug.us_safety_warnings.as_deref() {
         out.push_str(warnings);
         out.push('\n');
@@ -605,6 +605,7 @@ pub(super) fn render_safety_block(
     region: DrugRegion,
     status: Option<&str>,
     payload_allowed: bool,
+    show_boxed_warning: bool,
 ) -> String {
     if !payload_allowed {
         let heading = match region {
@@ -623,11 +624,11 @@ pub(super) fn render_safety_block(
         |status| format!("## Safety (EU - EMA)\n\n{status}"),
     );
     match region {
-        DrugRegion::Us => render_us_safety_block(drug, &us_heading),
+        DrugRegion::Us => render_us_safety_block(drug, &us_heading, show_boxed_warning),
         DrugRegion::Eu => render_eu_safety_block(&eu_heading, drug.ema_safety.as_ref()),
         DrugRegion::Who => String::new(),
         DrugRegion::All => {
-            let us = render_us_safety_block(drug, &us_heading);
+            let us = render_us_safety_block(drug, &us_heading, show_boxed_warning);
             let eu = render_eu_safety_block("## Safety (EU - EMA)", drug.ema_safety.as_ref());
             [us, eu]
                 .into_iter()

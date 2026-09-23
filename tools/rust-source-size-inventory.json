@@ -262,12 +262,12 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1563,
+      "baseline_lines": 1570,
       "floor_lines": 1561,
       "authorized_increase": {
-        "ticket": "1232",
-        "delta": 2,
-        "reason": "The drug JSON serializer carries the boxed-warning field through the existing direct Drug serialization.",
+        "ticket": "1237",
+        "delta": 9,
+        "reason": "The JSON serializer test pins the boxed-warning field on the drug output.",
         "removal_condition": "None expected; remove when the serializer is decomposed."
       }
     },
@@ -280,17 +280,6 @@
         "delta": 55,
         "reason": "Pin the graph pagination footer and shared continuation command on the existing article Markdown renderer test without adding a package file beyond the fixed 1300-file boundary; ticket 1201 adds the header parameter to every article render context literal.",
         "removal_condition": "Extract graph renderer tests when a package-neutral module split can preserve the exact 1300-file source package boundary."
-      }
-    },
-    {
-      "path": "src/render/markdown/drug/tests.rs",
-      "baseline_lines": 1084,
-      "floor_lines": 943,
-      "authorized_increase": {
-        "ticket": "1232",
-        "delta": 141,
-        "reason": "Two render-order tests pin the boxed warning ahead of the ordinary warnings in raw, summary, and safety modes.",
-        "removal_condition": "Move the render-order tests into the drug renderer suite when it is next decomposed."
       }
     },
     {
@@ -322,7 +311,7 @@
       "authorized_increase": {
         "ticket": "1232",
         "delta": 3,
-        "reason": "Section provenance records the boxed-warning contributor alongside the existing label warnings contributor.",
+        "reason": "Three section-provenance test fixtures initialize the boxed-warning field added by ticket 1232.",
         "removal_condition": "Remove when section provenance moves beside its renderer."
       }
     },
