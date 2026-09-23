@@ -116,13 +116,13 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1103,
-      "floor_lines": 1094,
+      "baseline_lines": 1117,
+      "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1205",
-        "delta": 9,
-        "reason": "Ticket 1205 adds the drug cell_lines section flag, its parse arm, and its load call.",
-        "removal_condition": "Extract the drug section flags and their loads when the drug get path is next decomposed."
+        "ticket": "1232",
+        "delta": 14,
+        "reason": "Boxed-warning population, region zeroing, and the safety contributor check sit beside the existing US safety assembly.",
+        "removal_condition": "Extract the label-safety assembly when the drug getter is next decomposed."
       }
     },
     {
@@ -262,13 +262,13 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1561,
-      "floor_lines": 1555,
+      "baseline_lines": 1563,
+      "floor_lines": 1561,
       "authorized_increase": {
-        "ticket": "1158, 1201, 1205",
-        "delta": 6,
-        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests, and the PharmacoDB section fields on the cell line and drug JSON shapes (ticket 1205, +2).",
-        "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
+        "ticket": "1232",
+        "delta": 2,
+        "reason": "The drug JSON serializer carries the boxed-warning field through the existing direct Drug serialization.",
+        "removal_condition": "None expected; remove when the serializer is decomposed."
       }
     },
     {
@@ -280,6 +280,17 @@
         "delta": 55,
         "reason": "Pin the graph pagination footer and shared continuation command on the existing article Markdown renderer test without adding a package file beyond the fixed 1300-file boundary; ticket 1201 adds the header parameter to every article render context literal.",
         "removal_condition": "Extract graph renderer tests when a package-neutral module split can preserve the exact 1300-file source package boundary."
+      }
+    },
+    {
+      "path": "src/render/markdown/drug/tests.rs",
+      "baseline_lines": 1084,
+      "floor_lines": 943,
+      "authorized_increase": {
+        "ticket": "1232",
+        "delta": 141,
+        "reason": "Two render-order tests pin the boxed warning ahead of the ordinary warnings in raw, summary, and safety modes.",
+        "removal_condition": "Move the render-order tests into the drug renderer suite when it is next decomposed."
       }
     },
     {
@@ -306,13 +317,13 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1847,
-      "floor_lines": 1810,
+      "baseline_lines": 1850,
+      "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1022, 1158, 1202, 1214, 1205",
-        "delta": 37,
-        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs, the cell-line section-sources builder (ticket 1202, +21), and its ChEMBL section row (ticket 1214, +4), and the two PharmacoDB outcome sections and their pinned test literals (ticket 1205, +5).",
-        "removal_condition": "Extract variant provenance into its own renderer module."
+        "ticket": "1232",
+        "delta": 3,
+        "reason": "Section provenance records the boxed-warning contributor alongside the existing label warnings contributor.",
+        "removal_condition": "Remove when section provenance moves beside its renderer."
       }
     },
     {

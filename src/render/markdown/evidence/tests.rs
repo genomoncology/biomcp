@@ -218,6 +218,7 @@ fn drug_evidence_urls_include_chembl() {
         approvals: None,
         fda_orphan_designations: None,
         us_safety_warnings: None,
+        us_boxed_warning: None,
         ema_regulatory: None,
         ema_safety: None,
         ema_shortage: None,
@@ -268,6 +269,7 @@ fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
             label: Some(crate::entities::drug::DrugLabel {
                 indication_summary: Vec::new(),
                 indications: None,
+                boxed_warning: None,
                 warnings: Some("Warnings".to_string()),
                 dosage: None,
             }),
@@ -276,6 +278,7 @@ fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
             approvals: None,
             fda_orphan_designations: None,
             us_safety_warnings: None,
+            us_boxed_warning: None,
             ema_regulatory: None,
             ema_safety: None,
             ema_shortage: None,

@@ -18,3 +18,12 @@ biomcp get drug vincristine safety --region us
 ## Fix
 
 Read `boxed_warning`, then `warnings_and_cautions`, then `warnings`. Render the boxed warning in its own block ahead of the others. Add fixtures for a current-format label with a boxed warning and an older-format label with only `warnings`.
+
+## Resolved
+
+Ticket 1232 (`tickets/1232-label-warnings`). The label model reads
+`boxed_warning` as its own field and falls back from `warnings_and_cautions`
+to `warnings` for the non-boxed text. The boxed warning renders ahead of
+the other warnings in the FDA Label section (raw and summary modes) and
+ahead of the FDA label warnings subsection in the safety block, and the
+safety section-outcome contributor check counts a boxed-only label.

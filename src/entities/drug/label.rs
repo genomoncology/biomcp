@@ -7,6 +7,8 @@ use regex::Regex;
 
 use super::{DrugLabel, DrugLabelIndication};
 
+const LABEL_MAX_CHARS: usize = 2000;
+
 fn label_text(value: Option<&serde_json::Value>) -> Option<String> {
     let value = value?;
     let text = match value {
@@ -349,8 +351,6 @@ pub(super) fn extract_inline_label(
     label_response: &serde_json::Value,
     raw_mode: bool,
 ) -> Option<DrugLabel> {
-    const LABEL_MAX_CHARS: usize = 2000;
-
     let top = label_response
         .get("results")
         .and_then(|v| v.as_array())
@@ -359,7 +359,10 @@ pub(super) fn extract_inline_label(
     let indication_summary = extract_label_indication_summary(label_response);
     let raw_indications = label_text(top.get("indications_and_usage"))
         .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
+    let boxed_warning = label_text(top.get("boxed_warning"))
+        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
     let raw_warnings = label_text(top.get("warnings_and_cautions"))
+        .or_else(|| label_text(top.get("warnings")))
         .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
     let raw_dosage = label_text(top.get("dosage_and_administration"))
         .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS));
@@ -374,6 +377,7 @@ pub(super) fn extract_inline_label(
 
     if indication_summary.is_empty()
         && indications.is_none()
+        && boxed_warning.is_none()
         && warnings.is_none()
         && dosage.is_none()
     {
@@ -383,6 +387,7 @@ pub(super) fn extract_inline_label(
     Some(DrugLabel {
         indication_summary,
         indications,
+        boxed_warning,
         warnings,
         dosage,
     })
@@ -393,7 +398,18 @@ pub(super) fn extract_label_warnings_text(label_response: &serde_json::Value) ->
         .get("results")
         .and_then(|v| v.as_array())
         .and_then(|v| v.first())
-        .and_then(|top| label_text(top.get("warnings_and_cautions")))
+        .and_then(|top| {
+            label_text(top.get("warnings_and_cautions")).or_else(|| label_text(top.get("warnings")))
+        })
+}
+
+pub(super) fn extract_label_boxed_warning(label_response: &serde_json::Value) -> Option<String> {
+    label_response
+        .get("results")
+        .and_then(|v| v.as_array())
+        .and_then(|v| v.first())
+        .and_then(|top| label_text(top.get("boxed_warning")))
+        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS))
 }
 
 pub(super) fn extract_label_set_id(label_response: &serde_json::Value) -> Option<String> {

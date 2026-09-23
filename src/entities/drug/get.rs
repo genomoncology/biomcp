@@ -15,7 +15,10 @@ use crate::sources::openfda::OpenFdaClient;
 use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
 
-use super::label::{extract_inline_label, extract_label_set_id, extract_label_warnings_text};
+use super::label::{
+    extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
+    extract_label_warnings_text,
+};
 use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
     populate_top_adverse_event_preview,
@@ -823,6 +826,11 @@ async fn populate_us_regional_sections(
     } else {
         None
     };
+    drug.us_boxed_warning = if section_flags.include_safety {
+        label_response.and_then(extract_label_boxed_warning)
+    } else {
+        None
+    };
 
     Ok(())
 }
@@ -1014,6 +1022,7 @@ async fn get_with_region_owned(
         resolved.drug.approvals = None;
         resolved.drug.fda_orphan_designations = None;
         resolved.drug.us_safety_warnings = None;
+        resolved.drug.us_boxed_warning = None;
     }
 
     let ema_safety_failed = if region.includes_eu() {
@@ -1053,6 +1062,11 @@ async fn get_with_region_owned(
                     .us_safety_warnings
                     .as_deref()
                     .is_some_and(|value| !value.trim().is_empty())
+                    || resolved
+                        .drug
+                        .us_boxed_warning
+                        .as_deref()
+                        .is_some_and(|value| !value.trim().is_empty())
                 {
                     contributors.push("OpenFDA label");
                 }

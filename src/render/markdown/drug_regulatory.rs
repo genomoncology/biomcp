@@ -339,6 +339,12 @@ fn render_us_safety_block(drug: &Drug, heading: &str) -> String {
         let _ = writeln!(out, "{}", drug.top_adverse_events.join(", "));
     }
 
+    if let Some(boxed) = drug.us_boxed_warning.as_deref() {
+        out.push_str("\n### FDA boxed warning\n");
+        out.push_str(boxed);
+        out.push('\n');
+    }
+
     out.push_str("\n### FDA label warnings\n");
     if let Some(warnings) = drug.us_safety_warnings.as_deref() {
         out.push_str(warnings);
