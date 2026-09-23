@@ -97,5 +97,5 @@ Filed from `sdlc/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised a
   must state helper-tested recovery with the non-Unix GenCC site as
   compile-only residual. Fourth: REJECT on stale review bookkeeping only
   (the history said "third review pending"); fixed in the same commit.
-  Fifth review pending.
+  Fifth: ACCEPT 2026-09-23 — history accurate, design complete, no P2s.
 - Code review: pending
