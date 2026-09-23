@@ -69,4 +69,4 @@ None.
 ## Review
 
 - Design review: accepted with edits (2026-09-23). Dropped the moot BioData-wins rule, named the BioData guard conflicts, added workflow trigger and panic strategy checks, corrected the cache migration fact, named the test commands.
-- Code review: pending
+- Code review: pending. Completion record: `sdlc/records/1234-merge-current-main-into-the-1-0-line.md`.
