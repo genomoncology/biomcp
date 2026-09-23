@@ -307,7 +307,13 @@ fn trim_excerpt(text: &str) -> String {
     if compact.len() <= 240 {
         compact
     } else {
-        format!("{}...", &compact[..240])
+        // Walk back to the nearest character boundary so a multibyte
+        // character straddling byte 240 cannot panic the slice.
+        let mut cut = 240;
+        while !compact.is_char_boundary(cut) {
+            cut -= 1;
+        }
+        format!("{}...", &compact[..cut])
     }
 }
 
