@@ -42,7 +42,7 @@ An outside design review on 2026-09-11 recommended one new entity and set a gate
 
 ## First slice
 
-Ticket 1235: `search patient`, `get patient <id>`, and the `conditions` section.
+Ticket 1235: `get patient <id>` and the `conditions` section. Ticket 1236: `search patient`.
 
 ## Follow-ups (not yet ticketed)
 
