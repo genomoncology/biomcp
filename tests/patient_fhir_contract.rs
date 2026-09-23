@@ -313,9 +313,16 @@ fn files_containing(root: &Path, needle: &str) -> Vec<String> {
     hits
 }
 
-/// Runs `get patient` at trace level against one fixture and checks that the
-/// ID and the server stay out of stderr, the error, and the cache directory.
+/// Runs `get patient` at debug and at trace level against one fixture. The ID
+/// and the server's host and port must stay out of stderr, the error, and the
+/// cache directory.
 fn assert_trace_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_error: bool) {
+    for level in ["debug", "trace"] {
+        assert_run_leaks_nothing(&format!("{case} at {level}"), fixture, expect_error, level);
+    }
+}
+
+fn assert_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_error: bool, level: &str) {
     let cache = tempfile::tempdir().expect("cache dir");
     let env = [
         ("BIOMCP_FHIR_BASE", fixture.fhir_base()),
@@ -324,8 +331,9 @@ fn assert_trace_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_erro
             "XDG_CACHE_HOME",
             cache.path().join("xdg").display().to_string(),
         ),
-        ("RUST_LOG", "trace".to_string()),
+        ("RUST_LOG", level.to_string()),
     ];
+    let authority = fixture.base.trim_start_matches("http://");
     for json in [false, true] {
         let mut args = vec!["get", "patient", ID, "conditions"];
         if json {
@@ -335,18 +343,15 @@ fn assert_trace_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_erro
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
         assert_eq!(!output.status.success(), expect_error, "{case}: {stderr}");
-        assert!(
-            !stderr.is_empty() || !expect_error,
-            "{case}: no trace output"
-        );
+        assert!(!stderr.is_empty() || !expect_error, "{case}: no log output");
         assert!(!stderr.contains(ID), "{case}: stderr names the ID");
         assert!(
-            !stderr.contains(&fixture.fhir_base()),
-            "{case}: stderr names the base"
+            !stderr.contains(authority),
+            "{case}: stderr names the server host and port"
         );
         assert!(
-            !stdout.contains(&fixture.base),
-            "{case}: stdout names the server"
+            !stdout.contains(authority),
+            "{case}: stdout names the server host and port"
         );
         if expect_error {
             assert!(!stdout.contains(ID), "{case}: error output names the ID");

@@ -34,6 +34,9 @@ fn patient_ids_outside_the_fhir_id_rule_are_refused_without_echo() {
         "a b",
         "a%2Fb",
         "é",
+        ".",
+        "..",
+        "...",
         &"a".repeat(65),
     ] {
         let error = PatientId::parse(raw).expect_err(raw);
@@ -44,6 +47,8 @@ fn patient_ids_outside_the_fhir_id_rule_are_refused_without_echo() {
     }
     assert!(PatientId::parse(&"a".repeat(64)).is_ok());
     assert!(PatientId::parse("Ab-9.z").is_ok());
+    assert!(PatientId::parse("a.").is_ok());
+    assert!(PatientId::parse(".a").is_ok());
 }
 
 #[test]
