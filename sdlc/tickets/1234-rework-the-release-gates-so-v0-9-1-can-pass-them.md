@@ -35,11 +35,14 @@ Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test
    - `pypi-publish`: `github.event_name == 'push'`.
    - `homebrew-tap`: `github.event_name == 'push'`.
    - `container-publish`:
-     `!cancelled() && success() && (github.event_name == 'push' || (needs.create-draft.result == 'skipped' && inputs.container_only == true))`.
-     On push this requires every direct need to succeed (`success()` is
-     explicit because any needs-result reference disables the implicit
-     check); on dispatch it requires the dispatch gates to succeed, the
-     push-only needs to be skipped, and `container_only` to be set.
+     `!cancelled() && ((github.event_name == 'push' && success()) || (inputs.container_only == true && needs.version-check.result == 'success' && needs.docs-live.result == 'success' && needs.create-draft.result == 'skipped' && needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped'))`.
+     Truth table: push with every need green runs; push with any failed
+     need is blocked by the explicit `success()`; dispatch with
+     `container_only: true` runs only when `version-check` and
+     `docs-live` succeeded and every push-only need is skipped; dispatch
+     without `container_only` is blocked. `success()` sits inside the
+     push branch because at job level it is false whenever a needed job
+     was skipped, not only failed.
    - `publish-release`: `github.event_name == 'push'`.
    Dispatch contract, recorded: a dispatch with `container_only: true` runs
    `version-check`, `docs-live`, and `container-publish` only; a dispatch
