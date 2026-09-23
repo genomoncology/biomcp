@@ -3503,10 +3503,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-a-published-release-runs" class="md-nav__link">
+  <a href="#tag-push-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What a published release runs
+        Tag-push release
       
     </span>
   </a>
@@ -3551,6 +3551,17 @@
     <span class="md-ellipsis">
       
         Version metadata
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#permissions-and-concurrency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions and concurrency
       
     </span>
   </a>
@@ -4311,10 +4322,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-a-published-release-runs" class="md-nav__link">
+  <a href="#tag-push-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What a published release runs
+        Tag-push release
       
     </span>
   </a>
@@ -4366,6 +4377,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#permissions-and-concurrency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions and concurrency
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#separate-manual-directory-actions" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4397,133 +4419,35 @@
 
 
 <h1 id="release-process">Release Process<a class="headerlink" href="#release-process" title="Permanent link">&para;</a></h1>
-<p>BioMCP publishes from one workflow, <code>Release</code> in
-<code>.github/workflows/release.yml</code>. The workflow runs when a GitHub release is
-published, and an operator can start it by hand to publish only the container
-image for a release that is already public. The workflow never creates the
-release, the tag, or the public-version commit.</p>
-<h2 id="what-a-published-release-runs">What a published release runs<a class="headerlink" href="#what-a-published-release-runs" title="Permanent link">&para;</a></h2>
-<p>A <code>release</code> event with <code>types: [published]</code> starts seven jobs:</p>
-<ul>
-<li><code>build</code> compiles the five shipped targets, packages each artifact, writes a
-  <code>.sha256</code> sidecar, and uploads both files to the GitHub release with
-  <code>gh release upload</code>. The upload step runs only for a <code>release</code> event, so a
-  manual dispatch stops after packaging. The five artifacts are
-  <code>biomcp-linux-x86_64.tar.gz</code>, <code>biomcp-linux-arm64.tar.gz</code>,
-  <code>biomcp-darwin-arm64.tar.gz</code>, <code>biomcp-darwin-x86_64.tar.gz</code>, and
-  <code>biomcp-windows-x86_64.zip</code>.</li>
-<li><code>version-check</code> runs first on both triggers. It checks out the tag ref and
-  fails unless <code>${TAG#v}</code> equals the committed <code>Cargo.toml</code> and
-  <code>pyproject.toml</code> versions, so a tag pushed before the version-bump commit
-  cannot publish dev-versioned artifacts. It also runs
-  <code>scripts/check-changelog-coverage.py</code>, which fails when the CHANGELOG
-  Unreleased section names no ticket merged since the previous release. Every
-  job that builds or gates a publish path needs it.</li>
-<li><code>pypi-build</code> builds wheels for Linux x86_64, macOS arm64, macOS x86_64, and
-  Windows x86_64 and uploads them as workflow artifacts. Every wheel builds with
-  <code>args: --release --locked</code>, so the wheel binary carries the same release
-  profile as the tarball executables instead of a dev build with unoptimized
-  frames.</li>
-<li><code>wheel-smoke</code> runs after <code>pypi-build</code>, installs the Linux x86_64 wheel into a
-  virtual environment outside the checkout, and runs <code>search trial</code>,
-  <code>drug interactions</code>, <code>drug trials</code>, and the not-found <code>drug adverse-events</code>
-  fallback through the installed <code>biomcp</code> binary. It fails on SIGABRT, on a
-  stack-overflow message, and on any other crash, so a dev-profile wheel
-  cannot reach PyPI. A clean source error still passes. JSON-mode legs run
-  <code>get drug ... regulatory -j</code> and a <code>search trial -j</code> command that must exit
-  0, print an object, and never mention a missing skill asset, which is the
-  failure mode a debug-profile wheel shows on machines other than the build
-  runner.</li>
-<li><code>docs-live</code> runs on both triggers, resolves the tag's commit, and reads the
-  pointer <code>https://biomcp.org/__biomcp_revision__/latest.txt</code> with no-cache
-  request headers and a fresh cache-busting query on every attempt. It retries
-  for up to ten minutes while the site deploy and the Pages cache catch up, and
-  it passes when the live revision equals the tag's commit or is a descendant
-  of it. A live revision behind or divergent from the tag fails the job.</li>
-<li><code>pypi-publish</code> runs after <code>pypi-build</code>, <code>wheel-smoke</code>, and <code>docs-live</code> in the
-  protected <code>pypi</code> environment and uploads those wheels to PyPI.</li>
-<li><code>homebrew-tap</code> runs after <code>build</code> and <code>docs-live</code>, downloads the published
-  checksums, and updates the formula in <code>genomoncology/homebrew-biomcp</code>. Without
-  a <code>HOMEBREW_TAP_TOKEN</code> secret the job logs the skip and exits clean.</li>
-<li><code>container-publish</code> runs after <code>build</code> and <code>docs-live</code> and publishes the
-  container image; the next section covers it.</li>
-</ul>
+<p>BioMCP publishes from <code>.github/workflows/release.yml</code>. A push of a stable tag matching <code>v*</code> starts a release. The workflow creates the GitHub release as a draft, validates and publishes the artifacts, then makes the release public last. A manual dispatch only validates an existing tag or republishes its container image.</p>
+<h2 id="tag-push-release">Tag-push release<a class="headerlink" href="#tag-push-release" title="Permanent link">&para;</a></h2>
+<p>Prepare and commit every public version file and the versioned CHANGELOG section before pushing the tag. Pre-release tags are not supported.</p>
+<p>The workflow runs these jobs:</p>
+<ol>
+<li><code>version-check</code> checks out the tag with full history. <code>scripts/check-release-versions.py</code> requires a stable <code>v</code>-prefixed tag, compares it with Cargo and Python package versions, and runs <code>scripts/check-version-sync.sh</code>. <code>scripts/check-changelog-coverage.py</code> derives tickets only from merged <code>tickets/NNNN-*</code> branches and requires a descriptive version-section bullet or explicit internal-only bullet for each.</li>
+<li><code>create-draft</code> creates the GitHub release as a draft. The draft gives asset upload a target without exposing a partial release.</li>
+<li><code>build</code> compiles the five tarball/zip targets, writes SHA-256 sidecars, and uploads them to the draft with <code>--clobber</code> so a failed-job rerun replaces partial assets.</li>
+<li><code>pypi-build</code> builds four release-profile wheels: Linux x86_64, macOS arm64, macOS x86_64, and Windows x86_64.</li>
+<li><code>wheel-smoke</code> installs every wheel on its native runner. The deep trial and drug commands must exit 0; the absent-FAERS case must return its exact code and text; exit 101, a signal exit, stack-overflow text, malformed JSON, and missing skill assets fail the job.</li>
+<li><code>docs-live</code> requires the live documentation revision to equal or descend from the tag commit. It retries tag resolution and the public revision pointer.</li>
+<li><code>pypi-publish</code>, <code>homebrew-tap</code>, and <code>container-publish</code> run only after their declared validation gates. PyPI uses the protected <code>pypi</code> environment and trusted publishing. The tap writes with <code>HOMEBREW_TAP_TOKEN</code>.</li>
+<li><code>publish-release</code> makes the draft public after every publisher succeeds, then moves the GHCR <code>latest</code> pointer only when the newly public tag is the repository's latest release.</li>
+</ol>
+<p>The GitHub release, its assets, and the container <code>latest</code> pointer stay non-public until every check passes. PyPI and the Homebrew tap publish after their own gates and can briefly precede the GitHub release if a later publisher fails. Do not re-run the whole workflow after PyPI succeeds; re-run failed jobs only because version collisions fail loudly.</p>
 <h2 id="container-publication">Container publication<a class="headerlink" href="#container-publication" title="Permanent link">&para;</a></h2>
-<p><code>container-publish</code> checks out the packaging ref, which is the workflow's own
-ref rather than the release tag. A <code>release: published</code> event runs from the tag,
-so the packaging is the tag's; a manual dispatch runs from the ref it was
-started on, so main's <code>Dockerfile</code> and <code>.dockerignore</code> build the tag's content.
-The job downloads the release's two Linux tarballs and verifies them against
-their published sidecars before it unpacks each <code>biomcp</code> executable into the
-image build context, and it reads the revision label from the tag's commit with
-<code>gh api</code>. It then pushes one image index to
-<code>ghcr.io/genomoncology/biomcp:&lt;version&gt;</code> that carries <code>linux/amd64</code> and
-<code>linux/arm64</code>, assembled from those executables rather than recompiled in the
-job.</p>
-<p>After the push, the job pulls both platforms back from the registry and runs
-<code>biomcp --version</code>; the arm64 run goes through QEMU. Both runs must show a
-non-root user and an <code>org.opencontainers.image.revision</code> label equal to the
-tag's commit. Only then does the job move <code>latest</code> with
-<code>docker buildx imagetools create</code>, and only when <code>gh release view</code> reports the
-tag as the repository's latest release. A backfill for an older release keeps
-its versioned tag and leaves <code>latest</code> alone. A failed or cancelled <code>build</code>
-skips the job, and so does a failed <code>docs-live</code>. If the push succeeds but a
-smoke fails, the workflow stops, <code>latest</code> stays on the previous image, and the
-versioned tag holds the unverified push until a rerun replaces it.</p>
+<p><code>container-publish</code> downloads the two Linux archives and their published sidecars from the draft or existing release, verifies them, and builds one image index for <code>linux/amd64</code> and <code>linux/arm64</code>. It smokes both registry platforms, checks the non-root user and revision label, and leaves the versioned image in place. <code>publish-release</code> moves <code>latest</code> only after those smokes and only for the newest public release.</p>
 <h2 id="container-only-dispatch">Container-only dispatch<a class="headerlink" href="#container-only-dispatch" title="Permanent link">&para;</a></h2>
-<p>A manual run takes two inputs. <code>tag</code> (required) names the release tag to
-publish from. <code>container_only</code> (boolean, default <code>false</code>) skips <code>build</code> and
-<code>pypi-build</code>.</p>
-<p>With <code>container_only: true</code>, <code>wheel-smoke</code>, <code>pypi-publish</code>, and <code>homebrew-tap</code>
-are skipped because their <code>needs</code> are skipped. <code>version-check</code> and <code>docs-live</code>
-have no <code>container_only</code> gate, so both still run and <code>container-publish</code> waits
-for them: a backfill requires the committed versions at the tag ref to match
-the tag and the live site to be at or past the tag's commit. That path
-rebuilds the image for an already-published release, for example to backfill
-v0.9.0, and cannot touch PyPI, the release assets, or the tap.</p>
-<p>A dispatch without <code>container_only</code> builds and packages the artifacts but
-uploads nothing, because the upload step is guarded on the <code>release</code> event. The
-run never reaches PyPI: <code>pypi-publish</code> is gated on the <code>release</code> event as well,
-so a dispatch skips it on every input. It fails at <code>docs-live</code> when the site
-has not reached that tag's commit. When <code>docs-live</code> passes, <code>homebrew-tap</code> and
-<code>container-publish</code> still run, so a dispatch that names an older tag rewrites
-the public Homebrew formula backwards and republishes that tag's image; the old
-early failure at the asset upload stopped a dispatch before either job. Use
-<code>container_only: true</code> for manual runs that only need the image.</p>
+<p>A manual run takes <code>tag</code> and <code>container_only</code>. <code>TAG</code> comes from the input on dispatch and from <code>github.ref_name</code> on a tag push.</p>
+<p>With <code>container_only: true</code>, only <code>version-check</code>, <code>docs-live</code>, and <code>container-publish</code> run. The container condition requires both gates to succeed and every push-only need to be skipped. This republishes an existing release image without touching its assets, PyPI, the tap, or the GitHub release state.</p>
+<p>Without <code>container_only</code>, a dispatch runs only <code>version-check</code> and <code>docs-live</code>; it is a check-only dry run and publishes nothing. PyPI and Homebrew carry explicit push-only gates.</p>
 <h2 id="documentation-publication">Documentation publication<a class="headerlink" href="#documentation-publication" title="Permanent link">&para;</a></h2>
-<p>The site publishes from pushes to <code>main</code>, not from the release event. The
-release commit lands on <code>main</code> before the release is published, so its push
-runs <code>Publish documentation</code>: it builds the site strictly from that exact SHA,
-deploys it to the <code>gh-pages</code> branch, requests a Pages build, and verifies the
-live revision witness <code>https://biomcp.org/__biomcp_revision__/&lt;sha&gt;.txt</code> and
-the published Markdown bytes against the local build. Confirm that run
-succeeded for the release SHA before announcing the release. The site is edge
-documentation and tracks <code>main</code>, not the latest tag.</p>
-<p>Every deploy also rewrites the pointer at
-<code>https://biomcp.org/__biomcp_revision__/latest.txt</code> with the same SHA, so the
-newest deploy stays readable after a later push removes the per-revision file.
-The <code>docs-live</code> job reads that pointer and retries for up to ten minutes while
-the deploy and the Pages cache catch up. The job passes when the live revision
-equals the tag's commit or is a descendant of it, and fails when the live
-revision is behind or divergent. A release therefore stops before PyPI, the
-tap, and the container image publish against stale documentation.</p>
+<p>The site publishes from pushes to <code>main</code>, not from the release workflow. Every deploy writes <code>https://biomcp.org/__biomcp_revision__/latest.txt</code>. <code>docs-live</code> retries that pointer for up to ten minutes and passes when the live revision equals the tag commit or is a descendant. A behind or divergent revision blocks every publication path.</p>
 <h2 id="version-metadata">Version metadata<a class="headerlink" href="#version-metadata" title="Permanent link">&para;</a></h2>
-<p>Package versions are committed metadata, not values stamped from tags. At
-release time the <code>version-check</code> job fails the workflow unless the tag equals
-both committed versions, on the tag ref itself, so a backfill dispatch on an
-older tag also passes. <code>scripts/check-version-sync.sh</code> checks the mapping from
-<code>Cargo.toml</code>,
-<code>pyproject.toml</code>, <code>manifest.json</code>, both <code>server.json</code> version fields,
-<code>CITATION.cff</code>, and any concrete Homebrew formula version while those files
-track the latest reachable stable tag. The private development candidate is
-Cargo <code>0.9.1-dev.1</code> and Python <code>0.9.1.dev1</code>; public metadata stays on the latest
-published release, v0.9.0, until one reviewed commit moves it.</p>
+<p>Package versions are committed metadata, not values stamped from tags. <code>scripts/check-version-sync.sh</code> checks Cargo, Python, lockfiles, <code>manifest.json</code>, both <code>server.json</code> fields, <code>CITATION.cff</code>, and the concrete Homebrew version. <code>scripts/check-release-versions.py</code> adds tag equality and stable-tag enforcement. Commit the complete version change before pushing the tag. The private development candidate is Cargo <code>0.9.1-dev.1</code> and Python <code>0.9.1.dev1</code>; public metadata stays on the latest published release, v0.9.0, until one reviewed commit moves it.</p>
+<h2 id="permissions-and-concurrency">Permissions and concurrency<a class="headerlink" href="#permissions-and-concurrency" title="Permanent link">&para;</a></h2>
+<p>The workflow defaults to no token permissions. Each job receives only its declared permission; PyPI alone receives <code>id-token: write</code>, container publication receives <code>packages: write</code>, and draft/asset publication receives <code>contents: write</code>. Release runs share a tag-keyed concurrency group, so a dispatch cannot race a tag push. Third-party actions are pinned where the repository has an admitted immutable revision; the PyPI publisher remains isolated in the protected <code>pypi</code> environment.</p>
 <h2 id="separate-manual-directory-actions">Separate manual directory actions<a class="headerlink" href="#separate-manual-directory-actions" title="Permanent link">&para;</a></h2>
-<p>The release workflow does not publish <code>server.json</code> to the official MCP
-Registry or submit BioMCP to third-party directories. After a release, an
-operator reviews the committed registry metadata and performs each official
-submission separately. Record acceptance before describing any directory as
-updated.</p>
+<p>The release workflow does not publish <code>server.json</code> to the official MCP Registry or submit BioMCP to third-party directories. After a release, an operator reviews the committed registry metadata and performs each submission separately. Record acceptance before describing any directory as updated.</p>
 
 
 
