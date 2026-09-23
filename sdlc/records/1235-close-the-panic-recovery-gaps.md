@@ -49,3 +49,13 @@ the margin rerun reached only the clean source-unavailable error on
 yellow; the run with real synced DDInter data on the M5 is the remaining
 verification. The shipped profile stays pinned by the Python profile pin;
 the cargo test child is not treated as proof of it.
+
+Post-merge corrections on main: the CI formatter wanted two additional
+shell.rs forms (import grouping, tool-attribute wrap) the gate host's
+formatter accepted as written; the rust-source-size baseline for
+`src/mcp/shell.rs` moved to 2,229 with a ticket-1235 authorization; and
+the panic hook variable gained its production-read classification
+(`BIOMCP_TEST_PANIC_TOOL`, internal test hook). CI is green at 0cc8b13e
+on all five jobs, and the documentation publish converged. The
+gate-host-versus-CI lane disagreement on identical code (formatter and
+env-docs contract) is noted for the 1238 hygiene investigation.
