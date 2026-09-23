@@ -4,6 +4,7 @@
 use std::path::{Path, PathBuf};
 use std::process::{Output, Stdio};
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
@@ -27,17 +28,32 @@ const FAERS_REPORT_PAGE: &str = r#"{
   }]
 }"#;
 
+const CTGOV_DOCUMENT_STUDY: &str = r#"{
+  "protocolSection":{"identificationModule":{"nctId":"NCT00000001"}},
+  "documentSection":{"largeDocumentModule":{"largeDocs":[
+    {"typeAbbrev":"Prot","filename":"protocol.pdf","size":17}
+  ]}}
+}"#;
+
+const MYCHEM_IMATINIB: &str =
+    include_str!("../testdata/sources/mychem/query_imatinib_get_20260811.json");
+
 struct TlsFixture {
     origin: String,
     bundle: PathBuf,
     connections: Arc<AtomicUsize>,
     sessions: Arc<AtomicUsize>,
+    requests: Arc<Mutex<Vec<String>>>,
     server: tokio::task::JoinHandle<()>,
     _dir: tempfile::TempDir,
 }
 
 impl TlsFixture {
     async fn start() -> Self {
+        Self::start_with_body(FAERS_REPORT_PAGE).await
+    }
+
+    async fn start_with_body(body: &'static str) -> Self {
         let dir = tempfile::tempdir().expect("fixture directory");
         let material = tls_material();
         let bundle = dir.path().join("ca.pem");
@@ -58,21 +74,42 @@ impl TlsFixture {
         let address = listener.local_addr().expect("fixture address");
         let connections = Arc::new(AtomicUsize::new(0));
         let sessions = Arc::new(AtomicUsize::new(0));
+        let requests = Arc::new(Mutex::new(Vec::new()));
         let acceptor = TlsAcceptor::from(Arc::new(config));
         let server = tokio::spawn(serve(
             listener,
             acceptor,
             Arc::clone(&connections),
             Arc::clone(&sessions),
+            Arc::clone(&requests),
+            body,
         ));
         Self {
             origin: format!("https://{address}"),
             bundle,
             connections,
             sessions,
+            requests,
             server,
             _dir: dir,
         }
+    }
+
+    async fn run_command(&self, env: &[(&str, &str)], args: &[&str]) -> Output {
+        let mut command = tokio::process::Command::new(env!("CARGO_BIN_EXE_biomcp"));
+        command
+            .env_remove("BIOMCP_CA_BUNDLE")
+            .env_remove("SSL_CERT_FILE")
+            .env("BIOMCP_CA_BUNDLE", &self.bundle)
+            .env("BIOMCP_TEST_UNPACED_ORIGIN", &self.origin)
+            .env("RUST_LOG", "warn")
+            .env("NO_PROXY", "*")
+            .env("no_proxy", "*")
+            .args(args);
+        for (name, value) in env {
+            command.env(name, value);
+        }
+        command.output().await.expect("run biomcp")
     }
 
     async fn run(&self, explicit: Option<&Path>, fallback: Option<&Path>, json: bool) -> Output {
@@ -109,6 +146,8 @@ async fn serve(
     acceptor: TlsAcceptor,
     connections: Arc<AtomicUsize>,
     sessions: Arc<AtomicUsize>,
+    requests: Arc<Mutex<Vec<String>>>,
+    body: &'static str,
 ) {
     loop {
         let Ok((stream, _)) = listener.accept().await else {
@@ -117,17 +156,22 @@ async fn serve(
         connections.fetch_add(1, Ordering::SeqCst);
         let acceptor = acceptor.clone();
         let sessions = Arc::clone(&sessions);
+        let requests = Arc::clone(&requests);
         tokio::spawn(async move {
             let Ok(mut stream) = acceptor.accept(stream).await else {
                 return;
             };
             sessions.fetch_add(1, Ordering::SeqCst);
             let mut request = vec![0_u8; 8192];
-            let _ = stream.read(&mut request).await;
+            if let Ok(size) = stream.read(&mut request).await
+                && let Some(line) = String::from_utf8_lossy(&request[..size]).lines().next()
+            {
+                requests.lock().expect("request log").push(line.to_string());
+            }
             let response = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                FAERS_REPORT_PAGE.len(),
-                FAERS_REPORT_PAGE
+                body.len(),
+                body
             );
             let _ = stream.write_all(response.as_bytes()).await;
             let _ = stream.shutdown().await;
@@ -213,6 +257,116 @@ async fn configured_bundle_reaches_the_private_ca_fixture() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Rash"), "stdout={stdout}");
     assert_eq!(fixture.sessions.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn health_client_reaches_a_private_ca_provider() {
+    let fixture = TlsFixture::start().await;
+    let output = fixture
+        .run_command(
+            &[("BIOMCP_FDA_ORPHAN_BASE", &fixture.origin)],
+            &[
+                "health",
+                "--api",
+                "FDA Orphan Drug Designations and Approvals",
+            ],
+        )
+        .await;
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(fixture.sessions.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn fda_orphan_client_reaches_a_private_ca_provider() {
+    let fixture = TlsFixture::start_with_body(MYCHEM_IMATINIB).await;
+    let output = fixture
+        .run_command(
+            &[
+                ("BIOMCP_MYCHEM_BASE", &fixture.origin),
+                ("BIOMCP_OPENFDA_BASE", &fixture.origin),
+                ("BIOMCP_FDA_ORPHAN_BASE", &fixture.origin),
+            ],
+            &["--no-cache", "get", "drug", "imatinib", "regulatory"],
+        )
+        .await;
+    let requests = fixture.requests.lock().expect("request log");
+    assert!(
+        requests.iter().any(|request| request.contains("OOPD_Results.cfm")),
+        "FDA orphan request missing; status={:?}, stderr={}, requests={requests:?}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[tokio::test]
+async fn trial_document_client_reaches_a_private_ca_provider() {
+    let fixture = TlsFixture::start_with_body(CTGOV_DOCUMENT_STUDY).await;
+    let output = fixture
+        .run_command(
+            &[
+                ("BIOMCP_CTGOV_BASE", &fixture.origin),
+                ("BIOMCP_CTGOV_CDN_BASE", &fixture.origin),
+            ],
+            &[
+                "--no-cache",
+                "get",
+                "trial",
+                "NCT00000001",
+                "document",
+                "protocol.pdf",
+            ],
+        )
+        .await;
+    let requests = fixture.requests.lock().expect("request log");
+    assert!(
+        requests.iter().any(|request| request.contains("protocol.pdf")),
+        "document CDN request missing; status={:?}, stderr={}, requests={requests:?}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[tokio::test]
+async fn orcid_client_reaches_a_private_ca_provider() {
+    let fixture = TlsFixture::start().await;
+    let output = fixture
+        .run_command(
+            &[
+                ("BIOMCP_ORCID_BASE", &fixture.origin),
+                ("ORCID_ACCESS_TOKEN", "fixture-token"),
+            ],
+            &["--no-cache", "get", "author", "orcid:0000-0002-1825-0097"],
+        )
+        .await;
+    let requests = fixture.requests.lock().expect("request log");
+    assert!(
+        requests.iter().any(|request| request.contains("/person")),
+        "ORCID request missing; status={:?}, stderr={}, requests={requests:?}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[tokio::test]
+async fn clingen_cspec_client_reaches_a_private_ca_provider() {
+    let fixture = TlsFixture::start().await;
+    let output = fixture
+        .run_command(
+            &[("BIOMCP_CSPEC_FIXTURE_ORIGIN", &fixture.origin)],
+            &["--no-cache", "gene", "cspec", "ATM"],
+        )
+        .await;
+    let requests = fixture.requests.lock().expect("request log");
+    assert!(
+        requests.iter().any(|request| request.contains("/cspec/Gene/id/ATM/")),
+        "CSpec request missing; status={:?}, stderr={}, requests={requests:?}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 #[tokio::test]
