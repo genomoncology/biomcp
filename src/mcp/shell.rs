@@ -8,9 +8,9 @@ use futures::FutureExt;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
     AnnotateAble, CallToolRequestParams, CallToolResult, Content, Implementation,
-    ListResourcesResult, ListToolsResult,
-    PaginatedRequestParams, RawResource, ReadResourceRequestParams, ReadResourceResult,
-    ResourceContents, ServerCapabilities, ServerInfo,
+    ListResourcesResult, ListToolsResult, PaginatedRequestParams, RawResource,
+    ReadResourceRequestParams, ReadResourceResult, ResourceContents, ServerCapabilities,
+    ServerInfo,
 };
 use rmcp::schemars;
 use rmcp::service::RequestContext;
@@ -1063,7 +1063,10 @@ fn append_default_mcp_footer(text: String, json_text: &str) -> String {
 
 #[tool_router]
 impl BioMcpServer {
-    #[tool(name = "__biomcp_test_panic", description = "Internal panic recovery test hook")]
+    #[tool(
+        name = "__biomcp_test_panic",
+        description = "Internal panic recovery test hook"
+    )]
     async fn test_panic(&self) -> Result<CallToolResult, McpError> {
         panic!("injected MCP tool panic")
     }
