@@ -25,15 +25,26 @@ Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test
    PyPI and the Homebrew tap publish after their own gates and can
    briefly precede the GitHub release if a later job fails — the same
    channel exposure as today, now recorded here instead of implied away.
-5. Dispatch: no draft exists (the release is published), so every publish
-   job carries an explicit condition over its needs results. On dispatch
-   with `container_only: true`, `create-draft` skips and
-   `container-publish` runs only under
-   `needs.create-draft.result == 'skipped'`; build-side and PyPI-side
-   jobs skip through their existing `container_only` conditions. The
-   exact per-job `if` expressions are enumerated in the implementation
-   and pinned by tests; no job relies on implicit skipped-needs
-   suppression alone.
+5. Every job-level `if` is enumerated here and pinned by tests:
+   - `version-check`: none (runs on both triggers).
+   - `create-draft`: `github.event_name == 'push'`.
+   - `build`: `github.event_name == 'push'`.
+   - `pypi-build`: `github.event_name == 'push'`.
+   - `wheel-smoke`: `github.event_name == 'push'`.
+   - `docs-live`: none (runs on both triggers; backfills need the gate).
+   - `pypi-publish`: `github.event_name == 'push'`.
+   - `homebrew-tap`: `github.event_name == 'push'`.
+   - `container-publish`:
+     `!cancelled() && (github.event_name == 'push' || needs.create-draft.result == 'skipped')`.
+   - `publish-release`: `github.event_name == 'push'`.
+   Dispatch contract, recorded: a dispatch with `container_only: true` runs
+   `version-check`, `docs-live`, and `container-publish` only; a dispatch
+   without it runs `version-check` and `docs-live` only, as a check-only
+   dry run that publishes nothing. `always()` appears nowhere; every
+   needs-result condition uses `!cancelled()`.
+6. No `skip-existing` anywhere: release asset upload keeps `--clobber` so a
+   rerun replaces partial uploads (ticket 1222's decision), and PyPI
+   publish fails loudly on a version collision.
 
 ### Version and changelog gates
 
@@ -69,15 +80,14 @@ Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test
     release (accepted, fail-closed).
 11. The permissions package lands in full: top-level `permissions: {}`;
     per-job grants — `contents: write` for `create-draft` and the
-    asset-uploading `build`, `contents: read` for `version-check`,
-    `docs-live`, and `homebrew-tap` (tap writes go through
-    `HOMEBREW_TAP_TOKEN`), `id-token: write` plus `contents: read` for
-    `pypi-publish`, `packages: write` plus `contents: read` for
-    `container-publish` and `publish-release` (`contents: write` there);
-    no permissions for `wheel-smoke`. Also: the Homebrew push-event gate,
-    upload `skip-existing` semantics, tag-resolution retry,
-    workflow-level concurrency, action SHA pinning, and the PyPI
-    trusted-publisher confirmation.
+    asset-uploading `build`; `contents: read` for `version-check`,
+    `pypi-build`, `docs-live`, and `homebrew-tap` (tap writes go through
+    `HOMEBREW_TAP_TOKEN`); `id-token: write` plus `contents: read` for
+    `pypi-publish`; `packages: write` plus `contents: read` for
+    `container-publish`; `contents: write` for `publish-release`; no
+    permissions for `wheel-smoke`. Also: the Homebrew push-event gate,
+    tag-resolution retry, workflow-level concurrency, action SHA
+    pinning, and the PyPI trusted-publisher confirmation.
 
 ### Expected needs adjacency (all edges mutation-tested)
 
@@ -90,7 +100,8 @@ wheel-smoke:              pypi-build
 docs-live:                version-check
 pypi-publish:             pypi-build, wheel-smoke, docs-live
 homebrew-tap:             build, docs-live, wheel-smoke
-container-publish:        build, docs-live, version-check, wheel-smoke
+container-publish:        build, docs-live, version-check,
+                          wheel-smoke, create-draft
 publish-release:          build, pypi-publish, homebrew-tap,
                           container-publish, docs-live
 ```
@@ -117,11 +128,14 @@ publish-release:          build, pypi-publish, homebrew-tap,
 
 ## Review
 
-- Design review: REJECT twice 2026-09-23 (gpt-5.6-sol, medium). First:
-  draft-creation job, latest-guard-under-draft, dispatch survival,
+- Design review: REJECT three times 2026-09-23 (gpt-5.6-sol, medium).
+  First: draft-creation job, latest-guard-under-draft, dispatch survival,
   permissions package, rc contradiction, needs-edge mutations. Second:
   `inputs.tag ||` order, push-only publisher gates, the false
   nothing-public claim, per-job permission grants, explicit skip
-  semantics, and an exact adjacency list. All folded in; third review
+  semantics, and an exact adjacency list. Third: `create-draft` in
+  container-publish's adjacency (direct needs only), full `if`
+  enumeration in the ticket, `pypi-build` contents:read, `!cancelled()`
+  everywhere, and the skip-existing choice. All folded in; fourth review
   pending.
 - Code review: pending
