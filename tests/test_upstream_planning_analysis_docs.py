@@ -1181,7 +1181,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r"^\[profile\.release\]\n"
         r'lto = "thin"\n'
         r"codegen-units = 1\n"
-        r'panic = "abort"\n'
+        r'panic = "unwind"\n'
         r"strip = true\n\n"
         r"^\[profile\.spec\]\n"
         r'inherits = "release"\n'

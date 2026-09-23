@@ -245,7 +245,15 @@ fn normalize_approval_date(value: &str) -> Option<String> {
         return None;
     }
     if v.len() == 10 {
-        return Some(v.to_string());
+        // Only an ASCII YYYY-MM-DD shape is accepted, so later slicing by
+        // callers stays on character boundaries for any external value.
+        let bytes = v.as_bytes();
+        let valid = bytes[0..4].iter().all(|b| b.is_ascii_digit())
+            && bytes[4] == b'-'
+            && bytes[5..7].iter().all(|b| b.is_ascii_digit())
+            && bytes[7] == b'-'
+            && bytes[8..10].iter().all(|b| b.is_ascii_digit());
+        return valid.then(|| v.to_string());
     }
     if v.len() == 8 && v.chars().all(|c| c.is_ascii_digit()) {
         return Some(format!("{}-{}-{}", &v[0..4], &v[4..6], &v[6..8]));

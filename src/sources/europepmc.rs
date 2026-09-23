@@ -379,7 +379,8 @@ fn normalize_pmcid(pmcid: &str) -> Result<String, BioMcpError> {
     if pmcid.len() > 64 {
         return Err(BioMcpError::InvalidArgument("PMCID is too long.".into()));
     }
-    let (prefix, rest) = pmcid.split_at(3.min(pmcid.len()));
+    let prefix: String = pmcid.chars().take(3).collect();
+    let rest = &pmcid[prefix.len()..];
     if !prefix.eq_ignore_ascii_case("PMC")
         || rest.is_empty()
         || !rest.chars().all(|c| c.is_ascii_digit())
