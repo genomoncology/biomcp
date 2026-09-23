@@ -35,13 +35,18 @@ Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test
    - `pypi-publish`: `github.event_name == 'push'`.
    - `homebrew-tap`: `github.event_name == 'push'`.
    - `container-publish`:
-     `!cancelled() && (github.event_name == 'push' || needs.create-draft.result == 'skipped')`.
+     `!cancelled() && success() && (github.event_name == 'push' || (needs.create-draft.result == 'skipped' && inputs.container_only == true))`.
+     On push this requires every direct need to succeed (`success()` is
+     explicit because any needs-result reference disables the implicit
+     check); on dispatch it requires the dispatch gates to succeed, the
+     push-only needs to be skipped, and `container_only` to be set.
    - `publish-release`: `github.event_name == 'push'`.
    Dispatch contract, recorded: a dispatch with `container_only: true` runs
    `version-check`, `docs-live`, and `container-publish` only; a dispatch
    without it runs `version-check` and `docs-live` only, as a check-only
    dry run that publishes nothing. `always()` appears nowhere; every
-   needs-result condition uses `!cancelled()`.
+   needs-result condition pairs `!cancelled()` with an explicit
+   `success()`.
 6. No `skip-existing` anywhere: release asset upload keeps `--clobber` so a
    rerun replaces partial uploads (ticket 1222's decision), and PyPI
    publish fails loudly on a version collision.
@@ -108,9 +113,10 @@ publish-release:          build, pypi-publish, homebrew-tap,
 
 12. Workflow mutation tests prove: every gate step has no
     `continue-on-error`, no `if:` escape, no `|| true`; removing ANY edge
-    above fails a test, including the dispatch skipped-draft route
-    (`container-publish` under dispatch); the mutation list covers the
-    full adjacency exactly, one test per edge.
+    above fails a test, including the dispatch skipped-draft route; the
+    mutation list covers the full adjacency exactly, one test per edge;
+    and dropping `success()` or the `inputs.container_only` clause from
+    the `container-publish` condition fails a test.
 
 ## Acceptance
 
@@ -136,6 +142,8 @@ publish-release:          build, pypi-publish, homebrew-tap,
   semantics, and an exact adjacency list. Third: `create-draft` in
   container-publish's adjacency (direct needs only), full `if`
   enumeration in the ticket, `pypi-build` contents:read, `!cancelled()`
-  everywhere, and the skip-existing choice. All folded in; fourth review
-  pending.
+  everywhere, and the skip-existing choice. Fourth: `container_only`
+  required in the dispatch clause, and explicit `success()` beside
+  `!cancelled()` so a failed need can never publish on push. All folded
+  in; fifth review pending.
 - Code review: pending
