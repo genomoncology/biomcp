@@ -981,7 +981,7 @@ fn contains_boundary_phrase(field: &str, term: &str) -> bool {
         if before_ok && after_ok {
             return true;
         }
-        search_from = start + 1;
+        search_from = start + term.chars().next().map_or(1, char::len_utf8);
     }
     false
 }

@@ -592,6 +592,16 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
     }
 }
 
+fn panic_payload_message(payload: &(dyn std::any::Any + Send)) -> &str {
+    if let Some(message) = payload.downcast_ref::<String>() {
+        message
+    } else if let Some(message) = payload.downcast_ref::<&str>() {
+        message
+    } else {
+        "unknown panic payload"
+    }
+}
+
 async fn run_outcome_with_worker_stack(
     cli: Cli,
     alias_suggestions_as_json: bool,
@@ -612,9 +622,12 @@ async fn run_outcome_with_worker_stack(
                 }
             })?;
 
-        handle
-            .join()
-            .map_err(|_| anyhow::anyhow!("in-process CLI worker panicked"))?
+        handle.join().map_err(|payload| {
+            anyhow::anyhow!(
+                "in-process CLI worker panicked: {}",
+                panic_payload_message(payload.as_ref())
+            )
+        })?
     })
     .await
     .map_err(|err| anyhow::anyhow!("failed to join in-process CLI worker: {err}"))?
