@@ -96,6 +96,6 @@ Filed from `sdlc/issues/2026-09-23-panic-recovery-gaps-after-1230.md`; revised a
   `env_remove` the variable for every child, and the acceptance wording
   must state helper-tested recovery with the non-Unix GenCC site as
   compile-only residual. Fourth: REJECT on stale review bookkeeping only
-  (the history said "third review pending"); fixed here. Fifth review
-  pending.
+  (the history said "third review pending"); fixed in the same commit.
+  Fifth review pending.
 - Code review: pending

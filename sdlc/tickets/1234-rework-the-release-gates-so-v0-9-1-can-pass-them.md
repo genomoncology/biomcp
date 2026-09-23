@@ -156,4 +156,11 @@ publish-release:          build, pypi-publish, homebrew-tap,
   success and each required skip; numbering fixed. Sixth: caught that the
   fifth-round condition edit never landed. Seventh: ACCEPT; one P2
   bookkeeping note, fixed here.
-- Code review: pending
+- Code review: ACCEPT 2026-09-23 (gpt-5.6-sol, medium) — implementation
+  matches the accepted design character for character; the
+  `packages: write` finding became a ticket item-12 amendment (the job
+  moves the container `latest` registry pointer)
+- Verification: yellow gate at b9a3be15 lint/test/spec OK (1,018 passed,
+  3 skipped); first gate's four stale contract pins fixed in the same
+  commit; see
+  `sdlc/records/1234-rework-the-release-gates-so-v0-9-1-can-pass-them.md`
