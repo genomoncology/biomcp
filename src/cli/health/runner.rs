@@ -16,7 +16,8 @@ use super::http::{
 };
 use super::local::{
     check_cache_dir, check_cache_limits, check_cvx_local_data, check_ddinter_local_data,
-    check_ema_local_data, check_gtr_local_data, check_who_ivd_local_data, check_who_local_data,
+    check_ema_local_data, check_fhir_config, check_gtr_local_data, check_who_ivd_local_data,
+    check_who_local_data,
 };
 use super::{HealthReport, HealthRow, HealthStatus};
 
@@ -369,6 +370,7 @@ pub(super) async fn check(
         outcomes.push(check_who_local_data());
         outcomes.push(check_gtr_local_data());
         outcomes.push(check_who_ivd_local_data());
+        outcomes.push(check_fhir_config());
         outcomes.push(check_cache_dir().await);
         outcomes.push(check_cache_limits().await);
     }

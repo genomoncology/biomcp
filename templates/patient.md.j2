@@ -1,0 +1,27 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# Patient {{ id }}
+
+Source: {{ source }}
+Gender: {{ gender or "-" }}
+Birth date: {{ birth_date or "-" }}
+{% endif -%}
+{% if show_conditions -%}
+## Conditions ({{ source }})
+
+{% if source_states.conditions.status %}{{ source_states.conditions.status }}
+{% endif -%}
+{% if source_states.conditions.payload_allowed and conditions -%}
+| Condition | Codes | Clinical status | Verification | Onset | Recorded |
+|---|---|---|---|---|---|
+{% for row in conditions -%}
+| {{ (row.text or "-") | markdown_cell }} | {% for coding in row.codings %}{{ (coding.system or "-") | markdown_cell }} {{ (coding.code or "-") | markdown_cell }}{% if not loop.last %}; {% endif %}{% else %}-{% endfor %} | {{ (row.clinical_status or "-") | markdown_cell }} | {{ (row.verification_status or "-") | markdown_cell }} | {{ (row.onset or "-") | markdown_cell }} | {{ (row.recorded_date or "-") | markdown_cell }} |
+{% endfor -%}
+{% elif source_states.conditions.empty_allowed -%}
+No conditions found on the FHIR server.
+{% endif -%}
+{% endif -%}
+{% if sections_block %}
+{{ sections_block }}
+{% endif %}

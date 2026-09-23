@@ -361,3 +361,28 @@ pub(super) fn list_adverse_event() -> String {
 "#
     .to_string()
 }
+
+pub(super) fn list_patient() -> String {
+    r#"# patient
+
+## Commands
+
+- `get patient <id>` - demographics (id, gender, birth date) from the FHIR server in `BIOMCP_FHIR_BASE`
+- `get patient <id> conditions` - this patient's FHIR Condition records
+- `get patient <id> all` - include every section
+
+## Setup
+
+- Set `BIOMCP_FHIR_BASE` to the base URL of one FHIR R4 server. No command or MCP argument takes a URL.
+- A patient ID is 1-64 letters, digits, hyphens, or periods. Anything else is refused before any request.
+- `biomcp health` reports the FHIR source as configured or not configured.
+
+## Limits
+
+- `search patient` is not yet available.
+- Patient commands run on the CLI and stdio MCP. `serve-http` refuses them until the HTTP transport has authenticated per-user sessions.
+- Every FHIR request is sent with no-store, and nothing is cached.
+- The conditions section reads at most 20 pages of 100. A repeated or off-server next link, a redirect off the server, or the page cap marks it `degraded`.
+"#
+    .to_string()
+}

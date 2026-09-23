@@ -409,6 +409,8 @@ pub enum BioMcpError {
         reason: String,
         suggestion: String,
     },
+    /// A patient-record failure. Its text is fixed and names no URL or ID.
+    Fhir(crate::sources::fhir::FhirError),
     Template(minijinja::Error),
     Json(serde_json::Error),
     Io(std::io::Error),
@@ -508,6 +510,7 @@ impl BioMcpError {
             Self::Template(_) | Self::Json(_) | Self::Io(_) => {
                 format!("Response from {source} could not be processed.")
             }
+            Self::Fhir(error) => format!("{error}."),
             Self::WithSourceContext { .. } => unreachable!("underlying error is never wrapped"),
         }
     }
@@ -576,6 +579,7 @@ impl BioMcpError {
             Self::Template(_) => "Template rendering failed.".to_string(),
             Self::Json(_) => "JSON processing failed.".to_string(),
             Self::Io(_) => "I/O operation failed.".to_string(),
+            Self::Fhir(error) => format!("{error}."),
             Self::WithSourceContext { source, .. } => source.non_source_message(),
         }
     }
@@ -677,6 +681,7 @@ impl BioMcpError {
             Self::Template(_) => "template",
             Self::Json(_) => "json",
             Self::Io(_) => "io",
+            Self::Fhir(_) => "fhir",
         }
     }
 
@@ -752,6 +757,7 @@ impl fmt::Display for BioMcpError {
             Self::Template(source) => write!(formatter, "Template error: {source}"),
             Self::Json(source) => write!(formatter, "JSON error: {source}"),
             Self::Io(source) => write!(formatter, "IO error: {source}"),
+            Self::Fhir(error) => write!(formatter, "{error}."),
         }
     }
 }

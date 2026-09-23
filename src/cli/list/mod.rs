@@ -27,6 +27,7 @@ pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
         Some("protein") => Ok(molecular::list_protein()),
         Some("study") => Ok(literature::list_study()),
         Some("adverse-event") => Ok(clinical::list_adverse_event()),
+        Some("patient") => Ok(clinical::list_patient()),
         Some("search-all") => Ok(helpers::list_search_all()),
         Some("discover") => Ok(helpers::list_discover()),
         Some("batch") => Ok(helpers::list_batch()),
@@ -84,13 +85,14 @@ fn normalize_entity(entity: Option<&str>) -> Result<Option<&'static str>, BioMcp
         "protein" => Ok(Some("protein")),
         "study" => Ok(Some("study")),
         "adverse-event" | "adverse_event" | "adverseevent" => Ok(Some("adverse-event")),
+        "patient" | "patients" => Ok(Some("patient")),
         "search-all" | "search_all" | "searchall" => Ok(Some("search-all")),
         "discover" => Ok(Some("discover")),
         "batch" => Ok(Some("batch")),
         "enrich" => Ok(Some("enrich")),
         "skill" | "skills" => Ok(Some("skill")),
         other => Err(BioMcpError::InvalidArgument(format!(
-            "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- author\n- trial\n- diagnostic\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- cell-line\n- protein\n- study\n- adverse-event\n- search-all\n- discover\n- batch\n- enrich\n- skill"
+            "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- author\n- trial\n- diagnostic\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- cell-line\n- protein\n- study\n- adverse-event\n- patient\n- search-all\n- discover\n- batch\n- enrich\n- skill"
         ))),
     }
 }

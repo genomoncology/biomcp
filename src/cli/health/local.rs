@@ -415,3 +415,28 @@ fn cache_limits_error_outcome(message: String) -> ProbeOutcome {
         ProbeClass::Error,
     )
 }
+
+const FHIR_AFFECTS: &str = "get patient and its conditions section";
+
+/// Reports whether `BIOMCP_FHIR_BASE` is set. It sends no request and never
+/// prints the URL.
+pub(in crate::cli::health) fn check_fhir_config() -> ProbeOutcome {
+    fhir_config_outcome(crate::sources::fhir::FhirClient::is_configured())
+}
+
+pub(in crate::cli::health) fn fhir_config_outcome(configured: bool) -> ProbeOutcome {
+    let (status, class) = if configured {
+        (HealthStatus::Configured, ProbeClass::Healthy)
+    } else {
+        (HealthStatus::NotConfigured, ProbeClass::Excluded)
+    };
+    let mut row = health_row(
+        "FHIR (patient record)",
+        status,
+        "n/a".into(),
+        Some(FHIR_AFFECTS),
+        None,
+    );
+    row.required_env_var = Some(crate::sources::fhir::FHIR_BASE_ENV.to_string());
+    outcome(row, class)
+}

@@ -10,6 +10,7 @@ pub(crate) mod disease;
 pub(crate) mod drug;
 pub(crate) mod gene;
 pub(crate) mod pathway;
+pub(crate) mod patient;
 pub(crate) mod pgx;
 pub(crate) mod pharmacodb;
 pub(crate) mod protein;

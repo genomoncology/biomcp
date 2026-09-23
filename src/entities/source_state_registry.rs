@@ -242,6 +242,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         Aggregation::Additive,
     ),
     state(
+        "patient",
+        "conditions",
+        "Conditions",
+        &["FHIR"],
+        Aggregation::Additive,
+    ),
+    state(
         "pathway",
         "genes",
         "Genes",
@@ -622,6 +629,13 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         Some("drug_response"),
     ),
     selector("cell_line", "all", SelectorClass::Aggregate, None),
+    selector(
+        "patient",
+        "conditions",
+        SelectorClass::Canonical,
+        Some("conditions"),
+    ),
+    selector("patient", "all", SelectorClass::Aggregate, None),
     selector("pathway", "genes", SelectorClass::Canonical, Some("genes")),
     selector(
         "pathway",
@@ -871,6 +885,7 @@ pub(crate) fn recovery_route(entity: &str, key: &str) -> Option<RecoveryRoute> {
         "drug" => "drug",
         "gene" => "gene",
         "pathway" => "pathway",
+        "patient" => "patient",
         "pgx" => "pgx",
         "protein" => "protein",
         "variant" => "variant",

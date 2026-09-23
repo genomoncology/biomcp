@@ -126,6 +126,7 @@ pub(super) fn command_requests_json(command: &Commands) -> bool {
             GetEntity::Drug(args) => sections_request_json(&args.args),
             GetEntity::CellLine(args) => sections_request_json(&args.sections),
             GetEntity::Pathway(args) => sections_request_json(&args.sections),
+            GetEntity::Patient(args) => sections_request_json(&args.sections),
             GetEntity::Protein(args) => sections_request_json(&args.sections),
             GetEntity::AdverseEvent(args) => sections_request_json(&args.sections),
         },
@@ -286,6 +287,7 @@ impl JsonResponseContract {
             SearchEntity::AdverseEvent(args) if args.source.eq_ignore_ascii_case("vaers") => {
                 Self::NONE
             }
+            SearchEntity::Patient(_) => Self::NONE,
             SearchEntity::Gene(_)
             | SearchEntity::Disease(_)
             | SearchEntity::Diagnostic(_)

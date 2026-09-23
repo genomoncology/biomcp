@@ -13,6 +13,7 @@ mod evidence;
 mod funding;
 mod gene;
 mod pathway;
+mod patient;
 mod pgx;
 mod pharmacodb;
 mod protein;
@@ -76,6 +77,7 @@ pub use self::gene::{
     gene_cell_lines_markdown, gene_markdown, gene_search_markdown, gene_search_markdown_with_footer,
 };
 pub use self::pathway::{pathway_markdown, pathway_search_markdown_with_footer};
+pub use self::patient::patient_markdown;
 #[allow(unused_imports)]
 pub use self::pgx::{pgx_markdown, pgx_search_markdown_with_footer};
 pub use self::pharmacodb::pharmacodb_rows_markdown;
@@ -433,6 +435,13 @@ pub(crate) fn cell_line_next_commands(
     requested_sections: &[String],
 ) -> Vec<String> {
     sections::cell_line_next_commands(cell_line, requested_sections)
+}
+
+pub(crate) fn patient_next_commands(
+    patient: &crate::entities::patient::Patient,
+    requested_sections: &[String],
+) -> Vec<String> {
+    sections::patient_next_commands(patient, requested_sections)
 }
 
 pub(crate) fn disease_next_commands(
@@ -814,6 +823,10 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
         include_str!("../../../templates/disease_search.md.j2"),
     )?;
     env.add_template("pgx.md.j2", include_str!("../../../templates/pgx.md.j2"))?;
+    env.add_template(
+        "patient.md.j2",
+        include_str!("../../../templates/patient.md.j2"),
+    )?;
     env.add_template(
         "pgx_search.md.j2",
         include_str!("../../../templates/pgx_search.md.j2"),

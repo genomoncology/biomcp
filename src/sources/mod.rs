@@ -281,6 +281,7 @@ pub(crate) mod ema;
 pub(crate) mod enrichr;
 pub(crate) mod europepmc;
 pub(crate) mod fda_orphan;
+pub(crate) mod fhir;
 pub(crate) mod figshare;
 pub(crate) mod gencc;
 pub(crate) mod gnomad;
@@ -705,7 +706,14 @@ pub(crate) enum SharedHttpClientKind {
 #[error("semantic scholar shared-pool rate limit exceeded")]
 struct SemanticScholarSharedPoolRateLimitError;
 
-struct RetryAfterTooManyRequestsMiddleware;
+/// The one transient-retry layer every shared client uses: three retries with
+/// exponential backoff, logged at `DEBUG`.
+pub(crate) fn shared_retry_middleware() -> RetryTransientMiddleware<ExponentialBackoff> {
+    let retry = ExponentialBackoff::builder().build_with_max_retries(3);
+    RetryTransientMiddleware::new_with_policy(retry).with_retry_log_level(tracing::Level::DEBUG)
+}
+
+pub(crate) struct RetryAfterTooManyRequestsMiddleware;
 
 #[async_trait::async_trait]
 impl Middleware for RetryAfterTooManyRequestsMiddleware {
@@ -778,7 +786,7 @@ pub(crate) struct ResponseBodyLimitError {
     pub(crate) max_bytes: usize,
 }
 #[derive(Clone, Copy, Debug)]
-struct ResponseBodyLimitMiddleware;
+pub(crate) struct ResponseBodyLimitMiddleware;
 #[async_trait::async_trait]
 impl Middleware for ResponseBodyLimitMiddleware {
     async fn handle(
@@ -896,14 +904,10 @@ pub(crate) fn build_uncached_http_client(
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(headers);
     let base = ca_bundle::build(base, bundle)?;
-    let retry = ExponentialBackoff::builder().build_with_max_retries(3);
     let builder = ClientBuilder::new(base);
     let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
     let builder = builder.with(rate_limit::RateLimitMiddleware::provider_pool());
-    let builder = builder.with(
-        RetryTransientMiddleware::new_with_policy(retry)
-            .with_retry_log_level(tracing::Level::DEBUG),
-    );
+    let builder = builder.with(shared_retry_middleware());
     let builder = match kind {
         SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
         SharedHttpClientKind::SemanticScholarSharedPool => {
@@ -980,8 +984,6 @@ pub(crate) fn finish_cached_http_client(
         .default_headers(default_headers);
     let base_client = ca_bundle::build(base_client, bundle)?;
 
-    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
-
     let cache_options = HttpCacheOptions {
         cache_options: Some(CacheOptions {
             // Shared-cache semantics: do not store private/authenticated responses.
@@ -1001,10 +1003,7 @@ pub(crate) fn finish_cached_http_client(
         manager,
         options: cache_options,
     }));
-    let builder = builder.with(
-        RetryTransientMiddleware::new_with_policy(retry_policy)
-            .with_retry_log_level(tracing::Level::DEBUG),
-    );
+    let builder = builder.with(shared_retry_middleware());
     let builder = match kind {
         SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
         SharedHttpClientKind::SemanticScholarSharedPool => {

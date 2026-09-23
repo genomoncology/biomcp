@@ -26,6 +26,7 @@ pub mod list;
 mod mcp_config;
 mod outcome;
 mod pathway;
+pub(crate) mod patient;
 mod pgx;
 mod phenotype;
 mod protein;

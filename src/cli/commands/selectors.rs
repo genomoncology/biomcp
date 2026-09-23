@@ -6,8 +6,8 @@
 use clap::Subcommand;
 
 use crate::cli::{
-    adverse_event, article, author, cell_line, diagnostic, disease, drug, gene, gwas, pathway, pgx,
-    phenotype, protein, search_all_command, trial, variant,
+    adverse_event, article, author, cell_line, diagnostic, disease, drug, gene, gwas, pathway,
+    patient, pgx, phenotype, protein, search_all_command, trial, variant,
 };
 
 #[allow(clippy::large_enum_variant)]
@@ -242,6 +242,8 @@ EXAMPLES:
 See also: biomcp list pathway"
     )]
     Pathway(pathway::PathwaySearchArgs),
+    /// Patient search is not yet available; use `get patient <id>`
+    Patient(patient::PatientSearchArgs),
     /// Search proteins by name or accession (UniProt)
     #[command(after_help = "\
 EXAMPLES:
@@ -425,6 +427,9 @@ EXAMPLES:
 
 See also: biomcp list pathway")]
     Pathway(pathway::PathwayGetArgs),
+    /// Get one patient and their conditions from the FHIR server in BIOMCP_FHIR_BASE
+    #[command(after_help = patient::GET_AFTER_HELP)]
+    Patient(patient::PatientGetArgs),
     /// Get protein by UniProt accession or gene symbol
     #[command(after_help = "\
 EXAMPLES:

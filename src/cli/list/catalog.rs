@@ -51,6 +51,7 @@ const ENTITY_FLAGS: &[(&str, bool, bool)] = &[
     ("cell-line", true, true),
     ("protein", true, true),
     ("adverse-event", true, true),
+    ("patient", false, true),
     ("study", false, false),
 ];
 
@@ -80,6 +81,7 @@ pub(crate) fn sections(name: &str) -> &'static [&'static str] {
         "cell-line" => crate::entities::cell_line::CELL_LINE_SECTION_NAMES,
         "protein" => crate::entities::protein::PROTEIN_SECTION_NAMES,
         "adverse-event" => crate::entities::adverse_event::ADVERSE_EVENT_SECTION_NAMES,
+        "patient" => crate::entities::patient::PATIENT_SECTION_NAMES,
         _ => &[],
     }
 }

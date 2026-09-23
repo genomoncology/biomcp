@@ -666,6 +666,25 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
     out
 }
 
+pub(crate) fn patient_section_sources(
+    patient: &crate::entities::patient::Patient,
+) -> Vec<SectionSource> {
+    let mut out = Vec::new();
+    push_section(
+        &mut out,
+        has_text(&patient.id),
+        "identity",
+        "Identity",
+        [patient.source.as_str()],
+    );
+    out.extend(outcome_section_sources(
+        "patient",
+        &patient.section_outcomes,
+        &[("conditions", "Conditions")],
+    ));
+    out
+}
+
 pub(crate) fn cell_line_section_sources(
     cell_line: &crate::entities::cell_line::CellLine,
 ) -> Vec<SectionSource> {

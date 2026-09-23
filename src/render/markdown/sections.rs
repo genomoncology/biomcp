@@ -152,6 +152,7 @@ pub(super) fn section_description(entity: &str, section: &str) -> &'static str {
         ("article", "fulltext") => "cached full text when available",
         ("article", "tldr") => "Semantic Scholar summary and influence",
         ("diagnostic", "genes") => "diagnostic-associated gene names",
+        ("patient", "conditions") => "this patient's FHIR Condition records",
         ("diagnostic", "conditions") => {
             "condition, pathogen, or marker names reported for this diagnostic"
         }
@@ -268,6 +269,18 @@ pub(crate) fn cell_line_next_commands(
         &cell_line.section_outcomes,
         out,
     )
+}
+
+pub(crate) fn patient_next_commands(
+    patient: &crate::entities::patient::Patient,
+    requested_sections: &[String],
+) -> Vec<String> {
+    let out = visible_section_commands(
+        "patient",
+        &patient.id,
+        &sections_patient(patient, requested_sections),
+    );
+    with_section_recovery("patient", &patient.id, &patient.section_outcomes, out)
 }
 
 pub(crate) fn disease_next_commands(
@@ -642,6 +655,19 @@ pub(super) fn sections_cell_line(
             crate::entities::cell_line::CELL_LINE_SECTION_NAMES,
         ),
         &cell_line.section_outcomes,
+    )
+}
+
+pub(super) fn sections_patient(
+    patient: &crate::entities::patient::Patient,
+    requested: &[String],
+) -> Vec<String> {
+    if quote_arg(&patient.id).is_empty() {
+        return Vec::new();
+    }
+    without_failed_recovery_sections(
+        sections_for(requested, crate::entities::patient::PATIENT_SECTION_NAMES),
+        &patient.section_outcomes,
     )
 }
 

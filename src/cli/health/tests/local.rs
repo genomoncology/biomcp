@@ -10,8 +10,8 @@ use super::super::catalog::{
 };
 use super::super::local::{
     check_cache_dir_with, check_cache_limits_with, cvx_local_data_outcome,
-    ddinter_local_data_outcome, ema_local_data_outcome, gtr_local_data_outcome, probe_cache_dir,
-    who_ivd_local_data_outcome, who_local_data_outcome,
+    ddinter_local_data_outcome, ema_local_data_outcome, fhir_config_outcome,
+    gtr_local_data_outcome, probe_cache_dir, who_ivd_local_data_outcome, who_local_data_outcome,
 };
 use super::super::runner::{ProbeClass, report_from_outcomes};
 use super::{
@@ -645,4 +645,28 @@ fn check_cache_dir_config_error_matches_pinned_contract() {
     );
     assert_cache_dir_affects(outcome.row.affects.as_deref());
     assert_eq!(outcome.row.key_configured, None);
+}
+
+#[test]
+fn fhir_row_reports_configured_or_not_configured_without_a_url() {
+    let unset = fhir_config_outcome(false);
+    assert_eq!(unset.row.status, HealthStatus::NotConfigured);
+    assert_eq!(unset.class, ProbeClass::Excluded);
+    assert_eq!(
+        unset.row.required_env_var.as_deref(),
+        Some("BIOMCP_FHIR_BASE")
+    );
+    let set = fhir_config_outcome(true);
+    assert_eq!(set.row.status, HealthStatus::Configured);
+    assert_eq!(set.class, ProbeClass::Healthy);
+    let markdown = report_from_outcomes(vec![unset, set]).to_markdown();
+    assert!(
+        markdown.contains("| FHIR (patient record) | not configured |"),
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains("| FHIR (patient record) | configured |"),
+        "{markdown}"
+    );
+    assert!(!markdown.contains("://"), "{markdown}");
 }
