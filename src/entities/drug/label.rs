@@ -7,6 +7,8 @@ use regex::Regex;
 
 use super::{DrugLabel, DrugLabelIndication};
 
+const LABEL_MAX_CHARS: usize = 2000;
+
 fn label_text(value: Option<&serde_json::Value>) -> Option<String> {
     let value = value?;
     let text = match value {
@@ -349,8 +351,6 @@ pub(super) fn extract_inline_label(
     label_response: &serde_json::Value,
     raw_mode: bool,
 ) -> Option<DrugLabel> {
-    const LABEL_MAX_CHARS: usize = 2000;
-
     let top = label_response
         .get("results")
         .and_then(|v| v.as_array())
