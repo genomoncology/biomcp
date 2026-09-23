@@ -37,3 +37,7 @@ Merged `origin/main` at `43edc43c` into `biodata/biomcp-1.0` as one merge commit
 ## Open
 
 The hosted workflow requires the branch tip. Hand the commit that adds this record to the migration manager for BioData's hosted verification dispatch. That commit changes only this record.
+
+## BioData verification
+
+BioData workflow `verify-biomcp-1.0.yml` run 35898380929 passed on 2026-09-23 against branch tip `92d5d676`, which carries this merge.
