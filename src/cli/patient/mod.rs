@@ -4,7 +4,7 @@ use clap::Args;
 
 #[derive(Args, Debug)]
 pub struct PatientGetArgs {
-    /// FHIR Patient ID: 1-64 letters, digits, hyphens, or periods
+    /// FHIR Patient ID: 1-64 letters, digits, hyphens, or periods, not only periods
     pub id: String,
     /// Sections to include (conditions, all)
     #[arg(trailing_var_arg = true)]

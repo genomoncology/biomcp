@@ -780,7 +780,7 @@ biomcp get patient <id> all
 ```
 
 Reads one patient from the FHIR server in `BIOMCP_FHIR_BASE`. A patient ID is 1-64 letters,
-digits, hyphens, or periods. `serve-http` refuses patient commands. `search patient` is not yet
+digits, hyphens, or periods, and not only periods. `serve-http` refuses patient commands. `search patient` is not yet
 available.
 
 ### Protein

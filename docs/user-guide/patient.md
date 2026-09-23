@@ -25,7 +25,7 @@ biomcp get patient <id>
 
 The card reads one Patient resource and shows its ID, gender, and birth date.
 
-A patient ID is 1-64 letters, digits, hyphens, or periods, the FHIR `id` rule. Any other ID is refused before a request is sent.
+A patient ID is 1-64 letters, digits, hyphens, or periods, the FHIR `id` rule, and not only periods. Any other ID is refused before a request is sent.
 
 ## Request patient sections
 

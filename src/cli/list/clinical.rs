@@ -374,7 +374,7 @@ pub(super) fn list_patient() -> String {
 ## Setup
 
 - Set `BIOMCP_FHIR_BASE` to the base URL of one FHIR R4 server. No command or MCP argument takes a URL.
-- A patient ID is 1-64 letters, digits, hyphens, or periods. Anything else is refused before any request.
+- A patient ID is 1-64 letters, digits, hyphens, or periods, and not only periods. Anything else is refused before any request.
 - `biomcp health` reports the FHIR source as configured or not configured.
 
 ## Limits

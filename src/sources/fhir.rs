@@ -63,16 +63,19 @@ pub(crate) struct PatientId(String);
 
 impl PatientId {
     /// Refuses anything outside the FHIR id rule before any request.
+    /// An ID of only dots is refused too. The URL library drops `.` and `..`
+    /// path segments, and the read would become a search of every patient.
     /// The error never repeats the input.
     pub(crate) fn parse(raw: &str) -> Result<Self, BioMcpError> {
         let valid = !raw.is_empty()
             && raw.chars().count() <= MAX_PATIENT_ID_CHARS
             && raw
                 .chars()
-                .all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '.');
+                .all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '.')
+            && raw.chars().any(|ch| ch != '.');
         if !valid {
             return Err(BioMcpError::InvalidArgument(
-                "a patient ID must be 1-64 characters of letters, digits, hyphens, or periods"
+                "a patient ID must be 1-64 characters of letters, digits, hyphens, or periods, and not only periods"
                     .into(),
             ));
         }

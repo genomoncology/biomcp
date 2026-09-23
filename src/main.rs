@@ -83,11 +83,20 @@ fn is_terminal_textual_article_asset(media_type: Option<&str>) -> bool {
         )
 }
 
+/// HTTP client libraries whose debug and trace logs name the host and port of
+/// each connection. The FHIR server is the operator's patient record, so these
+/// stay at `warn` whatever `RUST_LOG` asks for.
+const QUIET_TRANSPORT_TARGETS: &[&str] = &["hyper", "hyper_util", "h2", "reqwest", "rustls"];
+
 fn init_tracing() {
+    let mut filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("warn"));
+    for target in QUIET_TRANSPORT_TARGETS {
+        if let Ok(directive) = format!("{target}=warn").parse() {
+            filter = filter.add_directive(directive);
+        }
+    }
     let _ = tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("warn")),
-        )
+        .with_env_filter(filter)
         .with_writer(std::io::stderr)
         .with_ansi(std::io::stderr().is_terminal())
         .try_init();
