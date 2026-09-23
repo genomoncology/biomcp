@@ -1380,7 +1380,9 @@ impl ServerHandler for BioMcpServer {
                 } else {
                     "unknown panic payload"
                 };
-                Ok(Self::tool_error(format!("Error: MCP tool panicked: {message}")))
+                Ok(Self::tool_error(format!(
+                    "Error: MCP tool panicked: {message}"
+                )))
             }
         }
     }
