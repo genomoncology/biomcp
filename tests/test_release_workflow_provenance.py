@@ -3,162 +3,219 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 RELEASE_WORKFLOW = WORKFLOWS / "release.yml"
 
+EXPECTED_NEEDS = {
+    "version-check": [],
+    "create-draft": ["version-check"],
+    "build": ["version-check", "create-draft"],
+    "pypi-build": ["version-check"],
+    "wheel-smoke": ["pypi-build"],
+    "docs-live": ["version-check"],
+    "pypi-publish": ["pypi-build", "wheel-smoke", "docs-live"],
+    "homebrew-tap": ["build", "docs-live", "wheel-smoke"],
+    "container-publish": [
+        "build",
+        "docs-live",
+        "version-check",
+        "wheel-smoke",
+        "create-draft",
+    ],
+    "publish-release": [
+        "build",
+        "pypi-publish",
+        "homebrew-tap",
+        "container-publish",
+        "docs-live",
+    ],
+}
 
-def _job_block(workflow: str, job_name: str) -> str:
+
+def _job_block(workflow: str, job: str) -> str:
     match = re.search(
-        rf"^  {re.escape(job_name)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)",
+        rf"^  {re.escape(job)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)",
         workflow,
-        flags=re.MULTILINE | re.DOTALL,
+        re.MULTILINE | re.DOTALL,
     )
-    assert match is not None, f"missing workflow job {job_name}"
+    assert match is not None, f"missing workflow job {job}"
     return match.group(1)
 
 
-def test_container_only_dispatch_gates_the_release_jobs() -> None:
-    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-    container_only_gate = (
-        "if: github.event_name == 'release' || inputs.container_only != true"
-    )
-
-    assert "container_only:" in release
-    assert container_only_gate in _job_block(release, "build")
-    assert container_only_gate in _job_block(release, "pypi-build")
-    assert container_only_gate in _job_block(release, "wheel-smoke")
+def _needs(block: str) -> list[str]:
+    match = re.search(r"^    needs: \[([^]]*)\]$", block, re.MULTILINE)
+    if match is None:
+        return []
+    return [part.strip() for part in match.group(1).split(",") if part.strip()]
 
 
-def test_no_reference_to_the_archived_release_asset_action() -> None:
-    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+def _assert_release_contract(workflow: str) -> None:
+    assert "push:\n    tags: ['v*']" in workflow
+    assert "permissions: {}" in workflow
+    assert "group: release-${{ inputs.tag || github.ref_name }}" in workflow
+    assert "github.event.release.tag_name" not in workflow
+    for job, needs in EXPECTED_NEEDS.items():
+        assert _needs(_job_block(workflow, job)) == needs, job
 
-    assert "actions/upload-release-asset" not in release
-    assert "github.event.release.upload_url" not in release
+    expected_ifs = {
+        "create-draft": "if: github.event_name == 'push'",
+        "build": "if: github.event_name == 'push'",
+        "pypi-build": "if: github.event_name == 'push'",
+        "wheel-smoke": "if: github.event_name == 'push'",
+        "pypi-publish": "if: github.event_name == 'push'",
+        "homebrew-tap": "if: github.event_name == 'push'",
+        "publish-release": "if: github.event_name == 'push'",
+    }
+    for job, condition in expected_ifs.items():
+        assert condition in _job_block(workflow, job), job
+    assert "\n    if:" not in _job_block(workflow, "version-check")
+    assert "\n    if:" not in _job_block(workflow, "docs-live")
 
-
-def test_release_upload_step_uses_gh_and_runs_only_on_a_release() -> None:
-    build = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "build")
-    upload_steps = [
-        step for step in build.split("\n      - ") if "gh release upload" in step
-    ]
-
-    assert "TAG: ${{ github.event.release.tag_name || inputs.tag }}" in build
-    assert len(upload_steps) == 1
-    upload = upload_steps[0]
-    assert "if: github.event_name == 'release'" in upload
-    # The Windows matrix leg defaults to PowerShell, which does not expand $TAG.
-    assert "shell: bash" in upload
-    assert "GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}" in upload
-    assert 'gh release upload "$TAG"' in upload
-    assert '"${{ matrix.artifact }}"' in upload
-    assert '"${{ matrix.artifact }}.sha256"' in upload
-    assert "--clobber" in upload
-
-
-def test_homebrew_tap_resolves_the_tag_once_for_every_use() -> None:
-    homebrew_tap = _job_block(
-        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "homebrew-tap"
-    )
-
-    assert "needs: [build, docs-live]" in homebrew_tap
-    assert "GITHUB_REF_NAME" not in homebrew_tap
-    assert homebrew_tap.count("github.event.release.tag_name || inputs.tag") == 1
-    assert "TAG: ${{ github.event.release.tag_name || inputs.tag }}" in homebrew_tap
-    assert 'gh release download "$TAG"' in homebrew_tap
-    assert 'VERSION="${TAG#v}"' in homebrew_tap
-    assert 'git commit -m "Update biomcp formula for ${TAG}"' in homebrew_tap
-
-
-def test_pypi_publish_requires_a_release_event() -> None:
-    pypi_publish = _job_block(
-        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "pypi-publish"
-    )
-
-    assert "needs: [pypi-build, wheel-smoke, docs-live]" in pypi_publish
-    # A workflow_dispatch names any ref; only a release event may publish wheels.
-    assert "if: github.event_name == 'release'\n" in pypi_publish
-
-
-def test_pypi_wheels_build_in_the_release_profile() -> None:
-    pypi_build = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "pypi-build")
-    maturin_steps = [
-        step
-        for step in pypi_build.split("\n      - ")
-        if "uses: PyO3/maturin-action@v1" in step
-    ]
-
-    assert len(maturin_steps) == 1
-    assert "args: --release --locked" in maturin_steps[0]
-
-
-def test_wheel_smoke_runs_the_built_wheel_and_gates_pypi_publish() -> None:
-    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-    wheel_smoke = _job_block(release, "wheel-smoke")
-    pypi_publish = _job_block(release, "pypi-publish")
-
-    assert "needs: [pypi-build]" in wheel_smoke
-    assert "runs-on: ubuntu-24.04" in wheel_smoke
-    assert "uses: actions/download-artifact@v4" in wheel_smoke
-    assert "name: wheel-x86_64-unknown-linux-gnu" in wheel_smoke
-    assert 'BIOMCP="$RUNNER_TEMP/wheel-venv/bin/biomcp"' in wheel_smoke
-    assert "uses: PyO3/maturin-action@v1" not in wheel_smoke
-    assert "needs: [pypi-build, wheel-smoke, docs-live]" in pypi_publish
-
-
-def test_wheel_smoke_fails_on_a_stack_overflow_and_runs_the_deep_paths() -> None:
-    wheel_smoke = _job_block(
-        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "wheel-smoke"
-    )
-
-    assert 'grep -q "has overflowed its stack"' in wheel_smoke
-    assert '"$status" -eq 134' in wheel_smoke
-    assert '"$status" -ge 128' in wheel_smoke
-    # run_smoke, run_fallback_smoke, and run_json_smoke each fail three ways.
-    assert wheel_smoke.count("return 1") == 9
-    for command in (
-        "run_smoke search trial --condition diabetes --limit 1",
-        'run_smoke search trial --criteria "anti-PD-1 therapy" --limit 3',
-        "run_smoke drug interactions apixaban",
-        "run_smoke drug trials imatinib",
+    container = _job_block(workflow, "container-publish")
+    for clause in (
+        "!cancelled()",
+        "github.event_name == 'push' && success()",
+        "inputs.container_only == true",
+        "needs.version-check.result == 'success'",
+        "needs.docs-live.result == 'success'",
+        "needs.create-draft.result == 'skipped'",
+        "needs.build.result == 'skipped'",
+        "needs['wheel-smoke'].result == 'skipped'",
     ):
-        assert command in wheel_smoke
+        assert clause in container
+    assert "always()" not in workflow
+
+    version = _job_block(workflow, "version-check")
+    assert "fetch-depth: 0" in version
+    assert "check-release-versions.py" in version
+    assert "check-changelog-coverage.py" in version
+    assert "continue-on-error" not in version
+    assert "|| true" not in version
+    assert "if: false" not in version
+
+    permissions = {
+        "version-check": "contents: read",
+        "create-draft": "contents: write",
+        "build": "contents: write",
+        "pypi-build": "contents: read",
+        "docs-live": "contents: read",
+        "homebrew-tap": "contents: read",
+        "pypi-publish": "id-token: write",
+        "container-publish": "packages: write",
+        "publish-release": "contents: write",
+    }
+    for job, grant in permissions.items():
+        assert grant in _job_block(workflow, job), job
+    assert "permissions:" not in _job_block(workflow, "wheel-smoke")
+
+    draft = _job_block(workflow, "create-draft")
+    assert 'gh release create "$TAG" --draft --verify-tag' in draft
+    build = _job_block(workflow, "build")
+    assert 'gh release upload "$TAG"' in build and "--clobber" in build
+    assert "skip-existing" not in workflow and "skip_existing" not in workflow
+
+    smoke = _job_block(workflow, "wheel-smoke")
+    for artifact in (
+        "wheel-x86_64-unknown-linux-gnu",
+        "wheel-aarch64-apple-darwin",
+        "wheel-x86_64-apple-darwin",
+        "wheel-x86_64-pc-windows-msvc",
+    ):
+        assert artifact in smoke
+    assert "Scripts/biomcp.exe" in smoke and "bin/biomcp" in smoke
+    assert '"$status" -eq 101' in smoke and '"$status" -ge 128' in smoke
+    assert "require_exit 0 drug interactions apixaban" in smoke
+    assert "Drug not found in FAERS" in smoke
+    assert "skill asset" in smoke
+
+    final = _job_block(workflow, "publish-release")
+    assert 'gh release edit "$TAG" --draft=false' in final
+    assert "gh release view" in final
+    assert "docker buildx imagetools create --tag" in final
+    assert "gh release view" not in container
+    assert "imagetools create --tag" not in container
 
 
-def test_container_publish_platforms_and_latest_guard() -> None:
-    container_publish = _job_block(
-        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "container-publish"
+def test_release_workflow_contract() -> None:
+    _assert_release_contract(RELEASE_WORKFLOW.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize(
+    "job,edge", [(job, edge) for job, edges in EXPECTED_NEEDS.items() for edge in edges]
+)
+def test_removing_each_needs_edge_breaks_the_contract(
+    tmp_path: Path, job: str, edge: str
+) -> None:
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    block = _job_block(workflow, job)
+    mutated = (
+        block.replace(edge + ", ", "", 1)
+        .replace(", " + edge, "", 1)
+        .replace("[" + edge + "]", "[]", 1)
     )
-
-    assert "platforms: linux/amd64,linux/arm64" in container_publish
-    assert "gh release view" in container_publish
-    assert '"$LATEST_RELEASE" != "$TAG"' in container_publish
-    assert "docker buildx imagetools create --tag" in container_publish
-
-
-def test_container_publish_checks_out_the_packaging_ref() -> None:
-    container_publish = _job_block(
-        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "container-publish"
-    )
-    checkout_steps = [
-        step
-        for step in container_publish.split("\n      - ")
-        if "uses: actions/checkout@v4" in step
-    ]
-
-    assert len(checkout_steps) == 1
-    assert "ref:" not in checkout_steps[0]
+    assert mutated != block
+    scratch = tmp_path / "release.yml"
+    scratch.write_text(workflow.replace(block, mutated, 1), encoding="utf-8")
+    with pytest.raises(AssertionError):
+        _assert_release_contract(scratch.read_text(encoding="utf-8"))
 
 
-def test_container_publish_resolves_the_revision_from_the_tag() -> None:
-    container_publish = _job_block(
-        RELEASE_WORKFLOW.read_text(encoding="utf-8"), "container-publish"
-    )
+@pytest.mark.parametrize(
+    "needle,replacement",
+    [
+        (
+            'run: python3 scripts/check-release-versions.py --tag "$TAG"',
+            'run: python3 scripts/check-release-versions.py --tag "$TAG" || true',
+        ),
+        ("    steps:\n", "    continue-on-error: true\n    steps:\n"),
+        (
+            "      - name: Require the tag and committed versions to agree\n",
+            "      - name: Require the tag and committed versions to agree\n        if: false\n",
+        ),
+    ],
+)
+def test_neutering_a_gate_breaks_the_contract(
+    tmp_path: Path, needle: str, replacement: str
+) -> None:
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    assert needle in workflow
+    scratch = tmp_path / "release.yml"
+    scratch.write_text(workflow.replace(needle, replacement, 1), encoding="utf-8")
+    with pytest.raises(AssertionError):
+        _assert_release_contract(scratch.read_text(encoding="utf-8"))
 
-    assert "SOURCE_SHA=" in container_publish
-    assert "repos/${GITHUB_REPOSITORY}/commits/${TAG}" in container_publish
-    assert "git rev-parse HEAD" not in container_publish
+
+@pytest.mark.parametrize(
+    "clause",
+    [
+        "success()",
+        "inputs.container_only == true",
+        "needs.version-check.result == 'success'",
+        "needs.docs-live.result == 'success'",
+        "needs.create-draft.result == 'skipped'",
+        "needs.build.result == 'skipped'",
+        "needs['wheel-smoke'].result == 'skipped'",
+    ],
+)
+def test_removing_a_container_condition_clause_breaks_the_contract(
+    tmp_path: Path, clause: str
+) -> None:
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    scratch = tmp_path / "release.yml"
+    scratch.write_text(workflow.replace(clause, "true", 1), encoding="utf-8")
+    with pytest.raises(AssertionError):
+        _assert_release_contract(scratch.read_text(encoding="utf-8"))
+
+
+def test_actions_are_pinned_and_pypi_uses_trusted_publishing() -> None:
+    workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    assert not re.findall(r"uses: [^\s]+@(?![0-9a-f]{40}\b)[^\s]+", workflow)
+    pypi = _job_block(workflow, "pypi-publish")
+    assert "environment: pypi" in pypi and "id-token: write" in pypi
+    assert "uv publish --trusted-publishing always dist/*" in pypi
 
 
 def test_no_other_workflow_exposes_release_publication() -> None:
@@ -171,83 +228,6 @@ def test_no_other_workflow_exposes_release_publication() -> None:
         "imagetools create",
     )
     for path in WORKFLOWS.glob("*.yml"):
-        if path == RELEASE_WORKFLOW:
-            continue
-        text = path.read_text(encoding="utf-8")
-        assert not any(route in text for route in routes), path.name
-
-
-def test_docs_live_reads_the_pointer_on_both_triggers() -> None:
-    docs_live = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "docs-live")
-
-    container_only_gate = (
-        "if: github.event_name == 'release' || inputs.container_only != true"
-    )
-    assert container_only_gate not in docs_live
-    assert "permissions:\n      contents: read" in docs_live
-    assert "TAG: ${{ github.event.release.tag_name || inputs.tag }}" in docs_live
-    assert (
-        "LIVE_REVISION_URL: https://biomcp.org/__biomcp_revision__/latest.txt"
-        in docs_live
-    )
-    assert 'gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq .sha' in docs_live
-    assert "Cache-Control: no-cache" in docs_live
-    assert "Pragma: no-cache" in docs_live
-    assert "--connect-timeout 10 --max-time 30" in docs_live
-    assert "check-docs-live-revision.py" in docs_live
-    assert "--tag-sha \"$TAG_SHA\"" in docs_live
-    assert '--live-revision "$live_revision"' in docs_live
-    assert 'RETRY_WINDOW_SECONDS: "600"' in docs_live
-    assert 'RETRY_INTERVAL_SECONDS: "30"' in docs_live
-
-
-def test_docs_live_checks_out_the_gate_helper_from_the_default_branch() -> None:
-    docs_live = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "docs-live")
-    checkout_steps = [
-        step
-        for step in docs_live.split("\n      - ")
-        if "uses: actions/checkout@v4" in step
-    ]
-
-    assert len(checkout_steps) == 1
-    assert "ref: ${{ github.event.repository.default_branch }}" in checkout_steps[0]
-
-
-def test_docs_live_gates_every_publisher() -> None:
-    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-    container_publish = _job_block(release, "container-publish")
-
-    assert "needs: [pypi-build, wheel-smoke, docs-live]" in _job_block(
-        release, "pypi-publish"
-    )
-    assert "needs: [build, docs-live]" in _job_block(release, "homebrew-tap")
-    assert "needs: [build, docs-live]" in container_publish
-    assert "needs.docs-live.result == 'success'" in container_publish
-
-
-def test_version_check_gates_every_build_and_publish_path() -> None:
-    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-    version_check = _job_block(release, "version-check")
-
-    assert "needs: [version-check]" in _job_block(release, "build")
-    assert "needs: [version-check]" in _job_block(release, "pypi-build")
-    assert "needs: [version-check]" in _job_block(release, "docs-live")
-    # The check reads the tag ref, so a container_only backfill on an older
-    # tag compares the versions committed at that tag.
-    assert 'ref: ${{ github.event.release.tag_name || inputs.tag }}' in version_check
-    assert '[ "$VERSION" != "$CARGO_VERSION" ] || [ "$VERSION" != "$PYPROJECT_VERSION" ]' in version_check
-    assert "scripts/check-changelog-coverage.py" in version_check
-
-
-def test_wheel_smoke_covers_the_not_found_fallback_and_json_mode() -> None:
-    wheel_smoke = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "wheel-smoke")
-
-    assert 'run_fallback_smoke "Drug not found in FAERS"' in wheel_smoke
-    assert "drug adverse-events qwertyzzznonexistent999" in wheel_smoke
-    assert "run_json_smoke get drug --region us aspirin regulatory -j" in wheel_smoke
-    assert "run_json_smoke search trial --condition diabetes --limit 1 -j" in wheel_smoke
-    # JSON mode must succeed outright: exit 0, an object on stdout, and no
-    # missing skill-asset error, which is what a debug-profile wheel shows.
-    assert '"json mode must exit 0' in wheel_smoke
-    assert '"json mode must print an object' in wheel_smoke
-    assert '"skill asset error' in wheel_smoke
+        if path != RELEASE_WORKFLOW:
+            text = path.read_text(encoding="utf-8")
+            assert not any(route in text for route in routes), path.name

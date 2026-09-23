@@ -19,3 +19,7 @@ The 1225, 1226, and 1229 records cite these tests as mutation-checked. The mutat
 - Parse the YAML and assert each job's `needs`, `if`, and step order.
 - Move the docs-live and wheel-smoke logic into checked-in scripts. Test them against fake `gh` and `curl` and a fake crashing binary.
 - Keep the five breaks above as a mutation list the tests must catch.
+
+## Resolved
+
+Ticket 1234 moves release validation ahead of a draft-last GitHub release, checks versions and changelog coverage with behavior-tested scripts, pins the complete publish-job dependency graph with mutation tests, smokes every built wheel, narrows permissions, and preserves the explicit container-backfill dispatch. See `sdlc/records/1234-rework-the-release-gates-so-v0-9-1-can-pass-them.md` after verification.
