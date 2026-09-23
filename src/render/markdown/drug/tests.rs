@@ -1005,14 +1005,10 @@ fn drug_markdown_renders_label_boxed_warning_ahead_of_other_label_sections() {
         cell_lines: None,
     };
 
-    let raw = drug_markdown_with_region(
-        &drug,
-        &["label".to_string()],
-        DrugRegion::Us,
-        true,
-    )
-    .expect("markdown");
-    let boxed_at = raw.find("### Boxed Warning\nWARNING: SERIOUS SKIN REACTIONS")
+    let raw = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, true)
+        .expect("markdown");
+    let boxed_at = raw
+        .find("### Boxed Warning\nWARNING: SERIOUS SKIN REACTIONS")
         .expect("boxed block in raw mode");
     let warnings_at = raw
         .find("### Warnings and Precautions")
@@ -1020,13 +1016,8 @@ fn drug_markdown_renders_label_boxed_warning_ahead_of_other_label_sections() {
     assert!(boxed_at < warnings_at);
     assert!(raw.contains("Immune-mediated adverse reactions."));
 
-    let summary = drug_markdown_with_region(
-        &drug,
-        &["label".to_string()],
-        DrugRegion::Us,
-        false,
-    )
-    .expect("markdown");
+    let summary = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, false)
+        .expect("markdown");
     let boxed_at = summary
         .find("### Boxed Warning\nWARNING: SERIOUS SKIN REACTIONS")
         .expect("boxed block in summary mode");
@@ -1080,13 +1071,8 @@ fn drug_markdown_us_safety_block_renders_boxed_warning_first() {
         cell_lines: None,
     };
 
-    let markdown = drug_markdown_with_region(
-        &drug,
-        &["safety".to_string()],
-        DrugRegion::Us,
-        false,
-    )
-    .expect("markdown");
+    let markdown = drug_markdown_with_region(&drug, &["safety".to_string()], DrugRegion::Us, false)
+        .expect("markdown");
     let boxed_at = markdown
         .find("### FDA boxed warning\nWARNING: SERIOUS SKIN REACTIONS")
         .expect("boxed subsection in safety block");

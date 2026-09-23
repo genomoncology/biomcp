@@ -107,7 +107,10 @@ fn extract_inline_label_falls_back_to_legacy_warnings_field() {
     });
 
     let label = extract_inline_label(&response, true).expect("raw label");
-    assert_eq!(label.warnings.as_deref(), Some("Older-format label warnings text."));
+    assert_eq!(
+        label.warnings.as_deref(),
+        Some("Older-format label warnings text.")
+    );
     assert!(label.boxed_warning.is_none());
     assert_eq!(
         extract_label_warnings_text(&response).as_deref(),
@@ -145,7 +148,10 @@ fn extract_inline_label_boxed_only_still_returns_a_label() {
     });
 
     let label = extract_inline_label(&response, false).expect("boxed-only label");
-    assert_eq!(label.boxed_warning.as_deref(), Some("WARNING: NO OTHER FIELDS"));
+    assert_eq!(
+        label.boxed_warning.as_deref(),
+        Some("WARNING: NO OTHER FIELDS")
+    );
     assert!(label.warnings.is_none());
     assert!(label.indications.is_none());
     assert!(label.dosage.is_none());

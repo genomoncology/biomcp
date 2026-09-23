@@ -399,8 +399,7 @@ pub(super) fn extract_label_warnings_text(label_response: &serde_json::Value) ->
         .and_then(|v| v.as_array())
         .and_then(|v| v.first())
         .and_then(|top| {
-            label_text(top.get("warnings_and_cautions"))
-                .or_else(|| label_text(top.get("warnings")))
+            label_text(top.get("warnings_and_cautions")).or_else(|| label_text(top.get("warnings")))
         })
 }
 
