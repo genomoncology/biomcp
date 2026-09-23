@@ -109,6 +109,7 @@ An expanded index of the BioMCP documentation.
 - [Gene](https://biomcp.org/user-guide/gene/): BioMCP usage guidance for Gene.
 - [GWAS](https://biomcp.org/user-guide/gwas/): BioMCP usage guidance for GWAS.
 - [Pathway](https://biomcp.org/user-guide/pathway/): BioMCP usage guidance for Pathway.
+- [Patient](https://biomcp.org/user-guide/patient/): BioMCP usage guidance for Patient.
 - [PGX](https://biomcp.org/user-guide/pgx/): BioMCP usage guidance for PGX.
 - [Phenotype](https://biomcp.org/user-guide/phenotype/): BioMCP usage guidance for Phenotype.
 - [Protein](https://biomcp.org/user-guide/protein/): BioMCP usage guidance for Protein.

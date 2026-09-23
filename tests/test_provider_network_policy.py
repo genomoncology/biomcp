@@ -51,8 +51,13 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # its uncached health probe. Both reject redirects, cap response bytes, and
     # accept a private base only through the documented fixture override seam.
     # cli/health owns the bounded probe client and its stub-client test fixtures.
+    # fhir.rs owns the operator-configured FHIR client. It sends no-store
+    # requests only to the one origin and base path in BIOMCP_FHIR_BASE, and
+    # its redirect policy refuses every other target, so the ordinary DNS
+    # policy has nothing further to bind.
     assert found == Counter(
         {
+            "src/sources/fhir.rs": 1,
             "src/sources/mod.rs": 3,
             "src/sources/ordinary_url_policy.rs": 3,
             "src/sources/clingen_cspec.rs": 1,
@@ -135,6 +140,7 @@ def test_every_touched_production_builder_applies_the_operator_ca_bundle() -> No
         "src/sources/fda_orphan.rs": 2,
         "src/entities/trial/documents.rs": 1,
         "src/cli/health/runner.rs": 1,
+        "src/sources/fhir.rs": 1,
     }.items():
         text = (ROOT / relative).read_text()
         assert text.count("ca_bundle::") >= expected, relative

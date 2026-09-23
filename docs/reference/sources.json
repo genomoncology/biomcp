@@ -580,6 +580,26 @@
     "notes": "BioMCP performs bounded live searches of FDA's Orphan Drug Designations and Approvals table for U.S. regulatory cards. Orphan designation and FDA approval remain separate facts."
   },
   {
+    "id": "fhir",
+    "name": "FHIR (operator server)",
+    "tier": 2,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "get patient <id>",
+      "get patient <id> conditions"
+    ],
+    "bioMcp_auth": "not_applicable",
+    "env_var": "BIOMCP_FHIR_BASE",
+    "provider_access": "the operator's own server, named in BIOMCP_FHIR_BASE",
+    "license_summary": "an operator-run FHIR R4 server that publishes no licence or terms page; the operator's own data-use agreements govern every record",
+    "redistribution_summary": "patient records are protected health information; BioMCP caches nothing and the operator decides every reuse",
+    "terms_url": null,
+    "key_url": null,
+    "reviewed_on": "2026-09-23",
+    "notes": "BioMCP reads one patient and the Condition list from the server in BIOMCP_FHIR_BASE. Every request is sent with no-store, next links and redirects stay on the configured server, and serve-http refuses patient commands. BioMCP ships no patient data."
+  },
+  {
     "id": "figshare",
     "name": "Figshare",
     "tier": 1,

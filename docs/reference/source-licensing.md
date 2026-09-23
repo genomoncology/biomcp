@@ -59,6 +59,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | EMA | 1 | direct_api | none | EMA website material may be reused with source attribution; third-party content can carry separate rights | EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission | <https://www.ema.europa.eu/en/about-us/about-website/legal-notice> |
 | Enrichr | 1 | direct_api | none | open web/API service with citation expectations for Enrichr and its libraries | reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries | <https://maayanlab.cloud/Enrichr/> |
 | Europe PMC | 1 | direct_api | none | open literature metadata service; article and full-text licenses vary by record | metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses | <https://europepmc.org/RestfulWebService> |
+| FHIR (operator server) | 2 | direct_api | not_applicable | an operator-run FHIR R4 server that publishes no licence or terms page; the operator's own data-use agreements govern every record | patient records are protected health information; BioMCP caches nothing and the operator decides every reuse | none published |
 | Figshare | 1 | direct_api | none | public repository API; each article/file carries its own license metadata | reuse downloaded article assets according to the Figshare item license and preserve Figshare/article provenance | <https://figshare.com/terms> |
 | FDA Orphan Drug Designations and Approvals | 1 | direct_api | none | FDA-origin public information | designation records are broadly reusable; preserve FDA source context and never imply designation is approval | <https://www.fda.gov/about-fda/about-website/website-policies> |
 | gnomAD | 3 | direct_api | none | Broad Institute data policies with attribution and service-specific conditions | querying is open, but users should review the gnomAD policies before bulk reuse or republishing | <https://gnomad.broadinstitute.org/policies> |
@@ -772,6 +773,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - API key / account URL: <https://www.disgenet.com/>
 - Reviewed on: `2026-03-20`
 - Notes: DisGeNET's public site advertises free and commercial plans. BioMCP documents the API as key-gated and treats it as provider-controlled.
+
+### FHIR (operator server)
+
+- BioMCP surfaces: `get patient <id>; get patient <id> conditions`
+- Integration mode: `direct_api`
+- BioMCP auth: `not_applicable`; the server comes from `BIOMCP_FHIR_BASE`
+- Provider access / registration: the operator's own server, named in `BIOMCP_FHIR_BASE`
+- License / terms summary: an operator-run FHIR R4 server that publishes no licence or terms page; the operator's own data-use agreements govern every record
+- Redistribution / reuse summary: patient records are protected health information; BioMCP caches nothing and the operator decides every reuse
+- Official terms URL: none published
+- Reviewed on: `2026-09-23`
+- Notes: BioMCP reads one patient and the Condition list from the server in `BIOMCP_FHIR_BASE`. Every request is sent with no-store, next links and redirects stay on the configured server, and serve-http refuses patient commands. BioMCP ships no patient data.
 
 ### NCI CTS
 

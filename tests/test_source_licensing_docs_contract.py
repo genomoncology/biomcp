@@ -36,6 +36,7 @@ DIRECT_SOURCE_MODULES = {
     "who_ivd": "WHO Prequalified IVD",
     "enrichr": "Enrichr",
     "europepmc": "Europe PMC",
+    "fhir": "FHIR (operator server)",
     "figshare": "Figshare",
     "fda_orphan": "FDA Orphan Drug Designations and Approvals",
     "gnomad": "gnomAD",

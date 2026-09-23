@@ -460,9 +460,11 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     # cli/trial/search_summary.rs module is the added member. The main merge
     # for ticket 1234 adds the docs-live gate helper and its contract test
     # (ticket 1226) and the CA-bundle helper and its TLS contract test
-    # (ticket 1221). The exact merged package contains 1,400 files, with no
-    # spare capacity.
-    assert len(paths) == 1400
+    # (ticket 1221). Ticket 2002 adds the FHIR source, the patient entity,
+    # CLI, renderer, template, MCP gate, contract test, guide, and spec page
+    # (13 files). The exact package contains 1,413 files, with no spare
+    # capacity.
+    assert len(paths) == 1413
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
