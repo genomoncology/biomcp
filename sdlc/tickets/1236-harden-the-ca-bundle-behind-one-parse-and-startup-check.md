@@ -17,7 +17,7 @@ Filed from `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJ
    docs say so.
 2. **Startup validation**: `serve`, `mcp`, and `serve-http` load the
    bundle before creating the stdio transport (`src/mcp/shell.rs:1448-1460`)
-   and before the HTTP bind (`src/mcp/shell/http.rs:429-461`). An
+   and before the HTTP bind (`src/mcp/shell/http_server.rs:429-462`). An
    explicit `BIOMCP_CA_BUNDLE` failure stops the server before it
    accepts a session; the fallback keeps its single warning.
 3. **One-parse measurement and test isolation**: `ca_bundle` keeps a
@@ -104,5 +104,5 @@ Filed from `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJ
   binary), the root pin covers repository-wide disabling calls plus the
   Reqwest feature, both stdio cases hold stdin and assert the
   diagnostic, and every wait is deadline-bounded with forced cleanup.
-  Fourth review pending.
+  Fourth: ACCEPT 2026-09-23 — one P2 citation fix applied here.
 - Code review: pending
