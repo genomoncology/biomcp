@@ -45,45 +45,45 @@ Filed from `sdlc/issues/2026-09-23-release-gates-from-1233-block-v0-9-1-and-test
    `version-check`, `docs-live`, and `container-publish` only; a dispatch
    without it runs `version-check` and `docs-live` only, as a check-only
    dry run that publishes nothing. `always()` appears nowhere; every
-   needs-result condition pairs `!cancelled()` with an explicit
-   `success()`.
+   needs-result condition pairs `!cancelled()` with branch-local success
+   requirements.
 6. No `skip-existing` anywhere: release asset upload keeps `--clobber` so a
    rerun replaces partial uploads (ticket 1222's decision), and PyPI
    publish fails loudly on a version collision.
 
 ### Version and changelog gates
 
-6. `scripts/check-release-versions.py` requires a `^v` tag, compares it
+7. `scripts/check-release-versions.py` requires a `^v` tag, compares it
    to the committed Cargo and pyproject versions, and runs
    `scripts/check-version-sync.sh` from the tag ref (`fetch-depth: 0`).
    Behavior tests cover match, mismatch, missing `v`, and stable-only
    rejection with a clear message; `check-version-sync.sh` keeps its
    stable/`-dev.N` forms. Recorded decision: stable tags only; rc support
    becomes its own ticket if ever needed.
-7. `scripts/check-changelog-coverage.py` reads the `## <tag version>`
+8. `scripts/check-changelog-coverage.py` reads the `## <tag version>`
    section first (stripping `v`, allowing the date suffix, escaping the
    version) and falls back to `## Unreleased`, matching to the next
    heading or end of file, failing clearly when neither exists.
-8. Tickets come only from `Merge ... tickets/NNNN-` commit subjects via
+9. Tickets come only from `Merge ... tickets/NNNN-` commit subjects via
    `git log <previous>..<tag>` on the full checkout; any-length numbers;
    each needs a described bullet; an internal-only marker bullet covers
    tickets with no user-visible change.
 
 ### Event gates for publishers
 
-9. `pypi-publish` and `homebrew-tap` gate on
+10. `pypi-publish` and `homebrew-tap` gate on
    `github.event_name == 'push'` (replacing the 1229 `release` gate), so
    a dispatch still cannot reach PyPI or the tap on any input.
 
 ### Smoke and permissions
 
-10. The wheel smoke runs as a matrix over all four built wheels; Unix
+11. The wheel smoke runs as a matrix over all four built wheels; Unix
     legs use `bin/biomcp`, Windows uses `Scripts/biomcp.exe`. Deep-path
     commands exit 0; the not-found adverse-event command exits with its
     exact expected code and text; exit 101 and any crash fail. Platform
     legs share live providers; a transient provider outage fails the
     release (accepted, fail-closed).
-11. The permissions package lands in full: top-level `permissions: {}`;
+12. The permissions package lands in full: top-level `permissions: {}`;
     per-job grants — `contents: write` for `create-draft` and the
     asset-uploading `build`; `contents: read` for `version-check`,
     `pypi-build`, `docs-live`, and `homebrew-tap` (tap writes go through
@@ -111,12 +111,13 @@ publish-release:          build, pypi-publish, homebrew-tap,
                           container-publish, docs-live
 ```
 
-12. Workflow mutation tests prove: every gate step has no
+13. Workflow mutation tests prove: every gate step has no
     `continue-on-error`, no `if:` escape, no `|| true`; removing ANY edge
     above fails a test, including the dispatch skipped-draft route; the
     mutation list covers the full adjacency exactly, one test per edge;
-    and dropping `success()` or the `inputs.container_only` clause from
-    the `container-publish` condition fails a test.
+    and dropping the branch-local `success()`, any
+    `needs.*.result == 'success'` clause, or the `inputs.container_only`
+    clause from the `container-publish` condition fails a test.
 
 ## Acceptance
 
@@ -144,6 +145,8 @@ publish-release:          build, pypi-publish, homebrew-tap,
   enumeration in the ticket, `pypi-build` contents:read, `!cancelled()`
   everywhere, and the skip-existing choice. Fourth: `container_only`
   required in the dispatch clause, and explicit `success()` beside
-  `!cancelled()` so a failed need can never publish on push. All folded
-  in; fifth review pending.
+  `!cancelled()` so a failed need can never publish on push. Fifth:
+  `success()` is false for skipped needs, so it is branch-local (push
+  only) and the dispatch branch names each required success and each
+  required skip; numbering fixed. All folded in; sixth review pending.
 - Code review: pending
