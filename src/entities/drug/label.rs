@@ -410,6 +410,7 @@ pub(super) fn extract_label_boxed_warning(label_response: &serde_json::Value) ->
         .and_then(|v| v.as_array())
         .and_then(|v| v.first())
         .and_then(|top| label_text(top.get("boxed_warning")))
+        .map(|v| truncate_with_note(&normalize_label_whitespace(&v), LABEL_MAX_CHARS))
 }
 
 pub(super) fn extract_label_set_id(label_response: &serde_json::Value) -> Option<String> {
