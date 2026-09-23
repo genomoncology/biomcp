@@ -115,7 +115,8 @@ def test_wheel_smoke_fails_on_a_stack_overflow_and_runs_the_deep_paths() -> None
     assert 'grep -q "has overflowed its stack"' in wheel_smoke
     assert '"$status" -eq 134' in wheel_smoke
     assert '"$status" -ge 128' in wheel_smoke
-    assert wheel_smoke.count("return 1") == 3
+    # run_smoke, run_fallback_smoke, and run_json_smoke each fail three ways.
+    assert wheel_smoke.count("return 1") == 9
     for command in (
         "run_smoke search trial --condition diabetes --limit 1",
         'run_smoke search trial --criteria "anti-PD-1 therapy" --limit 3',
@@ -222,3 +223,31 @@ def test_docs_live_gates_every_publisher() -> None:
     assert "needs: [build, docs-live]" in _job_block(release, "homebrew-tap")
     assert "needs: [build, docs-live]" in container_publish
     assert "needs.docs-live.result == 'success'" in container_publish
+
+
+def test_version_check_gates_every_build_and_publish_path() -> None:
+    release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    version_check = _job_block(release, "version-check")
+
+    assert "needs: [version-check]" in _job_block(release, "build")
+    assert "needs: [version-check]" in _job_block(release, "pypi-build")
+    assert "needs: [version-check]" in _job_block(release, "docs-live")
+    # The check reads the tag ref, so a container_only backfill on an older
+    # tag compares the versions committed at that tag.
+    assert 'ref: ${{ github.event.release.tag_name || inputs.tag }}' in version_check
+    assert '[ "$VERSION" != "$CARGO_VERSION" ] || [ "$VERSION" != "$PYPROJECT_VERSION" ]' in version_check
+    assert "scripts/check-changelog-coverage.py" in version_check
+
+
+def test_wheel_smoke_covers_the_not_found_fallback_and_json_mode() -> None:
+    wheel_smoke = _job_block(RELEASE_WORKFLOW.read_text(encoding="utf-8"), "wheel-smoke")
+
+    assert 'run_fallback_smoke "Drug not found in FAERS"' in wheel_smoke
+    assert "drug adverse-events qwertyzzznonexistent999" in wheel_smoke
+    assert "run_json_smoke get drug --region us aspirin regulatory -j" in wheel_smoke
+    assert "run_json_smoke search trial --condition diabetes --limit 1 -j" in wheel_smoke
+    # JSON mode must succeed outright: exit 0, an object on stdout, and no
+    # missing skill-asset error, which is what a debug-profile wheel shows.
+    assert '"json mode must exit 0' in wheel_smoke
+    assert '"json mode must print an object' in wheel_smoke
+    assert '"skill asset error' in wheel_smoke

@@ -22,3 +22,10 @@ grep -n '^version' Cargo.toml pyproject.toml
 ## Fix
 
 Add a `version-check` job that fails unless `${TAG#v}` equals the Cargo version and the matching Python version. Make `build`, `pypi-build`, and `docs-live` need it. Add a test that removes the job and fails.
+
+## Resolved
+
+Ticket 1233, branch `tickets/1233-release-readiness`. The `version-check` job
+fails the workflow unless the tag matches both committed versions at the tag
+ref, and `build`, `pypi-build`, and `docs-live` need it, so every publish path
+is gated. See the record in `sdlc/records/`.
