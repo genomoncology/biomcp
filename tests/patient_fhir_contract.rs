@@ -315,14 +315,15 @@ fn files_containing(root: &Path, needle: &str) -> Vec<String> {
 
 /// Runs `get patient` at debug and at trace level against one fixture. The ID
 /// and the server's host and port must stay out of stderr, the error, and the
-/// cache directory.
-fn assert_trace_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_error: bool) {
+/// cache directory. A failing case must print its exact user-facing error.
+fn assert_trace_run_leaks_nothing(case: &str, fixture: &FhirFixture, error: Option<&str>) {
     for level in ["debug", "trace"] {
-        assert_run_leaks_nothing(&format!("{case} at {level}"), fixture, expect_error, level);
+        assert_run_leaks_nothing(&format!("{case} at {level}"), fixture, error, level);
     }
 }
 
-fn assert_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_error: bool, level: &str) {
+fn assert_run_leaks_nothing(case: &str, fixture: &FhirFixture, error: Option<&str>, level: &str) {
+    let expect_error = error.is_some();
     let cache = tempfile::tempdir().expect("cache dir");
     let env = [
         ("BIOMCP_FHIR_BASE", fixture.fhir_base()),
@@ -343,10 +344,19 @@ fn assert_run_leaks_nothing(case: &str, fixture: &FhirFixture, expect_error: boo
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
         assert_eq!(!output.status.success(), expect_error, "{case}: {stderr}");
-        assert!(
-            !expect_error || !(stderr.is_empty() && stdout.is_empty()),
-            "{case}: the error reached neither stream"
-        );
+        if let Some(text) = error {
+            if json {
+                assert!(
+                    stdout.contains(&format!("\"{text}.\"")),
+                    "{case}: JSON error: {stdout}"
+                );
+            } else {
+                assert!(
+                    stderr.contains(&format!("Error: {text}.")),
+                    "{case}: error: {stderr}"
+                );
+            }
+        }
         assert!(!stderr.contains(ID), "{case}: stderr names the ID");
         assert!(
             !stderr.contains(authority),
@@ -382,7 +392,7 @@ fn trace_logging_leaks_no_id_or_server_on_any_path() {
             redirect(format!("{other_base}/fhir/{ID}/page-2"))
         }
     });
-    assert_trace_run_leaks_nothing("degraded walk", &degraded, false);
+    assert_trace_run_leaks_nothing("degraded walk", &degraded, None);
 
     let conditions_fail = FhirFixture::start(|target| {
         if target.starts_with("/fhir/Patient/") {
@@ -394,7 +404,7 @@ fn trace_logging_leaks_no_id_or_server_on_any_path() {
             )
         }
     });
-    assert_trace_run_leaks_nothing("conditions 500", &conditions_fail, false);
+    assert_trace_run_leaks_nothing("conditions 500", &conditions_fail, None);
 
     let server_error = FhirFixture::start(|_| {
         json_reply(
@@ -402,7 +412,11 @@ fn trace_logging_leaks_no_id_or_server_on_any_path() {
             json!({"resourceType": "OperationOutcome", "issue": [{"severity": "fatal", "diagnostics": format!("Patient/{ID} failed")}]}),
         )
     });
-    assert_trace_run_leaks_nothing("patient 500", &server_error, true);
+    assert_trace_run_leaks_nothing(
+        "patient 500",
+        &server_error,
+        Some("the FHIR server answered HTTP 500"),
+    );
 
     let not_found = FhirFixture::start(|_| {
         json_reply(
@@ -410,11 +424,19 @@ fn trace_logging_leaks_no_id_or_server_on_any_path() {
             json!({"resourceType": "OperationOutcome", "issue": [{"severity": "error", "diagnostics": format!("Patient/{ID} is not known")}]}),
         )
     });
-    assert_trace_run_leaks_nothing("not found", &not_found, true);
+    assert_trace_run_leaks_nothing(
+        "not found",
+        &not_found,
+        Some("the FHIR server has no record with that patient ID"),
+    );
 
     let other_base = other.base.clone();
     let moved = FhirFixture::start(move |target| redirect(format!("{other_base}{target}")));
-    assert_trace_run_leaks_nothing("patient redirect", &moved, true);
+    assert_trace_run_leaks_nothing(
+        "patient redirect",
+        &moved,
+        Some("the FHIR server redirected off the configured base, so the request stopped"),
+    );
 
     assert_eq!(other.requests(), 0, "a redirect left the configured origin");
 }
