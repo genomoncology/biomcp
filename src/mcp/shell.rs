@@ -290,7 +290,10 @@ fn typed_search_schema(schema: &mut schemars::Schema) {
     const ENTITIES: [&str; 8] = [
         "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
     ];
-    let branches = ENTITIES.into_iter().map(typed_search_branch).collect::<Vec<_>>();
+    let branches = ENTITIES
+        .into_iter()
+        .map(typed_search_branch)
+        .collect::<Vec<_>>();
     // Top-level entity enum (derived from the same list as the branches so
     // they cannot drift) plus required, for model providers that build
     // arguments from top-level properties instead of reading oneOf branches.
@@ -1190,7 +1193,9 @@ impl BioMcpServer {
         Parameters(input): Parameters<TypedVariantCar>,
     ) -> Result<CallToolResult, McpError> {
         if input.inputs.is_empty() || input.inputs.len() > 50 {
-            return Ok(Self::tool_error("variant_normalize_car inputs must contain 1-50 HGVS strings"));
+            return Ok(Self::tool_error(
+                "variant_normalize_car inputs must contain 1-50 HGVS strings",
+            ));
         }
         match crate::entities::variant::normalize_car_batch(input.inputs).await {
             Ok(response) => Ok(CallToolResult::success(vec![Content::text(
@@ -1219,7 +1224,9 @@ impl BioMcpServer {
                 || input.limit == 0
                 || input.limit > 100
             {
-                return Ok(Self::tool_error("variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100"));
+                return Ok(Self::tool_error(
+                    "variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100",
+                ));
             }
             return match crate::entities::variant::search_erepo_gene(
                 &gene,
@@ -1243,13 +1250,17 @@ impl BioMcpServer {
             (Some(caid), None) => vec![caid],
             (None, Some(caids)) if !caids.is_empty() && caids.len() <= 50 => caids,
             _ => {
-                return Ok(Self::tool_error("variant_erepo requires exactly one of caid or caids (1-50)"));
+                return Ok(Self::tool_error(
+                    "variant_erepo requires exactly one of caid or caids (1-50)",
+                ));
             }
         };
         if caids.len() != 1
             && (input.detail || input.assertion_id.is_some() || input.version.is_some())
         {
-            return Ok(Self::tool_error("variant_erepo detail selectors require singular caid"));
+            return Ok(Self::tool_error(
+                "variant_erepo detail selectors require singular caid",
+            ));
         }
         match crate::entities::variant::retrieve_erepo(
             caids,
@@ -1289,7 +1300,9 @@ impl BioMcpServer {
             || input.limit > 50
             || input.files && input.version_iri.is_none() && input.capture_id.is_none()
         {
-            return Ok(Self::tool_error("gene_cspec version_iri and capture_id are mutually exclusive; files requires one of them; limit must be 1-50"));
+            return Ok(Self::tool_error(
+                "gene_cspec version_iri and capture_id are mutually exclusive; files requires one of them; limit must be 1-50",
+            ));
         }
         let result = if input.files {
             match input.capture_id {
@@ -1343,7 +1356,9 @@ impl BioMcpServer {
     ) -> Result<CallToolResult, McpError> {
         Self::argument_errors_as_results(async {
             if input.items.is_empty() || input.items.len() > 10 {
-                return Ok(Self::tool_error("variant_articles requires between 1 and 10 items"));
+                return Ok(Self::tool_error(
+                    "variant_articles requires between 1 and 10 items",
+                ));
             }
             if input.limit == 0 || input.limit > 50 {
                 return Ok(Self::tool_error("variant_articles limit must be between 1 and 50"));
@@ -1366,12 +1381,13 @@ impl BioMcpServer {
             .await
             {
                 Ok(outcome) => {
-                    let text = crate::render::json::to_pretty(&outcome.response).map_err(|error| {
-                        McpError::internal_error(
-                            format!("Failed to serialize variant article response: {error}"),
-                            None,
-                        )
-                    })?;
+                    let text =
+                        crate::render::json::to_pretty(&outcome.response).map_err(|error| {
+                            McpError::internal_error(
+                                format!("Failed to serialize variant article response: {error}"),
+                                None,
+                            )
+                        })?;
                     let text = redact_mcp_json_text(&text).map_err(|error| {
                         McpError::internal_error(
                             format!("Failed to sanitize variant article response: {error}"),
@@ -1770,7 +1786,9 @@ mod tests {
         // top-level required, on every bare-oneOf root.
         assert_eq!(
             search["properties"]["entity"]["enum"],
-            json!(["author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein"])
+            json!([
+                "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein"
+            ])
         );
         assert_eq!(search["required"], json!(["entity"]));
         assert_eq!(get["required"], json!(["entity"]));
@@ -1783,12 +1801,19 @@ mod tests {
             .map(|branch| &branch["properties"]["entity"]["const"])
             .collect();
         assert_eq!(get_entities, &branch_entities);
-        let erepo = serde_json::to_value(rmcp::schemars::schema_for!(super::TypedVariantErepo))
-            .unwrap();
+        let erepo =
+            serde_json::to_value(rmcp::schemars::schema_for!(super::TypedVariantErepo)).unwrap();
         assert_eq!(erepo["type"], json!("object"));
         assert_eq!(erepo["oneOf"].as_array().unwrap().len(), 3);
         for field in [
-            "caid", "caids", "gene", "detail", "assertion_id", "version", "limit", "offset",
+            "caid",
+            "caids",
+            "gene",
+            "detail",
+            "assertion_id",
+            "version",
+            "limit",
+            "offset",
         ] {
             assert!(erepo["properties"].get(field).is_some(), "erepo root missing {field}");
         }
@@ -1843,7 +1868,7 @@ mod tests {
         result
             .content
             .iter()
-            .filter_map(rmcp::model::Content::as_text)
+            .filter_map(rmcp::model::RawContent::as_text)
             .map(|text| text.text.clone())
             .collect::<Vec<_>>()
             .join("\n")
