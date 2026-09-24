@@ -460,3 +460,26 @@ def test_http_validates_modern_headers_metadata_and_origin() -> None:
     assert isinstance(removed_ping[2], dict)
     assert removed_ping[2]["error"]["code"] == -32601
     assert invalid_origin[0] == 403
+
+
+def test_stdio_rejects_unknown_list_cursors(modern_stdio: RawStdioMcp) -> None:
+    for method in ("tools/list", "resources/list"):
+        response = modern_stdio.call(f"cursor-{method}", method, {"cursor": "garbage"})
+        assert response["error"]["code"] == -32602
+        assert "cursor" in response["error"]["message"]
+
+
+def test_stdio_argument_validation_is_a_tool_result_not_a_protocol_error(
+    modern_stdio: RawStdioMcp,
+) -> None:
+    # search with an unknown entity reaches the in-body validation and must
+    # come back as isError with the message in content, so a model can retry.
+    response = modern_stdio.call(
+        "bad-entity",
+        "tools/call",
+        {"name": "search", "arguments": {"entity": "nosuch", "query": "x"}},
+    )
+    result = response["result"]
+    assert result["isError"] is True
+    text = result["content"][0]["text"]
+    assert "entity" in text

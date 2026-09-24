@@ -284,15 +284,15 @@ where
                 .collect(),
             ),
         )
-        .await
-        .expect_err("out-of-schema typed search limit should be rejected");
-    match invalid {
-        ServiceError::McpError(data) => assert!(
-            data.message
-                .contains("typed search pagination is outside its supported bounds")
-        ),
-        other => panic!("expected MCP invalid params error, got {other:?}"),
-    }
+        .await?;
+    // Argument validation is a tool result with isError so a model can
+    // read the bounds and retry.
+    assert_eq!(invalid.is_error, Some(true));
+    let text = first_text(&invalid.content);
+    assert!(
+        text.contains("typed search pagination is outside its supported bounds"),
+        "bounds message: {text}"
+    );
     Ok(())
 }
 
@@ -639,12 +639,10 @@ where
                 .collect(),
             ),
         )
-        .await
-        .expect_err("typed binary download must be rejected");
-    assert!(
-        typed.to_string().contains("CLI-only"),
-        "typed rejection: {typed}"
-    );
+        .await?;
+    assert_eq!(typed.is_error, Some(true));
+    let text = first_text(&typed.content);
+    assert!(text.contains("CLI-only"), "typed rejection: {text}");
     Ok(())
 }
 

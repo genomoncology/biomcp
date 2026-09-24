@@ -1294,9 +1294,13 @@ async fn raw_and_typed_mcp_reject_unknown_adverse_event_sections_before_provider
                 .collect(),
             ),
         )
-        .await
-        .expect_err("typed MCP rejects an unknown section at its schema boundary");
-    assert!(typed.to_string().contains("invalid adverse-event section"));
+        .await?;
+    // In-body argument validation returns a tool result with isError.
+    assert_eq!(typed.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&typed.content)
+            .contains("invalid adverse-event section")
+    );
 
     client.cancel().await?;
     Ok(())
@@ -1506,6 +1510,27 @@ async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Re
 
     let success = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
     assert_eq!(success.is_error, Some(false));
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn rmcp_client_rejects_unknown_list_cursors() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness.spawn_stdio_client(&[]).await?;
+    let error = client
+        .peer()
+        .list_tools(Some(
+            rmcp::model::PaginatedRequestParams::default().with_cursor(Some("garbage".into())),
+        ))
+        .await
+        .expect_err("an unknown cursor must be rejected with a protocol error");
+    match error {
+        rmcp::ServiceError::McpError(data) => {
+            assert_eq!(data.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+        }
+        other => panic!("expected an MCP protocol error, got: {other:?}"),
+    }
     client.cancel().await?;
     Ok(())
 }

@@ -108,13 +108,19 @@ async fn dispatch_result(
                 "_meta": {"io.modelcontextprotocol/serverInfo": server_info}
             })
         }
-        "tools/list" => json!({"tools": super::super::super::catalog::list(&server.tool_router)}),
-        "resources/list" => json!({
+        "tools/list" => {
+            reject_unknown_cursor(params)?;
+            json!({"tools": super::super::super::catalog::list(&server.tool_router)})
+        }
+        "resources/list" => {
+            reject_unknown_cursor(params)?;
+            json!({
             "resources": build_resource_list()
                 .into_iter()
                 .map(rmcp::model::AnnotateAble::no_annotation)
                 .collect::<Vec<_>>()
-        }),
+            })
+        }
         "resources/templates/list" => json!({"resourceTemplates": []}),
         "resources/read" => {
             let uri = required_string(params, "uri")?;
@@ -194,6 +200,18 @@ fn acknowledged_notifications(params: &Map<String, Value>) -> Value {
         }
     }
     Value::Object(acknowledged)
+}
+
+fn reject_unknown_cursor(params: &Map<String, Value>) -> Result<(), Value> {
+    // The catalogs are small enough to return in one page, so the server
+    // never issues a cursor; any cursor a client presents is unknown.
+    match params.get("cursor") {
+        Some(Value::String(cursor)) if !cursor.is_empty() => Err(json!({
+            "code": -32602,
+            "message": "unknown cursor"
+        })),
+        _ => Ok(()),
+    }
 }
 
 fn required_string<'a>(params: &'a Map<String, Value>, name: &str) -> Result<&'a str, Value> {
