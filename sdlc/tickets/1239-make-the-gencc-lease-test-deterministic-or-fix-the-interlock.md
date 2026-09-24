@@ -54,9 +54,12 @@ so variant discrimination alone would not close the hole. Chosen fix:
    `BIOMCP_GENCC_TEST_FAIL_AT=cleanup-classify-generation` (returns
    `Unavailable` as the load result, debug-only); publish g3; assert the
    publish succeeds and the generations directory holds three entries;
-   disarm; assert the store loads. Red on unfixed code: every unleased
-   non-active generation is pruned, so the count is 1 ({g3}), not 2.
-   The corrupt-prune policy stays pinned by the existing
+   disarm; assert the store loads. On unfixed code the injection point
+   does not exist, so the armed variable is inert and the count-3
+   assertion fails against normal cleanup's 2; with the injection added
+   but the old any-error classifier, every unleased non-active
+   generation would prune to 1. The corrupt-prune policy stays pinned
+   by the existing
    `invalid-finalized` test, which passes unchanged under the taxonomy
    fix.
 5. The flaking test's count assertion stays single-shot: cleanup runs
@@ -78,5 +81,16 @@ tests prove the mechanism either way.
 
 - Design review: REJECT once (the fix's discrimination signal did not
   exist — transient open errors surface as `Invalid`); revised to the
-  taxonomy fix above, re-review pending
+  taxonomy fix above, ACCEPT on re-review 2026-09-24
+- Code review: ACCEPT 2026-09-24 (reviewer, medium) — two P2s recorded
+  below
 - Code review: pending
+
+## Recorded residuals
+
+- Non-unix `read_regular` still maps transient read failures to
+  `Invalid`, so the same transient-prune hazard exists on non-unix
+  hosts. Deferred with the design's P2; fix is routing it through the
+  errno taxonomy.
+- Live provider verification and the full-suite load reproduction stay
+  with their owning tickets.
