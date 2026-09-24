@@ -323,6 +323,7 @@ fn basis_freshness(basis: Option<std::time::SystemTime>) -> DdinterBundleFreshne
     let stale = basis.is_none_or(|mtime| {
         std::time::SystemTime::now()
             .duration_since(mtime)
+            .ok()
             .is_none_or(|age| age >= DDINTER_STALE_AFTER)
     });
     if stale {
