@@ -221,8 +221,9 @@ impl FhirClient {
             .get(url)
             .header(CACHE_CONTROL, "no-store")
             .header(ACCEPT, ACCEPT_FHIR_JSON);
-        // RED: strict handling not sent yet.
-        let _ = (strict, PREFER_STRICT);
+        if strict {
+            request = request.header("Prefer", PREFER_STRICT);
+        }
         super::apply_no_store(request)
     }
 

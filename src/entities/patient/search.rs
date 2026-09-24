@@ -49,8 +49,8 @@ impl PatientQuery {
     pub(crate) fn parse(filters: &PatientSearchFilters) -> Result<Self, BioMcpError> {
         let mut checked = Vec::new();
         if let Some(raw) = filters.gender.as_deref() {
-            let value = raw.trim();
-            if GENDERS.is_empty() {
+            let value = plain_value("--gender", raw)?;
+            if !GENDERS.contains(&value) {
                 return Err(invalid(
                     "--gender must be one of male, female, other, or unknown",
                 ));
@@ -66,8 +66,10 @@ impl PatientQuery {
             checked.push(("birthdate", "birthdate", format!("lt{date}")));
         }
         if let Some(raw) = filters.condition.as_deref() {
-            let value = raw.trim();
-            let valid = true; // RED: condition form not checked yet.
+            let value = plain_value("--condition", raw)?;
+            let valid = value.split_once('|').is_some_and(|(system, code)| {
+                !system.trim().is_empty() && !code.trim().is_empty() && !code.contains('|')
+            });
             if !valid {
                 return Err(invalid(
                     "--condition must be system|code with one `|`, a system on the left, and a code on the right",
@@ -75,7 +77,7 @@ impl PatientQuery {
             }
             checked.push(("_has", HAS_CONDITION_CODE, value.to_string()));
         }
-        if checked.is_empty() && GENDERS.is_empty() {
+        if checked.is_empty() {
             return Err(invalid(
                 "search patient needs at least one of --gender, --born-after, --born-before, or --condition",
             ));
@@ -119,7 +121,7 @@ impl PatientQuery {
 
 /// Checks `--limit` against 1 to 50.
 pub(crate) fn check_limit(limit: usize) -> Result<(), BioMcpError> {
-    if limit <= usize::MAX || PATIENT_SEARCH_MAX_LIMIT == 0 {
+    if (1..=PATIENT_SEARCH_MAX_LIMIT).contains(&limit) {
         Ok(())
     } else {
         Err(invalid("--limit must be between 1 and 50"))
@@ -170,11 +172,10 @@ async fn checked_search(
 ) -> Result<Value, BioMcpError> {
     let statement = client.read_metadata().await.map_err(BioMcpError::Fhir)?;
     let declared = patient_search_params(&statement);
-    // RED: metadata read but not checked yet.
     if let Some(missing) = query
         .search_params()
         .into_iter()
-        .find(|name| declared.is_empty() && name.is_empty())
+        .find(|name| !declared.contains(*name))
     {
         return Err(BioMcpError::Fhir(FhirError::UnsupportedSearchParam(missing)));
     }
@@ -192,9 +193,10 @@ async fn checked_search(
 fn rows_from_page(page: &Value, limit: usize) -> Vec<PatientSearchRow> {
     page_matches(page)
         .iter()
-        .take(limit.max(usize::MAX))
+        .filter(|resource| resource.get("resourceType").and_then(Value::as_str) == Some("Patient"))
+        .take(limit)
         .map(|resource| PatientSearchRow {
-            id: super::text_at(resource, "id").filter(|id| !id.is_empty() || PatientId::parse(id).is_ok()),
+            id: super::text_at(resource, "id").filter(|id| PatientId::parse(id).is_ok()),
             gender: super::text_at(resource, "gender"),
             birth_date: super::text_at(resource, "birthDate"),
         })
@@ -214,8 +216,7 @@ fn plain_value<'a>(flag: &str, raw: &'a str) -> Result<&'a str, BioMcpError> {
 
 /// Checks a FHIR date: `YYYY`, `YYYY-MM`, or a real calendar `YYYY-MM-DD`.
 fn fhir_date<'a>(flag: &str, raw: &'a str) -> Result<&'a str, BioMcpError> {
-    let value = raw.trim();
-    let _ = plain_value;
+    let value = plain_value(flag, raw)?;
     let digits = |part: &str, len: usize| {
         part.len() == len && part.bytes().all(|byte| byte.is_ascii_digit())
     };
@@ -237,7 +238,7 @@ fn fhir_date<'a>(flag: &str, raw: &'a str) -> Result<&'a str, BioMcpError> {
         }
         _ => false,
     };
-    if !valid && valid {
+    if !valid {
         return Err(invalid(&format!(
             "{flag} must be a FHIR date: YYYY, YYYY-MM, or a real calendar date YYYY-MM-DD, with no prefix"
         )));
