@@ -287,14 +287,21 @@ fn typed_search_branch(entity: &str) -> Value {
 }
 
 fn typed_search_schema(schema: &mut schemars::Schema) {
-    let branches = [
+    const ENTITIES: [&str; 8] = [
         "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
-    ]
-    .into_iter()
-    .map(typed_search_branch)
-    .collect::<Vec<_>>();
-    *schema = serde_json::from_value(json!({"type":"object","oneOf":branches}))
-        .expect("valid typed search schema");
+    ];
+    let branches = ENTITIES.into_iter().map(typed_search_branch).collect::<Vec<_>>();
+    // Top-level entity enum (derived from the same list as the branches so
+    // they cannot drift) plus required, for model providers that build
+    // arguments from top-level properties instead of reading oneOf branches.
+    let entity = json!({"type":"string","enum":ENTITIES});
+    *schema = serde_json::from_value(json!({
+        "type":"object",
+        "properties":{"entity":entity},
+        "required":["entity"],
+        "oneOf":branches
+    }))
+    .expect("valid typed search schema");
 }
 
 fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
@@ -303,8 +310,22 @@ fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
         json!({"type":"object","additionalProperties":false,"properties":{"caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}}},"required":["caids"]}),
         json!({"type":"object","additionalProperties":false,"properties":{"gene":{"type":"string","minLength":1},"limit":{"type":"integer","minimum":1,"maximum":100,"default":25},"offset":{"type":"integer","minimum":0,"default":0}},"required":["gene"]}),
     ];
-    *schema = serde_json::from_value(json!({"type":"object","oneOf":branches}))
-        .expect("valid typed ERepo schema");
+    let properties = json!({
+        "caid":{"type":"string","minLength":1},
+        "caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}},
+        "gene":{"type":"string","minLength":1},
+        "detail":{"type":"boolean"},
+        "assertion_id":{"type":"string"},
+        "version":{"type":"string"},
+        "limit":{"type":"integer","minimum":1,"maximum":100,"default":25},
+        "offset":{"type":"integer","minimum":0,"default":0},
+    });
+    *schema = serde_json::from_value(json!({
+        "type":"object",
+        "properties":properties,
+        "oneOf":branches
+    }))
+    .expect("valid typed ERepo schema");
 }
 
 fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
@@ -346,6 +367,22 @@ impl BioMcpServer {
             tool_router.add_route(panic_route);
         }
         Self { tool_router }
+    }
+
+    /// Argument-validation failures become tool results with `isError`
+    /// (spec-sanctioned for tool-originated errors, and the model can
+    /// self-correct); protocol-shape errors pass through as-is.
+    async fn argument_errors_as_results<F>(future: F) -> Result<CallToolResult, McpError>
+    where
+        F: Future<Output = Result<CallToolResult, McpError>>,
+    {
+        match future.await {
+            Ok(result) => Ok(result),
+            Err(error) if error.code == rmcp::model::ErrorCode::INVALID_PARAMS => {
+                Ok(Self::tool_error(error.message.into_owned()))
+            }
+            Err(error) => Err(error),
+        }
     }
 
     fn tool_error(message: impl Into<String>) -> CallToolResult {
@@ -617,6 +654,13 @@ fn args_with_json(mut args: Vec<String>) -> Vec<String> {
         args.push("--json".to_string());
     }
     args
+}
+
+fn unknown_cursor_error(request: Option<&PaginatedRequestParams>) -> Option<McpError> {
+    // The catalogs fit one page and the server never issues a cursor, so
+    // any cursor a client presents is unknown.
+    let cursor = request?.cursor.as_deref()?;
+    (!cursor.is_empty()).then(|| McpError::invalid_params("unknown cursor", None))
 }
 
 fn cli_may_return_article_fulltext(cli: &crate::cli::Cli) -> bool {
@@ -1111,13 +1155,16 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedSearch>,
     ) -> Result<CallToolResult, McpError> {
-        let json = input
-            .0
-            .get("json")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let args = search_args(input)?;
-        Self::execute_args(args, json).await
+        Self::argument_errors_as_results(async {
+            let json = input
+                .0
+                .get("json")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let args = search_args(input)?;
+            Self::execute_args(args, json).await
+        })
+        .await
     }
 
     #[tool]
@@ -1125,13 +1172,16 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedGet>,
     ) -> Result<CallToolResult, McpError> {
-        let json = input
-            .0
-            .get("json")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let args = get_args(input)?;
-        Self::execute_args(args, json).await
+        Self::argument_errors_as_results(async {
+            let json = input
+                .0
+                .get("json")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let args = get_args(input)?;
+            Self::execute_args(args, json).await
+        })
+        .await
     }
 
     #[tool]
@@ -1140,10 +1190,7 @@ impl BioMcpServer {
         Parameters(input): Parameters<TypedVariantCar>,
     ) -> Result<CallToolResult, McpError> {
         if input.inputs.is_empty() || input.inputs.len() > 50 {
-            return Err(McpError::invalid_params(
-                "variant_normalize_car inputs must contain 1-50 HGVS strings",
-                None,
-            ));
+            return Ok(Self::tool_error("variant_normalize_car inputs must contain 1-50 HGVS strings"));
         }
         match crate::entities::variant::normalize_car_batch(input.inputs).await {
             Ok(response) => Ok(CallToolResult::success(vec![Content::text(
@@ -1172,10 +1219,7 @@ impl BioMcpServer {
                 || input.limit == 0
                 || input.limit > 100
             {
-                return Err(McpError::invalid_params(
-                    "variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100",
-                    None,
-                ));
+                return Ok(Self::tool_error("variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100"));
             }
             return match crate::entities::variant::search_erepo_gene(
                 &gene,
@@ -1199,19 +1243,13 @@ impl BioMcpServer {
             (Some(caid), None) => vec![caid],
             (None, Some(caids)) if !caids.is_empty() && caids.len() <= 50 => caids,
             _ => {
-                return Err(McpError::invalid_params(
-                    "variant_erepo requires exactly one of caid or caids (1-50)",
-                    None,
-                ));
+                return Ok(Self::tool_error("variant_erepo requires exactly one of caid or caids (1-50)"));
             }
         };
         if caids.len() != 1
             && (input.detail || input.assertion_id.is_some() || input.version.is_some())
         {
-            return Err(McpError::invalid_params(
-                "variant_erepo detail selectors require singular caid",
-                None,
-            ));
+            return Ok(Self::tool_error("variant_erepo detail selectors require singular caid"));
         }
         match crate::entities::variant::retrieve_erepo(
             caids,
@@ -1251,10 +1289,7 @@ impl BioMcpServer {
             || input.limit > 50
             || input.files && input.version_iri.is_none() && input.capture_id.is_none()
         {
-            return Err(McpError::invalid_params(
-                "gene_cspec version_iri and capture_id are mutually exclusive; files requires one of them; limit must be 1-50",
-                None,
-            ));
+            return Ok(Self::tool_error("gene_cspec version_iri and capture_id are mutually exclusive; files requires one of them; limit must be 1-50"));
         }
         let result = if input.files {
             match input.capture_id {
@@ -1306,59 +1341,53 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedVariantArticles>,
     ) -> Result<CallToolResult, McpError> {
-        if input.items.is_empty() || input.items.len() > 10 {
-            return Err(McpError::invalid_params(
-                "variant_articles requires between 1 and 10 items",
-                None,
-            ));
-        }
-        if input.limit == 0 || input.limit > 50 {
-            return Err(McpError::invalid_params(
-                "variant_articles limit must be between 1 and 50",
-                None,
-            ));
-        }
-        if input.confirmed_only && !input.verify_identity {
-            return Err(McpError::invalid_params(
-                "variant_articles confirmed_only requires verify_identity",
-                None,
-            ));
-        }
-        let strategy = variant_article_strategy(&input.strategy)?;
-        match crate::entities::article::search_variant_article_batch_with_options(
-            input.items,
-            strategy,
-            input.limit,
-            input.offset,
-            input.debug_plan,
-            crate::entities::article::VariantArticleVerificationOptions {
-                verify_identity: input.verify_identity,
-                confirmed_only: input.confirmed_only,
-            },
-        )
+        Self::argument_errors_as_results(async {
+                if input.items.is_empty() || input.items.len() > 10 {
+                    return Ok(Self::tool_error("variant_articles requires between 1 and 10 items"));
+                }
+                if input.limit == 0 || input.limit > 50 {
+                    return Ok(Self::tool_error("variant_articles limit must be between 1 and 50"));
+                }
+                if input.confirmed_only && !input.verify_identity {
+                    return Ok(Self::tool_error("variant_articles confirmed_only requires verify_identity"));
+                }
+                let strategy = variant_article_strategy(&input.strategy)?;
+                match crate::entities::article::search_variant_article_batch_with_options(
+                    input.items,
+                    strategy,
+                    input.limit,
+                    input.offset,
+                    input.debug_plan,
+                    crate::entities::article::VariantArticleVerificationOptions {
+                        verify_identity: input.verify_identity,
+                        confirmed_only: input.confirmed_only,
+                    },
+                )
+                .await
+                {
+                    Ok(outcome) => {
+                        let text = crate::render::json::to_pretty(&outcome.response).map_err(|error| {
+                            McpError::internal_error(
+                                format!("Failed to serialize variant article response: {error}"),
+                                None,
+                            )
+                        })?;
+                        let text = redact_mcp_json_text(&text).map_err(|error| {
+                            McpError::internal_error(
+                                format!("Failed to sanitize variant article response: {error}"),
+                                None,
+                            )
+                        })?;
+                        Ok(if outcome.hard_error {
+                            CallToolResult::error(vec![Content::text(text)])
+                        } else {
+                            CallToolResult::success(vec![Content::text(text)])
+                        })
+                    }
+                    Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+                }
+        })
         .await
-        {
-            Ok(outcome) => {
-                let text = crate::render::json::to_pretty(&outcome.response).map_err(|error| {
-                    McpError::internal_error(
-                        format!("Failed to serialize variant article response: {error}"),
-                        None,
-                    )
-                })?;
-                let text = redact_mcp_json_text(&text).map_err(|error| {
-                    McpError::internal_error(
-                        format!("Failed to sanitize variant article response: {error}"),
-                        None,
-                    )
-                })?;
-                Ok(if outcome.hard_error {
-                    CallToolResult::error(vec![Content::text(text)])
-                } else {
-                    CallToolResult::success(vec![Content::text(text)])
-                })
-            }
-            Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
-        }
     }
 }
 
@@ -1403,9 +1432,12 @@ impl ServerHandler for BioMcpServer {
 
     fn list_tools(
         &self,
-        _request: Option<PaginatedRequestParams>,
+        request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> impl Future<Output = Result<ListToolsResult, McpError>> + Send + '_ {
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
         std::future::ready(Ok(ListToolsResult::with_all_items(super::catalog::list(
             &self.tool_router,
         ))))
@@ -1413,9 +1445,12 @@ impl ServerHandler for BioMcpServer {
 
     fn list_resources(
         &self,
-        _request: Option<PaginatedRequestParams>,
+        request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> impl Future<Output = Result<ListResourcesResult, McpError>> + Send + '_ {
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
         std::future::ready(Ok(ListResourcesResult::with_all_items(
             build_resource_list()
                 .into_iter()
@@ -1729,6 +1764,35 @@ mod tests {
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
         assert_eq!(get["type"], json!("object"));
         assert_eq!(get["oneOf"].as_array().unwrap().len(), 13);
+
+        // Providers that build arguments from top-level properties see the
+        // entity enum (derived from the same lists as the branches) and a
+        // top-level required, on every bare-oneOf root.
+        assert_eq!(
+            search["properties"]["entity"]["enum"],
+            json!(["author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein"])
+        );
+        assert_eq!(search["required"], json!(["entity"]));
+        assert_eq!(get["required"], json!(["entity"]));
+        let get_entities = get["properties"]["entity"]["enum"].as_array().unwrap();
+        assert_eq!(get_entities.len(), 13);
+        let branch_entities: Vec<&serde_json::Value> = get["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|branch| &branch["properties"]["entity"]["const"])
+            .collect();
+        assert_eq!(get_entities, &branch_entities);
+        let erepo = serde_json::to_value(rmcp::schemars::schema_for!(super::TypedVariantErepo))
+            .unwrap();
+        assert_eq!(erepo["type"], json!("object"));
+        assert_eq!(erepo["oneOf"].as_array().unwrap().len(), 3);
+        for field in [
+            "caid", "caids", "gene", "detail", "assertion_id", "version", "limit", "offset",
+        ] {
+            assert!(erepo["properties"].get(field).is_some(), "erepo root missing {field}");
+        }
+        assert!(erepo.get("required").is_none());
 
         assert!(search_args(TypedSearch(json!({"entity":"pathway","query":"MAPK"}))).is_err());
         assert!(

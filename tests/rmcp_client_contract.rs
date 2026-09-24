@@ -1511,6 +1511,23 @@ async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Re
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn rmcp_client_rejects_unknown_list_cursors() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness.spawn_stdio_client(&[]).await?;
+    let error = client
+        .peer()
+        .list_tools(rmcp::model::PaginatedRequestParams {
+            cursor: Some("garbage".into()),
+            ..Default::default()
+        })
+        .await
+        .expect_err("an unknown cursor must be rejected with a protocol error");
+    assert_eq!(error.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness.spawn_stdio_client(&[]).await?;
