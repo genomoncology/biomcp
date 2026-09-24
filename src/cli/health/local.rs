@@ -416,7 +416,7 @@ fn cache_limits_error_outcome(message: String) -> ProbeOutcome {
     )
 }
 
-const FHIR_AFFECTS: &str = "get patient and its conditions section";
+const FHIR_AFFECTS: &str = "get patient, its conditions section, and search patient";
 
 /// Reports whether `BIOMCP_FHIR_BASE` is set. It sends no request and never
 /// prints the URL.

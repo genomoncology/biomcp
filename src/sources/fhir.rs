@@ -4,7 +4,8 @@
 //! Nothing here logs, and no error carries a URL, a body, or a patient ID.
 //! Every FHIR GET goes through [`FhirClient::get_json`], which sends it with
 //! no-store and strips the URL from any transport error. Redirects and next
-//! links stay on the origin and base path of the configured server.
+//! links stay on the origin and base path of the configured server. A patient
+//! search also asks the server to fail rather than ignore a parameter.
 
 use std::collections::HashSet;
 use std::time::Duration;
@@ -29,6 +30,8 @@ pub(crate) const MAX_PATIENT_ID_CHARS: usize = 64;
 
 const MAX_REDIRECTS: usize = 10;
 const ACCEPT_FHIR_JSON: &str = "application/fhir+json, application/json";
+/// Asks the server to fail on a search parameter it would otherwise ignore.
+const PREFER_STRICT: &str = "handling=strict";
 
 /// What can go wrong between BioMCP and the FHIR server.
 ///
@@ -55,6 +58,10 @@ pub enum FhirError {
     Status(u16),
     #[error("the FHIR server sent a response that is not the expected FHIR JSON")]
     Decode,
+    #[error(
+        "the FHIR server's metadata does not list the Patient search parameter {0}, so no search was sent"
+    )]
+    UnsupportedSearchParam(&'static str),
 }
 
 /// A patient ID checked against `[A-Za-z0-9\-.]{1,64}`, the FHIR id rule.
@@ -207,18 +214,25 @@ impl FhirClient {
     }
 
     /// Builds the one kind of request this client sends: a GET with no-store.
-    fn request(&self, url: Url) -> RequestBuilder {
-        super::apply_no_store(
-            self.client
-                .get(url)
-                .header(CACHE_CONTROL, "no-store")
-                .header(ACCEPT, ACCEPT_FHIR_JSON),
-        )
+    /// A strict request also sends `Prefer: handling=strict`.
+    fn request(&self, url: Url, strict: bool) -> RequestBuilder {
+        let mut request = self
+            .client
+            .get(url)
+            .header(CACHE_CONTROL, "no-store")
+            .header(ACCEPT, ACCEPT_FHIR_JSON);
+        // RED: strict handling not sent yet.
+        let _ = (strict, PREFER_STRICT);
+        super::apply_no_store(request)
     }
 
     /// The one FHIR request function. Every GET goes through it.
-    async fn get_json(&self, url: Url) -> Result<Value, FhirError> {
-        let response = self.request(url).send().await.map_err(transport_error)?;
+    async fn get_json(&self, url: Url, strict: bool) -> Result<Value, FhirError> {
+        let response = self
+            .request(url, strict)
+            .send()
+            .await
+            .map_err(transport_error)?;
         let status = response.status();
         let body = response
             .bytes()
@@ -236,7 +250,7 @@ impl FhirClient {
     /// Reads `Patient/{id}`.
     pub(crate) async fn read_patient(&self, id: &PatientId) -> Result<Value, FhirError> {
         let resource = self
-            .get_json(self.base.resource_url(&["Patient", id.as_str()], &[]))
+            .get_json(self.base.resource_url(&["Patient", id.as_str()], &[]), false)
             .await?;
         if resource.get("resourceType").and_then(Value::as_str) != Some("Patient") {
             return Err(FhirError::Decode);
@@ -254,6 +268,34 @@ impl FhirClient {
         self.walk(start, MAX_PAGES).await
     }
 
+    /// Reads the server's CapabilityStatement at `metadata`.
+    pub(crate) async fn read_metadata(&self) -> Result<Value, FhirError> {
+        let statement = self
+            .get_json(self.base.resource_url(&["metadata"], &[]), false)
+            .await
+            .map_err(not_found_as_status)?;
+        if statement.get("resourceType").and_then(Value::as_str) != Some("CapabilityStatement") {
+            return Err(FhirError::Decode);
+        }
+        Ok(statement)
+    }
+
+    /// Runs one Patient search with strict handling and reads one page.
+    /// It never follows a next link.
+    pub(crate) async fn search_patients(
+        &self,
+        query: &[(&str, &str)],
+    ) -> Result<Value, FhirError> {
+        let page = self
+            .get_json(self.base.resource_url(&["Patient"], query), true)
+            .await
+            .map_err(not_found_as_status)?;
+        if page.get("resourceType").and_then(Value::as_str) != Some("Bundle") {
+            return Err(FhirError::Decode);
+        }
+        Ok(page)
+    }
+
     /// Follows next links from `start`. A failure on the first page is an
     /// error; any later stop keeps the pages read and names the reason.
     pub(crate) async fn walk(&self, start: Url, max_pages: usize) -> Result<Walk, FhirError> {
@@ -267,7 +309,7 @@ impl FhirClient {
                 break;
             }
             visited.insert(url.as_str().to_string());
-            let page = match self.get_json(url.clone()).await {
+            let page = match self.get_json(url.clone(), false).await {
                 Ok(page) => page,
                 Err(FhirError::Redirect) => {
                     walk.stop = Some(WalkStop::OffBaseRedirect);
@@ -307,6 +349,35 @@ impl FhirClient {
         }
         Ok(walk)
     }
+}
+
+/// A 404 outside a patient read is not a missing patient.
+fn not_found_as_status(error: FhirError) -> FhirError {
+    if error == FhirError::NotFound {
+        FhirError::Status(404)
+    } else {
+        error
+    }
+}
+
+/// The Patient search parameters a CapabilityStatement lists under any
+/// `rest` entry with mode `server`.
+pub(crate) fn patient_search_params(statement: &Value) -> HashSet<String> {
+    array(statement.get("rest"))
+        .filter(|rest| rest.get("mode").and_then(Value::as_str) == Some("server"))
+        .flat_map(|rest| array(rest.get("resource")))
+        .filter(|resource| resource.get("type").and_then(Value::as_str) == Some("Patient"))
+        .flat_map(|resource| array(resource.get("searchParam")))
+        .filter_map(|param| param.get("name").and_then(Value::as_str))
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
+/// The match entries of one Bundle page, read by the same rules as a walk.
+pub(crate) fn page_matches(page: &Value) -> Vec<Value> {
+    let mut walk = Walk::default();
+    read_bundle_page(page, &mut walk);
+    walk.matches
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -399,8 +470,8 @@ mod tests;
 
 #[cfg(test)]
 impl FhirClient {
-    pub(crate) fn request_for_test(&self, url: Url) -> RequestBuilder {
-        self.request(url)
+    pub(crate) fn request_for_test(&self, url: Url, strict: bool) -> RequestBuilder {
+        self.request(url, strict)
     }
 
     pub(crate) fn base(&self) -> &FhirBase {

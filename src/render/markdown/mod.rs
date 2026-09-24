@@ -77,7 +77,10 @@ pub use self::gene::{
     gene_cell_lines_markdown, gene_markdown, gene_search_markdown, gene_search_markdown_with_footer,
 };
 pub use self::pathway::{pathway_markdown, pathway_search_markdown_with_footer};
-pub use self::patient::patient_markdown;
+pub use self::patient::{
+    PATIENT_NO_COUNT, patient_count_markdown, patient_markdown, patient_search_markdown,
+    patient_search_next_commands,
+};
 #[allow(unused_imports)]
 pub use self::pgx::{pgx_markdown, pgx_search_markdown_with_footer};
 pub use self::pharmacodb::pharmacodb_rows_markdown;
@@ -826,6 +829,10 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     env.add_template(
         "patient.md.j2",
         include_str!("../../../templates/patient.md.j2"),
+    )?;
+    env.add_template(
+        "patient_search.md.j2",
+        include_str!("../../../templates/patient_search.md.j2"),
     )?;
     env.add_template(
         "pgx_search.md.j2",

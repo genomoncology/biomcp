@@ -1,7 +1,7 @@
 use http_cache_reqwest::CacheMode;
 use serde_json::json;
 
-use super::test_server::{FixtureServer, Reply, condition, condition_bundle};
+use super::test_server::{FixtureServer, Reply, capability, condition, condition_bundle};
 use super::*;
 
 const ID: &str = "SYNTH-PT-7Q.42";
@@ -101,7 +101,7 @@ async fn the_request_function_sets_no_store() {
             .base()
             .resource_url(&["Condition"], &[("patient", ID), ("_count", "100")]),
     ] {
-        let mut request = client.request_for_test(url);
+        let mut request = client.request_for_test(url, false);
         assert_eq!(
             request.extensions().get::<CacheMode>(),
             Some(&no_store_mode())
@@ -324,4 +324,68 @@ async fn a_missing_patient_is_not_found_naming_no_id() {
 fn an_unset_base_names_the_variable() {
     let message = BioMcpError::Fhir(FhirError::NotConfigured).to_string();
     assert!(message.contains(FHIR_BASE_ENV), "{message}");
+}
+
+#[tokio::test]
+async fn a_patient_search_is_strict_no_store_and_reads_one_page() {
+    let server = FixtureServer::start(|target| {
+        let mut page = condition_bundle(&[json!({"resourceType": "Patient", "id": "p1"})], None);
+        if target.starts_with("/fhir/Patient?") {
+            page["link"] = json!([{"relation": "next", "url": "/fhir?page=2"}]);
+        }
+        Reply::json(200, page)
+    })
+    .await;
+    let client = FhirClient::new(&format!("{}/fhir", server.base)).expect("client");
+    let page = client
+        .search_patients(&[("gender", "female"), ("_count", "3")])
+        .await
+        .expect("page");
+    assert_eq!(page_matches(&page).len(), 1);
+    let seen = server.seen();
+    assert_eq!(seen.len(), 1, "followed a next link");
+    assert_eq!(seen[0].target, "/fhir/Patient?gender=female&_count=3");
+    assert_eq!(seen[0].prefer.as_deref(), Some("handling=strict"));
+    assert_eq!(seen[0].cache_control.as_deref(), Some("no-store"));
+}
+
+#[tokio::test]
+async fn metadata_is_read_with_no_store_and_must_be_a_capability_statement() {
+    let server = FixtureServer::start(|target| {
+        if target == "/fhir/metadata" {
+            Reply::json(200, capability(&["gender"]))
+        } else {
+            Reply::json(200, json!({"resourceType": "Bundle"}))
+        }
+    })
+    .await;
+    let client = FhirClient::new(&format!("{}/fhir", server.base)).expect("client");
+    let statement = client.read_metadata().await.expect("metadata");
+    assert!(patient_search_params(&statement).contains("gender"));
+    let seen = server.seen();
+    assert_eq!(seen[0].target, "/fhir/metadata");
+    assert_eq!(seen[0].cache_control.as_deref(), Some("no-store"));
+
+    let wrong = FixtureServer::start(|_| Reply::json(200, json!({"resourceType": "Bundle"}))).await;
+    let client = FhirClient::new(&format!("{}/fhir", wrong.base)).expect("client");
+    assert_eq!(client.read_metadata().await, Err(FhirError::Decode));
+    let missing = FixtureServer::start(|_| Reply::json(404, json!({}))).await;
+    let client = FhirClient::new(&format!("{}/fhir", missing.base)).expect("client");
+    assert_eq!(client.read_metadata().await, Err(FhirError::Status(404)));
+}
+
+#[test]
+fn search_params_come_only_from_the_server_patient_entry() {
+    let statement = json!({
+        "resourceType": "CapabilityStatement",
+        "rest": [
+            {"mode": "client", "resource": [{"type": "Patient", "searchParam": [{"name": "_has"}]}]},
+            {"mode": "server", "resource": [
+                {"type": "Condition", "searchParam": [{"name": "birthdate"}]},
+                {"type": "Patient", "searchParam": [{"name": "gender"}]}
+            ]}
+        ]
+    });
+    let params = patient_search_params(&statement);
+    assert_eq!(params, HashSet::from(["gender".to_string()]));
 }

@@ -1,0 +1,17 @@
+# Patients on the FHIR server
+
+{% if count == 0 -%}
+No patients found.
+{% else -%}
+Found {{ count }} patient{% if count != 1 %}s{% endif %}, at most {{ limit }} requested.
+
+| ID | Gender | Birth date |
+|---|---|---|
+{% for row in results -%}
+| {{ (row.id or "-") | markdown_cell }} | {{ (row.gender or "-") | markdown_cell }} | {{ (row.birth_date or "-") | markdown_cell }} |
+{% endfor %}
+{% for command in next_commands -%}
+{% if loop.first %}Next:
+{% endif %}- `{{ command }}`
+{% endfor -%}
+{% endif -%}

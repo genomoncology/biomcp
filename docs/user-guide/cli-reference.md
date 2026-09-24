@@ -777,11 +777,15 @@ ChEMBL and is asked for by name, and the `drug_response` section reads PharmacoD
 biomcp get patient <id>
 biomcp get patient <id> conditions
 biomcp get patient <id> all
+biomcp search patient --gender female --born-after 1950-01-01 --condition "http://snomed.info/sct|44054006" --limit 10
+biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 ```
 
 Reads one patient from the FHIR server in `BIOMCP_FHIR_BASE`. A patient ID is 1-64 letters,
-digits, hyphens, or periods, and not only periods. `serve-http` refuses patient commands. `search patient` is not yet
-available.
+digits, hyphens, or periods, and not only periods. `serve-http` refuses patient commands.
+`search patient` takes `--gender`, `--born-after`, `--born-before`, `--condition <system|code>`,
+`--limit` (1-50), and `--count`, needs at least one filter, and refuses a filter the server's
+metadata does not list.
 
 ### Protein
 

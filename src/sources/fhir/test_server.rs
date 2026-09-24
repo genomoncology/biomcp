@@ -37,6 +37,7 @@ impl Reply {
 pub(crate) struct Seen {
     pub target: String,
     pub cache_control: Option<String>,
+    pub prefer: Option<String>,
 }
 
 type Route = dyn Fn(&str) -> Reply + Send + Sync;
@@ -79,14 +80,18 @@ impl FixtureServer {
                         .and_then(|line| line.split(' ').nth(1))
                         .unwrap_or_default()
                         .to_string();
-                    let cache_control = lines.find_map(|line| {
-                        let (name, value) = line.split_once(':')?;
-                        name.eq_ignore_ascii_case("cache-control")
-                            .then(|| value.trim().to_string())
-                    });
+                    let headers = lines.collect::<Vec<_>>();
+                    let header = |wanted: &str| {
+                        headers.iter().find_map(|line| {
+                            let (name, value) = line.split_once(':')?;
+                            name.eq_ignore_ascii_case(wanted)
+                                .then(|| value.trim().to_string())
+                        })
+                    };
                     seen.lock().expect("seen lock").push(Seen {
                         target: target.clone(),
-                        cache_control,
+                        cache_control: header("cache-control"),
+                        prefer: header("prefer"),
                     });
                     let reply = route(&target);
                     let mut head = format!(
@@ -135,6 +140,20 @@ pub(crate) fn condition_bundle(
         bundle["link"] = serde_json::json!([{"relation": "next", "url": next}]);
     }
     bundle
+}
+
+/// A CapabilityStatement whose server Patient resource lists `params`.
+pub(crate) fn capability(params: &[&str]) -> serde_json::Value {
+    serde_json::json!({
+        "resourceType": "CapabilityStatement",
+        "rest": [{"mode": "server", "resource": [{
+            "type": "Patient",
+            "searchParam": params
+                .iter()
+                .map(|name| serde_json::json!({"name": name, "type": "token"}))
+                .collect::<Vec<_>>(),
+        }]}],
+    })
 }
 
 /// A synthetic Condition with an active clinical status.

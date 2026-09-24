@@ -213,5 +213,10 @@ fn text_at(value: &Value, key: &str) -> Option<String> {
         .map(ToOwned::to_owned)
 }
 
+mod search;
+pub use self::search::{
+    PATIENT_SEARCH_MAX_LIMIT, PatientSearchFilters, PatientSearchRow, count, search,
+};
+
 #[cfg(test)]
 mod tests;

@@ -234,7 +234,7 @@ fn typed_search_branch(entity: &str) -> Value {
             ],
             &["query"],
         ),
-        // Patient search takes no filters until it ships; the CLI refuses it.
+        // Typed patient search stays filterless (2003); filters use the shell tool.
         "patient" => (&[], &[]),
         _ => unreachable!(),
     };

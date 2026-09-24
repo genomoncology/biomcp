@@ -370,6 +370,8 @@ pub(super) fn list_patient() -> String {
 - `get patient <id>` - demographics (id, gender, birth date) from the FHIR server in `BIOMCP_FHIR_BASE`
 - `get patient <id> conditions` - this patient's FHIR Condition records
 - `get patient <id> all` - include every section
+- `search patient --gender <male|female|other|unknown> --born-after <date> --born-before <date> --condition <system|code> --limit <N>` - find patients by typed facts; at least one filter
+- `search patient --condition <system|code> --count` - the patient count the server reports
 
 ## Setup
 
@@ -379,7 +381,10 @@ pub(super) fn list_patient() -> String {
 
 ## Limits
 
-- `search patient` is not yet available.
+- `search patient` takes no free text. Dates are `YYYY`, `YYYY-MM`, or a real calendar `YYYY-MM-DD`; `--born-after` and `--born-before` are strict bounds. A comma in any value is refused because it means OR in FHIR.
+- `search patient` reads the server's metadata first and refuses a filter the server does not list. It sends `Prefer: handling=strict`, reads one page, and keeps only each patient's id, gender, and birth date. `--limit` runs 1-50.
+- `--count` prints the server's `Bundle.total`, labeled server-reported. It never counts entries.
+- Over MCP, typed `search` for patient takes no filters. Run `search patient` with filters through the `biomcp` shell tool on stdio.
 - Patient commands run on the CLI and stdio MCP. `serve-http` refuses them until the HTTP transport has authenticated per-user sessions.
 - Every FHIR request is sent with no-store, and nothing is cached.
 - The conditions section reads at most 20 pages of 100. A repeated or off-server next link, a redirect off the server, or the page cap marks it `degraded`.

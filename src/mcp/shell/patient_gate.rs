@@ -51,6 +51,16 @@ mod tests {
             &["biomcp", "get", "patient", "SYNTH-1"][..],
             &["biomcp", "get", "patient", "SYNTH-1", "conditions"],
             &["biomcp", "search", "patient"],
+            &[
+                "biomcp",
+                "search",
+                "patient",
+                "--gender",
+                "female",
+                "--condition",
+                "http://snomed.info/sct|44054006",
+                "--count",
+            ],
             &["biomcp", "batch", "patient", "SYNTH-1,SYNTH-2"],
             &["biomcp", "batch", " Patient ", "SYNTH-1"],
         ] {
@@ -66,7 +76,7 @@ mod tests {
     }
 
     #[test]
-    fn typed_patient_search_maps_to_the_cli_refusal_without_filters() {
+    fn typed_patient_search_takes_no_filters() {
         assert_eq!(
             super::super::search_args(super::super::TypedSearch(json!({"entity":"patient"})))
                 .unwrap(),
@@ -78,11 +88,16 @@ mod tests {
             ))
             .is_err()
         );
-        assert!(
-            super::super::search_args(super::super::TypedSearch(
-                json!({"entity":"patient","limit":5})
-            ))
-            .is_err()
-        );
+        for field in [
+            json!({"entity":"patient","limit":5}),
+            json!({"entity":"patient","gender":"female"}),
+            json!({"entity":"patient","condition":"http://snomed.info/sct|44054006"}),
+            json!({"entity":"patient","count":true}),
+        ] {
+            assert!(
+                super::super::search_args(super::super::TypedSearch(field.clone())).is_err(),
+                "{field}"
+            );
+        }
     }
 }

@@ -171,6 +171,7 @@ New to BioMCP? Try:
 - `get drug <name> cell_lines`
 - `drug cell-lines <name> [--cell-line <accession>|--dataset <name>] [--limit <N>] [--offset <N>]`
 - `get patient <id> [conditions|all]` (reads the FHIR server in `BIOMCP_FHIR_BASE`; CLI and stdio MCP only)
+- `search patient --gender <g> --born-after <date> --born-before <date> --condition <system|code> [--limit <N>|--count]` (typed facts only; CLI and stdio MCP only)
 - `protein structures <accession> --limit <N> --offset <N>`
 - `search drug --interactions <drug>` remains unavailable from current public data sources; use `drug interactions <name>` when you already know the anchor drug
 - `study list`

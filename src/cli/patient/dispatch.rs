@@ -1,4 +1,4 @@
-use super::{PatientGetArgs, PatientSearchArgs, SEARCH_NOT_YET_AVAILABLE};
+use super::{PatientGetArgs, PatientSearchArgs};
 use crate::cli::CommandOutcome;
 
 pub(in crate::cli) async fn handle_get(
@@ -21,6 +21,46 @@ pub(in crate::cli) async fn handle_get(
     Ok(CommandOutcome::stdout(text))
 }
 
-pub(in crate::cli) fn handle_search(_args: PatientSearchArgs) -> anyhow::Result<CommandOutcome> {
-    Err(crate::error::BioMcpError::InvalidArgument(SEARCH_NOT_YET_AVAILABLE.into()).into())
+pub(in crate::cli) async fn handle_search(
+    args: PatientSearchArgs,
+    json: bool,
+) -> anyhow::Result<CommandOutcome> {
+    let filters = crate::entities::patient::PatientSearchFilters {
+        gender: args.gender,
+        born_after: args.born_after,
+        born_before: args.born_before,
+        condition: args.condition,
+    };
+    let text = if args.count {
+        let total = crate::entities::patient::count(&filters).await?;
+        if json {
+            #[derive(serde::Serialize)]
+            struct CountResponse {
+                source: &'static str,
+                server_reported_total: Option<u64>,
+                #[serde(skip_serializing_if = "Option::is_none")]
+                message: Option<&'static str>,
+            }
+            crate::render::json::to_pretty(&CountResponse {
+                source: crate::sources::fhir::FHIR_SOURCE,
+                server_reported_total: total,
+                message: total
+                    .is_none()
+                    .then_some(crate::render::markdown::PATIENT_NO_COUNT),
+            })?
+        } else {
+            crate::render::markdown::patient_count_markdown(total)
+        }
+    } else {
+        let rows = crate::entities::patient::search(&filters, args.limit).await?;
+        if json {
+            let pagination =
+                super::super::PaginationMeta::offset(0, args.limit, rows.len(), None);
+            let next_commands = crate::render::markdown::patient_search_next_commands(&rows);
+            super::super::search_json_with_meta(rows, pagination, next_commands)?
+        } else {
+            crate::render::markdown::patient_search_markdown(&rows, args.limit)?
+        }
+    };
+    Ok(CommandOutcome::stdout(text))
 }

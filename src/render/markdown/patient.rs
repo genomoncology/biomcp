@@ -1,7 +1,7 @@
 //! Patient markdown renderer.
 
 use super::*;
-use crate::entities::patient::Patient;
+use crate::entities::patient::{Patient, PatientSearchRow};
 
 pub fn patient_markdown(
     patient: &Patient,
@@ -35,3 +35,36 @@ pub fn patient_markdown(
     })?;
     Ok(body)
 }
+
+/// `biomcp get patient <id>` for each row whose id passed the FHIR id rule.
+pub fn patient_search_next_commands(rows: &[PatientSearchRow]) -> Vec<String> {
+    rows.iter()
+        .filter_map(|row| row.id.as_deref())
+        .map(|id| format!("biomcp get patient {id}"))
+        .collect()
+}
+
+pub fn patient_search_markdown(
+    rows: &[PatientSearchRow],
+    limit: usize,
+) -> Result<String, BioMcpError> {
+    let tmpl = env()?.get_template("patient_search.md.j2")?;
+    Ok(tmpl.render(context! {
+        count => rows.len(),
+        limit => limit,
+        results => rows,
+        next_commands => patient_search_next_commands(rows),
+    })?)
+}
+
+/// The patient count the server reports. It never counts entries itself.
+pub fn patient_count_markdown(total: Option<u64>) -> String {
+    let line = match total {
+        Some(total) => format!("Server-reported total: {total}"),
+        None => PATIENT_NO_COUNT.to_string(),
+    };
+    format!("# Patient count on the FHIR server\n\n{line}\n")
+}
+
+/// What `search patient --count` says when the Bundle has no `total`.
+pub const PATIENT_NO_COUNT: &str = "The FHIR server reported no count.";

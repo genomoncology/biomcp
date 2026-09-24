@@ -242,7 +242,8 @@ EXAMPLES:
 See also: biomcp list pathway"
     )]
     Pathway(pathway::PathwaySearchArgs),
-    /// Patient search is not yet available; use `get patient <id>`
+    /// Search patients on the FHIR server by gender, birth date, and coded condition
+    #[command(after_help = patient::SEARCH_AFTER_HELP)]
     Patient(patient::PatientSearchArgs),
     /// Search proteins by name or accession (UniProt)
     #[command(after_help = "\

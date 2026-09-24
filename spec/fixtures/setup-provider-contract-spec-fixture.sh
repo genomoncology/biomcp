@@ -386,10 +386,54 @@ def fhir_bundle(conditions, next_url=None):
 
 FHIR_PATIENTS = {"SYNTH-PT-1", "SYNTH-PT-EMPTY", "SYNTH-PT-OFFSITE"}
 FHIR_PAGE_TWO = "/fhir?_getpages=synth-pt-1&_getpagesoffset=1"
+FHIR_SEARCH_PARAMS = ["gender", "birthdate", "_has"]
+FHIR_NO_TOTAL_CONDITION = "http://example.org/synthetic|no-total"
+
+
+def fhir_capability(params):
+    return json.dumps({
+        "resourceType": "CapabilityStatement",
+        "rest": [{"mode": "server", "resource": [{
+            "type": "Patient",
+            "searchParam": [{"name": name, "type": "token"} for name in params],
+        }]}],
+    }).encode("utf-8")
+
+
+def fhir_leaky_patient(pid):
+    # A server that ignores _elements sends every field. BioMCP must drop them.
+    return {
+        "resourceType": "Patient", "id": pid, "gender": "female", "birthDate": "1970-01-01",
+        "name": [{"family": "Synthleak", "given": ["Nameleak"]}],
+        "address": [{"line": ["1 Addressleak Way"], "city": "Cityleak"}],
+        "telecom": [{"system": "phone", "value": "555-0100-leak"}],
+    }
+
+
+def fhir_patient_search(params):
+    # Ignores _elements and _count on purpose, and mixes in a Condition and a
+    # Patient whose id breaks the FHIR id rule.
+    entries = [
+        {"resource": {"resourceType": "Condition", "id": "synth-condleak"}, "search": {"mode": "match"}},
+        {"resource": fhir_leaky_patient("a/b"), "search": {"mode": "match"}},
+    ] + [
+        {"resource": fhir_leaky_patient(f"SYNTH-PT-S{n}"), "search": {"mode": "match"}}
+        for n in range(1, 6)
+    ]
+    bundle = {"resourceType": "Bundle", "type": "searchset", "total": 7, "entry": entries}
+    if params.get("_has:Condition:patient:code") == [FHIR_NO_TOTAL_CONDITION]:
+        del bundle["total"]
+    return json.dumps(bundle).encode("utf-8")
 
 
 def fhir_response(parsed):
     path = parsed.path
+    if path == "/fhir/metadata":
+        return 200, fhir_capability(FHIR_SEARCH_PARAMS)
+    if path == "/fhir-lacks-has/metadata":
+        return 200, fhir_capability(["gender", "birthdate"])
+    if path == "/fhir/Patient":
+        return 200, fhir_patient_search(parse_qs(parsed.query))
     if path.startswith("/fhir/Patient/"):
         pid = path.rsplit("/", 1)[1]
         if pid in FHIR_PATIENTS:
@@ -460,7 +504,7 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/healthz":
             send(self, 200, b'{"status":"ok"}')
             return
-        if parsed.path == "/fhir" or parsed.path.startswith("/fhir/"):
+        if parsed.path == "/fhir" or parsed.path.startswith(("/fhir/", "/fhir-lacks-has/")):
             answer = fhir_response(parsed)
             if answer is not None:
                 send(self, answer[0], answer[1], "application/fhir+json")

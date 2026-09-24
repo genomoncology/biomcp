@@ -196,7 +196,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     outcome_to_string(super::pathway::handle_search(args, json).await?)
                 }
                 SearchEntity::Patient(args) => {
-                    outcome_to_string(super::patient::handle_search(args)?)
+                    outcome_to_string(super::patient::handle_search(args, json).await?)
                 }
                 SearchEntity::Protein(args) => {
                     outcome_to_string(super::protein::handle_search(args, json).await?)

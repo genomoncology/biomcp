@@ -10,7 +10,16 @@
   redirects only on the configured server for at most 20 pages. Errors name no
   URL or patient ID. Patient commands run on the CLI and stdio MCP only, and
   `serve-http` refuses them. `biomcp health` reports the FHIR row as
-  configured or not configured. `search patient` is not yet available. (2002)
+  configured or not configured. (2002)
+
+- Added `search patient` with `--gender`, `--born-after`, `--born-before`,
+  `--condition <system|code>`, `--limit`, and `--count`. It checks every value
+  before any request, reads the server's metadata and refuses a filter the
+  server does not list, and sends the search with `Prefer: handling=strict`.
+  Output keeps only each patient's id, gender, and birth date. `--count`
+  prints the server-reported total. Typed MCP `search` for patient stays
+  filterless; stdio callers search with filters through the `biomcp` shell
+  tool. (2003)
 
 - Added the `cell-line` entity: `search cell-line <name>` resolves common
   spellings to Cellosaurus accessions, and `get cell-line <CVCL_xxxx>` returns

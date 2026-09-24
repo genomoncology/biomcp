@@ -75,6 +75,7 @@ ENTITY_GUIDE_HEADINGS = {
     "docs/user-guide/patient.md": [
         "## Configure the FHIR server",
         "## Get a patient record",
+        "## Search patients",
         "## Request patient sections",
         "## Helper commands",
         "## JSON mode",

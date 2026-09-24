@@ -35,7 +35,7 @@ internal fixture overrides and release/install variables.
 | `BIOMCP_GTR_DIR` | Local GTR download root |
 | `BIOMCP_GENCC_DIR` | Private durable GenCC normalized-dataset root; defaults to the platform data directory under `biomcp/gencc` |
 | `BIOMCP_WHO_IVD_DIR` | Local WHO IVD download root |
-| `BIOMCP_FHIR_BASE` | Base URL of the operator's FHIR R4 server for `get patient`; unset means patient commands fail and name this variable |
+| `BIOMCP_FHIR_BASE` | Base URL of the operator's FHIR R4 server for `get patient` and `search patient`; unset means patient commands fail and name this variable |
 | `BIOMCP_CA_BUNDLE` | PEM bundle of extra trusted TLS roots for ordinary provider HTTPS; `SSL_CERT_FILE` is the fallback |
 | `cache.toml` | Persistent cache defaults under the resolved config root |
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
