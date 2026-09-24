@@ -33,6 +33,7 @@ PRODUCTION_READ_ENV_ALLOWLIST = {
     "BIOMCP_GENCC_CHILD_TIMEOUT_MS": "test-subprocess deadline, not operator configuration",
     "BIOMCP_GENCC_TEST_BLOCK_PUBLICATION": "debug-only test barrier, not operator configuration",
     "BIOMCP_GENCC_TEST_CRASH_AT": "debug-only crash injection, not operator configuration",
+    "BIOMCP_CA_TEST_EXPECT": "unit-test child-process selector, not operator configuration",
     "BIOMCP_GENCC_TEST_CRASH_MARKER": "debug-only crash marker, not operator configuration",
     "BIOMCP_GENCC_TEST_FAIL_AT": "debug-only failure injection, not operator configuration",
     "BIOMCP_GENCC_TEST_NOW": "debug-only clock injection, not operator configuration",
