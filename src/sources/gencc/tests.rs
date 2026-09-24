@@ -843,10 +843,13 @@ fn gencc_subprocess_client() {
         let snapshot = Store::open().unwrap().load().unwrap().unwrap();
         std::fs::write(entered, b"entered").unwrap();
         let release = std::env::var_os("BIOMCP_GENCC_CHILD_RELEASE").unwrap();
-        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        // Bounded well above full-suite load stalls: this holder must
+        // outlive the parent's publishes, which can be delayed by
+        // minutes while other suite workers compete for CPU.
+        let deadline = std::time::Instant::now() + Duration::from_secs(120);
         while !std::path::Path::new(&release).exists() {
             assert!(std::time::Instant::now() < deadline);
-            std::thread::sleep(Duration::from_millis(5));
+            std::thread::sleep(Duration::from_millis(25));
         }
         assert_eq!(snapshot.dataset.assertions().len(), 3);
         return;

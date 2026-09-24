@@ -912,7 +912,7 @@ fn subprocess_lease_defers_old_generation_cleanup_until_reader_exits() {
         .stderr(Stdio::null())
         .spawn()
         .unwrap();
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(120);
     while !entered.exists() {
         assert!(child.try_wait().unwrap().is_none());
         assert!(std::time::Instant::now() < deadline);
@@ -920,6 +920,10 @@ fn subprocess_lease_defers_old_generation_cleanup_until_reader_exits() {
     }
     drop(publish(&store, &dataset, "2026-01-02T00:00:00Z", "\"g2\""));
     drop(publish(&store, &dataset, "2026-01-03T00:00:00Z", "\"g3\""));
+    assert!(
+        child.try_wait().unwrap().is_none(),
+        "child lease holder exited before the deferred-cleanup assertion"
+    );
     assert_eq!(fs::read_dir(root.join("generations")).unwrap().count(), 3);
     fs::write(&release, b"release").unwrap();
     assert!(child.wait().unwrap().success());
