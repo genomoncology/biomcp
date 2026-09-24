@@ -245,13 +245,13 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2230,
+      "baseline_lines": 2331,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1236",
-        "delta": 274,
-        "reason": "Dispatch-level panic recovery (1235) plus startup CA-bundle validation (1236) in the shell module.",
-        "removal_condition": "Extract router wiring and startup validation when the shell module is next decomposed."
+        "ticket": "1240",
+        "delta": 375,
+        "reason": "Top-level tool-schema properties, argument errors as tool results, and unknown-cursor rejection.",
+        "removal_condition": "Shrink when the tool surface is next refactored."
       }
     },
     {
