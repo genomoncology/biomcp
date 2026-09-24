@@ -245,13 +245,13 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2181,
+      "baseline_lines": 2182,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1031, 1150, 1158, 1202, 1213, 1205, 1223",
-        "delta": 225,
-        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions, the typed cell-line get branch and its typed-search rejection (ticket 1202, +8), and the gene cell-lines arm of the MCP command allowlist (ticket 1213, +1), and the two PharmacoDB row helpers on the MCP allowlist (ticket 1205, +4), and the typed search and get object roots with their rejection test (ticket 1223, +19).",
-        "removal_condition": "Extract typed tool schema transforms when the MCP shell is next decomposed."
+        "ticket": "1236",
+        "delta": 226,
+        "reason": "Server startup validates the CA bundle before creating the stdio transport.",
+        "removal_condition": "Extract startup validation when the shell module is next decomposed."
       }
     },
     {
