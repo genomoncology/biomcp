@@ -84,11 +84,12 @@ the reviewer verified every seam against the code).
    are not inventoried. The freshness rework reshapes the existing
    `bundle_freshness_requires_all_files_to_be_fresh` pin
    (ddinter/tests/construction.rs:7-15), and the heading pins live at
-   tests.rs:55-56.
+   tests.rs:56-57.
 
 ## Review
 
-- Design review: REJECT once (freshness freeze inverted the aging
-  signal; the synonym seam did not exist; the cap deferral was not
-  recorded); revised above, re-review pending
+- Design review: REJECT twice — first the freshness freeze inverted
+  the aging signal, the synonym seam did not exist, and the cap
+  deferral was not recorded; then item 7 misstated the get.rs
+  inventory; revised above, final verification ACCEPT 2026-09-24
 - Code review: pending
