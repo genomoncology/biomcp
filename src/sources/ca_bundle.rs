@@ -34,7 +34,7 @@ struct CachedBundleError {
 }
 
 impl CachedBundleError {
-    fn into_error(&self) -> BioMcpError {
+    fn to_error(&self) -> BioMcpError {
         bundle_error(&self.path, self.reason.clone())
     }
 }
@@ -93,7 +93,7 @@ impl CaBundle {
 fn load() -> Result<Option<&'static LoadedBundle>, BioMcpError> {
     match RESOLVED_BUNDLE.get_or_init(resolve) {
         Ok(bundle) => Ok(bundle.as_ref()),
-        Err(error) => Err(error.into_error()),
+        Err(error) => Err(error.to_error()),
     }
 }
 

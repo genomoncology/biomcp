@@ -273,7 +273,7 @@ async fn health_probe_reaches_a_private_ca_provider_through_the_orphan_client() 
             &[
                 "health",
                 "--api",
-                "FDA Orphan Drug Designations and Approvals",
+                "FDA Orphan Drug Designations",
             ],
         )
         .await;
@@ -300,7 +300,9 @@ async fn fda_orphan_client_reaches_a_private_ca_provider() {
         .await;
     let requests = fixture.requests.lock().expect("request log");
     assert!(
-        requests.iter().any(|request| request.contains("OOPD_Results.cfm")),
+        requests
+            .iter()
+            .any(|request| request.contains("OOPD_Results.cfm")),
         "FDA orphan request missing; status={:?}, stderr={}, requests={requests:?}",
         output.status.code(),
         String::from_utf8_lossy(&output.stderr)
@@ -328,7 +330,9 @@ async fn trial_document_client_reaches_a_private_ca_provider() {
         .await;
     let requests = fixture.requests.lock().expect("request log");
     assert!(
-        requests.iter().any(|request| request.contains("protocol.pdf")),
+        requests
+            .iter()
+            .any(|request| request.contains("protocol.pdf")),
         "document CDN request missing; status={:?}, stderr={}, requests={requests:?}",
         output.status.code(),
         String::from_utf8_lossy(&output.stderr)
@@ -367,7 +371,9 @@ async fn clingen_cspec_client_reaches_a_private_ca_provider() {
         .await;
     let requests = fixture.requests.lock().expect("request log");
     assert!(
-        requests.iter().any(|request| request.contains("/cspec/Gene/id/ATM/")),
+        requests
+            .iter()
+            .any(|request| request.contains("/cspec/Gene/id/ATM/")),
         "CSpec request missing; status={:?}, stderr={}, requests={requests:?}",
         output.status.code(),
         String::from_utf8_lossy(&output.stderr)
