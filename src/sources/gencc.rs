@@ -832,7 +832,21 @@ async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation
 async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: Option<&str>) {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
     loop {
-        if let Ok(store) = Store::open()
+        let clean_root = std::fs::read_dir(root).unwrap().all(|entry| {
+            let name = entry.unwrap().file_name();
+            !name.to_string_lossy().starts_with(".raw-")
+        });
+        // Generation temporaries wait on the same deadline: their
+        // cleanup runs detached and can lag past the lock (ticket 1247).
+        let clean_generations = std::fs::read_dir(root.join("generations"))
+            .unwrap()
+            .all(|entry| {
+                let name = entry.unwrap().file_name();
+                !name.to_string_lossy().starts_with(".tmp-")
+            });
+        if clean_root
+            && clean_generations
+            && let Ok(store) = Store::open()
             && store.try_lock_refresh().is_ok_and(|locked| locked)
         {
             store.unlock_refresh();
@@ -844,10 +858,6 @@ async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: O
                     .map(|snapshot| snapshot.manifest.etag.as_str()),
                 expected_etag
             );
-            assert!(std::fs::read_dir(root).unwrap().all(|entry| {
-                let name = entry.unwrap().file_name();
-                !name.to_string_lossy().starts_with(".raw-")
-            }));
             return;
         }
         assert!(
@@ -976,15 +986,6 @@ async fn cancelling_active_publication_joins_cleanup_and_releases_locks() {
     task.abort();
     assert!(task.await.unwrap_err().is_cancelled());
     assert_cancelled_store_settles(&root, Some("\"old\"")).await;
-    assert!(
-        std::fs::read_dir(root.join("generations"))
-            .unwrap()
-            .all(|entry| !entry
-                .unwrap()
-                .file_name()
-                .to_string_lossy()
-                .starts_with(".tmp-"))
-    );
     server.abort();
     unsafe {
         std::env::remove_var("BIOMCP_GENCC_TEST_BLOCK_PUBLICATION");
