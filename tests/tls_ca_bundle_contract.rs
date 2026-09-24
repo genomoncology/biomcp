@@ -270,11 +270,7 @@ async fn health_probe_reaches_a_private_ca_provider_through_the_orphan_client() 
     let output = fixture
         .run_command(
             &[("BIOMCP_FDA_ORPHAN_BASE", &fixture.origin)],
-            &[
-                "health",
-                "--api",
-                "FDA Orphan Drug Designations",
-            ],
+            &["health", "--api", "FDA Orphan Drug Designations"],
         )
         .await;
     assert!(
