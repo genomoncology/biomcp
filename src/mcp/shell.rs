@@ -1342,50 +1342,50 @@ impl BioMcpServer {
         Parameters(input): Parameters<TypedVariantArticles>,
     ) -> Result<CallToolResult, McpError> {
         Self::argument_errors_as_results(async {
-                if input.items.is_empty() || input.items.len() > 10 {
-                    return Ok(Self::tool_error("variant_articles requires between 1 and 10 items"));
+            if input.items.is_empty() || input.items.len() > 10 {
+                return Ok(Self::tool_error("variant_articles requires between 1 and 10 items"));
+            }
+            if input.limit == 0 || input.limit > 50 {
+                return Ok(Self::tool_error("variant_articles limit must be between 1 and 50"));
+            }
+            if input.confirmed_only && !input.verify_identity {
+                return Ok(Self::tool_error("variant_articles confirmed_only requires verify_identity"));
+            }
+            let strategy = variant_article_strategy(&input.strategy)?;
+            match crate::entities::article::search_variant_article_batch_with_options(
+                input.items,
+                strategy,
+                input.limit,
+                input.offset,
+                input.debug_plan,
+                crate::entities::article::VariantArticleVerificationOptions {
+                    verify_identity: input.verify_identity,
+                    confirmed_only: input.confirmed_only,
+                },
+            )
+            .await
+            {
+                Ok(outcome) => {
+                    let text = crate::render::json::to_pretty(&outcome.response).map_err(|error| {
+                        McpError::internal_error(
+                            format!("Failed to serialize variant article response: {error}"),
+                            None,
+                        )
+                    })?;
+                    let text = redact_mcp_json_text(&text).map_err(|error| {
+                        McpError::internal_error(
+                            format!("Failed to sanitize variant article response: {error}"),
+                            None,
+                        )
+                    })?;
+                    Ok(if outcome.hard_error {
+                        CallToolResult::error(vec![Content::text(text)])
+                    } else {
+                        CallToolResult::success(vec![Content::text(text)])
+                    })
                 }
-                if input.limit == 0 || input.limit > 50 {
-                    return Ok(Self::tool_error("variant_articles limit must be between 1 and 50"));
-                }
-                if input.confirmed_only && !input.verify_identity {
-                    return Ok(Self::tool_error("variant_articles confirmed_only requires verify_identity"));
-                }
-                let strategy = variant_article_strategy(&input.strategy)?;
-                match crate::entities::article::search_variant_article_batch_with_options(
-                    input.items,
-                    strategy,
-                    input.limit,
-                    input.offset,
-                    input.debug_plan,
-                    crate::entities::article::VariantArticleVerificationOptions {
-                        verify_identity: input.verify_identity,
-                        confirmed_only: input.confirmed_only,
-                    },
-                )
-                .await
-                {
-                    Ok(outcome) => {
-                        let text = crate::render::json::to_pretty(&outcome.response).map_err(|error| {
-                            McpError::internal_error(
-                                format!("Failed to serialize variant article response: {error}"),
-                                None,
-                            )
-                        })?;
-                        let text = redact_mcp_json_text(&text).map_err(|error| {
-                            McpError::internal_error(
-                                format!("Failed to sanitize variant article response: {error}"),
-                                None,
-                            )
-                        })?;
-                        Ok(if outcome.hard_error {
-                            CallToolResult::error(vec![Content::text(text)])
-                        } else {
-                            CallToolResult::success(vec![Content::text(text)])
-                        })
-                    }
-                    Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
-                }
+                Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+            }
         })
         .await
     }
@@ -1831,10 +1831,22 @@ mod tests {
             }))
             .await;
 
+        let result = result.expect("argument validation returns a tool result");
+        assert_eq!(result.is_error, Some(true));
         assert!(
-            result.is_err(),
-            "mutually exclusive CSpec selectors must fail"
+            biomcp_mcp_contract_client_text(&result).contains("mutually exclusive"),
+            "the error text must name the conflict"
         );
+    }
+
+    fn biomcp_mcp_contract_client_text(result: &rmcp::model::CallToolResult) -> String {
+        result
+            .content
+            .iter()
+            .filter_map(rmcp::model::Content::as_text)
+            .map(|text| text.text.clone())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]

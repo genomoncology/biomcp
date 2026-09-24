@@ -1516,13 +1516,18 @@ async fn rmcp_client_rejects_unknown_list_cursors() -> anyhow::Result<()> {
     let client = harness.spawn_stdio_client(&[]).await?;
     let error = client
         .peer()
-        .list_tools(rmcp::model::PaginatedRequestParams {
+        .list_tools(Some(rmcp::model::PaginatedRequestParams {
             cursor: Some("garbage".into()),
             ..Default::default()
-        })
+        }))
         .await
         .expect_err("an unknown cursor must be rejected with a protocol error");
-    assert_eq!(error.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+    match error {
+        rmcp::ServiceError::McpError(data) => {
+            assert_eq!(data.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+        }
+        other => panic!("expected an MCP protocol error, got: {other:?}"),
+    }
     client.cancel().await?;
     Ok(())
 }
