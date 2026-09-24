@@ -1,6 +1,6 @@
 ---
 base: d63eb544
-head: a7634fef
+head: bcfc3c6b
 ---
 
 Added `get patient <id>` with a `conditions` section. It reads one Patient and its Condition list from the FHIR R4 server in `BIOMCP_FHIR_BASE`. The client ports the request rules of an earlier read-only FHIR client prototype. It shares no code with it.
@@ -22,6 +22,7 @@ Added `get patient <id>` with a `conditions` section. It reads one Patient and i
 - serve-http refusal (`tests/patient_fhir_contract.rs`): with the check disabled, all four tests failed (shell tool, typed search, typed get, batch). Green: 4 of 4, each with zero fixture requests.
 - Trace leak: a `tracing::trace!` of the request URL made the test fail with "stderr names the ID". Green: at `RUST_LOG=trace`, a degraded walk, a conditions 500, a patient 500, a 404, and an off-origin redirect leave no ID or server in stderr, in the error output, or under the cache directory.
 - Review fixes, red at `29ab82df` on yellow: the ID test failed on `.`, and the leak test failed with "degraded walk at debug: stderr names the server host and port". Green at `413799e5`: the ID test passed. The leak test then failed its guard that stderr is not empty on error. That guard had counted on hyper's log lines. `a7634fef` changed it to check that the error reaches stdout or stderr. Green at `a7634fef`: 9 of 9 contract tests. The leak test now runs at `debug` and at `trace` and searches stdout and stderr for the bare host and port.
+- Re-review found that the `a7634fef` guard passed on any output, including retry log lines. `bcfc3c6b` makes each failing leak case check its exact error: not found, HTTP 500, and the off-base redirect. Plain runs check stderr for `Error: <text>.`. JSON runs check the error message on stdout.
 - Typed get over stdio reads the patient in two requests. Bad IDs, an unset base, and `search patient` send no request.
 
 ## Checks
@@ -29,6 +30,7 @@ Added `get patient <id>` with a `conditions` section. It reads one Patient and i
 - Yellow ran from a clean detached checkout at `a7634fef` while otherwise idle. The checkout is removed. `make lint` passed. `make test` passed: 3,737 Rust tests and 1,260 Python tests, with 31 Rust and 4 Python skipped. `make spec` passed.
 - `tools/check-biodata-1.0 --already-isolated` passed on yellow at `a7634fef` under BioMCP's `tools/run-offline`, after `cargo build --locked --offline --no-default-features --bin biomcp`: 119 Rust tests and 152 Python tests passed, with 1 skipped. Yellow has no BioData checkout. BioMCP's launcher sets the same `BIOMCP_OFFLINE_NETWORK=1` isolation.
 - Two earlier yellow runs failed `make spec` on the typed-tools example. It counted eight search branches and gave `conditions` to diagnostic alone. Commits `5eca5042` and `e6276ac2` fixed both. The patient spec also stopped capturing output before checking it.
+- At `bcfc3c6b`, a test-only change, yellow ran under `~/.yellow-gate.lock` from a clean checkout that is removed. `make lint` passed. The patient contract tests passed 9 of 9. The FHIR and patient unit tests passed 30 of 30.
 - The yellow run at `413799e5` passed lint, spec, and check-biodata and failed `make test` on the leak guard above.
 - Every commit since `5eca5042` skipped the local pre-commit hook. The hook runs clippy, and Rust builds no longer run on the development box. Yellow's `make lint` covered them.
 
