@@ -561,10 +561,12 @@ impl Store {
                 continue;
             }
             let state = State { active_generation: Some(name.clone()), ..State::default() };
-            if let Ok(snapshot) = self.load_generation(&name, state) {
-                valid.push((name, snapshot.manifest.retrieved_at));
-            } else {
-                invalid.push(name);
+            let loaded = injected("cleanup-classify-generation", StoreError::Unavailable)
+                .and_then(|()| self.load_generation(&name, state));
+            match loaded {
+                Ok(snapshot) => valid.push((name, snapshot.manifest.retrieved_at)),
+                Err(StoreError::Invalid) => invalid.push(name),
+                Err(error) => tracing::warn!(generation = %name, %error, "GenCC cleanup retained a generation after a transient load error"),
             }
         }
         valid.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| right.0.cmp(&left.0)));
@@ -572,7 +574,10 @@ impl Store {
         let mut changed = false;
         for name in invalid {
             if Some(name.as_str()) == active { continue; }
-            changed |= remove_generation_if_unleased(&self.generations_dir, &generations, &name)?;
+            if remove_generation_if_unleased(&self.generations_dir, &generations, &name)? {
+                tracing::warn!(generation = %name, "GenCC cleanup pruned an invalid generation");
+                changed = true;
+            }
         }
         for (name, _) in valid {
             if Some(name.as_str()) == active || newest_other.as_deref() == Some(name.as_str()) { continue; }
@@ -710,15 +715,24 @@ fn write_new_at(parent: &File, name: &str, bytes: &[u8], point: &str) -> Result<
 }
 #[cfg(unix)]
 #[rustfmt::skip]
+fn store_error_for_errno(errno: Option<i32>) -> StoreError {
+    match errno {
+        Some(libc::EINTR) | Some(libc::EIO) | Some(libc::ENOMEM) | Some(libc::EMFILE) | Some(libc::ENFILE) => StoreError::Unavailable,
+        _ => StoreError::Invalid,
+    }
+}
+
+#[cfg(unix)]
+#[rustfmt::skip]
 fn open_existing_at(parent: &File, name: &str) -> Result<File, StoreError> {
     use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     let name = std::ffi::CString::new(name).map_err(|_| StoreError::Invalid)?;
     // SAFETY: parent and the NUL-terminated name remain valid.
     let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), libc::O_RDONLY | libc::O_NOFOLLOW | libc::O_CLOEXEC) };
-    if fd < 0 { return Err(StoreError::Invalid); }
+    if fd < 0 { return Err(store_error_for_errno(std::io::Error::last_os_error().raw_os_error())); }
     let file = File::from(unsafe { OwnedFd::from_raw_fd(fd) });
-    let metadata = file.metadata().map_err(|_| StoreError::Invalid)?;
+    let metadata = file.metadata().map_err(|error| store_error_for_errno(error.raw_os_error()))?;
     if !metadata.is_file() || metadata.uid() != unsafe { libc::geteuid() } || metadata.nlink() != 1 || metadata.permissions().mode() & 0o777 != 0o600 { return Err(StoreError::Invalid); }
     Ok(file)
 }
@@ -740,7 +754,7 @@ fn read_at(parent: &File, name: &str) -> Result<Vec<u8>, StoreError> {
     let mut file = open_existing_at(parent, name)?;
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes)
-        .map_err(|_| StoreError::Invalid)?;
+        .map_err(|error| store_error_for_errno(error.raw_os_error()))?;
     Ok(bytes)
 }
 #[cfg(unix)]
@@ -1036,4 +1050,29 @@ fn safe_generation_id(value: &str) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+}
+#[cfg(all(test, unix))]
+mod errno_tests {
+    use super::{store_error_for_errno, StoreError};
+
+    #[test]
+    fn environment_errnos_map_to_unavailable() {
+        for errno in [libc::EINTR, libc::EIO, libc::ENOMEM, libc::EMFILE, libc::ENFILE] {
+            assert!(matches!(
+                store_error_for_errno(Some(errno)),
+                StoreError::Unavailable
+            ));
+        }
+    }
+
+    #[test]
+    fn deterministic_causes_and_unknown_errnos_map_to_invalid() {
+        for errno in [libc::ENOENT, libc::ELOOP, libc::EACCES, 0, 999] {
+            assert!(matches!(
+                store_error_for_errno(Some(errno)),
+                StoreError::Invalid
+            ));
+        }
+        assert!(matches!(store_error_for_errno(None), StoreError::Invalid));
+    }
 }
