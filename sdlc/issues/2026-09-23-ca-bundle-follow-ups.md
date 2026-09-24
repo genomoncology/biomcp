@@ -30,3 +30,14 @@ Only the shared cached client and the health client are built once. `provider_ur
 - The warning at `src/sources/ca_bundle.rs:115` drops a whole mixed bundle, corporate root included. Tell the user to set `BIOMCP_CA_BUNDLE` to a clean bundle.
 - The missing-file fallback has no test. Missing, unreadable, directory, and blank fallbacks are tested only in the loader. No test covers an invalid `BIOMCP_CA_BUNDLE` with a valid `SSL_CERT_FILE`, which must fail closed. Add them to `broken_fallback_bundles_warn_and_continue` and the contract suite.
 - `tests/tls_ca_bundle_contract.rs:78-84` inherits `RUST_LOG`. With `RUST_LOG=error` the warning is hidden and the test fails. Set `RUST_LOG=warn` on the child.
+
+## Resolved
+
+Ticket 1236 caches one process-wide resolution, validates it before either
+server transport accepts work, keeps raw non-UTF-8 paths for file access,
+replaces parser details with indexed fixed reasons, and directs fallback users
+to `BIOMCP_CA_BUNDLE`. Its contracts cover fallback failures, startup behavior,
+provider builders, additive roots, and the listed dedicated clients. The docs
+state that rotation requires restart. AlphaGenome's actual
+`SSL_CERT_FILE`/`SSL_CERT_DIR` behavior is documented; wiring
+`BIOMCP_CA_BUNDLE` into its gRPC client remains deferred future work.

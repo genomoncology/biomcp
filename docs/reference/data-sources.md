@@ -92,10 +92,12 @@ so an operator can deliberately select HTTP or private/on-prem addresses, but
 the exception does not allow a redirect to another origin. Clients trust the
 bundled webpki roots plus any operator PEM bundle named by `BIOMCP_CA_BUNDLE`,
 falling back to `SSL_CERT_FILE` only when that variable is unset; the bundle
-only adds roots and never disables verification. AlphaGenome is the
-single separate authenticated gRPC/Tonic provider transport, reads the native
-OS trust store, and is not part of
-this ordinary Reqwest boundary.
+only adds roots and never disables verification. The bundle is parsed once;
+restart BioMCP after rotating it. AlphaGenome is the single separate
+authenticated gRPC/Tonic provider transport and does not use
+`BIOMCP_CA_BUNDLE`. Its `SSL_CERT_FILE` and `SSL_CERT_DIR` settings replace the
+native OS trust source when set. Wiring the BioMCP bundle into AlphaGenome
+remains future work.
 
 Provider-returned URL fetches share one outbound policy across Semantic Scholar
 PDFs, PMC OA objects, Figshare files, and ClinicalTrials.gov documents. Before

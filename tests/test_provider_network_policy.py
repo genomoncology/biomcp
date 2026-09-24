@@ -51,9 +51,11 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # its uncached health probe. Both reject redirects, cap response bytes, and
     # accept a private base only through the documented fixture override seam.
     # cli/health owns the bounded probe client and its stub-client test fixtures.
+    # ca_bundle.rs constructs three builders in the process-reentry parse-once test.
     assert found == Counter(
         {
             "src/sources/mod.rs": 3,
+            "src/sources/ca_bundle.rs": 3,
             "src/sources/ordinary_url_policy.rs": 3,
             "src/sources/clingen_cspec.rs": 1,
             "src/sources/provider_url_policy.rs": 1,
@@ -106,7 +108,9 @@ def test_alphagenome_is_the_single_documented_non_reqwest_provider_transport() -
 
     reference = (ROOT / "docs/reference/data-sources.md").read_text()
     assert "authenticated gRPC/Tonic provider transport" in reference
-    assert "not part of this ordinary Reqwest boundary" in " ".join(reference.split())
+    normalized = " ".join(reference.split())
+    assert "does not use `BIOMCP_CA_BUNDLE`" in normalized
+    assert "`SSL_CERT_FILE` and `SSL_CERT_DIR`" in normalized
 
 
 def test_no_path_disables_certificate_verification_or_replaces_bundled_roots() -> None:
@@ -120,6 +124,13 @@ def test_no_path_disables_certificate_verification_or_replaces_bundled_roots() -
         ):
             assert marker not in text, f"{relative} weakens TLS trust: {marker}"
 
+    cargo = (ROOT / "Cargo.toml").read_text()
+    reqwest_features = (
+        'reqwest = { version = "0.12", default-features = false, '
+        'features = ["json", "rustls-tls"'
+    )
+    assert reqwest_features in cargo
+
     helper = (ROOT / "src/sources/ca_bundle.rs").read_text()
     assert "add_root_certificate" in helper
     assert "RootCertStore::empty()" in helper
@@ -130,11 +141,20 @@ def test_every_touched_production_builder_applies_the_operator_ca_bundle() -> No
     # The inventory above counts constructions; this pins that every builder
     # this ticket touched routes through the shared CA-bundle helper so an
     # operator-supplied private root is trusted without disabling verification.
-    for relative, expected in {
-        "src/sources/ordinary_url_policy.rs": 3,
-        "src/sources/fda_orphan.rs": 2,
-        "src/entities/trial/documents.rs": 1,
-        "src/cli/health/runner.rs": 1,
+    for relative, calls in {
+        "src/sources/ordinary_url_policy.rs": {
+            "ca_bundle::configure(": 2,
+            "ca_bundle::build_client(": 1,
+        },
+        "src/sources/fda_orphan.rs": {
+            "ca_bundle::configure(": 1,
+            "ca_bundle::build_client(": 1,
+        },
+        "src/entities/trial/documents.rs": {"ca_bundle::build_client(": 1},
+        "src/cli/health/runner.rs": {"ca_bundle::build_client(": 1},
+        "src/sources/orcid.rs": {"ca_bundle::build(": 1},
+        "src/sources/clingen_cspec.rs": {"ca_bundle::build(": 1},
     }.items():
         text = (ROOT / relative).read_text()
-        assert text.count("ca_bundle::") >= expected, relative
+        for call, expected in calls.items():
+            assert text.count(call) == expected, (relative, call)

@@ -1494,6 +1494,7 @@ fn is_handshake_startup_error(err: &anyhow::Error) -> bool {
 }
 
 pub async fn run_stdio() -> anyhow::Result<()> {
+    crate::sources::ca_bundle::validate()?;
     let shutdown = CancellationToken::new();
 
     let cancel = shutdown.clone();

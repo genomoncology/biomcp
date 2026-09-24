@@ -245,13 +245,13 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2229,
+      "baseline_lines": 2230,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1235",
-        "delta": 273,
-        "reason": "The dispatch-level panic recovery wraps router calls and the environment-guarded test route sits beside the catalog application.",
-        "removal_condition": "Extract the tool router wiring when the shell module is next decomposed."
+        "ticket": "1236",
+        "delta": 274,
+        "reason": "Dispatch-level panic recovery (1235) plus startup CA-bundle validation (1236) in the shell module.",
+        "removal_condition": "Extract router wiring and startup validation when the shell module is next decomposed."
       }
     },
     {
