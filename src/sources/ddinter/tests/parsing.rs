@@ -112,7 +112,11 @@ fn identity_terms_match_ddinter_rows_through_synonyms() {
         Some("Aspirin"),
         &["Bayer".to_string(), "acetylsalicylic acid".to_string()],
     );
-    assert!(identity.terms().contains(&normalize_name_key("acetylsalicylic acid").expect("key")));
+    assert!(
+        identity
+            .terms()
+            .contains(&normalize_name_key("acetylsalicylic acid").expect("key"))
+    );
 
     let row = DdinterInteractionRow {
         drug_a_id: "D0001".to_string(),
@@ -142,6 +146,11 @@ fn identity_terms_match_ddinter_rows_through_synonyms() {
     assert_eq!(client.interactions(&identity).len(), 1);
 
     // Without the synonym, the same row stays unreachable from aspirin.
-    let brand_only = DdinterIdentity::with_aliases("aspirin", Some("Aspirin"), &["Bayer".to_string()]);
-    assert!(!brand_only.terms().contains(&normalize_name_key("acetylsalicylic acid").expect("key")));
+    let brand_only =
+        DdinterIdentity::with_aliases("aspirin", Some("Aspirin"), &["Bayer".to_string()]);
+    assert!(
+        !brand_only
+            .terms()
+            .contains(&normalize_name_key("acetylsalicylic acid").expect("key"))
+    );
 }

@@ -168,7 +168,7 @@ fn apply_interaction_report(drug: &mut Drug, report: &DrugInteractionReport) {
     drug.interaction_text = report.label_interaction_text.clone();
     drug.interaction_pagination = Some(report.pagination.clone());
     drug.interaction_bundle_freshness = Some(report.bundle_freshness.clone());
-    drug.interaction_coverage_status = Some(report.coverage_status.clone());
+    drug.interaction_coverage_status = Some(report.coverage_status);
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
