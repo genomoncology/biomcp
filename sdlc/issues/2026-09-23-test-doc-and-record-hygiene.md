@@ -35,3 +35,16 @@ Allow about 30 seconds for readiness and print `server.log` and the report JSON 
 - The review residuals from 1219, 1221, 1222, 1224, 1225, 1226, and 1229 live only in record prose. File each open one here or gate it.
 - `sdlc/issues/` holds three near-duplicate 2026-09-13 files about the raw-ctgov-total abort on the gate host. Merge them.
 - The 1222 record and ticket file names differ.
+
+## Resolved
+
+Ticket 1244. All listed items landed: the staleness check warns instead
+of failing, the migration test asserts the settle flag, the three test
+weaknesses are fixed, the audit bans the count form off the blog, the
+cspec fixture waits 30s and prints diagnostics, CI records the three
+tool versions and installs with -y, the overview names seven tools and
+the true pinning state, the residuals have recorded dispositions, and
+the 1222 record file was renamed. Deliberately open: the cspec block
+limit and retry/request-log items, and the unenforced freshness
+warning. See
+`sdlc/records/1244-clear-the-test-doc-and-record-hygiene.md`.
