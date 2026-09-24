@@ -861,7 +861,6 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn async_io_crossing_expiry_settles_without_admitting_a_mutation() {
-        let root = TempDirGuard::new("epoch-io-crossing-deadline");
         let entered = std::sync::Arc::new(tokio::sync::Notify::new());
         let release = std::sync::Arc::new(tokio::sync::Notify::new());
         let settled_post_yield =
