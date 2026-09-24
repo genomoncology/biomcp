@@ -105,4 +105,8 @@ Filed from `sdlc/issues/2026-09-23-ca-bundle-follow-ups.md`; revised after a REJ
   Reqwest feature, both stdio cases hold stdin and assert the
   diagnostic, and every wait is deadline-bounded with forced cleanup.
   Fourth: ACCEPT 2026-09-23 — one P2 citation fix applied here.
-- Code review: pending
+- Code review: REJECT once, fixes applied, re-review ACCEPT 2026-09-23
+  (gpt-5.6-sol, medium)
+- Verification: yellow gate at 2ea56fe1 lint/test/spec OK; TLS contract
+  3x green; see
+  `sdlc/records/1236-harden-the-ca-bundle-behind-one-parse-and-startup-check.md`
