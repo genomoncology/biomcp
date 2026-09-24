@@ -763,6 +763,7 @@ async fn populate_common_sections(
         drug.interaction_text = None;
         drug.interaction_pagination = None;
         drug.interaction_bundle_freshness = None;
+        drug.interaction_coverage_status = None;
     }
 
     if section_flags.include_targets {

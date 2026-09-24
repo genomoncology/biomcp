@@ -116,13 +116,13 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1117,
+      "baseline_lines": 1118,
       "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1232",
-        "delta": 14,
-        "reason": "Boxed-warning population, region zeroing, and the safety contributor check sit beside the existing US safety assembly.",
-        "removal_condition": "Extract the label-safety assembly when the drug getter is next decomposed."
+        "ticket": "1241",
+        "delta": 15,
+        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+        "removal_condition": "Shrink when the drug card model is next refactored."
       }
     },
     {
@@ -228,13 +228,13 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1150,
+      "baseline_lines": 1158,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1142, 1196, 1200, 1202, 1205, 1221",
-        "delta": 28,
-        "reason": "ORCID provider registration and the credential-invalid variant (ticket 1142, +7, with four request arms compressed and two destructure one-liners rejected by rustfmt width rules), the GenCC provider label for the sync initialization error (ticket 1196, +3), and the OpenCitations provider registration as the confirmation phase source (ticket 1200, +3), and the Cellosaurus provider registration for the cell-line source (ticket 1202, +1), and the PharmacoDB source provider constant (ticket 1205, +2), and the CA bundle variant with its path-carrying projection for operator TLS trust (ticket 1221, +12).",
-        "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
+        "ticket": "1241",
+        "delta": 36,
+        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+        "removal_condition": "Shrink when the drug card model is next refactored."
       }
     },
     {
@@ -262,13 +262,13 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1570,
+      "baseline_lines": 1590,
       "floor_lines": 1561,
       "authorized_increase": {
-        "ticket": "1237",
-        "delta": 9,
-        "reason": "The JSON serializer test pins the boxed-warning field on the drug output.",
-        "removal_condition": "None expected; remove when the serializer is decomposed."
+        "ticket": "1241",
+        "delta": 29,
+        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+        "removal_condition": "Shrink when the drug card model is next refactored."
       }
     },
     {
@@ -306,13 +306,13 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1850,
+      "baseline_lines": 1869,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1232",
-        "delta": 3,
-        "reason": "Three section-provenance test fixtures initialize the boxed-warning field added by ticket 1232.",
-        "removal_condition": "Remove when section provenance moves beside its renderer."
+        "ticket": "1241",
+        "delta": 22,
+        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+        "removal_condition": "Shrink when the drug card model is next refactored."
       }
     },
     {
@@ -452,6 +452,17 @@
         "delta": 50,
         "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
+      }
+    },
+    {
+      "path": "src/render/markdown/drug/tests.rs",
+      "floor_lines": 974,
+      "baseline_lines": 1004,
+      "authorized_increase": {
+        "ticket": "1241",
+        "delta": 30,
+        "reason": "Coverage-state expectations for the drug interactions card.",
+        "removal_condition": "Shrink when the card test fixtures share a builder."
       }
     }
   ]

@@ -24,6 +24,8 @@ fn related_drug_suggests_review_when_label_and_indications_are_sparse() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,

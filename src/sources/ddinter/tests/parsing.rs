@@ -102,3 +102,55 @@ fn client_coverage_status_distinguishes_absent_drug_from_empty_matches() {
     assert!(!client.contains_identity(&uncovered));
     assert!(client.interactions(&uncovered).is_empty());
 }
+
+#[test]
+fn identity_terms_match_ddinter_rows_through_synonyms() {
+    // A row filed under the chemical name is found from the brand name
+    // when the anchor's synonym list carries it (ticket 1241).
+    let identity = DdinterIdentity::with_aliases(
+        "aspirin",
+        Some("Aspirin"),
+        &["Bayer".to_string(), "acetylsalicylic acid".to_string()],
+    );
+    assert!(
+        identity
+            .terms()
+            .contains(&normalize_name_key("acetylsalicylic acid").expect("key"))
+    );
+
+    let row = DdinterInteractionRow {
+        drug_a_id: "D0001".to_string(),
+        drug_a: "acetylsalicylic acid".to_string(),
+        drug_b_id: "D0002".to_string(),
+        drug_b: "warfarin".to_string(),
+        level: Some("major".to_string()),
+    };
+    let mut index = DdinterIndex {
+        rows: Vec::new(),
+        by_name: HashMap::new(),
+    };
+    let idx = index.rows.len();
+    if let Some(key) = normalize_name_key(&row.drug_a) {
+        index.by_name.entry(key).or_default().push(idx);
+    }
+    if let Some(key) = normalize_name_key(&row.drug_b) {
+        index.by_name.entry(key).or_default().push(idx);
+    }
+    index.rows.push(row);
+
+    let client = DdinterClient {
+        index: Arc::new(index),
+        freshness: DdinterBundleFreshness::Fresh,
+    };
+    assert!(client.contains_identity(&identity));
+    assert_eq!(client.interactions(&identity).len(), 1);
+
+    // Without the synonym, the same row stays unreachable from aspirin.
+    let brand_only =
+        DdinterIdentity::with_aliases("aspirin", Some("Aspirin"), &["Bayer".to_string()]);
+    assert!(
+        !brand_only
+            .terms()
+            .contains(&normalize_name_key("acetylsalicylic acid").expect("key"))
+    );
+}

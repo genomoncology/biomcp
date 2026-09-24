@@ -107,7 +107,10 @@ async fn interaction_report_from_base(
         .as_ref()
         .and_then(extract_interaction_text_from_label);
     let client = DdinterClient::ready().await?;
-    let identity = DdinterIdentity::with_aliases(&requested_name, Some(&anchor_name), &brand_names);
+    let mut identity_terms = brand_names.clone();
+    identity_terms.extend(anchor.ddinter_synonyms.iter().cloned());
+    let identity =
+        DdinterIdentity::with_aliases(&requested_name, Some(&anchor_name), &identity_terms);
     let rows = client.interactions(&identity);
     let in_ddinter_coverage = client.contains_identity(&identity);
     let interactions = aggregate_rows(&rows, &identity)?
@@ -165,6 +168,7 @@ fn apply_interaction_report(drug: &mut Drug, report: &DrugInteractionReport) {
     drug.interaction_text = report.label_interaction_text.clone();
     drug.interaction_pagination = Some(report.pagination.clone());
     drug.interaction_bundle_freshness = Some(report.bundle_freshness.clone());
+    drug.interaction_coverage_status = Some(report.coverage_status);
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -205,6 +209,7 @@ pub(super) fn apply_interactions_result(
         drug.interactions.clear();
         drug.interaction_pagination = None;
         drug.interaction_bundle_freshness = None;
+        drug.interaction_coverage_status = None;
     }
     drug.interaction_text = label_text;
 

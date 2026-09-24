@@ -461,6 +461,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut mechanisms_seen: HashSet<String> = HashSet::new();
     let mut brand_names: Vec<String> = Vec::new();
     let mut brand_names_seen: HashSet<String> = HashSet::new();
+    let mut ddinter_synonyms: Vec<String> = Vec::new();
 
     let mut targets: Vec<String> = Vec::new();
     let mut indications: Vec<String> = Vec::new();
@@ -520,12 +521,17 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     continue;
                 }
                 let key = synonym.to_ascii_lowercase();
-                if !brand_names_seen.insert(key) {
+                if !brand_names_seen.insert(key.clone()) {
                     continue;
                 }
-                brand_names.push(synonym.to_string());
-                if brand_names.len() >= 3 {
-                    break;
+                // The full synonym list feeds DDInter identity matching
+                // (ticket 1241); the card keeps the three-brand cap, so
+                // the loop does not break here.
+                if ddinter_synonyms.len() < 32 {
+                    ddinter_synonyms.push(synonym.to_string());
+                }
+                if brand_names.len() < 3 {
+                    brand_names.push(synonym.to_string());
                 }
             }
         }
@@ -645,6 +651,8 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms,
         pharm_classes,
         top_adverse_events: Vec::new(),
         faers_query: None,

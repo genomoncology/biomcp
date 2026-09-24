@@ -156,6 +156,8 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Cough".to_string()],
         faers_query: None,

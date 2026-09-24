@@ -93,6 +93,11 @@ pub fn drug_markdown_with_region(
         interaction_text => &drug.interaction_text,
         interaction_pagination => &drug.interaction_pagination,
         interaction_bundle_freshness => drug.interaction_bundle_freshness.as_ref().map(|value| value.status.as_str()),
+        interaction_coverage => match drug.interaction_coverage_status {
+            Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage) => Some("not in the DDInter coverage set"),
+            Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage) => Some("in the DDInter coverage set"),
+            None => None,
+        },
         label => &drug.label,
         raw_label => raw_label,
         civic => &drug.civic,

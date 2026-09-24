@@ -145,9 +145,12 @@ impl DdinterClient {
         #[cfg(test)]
         DDINTER_READY_CALLS.fetch_add(1, Ordering::SeqCst);
         let root = resolve_ddinter_root();
-        let index = cached_index_for_root(&root)?;
-        let freshness = bundle_freshness(&root);
-        Ok(Self { index, freshness })
+        let cached = cached_index_for_root(&root)?;
+        let freshness = basis_freshness(cached.oldest_mtime);
+        Ok(Self {
+            index: cached.index,
+            freshness,
+        })
     }
 
     pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<bool, BioMcpError> {
@@ -200,19 +203,32 @@ pub(crate) fn ready_call_count() -> usize {
     DDINTER_READY_CALLS.load(Ordering::SeqCst)
 }
 
-fn cached_index_map() -> &'static Mutex<HashMap<PathBuf, Arc<DdinterIndex>>> {
-    static CACHE: OnceLock<Mutex<HashMap<PathBuf, Arc<DdinterIndex>>>> = OnceLock::new();
+fn cached_index_map() -> &'static Mutex<HashMap<PathBuf, CachedDdinterIndex>> {
+    static CACHE: OnceLock<Mutex<HashMap<PathBuf, CachedDdinterIndex>>> = OnceLock::new();
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn cached_index_for_root(root: &Path) -> Result<Arc<DdinterIndex>, BioMcpError> {
+/// The index plus the freshness basis (the oldest file mtime) captured
+/// at load time. Freshness derives from this basis and the clock, never
+/// from a later re-read: an externally replaced bundle cannot flip a
+/// loaded index's label (ticket 1241).
+#[derive(Debug, Clone)]
+struct CachedDdinterIndex {
+    index: Arc<DdinterIndex>,
+    oldest_mtime: Option<std::time::SystemTime>,
+}
+
+fn cached_index_for_root(root: &Path) -> Result<CachedDdinterIndex, BioMcpError> {
     let cache = crate::utils::sync::recover_poison(cached_index_map().lock());
-    if let Some(index) = cache.get(root) {
-        return Ok(index.clone());
+    if let Some(cached) = cache.get(root) {
+        return Ok(cached.clone());
     }
     drop(cache);
 
-    let parsed = Arc::new(load_index(root)?);
+    let parsed = CachedDdinterIndex {
+        index: Arc::new(load_index(root)?),
+        oldest_mtime: oldest_bundle_mtime(root),
+    };
     let mut cache = crate::utils::sync::recover_poison(cached_index_map().lock());
     Ok(cache
         .entry(root.to_path_buf())
@@ -223,6 +239,14 @@ fn cached_index_for_root(root: &Path) -> Result<Arc<DdinterIndex>, BioMcpError> 
 fn evict_cached_index(root: &Path) {
     let mut cache = crate::utils::sync::recover_poison(cached_index_map().lock());
     cache.remove(root);
+}
+
+fn oldest_bundle_mtime(root: &Path) -> Option<std::time::SystemTime> {
+    DDINTER_REQUIRED_FILES
+        .iter()
+        .filter_map(|file_name| std::fs::metadata(root.join(file_name)).ok())
+        .filter_map(|metadata| metadata.modified().ok())
+        .min()
 }
 
 fn load_index(root: &Path) -> Result<DdinterIndex, BioMcpError> {
@@ -295,19 +319,14 @@ fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteraction
     Ok(out)
 }
 
-fn file_is_stale(path: &Path, stale_after: Duration) -> bool {
-    path.metadata()
-        .ok()
-        .and_then(|metadata| metadata.modified().ok())
-        .and_then(|modified| std::time::SystemTime::now().duration_since(modified).ok())
-        .is_none_or(|age| age >= stale_after)
-}
-
-fn bundle_freshness(root: &Path) -> DdinterBundleFreshness {
-    if DDINTER_REQUIRED_FILES
-        .iter()
-        .any(|file_name| file_is_stale(&root.join(file_name), DDINTER_STALE_AFTER))
-    {
+fn basis_freshness(basis: Option<std::time::SystemTime>) -> DdinterBundleFreshness {
+    let stale = basis.is_none_or(|mtime| {
+        std::time::SystemTime::now()
+            .duration_since(mtime)
+            .ok()
+            .is_none_or(|age| age >= DDINTER_STALE_AFTER)
+    });
+    if stale {
         DdinterBundleFreshness::Stale
     } else {
         DdinterBundleFreshness::Fresh

@@ -270,16 +270,29 @@ pub(crate) fn drug_interaction_note(drug: &Drug) -> Option<String> {
     {
         return None;
     }
-    if !drug.interactions.is_empty() {
+    match drug.interaction_coverage_status {
         Some(
+            crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage,
+        ) => Some(
+            "DDInter does not cover this drug, so the absence of rows reflects coverage, not a clean bill."
+                .to_string(),
+        ),
+        Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage)
+            if drug.interactions.is_empty() =>
+        {
+            Some(
+                "This drug is in the DDInter coverage set and the current bundle holds no matching rows. DDInter warns that missing rows do not prove no interaction exists."
+                    .to_string(),
+            )
+        }
+        _ if !drug.interactions.is_empty() => Some(
             "Structured rows come from the current DDInter download bundle. DDInter warns that missing rows do not prove no interaction exists."
                 .to_string(),
-        )
-    } else {
-        Some(
+        ),
+        _ => Some(
             "The current DDInter download bundle has no matching rows for this drug. DDInter warns that missing rows do not prove no interaction exists."
                 .to_string(),
-        )
+        ),
     }
 }
 
@@ -1059,6 +1072,8 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1111,6 +1126,8 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1184,6 +1201,8 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: vec!["PD-1 inhibitors".to_string()],
             top_adverse_events: Vec::new(),
             faers_query: None,
