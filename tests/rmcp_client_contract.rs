@@ -1298,7 +1298,8 @@ async fn raw_and_typed_mcp_reject_unknown_adverse_event_sections_before_provider
     // In-body argument validation returns a tool result with isError.
     assert_eq!(typed.is_error, Some(true));
     assert!(
-        biomcp_mcp_contract_client::first_text(&typed.content).contains("invalid adverse-event section")
+        biomcp_mcp_contract_client::first_text(&typed.content)
+            .contains("invalid adverse-event section")
     );
 
     client.cancel().await?;
