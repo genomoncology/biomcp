@@ -1361,7 +1361,9 @@ impl BioMcpServer {
                 ));
             }
             if input.limit == 0 || input.limit > 50 {
-                return Ok(Self::tool_error("variant_articles limit must be between 1 and 50"));
+                return Ok(Self::tool_error(
+                    "variant_articles limit must be between 1 and 50",
+                ));
             }
             if input.confirmed_only && !input.verify_identity {
                 return Ok(Self::tool_error("variant_articles confirmed_only requires verify_identity"));
@@ -1792,15 +1794,18 @@ mod tests {
         );
         assert_eq!(search["required"], json!(["entity"]));
         assert_eq!(get["required"], json!(["entity"]));
-        let get_entities = get["properties"]["entity"]["enum"].as_array().unwrap();
+        let get_entities = get["properties"]["entity"]["enum"]
+            .as_array()
+            .unwrap()
+            .clone();
         assert_eq!(get_entities.len(), 13);
-        let branch_entities: Vec<&serde_json::Value> = get["oneOf"]
+        let branch_entities: Vec<serde_json::Value> = get["oneOf"]
             .as_array()
             .unwrap()
             .iter()
-            .map(|branch| &branch["properties"]["entity"]["const"])
+            .map(|branch| branch["properties"]["entity"]["const"].clone())
             .collect();
-        assert_eq!(get_entities, &branch_entities);
+        assert_eq!(get_entities, branch_entities);
         let erepo =
             serde_json::to_value(rmcp::schemars::schema_for!(super::TypedVariantErepo)).unwrap();
         assert_eq!(erepo["type"], json!("object"));
@@ -1815,7 +1820,10 @@ mod tests {
             "limit",
             "offset",
         ] {
-            assert!(erepo["properties"].get(field).is_some(), "erepo root missing {field}");
+            assert!(
+                erepo["properties"].get(field).is_some(),
+                "erepo root missing {field}"
+            );
         }
         assert!(erepo.get("required").is_none());
 
@@ -1868,8 +1876,10 @@ mod tests {
         result
             .content
             .iter()
-            .filter_map(rmcp::model::RawContent::as_text)
-            .map(|text| text.text.clone())
+            .filter_map(|chunk| match &chunk.raw {
+                rmcp::model::RawContent::Text(text) => Some(text.text.clone()),
+                _ => None,
+            })
             .collect::<Vec<_>>()
             .join("\n")
     }
