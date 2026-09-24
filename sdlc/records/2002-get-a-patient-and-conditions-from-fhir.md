@@ -1,13 +1,14 @@
 ---
 base: d63eb544
-head: e6276ac2
+head: a7634fef
 ---
 
 Added `get patient <id>` with a `conditions` section. It reads one Patient and its Condition list from the FHIR R4 server in `BIOMCP_FHIR_BASE`. The client ports the request rules of an earlier read-only FHIR client prototype. It shares no code with it.
 
 ## What changed
 
-- `src/sources/fhir.rs` is the FHIR client. `PatientId` enforces the FHIR `id` rule (1-64 letters, digits, hyphens, or periods) before any request. `FhirBase` builds every URL with encoded path segments and query pairs. One private request function sets no-store twice: the cache extension and a `Cache-Control: no-store` header. The redirect policy and the page walk accept only the configured origin and base path. The walk stops at a repeated link or at 20 pages of 100. The client uses the shared retry layer, now one helper in `src/sources/mod.rs`. `FhirError` carries fixed text only. No error can name a URL or an ID.
+- `src/sources/fhir.rs` is the FHIR client. `PatientId` enforces the FHIR `id` rule (1-64 letters, digits, hyphens, or periods) before any request. It also refuses IDs made only of periods. The URL library drops `.` and `..` path segments, so those IDs would read `{base}/Patient`. `FhirBase` builds every URL with encoded path segments and query pairs. One private request function sets no-store twice: the cache extension and a `Cache-Control: no-store` header. The redirect policy and the page walk accept only the configured origin and base path. The walk stops at a repeated link or at 20 pages of 100. The client uses the shared retry layer, now one helper in `src/sources/mod.rs`. `FhirError` carries fixed text only. No error can name a URL or an ID.
+- `src/main.rs` holds the `hyper`, `hyper_util`, `h2`, `reqwest`, and `rustls` log targets at `warn` whatever `RUST_LOG` says. At `debug`, hyper and the connection pool logged the server's host and port.
 - `src/entities/patient.rs` settles `conditions` as `data`, `empty`, `degraded`, or `unavailable`. The ticket lists the degraded causes.
 - The CLI, list page, help, renderer, template, health row, and source-state registry gained the patient entity. `search patient` fails with a not-yet-available message and sends no request. Ticket 2003 replaces it.
 - `src/mcp/shell/patient_gate.rs` is the one serve-http check. `run_http` marks the process at startup. `execute_cli` refuses `get`, `search`, and `batch patient` when the mark is set. Every MCP tool reaches `execute_cli`, including the modern-protocol dispatcher. Typed search gained a filterless `patient` branch. Stdio callers get the same message as the CLI.
@@ -20,14 +21,16 @@ Added `get patient <id>` with a `conditions` section. It reads one Patient and i
 - Entity outcomes (`src/entities/patient/tests.rs`): 5 of 7 failed before the outcome rules existed. Green: 7 of 7.
 - serve-http refusal (`tests/patient_fhir_contract.rs`): with the check disabled, all four tests failed (shell tool, typed search, typed get, batch). Green: 4 of 4, each with zero fixture requests.
 - Trace leak: a `tracing::trace!` of the request URL made the test fail with "stderr names the ID". Green: at `RUST_LOG=trace`, a degraded walk, a conditions 500, a patient 500, a 404, and an off-origin redirect leave no ID or server in stderr, in the error output, or under the cache directory.
+- Review fixes, red at `29ab82df` on yellow: the ID test failed on `.`, and the leak test failed with "degraded walk at debug: stderr names the server host and port". Green at `413799e5`: the ID test passed. The leak test then failed its guard that stderr is not empty on error. That guard had counted on hyper's log lines. `a7634fef` changed it to check that the error reaches stdout or stderr. Green at `a7634fef`: 9 of 9 contract tests. The leak test now runs at `debug` and at `trace` and searches stdout and stderr for the bare host and port.
 - Typed get over stdio reads the patient in two requests. Bad IDs, an unset base, and `search patient` send no request.
 
 ## Checks
 
-- Yellow ran from a clean detached checkout at `e6276ac2` while otherwise idle. The checkout is removed. `make lint` passed. `make test` passed: 3,737 Rust tests and 1,260 Python tests, with 4 skipped. `make spec` passed.
-- `tools/check-biodata-1.0 --already-isolated` passed on yellow at `e6276ac2` under BioMCP's `tools/run-offline`, after `cargo build --locked --offline --no-default-features --bin biomcp`: 119 Rust tests and 152 Python tests passed, with 1 skipped. Yellow has no BioData checkout. BioMCP's launcher sets the same `BIOMCP_OFFLINE_NETWORK=1` isolation.
+- Yellow ran from a clean detached checkout at `a7634fef` while otherwise idle. The checkout is removed. `make lint` passed. `make test` passed: 3,737 Rust tests and 1,260 Python tests, with 31 Rust and 4 Python skipped. `make spec` passed.
+- `tools/check-biodata-1.0 --already-isolated` passed on yellow at `a7634fef` under BioMCP's `tools/run-offline`, after `cargo build --locked --offline --no-default-features --bin biomcp`: 119 Rust tests and 152 Python tests passed, with 1 skipped. Yellow has no BioData checkout. BioMCP's launcher sets the same `BIOMCP_OFFLINE_NETWORK=1` isolation.
 - Two earlier yellow runs failed `make spec` on the typed-tools example. It counted eight search branches and gave `conditions` to diagnostic alone. Commits `5eca5042` and `e6276ac2` fixed both. The patient spec also stopped capturing output before checking it.
-- The last two commits skipped the local pre-commit hook. The hook runs clippy, and Rust builds no longer run on the development box. Yellow's `make lint` covered them.
+- The yellow run at `413799e5` passed lint, spec, and check-biodata and failed `make test` on the leak guard above.
+- Every commit since `5eca5042` skipped the local pre-commit hook. The hook runs clippy, and Rust builds no longer run on the development box. Yellow's `make lint` covered them.
 
 ## Smoke
 
