@@ -34,6 +34,8 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         interaction_text: Some("DRUG INTERACTIONS\n\nWarfarin interacts with aspirin.".to_string()),
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -85,6 +87,8 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -109,6 +113,32 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
             .contains("The current DDInter download bundle has no matching rows for this drug.")
     );
     assert!(!markdown.contains("No known drug-drug interactions found."));
+
+    // Coverage states carry their own wording (ticket 1241): an
+    // uncovered drug never reads as a clean no-rows result, and the
+    // coverage line names the set.
+    let mut uncovered = drug.clone();
+    uncovered.interaction_coverage_status = Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage);
+    uncovered.interaction_pagination = Some(crate::entities::drug::interactions::DrugInteractionPagination {
+        total: 0,
+        count: 0,
+        offset: 0,
+        limit: 10,
+        next_command: None,
+    });
+    uncovered.interaction_bundle_freshness = Some(crate::entities::drug::interactions::DrugInteractionBundleFreshness {
+        status: crate::entities::drug::interactions::DrugInteractionFreshnessStatus::Fresh,
+    });
+    let markdown = drug_markdown(&uncovered, &["interactions".to_string()]).expect("markdown");
+    assert!(
+        markdown.contains("DDInter does not cover this drug"),
+        "not-covered note: {markdown}"
+    );
+    assert!(markdown.contains("DDInter coverage: not in the DDInter coverage set"));
+    assert!(
+        !markdown
+            .contains("The current DDInter download bundle has no matching rows for this drug.")
+    );
 }
 
 #[test]
@@ -174,6 +204,8 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -223,6 +255,8 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -273,6 +307,8 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -323,6 +359,8 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Rash".to_string()],
         faers_query: None,
@@ -457,6 +495,8 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -659,6 +699,8 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Fatigue".to_string(), "Rash".to_string()],
         faers_query: None,
@@ -734,6 +776,8 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,

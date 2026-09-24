@@ -25,6 +25,8 @@ fn warning_drug() -> Drug {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Rash".to_string()],
         faers_query: None,

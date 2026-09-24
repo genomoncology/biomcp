@@ -152,6 +152,9 @@ Variant Targets (CIViC): {{ variant_targets | join(", ") }}
 Returned: {{ interaction_pagination.count }} of {{ interaction_pagination.total }}
 
 DDInter bundle freshness: {{ interaction_bundle_freshness }}
+{% if interaction_coverage -%}
+DDInter coverage: {{ interaction_coverage }}
+{% endif -%}
 
 {% endif -%}
 {% if source_states.interactions.payload_allowed and interactions -%}

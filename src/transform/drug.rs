@@ -461,6 +461,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut mechanisms_seen: HashSet<String> = HashSet::new();
     let mut brand_names: Vec<String> = Vec::new();
     let mut brand_names_seen: HashSet<String> = HashSet::new();
+    let mut ddinter_synonyms: Vec<String> = Vec::new();
 
     let mut targets: Vec<String> = Vec::new();
     let mut indications: Vec<String> = Vec::new();
@@ -645,6 +646,8 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms,
         pharm_classes,
         top_adverse_events: Vec::new(),
         faers_query: None,
