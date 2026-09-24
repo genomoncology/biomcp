@@ -64,9 +64,12 @@ command runs with the bundled roots. A missing, unreadable, malformed, or
 certificate-less `BIOMCP_CA_BUNDLE` fails the command before any request and
 names the path in both text and `--json` errors. The bundle only adds roots: certificate
 verification and the bundled roots stay in place. Client certificates, mTLS,
-and `SSL_CERT_DIR` are out of scope. AlphaGenome's gRPC client already reads
-the native OS trust store. The shared and health HTTP clients are built once,
-so set the variable before starting BioMCP.
+and `SSL_CERT_DIR` are out of scope for ordinary providers. AlphaGenome's
+separate gRPC client does not use `BIOMCP_CA_BUNDLE`; when set,
+`SSL_CERT_FILE` and `SSL_CERT_DIR` replace its native OS trust source. Wiring
+`BIOMCP_CA_BUNDLE` into that client requires retained PEM bytes and remains
+future work. BioMCP resolves and parses the ordinary-provider bundle once per
+process, so set it before startup and restart BioMCP after rotating it.
 
 ## Internal and Measurement Controls
 
