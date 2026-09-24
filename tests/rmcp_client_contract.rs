@@ -1516,10 +1516,9 @@ async fn rmcp_client_rejects_unknown_list_cursors() -> anyhow::Result<()> {
     let client = harness.spawn_stdio_client(&[]).await?;
     let error = client
         .peer()
-        .list_tools(Some(rmcp::model::PaginatedRequestParams {
-            cursor: Some("garbage".into()),
-            ..Default::default()
-        }))
+        .list_tools(Some(
+            rmcp::model::PaginatedRequestParams::default().with_cursor(Some("garbage".into())),
+        ))
         .await
         .expect_err("an unknown cursor must be rejected with a protocol error");
     match error {

@@ -1366,7 +1366,9 @@ impl BioMcpServer {
                 ));
             }
             if input.confirmed_only && !input.verify_identity {
-                return Ok(Self::tool_error("variant_articles confirmed_only requires verify_identity"));
+                return Ok(Self::tool_error(
+                    "variant_articles confirmed_only requires verify_identity",
+                ));
             }
             let strategy = variant_article_strategy(&input.strategy)?;
             match crate::entities::article::search_variant_article_batch_with_options(
