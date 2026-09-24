@@ -44,3 +44,7 @@ One manual read-only run against the HAPI server on `blue` (MIMIC-IV demo) passe
 - Every smoke patient came back `degraded`. None of the demo's Conditions carries `clinicalStatus`, and the ticket degrades on a missing status. FHIR R4 invariant con-3 requires `clinicalStatus` only for `problem-list-item` conditions. Encounter diagnoses may omit it. A follow-up could degrade only when con-3 is broken. That changes the ticket's rule. It needs a new ticket.
 - The health row is covered by a unit test and by the runner wiring. A full `biomcp health` probes every public API. No offline test runs it end to end.
 - After review accepts, the landing agent pushes to `biodata/biomcp-1.0` and dispatches BioData's verification workflow at that tip, per `AGENTS.md`.
+
+## BioData verification
+
+BioData workflow `verify-biomcp-1.0.yml` run 35941640805 failed on 2026-09-23 against branch tip `71a7a4ba`, which carries this ticket. It failed in "Install pinned isolation tools" before any BioMCP step ran. Ubuntu's archive no longer serves the pinned apparmor-profiles version. This is a pin failure. It says nothing about ticket 2002. BioData ticket 0178 updates the pins, and the run must be dispatched again once 0178 lands.
