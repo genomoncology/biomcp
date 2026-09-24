@@ -109,7 +109,8 @@ async fn interaction_report_from_base(
     let client = DdinterClient::ready().await?;
     let mut identity_terms = brand_names.clone();
     identity_terms.extend(anchor.ddinter_synonyms.iter().cloned());
-    let identity = DdinterIdentity::with_aliases(&requested_name, Some(&anchor_name), &identity_terms);
+    let identity =
+        DdinterIdentity::with_aliases(&requested_name, Some(&anchor_name), &identity_terms);
     let rows = client.interactions(&identity);
     let in_ddinter_coverage = client.contains_identity(&identity);
     let interactions = aggregate_rows(&rows, &identity)?

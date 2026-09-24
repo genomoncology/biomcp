@@ -484,8 +484,8 @@ impl BioMcpError {
                 format!("DDInter bundle could not be read: {message}")
             }
             Self::Api { .. } => format!("API request to {source} failed."),
-            Self::ApiJson { message, .. } if source == "DDInter" => {
-                format!("DDInter bundle could not be decoded: {message}")
+            Self::ApiJson { api, .. } if source == "DDInter" => {
+                format!("DDInter bundle could not be decoded ({api})")
             }
             Self::ApiJson { .. } => format!("API response from {source} could not be decoded."),
             Self::BodyLimit { max_bytes, .. } => {

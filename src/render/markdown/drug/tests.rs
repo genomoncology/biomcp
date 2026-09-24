@@ -118,17 +118,23 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
     // uncovered drug never reads as a clean no-rows result, and the
     // coverage line names the set.
     let mut uncovered = drug.clone();
-    uncovered.interaction_coverage_status = Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage);
-    uncovered.interaction_pagination = Some(crate::entities::drug::interactions::DrugInteractionPagination {
-        total: 0,
-        count: 0,
-        offset: 0,
-        limit: 10,
-        next_command: None,
-    });
-    uncovered.interaction_bundle_freshness = Some(crate::entities::drug::interactions::DrugInteractionBundleFreshness {
-        status: crate::entities::drug::interactions::DrugInteractionFreshnessStatus::Fresh,
-    });
+    uncovered.interaction_coverage_status = Some(
+        crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage,
+    );
+    uncovered.interaction_pagination = Some(
+        crate::entities::drug::interactions::DrugInteractionPagination {
+            total: 0,
+            count: 0,
+            offset: 0,
+            limit: 10,
+            next_command: None,
+        },
+    );
+    uncovered.interaction_bundle_freshness = Some(
+        crate::entities::drug::interactions::DrugInteractionBundleFreshness {
+            status: crate::entities::drug::interactions::DrugInteractionFreshnessStatus::Fresh,
+        },
+    );
     let markdown = drug_markdown(&uncovered, &["interactions".to_string()]).expect("markdown");
     assert!(
         markdown.contains("DDInter does not cover this drug"),
