@@ -37,5 +37,8 @@ the waiting itself. No production code changes.
 
 ## Review
 
-- Design review: pending
+- Design review: combined review REJECT once (code motion, not
+  waiting), rework ACCEPT 2026-09-24
+- Verification: yellow gate at 17ac88cc lint/test/spec OK; see
+  `sdlc/records/1247-make-the-gencc-cancellation-settle-wait-for-generation-temps.md`
 - Code review: pending
