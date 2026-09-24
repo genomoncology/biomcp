@@ -1,5 +1,5 @@
 ---
-base: d63eb544
+base: edd36bbc
 head: bcfc3c6b
 ---
 
@@ -32,6 +32,7 @@ Added `get patient <id>` with a `conditions` section. It reads one Patient and i
 - Two earlier yellow runs failed `make spec` on the typed-tools example. It counted eight search branches and gave `conditions` to diagnostic alone. Commits `5eca5042` and `e6276ac2` fixed both. The patient spec also stopped capturing output before checking it.
 - At `bcfc3c6b`, a test-only change, yellow ran under `~/.yellow-gate.lock` from a clean checkout that is removed. `make lint` passed. The patient contract tests passed 9 of 9. The FHIR and patient unit tests passed 30 of 30.
 - The yellow run at `413799e5` passed lint, spec, and check-biodata and failed `make test` on the leak guard above.
+- The branch was rebased onto `edd36bbc`. The rebased tip before this note is `dc643eb8`. Its tree differs from the checked tip `cb1d4a8e` only by `sdlc/tickets/2004` to `2006`. The gates were not rerun after the rebase.
 - Every commit since `5eca5042` skipped the local pre-commit hook. The hook runs clippy, and Rust builds no longer run on the development box. Yellow's `make lint` covered them.
 
 ## Smoke
