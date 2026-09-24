@@ -120,6 +120,7 @@ def _assert_release_contract(workflow: str) -> None:
     smoke = _job_block(workflow, "wheel-smoke")
     for artifact in (
         "wheel-x86_64-unknown-linux-gnu",
+        "wheel-aarch64-unknown-linux-gnu",
         "wheel-aarch64-apple-darwin",
         "wheel-x86_64-apple-darwin",
         "wheel-x86_64-pc-windows-msvc",
