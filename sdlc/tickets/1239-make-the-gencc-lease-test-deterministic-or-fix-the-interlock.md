@@ -84,6 +84,9 @@ tests prove the mechanism either way.
   taxonomy fix above, ACCEPT on re-review 2026-09-24
 - Code review: ACCEPT 2026-09-24 (reviewer, medium) — two P2s recorded
   below
+- Verification: yellow gate at 6b09b548 lint/test/spec OK, plus two more
+  full `make test` runs green at the merged SHA 6836ed54 — three
+  consecutive full-suite passes
 - Code review: pending
 
 ## Recorded residuals
