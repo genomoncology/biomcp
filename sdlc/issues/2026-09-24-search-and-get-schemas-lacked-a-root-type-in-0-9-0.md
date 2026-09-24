@@ -14,4 +14,4 @@ In 0.9.0, `tools/list` returns `search` and `get` input schemas with `oneOf` and
 
 Fixed on main by e559cae2 (2026-09-22, "Declare object roots on the typed MCP tool schemas"), before the report arrived. Tests pin it: `src/mcp/shell.rs:1727` and `:1730`, `tests/test_mcp_2026_protocol.py`, and the release smoke's tools/list check (`tests/test_release_smoke_script.py:54-60`). It ships in 0.9.1. No ticket. Ticket 1240 reshapes these schemas and must keep the root `type`. The existing tests enforce that.
 
-After 0.9.1 is on PyPI, reply on #284 with the release and close it. The reply is public and needs Ian's OK.
+Ian approved a reply, posted 2026-09-24: https://github.com/genomoncology/biomcp/issues/284#issuecomment-5816965295. Close #284 when 0.9.1 is on PyPI.

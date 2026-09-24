@@ -19,7 +19,7 @@ Source issue: `sdlc/issues/2026-09-24-windows-icacls-output-corrupts-the-stdio-m
 - The Windows contract fails before the fix and passes after it.
 - The repository guard fails if the icacls `Stdio::null()` calls are removed.
 - The CHANGELOG Unreleased section names ticket 1246 with a user-facing line.
-- After release, a reply on #283 offers the reporter the patched wheel to test on zh-CN Windows. The reply needs Ian's OK.
+- Ian approved a thank-you on #283, posted 2026-09-24 (https://github.com/genomoncology/biomcp/issues/283#issuecomment-5816964998). It promises the fix in the next release and accepts the reporter's offer to test on zh-CN Windows. When the patched wheel exists, point the reporter to it; that follow-up reply needs Ian's OK.
 
 ## Review
 
