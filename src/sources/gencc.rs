@@ -848,6 +848,15 @@ async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: O
                 let name = entry.unwrap().file_name();
                 !name.to_string_lossy().starts_with(".raw-")
             }));
+            // Generation temporaries are waited on here too: a cancelled
+            // publication's .tmp- cleanup can lag past the settle point
+            // under load (ticket 1246).
+            assert!(std::fs::read_dir(root.join("generations"))
+                .unwrap()
+                .all(|entry| {
+                    let name = entry.unwrap().file_name();
+                    !name.to_string_lossy().starts_with(".tmp-")
+                }));
             return;
         }
         assert!(
@@ -976,6 +985,8 @@ async fn cancelling_active_publication_joins_cleanup_and_releases_locks() {
     task.abort();
     assert!(task.await.unwrap_err().is_cancelled());
     assert_cancelled_store_settles(&root, Some("\"old\"")).await;
+    // The settle helper waits for generation temporaries; this second
+    // read proves the cleanup is stable, not merely observed once.
     assert!(
         std::fs::read_dir(root.join("generations"))
             .unwrap()
