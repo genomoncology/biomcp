@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 import importlib.util
-from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 _SPEC = importlib.util.spec_from_file_location(
