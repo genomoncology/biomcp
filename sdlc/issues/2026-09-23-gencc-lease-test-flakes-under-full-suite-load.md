@@ -36,3 +36,16 @@ determinization ticket 1228 applied to the cache expiry test.
 ## Priority
 
 Should-fix after 0.9.1. Track here if a third occurrence lands.
+
+## Resolved
+
+Ticket 1239. The interlock was never broken: the child lease holder's
+five-second wait deadline expired under full-suite load, the child
+exited, the lease legitimately released, and cleanup correctly pruned
+the now-unleased generation. Deadlines moved to 120 seconds with a
+liveness assertion before the count. The investigation also closed a
+latent cleanup hole: transient environment errors during cleanup
+classification no longer delete healthy generations (errno taxonomy
+plus variant discrimination in `store.rs`), with a deterministic
+fault-injection test. See
+`sdlc/records/1239-make-the-gencc-lease-test-deterministic-or-fix-the-interlock.md`.
