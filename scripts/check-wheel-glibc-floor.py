@@ -26,13 +26,17 @@ def member_versions(data: bytes) -> list[float]:
 
 def wheel_floor(wheel: Path) -> float:
     top = 0.0
+    scanned = 0
     with zipfile.ZipFile(wheel) as archive:
         for name in archive.namelist():
             if not name.endswith(".so") and not name.endswith("/biomcp") and name != "biomcp":
                 continue
+            scanned += 1
             versions = member_versions(archive.read(name))
             if versions:
                 top = max(top, *versions)
+    if scanned == 0:
+        raise SystemExit(f"FAIL {wheel.name}: no ELF member matched the scan filter")
     return top
 
 

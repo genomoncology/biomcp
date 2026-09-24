@@ -59,6 +59,12 @@ def test_main_passes_at_or_below_the_default_floor(tmp_path: Path, capsys: pytes
     assert "OK wheel-b.whl" in capsys.readouterr().out
 
 
+def test_wheel_floor_fails_when_no_member_matches(tmp_path: Path) -> None:
+    wheel = build_wheel(tmp_path / "w.whl", {"metadata.json": b"GLIBC_2.39 ignored"})
+    with pytest.raises(SystemExit, match="no ELF member"):
+        wheel_floor(wheel)
+
+
 def test_main_rejects_bad_usage(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["check-wheel-glibc-floor.py"]) == 2
     assert capsys.readouterr().err.strip()
