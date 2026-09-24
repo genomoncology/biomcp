@@ -71,11 +71,20 @@ the reviewer verified every seam against the code).
    verified honestly at the M5 real-bundle run; not separately fixed
    here.
 7. Compile ripple stated: 23 full-field `Drug` struct literals across
-   12 files gain the new field; size-inventory entries needing a
-   ticket-1241 authorization: `src/render/provenance.rs` (1850/1847),
-   `src/render/json.rs` (1570/1561), `src/error.rs` (1150/1122).
-   `get.rs` should not change; the other touched files are not
-   inventoried.
+   11 files (json.rs, provenance.rs, transform/drug.rs, root_tests.rs,
+   gene_drug.rs, drug_variant_article_trial.rs, evidence/tests.rs,
+   variant_drug.rs, drug/tests.rs ×9, label_warnings.rs,
+   cell_lines/tests.rs) gain the new field; size-inventory entries
+   needing a ticket-1241 authorization: `src/render/provenance.rs`
+   (1850/1847), `src/render/json.rs` (1570/1561), `src/error.rs`
+   (1150/1122), and `src/entities/drug/get.rs` (1117/1103) for the
+   section-off clear's one line (item 1). The other touched files
+   (entities/drug/mod.rs, interactions.rs, sources/ddinter.rs and its
+   tests, render/markdown/drug.rs and its tests, templates/drug.md.j2)
+   are not inventoried. The freshness rework reshapes the existing
+   `bundle_freshness_requires_all_files_to_be_fresh` pin
+   (ddinter/tests/construction.rs:7-15), and the heading pins live at
+   tests.rs:55-56.
 
 ## Review
 
