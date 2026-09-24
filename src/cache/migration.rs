@@ -863,8 +863,7 @@ mod tests {
     async fn async_io_crossing_expiry_settles_without_admitting_a_mutation() {
         let entered = std::sync::Arc::new(tokio::sync::Notify::new());
         let release = std::sync::Arc::new(tokio::sync::Notify::new());
-        let settled_post_yield =
-            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let settled_post_yield = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let deadline =
             crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
         let io = deadline_io(&deadline, {

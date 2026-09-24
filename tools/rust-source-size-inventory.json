@@ -15,11 +15,11 @@
     },
     {
       "path": "src/cache/migration.rs",
-      "baseline_lines": 1089,
+      "baseline_lines": 1088,
       "floor_lines": 927,
       "authorized_increase": {
         "ticket": "1244",
-        "delta": 162,
+        "delta": 161,
         "reason": "The deadline-settle test asserts a post-yield flag instead of vacuous disk checks.",
         "removal_condition": "Shrink when the migration test module is next reorganized."
       }
