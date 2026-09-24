@@ -356,11 +356,11 @@
     },
     {
       "path": "src/sources/gencc/tests.rs",
-      "baseline_lines": 1135,
+      "baseline_lines": 1138,
       "floor_lines": 982,
       "authorized_increase": {
         "ticket": "1239",
-        "delta": 153,
+        "delta": 156,
         "reason": "Cleanup classification distinguishes corrupt from transient load failures; errno taxonomy, retention warns, and the fault-injection regression test.",
         "removal_condition": "Shrink when the store module's fault-injection scaffolding is extracted."
       }
