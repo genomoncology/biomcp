@@ -18,20 +18,53 @@ load, not a guess.
 
 ## Design
 
-1. Reproduce on the gate host: run the full suite (or the gencc test
-   binary under nextest with the suite) repeatedly until the assertion
-   fires, with the store's cleanup/lease tracing enabled.
-2. From the trace, decide which of two fixes applies:
-   - If a prune legitimately may prune g2 while g1 is leased (retention
-     counting leased generations differently than the test assumes), the
-     test's expectation is wrong and becomes a deterministic assertion
-     of the actual policy.
-   - If a prune deleted a leased or retained generation through a race
-     (for example a quarantined `.delete-*` rename completing across
-     publishes), fix the interlock in `store.rs` and keep the test.
-3. Poll-with-deadline replaces any single-shot directory count read that
-   can legitimately lag; the deadline is bounded with forced cleanup, per
-   the 1236 review's waiting rule.
+Root cause (verified by review against `cleanup_locked`, store.rs:550-575):
+the classification loop pushes ANY `load_generation` error into the
+`invalid` list, and invalid generations are pruned without the
+`newest_other` retention protection. Under full-suite pressure the load
+of the healthy unleased g2 fails transiently, g2 is deleted, and the
+directory holds {g1(leased), g3} = 2. The child's lease never mattered
+to g2; classification is the sole deletion-decision seam (reviewer
+confirmed every other error path retains or aborts).
+
+Review decision (first review REJECT): `StoreError::Invalid` is what the
+transient failures actually surface as — `open_existing_at` maps every
+`fd < 0` to `Invalid`, and `read_at` maps read failures to `Invalid` —
+so variant discrimination alone would not close the hole. Chosen fix:
+
+1. Taxonomy fix in the helpers: a pure errno mapping
+   (`store_error_for_errno`) returns `Unavailable` for environment
+   errnos (EINTR, EIO, EMFILE, ENFILE, ENOMEM) and `Invalid` otherwise,
+   with no errno reading as `Invalid`. Applied at exactly three sites on
+   the load path: `open_existing_at`'s `fd < 0`, its `metadata()`
+   failure, and `read_at`'s `read_to_end` failure. The deliberate
+   validity checks (mode/uid/nlink, schema, digest) stay `Invalid`.
+   Unit tests cover the pure mapping both directions.
+2. Classification discrimination: only `Err(StoreError::Invalid)`
+   enters the invalid list; `Unavailable`, `Deadline` (routine lease
+   contention), `PostRenameSync`, and any future variant retain the
+   generation this pass with `tracing::warn!(generation = %name, %error,
+   "GenCC cleanup retained a generation after a transient load
+   error")`. The next publish retries; retained generations are bounded
+   by the publish rate while the environment error persists.
+3. `tracing::warn!(generation = %name, ...)` also fires when an invalid
+   generation is pruned, so deletions are no longer silent.
+4. Deterministic regression test at the classification seam, in-process
+   and serial like the existing FAIL_AT family: publish g1, g2; arm
+   `BIOMCP_GENCC_TEST_FAIL_AT=cleanup-classify-generation` (returns
+   `Unavailable` as the load result, debug-only); publish g3; assert the
+   publish succeeds and the generations directory holds three entries;
+   disarm; assert the store loads. Red on unfixed code: every unleased
+   non-active generation is pruned, so the count is 1 ({g3}), not 2.
+   The corrupt-prune policy stays pinned by the existing
+   `invalid-finalized` test, which passes unchanged under the taxonomy
+   fix.
+5. The flaking test's count assertion stays single-shot: cleanup runs
+   synchronously inside publish under the exclusive store lock.
+
+The full-suite load reproduction is retained as evidence, not as the
+design's dependency: the deterministic seam test plus the taxonomy unit
+tests prove the mechanism either way.
 
 ## Acceptance
 
@@ -43,5 +76,7 @@ load, not a guess.
 
 ## Review
 
-- Design review: pending
+- Design review: REJECT once (the fix's discrimination signal did not
+  exist — transient open errors surface as `Invalid`); revised to the
+  taxonomy fix above, re-review pending
 - Code review: pending
