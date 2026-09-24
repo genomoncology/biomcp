@@ -453,6 +453,17 @@
         "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
+    },
+    {
+      "path": "src/render/markdown/drug/tests.rs",
+      "floor_lines": 974,
+      "baseline_lines": 1004,
+      "authorized_increase": {
+        "ticket": "1241",
+        "delta": 30,
+        "reason": "Coverage-state expectations for the drug interactions card.",
+        "removal_condition": "Shrink when the card test fixtures share a builder."
+      }
     }
   ]
 }
