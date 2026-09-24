@@ -345,24 +345,24 @@
     },
     {
       "path": "src/sources/gencc/store.rs",
-      "baseline_lines": 1039,
+      "baseline_lines": 1078,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1187",
-        "delta": 39,
-        "reason": "Deadline semantics concentrate in the three bounded lock waits beside their helpers after post-lock budget checks were removed; rustfmt reflow widens the shortened signatures and cleanup bodies.",
-        "removal_condition": "Extract the lock-wait helpers or the cleanup passes when the GenCC store is next decomposed."
+        "ticket": "1239",
+        "delta": 78,
+        "reason": "Cleanup classification distinguishes corrupt from transient load failures; errno taxonomy, retention warns, and the fault-injection regression test.",
+        "removal_condition": "Shrink when the store module's fault-injection scaffolding is extracted."
       }
     },
     {
       "path": "src/sources/gencc/tests.rs",
-      "baseline_lines": 1083,
+      "baseline_lines": 1138,
       "floor_lines": 982,
       "authorized_increase": {
-        "ticket": "1187",
-        "delta": 101,
-        "reason": "The expired-budget and reopen-after-release regressions join the bounded-wait and lease-deferral proofs beside the store fixtures they exercise.",
-        "removal_condition": "Extract shared GenCC store test fixtures when the test module is next decomposed."
+        "ticket": "1239",
+        "delta": 156,
+        "reason": "Cleanup classification distinguishes corrupt from transient load failures; errno taxonomy, retention warns, and the fault-injection regression test.",
+        "removal_condition": "Shrink when the store module's fault-injection scaffolding is extracted."
       }
     },
     {

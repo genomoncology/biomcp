@@ -624,6 +624,58 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
 }
 #[test]
 #[serial_test::serial(source_env)]
+fn transient_cleanup_classification_retains_generations() {
+    use super::store::{PublishMetadata, Store};
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("gencc");
+    let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
+    let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+    let store = Store::open().unwrap();
+    let body_sha256 = format!("{:x}", Sha256::digest(fixture()));
+    let publish = |now: &str| {
+        store
+            .publish(
+                &dataset,
+                PublishMetadata {
+                    now,
+                    etag: "\"fixture\"",
+                    last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                    endpoint: ENDPOINT,
+                    body_sha256: &body_sha256,
+                    row_count: dataset.row_count(),
+                },
+            )
+            .unwrap()
+    };
+    publish("2026-01-01T00:00:00Z");
+    publish("2026-01-02T00:00:00Z");
+    {
+        // Every classification load reports a transient environment
+        // failure. Cleanup must retain both older generations instead of
+        // classifying them invalid and pruning them.
+        let _fail = EnvRestore::set(
+            "BIOMCP_GENCC_TEST_FAIL_AT",
+            std::ffi::OsStr::new("cleanup-classify-generation"),
+        );
+        publish("2026-01-03T00:00:00Z");
+        assert_eq!(
+            std::fs::read_dir(root.join("generations")).unwrap().count(),
+            3,
+            "a transient classification failure must retain every generation"
+        );
+    }
+    let loaded = store.load().unwrap().expect("active generation loads");
+    drop(loaded);
+    publish("2026-01-04T00:00:00Z");
+    assert_eq!(
+        std::fs::read_dir(root.join("generations")).unwrap().count(),
+        2,
+        "normal retention resumes once the transient failure clears"
+    );
+}
+
+#[test]
+#[serial_test::serial(source_env)]
 fn expired_open_budget_completes_publish_and_deferred_cleanup() {
     use super::store::{PublishMetadata, Store};
     let temp = tempfile::tempdir().unwrap();
@@ -791,10 +843,13 @@ fn gencc_subprocess_client() {
         let snapshot = Store::open().unwrap().load().unwrap().unwrap();
         std::fs::write(entered, b"entered").unwrap();
         let release = std::env::var_os("BIOMCP_GENCC_CHILD_RELEASE").unwrap();
-        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        // Bounded well above full-suite load stalls: this holder must
+        // outlive the parent's publishes, which can be delayed by
+        // minutes while other suite workers compete for CPU.
+        let deadline = std::time::Instant::now() + Duration::from_secs(120);
         while !std::path::Path::new(&release).exists() {
             assert!(std::time::Instant::now() < deadline);
-            std::thread::sleep(Duration::from_millis(5));
+            std::thread::sleep(Duration::from_millis(25));
         }
         assert_eq!(snapshot.dataset.assertions().len(), 3);
         return;
