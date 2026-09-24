@@ -7,7 +7,9 @@ BioMCP is a single Rust binary (`biomcp`) with three operating modes:
 - **CLI mode:** Standard command-line invocation. Each command is a blocking
   async call that prints markdown to stdout and exits.
 - **MCP server mode:** `biomcp serve` starts a JSON-RPC MCP server over stdio.
-  The advertised MCP tool is `biomcp`, and `src/mcp/shell.rs` enforces a
+  The server advertises seven tools (`biomcp`, `search`, `get`,
+  `variant_normalize_car`, `variant_erepo`, `gene_cspec`,
+  `variant_articles`), and `src/mcp/shell.rs` enforces a
   read-only allowlist rather than mirroring the full CLI: `search`, `get`,
   helper families (`gene`, `variant`, `drug`, `disease`, `article`,
   `pathway`, `protein`), `list`, `version`, `health`, `batch`, `enrich`,
@@ -288,9 +290,11 @@ published v0.9.0 channels; `install.sh` resolves the latest release with
 platform assets rather than the latest merge to `main`.
 
 CI (`.github/workflows/ci.yml`) runs for pull requests and every push to
-`main`. Its `canonical-gates` job installs exact tool versions and invokes
+`main`. Its `canonical-gates` job invokes
 `make lint`, `make test`, and `make spec` without copying smaller command lists
-into YAML. Separate jobs retain full-feature, generated-source, Windows,
+into YAML. The build tools it drives are pinned by version (nextest, cargo-deny,
+ruff, mustmatch, protoc) while the four apt packages (bubblewrap, apparmor,
+apparmor-profiles, ripgrep) install unpinned from the distribution. Separate jobs retain full-feature, generated-source, Windows,
 repository-metadata, and container checks. The repository-contract checkout
 fetches full tag history so the pre-1.0 changelog boundary check is reliable.
 Routine release proof uses `make release-gate`,

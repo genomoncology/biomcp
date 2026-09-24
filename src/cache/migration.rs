@@ -862,19 +862,21 @@ mod tests {
     #[tokio::test(start_paused = true)]
     async fn async_io_crossing_expiry_settles_without_admitting_a_mutation() {
         let root = TempDirGuard::new("epoch-io-crossing-deadline");
-        let untouched = root.path().join("untouched");
-        fs::write(&untouched, b"preserve").unwrap();
         let entered = std::sync::Arc::new(tokio::sync::Notify::new());
         let release = std::sync::Arc::new(tokio::sync::Notify::new());
+        let settled_post_yield =
+            std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let deadline =
             crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
         let io = deadline_io(&deadline, {
             let entered = std::sync::Arc::clone(&entered);
             let release = std::sync::Arc::clone(&release);
+            let settled_post_yield = std::sync::Arc::clone(&settled_post_yield);
             async move {
                 entered.notify_one();
                 release.notified().await;
                 tokio::task::yield_now().await; // pending while the expired timer is checked
+                settled_post_yield.store(true, std::sync::atomic::Ordering::SeqCst);
                 Ok(())
             }
         });
@@ -887,8 +889,10 @@ mod tests {
         tokio::time::advance(std::time::Duration::from_secs(11)).await;
         release.notify_one();
         assert_eq!(io.await.unwrap_err().kind(), io::ErrorKind::TimedOut);
-        assert_eq!(fs::read(&untouched).unwrap(), b"preserve");
-        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+        // The settle contract: the operation's post-yield code runs to
+        // completion after the deadline fires. Real disk non-mutation is
+        // covered by epoch_cleanup_stops_mutating_after_a_mid_traversal_deadline.
+        assert!(settled_post_yield.load(std::sync::atomic::Ordering::SeqCst));
     }
 
     #[cfg(unix)]

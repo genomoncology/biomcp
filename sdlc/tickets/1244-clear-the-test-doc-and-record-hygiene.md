@@ -87,6 +87,31 @@ the reviewer verified every item against current code).
    slug wins), updating the ticket's textual reference to the record
    filename at the same time.
 
+## Dispositions (record residuals)
+
+- 1219: the M5 credential-helper hang is machine-local; no repo action.
+  The M5 DDInter leg is record 1235's residual and stays open.
+- 1221: client-per-call superseded by 1236 (parse-once across all
+  builders; non-UTF-8 and mixed-bundle tests landed with 1231/1236).
+  The unreadable-bundle-passes-silently-on-privileged-runner
+  sub-residual remains open pending 0.9.1; GitHub issue #250 stays open
+  until 0.9.1 ships.
+- 1222: the upload path will be exercised at the 0.9.1 release run.
+- 1224: the Cloudflare cache lag (up to ten minutes) is accepted; this
+  ticket's staleness decision supersedes the record's 365-day
+  age-check sentence.
+- 1225: the panic-abort residual is stale since 1230 set
+  `panic = "unwind"`; the args plumbing will be exercised at the 0.9.1
+  release run.
+- 1226: the fail-branch proof deferral was accepted by 1234's design.
+- 1229: the step-level-if weakness is documented in the 1229 record;
+  1234's gate-neutering mutation tests are the newer partial
+  mitigation. No further action.
+
+The 1222 record file was renamed to the ticket's slug
+(`1222-harden-the-release-path-and-retire-stale-release-facts.md`) with
+its in-repo textual reference updated.
+
 ## Acceptance
 
 - No test in the suite fails on a future date without a code change.

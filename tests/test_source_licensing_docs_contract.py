@@ -201,7 +201,11 @@ def _review_age_days(reviewed_on: str, today: date) -> int:
     return (today - reviewed).days
 
 
-def test_source_review_dates_are_not_stale() -> None:
+def test_source_review_dates_are_reported_when_stale() -> None:
+    # Deliberately a warning, not a failure (ticket 1244): freshness of
+    # reviewed_on dates is not enforced mechanically, because the repo
+    # carries no scheduled workflow and one date assertion does not
+    # justify one. The print keeps the signal visible in test logs.
     today = date.today()
     stale = [
         f"{item['id']} reviewed_on={item['reviewed_on']} ({_review_age_days(str(item['reviewed_on']), today)} days)"
@@ -209,10 +213,11 @@ def test_source_review_dates_are_not_stale() -> None:
         if _review_age_days(str(item["reviewed_on"]), today)
         > SOURCE_REVIEW_MAX_AGE_DAYS
     ]
-    assert not stale, (
-        "source licensing reviews expire after 12 months; re-read each provider's terms "
-        f"and refresh these reviewed_on dates: {stale}"
-    )
+    if stale:
+        print(
+            "WARNING: source licensing reviews older than 12 months; "
+            f"re-read each provider's terms and refresh reviewed_on: {stale}"
+        )
 
 
 def test_orcid_is_a_direct_exact_record_source() -> None:

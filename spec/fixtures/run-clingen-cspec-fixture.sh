@@ -7,7 +7,15 @@ bin="${BIOMCP_BIN:?run through scripts/run-specs.sh}"
 official='https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
 pten_official='https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN003/version/3.2.1'
 work="$(mktemp -d)"
-trap 'rm -rf "$work"' EXIT
+cleanup() {
+  status=$?
+  if ((status != 0)) && [[ -s "$work/report.json" ]]; then
+    echo 'clingen-cspec driver failed; report:' >&2
+    cat "$work/report.json" >&2
+  fi
+  rm -rf "$work"
+}
+trap cleanup EXIT
 
 for gene in APC ATM BRCA1 MLH1 PALB2 PTEN TP53 BRAF; do
   "$bin" --json gene cspec "$gene" >"$work/$gene.json"
@@ -96,5 +104,6 @@ report={
  'attachment_cli_and_mcp_match': files==files_mcp,
  'missing_capture_is_capture_unavailable': load('missing.json')['error']['code']=='capture_unavailable',
 }
+(work / 'report.json').write_text(json.dumps(report, sort_keys=True))
 print(json.dumps(report, sort_keys=True))
 PY
