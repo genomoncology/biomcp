@@ -64,7 +64,9 @@ READY.write_text(f'http://127.0.0.1:{server.server_port}')
 server.serve_forever()
 PY
 supervisor_pid=$!
-for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+# ~30s: full-suite load on a gate host can starve the fixture for
+# well past the old 5s window (ticket 1244).
+for _ in $(seq 1 300); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
 test -s "$server_pid_file"
 pid="$(<"$server_pid_file")"
 cleanup_incomplete_setup() {
@@ -76,7 +78,10 @@ trap cleanup_incomplete_setup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
-for _ in $(seq 1 50); do test -s "$ready" && break; kill -0 "$pid" 2>/dev/null || { cat "$fixture_root/server.log" >&2; exit 1; }; sleep .1; done
+# ~30s readiness wait; print the server log on death or timeout so a
+# load-starved fixture is diagnosable from the gate log.
+for _ in $(seq 1 300); do test -s "$ready" && break; kill -0 "$pid" 2>/dev/null || break; sleep .1; done
+test -s "$ready" || { cat "$fixture_root/server.log" >&2; exit 1; }
 test -s "$ready"
 {
   printf 'export BIOMCP_CSPEC_FIXTURE_ORIGIN=%q\n' "$(<"$ready")"

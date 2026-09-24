@@ -15,13 +15,13 @@
     },
     {
       "path": "src/cache/migration.rs",
-      "baseline_lines": 1086,
+      "baseline_lines": 1088,
       "floor_lines": 927,
       "authorized_increase": {
-        "ticket": "1150",
-        "delta": 159,
-        "reason": "Keep deadline-raced epoch filesystem operations, staging cleanup ownership, and deterministic expiry tests beside the cache epoch implementation.",
-        "removal_condition": "Extract cache epoch deadline adapters when package-neutral cache test support is available."
+        "ticket": "1244",
+        "delta": 161,
+        "reason": "The deadline-settle test asserts a post-yield flag instead of vacuous disk checks.",
+        "removal_condition": "Shrink when the migration test module is next reorganized."
       }
     },
     {

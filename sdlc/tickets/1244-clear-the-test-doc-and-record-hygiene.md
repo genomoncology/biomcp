@@ -21,18 +21,96 @@ live only in prose.
 
 ## Design
 
-1. Move the licensing expiry check to a warning (or scheduled check)
-   so `make test` cannot go red on a calendar date; keep the freshness
-   pressure in CI where it belongs.
-2. Fix the three named test weaknesses and the audit pattern.
-3. clingen-cspec fixture: 30-second readiness wait, print server.log
-   and the report JSON on failure.
-4. CI version record: print bwrap, apparmor_parser, and rg versions;
-   add `apt-get install -y`.
-5. Architecture overview: seven tools, no exact-version claim, fact
-   ownership named in the 1227 record's terms.
-6. File or gate each open record residual; record the disposition of
-   each in this ticket.
+Revised after the first design review (four P1 corrections folded in;
+the reviewer verified every item against current code).
+
+1. The licensing staleness assertion
+   (`test_source_review_dates_are_not_stale`) becomes a warning printed
+   with the offending dates. Recorded decision: freshness of the
+   `reviewed_on` dates is deliberately not enforced mechanically — the
+   repo carries no scheduled workflow and this one assertion does not
+   justify one; the warning keeps the signal visible in test logs. This
+   supersedes the 1224 record's "age-checks reviewed_on at 365 days"
+   sentence.
+2. The migration deadline test (`src/cache/migration.rs`): a flag set
+   after the operation's yield is asserted after `io.await`, pinning
+   the settle contract — the falsifiable part. Real disk non-touch
+   coverage already lives in
+   `epoch_cleanup_stops_mutating_after_a_mid_traversal_deadline`; the
+   untouched/marker checks are deleted as vacuous, and the record says
+   so. The file sits at its exact 1086-line inventory pin: the edit is
+   line-neutral or the inventory gains a ticket-1244 authorization.
+3. The article spec fixture test asserts the spec-runner summary's
+   indented `  page N (exit N)` form from `record_spec_failure`, a
+   unique target instead of a substring of the line above.
+4. The cellosaurus redundant `!url.contains("dr")` check is dropped.
+5. The documentation audit: the hand-copied-catalog ban learns the
+   blog's count form ("21,701 UTF-8 bytes and 5,599 tokens") but stays
+   scoped to the ban's existing catalog pages (not all current
+   markdown — the count form appears verbatim in open sdlc issue and
+   ticket files) — the blog's historical snapshot citations remain
+   allowed by design; the change bans current-build hand-copies on
+   those catalog pages.
+6. clingen-cspec fixture flake hardening: both ~5-second loops in
+   `spec/fixtures/setup-clingen-cspec-spec-fixture.sh` (pid-file and
+   readiness) move to ~30 seconds, and on readiness failure the setup
+   script prints `server.log`; the driver
+   (`spec/fixtures/run-clingen-cspec-fixture.sh`) prints the report
+   JSON in its exit trap before the work-dir cleanup. The issue's other
+   two suspected causes (the 180-second block limit, the retry breaking
+   the exact request-log check) stay deliberately out of scope,
+   recorded.
+7. CI: the version-record step prints `bwrap --version`,
+   `apparmor_parser --version`, and `rg --version`; the apt install
+   gains `-y`; `tests/test_offline_gate_contract.py`'s apt pin is
+   updated in the same change.
+8. Architecture overview: names the seven advertised tools; the
+   exact-versions sentence keeps its claim only for the still-pinned
+   tools (nextest, deny, ruff, mustmatch, protoc) and states the four
+   apt packages are unpinned. Ownership of the architecture facts stays
+   in records (naming an owner ticket in the overview would itself go
+   stale); the 1244 record carries the correction.
+9. Residual dispositions (recorded in the ticket when implemented):
+   1219's M5 credential-helper hang is machine-local; the M5 DDInter
+   leg is record 1235's residual; 1221's client-per-call gap is
+   superseded by 1236 (parse-once across all builders; non-UTF-8 and
+   mixed-bundle tests landed with 1231/1236), its unreadable-bundle
+   privileged-runner sub-residual remains open pending 0.9.1, and
+   GitHub issue #250 stays open until 0.9.1 ships; 1222's upload path
+   and 1225's args plumbing will be exercised at the 0.9.1 release
+   run; 1224's Cloudflare lag is accepted; 1225's panic-abort residual
+   is stale since 1230 set unwind; 1226's fail-branch narrowing was
+   accepted by 1234's design; 1229's step-level-if weakness is
+   documented in the 1229 record, with 1234's gate-neutering mutation
+   tests as the newer partial mitigation. The 1222 record/ticket
+   filename mismatch is renamed to match here (the ticket file's
+   slug wins), updating the ticket's textual reference to the record
+   filename at the same time.
+
+## Dispositions (record residuals)
+
+- 1219: the M5 credential-helper hang is machine-local; no repo action.
+  The M5 DDInter leg is record 1235's residual and stays open.
+- 1221: client-per-call superseded by 1236 (parse-once across all
+  builders; non-UTF-8 and mixed-bundle tests landed with 1231/1236).
+  The unreadable-bundle-passes-silently-on-privileged-runner
+  sub-residual remains open pending 0.9.1; GitHub issue #250 stays open
+  until 0.9.1 ships.
+- 1222: the upload path will be exercised at the 0.9.1 release run.
+- 1224: the Cloudflare cache lag (up to ten minutes) is accepted; this
+  ticket's staleness decision supersedes the record's 365-day
+  age-check sentence.
+- 1225: the panic-abort residual is stale since 1230 set
+  `panic = "unwind"`; the args plumbing will be exercised at the 0.9.1
+  release run.
+- 1226: the fail-branch proof deferral was accepted by 1234's design.
+- 1229: the step-level-if weakness is documented in the 1229 record;
+  1234's gate-neutering mutation tests are the newer partial
+  mitigation. No further action.
+
+The 1222 record file was renamed to the ticket's slug
+(`1222-harden-the-release-path-and-retire-stale-release-facts.md`) with
+its in-repo textual reference updated.
 
 ## Acceptance
 
@@ -42,5 +120,9 @@ live only in prose.
 
 ## Review
 
-- Design review: pending
+- Design review: REJECT once (four P1s: staleness enforcement had no
+  scheduled lane to move to, the migration flag item misstated what is
+  falsifiable, the audit extension would turn the suite red without a
+  blog exemption, and the apt pin needed a paired test update);
+  revised above, re-review pending
 - Code review: pending

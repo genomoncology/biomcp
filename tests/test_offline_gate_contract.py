@@ -37,11 +37,14 @@ def test_authoritative_linux_job_installs_unpinned_gate_tools() -> None:
     assert "BUBBLEWRAP_VERSION" not in WORKFLOW
     assert "APPARMOR_VERSION" not in WORKFLOW
     assert "RIPGREP_VERSION" not in WORKFLOW
-    assert "sudo apt-get install --no-install-recommends" in canonical
+    assert "sudo apt-get install -y --no-install-recommends" in canonical
     install = canonical.split("sudo apt-get install", 1)[1]
     install = install.split("sudo install", 1)[0]
     assert "=" not in install
-    packages = set(install.replace("\\", " ").split()) - {"--no-install-recommends"}
+    packages = (
+        set(install.replace("\\", " ").split())
+        - {"--no-install-recommends", "-y"}
+    )
     assert packages == {"bubblewrap", "apparmor", "apparmor-profiles", "ripgrep"}
     assert "make test" in canonical
     assert "make spec" in canonical

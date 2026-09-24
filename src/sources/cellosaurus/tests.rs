@@ -16,7 +16,6 @@ fn record_url_asks_for_the_card_projection_without_cross_references() {
         url,
         "https://api.cellosaurus.org/cell-line/CVCL_2119?format=json&fields=ac%2Cid%2Csy%2Cox%2Cdi%2Cca%2Csx%2Cag"
     );
-    assert!(!url.contains("dr"));
 }
 
 #[test]

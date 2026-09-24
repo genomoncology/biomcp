@@ -810,7 +810,9 @@ def test_failing_parallel_pages_are_named_without_stopping_later_batches(
     assert result.returncode != 0
     for failed_page in failed_pages:
         assert f"spec page failed: {failed_page} (exit 7)" in result.stderr
-        assert f"page {failed_page} (exit 7)" in result.stderr
+        # The end-of-run summary line (two-space indented), not a
+        # substring of the per-page line above.
+        assert f"  page {failed_page} (exit 7)" in result.stderr
         assert f"=== spec page: {failed_page} ===" in result.stdout
         assert f"mustmatch-output:test {failed_page}" in result.stdout
     # A failing batch must not hide the pages behind it.

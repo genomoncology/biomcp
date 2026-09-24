@@ -49,4 +49,4 @@ The release workflow stops depending on an archived action and stops being able 
 
 - Design review: REJECT 2026-09-22 (gpt-5.6-sol, medium) — the original bundle was split into 1222, 1226, 1227, and 1228; this ticket kept the upload and Homebrew work
 - Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — one P1 (dispatch side effects missing from the runbook) and one P2 (upload credential pins) fixed in a172d49a and verified closed
-- Verification: actionlint 1.7.12 clean, 11 provenance tests with mutation checks, yellow `make lint` OK at a172d49a; see `sdlc/records/1222-keep-the-release-uploads-working-and-the-homebrew-formula-honest.md`
+- Verification: actionlint 1.7.12 clean, 11 provenance tests with mutation checks, yellow `make lint` OK at a172d49a; see `sdlc/records/1222-harden-the-release-path-and-retire-stale-release-facts.md`

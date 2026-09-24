@@ -50,7 +50,7 @@ jobs:
       - name: Install canonical gate tools
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends \
+          sudo apt-get install -y --no-install-recommends \
             bubblewrap \
             apparmor \
             apparmor-profiles \
@@ -79,6 +79,9 @@ jobs:
           protoc --version
           shellcheck --version
           actionlint --version
+          bwrap --version
+          apparmor_parser --version
+          rg --version
       - name: Canonical lint gate
         run: make lint
       - name: Canonical test gate
