@@ -4,6 +4,11 @@
 
 ### New features
 
+- Linux wheels now target `manylinux_2_28` (built in the official
+  manylinux containers and verified against the glibc 2.28 symbol floor)
+  and a Linux ARM64 wheel ships, so `pip install biomcp-cli` works on
+  RHEL 8, Debian 10, Ubuntu 20.04 onward, and ARM64 Linux.
+
 - Added the `cell-line` entity: `search cell-line <name>` resolves common
   spellings to Cellosaurus accessions, and `get cell-line <CVCL_xxxx>` returns
   name, synonyms, species, disease, category, sex, age, cross-references, and

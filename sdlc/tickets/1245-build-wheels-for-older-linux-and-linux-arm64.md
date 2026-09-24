@@ -40,14 +40,16 @@ check. The floor must be true by construction:
 5. Docs: the runbook's four-wheel sentence becomes five platforms and
    gains the floor statement — manylinux_2_28 covers RHEL 8, Debian 10,
    and Ubuntu 20.04 onward; older Linux installs from the GitHub
-   tarball or `cargo install`. Changelog entry under Unreleased.
+   tarball or `cargo install` — and records the ARM-runner availability
+   assumption. Changelog entry under Unreleased.
 6. The sdist stays out on purpose: a pip sdist install would require a
    user-side Rust toolchain, and the tarball and cargo already serve
    the pre-2.28 fallback. The musl and s390x questions stay out.
 
-Sizing: this is a workflow change with two container steps, a symbol
-scan, two matrix legs, a docs sentence, and a changelog line — no
-Rust source changes.
+Sizing: this is a workflow change with container steps in both jobs
+(four docker runs in total — two builds, two runtime-floor smokes), a
+symbol-scan script with unit tests, two matrix legs, a docs paragraph,
+and a changelog line — no Rust source changes.
 
 ## Acceptance
 
@@ -59,5 +61,6 @@ Rust source changes.
 
 - Design review: REJECT once (a tag-only floor would be false — the
   binaries import GLIBC_2.39); revised to manylinux containers with a
-  mechanical symbol check, re-review pending
+  mechanical symbol check, ACCEPT on re-review 2026-09-24 with two P2
+  wording notes folded in above
 - Code review: pending
