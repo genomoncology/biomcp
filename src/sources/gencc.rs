@@ -836,16 +836,16 @@ async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: O
             let name = entry.unwrap().file_name();
             !name.to_string_lossy().starts_with(".raw-")
         });
-        // Generation temporaries are waited on with the same deadline:
-        // their cleanup runs detached and can lag past the lock release
-        // under load (ticket 1247).
+        // Generation temporaries wait on the same deadline: their
+        // cleanup runs detached and can lag past the lock (ticket 1247).
         let clean_generations = std::fs::read_dir(root.join("generations"))
             .unwrap()
             .all(|entry| {
                 let name = entry.unwrap().file_name();
                 !name.to_string_lossy().starts_with(".tmp-")
             });
-        if clean_root && clean_generations
+        if clean_root
+            && clean_generations
             && let Ok(store) = Store::open()
             && store.try_lock_refresh().is_ok_and(|locked| locked)
         {
