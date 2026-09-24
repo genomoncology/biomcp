@@ -46,9 +46,11 @@ the reviewer verified every item against current code).
 4. The cellosaurus redundant `!url.contains("dr")` check is dropped.
 5. The documentation audit: the hand-copied-catalog ban learns the
    blog's count form ("21,701 UTF-8 bytes and 5,599 tokens") but stays
-   scoped to non-blog pages — the blog's historical snapshot citations
-   remain allowed by design; the change bans current-build hand-copies
-   everywhere else.
+   scoped to the ban's existing catalog pages (not all current
+   markdown — the count form appears verbatim in open sdlc issue and
+   ticket files) — the blog's historical snapshot citations remain
+   allowed by design; the change bans current-build hand-copies on
+   those catalog pages.
 6. clingen-cspec fixture flake hardening: both ~5-second loops in
    `spec/fixtures/setup-clingen-cspec-spec-fixture.sh` (pid-file and
    readiness) move to ~30 seconds, and on readiness failure the setup
@@ -82,7 +84,8 @@ the reviewer verified every item against current code).
    documented in the 1229 record, with 1234's gate-neutering mutation
    tests as the newer partial mitigation. The 1222 record/ticket
    filename mismatch is renamed to match here (the ticket file's
-   slug wins).
+   slug wins), updating the ticket's textual reference to the record
+   filename at the same time.
 
 ## Acceptance
 
