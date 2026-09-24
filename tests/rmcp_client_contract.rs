@@ -1294,9 +1294,12 @@ async fn raw_and_typed_mcp_reject_unknown_adverse_event_sections_before_provider
                 .collect(),
             ),
         )
-        .await
-        .expect_err("typed MCP rejects an unknown section at its schema boundary");
-    assert!(typed.to_string().contains("invalid adverse-event section"));
+        .await?;
+    // In-body argument validation returns a tool result with isError.
+    assert_eq!(typed.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&typed.content).contains("invalid adverse-event section")
+    );
 
     client.cancel().await?;
     Ok(())
