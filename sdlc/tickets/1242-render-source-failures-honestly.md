@@ -73,6 +73,46 @@ per-source status; these paths do not.
 - Each listed path shows the failure and marks counts partial.
 - The anti-regression check exists and covers the listed renderers.
 
+## Implementation state (2026-09-25 close-out)
+
+This ticket landed in two sessions; the first closed after item 1.
+The per-item state:
+
+1. DONE. `TrialCount::Partial { total, reason }` with
+   `TrialCountPartialReason::DetailVerificationIncomplete` (not
+   Approximate — its meaning stays fixed). `verify_detail_filters`
+   returns `(Vec<CtGovStudy>, DetailVerificationReport)`; the report
+   counts kept-unverified studies and up to three NCT IDs
+   (eligibility.rs `DetailVerificationReport`). The three
+   keep-unverified paths (failed fetch, missing criteria, no NCT ID)
+   increment it. All four apply sites (single page, union search, both
+   count loops) thread it; both count loops return Partial instead of
+   Exact when unverified_kept > 0 (`completed_ctgov_union_count`).
+   `SearchPage<T>` gained `partial_note: Option<String>`; the trial
+   renderer/template print `Note: ...` beside the count header, and
+   `render_count_only` shows `Total: N (partial, ...)` text plus
+   `partial`/`partial_reason` JSON fields. Anchors:
+   `json_and_text_mark_a_partial_count_with_its_reason`,
+   `search_results_carry_the_partial_detail_verification_note`, and
+   the `completed_ctgov_union_count` partial arm in ctgov/tests.rs.
+2. NOT STARTED.
+3. NOT STARTED.
+4. NOT STARTED.
+5. NOT STARTED. Design note from this session for whoever picks it
+   up: http-cache 0.20's `conditional_fetch` serves the manager's
+   cached object directly on stale-within-tolerance and
+   offline/must-not-revalidate paths, and serves the `put()` RETURN on
+   304/200 revalidation — so stamping a stale marker on the cached
+   response in `SizeAwareCacheManager::get` (computed from the stored
+   `CachePolicy.is_stale/age`) and clearing it in `put` labels stale
+   serves with no false positive after revalidation. The entity-page
+   per-source plumbing beyond the response-level flag still needs a
+   design decision (source clients discard response headers; there is
+   no single response funnel — `request_from_plan` returns a builder).
+6. PARTIAL: the two trial anchors in item 1 exist; the
+   SOURCE_STATE_ROWS markdown walk and the SearchAllSection anchor are
+   NOT STARTED.
+
 ## Review
 
 - Design review: REJECT once (stale-cache label named the wrong

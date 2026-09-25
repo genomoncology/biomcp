@@ -36,6 +36,10 @@ pub(crate) struct SearchPage<T> {
     pub total: Option<usize>,
     pub next_page_token: Option<String>,
     pub upstream_total: Option<usize>,
+    /// Degradation note for the whole page: set when some kept rows
+    /// were produced without full verification (a source failure the
+    /// renderers surface instead of dropping).
+    pub partial_note: Option<String>,
 }
 
 impl<T> SearchPage<T> {
@@ -45,6 +49,7 @@ impl<T> SearchPage<T> {
             total,
             next_page_token: None,
             upstream_total: None,
+            partial_note: None,
         }
     }
 
@@ -58,6 +63,7 @@ impl<T> SearchPage<T> {
             total,
             next_page_token,
             upstream_total: None,
+            partial_note: None,
         }
     }
 
@@ -72,6 +78,7 @@ impl<T> SearchPage<T> {
             total,
             next_page_token,
             upstream_total,
+            partial_note: None,
         }
     }
 }

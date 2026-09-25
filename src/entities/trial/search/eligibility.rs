@@ -288,17 +288,50 @@ pub(super) fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<
     keywords
 }
 
+/// Failure telemetry from detail post-filtering: how many studies
+/// were kept in the result set without full verification, and at most
+/// three of their NCT IDs. A kept-unverified study is one whose
+/// detail fetch failed, whose criteria text was missing, or that
+/// carried no NCT ID to fetch.
+#[derive(Debug, Default, Clone)]
+pub(crate) struct DetailVerificationReport {
+    pub(crate) unverified_kept: usize,
+    pub(crate) unverified_ids: Vec<String>,
+}
+
+const UNVERIFIED_ID_CAP: usize = 3;
+
+impl DetailVerificationReport {
+    pub(crate) fn merge(&mut self, other: &DetailVerificationReport) {
+        self.unverified_kept = self.unverified_kept.saturating_add(other.unverified_kept);
+        for id in &other.unverified_ids {
+            if self.unverified_ids.len() >= UNVERIFIED_ID_CAP {
+                break;
+            }
+            self.unverified_ids.push(id.clone());
+        }
+    }
+
+    pub(crate) fn observe(&mut self, nct_id: Option<&str>) {
+        self.unverified_kept += 1;
+        if self.unverified_ids.len() < UNVERIFIED_ID_CAP {
+            self.unverified_ids
+                .push(nct_id.unwrap_or("<no NCT ID>").to_string());
+        }
+    }
+}
+
 pub(super) async fn verify_detail_filters(
     client: &ClinicalTrialsClient,
     studies: Vec<CtGovStudy>,
     facility_geo: Option<(&str, f64, f64, u32)>,
     keywords: &[String],
-) -> Vec<CtGovStudy> {
+) -> (Vec<CtGovStudy>, DetailVerificationReport) {
     let facility_geo = facility_geo.and_then(|(facility, lat, lon, distance)| {
         normalize_facility_text(facility).map(|facility| (facility, lat, lon, distance))
     });
     if facility_geo.is_none() && keywords.is_empty() {
-        return studies;
+        return (studies, DetailVerificationReport::default());
     }
 
     let mut sections = Vec::new();
@@ -310,6 +343,8 @@ pub(super) async fn verify_detail_filters(
     }
 
     let keywords = keywords.to_vec();
+    // Each item is (kept-unverified, kept study): the flag marks rows
+    // that survived without full detail verification.
     let mut verification_stream = stream::iter(studies.into_iter().map(|study| {
         let nct_id = ctgov_nct_id(&study);
         let sections = sections.clone();
@@ -317,24 +352,24 @@ pub(super) async fn verify_detail_filters(
         let keywords = keywords.clone();
         async move {
             let Some(nct_id) = nct_id else {
-                return Some(study);
+                return (true, Some(study));
             };
             let details = match client.get(&nct_id, &sections).await {
                 Ok(details) => details,
                 Err(e) => {
                     warn!(nct_id, error = %e, "trial detail fetch failed, keeping study");
-                    return Some(study);
+                    return (true, Some(study));
                 }
             };
 
             if let Some((facility, lat, lon, distance)) = facility_geo
                 && !trial_matches_facility_geo(&details, &facility, lat, lon, distance)
             {
-                return None;
+                return (false, None);
             }
 
             if keywords.is_empty() {
-                return Some(study);
+                return (false, Some(study));
             }
             let Some(criteria) = details
                 .protocol_section
@@ -348,25 +383,30 @@ pub(super) async fn verify_detail_filters(
                     nct_id,
                     "missing eligibility criteria in detail fetch, keeping study"
                 );
-                return Some(study);
+                return (true, Some(study));
             };
 
             let (inclusion, exclusion) = split_eligibility_sections(criteria);
-            keywords
+            let kept = keywords
                 .iter()
                 .all(|keyword| eligibility_keyword_in_inclusion(&inclusion, &exclusion, keyword))
-                .then_some(study)
+                .then_some(study);
+            (false, kept)
         }
     }))
     .buffered(DETAIL_VERIFY_CONCURRENCY);
 
     let mut verified = Vec::new();
-    while let Some(maybe_study) = verification_stream.next().await {
+    let mut report = DetailVerificationReport::default();
+    while let Some((unverified, maybe_study)) = verification_stream.next().await {
         if let Some(study) = maybe_study {
+            if unverified {
+                report.observe(ctgov_nct_id(&study).as_deref());
+            }
             verified.push(study);
         }
     }
-    verified
+    (verified, report)
 }
 
 pub(super) fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: f64) -> Vec<CtGovStudy> {

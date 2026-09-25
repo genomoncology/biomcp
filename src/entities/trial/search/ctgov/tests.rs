@@ -3,6 +3,7 @@
 use super::super::super::test_support::*;
 use super::super::{prepare_ctgov_search_context, validate_trial_search};
 use super::*;
+use crate::entities::trial::TrialCountPartialReason;
 use crate::entities::trial::TrialCountUnknownReason;
 
 fn trial_alias(label: &str, source: TrialAliasSource) -> TrialAlias {
@@ -29,6 +30,7 @@ fn filtered_page(
         total_count,
         studies: ctgov_studies(studies),
         next_page_token: next_page_token.map(str::to_string),
+        unverified: crate::entities::trial::search::DetailVerificationReport::default(),
         raw_study_count,
     }
 }
@@ -1026,11 +1028,26 @@ fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
         worker.exhausted = true;
     }
 
+    let clean = crate::entities::trial::search::DetailVerificationReport::default();
+    let mut partial = crate::entities::trial::search::DetailVerificationReport::default();
+    partial.observe(Some("NCT1"));
     assert_eq!(ctgov_union_total(false, false, &workers, 2), Some(2));
     assert_eq!(ctgov_union_total(true, false, &workers, 2), None);
-    assert_eq!(completed_ctgov_union_count(false, 2), TrialCount::Exact(2));
     assert_eq!(
-        completed_ctgov_union_count(true, 2),
+        completed_ctgov_union_count(false, 2, &clean),
+        TrialCount::Exact(2)
+    );
+    assert_eq!(
+        completed_ctgov_union_count(true, 2, &clean),
         TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage)
+    );
+    // A numeric count that keeps unverified trials reports partial,
+    // not exact.
+    assert_eq!(
+        completed_ctgov_union_count(false, 2, &partial),
+        TrialCount::Partial {
+            total: 2,
+            reason: TrialCountPartialReason::DetailVerificationIncomplete,
+        }
     );
 }
