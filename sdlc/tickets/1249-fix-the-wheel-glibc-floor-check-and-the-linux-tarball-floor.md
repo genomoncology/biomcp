@@ -89,5 +89,8 @@ piped into the wheel containers is unpinned.
 
 - Design review: REJECT once (the smoke command was network-bound
   and misnamed; protoc rationale wrong; rustup pin unspecified),
-  findings folded, re-review ACCEPT 2026-09-24
-- Code review: pending
+  findings folded, re-review ACCEPT 2026-09-25
+- Code review: REJECT once (quoting bug in the container smoke
+  guard; missing guard pin), fixed and pinned 2026-09-25
+- Verification: yellow gate at 68f885c1 lint/test/spec OK; see
+  `sdlc/records/1249-fix-the-wheel-glibc-floor-check-and-the-linux-tarball-floor.md`

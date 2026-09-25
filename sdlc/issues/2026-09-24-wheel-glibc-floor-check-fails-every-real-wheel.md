@@ -22,3 +22,13 @@ Compare `(major, minor)` integer tuples. Parse the floor argument the same way. 
 - Minor: state the glibc floor in the user install docs, not only the maintainer runbook and changelog.
 - Minor: `release.yml:207` pipes the rustup installer into `sh` unpinned. Pin it by checksum or use the image's toolchain.
 - Minor: ticket 1245 still says "Code review: pending".
+
+## Resolved
+
+Ticket 1249. Versions compare as integer pairs (2.9 passes a 2.28
+floor, 2.30 fails and prints as 2.30); the Linux tarballs build in
+the 2_28 containers with a pinned rustup; the wheel tag is pinned and
+asserted; the floor smoke runs an offline deep command; the install
+docs state the floor; 1245's ticket review line is corrected. The
+container legs' first live run stays at the 0.9.1 tag. See
+`sdlc/records/1249-fix-the-wheel-glibc-floor-check-and-the-linux-tarball-floor.md`.
