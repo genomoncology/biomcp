@@ -153,6 +153,17 @@
       }
     },
     {
+      "path": "src/entities/gene/gencc/tests.rs",
+      "floor_lines": 976,
+      "baseline_lines": 1019,
+      "authorized_increase": {
+        "ticket": "1252",
+        "delta": 43,
+        "reason": "the lease handshake conversion and the end-of-input orphan proof",
+        "removal_condition": "Move the helper out or shrink when the size budget tightens."
+      }
+    },
+    {
       "path": "src/entities/pathway.rs",
       "baseline_lines": 1314,
       "floor_lines": 1314,
@@ -233,13 +244,13 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1158,
+      "baseline_lines": 1210,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1241",
-        "delta": 36,
-        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
-        "removal_condition": "Shrink when the drug card model is next refactored."
+        "ticket": "1254",
+        "delta": 88,
+        "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+        "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
       }
     },
     {
@@ -288,6 +299,17 @@
       }
     },
     {
+      "path": "src/render/markdown/drug/tests.rs",
+      "floor_lines": 974,
+      "baseline_lines": 1004,
+      "authorized_increase": {
+        "ticket": "1241",
+        "delta": 30,
+        "reason": "Coverage-state expectations for the drug interactions card.",
+        "removal_condition": "Shrink when the card test fixtures share a builder."
+      }
+    },
+    {
       "path": "src/render/markdown/related.rs",
       "baseline_lines": 1140,
       "floor_lines": 1123,
@@ -311,13 +333,13 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1869,
+      "baseline_lines": 1894,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1241",
-        "delta": 22,
-        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
-        "removal_condition": "Shrink when the drug card model is next refactored."
+        "ticket": "1254",
+        "delta": 47,
+        "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+        "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
       }
     },
     {
@@ -349,25 +371,36 @@
       }
     },
     {
+      "path": "src/sources/gencc.rs",
+      "floor_lines": 1000,
+      "baseline_lines": 1008,
+      "authorized_increase": {
+        "ticket": "1252",
+        "delta": 8,
+        "reason": "the settle diagnostic names leaked temporaries",
+        "removal_condition": "Move the helper out or shrink when the size budget tightens."
+      }
+    },
+    {
       "path": "src/sources/gencc/store.rs",
-      "baseline_lines": 1078,
+      "baseline_lines": 1148,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1239",
-        "delta": 78,
-        "reason": "Cleanup classification distinguishes corrupt from transient load failures; errno taxonomy, retention warns, and the fault-injection regression test.",
-        "removal_condition": "Shrink when the store module's fault-injection scaffolding is extracted."
+        "ticket": "1254",
+        "delta": 148,
+        "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+        "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
       }
     },
     {
       "path": "src/sources/gencc/tests.rs",
-      "baseline_lines": 1135,
+      "baseline_lines": 1189,
       "floor_lines": 982,
       "authorized_increase": {
-        "ticket": "1239",
-        "delta": 153,
-        "reason": "Cleanup classification distinguishes corrupt from transient load failures; errno taxonomy, retention warns, and the fault-injection regression test.",
-        "removal_condition": "Shrink when the store module's fault-injection scaffolding is extracted."
+        "ticket": "1254",
+        "delta": 207,
+        "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+        "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
       }
     },
     {
@@ -449,6 +482,17 @@
       "authorized_increase": null
     },
     {
+      "path": "src/transform/drug.rs",
+      "floor_lines": 1000,
+      "baseline_lines": 1062,
+      "authorized_increase": {
+        "ticket": "1254",
+        "delta": 62,
+        "reason": "Anchor-only synonym fold plus the end-to-end identity tests.",
+        "removal_condition": "Split the merge tests into a dedicated tests submodule."
+      }
+    },
+    {
       "path": "src/transform/variant.rs",
       "baseline_lines": 1385,
       "floor_lines": 1335,
@@ -457,39 +501,6 @@
         "delta": 50,
         "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
-      }
-    },
-    {
-      "path": "src/render/markdown/drug/tests.rs",
-      "floor_lines": 974,
-      "baseline_lines": 1004,
-      "authorized_increase": {
-        "ticket": "1241",
-        "delta": 30,
-        "reason": "Coverage-state expectations for the drug interactions card.",
-        "removal_condition": "Shrink when the card test fixtures share a builder."
-      }
-    },
-    {
-      "path": "src/sources/gencc.rs",
-      "floor_lines": 1000,
-      "baseline_lines": 1008,
-      "authorized_increase": {
-        "ticket": "1252",
-        "delta": 8,
-        "reason": "the settle diagnostic names leaked temporaries",
-        "removal_condition": "Move the helper out or shrink when the size budget tightens."
-      }
-    },
-    {
-      "path": "src/entities/gene/gencc/tests.rs",
-      "floor_lines": 976,
-      "baseline_lines": 1019,
-      "authorized_increase": {
-        "ticket": "1252",
-        "delta": 43,
-        "reason": "the lease handshake conversion and the end-of-input orphan proof",
-        "removal_condition": "Move the helper out or shrink when the size budget tightens."
       }
     }
   ]

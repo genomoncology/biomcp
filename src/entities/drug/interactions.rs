@@ -100,17 +100,13 @@ async fn interaction_report_from_base(
 ) -> Result<DrugInteractionReport, BioMcpError> {
     let legacy_descriptions = interaction_description_map(&anchor);
     let anchor_name = anchor.name.clone();
-    let brand_names = anchor.brand_names.clone();
     let drugbank_id = anchor.drugbank_id.clone();
     let chembl_id = anchor.chembl_id.clone();
     let label_interaction_text = label_response
         .as_ref()
         .and_then(extract_interaction_text_from_label);
     let client = DdinterClient::ready().await?;
-    let mut identity_terms = brand_names.clone();
-    identity_terms.extend(anchor.ddinter_synonyms.iter().cloned());
-    let identity =
-        DdinterIdentity::with_aliases(&requested_name, Some(&anchor_name), &identity_terms);
+    let identity = ddinter_identity_for_anchor(&requested_name, &anchor);
     let rows = client.interactions(&identity);
     let in_ddinter_coverage = client.contains_identity(&identity);
     let interactions = aggregate_rows(&rows, &identity)?
@@ -269,6 +265,18 @@ pub(super) async fn populate_card_interactions(
     Ok(())
 }
 
+/// The DDInter identity for an anchor drug: the anchor name plus its
+/// brand names and anchor-hit synonyms (ticket 1241; anchor-only since
+/// ticket 1254 — never pooled across MyChem hits).
+pub(crate) fn ddinter_identity_for_anchor(
+    requested_name: &str,
+    anchor: &crate::entities::drug::Drug,
+) -> DdinterIdentity {
+    let mut identity_terms = anchor.brand_names.clone();
+    identity_terms.extend(anchor.ddinter_synonyms.iter().cloned());
+    DdinterIdentity::with_aliases(requested_name, Some(&anchor.name), &identity_terms)
+}
+
 fn aggregate_rows(
     rows: &[DdinterInteractionRow],
     identity: &DdinterIdentity,
@@ -410,6 +418,53 @@ mod tests {
             command,
             "biomcp drug interactions \"vitamin k\" --limit 25 --offset 25"
         );
+    }
+
+    #[test]
+    fn ddinter_identity_for_anchor_passes_brands_and_synonyms_on() {
+        // The real call-site seam (ticket 1254): the anchor's brand
+        // names and its anchor-hit synonyms both reach the identity.
+        let mut anchor: Drug =
+            serde_json::from_value(serde_json::json!({"name": "Aspirin"})).expect("drug");
+        anchor.brand_names = vec!["Bayer".to_string()];
+        anchor.ddinter_synonyms = vec!["acetylsalicylic acid".to_string()];
+
+        let identity = ddinter_identity_for_anchor("aspirin", &anchor);
+        assert!(
+            identity
+                .terms()
+                .contains(&crate::sources::ddinter::normalize_name_key("Bayer").expect("key"))
+        );
+        assert!(identity.terms().contains(
+            &crate::sources::ddinter::normalize_name_key("acetylsalicylic acid").expect("key")
+        ));
+    }
+
+    #[test]
+    fn aggregation_keeps_a_row_whose_partner_is_not_an_anchor_term() {
+        // A pooled combination-product synonym used to widen the anchor
+        // terms so both row sides matched and the row was skipped
+        // silently (ticket 1254). Anchor-only terms keep the row.
+        let mut anchor: Drug =
+            serde_json::from_value(serde_json::json!({"name": "Aspirin"})).expect("drug");
+        anchor.ddinter_synonyms = vec!["acetylsalicylic acid".to_string()];
+        let identity = ddinter_identity_for_anchor("aspirin", &anchor);
+        assert!(
+            !identity.terms().contains(
+                &crate::sources::ddinter::normalize_name_key("dipyridamole").expect("key")
+            )
+        );
+
+        let row = DdinterInteractionRow {
+            drug_a_id: "D0001".to_string(),
+            drug_a: "aspirin".to_string(),
+            drug_b_id: "D0009".to_string(),
+            drug_b: "dipyridamole".to_string(),
+            level: Some("moderate".to_string()),
+        };
+        let aggregated = aggregate_rows(&[row], &identity).expect("aggregate");
+        assert_eq!(aggregated.len(), 1);
+        assert_eq!(aggregated[0].drug, "dipyridamole");
     }
 
     #[test]

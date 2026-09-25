@@ -1047,6 +1047,31 @@ mod tests {
     }
 
     #[test]
+    fn drug_interaction_note_covers_the_zero_rows_wordings() {
+        // The covered-zero-rows arm must read as coverage information,
+        // not a clean bill (ticket 1254).
+        let mut drug: crate::entities::drug::Drug =
+            serde_json::from_value(serde_json::json!({"name": "dabigatran"})).expect("drug");
+        drug.interaction_coverage_status = Some(
+            crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage,
+        );
+        let note = drug_interaction_note(&drug).expect("note");
+        assert!(note.starts_with("This drug is in the DDInter coverage set"));
+        assert!(note.contains("no matching rows"));
+
+        // Rows present keeps the bundle wording.
+        drug.interactions = vec![crate::entities::drug::DrugInteraction {
+            drug: "aspirin".to_string(),
+            ddinter_id: None,
+            level: Some("major".to_string()),
+            description: None,
+            partner_classes: Vec::new(),
+        }];
+        let note = drug_interaction_note(&drug).expect("note");
+        assert!(note.starts_with("Structured rows come from the current DDInter"));
+    }
+
+    #[test]
     fn drug_provenance_emits_variant_targets_when_present() {
         let drug = Drug {
             section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
