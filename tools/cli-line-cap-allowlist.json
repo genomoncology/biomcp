@@ -2,13 +2,5 @@
   "cap": 700,
   "created": "2026-04-28",
   "scope": "tracked Rust files under src/cli",
-  "entries": [
-    {
-      "path": "src/cli/trial/dispatch.rs",
-      "lines": 710,
-      "ticket": "1242",
-      "reason": "Partial-count rendering for detail-unverified trials: the partial marker, its reason text, and the count anchors.",
-      "removal_condition": "Move the partial-count rendering into the trial render module when the count surface shrinks."
-    }
-  ]
+  "entries": []
 }
