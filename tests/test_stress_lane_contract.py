@@ -41,7 +41,9 @@ def test_the_rust_lane_pins_worker_parallelism() -> None:
 def test_the_python_lane_pins_worker_parallelism() -> None:
     recipe = stress_recipe()
     pytest_line = next(line for line in recipe.splitlines() if "pytest" in line)
-    assert "-n 4" in pytest_line, "pytest-xdist must not auto-serialize on the pinned set"
+    assert "-n 4" in pytest_line, (
+        "pytest-xdist must not auto-serialize on the pinned set"
+    )
     assert "test_disease_survival_fixture_lifecycle" in pytest_line
 
 
@@ -60,6 +62,7 @@ def test_the_rust_lane_names_the_flaky_set() -> None:
 def test_the_repeat_count_defaults_to_three() -> None:
     recipe = stress_recipe()
     assert 'repeat="$${BIOMCP_STRESS_REPEAT:-3}"' in recipe
+
 
 def test_the_lane_avoids_single_cpu_pinning() -> None:
     """One-CPU pinning deadlocks the pipe handshake child; see
