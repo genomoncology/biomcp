@@ -77,5 +77,5 @@ per-source status; these paths do not.
 
 - Design review: REJECT once (stale-cache label named the wrong
   seam; partial-count and per-trial surfaces unspecified; anchors
-  unnamed), findings folded, re-review pending
+  unnamed), findings folded, re-review ACCEPT 2026-09-25
 - Code review: pending

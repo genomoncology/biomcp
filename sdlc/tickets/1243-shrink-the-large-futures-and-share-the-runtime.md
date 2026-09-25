@@ -81,5 +81,5 @@ deeply nested document on a 2 MiB blocking thread can overflow.
 - Design review: REJECT once (item 4 named the wrong seam — the
   per-call runtime at outcome.rs:610-626 serves the MCP path too;
   probe misstated; depth-cap placement unspecified; two issue items
-  dropped silently), findings folded, re-review pending
+  dropped silently), findings folded, re-review ACCEPT 2026-09-25
 - Code review: pending
