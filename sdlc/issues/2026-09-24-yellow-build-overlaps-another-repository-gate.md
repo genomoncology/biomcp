@@ -1,12 +1,12 @@
 # Yellow build overlaps another repository gate
 
-Status: open. Reported 2026-09-24 during BD ticket 0171 verification.
+Status: open. Reported 2026-09-24 during the other repository's ticket 0171 verification.
 
 ## Observation
 
-A BioMCP spec artifact build ran on Yellow while BD's reviewed container runner held the shared gate lock. The observer found BioMCP Cargo PID 1425695 and rustc PID 1425720 in the BioMCP checkout. Cargo stdout targeted `biomcp-gates-1240.log`. The Cargo command was `cargo build --locked --profile spec --no-default-features --bin biomcp --example rmcp_streamable_http_contract`. BD's concurrent runner PID was 1420565 with Docker child 1420591.
+A BioMCP spec artifact build ran on Yellow while the other repository's reviewed container runner held the shared gate lock. The observer found BioMCP Cargo PID 1425695 and rustc PID 1425720 in the BioMCP checkout. Cargo stdout targeted `biomcp-gates-1240.log`. The Cargo command was `cargo build --locked --profile spec --no-default-features --bin biomcp --example rmcp_streamable_http_contract`. the other repository's concurrent runner PID was 1420565 with Docker child 1420591.
 
-The BD run used pushed revision `ed42252b461287c67bc17e052e2731490755e78b`. Its partial formatting and fixture-policy failures are preliminary evidence. The run was stopped, its temporary checkout was cleaned up, and its results were not accepted as the required gate. The BioMCP processes were left untouched.
+The other repository's run used pushed revision `ed42252b461287c67bc17e052e2731490755e78b`. Its partial formatting and fixture-policy failures are preliminary evidence. The run was stopped, its temporary checkout was cleaned up, and its results were not accepted as the required gate. The BioMCP processes were left untouched.
 
 ## Needed repair
 
@@ -18,4 +18,4 @@ This issue records the defect only. It authorizes no interruption of another job
 
 Edit 2026-09-24 (queue owner): the original text named the other
 repository, which this repository's zero-coupling gate forbids; the
-name is now "BD" with the same meaning. No observation changed.
+name is now the generic phrase "the other repository". No observation changed.
