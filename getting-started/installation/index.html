@@ -4447,6 +4447,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
 </code></pre></div>
 <p>The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA-256 checksum, smokes a destination-directory staging file, and atomically places <code>biomcp</code> in <code>~/.local/bin</code>. It records standalone ownership in adjacent <code>biomcp.install.json</code> so update and uninstall cannot damage package-managed installs. It fails closed before replacement when verification fails, and a pending receipt makes interruption recovery deterministic.</p>
+<p>The prebuilt Linux binaries carry a glibc 2.28 floor: they are built
+in the <code>manylinux_2_28</code> environment and run on RHEL 8, Debian 10, and
+Ubuntu 20.04 onward. Linux older than that cannot run them; build
+from source instead (Option 3). The PyPI wheels for Linux carry the
+same floor.</p>
 <p>The installer never edits shell startup files. If <code>~/.local/bin</code> is missing from
 <code>PATH</code>, it prints one <code>export PATH=...</code> command for you to copy. Install
 <code>sha256sum</code>, <code>shasum -a 256</code>, or <code>openssl dgst -sha256</code> before running it.</p>
@@ -4465,6 +4470,11 @@
 this guide. The package also keeps a small <code>biomcp-cli</code> compatibility command;
 it forwards to the sibling <code>biomcp</code> executable without changing command output
 or exit status.</p>
+<p>The Linux wheels are tagged <code>manylinux_2_28</code> and carry the same glibc
+2.28 floor as the prebuilt Linux tarballs (RHEL 8, Debian 10, Ubuntu
+20.04 onward). Older Linux cannot run them; build from source
+instead (Option 3). A current <code>pip</code> is needed so the <code>manylinux_2_28</code>
+tag resolves.</p>
 <p>Verify:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--version
 </code></pre></div>
