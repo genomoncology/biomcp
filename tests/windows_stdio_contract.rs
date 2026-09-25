@@ -30,7 +30,7 @@ impl StdioMcp {
             .env("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stderr(Stdio::inherit())
             .spawn()
             .expect("spawn biomcp serve");
         let stdout = child.stdout.take().expect("piped child stdout");
