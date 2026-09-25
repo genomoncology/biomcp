@@ -31,3 +31,13 @@ Apply the no-escape assertions to every step of pypi-build, wheel-smoke, and doc
 ## Recorded, not a defect
 
 Pre-release tags are rejected by decision rather than mapped to PEP 440. That is fine for 0.9.1.
+
+## Resolved
+
+Ticket 1250. Discovery is the union of records-added and
+merge-subject scans (fail closed); a bare number list fails; the
+pipeline contract covers every step of pypi-build, wheel-smoke, and
+docs-live plus the trigger, with twelve mutations each flipping an
+assertion; the three content pins landed. The fifteen bullets are
+listed in ticket 1253 for release prep. See
+`sdlc/records/1250-make-the-changelog-gate-and-workflow-tests-total.md`.

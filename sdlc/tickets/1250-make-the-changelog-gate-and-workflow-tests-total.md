@@ -77,4 +77,7 @@ of 18 workflow mutations outside the version-check job stay green.
 ## Review
 
 - Design review: pending
-- Code review: pending
+- Code review: ACCEPT with two P2s folded (real-git fixture;
+  job-level escape assert) 2026-09-25
+- Verification: yellow gate at 2159551c lint/test/spec OK; see
+  `sdlc/records/1250-make-the-changelog-gate-and-workflow-tests-total.md`
