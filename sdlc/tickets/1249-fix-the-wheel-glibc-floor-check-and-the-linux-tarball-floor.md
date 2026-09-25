@@ -38,27 +38,40 @@ piped into the wheel containers is unpinned.
    native instead of cross-compiling. The container runs
    `cargo build --release --locked --target <triple>`, packages from
    `target/<triple>/release/biomcp`, and emits the same artifact names
-   and `.sha256` sidecars. `check-wheel-glibc-floor` is not reused:
-   the tarball is a raw ELF, so the same marker scan runs over the
-   extracted binary via a small shared helper in the script (a
-   `--elf` mode or a public function both callers use) — whichever is
-   smaller, with the runbook floor assertion stated once. No protoc
-   needed: prost is behind the optional `alphagenome` feature and the
-   release build does not enable it.
+   and `.sha256` sidecars. The floor scan gains an `--elf` mode in the
+   script (both callers are bash, so a shared function is unreachable)
+   and the tarball step runs it over the pre-tar
+   `target/<triple>/release/biomcp` binary — the same bytes the tar
+   carries — with the runbook floor assertion stated once. The
+   container legs need no protoc: the build keeps the default
+   features (which include alphagenome and prost), and the AlphaGenome
+   protobuf code is generated and committed, so normal source builds
+   do not run or require protoc (installation troubleshooting states
+   this; the wheel container leg already compiles without it). Gate
+   the host `dtolnay/rust-toolchain` and `setup-protoc` steps off for
+   the Linux legs with `if: runner.os != 'Linux'`, the pattern
+   `pypi-build` already uses.
 4. Pin the wheel platform tag: maturin gains
    `--compatibility manylinux_2_28`, and the build step asserts the
    produced filename ends `manylinux_2_28_x86_64.whl` (resp.
    aarch64) before the scan runs.
 5. The container floor smoke runs one deep offline command after
-   `--version` (the pure-compute `variant normalize` call the venv
-   smoke already uses), not just the banner.
+   `--version`: `biomcp cache stats --json`, which walks the managed
+   cache store and prints a typed object, asserting the output starts
+   with `{` the way the venv smoke's `require_json` does. It touches
+   no network. (`variant normalize` proxies Mutalyzer over HTTP and
+   the venv smoke never calls it, so it is wrong for this leg.)
 6. State the glibc 2.28 floor in `docs/getting-started/installation.md`
    next to the pip and binary-download paths, and say the Linux
    tarball and wheels carry the same floor.
-7. Pin rustup in the containers: download the versioned
-   `rustup-init` for the container arch with its published `.sha256`
-   sidecar, verify with `sha256sum -c`, then run it. No unpinned
-   `curl | sh`.
+7. Pin rustup in the containers. Download the versioned
+   `rustup-init` from
+   `https://static.rust-lang.org/rustup/archive/1.28.2/<triple>/rustup-init`
+   plus its `.sha256` sidecar for both `x86_64-unknown-linux-gnu` and
+   `aarch64-unknown-linux-gnu` (both verified to exist; the sidecar is
+   `<digest> *./rustup-init`, directly consumable by `sha256sum -c`
+   after saving as `rustup-init.sha256`), verify, then run it. No
+   unpinned `curl | sh`. Re-verify both digests at implementation.
 8. Update ticket 1245's stale "Code review: pending" line to the
    recorded verdicts (the pending-check ticket later makes this
    mechanical).
@@ -74,5 +87,7 @@ piped into the wheel containers is unpinned.
 
 ## Review
 
-- Design review: pending
+- Design review: REJECT once (the smoke command was network-bound
+  and misnamed; protoc rationale wrong; rustup pin unspecified),
+  findings folded, re-review ACCEPT 2026-09-24
 - Code review: pending
