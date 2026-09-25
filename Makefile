@@ -1,5 +1,4 @@
 .PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev stress
-.PHONY: test-wait-ratchet
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp test-contracts-prepared prepare-spec
 

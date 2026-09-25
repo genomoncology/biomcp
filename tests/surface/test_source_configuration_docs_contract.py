@@ -29,7 +29,6 @@ PRODUCTION_READ_ENV_ALLOWLIST = {
     "BIOMCP_GENCC_CHILD_EXPECT": "test-subprocess assertion, not operator configuration",
     "BIOMCP_GENCC_CHILD_HOLD_LEASE": "test-subprocess barrier, not operator configuration",
     "BIOMCP_GENCC_CHILD_OPEN": "test-subprocess instruction, not operator configuration",
-    "BIOMCP_GENCC_CHILD_RELEASE": "test-subprocess barrier, not operator configuration",
     "BIOMCP_GENCC_CHILD_TIMEOUT_MS": "test-subprocess deadline, not operator configuration",
     "BIOMCP_GENCC_TEST_BLOCK_PUBLICATION": "debug-only test barrier, not operator configuration",
     "BIOMCP_GENCC_TEST_CRASH_AT": "debug-only crash injection, not operator configuration",

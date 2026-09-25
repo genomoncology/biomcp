@@ -38,7 +38,7 @@ def test_inventory_counts_match_the_tree() -> None:
 
 
 def test_a_new_unmarked_wait_fails(tmp_path: Path) -> None:
-    """A synthetic unmarked time.sleep in a scanned test file fails."""
+    """A synthetic unmarked time.sleep in a scanned test file fails."""  # watchdog: synthetic literal
     root = tmp_path / "repo"
     (root / "tools").mkdir(parents=True)
     (root / "tools" / "test-wait-inventory.json").write_text(
@@ -48,7 +48,7 @@ def test_a_new_unmarked_wait_fails(tmp_path: Path) -> None:
     tests_dir = root / "tests"
     tests_dir.mkdir()
     (tests_dir / "test_example.py").write_text(
-        "def test_waits() -> None:\n    time.sleep(0.1)\n", encoding="utf-8"
+        "def test_waits() -> None:\n    time.sleep(0.1)\n", encoding="utf-8"  # watchdog: synthetic literal
     )
     # scan() shells out to git ls-files, so stage the file.
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
@@ -70,7 +70,7 @@ def test_a_heartbeat_helper_with_a_bare_sleep_counts() -> None:
     lines = [
         "def _heartbeat_advances(path):",
         "    before = path.read_text()",
-        "    time.sleep(0.2)",
+        "    time.sleep(0.2)",  # watchdog: synthetic literal
         "    return path.read_text() != before",
     ]
     count, violations = count_waits(lines, [MODULE.PYTHON_PATTERNS[0]])
@@ -105,7 +105,7 @@ def test_an_inventory_decrease_passes_and_notes_the_ratchet_down(tmp_path: Path)
     tests_dir = root / "tests"
     tests_dir.mkdir()
     (tests_dir / "test_example.py").write_text(
-        "def test_waits() -> None:\n    time.sleep(0.1)\n", encoding="utf-8"
+        "def test_waits() -> None:\n    time.sleep(0.1)\n", encoding="utf-8"  # watchdog: synthetic literal
     )
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "add", "."], cwd=root, check=True)
