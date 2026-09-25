@@ -26,9 +26,14 @@
     },
     {
       "path": "src/cache/provider_capture.rs",
-      "baseline_lines": 1507,
+      "baseline_lines": 1508,
       "floor_lines": 1507,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1246",
+        "delta": 1,
+        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+        "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
+      }
     },
     {
       "path": "src/entities/adverse_event.rs",
@@ -55,13 +60,13 @@
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 1732,
+      "baseline_lines": 1733,
       "floor_lines": 998,
       "authorized_increase": {
-        "ticket": "1200",
-        "delta": 734,
-        "reason": "The OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases beside the existing citation-evidence composition tests.",
-        "removal_condition": "Move the confirmation-phase tests to a dedicated citation test submodule when the article test modules are next reorganized."
+        "ticket": "1246",
+        "delta": 735,
+        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+        "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
       }
     },
     {
