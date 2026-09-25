@@ -30,14 +30,22 @@ function calling reject.
    (string, required), `limit`, `offset`, and every other field any
    branch declares — one flat `properties` object, no `oneOf`. `get`
    publishes `entity` (enum, required), `id` (required), `sections`,
-   `region`, and the rest of the branch union. `variant_erepo`
-   publishes the union of its selector fields (already done in 1240)
-   and drops its `oneOf`. Branch-level validation is unchanged: the
-   in-body checks already reject bad combinations with isError
+   `assembly`, `source`, and the rest of the branch union (`region` is
+   a search-gene field; no get branch declares it). `variant_erepo`
+   publishes the union of its selector fields (already flat since
+   1240) and drops its `oneOf`. Branch-level validation is unchanged:
+   the in-body checks already reject bad combinations with isError
    results, so nothing loses enforcement — the schema is descriptive
    at the root, prescriptive at the body. Build the flat lists from
    the same consts the branches use so they cannot drift (the 1240
-   pattern). Record the decision in an ADR
+   pattern), with one collision rule: when branches give one field
+   name different schemas, union the values — `source` merges the
+   author/article/trial source enums into one enum; `disease` and
+   `drug` (string on some branches, array on others) publish a
+   `type` list `["string", "array"]` with the item schema. Hoist the
+   `ENTITIES` const so the root enum, `search_args`'s inline copy,
+   and the rejection message share one list. Record the decision in
+   an ADR
    (`sdlc/planning/adr/0002-flat-mcp-tool-schemas-for-function-calling.md`):
    root schemas are flat unions for OpenAI/Gemini compatibility;
    validation stays in the body as spec-permitted isError results;
@@ -46,8 +54,16 @@ function calling reject.
    `input_error` path (isError result naming the field and the
    expected type). Absent values keep their defaults.
 3. Add `#[serde(deny_unknown_fields)]` to the `variant_erepo`
-   argument struct and an isError test for an unknown field.
-4. One catalog-walking test: loop over every tool the server lists,
+   argument struct. The rejection surfaces as rmcp's `-32602`
+   protocol error (deserialization runs before the handler body, and
+   `variant_erepo` keeps its typed `Parameters`), which the ADR
+   already records as the accepted channel for pre-body failures —
+   not an isError result. The test asserts the -32602 shape.
+4. Rewrite the pinned schema tests (`shell.rs:1780-1831`) that
+   assert `oneOf` lengths into assertions that the flat root
+   `properties` equal the merged union of the branch properties
+   (per the collision rule) — they stay the drift tripwire. Add one
+   catalog-walking test: loop over every tool the server lists,
    assert root `type == "object"`, a non-empty `properties` object,
    no `oneOf`/`anyOf`/`allOf` at the root, and that every `required`
    name exists in `properties`. Put it where the catalog is already
@@ -60,18 +76,22 @@ function calling reject.
    schemas.
 
 Minor items from the issue folded in where cheap: the "invalid typed
-search entity" message lists the valid entities; `resources/templates/list`
-and `prompts/list` reject a garbage cursor through the existing
-`reject_unknown_cursor`. The rmcp `Parameters` wrapper and the
-conformance `--tool-args` rerun stay recorded residuals, not code
-here.
+search entity" message lists the valid entities; the modern dispatch's
+`resources/templates/list` (`src/mcp/shell/modern.rs:124`) rejects a
+garbage cursor through `reject_unknown_cursor`, and the rmcp path's
+`list_resource_templates`/`list_prompts` overrides reject through
+`unknown_cursor_error` (the modern dispatch has no `prompts/list` arm
+and keeps its `-32601`; recorded). Ticket 1240's stale
+"Code review: pending" line is corrected to the recorded verdicts.
+The rmcp `Parameters` wrapper and the conformance `--tool-args` rerun
+stay recorded residuals, not code here.
 
 ## Acceptance
 
 - The catalog walk passes for all seven tools and fails if any root
   regains a `oneOf`.
 - `limit:"abc"` returns an isError result naming limit; an unknown
-  `variant_erepo` field returns an isError result.
+  `variant_erepo` field is rejected with `-32602`.
 - The ADR lands with the decision and its trade-offs.
 - Yellow gate green at the head SHA.
 
