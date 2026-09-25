@@ -15,3 +15,13 @@ The `windows-contracts` CI job only runs `cargo check` and the `managed_state_pe
 ## Fix
 
 Ticket 1246.
+
+## Resolved
+
+Ticket 1246. The icacls child runs with all three streams nulled;
+steady-state writes spawn nothing (per-process memoization, repair on
+first encounter); a source guard rejects unset or inheriting stdout on
+any new spawn in production code; a Windows stdio contract fails on
+the old code and runs in CI. The reporter reply waits for the release
+and Ian's OK. See
+`sdlc/records/1246-keep-icacls-output-off-the-stdio-mcp-stream.md`.

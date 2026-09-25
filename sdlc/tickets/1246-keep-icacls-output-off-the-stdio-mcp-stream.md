@@ -26,5 +26,8 @@ Source issue: `sdlc/issues/2026-09-24-windows-icacls-output-corrupts-the-stdio-m
 - Design review: REJECT once (guard trigger contradicted its
   allow-list; the contract test had no offline mechanism; step 5
   dropped the re-securing posture), findings folded, re-review ACCEPT
-  2026-09-24
-- Code review: pending
+  2026-09-25
+- Code review: ACCEPT with two P2 notes folded (contract child
+  stderr inherits; guard split edges recorded) 2026-09-25
+- Verification: yellow gate at ba937a37 lint/test/spec OK; see
+  `sdlc/records/1246-keep-icacls-output-off-the-stdio-mcp-stream.md`
