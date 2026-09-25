@@ -17,3 +17,14 @@ Filed 2026-09-24 from the review of tickets 1239, 1247, and 1248. One cause sits
 - Scale every remaining watchdog timeout by one factor, `BIOMCP_TEST_TIMEOUT_SCALE`.
 - Add a lint to `make lint` that flags new `Instant::now() + Duration::from_secs`, `time.sleep`, and single heartbeat samples in tests unless the line carries a `watchdog:` reason.
 - Add a stress lane that runs the known-flaky tests pinned to one CPU, so a fix is proven by reproduction, not by three green runs.
+
+## Resolved
+
+Ticket 1252 (with 1248 rewritten on the new basis). The lease waits
+are pipe handshakes; the settle failure names its leaked paths; the
+reap check reads /proc stat; helpers carry BIOMCP_TEST_TIMEOUT_SCALE;
+a wait ratchet pins the remaining sleeps per file; make stress runs
+the flaky set on a two-CPU set with forced parallelism. The one-CPU
+pinning variant deadlocks the handshake child and is filed open with
+probe evidence. See
+`sdlc/records/1252-replace-timed-waits-with-signals-and-add-a-stress-lane.md`.
