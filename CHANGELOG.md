@@ -33,6 +33,27 @@
   that cannot be parsed warns and continues with the bundled roots. GitHub
   #250. (1221)
 
+### Changed
+
+- MCP argument-validation errors now come back as `isError` tool
+  results instead of `-32602` protocol errors, so a model can read the
+  message (which names the field and its bounds) and self-correct;
+  malformed protocol input before the handler still returns `-32602`.
+  (1240)
+
+- An unknown non-empty cursor on `tools/list`, `resources/list`,
+  `resources/templates/list`, or `prompts/list` is now rejected with
+  `-32602` instead of silently returning the full list; the server
+  never paginates, so any cursor it did not issue is unknown. (1240)
+
+- Every MCP tool publishes one flat JSON Schema root — the merged
+  union of its per-entity fields, with no top-level `oneOf` — so
+  OpenAI and Gemini function calling, which reject `oneOf` roots, see
+  the real argument shape. Same-named fields merge: source enums
+  union, and fields that are text on some entities and lists on
+  others accept either form. Per-entity validation in the tool bodies
+  is unchanged. (1251)
+
 ### Fixes
 
 - The glibc floor check now compares versions as integer pairs, the

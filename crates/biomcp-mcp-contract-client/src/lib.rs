@@ -390,10 +390,14 @@ where
         .find(|tool| tool.name == "get")
         .expect("typed get tool listed");
     let search_schema = serde_json::to_value(&search.input_schema)?;
+    assert!(
+        search_schema.get("oneOf").is_none(),
+        "typed search schema must publish a flat root: {search_schema}"
+    );
     assert_eq!(
-        search_schema["oneOf"].as_array().map(Vec::len),
+        search_schema["properties"]["entity"]["enum"].as_array().map(Vec::len),
         Some(8),
-        "typed search schema must have eight entity-specific branches: {search_schema}"
+        "typed search entity enum must carry all eight entities: {search_schema}"
     );
     assert!(
         json_property_contains(&search_schema, "entity", "gwas"),
@@ -404,10 +408,14 @@ where
         "typed search limit schema missing 25 bound: {search_schema}"
     );
     let get_schema = serde_json::to_value(&get.input_schema)?;
+    assert!(
+        get_schema.get("oneOf").is_none(),
+        "typed get schema must publish a flat root: {get_schema}"
+    );
     assert_eq!(
-        get_schema["oneOf"].as_array().map(Vec::len),
+        get_schema["properties"]["entity"]["enum"].as_array().map(Vec::len),
         Some(13),
-        "typed get schema must have thirteen entity-specific branches: {get_schema}"
+        "typed get entity enum must carry all thirteen entities: {get_schema}"
     );
     assert!(
         json_property_contains(&get_schema, "entity", "gene"),

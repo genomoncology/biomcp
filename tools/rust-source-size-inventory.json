@@ -250,13 +250,13 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2343,
+      "baseline_lines": 2543,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1240",
-        "delta": 387,
-        "reason": "Top-level tool-schema properties, argument errors as tool results, and unknown-cursor rejection.",
-        "removal_condition": "Shrink when the tool surface is next refactored."
+        "ticket": "1251",
+        "delta": 587,
+        "reason": "Flat root schemas built from the branch consts (union merge, hoisted ENTITIES), the limit/offset rejection, and the rewritten drift tests.",
+        "removal_condition": "Move the schema builders into a submodule when shell.rs next shrinks."
       }
     },
     {

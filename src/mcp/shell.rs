@@ -8,9 +8,9 @@ use futures::FutureExt;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
     AnnotateAble, CallToolRequestParams, CallToolResult, Content, Implementation,
-    ListResourcesResult, ListToolsResult, PaginatedRequestParams, RawResource,
-    ReadResourceRequestParams, ReadResourceResult, ResourceContents, ServerCapabilities,
-    ServerInfo,
+    ListPromptsResult, ListResourceTemplatesResult, ListResourcesResult, ListToolsResult,
+    PaginatedRequestParams, RawResource, ReadResourceRequestParams, ReadResourceResult,
+    ResourceContents, ServerCapabilities, ServerInfo,
 };
 use rmcp::schemars;
 use rmcp::service::RequestContext;
@@ -60,6 +60,7 @@ struct TypedVariantCar {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 #[schemars(transform = typed_variant_erepo_schema)]
 struct TypedVariantErepo {
     #[serde(default)]
@@ -148,6 +149,13 @@ fn short_string_schema() -> Value {
 fn string_array_schema() -> Value {
     json!({"type":"array","minItems":1,"maxItems":3,"uniqueItems":true,"items":short_string_schema()})
 }
+
+/// The typed search entities, in catalog order. The root schema enum,
+/// the per-entity branch builder, and the argument checks share this one
+/// list so they cannot drift.
+const ENTITIES: [&str; 8] = [
+    "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
+];
 
 fn typed_search_branch(entity: &str) -> Value {
     let (fields, required): (&[(&str, &str)], &[&str]) = match entity {
@@ -287,32 +295,112 @@ fn typed_search_branch(entity: &str) -> Value {
 }
 
 fn typed_search_schema(schema: &mut schemars::Schema) {
-    const ENTITIES: [&str; 8] = [
-        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
-    ];
+    // Flat root for OpenAI/Gemini function calling, which reject top-level
+    // oneOf: the entity enum plus the union of every branch's properties.
+    // The body stays prescriptive (ADR 0002); the root is descriptive.
     let branches = ENTITIES
-        .into_iter()
-        .map(typed_search_branch)
+        .iter()
+        .map(|entity| typed_search_branch(entity))
         .collect::<Vec<_>>();
-    // Top-level entity enum (derived from the same list as the branches so
-    // they cannot drift) plus required, for model providers that build
-    // arguments from top-level properties instead of reading oneOf branches.
-    let entity = json!({"type":"string","enum":ENTITIES});
+    let mut properties = merge_branch_properties(&branches);
+    properties.insert("entity".into(), json!({"type":"string","enum":ENTITIES}));
     *schema = serde_json::from_value(json!({
         "type":"object",
-        "properties":{"entity":entity},
-        "required":["entity"],
-        "oneOf":branches
+        "additionalProperties":false,
+        "properties":properties,
+        "required":["entity"]
     }))
     .expect("valid typed search schema");
 }
 
+/// Merges branch property maps into one flat root map. Same-named fields
+/// keep one schema when identical; otherwise the collision rule applies:
+/// enum/const values union into one enum, and string-vs-array fields
+/// publish `["string","array"]` with both sides' constraints. The union
+/// widens the accepted fields, but a first-seen constraint can be
+/// narrower than a permissive branch (sections keep `uniqueItems` even
+/// though adverse-event accepts duplicates); the body stays prescriptive
+/// per entity.
+fn merge_branch_properties(branches: &[Value]) -> serde_json::Map<String, Value> {
+    let mut properties = serde_json::Map::new();
+    for branch in branches {
+        let Some(fields) = branch.get("properties").and_then(Value::as_object) else {
+            continue;
+        };
+        for (name, value) in fields {
+            if name == "entity" {
+                continue;
+            }
+            match properties.get(name) {
+                Some(existing) => {
+                    properties.insert(name.clone(), merge_property(existing, value));
+                }
+                None => {
+                    properties.insert(name.clone(), value.clone());
+                }
+            }
+        }
+    }
+    properties
+}
+
+fn merge_property(left: &Value, right: &Value) -> Value {
+    if left == right {
+        return left.clone();
+    }
+    let enum_values = |schema: &Value| {
+        schema
+            .get("enum")
+            .and_then(Value::as_array)
+            .cloned()
+            .or_else(|| schema.get("const").map(|value| vec![value.clone()]))
+    };
+    if let (Some(values), Some(extra)) = (enum_values(left), enum_values(right)) {
+        let mut merged = values;
+        for value in extra {
+            if !merged.contains(&value) {
+                merged.push(value);
+            }
+        }
+        return json!({"enum":merged});
+    }
+    if let (Some(l), Some(r)) = (left.as_object(), right.as_object()) {
+        fn schema_type(schema: &Value) -> &str {
+            schema
+                .get("type")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        }
+        let flat_types = matches!(
+            (schema_type(left), schema_type(right)),
+            ("string", "array") | ("array", "string")
+        );
+        let mut merged = l.clone();
+        if flat_types {
+            merged.insert("type".into(), json!(["string", "array"]));
+        }
+        for (key, value) in r {
+            if key == "type" {
+                continue;
+            }
+            match merged.get(key) {
+                Some(existing) if existing != value => {
+                    merged.insert(key.clone(), merge_property(existing, value));
+                }
+                Some(_) => {}
+                None => {
+                    merged.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        return Value::Object(merged);
+    }
+    left.clone()
+}
+
 fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
-    let branches = [
-        json!({"type":"object","additionalProperties":false,"properties":{"caid":{"type":"string","minLength":1},"detail":{"type":"boolean"},"assertion_id":{"type":"string"},"version":{"type":"string"}},"required":["caid"]}),
-        json!({"type":"object","additionalProperties":false,"properties":{"caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}}},"required":["caids"]}),
-        json!({"type":"object","additionalProperties":false,"properties":{"gene":{"type":"string","minLength":1},"limit":{"type":"integer","minimum":1,"maximum":100,"default":25},"offset":{"type":"integer","minimum":0,"default":0}},"required":["gene"]}),
-    ];
+    // Flat union of the selector fields; the typed struct's
+    // deny_unknown_fields keeps the body prescriptive (ADR 0002).
     let properties = json!({
         "caid":{"type":"string","minLength":1},
         "caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}},
@@ -325,8 +413,8 @@ fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
     });
     *schema = serde_json::from_value(json!({
         "type":"object",
-        "properties":properties,
-        "oneOf":branches
+        "additionalProperties":false,
+        "properties":properties
     }))
     .expect("valid typed ERepo schema");
 }
@@ -716,12 +804,11 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
         .as_object()
         .ok_or_else(|| input_error("typed search input must be an object"))?;
     let entity = checked_text(object.get("entity").unwrap_or(&Value::Null), "entity", 256)?;
-    if ![
-        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
-    ]
-    .contains(&entity.as_str())
-    {
-        return Err(input_error("invalid typed search entity"));
+    if !ENTITIES.contains(&entity.as_str()) {
+        return Err(input_error(format!(
+            "invalid typed search entity; valid entities: {}",
+            ENTITIES.join(", ")
+        )));
     }
     let branch = typed_search_branch(&entity);
     let allowed = branch["properties"].as_object().expect("branch properties");
@@ -738,8 +825,20 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
             "{entity} search requires at least one identity field"
         )));
     }
-    let limit = object.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
-    let offset = object.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+    let limit = match object.get("limit") {
+        Some(value) if !value.is_null() => value
+            .as_u64()
+            .ok_or_else(|| input_error("limit must be an integer"))?
+            as usize,
+        _ => 10,
+    };
+    let offset = match object.get("offset") {
+        Some(value) if !value.is_null() => value
+            .as_u64()
+            .ok_or_else(|| input_error("offset must be an integer"))?
+            as usize,
+        _ => 0,
+    };
     if !(1..=25).contains(&limit)
         || offset > 1000
         || (entity == "gwas" && offset.checked_add(limit).is_none_or(|end| end > 50))
@@ -1479,6 +1578,30 @@ impl ServerHandler for BioMcpServer {
         )))
     }
 
+    fn list_prompts(
+        &self,
+        request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> impl Future<Output = Result<ListPromptsResult, McpError>> + Send + '_ {
+        // The server has no prompts; the override exists only so a garbage
+        // cursor is rejected with the same -32602 as every other list.
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
+        std::future::ready(Ok(ListPromptsResult::default()))
+    }
+
+    fn list_resource_templates(
+        &self,
+        request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> impl Future<Output = Result<ListResourceTemplatesResult, McpError>> + Send + '_ {
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
+        std::future::ready(Ok(ListResourceTemplatesResult::default()))
+    }
+
     fn read_resource(
         &self,
         request: ReadResourceRequestParams,
@@ -1589,13 +1712,14 @@ mod typed_get_tests;
 #[cfg(test)]
 mod tests {
     use super::{
-        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
+        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, ENTITIES, GENERIC_MCP_REJECTION_MESSAGE,
         LOCAL_INPUT_MCP_REJECTION_MESSAGE, ShellCommand, TypedGeneCspec, TypedGet, TypedSearch,
         TypedVariantArticles, TypedVariantCar, binary_download_rejection_for_args,
         cli_may_return_article_fulltext, get_args, is_allowed_mcp_args,
-        mcp_rejection_message_for_args, redact_mcp_json_text, redact_mcp_text, search_args,
+        mcp_rejection_message_for_args, merge_branch_properties, redact_mcp_json_text,
+        redact_mcp_text, search_args, typed_get_capabilities, typed_search_branch,
     };
-    use serde_json::json;
+    use serde_json::{Value, json};
     mod ticket_1120;
 
     #[test]
@@ -1719,99 +1843,144 @@ mod tests {
     }
 
     #[test]
-    fn typed_schemas_are_entity_specific() {
-        let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
-        assert_eq!(search["oneOf"].as_array().unwrap().len(), 8);
-        let gwas = search["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "gwas")
-            .unwrap();
+    fn typed_branches_stay_entity_specific() {
+        // The published roots are flat unions (ADR 0002), so
+        // entity-specificity is pinned on the branch builders the body
+        // validates against, plus the root fields only one entity declares.
+        let gwas = typed_search_branch("gwas");
         assert!(gwas["properties"].get("trait").is_some());
         assert!(gwas["properties"].get("region").is_none());
+        let capabilities = typed_get_capabilities();
+        let cell_line = capabilities
+            .iter()
+            .find(|capability| capability.entity == "cell-line")
+            .expect("typed get serves cell-line");
+        assert!(cell_line.sections.is_some());
+        let author = capabilities
+            .iter()
+            .find(|capability| capability.entity == "author")
+            .expect("typed get serves author");
+        assert!(author.sections.is_none());
+        let gene = capabilities
+            .iter()
+            .find(|capability| capability.entity == "gene")
+            .expect("typed get serves gene");
+        let gene_sections = gene.sections.as_deref().unwrap_or(&[]);
+        assert!(gene_sections.contains(&"pathways"));
+        assert!(!gene_sections.contains(&"population"));
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
-        assert_eq!(get["oneOf"].as_array().unwrap().len(), 13);
-        let cell_line = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "cell-line")
-            .expect("typed get publishes a cell-line branch");
-        assert!(cell_line["properties"].get("sections").is_some());
-        let author = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "author")
-            .unwrap();
-        assert!(author["properties"].get("sections").is_none());
-        let gene = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "gene")
-            .unwrap();
-        assert!(
-            gene["properties"]["sections"]["items"]["enum"]
-                .as_array()
-                .unwrap()
-                .contains(&json!("pathways"))
-        );
-        assert!(
-            !gene["properties"]["sections"]["items"]["enum"]
-                .as_array()
-                .unwrap()
-                .contains(&json!("population"))
-        );
-        let variant = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "variant")
-            .unwrap();
         assert_eq!(
-            variant["properties"]["assembly"]["enum"],
+            get["properties"]["assembly"]["enum"],
             json!(["grch37", "hg19", "grch38", "hg38"])
         );
     }
 
     #[test]
-    fn typed_search_and_get_schemas_declare_object_roots_and_reject_bad_input() {
+    fn typed_schemas_publish_flat_roots_and_reject_bad_input() {
         let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
         assert_eq!(search["type"], json!("object"));
-        assert_eq!(search["oneOf"].as_array().unwrap().len(), 8);
-        let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
-        assert_eq!(get["type"], json!("object"));
-        assert_eq!(get["oneOf"].as_array().unwrap().len(), 13);
+        for combinator in ["oneOf", "anyOf", "allOf"] {
+            assert!(
+                search.get(combinator).is_none(),
+                "flat search root must not carry {combinator}"
+            );
+        }
+        // The root properties equal the merged union of the branch
+        // properties: this is the drift tripwire for both halves.
+        let branches = ENTITIES
+            .iter()
+            .map(|entity| typed_search_branch(entity))
+            .collect::<Vec<_>>();
+        let mut expected = merge_branch_properties(&branches);
+        expected.insert("entity".into(), json!({"type":"string","enum":ENTITIES}));
+        assert_eq!(search["properties"], Value::Object(expected));
+        assert_eq!(search["required"], json!(["entity"]));
 
-        // Providers that build arguments from top-level properties see the
-        // entity enum (derived from the same lists as the branches) and a
-        // top-level required, on every bare-oneOf root.
+        // Collision rule spot checks on the merged union.
         assert_eq!(
-            search["properties"]["entity"]["enum"],
+            search["properties"]["source"]["enum"],
             json!([
-                "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein"
+                "semanticscholar",
+                "all",
+                "pubtator",
+                "europepmc",
+                "pubmed",
+                "litsense2",
+                "ctgov",
+                "nci"
             ])
         );
-        assert_eq!(search["required"], json!(["entity"]));
-        assert_eq!(get["required"], json!(["entity"]));
-        let get_entities = get["properties"]["entity"]["enum"]
-            .as_array()
+        for field in ["disease", "drug"] {
+            assert_eq!(
+                search["properties"][field]["type"],
+                json!(["string", "array"]),
+                "{field} is text on some branches and a list on others"
+            );
+            assert!(search["properties"][field]["items"].is_object());
+        }
+        // gene is plain text on every branch that declares it.
+        assert_eq!(search["properties"]["gene"]["type"], json!("string"));
+        // gene-specific fields ride in the union; limit and offset keep
+        // their shared bounds.
+        assert!(search["properties"].get("region").is_some());
+        assert!(search["properties"].get("query").is_some());
+        assert_eq!(search["properties"]["limit"]["maximum"], json!(25));
+
+        let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
+        assert_eq!(get["type"], json!("object"));
+        for combinator in ["oneOf", "anyOf", "allOf"] {
+            assert!(
+                get.get(combinator).is_none(),
+                "flat get root must not carry {combinator}"
+            );
+        }
+        let mut get_keys: Vec<&str> = get["properties"]
+            .as_object()
             .unwrap()
-            .clone();
-        assert_eq!(get_entities.len(), 13);
-        let branch_entities: Vec<serde_json::Value> = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|branch| branch["properties"]["entity"]["const"].clone())
+            .keys()
+            .map(String::as_str)
             .collect();
-        assert_eq!(get_entities, branch_entities);
+        get_keys.sort_unstable();
+        assert_eq!(
+            get_keys,
+            vec!["assembly", "entity", "id", "json", "sections", "source"]
+        );
+        assert_eq!(get["required"], json!(["entity", "id"]));
+        // The sections items enum unions every entity's sections, and the
+        // entity enum derives from the same capabilities as validation.
+        let capabilities = typed_get_capabilities();
+        let mut sections: Vec<serde_json::Value> = Vec::new();
+        for capability in &capabilities {
+            for section in capability.sections.iter().flatten() {
+                let value = json!(section);
+                if !sections.contains(&value) {
+                    sections.push(value);
+                }
+            }
+        }
+        assert_eq!(
+            get["properties"]["sections"]["items"]["enum"],
+            Value::Array(sections)
+        );
+        assert_eq!(
+            get["properties"]["entity"]["enum"],
+            json!(
+                capabilities
+                    .iter()
+                    .map(|capability| capability.entity)
+                    .collect::<Vec<_>>()
+            )
+        );
+
         let erepo =
             serde_json::to_value(rmcp::schemars::schema_for!(super::TypedVariantErepo)).unwrap();
         assert_eq!(erepo["type"], json!("object"));
-        assert_eq!(erepo["oneOf"].as_array().unwrap().len(), 3);
+        for combinator in ["oneOf", "anyOf", "allOf"] {
+            assert!(
+                erepo.get(combinator).is_none(),
+                "flat erepo root must not carry {combinator}"
+            );
+        }
         for field in [
             "caid",
             "caids",
@@ -1835,6 +2004,37 @@ mod tests {
                 json!({"entity":"gene","id":"BRAF","sections":["population"]})
             ))
             .is_err()
+        );
+    }
+
+    #[test]
+    fn typed_search_rejects_wrong_type_pagination_and_lists_valid_entities() {
+        for (field, wrong) in [("limit", json!("abc")), ("offset", json!(1.5))] {
+            let error = search_args(TypedSearch(json!({
+                "entity":"gene", "query":"BRAF", field: wrong
+            })))
+            .expect_err("a present non-integer pagination field must reject");
+            assert!(
+                error.message.contains(field),
+                "the rejection must name {field}: {}",
+                error.message
+            );
+            assert!(error.message.contains("integer"));
+        }
+        // Absent values keep their defaults; negative numbers are not u64.
+        assert!(search_args(TypedSearch(json!({"entity":"author","query":"Doe"}))).is_ok());
+        assert!(
+            search_args(TypedSearch(
+                json!({"entity":"gene","query":"BRAF","limit":-1})
+            ))
+            .is_err()
+        );
+        let error = search_args(TypedSearch(json!({"entity":"pathway","query":"MAPK"})))
+            .expect_err("an unknown entity rejects");
+        assert!(
+            error.message.contains("author"),
+            "the rejection lists the valid entities: {}",
+            error.message
         );
     }
 

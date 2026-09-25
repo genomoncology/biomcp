@@ -121,7 +121,10 @@ async fn dispatch_result(
                 .collect::<Vec<_>>()
             })
         }
-        "resources/templates/list" => json!({"resourceTemplates": []}),
+        "resources/templates/list" => {
+            reject_unknown_cursor(params)?;
+            json!({"resourceTemplates": []})
+        }
         "resources/read" => {
             let uri = required_string(params, "uri")?;
             serde_json::to_value(read_resource_markdown(uri).map_err(error_value)?)
