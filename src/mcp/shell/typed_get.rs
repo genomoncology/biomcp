@@ -55,15 +55,21 @@ pub(super) fn typed_trial_source_args(
 }
 
 pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
-    let branches = typed_get_capabilities()
-        .into_iter().map(|capability| {
+    // Flat root for OpenAI/Gemini function calling, which reject top-level
+    // oneOf: the entity enum plus the union of every branch's properties
+    // (ADR 0002). The merged sections enum unions each entity's items; the
+    // body stays prescriptive per entity through typed_get_allowed_keys.
+    let capabilities = typed_get_capabilities();
+    let branches = capabilities
+        .iter()
+        .map(|capability| {
             let entity = capability.entity;
             let mut properties = Map::from_iter([
                 ("entity".into(), json!({"const":entity})),
                 ("id".into(), json!({"type":"string","minLength":1,"maxLength":512})),
                 ("json".into(), json!({"type":"boolean","default":false})),
             ]);
-            if let Some(section_names) = capability.sections {
+            if let Some(section_names) = &capability.sections {
                 let mut sections = json!({"type":"array","maxItems":16,"items":{"enum":section_names}});
                 if capability.reject_duplicate_sections {
                     sections["uniqueItems"] = json!(true);
@@ -78,12 +84,17 @@ pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
             }
             json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity","id"]})
         }).collect::<Vec<_>>();
-    let entity = json!({"type":"string","enum":typed_get_capabilities().into_iter().map(|capability| capability.entity).collect::<Vec<_>>()});
+    let mut properties = super::merge_branch_properties(&branches);
+    let entities = capabilities
+        .iter()
+        .map(|capability| capability.entity)
+        .collect::<Vec<_>>();
+    properties.insert("entity".into(), json!({"type":"string","enum":entities}));
     *schema = serde_json::from_value(json!({
         "type":"object",
-        "properties":{"entity":entity},
-        "required":["entity"],
-        "oneOf":branches
+        "additionalProperties":false,
+        "properties":properties,
+        "required":["entity","id"]
     }))
     .expect("valid typed get schema");
 }

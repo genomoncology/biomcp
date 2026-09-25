@@ -136,6 +136,40 @@ def test_public_inventory_matches_typed_catalog() -> None:
             assert name in text, f"{path} omitted {name}"
 
 
+def test_every_tool_schema_is_a_flat_object_root(tmp_path: Path) -> None:
+    # OpenAI and Gemini function calling reject top-level oneOf (ADR 0002),
+    # so every tool the server lists must publish a flat object root. This
+    # walks the real schema builder through the binary, not a fixture copy.
+    binary = Path(os.environ.get("BIOMCP_BIN", ROOT / "target" / "debug" / "biomcp"))
+    assert binary.exists(), f"missing biomcp binary: {binary}"
+
+    result = subprocess.run(
+        [str(binary), "mcp", "tools"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    tools = json.loads(result.stdout)
+    assert [tool["name"] for tool in tools] == TOOLS
+    for tool in tools:
+        schema = tool["inputSchema"]
+        name = tool["name"]
+        assert schema.get("type") == "object", f"{name} root type must be object"
+        properties = schema.get("properties")
+        assert isinstance(properties, dict) and properties, (
+            f"{name} must publish non-empty top-level properties"
+        )
+        for combinator in ("oneOf", "anyOf", "allOf"):
+            assert combinator not in schema, (
+                f"{name} root must not carry {combinator}"
+            )
+        for required in schema.get("required", []):
+            assert required in properties, (
+                f"{name} requires {required} but does not publish it"
+            )
+
+
 def test_installed_binary_prints_the_complete_mcp_catalog(tmp_path: Path) -> None:
     binary = Path(os.environ.get("BIOMCP_BIN", ROOT / "target" / "debug" / "biomcp"))
     assert binary.exists(), f"missing biomcp binary: {binary}"

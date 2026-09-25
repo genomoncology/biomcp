@@ -95,7 +95,23 @@ stay recorded residuals, not code here.
 - The ADR lands with the decision and its trade-offs.
 - Yellow gate green at the head SHA.
 
+## Implementation notes
+
+- The search root publishes `required: ["entity"]` only. The ticket
+  draft said `query` required, but six of eight branches reject
+  `query` as an unknown field, so a root-required `query` would make
+  providers send a field the body must refuse on most entities. The
+  issue's actual demand (entity enum plus the union of branch
+  properties) is what ships; `get` keeps `["entity","id"]` because
+  every get branch requires both.
+- The flat schemas shrink tools/list: the per-entity branch objects
+  are no longer serialized eight (search), thirteen (get), and three
+  (erepo) times inside oneOf wrappers.
+
 ## Review
 
-- Design review: pending
+- Design review: REJECT once with three P1s (the deny_unknown_fields
+  isError/-32602 contradiction, the missing collision rule, `region`
+  misnamed as a get field), findings folded, re-review ACCEPT
+  2026-09-25
 - Code review: pending

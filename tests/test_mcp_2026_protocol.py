@@ -463,7 +463,7 @@ def test_http_validates_modern_headers_metadata_and_origin() -> None:
 
 
 def test_stdio_rejects_unknown_list_cursors(modern_stdio: RawStdioMcp) -> None:
-    for method in ("tools/list", "resources/list"):
+    for method in ("tools/list", "resources/list", "resources/templates/list"):
         response = modern_stdio.call(f"cursor-{method}", method, {"cursor": "garbage"})
         assert response["error"]["code"] == -32602
         assert "cursor" in response["error"]["message"]

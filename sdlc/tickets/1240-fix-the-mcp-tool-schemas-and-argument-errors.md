@@ -90,4 +90,6 @@ spec revision 2026-07-28, vendored by @hasmcp/mcp-spec-test@0.1.5).
 - Design review: ACCEPT with required changes 2026-09-24 (two P1s —
   the modern tools/list path and the spec-claim re-scoping — plus P2
   factual corrections, all folded in above)
-- Code review: pending
+- Code review: REJECT once with three P0s (a non-compiling test, a
+  stale unit pin, two unchanged contract assertions), all fixed and
+  verified ACCEPT 2026-09-24

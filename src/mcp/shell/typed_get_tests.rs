@@ -16,7 +16,7 @@ use serde_json::json;
 
 use super::{
     BioMcpServer, ShellCommand, TypedGet, TypedSearch, TypedVariantErepo, get_args,
-    redact_mcp_json_text, search_args,
+    redact_mcp_json_text, search_args, typed_get_capabilities,
 };
 
 #[test]
@@ -298,27 +298,48 @@ fn cli_catalog_gettable_inventory_matches_clap_get_subcommands() {
 
 #[test]
 fn typed_get_schema_and_mapper_match_independent_cli_catalog_oracle() {
+    // Flat root (ADR 0002): the entity enum equals the gettable catalog and
+    // the merged sections enum equals the catalog union minus the CLI-only
+    // article asset; per-entity mapping is exercised through the mapper.
     let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
-    let branches = schema["oneOf"].as_array().expect("typed get branches");
+    assert!(schema.get("oneOf").is_none());
     let catalog = crate::cli::list::catalog::entities()
         .into_iter()
         .filter(|entity| entity.gettable)
         .collect::<Vec<_>>();
 
-    let branch_entities = branches
+    let advertised_entities = schema["properties"]["entity"]["enum"]
+        .as_array()
+        .expect("entity enum")
         .iter()
-        .map(|branch| {
-            branch["properties"]["entity"]["const"]
-                .as_str()
-                .expect("branch entity")
-        })
+        .map(|entity| entity.as_str().expect("string entity").to_owned())
         .collect::<BTreeSet<_>>();
     let expected_entities = catalog
         .iter()
-        .map(|entity| entity.name)
+        .map(|entity| entity.name.to_owned())
         .collect::<BTreeSet<_>>();
-    assert_eq!(branches.len(), expected_entities.len());
-    assert_eq!(branch_entities, expected_entities);
+    assert_eq!(advertised_entities, expected_entities);
+    let mut advertised_sections = schema["properties"]["sections"]["items"]["enum"]
+        .as_array()
+        .expect("merged section enum")
+        .iter()
+        .map(|section| section.as_str().expect("string section").to_owned())
+        .collect::<BTreeSet<_>>();
+    let expected_sections = catalog
+        .iter()
+        .flat_map(|entity| {
+            entity
+                .sections
+                .iter()
+                .map(move |section| (entity.name, *section))
+        })
+        .filter(|(entity, section)| !(*entity == "article" && *section == "asset"))
+        .map(|(_, section)| section.to_owned())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(advertised_sections, expected_sections);
+    assert!(!advertised_sections.contains("document"));
+    assert!(!advertised_sections.contains("documents"));
+    advertised_sections.clear();
 
     let article_catalog = crate::cli::list::catalog::sections("article");
     assert!(article_catalog.contains(&"asset"));
@@ -334,31 +355,17 @@ fn typed_get_schema_and_mapper_match_independent_cli_catalog_oracle() {
         [("article", "asset")]
     );
 
-    for entity in catalog {
-        let branch = branches
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == entity.name)
-            .unwrap_or_else(|| panic!("missing {} branch", entity.name));
+    for entity in &catalog {
         if entity.name == "author" {
-            assert!(branch["properties"].get("sections").is_none());
             continue;
         }
-
-        let expected_sections = entity
+        let sections = entity
             .sections
             .iter()
             .copied()
             .filter(|section| !(entity.name == "article" && *section == "asset"))
             .collect::<BTreeSet<_>>();
-        let advertised_sections = branch["properties"]["sections"]["items"]["enum"]
-            .as_array()
-            .expect("section enum")
-            .iter()
-            .map(|section| section.as_str().expect("string section"))
-            .collect::<BTreeSet<_>>();
-        assert_eq!(advertised_sections, expected_sections, "{}", entity.name);
-
-        for section in expected_sections {
+        for section in sections {
             get_args(TypedGet(json!({
                 "entity": entity.name,
                 "id": "fixture-id",
@@ -388,36 +395,22 @@ fn typed_get_schema_and_mapper_match_independent_cli_catalog_oracle() {
         .expect_err("typed binary download must be rejected");
         assert!(error.to_string().contains("CLI-only"));
     }
-
-    let trial = branches
-        .iter()
-        .find(|branch| branch["properties"]["entity"]["const"] == "trial")
-        .expect("trial branch");
-    let trial_sections = trial["properties"]["sections"]["items"]["enum"]
-        .as_array()
-        .expect("trial sections");
-    assert!(!trial_sections.contains(&json!("document")));
-    assert!(!trial_sections.contains(&json!("documents")));
 }
 
 #[test]
 fn adverse_event_schema_and_mapper_deduplicate_sections_only_for_that_entity() {
-    let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
-    let branches = schema["oneOf"].as_array().unwrap();
-    let branch = |entity| {
-        branches
+    let capabilities = typed_get_capabilities();
+    let duplicate_policy = |entity: &str| {
+        capabilities
             .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == entity)
-            .unwrap()
+            .find(|capability| capability.entity == entity)
+            .unwrap_or_else(|| panic!("missing {entity} capability"))
+            .reject_duplicate_sections
     };
-    assert_eq!(
-        branch("adverse-event")["properties"]["sections"].get("uniqueItems"),
-        None
-    );
-    assert_eq!(
-        branch("gene")["properties"]["sections"]["uniqueItems"],
-        true
-    );
+    assert!(!duplicate_policy("adverse-event"));
+    assert!(duplicate_policy("gene"));
+    let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
+    assert_eq!(schema["properties"]["sections"]["type"], json!("array"));
 
     let args = get_args(TypedGet(json!({
         "entity": "adverse-event",
@@ -454,58 +447,44 @@ fn adverse_event_schema_and_mapper_deduplicate_sections_only_for_that_entity() {
 
 #[test]
 fn typed_variant_erepo_schema_prevents_selector_mixing_before_calls() {
+    // Flat root (ADR 0002): the selector union publishes every field, keeps
+    // unknown fields out (deny_unknown_fields on the struct), and the body
+    // rejects selector mixing before any provider call.
     let schema =
         serde_json::to_value(rmcp::schemars::schema_for!(TypedVariantErepo)).expect("ERepo schema");
-    let branches = schema["oneOf"].as_array().expect("selector branches");
-    assert_eq!(branches.len(), 3);
-
-    let branch = |selector: &str| {
-        branches
-            .iter()
-            .find(|branch| {
-                branch["required"]
-                    .as_array()
-                    .is_some_and(|required| required.contains(&json!(selector)))
-            })
-            .unwrap_or_else(|| panic!("missing {selector} selector branch"))
-    };
-    let caid = branch("caid");
-    let caids = branch("caids");
-    let gene = branch("gene");
-
-    for selector_branch in [caid, caids, gene] {
-        assert_eq!(selector_branch["additionalProperties"], false);
-    }
-    let property_names = |branch: &serde_json::Value| {
-        branch["properties"]
-            .as_object()
-            .expect("branch properties")
-            .keys()
-            .cloned()
-            .collect::<BTreeSet<_>>()
-    };
+    assert!(schema.get("oneOf").is_none());
+    assert!(schema.get("required").is_none());
+    assert_eq!(schema["additionalProperties"], json!(false));
+    let properties = schema["properties"].as_object().expect("root properties");
     assert_eq!(
-        property_names(caid),
-        BTreeSet::from_iter(["caid", "detail", "assertion_id", "version"].map(str::to_owned))
+        properties.keys().cloned().collect::<BTreeSet<_>>(),
+        BTreeSet::from_iter(
+            [
+                "caid",
+                "caids",
+                "gene",
+                "detail",
+                "assertion_id",
+                "version",
+                "limit",
+                "offset",
+            ]
+            .map(str::to_owned)
+        )
     );
+    assert_eq!(schema["properties"]["caid"]["minLength"], json!(1));
+    assert_eq!(schema["properties"]["caids"]["minItems"], json!(1));
+    assert_eq!(schema["properties"]["caids"]["maxItems"], json!(50));
     assert_eq!(
-        property_names(caids),
-        BTreeSet::from_iter(["caids"].map(str::to_owned))
+        schema["properties"]["caids"]["items"]["minLength"],
+        json!(1)
     );
-    assert_eq!(
-        property_names(gene),
-        BTreeSet::from_iter(["gene", "limit", "offset"].map(str::to_owned))
-    );
-    assert_eq!(caid["properties"]["caid"]["minLength"], 1);
-    assert_eq!(caids["properties"]["caids"]["minItems"], 1);
-    assert_eq!(caids["properties"]["caids"]["maxItems"], 50);
-    assert_eq!(caids["properties"]["caids"]["items"]["minLength"], 1);
-    assert_eq!(gene["properties"]["gene"]["minLength"], 1);
-    assert_eq!(gene["properties"]["limit"]["minimum"], 1);
-    assert_eq!(gene["properties"]["limit"]["maximum"], 100);
-    assert_eq!(gene["properties"]["limit"]["default"], 25);
-    assert_eq!(gene["properties"]["offset"]["minimum"], 0);
-    assert_eq!(gene["properties"]["offset"]["default"], 0);
+    assert_eq!(schema["properties"]["gene"]["minLength"], json!(1));
+    assert_eq!(schema["properties"]["limit"]["minimum"], json!(1));
+    assert_eq!(schema["properties"]["limit"]["maximum"], json!(100));
+    assert_eq!(schema["properties"]["limit"]["default"], json!(25));
+    assert_eq!(schema["properties"]["offset"]["minimum"], json!(0));
+    assert_eq!(schema["properties"]["offset"]["default"], json!(0));
 }
 
 #[tokio::test]

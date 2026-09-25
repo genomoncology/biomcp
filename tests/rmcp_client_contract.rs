@@ -1518,16 +1518,60 @@ async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Re
 async fn rmcp_client_rejects_unknown_list_cursors() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness.spawn_stdio_client(&[]).await?;
+    let garbage =
+        || Some(rmcp::model::PaginatedRequestParams::default().with_cursor(Some("garbage".into())));
+    let tools_error = client
+        .peer()
+        .list_tools(garbage())
+        .await
+        .expect_err("an unknown tools/list cursor must be rejected");
+    let prompts_error = client
+        .peer()
+        .list_prompts(garbage())
+        .await
+        .expect_err("an unknown prompts/list cursor must be rejected");
+    let templates_error = client
+        .peer()
+        .list_resource_templates(garbage())
+        .await
+        .expect_err("an unknown resources/templates/list cursor must be rejected");
+    for error in [tools_error, prompts_error, templates_error] {
+        match error {
+            rmcp::ServiceError::McpError(data) => {
+                assert_eq!(data.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+            }
+            other => panic!("expected an MCP protocol error, got: {other:?}"),
+        }
+    }
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn rmcp_variant_erepo_rejects_unknown_fields_with_a_protocol_error() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness.spawn_stdio_client(&[]).await?;
+    // Unknown fields fail inside rmcp's Parameters deserialization, before
+    // the handler body, so the rejection is -32602 (ADR 0002), not an
+    // isError tool result.
     let error = client
         .peer()
-        .list_tools(Some(
-            rmcp::model::PaginatedRequestParams::default().with_cursor(Some("garbage".into())),
-        ))
+        .call_tool(
+            CallToolRequestParams::new("variant_erepo").with_arguments(
+                BTreeMap::from([
+                    ("caid".to_string(), json!("CA123456")),
+                    ("bogus".to_string(), json!("unknown field")),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
         .await
-        .expect_err("an unknown cursor must be rejected with a protocol error");
+        .expect_err("an unknown field must fail parameter deserialization");
     match error {
         rmcp::ServiceError::McpError(data) => {
             assert_eq!(data.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+            assert!(data.message.to_lowercase().contains("bogus"));
         }
         other => panic!("expected an MCP protocol error, got: {other:?}"),
     }
