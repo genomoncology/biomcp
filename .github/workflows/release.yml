@@ -313,7 +313,7 @@ jobs:
             /opt/python/cp312-cp312/bin/biomcp --version
             stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"
             case "$stats" in
-              "{"*") ;;
+              "{"*) ;;
               *) echo "cache stats must print a JSON object, got: $stats" >&2; exit 1 ;;
             esac
           '

@@ -204,8 +204,11 @@ def _assert_linux_floor_contract(workflow: str) -> None:
     assert "wheel must end in $tag.whl: $wheel" in pypi
 
     # The runtime floor smoke runs a deep offline command, not only
-    # the version banner.
+    # the version banner, and the JSON guard is pinned exactly so a
+    # quoting typo cannot ship.
     assert "cache stats --json" in smoke
+    assert 'case "$stats" in' in smoke
+    assert '"{"*) ;;' in smoke
 
 
 def test_release_workflow_contract() -> None:
