@@ -25,3 +25,5 @@ benchmarks/bioasq/datasets/normalized/
 **/bin/
 .zig-cache/
 zig-out/
+# Transient uv lock files from concurrent invocations (cargo package lists them otherwise)
+uv-*.lock
