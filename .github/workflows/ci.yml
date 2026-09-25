@@ -126,6 +126,8 @@ jobs:
         run: |
           cargo check --locked
           cargo test --locked --test managed_state_permissions
+          cargo test --locked --test windows_stdio_contract
+          cargo test --locked --lib cache::private
 
   repository-contracts:
     timeout-minutes: 45
