@@ -117,4 +117,8 @@ stay recorded residuals, not code here.
   isError/-32602 contradiction, the missing collision rule, `region`
   misnamed as a get field), findings folded, re-review ACCEPT
   2026-09-25
-- Code review: pending
+- Code review: REJECT twice (stale oneOf consumers across the
+  example, two spec pages, the release smoke, and the trial help
+  contract; then a line-order defect in the mcp spec page), all fixed
+  and verified 2026-09-25
+- Verification: pending the yellow gate

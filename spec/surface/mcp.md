@@ -147,9 +147,9 @@ all listed MCP tools have titles and descriptions
 search and get schemas publish flat roots without combinators
 search and get schemas declare object roots
 search schema includes a bounded limit
+search and get schemas include author entity
 get schema merges per-entity sections and hides CLI-only forms
 article schema exposes assets manifest but not asset download
-search and get schemas include author entity
 variant_articles schema includes identity verification controls
 indexing'
 ```
