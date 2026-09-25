@@ -80,4 +80,8 @@ GenCC follow-ups), items 5-9 a second (hygiene and guards), items
 ## Review
 
 - Design review: this ticket is the design; deviations recorded here
-- Code review: pending
+- Code review (batch 1): ACCEPT with three report-only P2s
+  (unused parameter dropped; local-read line recorded; floor
+  attestation confirmed) 2026-09-25
+- Verification (batch 1): yellow gate at d8475987 lint/test/spec OK;
+  see `sdlc/records/1254-close-the-review-follow-ups-for-1235-through-1247.md`
