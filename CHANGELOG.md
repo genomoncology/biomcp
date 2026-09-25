@@ -70,6 +70,14 @@
 
 ### Internal
 
+- Test waits that polled the clock now wait on signals: the GenCC lease
+  child handshakes over a pipe and exits when its parent's stdin closes
+  (a dying parent can no longer leave it polling for two minutes), the
+  cancellation settle failure names the leaked temporary paths, and the
+  disease-survival reap test reads `/proc` instead of sampling heartbeats.
+  A `make stress` lane runs the known load-flaky tests pinned to one CPU,
+  a lint ratchets against new timed waits, and `BIOMCP_TEST_TIMEOUT_SCALE`
+  stretches every watchdog at once for slow hosts. (1252)
 - Advanced the development package identity to Rust `0.9.1-dev.1` and Python
   `0.9.1.dev1` after the public 0.9.0 release. Citation, MCP directory,
   registry, and Homebrew metadata stay on the latest published release, v0.9.0.

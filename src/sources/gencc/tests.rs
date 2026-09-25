@@ -838,19 +838,16 @@ fn gencc_subprocess_client() {
         else { store.record_failure(state, "2026-03-01T00:00:00Z").unwrap(); }
         panic!("configured state crash point was not reached");
     }
-    if let Some(entered) = std::env::var_os("BIOMCP_GENCC_CHILD_HOLD_LEASE") {
+    if std::env::var_os("BIOMCP_GENCC_CHILD_HOLD_LEASE").is_some() {
         use super::store::Store;
         let snapshot = Store::open().unwrap().load().unwrap().unwrap();
-        std::fs::write(entered, b"entered").unwrap();
-        let release = std::env::var_os("BIOMCP_GENCC_CHILD_RELEASE").unwrap();
-        // Bounded well above full-suite load stalls: this holder must
-        // outlive the parent's publishes, which can be delayed by
-        // minutes while other suite workers compete for CPU.
-        let deadline = std::time::Instant::now() + Duration::from_secs(120);
-        while !std::path::Path::new(&release).exists() {
-            assert!(std::time::Instant::now() < deadline);
-            std::thread::sleep(Duration::from_millis(25));
-        }
+        // Handshake, not polling: signal readiness on the raw stdout fd
+        // (libtest captures println!), then block on stdin. The parent
+        // closing the pipe is the release, and a dead parent closes it
+        // at the kernel, so no deadline and no orphan are needed.
+        crate::test_support::signal_ready_on_raw_stdout("entered");
+        let received = crate::test_support::block_until_stdin_closes();
+        assert!(received.is_empty(), "unexpected stdin data: {received:?}");
         assert_eq!(snapshot.dataset.assertions().len(), 3);
         return;
     }

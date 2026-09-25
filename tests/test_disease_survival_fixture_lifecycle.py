@@ -12,20 +12,13 @@ from pathlib import Path
 
 import pytest
 
+from support import proc_alive, wait_until
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.skipif(
     not Path("/proc").is_dir(),
     reason="fixture owner-death probes require Linux procfs",
 )
-
-
-def _wait_until(predicate, timeout: float = 10.0) -> None:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if predicate():
-            return
-        time.sleep(0.05)
-    assert predicate()
 
 
 def _read_record(path: Path) -> dict[str, str]:
@@ -40,12 +33,6 @@ def _healthz_is_unavailable(url: str) -> bool:
         return False
     except OSError:
         return True
-
-
-def _heartbeat_advances(path: Path) -> bool:
-    before = path.read_text()
-    time.sleep(0.2)
-    return path.read_text() != before
 
 
 def _disease_workspace(tmp_path: Path) -> Path:
@@ -91,7 +78,7 @@ def test_disease_survival_server_and_root_die_with_sigkilled_owner(
     )
     record_path = workspace / ".cache" / "spec-disease-survival-ownership"
     try:
-        _wait_until(lambda: ready.exists() and record_path.exists())
+        wait_until(lambda: ready.exists() and record_path.exists())
         record = _read_record(record_path)
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
         healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
@@ -99,8 +86,8 @@ def test_disease_survival_server_and_root_die_with_sigkilled_owner(
         owner.kill()
         assert owner.wait(timeout=60) == -signal.SIGKILL
 
-        _wait_until(lambda: _healthz_is_unavailable(healthz_url))
-        _wait_until(lambda: not fixture_root.exists())
+        wait_until(lambda: _healthz_is_unavailable(healthz_url))
+        wait_until(lambda: not fixture_root.exists())
     finally:
         if owner.poll() is None:
             owner.kill()
@@ -152,7 +139,7 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
     stale_pid: int | None = None
     decoy_pid: int | None = None
     try:
-        _wait_until(
+        wait_until(
             lambda: stale_pid_file.exists()
             and decoy_pid_file.exists()
             and stale_heartbeat.exists()
@@ -160,8 +147,10 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
         )
         stale_pid = int(stale_pid_file.read_text().strip())
         decoy_pid = int(decoy_pid_file.read_text().strip())
-        _wait_until(lambda: _heartbeat_advances(stale_heartbeat))
-        _wait_until(lambda: _heartbeat_advances(decoy_heartbeat))
+        # Liveness is the kernel's view, not a heartbeat sample: a
+        # single sample cannot tell a slow process from a killed one.
+        wait_until(lambda: proc_alive(stale_pid))
+        wait_until(lambda: proc_alive(decoy_pid))
         owner.kill()
         assert owner.wait(timeout=60) == -signal.SIGKILL
 
@@ -175,8 +164,8 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
                 == "1"
             )
 
-        _wait_until(lambda: is_ppid_one(stale_pid))
-        _wait_until(lambda: is_ppid_one(decoy_pid))
+        wait_until(lambda: is_ppid_one(stale_pid))
+        wait_until(lambda: is_ppid_one(decoy_pid))
 
         result = subprocess.run(
             ["bash", str(setup), str(workspace)],
@@ -186,11 +175,12 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
         )
 
         assert result.returncode == 0
-        _wait_until(lambda: not stale_root.exists())
-        assert not _heartbeat_advances(stale_heartbeat), (
-            "the matching PPID-1 fixture must stop after recovery"
-        )
-        assert _heartbeat_advances(decoy_heartbeat), (
+        wait_until(lambda: not stale_root.exists())
+        # The stale fixture must be collected (its process gone, not
+        # merely quiet), and the decoy must survive: a wrongly killed
+        # decoy here is the real bug this test exists to catch.
+        wait_until(lambda: not proc_alive(stale_pid))
+        assert proc_alive(decoy_pid), (
             "a PPID-1 process with only a similarly named path is not an authenticated "
             "disease-survival fixture"
         )
@@ -364,20 +354,20 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
         if time.monotonic() >= kill_deadline:
             os.kill(timed_run.pid, signal.SIGKILL)
             break
-        time.sleep(0.05)
+        time.sleep(0.05)  # watchdog: bounded kill-window poll
     record_path = workspace / ".cache" / "spec-disease-survival-ownership"
     try:
         # The runner can be killed before its ready marker under lane
         # saturation. The ownership record is the observation needed for the
         # post-kill cleanup assertions and may take longer to appear.
-        _wait_until(lambda: record_path.exists(), timeout=60)
+        wait_until(lambda: record_path.exists(), watchdog_secs=60)
         record = _read_record(record_path)
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
         healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
 
         assert timed_run.wait(timeout=60) == -signal.SIGKILL
-        _wait_until(lambda: _healthz_is_unavailable(healthz_url), timeout=60)
-        _wait_until(lambda: not fixture_root.exists(), timeout=60)
+        wait_until(lambda: _healthz_is_unavailable(healthz_url), watchdog_secs=60)
+        wait_until(lambda: not fixture_root.exists(), watchdog_secs=60)
     finally:
         if timed_run.poll() is None:
             timed_run.kill()
