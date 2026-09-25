@@ -441,7 +441,7 @@ async fn sync_export(
         .with_source_context(context));
     }
 
-    ensure_csv_content_type(content_type.as_ref(), &body)
+    ensure_csv_content_type(content_type.as_ref())
         .map_err(|error| error.with_source_context(context))?;
     parse_csv_rows(file_name, &body).map_err(|error| error.with_source_context(context))?;
     crate::utils::download::write_atomic_bytes(&root.join(file_name), &body).await
@@ -449,7 +449,6 @@ async fn sync_export(
 
 fn ensure_csv_content_type(
     header: Option<&reqwest::header::HeaderValue>,
-    _body: &[u8],
 ) -> Result<(), BioMcpError> {
     let Some(header) = header else {
         return Ok(());
