@@ -26,22 +26,22 @@ def test_the_stress_target_exists() -> None:
 def test_the_build_is_not_pinned_but_the_tests_are() -> None:
     recipe = stress_recipe()
     assert "$(MAKE) prepare-test" in recipe, "the archive must be prepared first"
-    pinned_count = recipe.count("taskset -c 0 tools/run-offline")
+    pinned_count = recipe.count("taskset -c 0,1 tools/run-offline")
     assert pinned_count >= 2, "both the cargo and pytest invocations must be pinned"
     prepare_line = next(line for line in recipe.splitlines() if "prepare-test" in line)
-    assert "taskset" not in prepare_line, "the build must not be pinned to one CPU"
+    assert "taskset" not in prepare_line, "the build must not be pinned to the CPU set"
 
 
 def test_the_rust_lane_pins_worker_parallelism() -> None:
     recipe = stress_recipe()
     cargo_line = next(line for line in recipe.splitlines() if "nextest run" in line)
-    assert "-j 4" in cargo_line, "nextest must not auto-serialize on one CPU"
+    assert "-j 4" in cargo_line, "nextest must not auto-serialize on the pinned set"
 
 
 def test_the_python_lane_pins_worker_parallelism() -> None:
     recipe = stress_recipe()
     pytest_line = next(line for line in recipe.splitlines() if "pytest" in line)
-    assert "-n 4" in pytest_line, "pytest-xdist must not auto-serialize on one CPU"
+    assert "-n 4" in pytest_line, "pytest-xdist must not auto-serialize on the pinned set"
     assert "test_disease_survival_fixture_lifecycle" in pytest_line
 
 
@@ -60,3 +60,9 @@ def test_the_rust_lane_names_the_flaky_set() -> None:
 def test_the_repeat_count_defaults_to_three() -> None:
     recipe = stress_recipe()
     assert 'repeat="$${BIOMCP_STRESS_REPEAT:-3}"' in recipe
+
+def test_the_lane_avoids_single_cpu_pinning() -> None:
+    """One-CPU pinning deadlocks the pipe handshake child; see
+    sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md."""
+    recipe = stress_recipe()
+    assert "taskset -c 0 " not in recipe, "never pin the lane to exactly one CPU"

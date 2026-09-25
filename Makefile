@@ -123,10 +123,13 @@ validate-skills:
 	PATH="$(CURDIR)/target/release:$(PATH)" \
 		uv run --no-sync sh -c 'PATH="$(CURDIR)/target/release:$$PATH" ./scripts/validate-skills.sh'
 
-# Stress lane: run the known load-flaky tests pinned to one CPU with
-# forced worker parallelism, repeated BIOMCP_STRESS_REPEAT times
+# Stress lane: run the known load-flaky tests pinned to a two-CPU set
+# with forced worker parallelism, repeated BIOMCP_STRESS_REPEAT times
 # (default 3). The build runs unpinned; only the test invocations are
-# pinned, because the runners auto-serialize on a single detected CPU.
+# pinned, because the runners auto-serialize on the detected CPU count.
+# One-CPU pinning is avoided deliberately: it deadlocks the pipe
+# handshake child deterministically (issue
+# sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md).
 stress:
 	$(MAKE) prepare-test
 	@set -euo pipefail; \
@@ -134,7 +137,7 @@ stress:
 	scale="$${BIOMCP_TEST_TIMEOUT_SCALE:-6}"; \
 	for round in $$(seq 1 "$$repeat"); do \
 	  echo "=== stress round $$round/$$repeat (one CPU, 4 workers, timeout scale $$scale) ==="; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
 	    -E 'test(subprocess_lease_defers_old_generation_cleanup_until_reader_exits) | test(subprocess_lease_child_exits_on_parent_end_of_input) | test(cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work) | test(cancelling_active_publication_joins_cleanup_and_releases_locks)'; \
-	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/test_disease_survival_fixture_lifecycle.py -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/test_disease_survival_fixture_lifecycle.py -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
 	done
