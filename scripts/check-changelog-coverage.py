@@ -10,6 +10,7 @@ import subprocess
 import sys
 
 MERGE_TICKET = re.compile(r"^Merge .*\btickets/([0-9]+)-")
+RECORD_TICKET = re.compile(r"^sdlc/records/([0-9]+)-")
 STABLE_TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 
 
@@ -41,11 +42,24 @@ def previous_tag(tag: str) -> str | None:
     return max(older, key=version_key) if older else None
 
 
-def merged_tickets(previous: str, tag: str) -> set[str]:
+def merge_subject_tickets(previous: str, tag: str) -> set[str]:
     subjects = run_git("log", "--format=%s", f"{previous}..{tag}").splitlines()
     return {
         match.group(1) for subject in subjects if (match := MERGE_TICKET.match(subject))
     }
+
+
+def record_tickets(previous: str, tag: str) -> set[str]:
+    names = run_git(
+        "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/records/"
+    ).splitlines()
+    return {match.group(1) for name in names if (match := RECORD_TICKET.match(name))}
+
+
+def merged_tickets(previous: str, tag: str) -> set[str]:
+    # Neither source alone is complete: a record can lag a merge, and a
+    # merge subject can be rewritten or absent. Fail closed on the union.
+    return merge_subject_tickets(previous, tag) | record_tickets(previous, tag)
 
 
 def section_text(path: Path, tag: str) -> tuple[str, str]:
@@ -89,8 +103,14 @@ def described_tickets(section: str) -> set[str]:
             marker = re.compile(
                 rf"(?:\(#?{re.escape(ticket)}\)|#{re.escape(ticket)}\b|\b{re.escape(ticket)}\b)"
             )
-            remainder = marker.sub("", text).strip(" .:-")
-            if remainder and not remainder.isdigit():
+            remainder = marker.sub("", text)
+            # A bare number list is not a description: remove every
+            # remaining bare number token and the separators around
+            # them, then require at least three word characters of
+            # described text.
+            remainder = re.sub(r"(?<![0-9])[0-9]+(?![0-9])", "", remainder)
+            remainder = remainder.strip(" .,:;-|/")
+            if len(re.findall(r"[^\W\d_]", remainder, re.UNICODE)) >= 3:
                 found.add(ticket)
     return found
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -9,15 +11,26 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "scripts" / "check-changelog-coverage.py"
 
+_SPEC = importlib.util.spec_from_file_location("check_changelog_coverage", CHECK)
+_MODULE = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_MODULE)
+described_tickets = _MODULE.described_tickets
 
-def _fake_git(directory: Path, responses: list[list[str]]) -> None:
+
+def _fake_git(directory: Path, responses: dict[str, list[str]]) -> None:
+    """Answer git subprocess calls by leading subcommand, not by order.
+
+    The coverage check runs `git tag`, `git log`, and `git diff` in
+    whatever order it needs them, so dispatching on the first argument
+    keeps the harness honest when the script changes.
+    """
     script = directory / "git"
     body = "#!/usr/bin/env bash\nset -euo pipefail\n"
     body += 'printf \'%s\\n\' "$*" >> "$GIT_FAKE_CALLS"\n'
-    body += 'COUNT="$(wc -l < "$GIT_FAKE_CALLS")"\n'
-    for index, lines in enumerate(responses, 1):
-        body += f"if [ \"$COUNT\" -eq {index} ]; then printf '%s\\n' {shlex.join(lines)}; exit 0; fi\n"
-    body += 'echo "unexpected git call" >&2\nexit 1\n'
+    body += 'case "$1" in\n'
+    for subcommand, lines in responses.items():
+        body += f"  {subcommand}) printf '%s\\n' {shlex.join(lines)}; exit 0 ;;\n"
+    body += 'esac\necho "unexpected git call: $*" >&2\nexit 1\n'
     script.write_text(body, encoding="utf-8")
     script.chmod(0o755)
 
@@ -27,9 +40,16 @@ def _run(
     *,
     changelog: str,
     subjects: list[str],
-    tags: list[str] | None = None,
+    records: list[str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    _fake_git(tmp_path, [tags or ["v0.9.0", "v0.9.1"], subjects])
+    _fake_git(
+        tmp_path,
+        {
+            "tag": ["v0.9.0", "v0.9.1"],
+            "log": subjects,
+            "diff": records or [],
+        },
+    )
     path = tmp_path / "CHANGELOG.md"
     path.write_text(changelog, encoding="utf-8")
     return subprocess.run(
@@ -81,6 +101,86 @@ def test_bare_ticket_number_does_not_satisfy_coverage(tmp_path: Path) -> None:
     assert "1234" in result.stderr
 
 
+def test_bare_ticket_number_list_does_not_satisfy_coverage(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=[
+            "Merge branch 'tickets/1226-gate'",
+            "Merge branch 'tickets/1227-other'",
+        ],
+        changelog="# C\n\n## Unreleased\n\n- 1226, 1227, 1228\n",
+    )
+    assert result.returncode == 1
+    assert "1226" in result.stderr and "1227" in result.stderr
+
+
+def test_described_number_only_bullet_after_numbers_removed(tmp_path: Path) -> None:
+    # Even with three stray digits gone, at least three word
+    # characters of description must remain.
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        changelog="# C\n\n## Unreleased\n\n- a 1 b 2 c 3 (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_record_only_ticket_requires_a_bullet(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Record ticket 2001 directly"],
+        records=["sdlc/records/2001-fix-the-gate.md"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "2001" in result.stderr
+
+
+def test_record_only_ticket_passes_with_a_described_bullet(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Record ticket 2001 directly"],
+        records=["sdlc/records/2001-fix-the-gate.md"],
+        changelog="# C\n\n## Unreleased\n\n- Fixed the coverage gate. (2001)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_union_of_merge_subjects_and_records_requires_both_bullets(
+    tmp_path: Path,
+) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        records=["sdlc/records/2002-record-only.md"],
+        changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "2002" in result.stderr
+
+
+def test_union_passes_when_both_have_bullets(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        records=["sdlc/records/2002-record-only.md"],
+        changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n- Widened the ticket scan. (2002)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_non_ticket_record_files_do_not_count(tmp_path: Path) -> None:
+    # Only sdlc/records/NNNN-*.md names map to tickets; a note file
+    # in the same directory must not.
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        records=["sdlc/records/release-notes-only.md"],
+        changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_internal_only_described_bullet_passes(tmp_path: Path) -> None:
     result = _run(
         tmp_path,
@@ -101,7 +201,7 @@ def test_missing_both_sections_fails_clearly(tmp_path: Path) -> None:
 
 
 def test_no_previous_release_passes_without_git_log(tmp_path: Path) -> None:
-    _fake_git(tmp_path, [["v0.9.1"]])
+    _fake_git(tmp_path, {"tag": ["v0.9.1"]})
     path = tmp_path / "CHANGELOG.md"
     path.write_text("## Unreleased\n", encoding="utf-8")
     result = subprocess.run(
@@ -115,3 +215,20 @@ def test_no_previous_release_passes_without_git_log(tmp_path: Path) -> None:
         },
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_every_real_unreleased_bullet_describes_its_ticket() -> None:
+    content = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    match = re.search(r"^## Unreleased\s*([\s\S]*?)(?=^## |\Z)", content, re.MULTILINE)
+    assert match is not None
+    section = match.group(1)
+    described = described_tickets(section)
+    mentioned = set(re.findall(r"\((\d{4})\)", section))
+    assert mentioned, "the Unreleased section has no ticket markers"
+    missing = sorted(mentioned - described)
+    assert not missing, f"bullets for {missing} carry no described text"
+
+
+def test_described_tickets_rejects_a_number_only_bullet_directly() -> None:
+    assert described_tickets("- 1226, 1227, 1228") == set()
+    assert described_tickets("- Fixed the wheel floor check (1246)") == {"1246"}
