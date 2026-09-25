@@ -68,10 +68,12 @@ deeply nested document on a 2 MiB blocking thread can overflow.
 
 ## Acceptance
 
-- The size-probe test exists and the measured top-level future is
-  recorded before and after.
-- No per-call runtime drop blocks the reply (test with a hanging
-  background task).
+- The size-probe test exists and the measured futures (the dispatch
+  future and the `run` fallthrough) are recorded before and after.
+- No per-call runtime drop blocks the reply: the hanging-background
+  test covers a blocking, eviction-shaped task, and MCP tool dispatch
+  constructs no runtime of its own (a test asserts the construction
+  path is not taken).
 - The XML depth cap rejects a nesting bomb with an error.
 
 ## Review
