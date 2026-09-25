@@ -6,6 +6,7 @@ use super::citation_evidence::{
 };
 use super::*;
 #[cfg(test)]
+#[cfg(unix)]
 mod admission;
 #[cfg(test)]
 mod cache;
