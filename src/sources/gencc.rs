@@ -829,23 +829,31 @@ async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation
 }
 
 #[cfg(test)]
-async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: Option<&str>) {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
-    loop {
-        let clean_root = std::fs::read_dir(root).unwrap().all(|entry| {
-            let name = entry.unwrap().file_name();
-            !name.to_string_lossy().starts_with(".raw-")
-        });
-        // Generation temporaries wait on the same deadline: their
-        // cleanup runs detached and can lag past the lock (ticket 1247).
-        let clean_generations = std::fs::read_dir(root.join("generations"))
+fn leaked_cancellation_temps(root: &std::path::Path) -> Vec<String> {
+    // Generation temporaries join the root scan: their cleanup runs
+    // detached and can lag past the lock (ticket 1247).
+    fn leaked_in(dir: &std::path::Path, prefix: &str) -> Vec<String> {
+        std::fs::read_dir(dir)
             .unwrap()
-            .all(|entry| {
+            .filter_map(|entry| {
                 let name = entry.unwrap().file_name();
-                !name.to_string_lossy().starts_with(".tmp-")
-            });
-        if clean_root
-            && clean_generations
+                name.to_string_lossy()
+                    .starts_with(prefix)
+                    .then(|| format!("{}/{}", dir.display(), name.to_string_lossy()))
+            })
+            .collect()
+    }
+    let mut leaked = leaked_in(root, ".raw-");
+    leaked.extend(leaked_in(&root.join("generations"), ".tmp-"));
+    leaked
+}
+
+#[cfg(test)]
+async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: Option<&str>) {
+    let deadline = tokio::time::Instant::now() + crate::test_support::watchdog(60);
+    loop {
+        let leaked = leaked_cancellation_temps(root);
+        if leaked.is_empty()
             && let Ok(store) = Store::open()
             && store.try_lock_refresh().is_ok_and(|locked| locked)
         {
@@ -862,9 +870,9 @@ async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: O
         }
         assert!(
             tokio::time::Instant::now() < deadline,
-            "cancelled GenCC work survived"
+            "cancelled GenCC work survived; leaked temporaries: {leaked:?}"
         );
-        tokio::time::sleep(Duration::from_millis(5)).await;
+        tokio::time::sleep(Duration::from_millis(5)).await; // watchdog: settle poll
     }
 }
 

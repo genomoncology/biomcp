@@ -361,11 +361,11 @@
     },
     {
       "path": "src/sources/gencc/tests.rs",
-      "baseline_lines": 1138,
+      "baseline_lines": 1135,
       "floor_lines": 982,
       "authorized_increase": {
         "ticket": "1239",
-        "delta": 156,
+        "delta": 153,
         "reason": "Cleanup classification distinguishes corrupt from transient load failures; errno taxonomy, retention warns, and the fault-injection regression test.",
         "removal_condition": "Shrink when the store module's fault-injection scaffolding is extracted."
       }
@@ -468,6 +468,28 @@
         "delta": 30,
         "reason": "Coverage-state expectations for the drug interactions card.",
         "removal_condition": "Shrink when the card test fixtures share a builder."
+      }
+    },
+    {
+      "path": "src/sources/gencc.rs",
+      "floor_lines": 1000,
+      "baseline_lines": 1008,
+      "authorized_increase": {
+        "ticket": "1252",
+        "delta": 8,
+        "reason": "the settle diagnostic names leaked temporaries",
+        "removal_condition": "Move the helper out or shrink when the size budget tightens."
+      }
+    },
+    {
+      "path": "src/entities/gene/gencc/tests.rs",
+      "floor_lines": 976,
+      "baseline_lines": 1019,
+      "authorized_increase": {
+        "ticket": "1252",
+        "delta": 43,
+        "reason": "the lease handshake conversion and the end-of-input orphan proof",
+        "removal_condition": "Move the helper out or shrink when the size budget tightens."
       }
     }
   ]

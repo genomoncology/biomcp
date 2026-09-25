@@ -1,0 +1,145 @@
+{
+  "schema": "biomcp-test-wait-inventory-v1",
+  "files": {
+    "src/cache/migration.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/cli/health/tests/runner.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/cli/system/batch.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/cli/system/dispatch.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/cli/system/tests/dev2_contracts.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/entities/article/assets.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/entities/article/backends/tests.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/entities/article/graph/tests.rs": {
+      "count": 4,
+      "language": "rust"
+    },
+    "src/entities/article/graph/tests/admission.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/entities/article/variant_search.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/entities/disease/search.rs": {
+      "count": 4,
+      "language": "rust"
+    },
+    "src/entities/disease/search/tests.rs": {
+      "count": 3,
+      "language": "rust"
+    },
+    "src/sources/clingen/tests/mod.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/sources/clingen_cspec.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/sources/gencc.rs": {
+      "count": 7,
+      "language": "rust"
+    },
+    "src/sources/gencc/store.rs": {
+      "count": 3,
+      "language": "rust"
+    },
+    "src/sources/gencc/tests.rs": {
+      "count": 12,
+      "language": "rust"
+    },
+    "src/sources/mod.rs": {
+      "count": 5,
+      "language": "rust"
+    },
+    "src/sources/orcid/tests.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/sources/rate_limit.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/sources/tests/provider_network.rs": {
+      "count": 3,
+      "language": "rust"
+    },
+    "tests/article_usage_stderr.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "tests/biomcp_cli_shim.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "tests/json_error_contract.rs": {
+      "count": 5,
+      "language": "rust"
+    },
+    "tests/managed_state_permissions.rs": {
+      "count": 3,
+      "language": "rust"
+    },
+    "tests/rmcp_client_contract.rs": {
+      "count": 6,
+      "language": "rust"
+    },
+    "tests/test_article_spec_fixture_lifecycle.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_author_surface_docs.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_ctgov_spec_fixture_lifecycle.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_mcp_2026_protocol.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_mcp_http_surface.py": {
+      "count": 2,
+      "language": "python"
+    },
+    "tests/test_mychem_empty_spec_fixture_contract.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_release_smoke_script.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_routine_fixture_recovery.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/tls_ca_bundle_contract.rs": {
+      "count": 3,
+      "language": "rust"
+    }
+  }
+}

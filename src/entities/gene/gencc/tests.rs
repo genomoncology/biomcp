@@ -893,42 +893,85 @@ fn subprocess_lease_defers_old_generation_cleanup_until_reader_exits() {
     let temp = tempfile::tempdir().unwrap();
     secure_anchor(temp.path());
     let root = temp.path().join("gencc");
-    let entered = temp.path().join("entered");
-    let release = temp.path().join("release");
     unsafe { std::env::set_var("BIOMCP_GENCC_DIR", &root) };
     let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
     let store = Store::open().unwrap();
     drop(publish(&store, &dataset, "2026-01-01T00:00:00Z", "\"g1\""));
-    let mut child = Command::new(std::env::current_exe().unwrap())
-        .args([
+    let mut child = crate::test_support::SignaledChild::spawn(
+        &std::env::current_exe().unwrap(),
+        &[
             "--ignored",
             "--exact",
             "sources::gencc::tests::gencc_subprocess_client",
-        ])
-        .env("BIOMCP_GENCC_DIR", &root)
-        .env("BIOMCP_GENCC_CHILD_HOLD_LEASE", &entered)
-        .env("BIOMCP_GENCC_CHILD_RELEASE", &release)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .unwrap();
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(120);
-    while !entered.exists() {
-        assert!(child.try_wait().unwrap().is_none());
-        assert!(std::time::Instant::now() < deadline);
-        std::thread::sleep(std::time::Duration::from_millis(5));
-    }
+        ],
+        [
+            ("BIOMCP_GENCC_DIR", root.clone()),
+            (
+                "BIOMCP_GENCC_CHILD_HOLD_LEASE",
+                std::path::PathBuf::from("1"),
+            ),
+        ],
+        "entered",
+    );
     drop(publish(&store, &dataset, "2026-01-02T00:00:00Z", "\"g2\""));
     drop(publish(&store, &dataset, "2026-01-03T00:00:00Z", "\"g3\""));
     assert!(
-        child.try_wait().unwrap().is_none(),
+        child.child.try_wait().unwrap().is_none(),
         "child lease holder exited before the deferred-cleanup assertion"
     );
     assert_eq!(fs::read_dir(root.join("generations")).unwrap().count(), 3);
-    fs::write(&release, b"release").unwrap();
-    assert!(child.wait().unwrap().success());
+    child.release();
+    assert!(child.child.wait().unwrap().success());
     drop(publish(&store, &dataset, "2026-01-04T00:00:00Z", "\"g4\""));
     assert_eq!(fs::read_dir(root.join("generations")).unwrap().count(), 2);
+    unsafe { std::env::remove_var("BIOMCP_GENCC_DIR") };
+}
+
+#[test]
+#[serial_test::serial(source_env)]
+fn subprocess_lease_child_exits_on_parent_end_of_input() {
+    // The orphan-proof: the handshake child holds a lease and blocks on
+    // stdin; closing the pipe (what a dying parent does at the kernel)
+    // must release it. No publish and no release file are involved.
+    let temp = tempfile::tempdir().unwrap();
+    secure_anchor(temp.path());
+    let root = temp.path().join("gencc");
+    unsafe { std::env::set_var("BIOMCP_GENCC_DIR", &root) };
+    let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+    let store = Store::open().unwrap();
+    drop(publish(&store, &dataset, "2026-01-01T00:00:00Z", "\"g1\""));
+    let mut child = crate::test_support::SignaledChild::spawn(
+        &std::env::current_exe().unwrap(),
+        &[
+            "--ignored",
+            "--exact",
+            "sources::gencc::tests::gencc_subprocess_client",
+        ],
+        [
+            ("BIOMCP_GENCC_DIR", root.clone()),
+            (
+                "BIOMCP_GENCC_CHILD_HOLD_LEASE",
+                std::path::PathBuf::from("1"),
+            ),
+        ],
+        "entered",
+    );
+    assert!(child.child.try_wait().unwrap().is_none());
+    child.release();
+    // watchdog: the child must exit promptly on end-of-input; a slow
+    // host stretches this window, not the wait itself.
+    let deadline = std::time::Instant::now() + crate::test_support::watchdog(30);
+    loop {
+        if child.child.try_wait().unwrap().is_some() {
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "handshake child did not exit on end-of-input"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(25)); // watchdog: exit poll
+    }
+    assert!(child.child.wait().unwrap().success());
     unsafe { std::env::remove_var("BIOMCP_GENCC_DIR") };
 }
 

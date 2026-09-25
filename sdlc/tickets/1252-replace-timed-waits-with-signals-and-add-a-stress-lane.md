@@ -104,8 +104,20 @@ guessed at a cause from one 200 ms heartbeat sample.
   passes on the tree as landed.
 - `BIOMCP_TEST_TIMEOUT_SCALE=10` visibly stretches a marked watchdog
   (unit test on the builder).
-- The stress lane reproduced the pre-fix failure on the parent commit
-  (recorded in this ticket), and is green at the head SHA.
+- The red side is proven mechanically (recorded here): the ratchet
+  fails on the parent commit's exact polling shapes — a scratch root
+  holding `git show 03d9ced6` copies of the two converted files
+  reports `new unmarked timed waits in src/entities/gene/gencc/tests.rs
+  (2)` (the 120 s deadline and the 5 ms poll this ticket deleted) and
+  14 in `src/sources/gencc/tests.rs` (the child's release-file poll
+  among the file's other pinned waits) — and the handshake itself
+  fails fast on a child that never signals
+  (`signaled_child_spawn_fails_when_the_child_never_signals`). A
+  live reproduction of the parent's flake under load was attempted by
+  building the parent tree in a scratch worktree and did not
+  complete within the session; no reproduction was observed or
+  claimed. The stress lane runs green at the head SHA in the yellow
+  gate.
 - Yellow gate green at the head SHA, including `make stress`.
 
 ## Review
