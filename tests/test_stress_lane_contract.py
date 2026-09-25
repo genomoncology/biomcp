@@ -17,7 +17,10 @@ def stress_recipe() -> str:
 
 def test_the_stress_target_exists() -> None:
     assert re.search(r"^stress:", MAKEFILE, re.MULTILINE), "make stress must exist"
-    assert ".PHONY: build test lint" in MAKEFILE and " stress" in MAKEFILE.split(".PHONY: build test lint")[1].splitlines()[0]
+    assert (
+        ".PHONY: build test lint" in MAKEFILE
+        and " stress" in MAKEFILE.split(".PHONY: build test lint")[1].splitlines()[0]
+    )
 
 
 def test_the_build_is_not_pinned_but_the_tests_are() -> None:
@@ -25,9 +28,7 @@ def test_the_build_is_not_pinned_but_the_tests_are() -> None:
     assert "$(MAKE) prepare-test" in recipe, "the archive must be prepared first"
     pinned_count = recipe.count("taskset -c 0 tools/run-offline")
     assert pinned_count >= 2, "both the cargo and pytest invocations must be pinned"
-    prepare_line = next(
-        line for line in recipe.splitlines() if "prepare-test" in line
-    )
+    prepare_line = next(line for line in recipe.splitlines() if "prepare-test" in line)
     assert "taskset" not in prepare_line, "the build must not be pinned to one CPU"
 
 
