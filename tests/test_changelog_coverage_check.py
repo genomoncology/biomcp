@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.util
 import os
+
+import pytest
 from pathlib import Path
 import re
 import shlex
@@ -15,6 +17,7 @@ _SPEC = importlib.util.spec_from_file_location("check_changelog_coverage", CHECK
 _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
 described_tickets = _MODULE.described_tickets
+record_tickets = _MODULE.record_tickets
 
 
 def _fake_git(directory: Path, responses: dict[str, list[str]]) -> None:
@@ -167,6 +170,34 @@ def test_union_passes_when_both_have_bullets(tmp_path: Path) -> None:
         changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n- Widened the ticket scan. (2002)\n",
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_record_discovery_uses_real_git_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The records scan runs against a real repository, not a canned response."""
+    import subprocess
+
+    def git(*args: str, cwd: Path) -> None:
+        subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+    repo = tmp_path / "repo"
+    (repo / "sdlc" / "records").mkdir(parents=True)
+    (repo / "CHANGELOG.md").write_text("# Changelog\n", encoding="utf-8")
+    git("init", "-q", cwd=repo)
+    git("config", "user.email", "t@example.com", cwd=repo)
+    git("config", "user.name", "t", cwd=repo)
+    git("add", "-A", cwd=repo)
+    git("commit", "-q", "-m", "base", cwd=repo)
+    git("tag", "v0.9.0", cwd=repo)
+    (repo / "sdlc" / "records" / "2001-real-history.md").write_text("x\n", encoding="utf-8")
+    git("add", "-A", cwd=repo)
+    git("commit", "-q", "-m", "ticket 2001", cwd=repo)
+    git("tag", "v0.9.1", cwd=repo)
+
+    monkeypatch.chdir(repo)
+    tickets = record_tickets("v0.9.0", "v0.9.1")
+    assert "2001" in tickets
 
 
 def test_non_ticket_record_files_do_not_count(tmp_path: Path) -> None:

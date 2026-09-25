@@ -313,6 +313,7 @@ def _assert_pipeline_contract(parsed: dict) -> None:
     for job in PIPELINE_JOBS:
         steps = _pipeline_steps(parsed, job)
         assert steps, job
+        assert parsed["jobs"][job].get("continue-on-error") is not True, job
         for step in steps:
             # No run step may swallow its own failure, and no step may
             # switch itself off. Only the optional protoc installer is
