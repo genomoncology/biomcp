@@ -11,11 +11,11 @@ of 18 workflow mutations outside the version-check job stay green.
    from merge subjects matching `tickets/NNNN-`. Eight merged tickets
    (1219, 1220, 1222, 1223, 1224, 1236, 1237, 1247) landed with other
    subjects or no merge commit, so the gate skips them silently.
-2. The bullet parser (:92) accepts `- 1226, 1227, 1228` as described
-   text: stripping the ticket marker leaves `1226, , 1227` — wait, it
-   leaves digits separated by commas, which passes the `remainder and
-   not remainder.isdigit()` test. A bare list of numbers passes as a
-   described bullet.
+2. The bullet parser (:92) accepts `- 1226, 1227, 1228` as a
+   described bullet: the per-ticket marker strip leaves digit tokens
+   and separators behind, and the leftover text passes the
+   `remainder and not remainder.isdigit()` check. A bare number list
+   describes nothing but passes.
 3. The workflow provenance tests assert no-escape properties only for
    the version-check job. `continue-on-error` on wheel-smoke or
    docs-live, `|| true` on the floor check, dropping the ARM wheel
