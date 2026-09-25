@@ -33,20 +33,20 @@ def test_the_build_is_not_pinned_but_the_tests_are() -> None:
 
 def test_the_rust_lane_pins_worker_parallelism() -> None:
     recipe = stress_recipe()
-    cargo_line = next(line for line in stress_recipe().splitlines() if "nextest run" in line)
+    cargo_line = next(line for line in recipe.splitlines() if "nextest run" in line)
     assert "-j 4" in cargo_line, "nextest must not auto-serialize on one CPU"
 
 
 def test_the_python_lane_pins_worker_parallelism() -> None:
     recipe = stress_recipe()
-    pytest_line = next(line for line in stress_recipe().splitlines() if "pytest" in line)
+    pytest_line = next(line for line in recipe.splitlines() if "pytest" in line)
     assert "-n 4" in pytest_line, "pytest-xdist must not auto-serialize on one CPU"
     assert "test_disease_survival_fixture_lifecycle" in pytest_line
 
 
 def test_the_rust_lane_names_the_flaky_set() -> None:
     recipe = stress_recipe()
-    cargo_line = next(line for line in stress_recipe().splitlines() if "nextest run" in line)
+    cargo_line = next(line for line in recipe.splitlines() if "nextest run" in line)
     for name in (
         "subprocess_lease_defers_old_generation_cleanup_until_reader_exits",
         "subprocess_lease_child_exits_on_parent_end_of_input",
