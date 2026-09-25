@@ -39,7 +39,12 @@ stderr now inherits so it can never fill a pipe; the guard's split
 heuristic inherits the package-boundary pattern's edges and is
 recorded); yellow gate at ba937a37 — lint, test, and spec OK after
 one count-bump cycle (the boundary ratchet now counts the two new
-test files, 1,356).
+test files, 1,356). CI on the merge then exposed that the lib's
+test profile had never compiled on Windows: two unix-only test sites
+(the article graph admission module and one provider-capture test)
+were ungated, so the new `--lib` step broke; both are now
+`#[cfg(unix)]` with the two pinned baselines taking the gate lines,
+and main is green at a9b2d593.
 
 Residuals: the before/after spawn count is the reporter's ~20 versus
 zero by construction — both falsifiable in the Windows CI job, no
