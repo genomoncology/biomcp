@@ -600,17 +600,37 @@ fn remove_generation_if_unleased(parent: &File, _generations: &Path, name: &str)
     #[cfg(not(unix))]
     let directory = _generations.join(name);
     #[cfg(unix)]
-    let directory_handle = open_directory_at(parent, name.as_ref())?;
+    let directory_handle = match open_directory_at(parent, name.as_ref()) {
+        Ok(directory) => directory,
+        // Invalid means the entry raced away or is not a directory
+        // (the scan never forwards those); nothing to remove.
+        Err(StoreError::Invalid) => return Ok(false),
+        Err(error) => return Err(error),
+    };
+    // An Invalid lease file means nothing holds this generation, so
+    // removal proceeds; other failures propagate (ticket 1254).
     #[cfg(unix)]
-    let lease = open_existing_at(&directory_handle, "lease.lock")?;
+    let leased = match open_existing_at(&directory_handle, "lease.lock") {
+        Ok(lease) => Some(lease),
+        Err(StoreError::Invalid) => None,
+        Err(error) => return Err(error),
+    };
     #[cfg(not(unix))]
     let lease = match open_existing_private_file(&directory.join("lease.lock")) {
         Ok(lease) => lease,
         Err(_) => return Ok(false),
     };
-    match FileExt::try_lock_exclusive(&lease) { Ok(()) => {}, Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => return Ok(false), Err(_) => return Ok(false) }
     #[cfg(unix)]
-    validate_directory_owner_mode(&directory_handle, true)?;
+    if let Some(lease) = leased.as_ref() {
+        match FileExt::try_lock_exclusive(lease) { Ok(()) => {}, Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => return Ok(false), Err(_) => return Ok(false) }
+    }
+    #[cfg(unix)]
+    match validate_directory_owner_mode(&directory_handle, true) {
+        // A deliberate mismatch is exactly the prune target; only
+        // environmental failures stop the removal (ticket 1254).
+        Ok(()) | Err(StoreError::Invalid) => {}
+        Err(error) => return Err(error),
+    }
     #[cfg(not(unix))]
     validate_existing_directory(&directory)?;
     injected("before-cleanup-generation-delete", StoreError::Unavailable)?;
@@ -676,7 +696,7 @@ fn open_directory_at(parent: &File, name: &std::ffi::OsStr) -> Result<File, Stor
     let name = std::ffi::CString::new(name.as_bytes()).map_err(|_| StoreError::Unavailable)?;
     // SAFETY: the component is NUL-terminated and parent remains open.
     let fd = unsafe { libc::openat(parent.as_raw_fd(), name.as_ptr(), libc::O_RDONLY | libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC) };
-    if fd < 0 { return Err(StoreError::Unavailable); }
+    if fd < 0 { return Err(store_error_for_errno(std::io::Error::last_os_error().raw_os_error())); }
     // SAFETY: openat returned a new owned descriptor.
     Ok(File::from(unsafe { OwnedFd::from_raw_fd(fd) }))
 }
@@ -717,7 +737,7 @@ fn write_new_at(parent: &File, name: &str, bytes: &[u8], point: &str) -> Result<
 #[rustfmt::skip]
 fn store_error_for_errno(errno: Option<i32>) -> StoreError {
     match errno {
-        Some(libc::EINTR) | Some(libc::EIO) | Some(libc::ENOMEM) | Some(libc::EMFILE) | Some(libc::ENFILE) => StoreError::Unavailable,
+        Some(libc::EINTR) | Some(libc::EIO) | Some(libc::ENOMEM) | Some(libc::EMFILE) | Some(libc::ENFILE) | Some(libc::EACCES) | Some(libc::ESTALE) | Some(libc::EAGAIN) => StoreError::Unavailable,
         _ => StoreError::Invalid,
     }
 }
@@ -808,13 +828,16 @@ fn remove_dir_owned(_parent: &File, path: &Path, name: &str) -> Result<(), Store
 #[rustfmt::skip]
 fn validate_directory_owner_mode(directory: &File, private: bool) -> Result<(), StoreError> {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
-    let metadata = directory.metadata().map_err(|_| StoreError::Unavailable)?;
+    // A deliberate mismatch (wrong mode, wrong owner, not a directory)
+    // is Invalid so cleanup prunes the generation (ticket 1254); only
+    // environmental metadata failures stay Unavailable.
+    let metadata = directory.metadata().map_err(|error| store_error_for_errno(error.raw_os_error()))?;
     let mode = metadata.permissions().mode() & 0o7777;
     let effective_uid = unsafe { libc::geteuid() }; let owner_ok = metadata.uid() == effective_uid;
     let trusted_owner = super::directory_owner_trusted(metadata.uid(), effective_uid);
     if !metadata.is_dir() || (!trusted_owner || (!owner_ok && mode & 0o022 != 0 && mode & 0o1000 == 0))
         || (private && (!owner_ok || mode & 0o777 != 0o700))
-        || (!private && mode & 0o022 != 0 && mode & 0o1000 == 0) { return Err(StoreError::Unavailable); }
+        || (!private && mode & 0o022 != 0 && mode & 0o1000 == 0) { return Err(StoreError::Invalid); }
     Ok(())
 }
 #[cfg(unix)]
@@ -1053,7 +1076,10 @@ fn safe_generation_id(value: &str) -> bool {
 }
 #[cfg(all(test, unix))]
 mod errno_tests {
-    use super::{store_error_for_errno, StoreError};
+    use super::{
+        open_directory_at, remove_generation_if_unleased, store_error_for_errno,
+        validate_directory_owner_mode, StoreError,
+    };
 
     #[test]
     fn environment_errnos_map_to_unavailable() {
@@ -1067,12 +1093,56 @@ mod errno_tests {
 
     #[test]
     fn deterministic_causes_and_unknown_errnos_map_to_invalid() {
-        for errno in [libc::ENOENT, libc::ELOOP, libc::EACCES, 0, 999] {
+        for errno in [libc::ENOENT, libc::ELOOP, 0, 999] {
             assert!(matches!(
                 store_error_for_errno(Some(errno)),
                 StoreError::Invalid
             ));
         }
         assert!(matches!(store_error_for_errno(None), StoreError::Invalid));
+    }
+
+    #[test]
+    fn permission_and_stale_handle_errnos_map_to_unavailable() {
+        // EACCES, ESTALE, and EAGAIN are environmental, not data
+        // corruption: a healthy generation hit by them must be
+        // retained, not pruned (decision recorded in ticket 1254).
+        for errno in [libc::EACCES, libc::ESTALE, libc::EAGAIN] {
+            assert!(matches!(
+                store_error_for_errno(Some(errno)),
+                StoreError::Unavailable
+            ));
+        }
+    }
+
+    #[test]
+    fn a_wrong_mode_directory_classifies_invalid_and_prunes() {
+        use std::os::unix::fs::PermissionsExt;
+        let temp = tempfile::tempdir().expect("tempdir");
+        let generations = temp.path().join("generations");
+        std::fs::create_dir_all(&generations).expect("generations dir");
+        let name = "g1234-abcd";
+        let generation = generations.join(name);
+        std::fs::create_dir(&generation).expect("generation dir");
+        std::fs::write(generation.join("lease.lock"), b"lease").expect("lease file");
+        std::fs::set_permissions(&generation, std::fs::Permissions::from_mode(0o700))
+            .expect("0700");
+
+        let parent = std::fs::File::open(&generations).expect("parent handle");
+        let handle = open_directory_at(&parent, name.as_ref()).expect("open generation");
+        assert!(validate_directory_owner_mode(&handle, true).is_ok());
+
+        // The deliberate mismatch prunes: the mode-wrong generation
+        // classifies Invalid and remove_generation_if_unleased removes
+        // it even though its lease file is intact (ticket 1254).
+        std::fs::set_permissions(&generation, std::fs::Permissions::from_mode(0o755))
+            .expect("0755");
+        let handle = open_directory_at(&parent, name.as_ref()).expect("reopen generation");
+        assert!(matches!(
+            validate_directory_owner_mode(&handle, true),
+            Err(StoreError::Invalid)
+        ));
+        assert!(remove_generation_if_unleased(&parent, &generations, name).expect("prune"));
+        assert!(!generation.exists());
     }
 }

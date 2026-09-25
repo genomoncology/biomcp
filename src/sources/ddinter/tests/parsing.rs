@@ -154,3 +154,16 @@ fn identity_terms_match_ddinter_rows_through_synonyms() {
             .contains(&normalize_name_key("acetylsalicylic acid").expect("key"))
     );
 }
+
+#[test]
+fn bundle_parse_errors_carry_the_read_marker() {
+    // Only marked errors render as "bundle could not be read"; the
+    // marker travels with the file detail (ticket 1254).
+    let body = b"DDInterID_A,Drug_A,DDInterID_B,Drug_B\nDDI1A,aspirin,DDI1B,warfarin\n";
+    let error = parse_csv_rows("ddinter_downloads_code_A.csv", body).expect_err("missing column");
+    let BioMcpError::Api { message, .. } = &error else {
+        panic!("expected Api error, got {error:?}");
+    };
+    assert!(message.starts_with(super::super::DDINTER_BUNDLE_READ_MARKER));
+    assert!(message.contains("ddinter_downloads_code_A.csv"));
+}

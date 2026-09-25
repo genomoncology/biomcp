@@ -80,4 +80,33 @@ GenCC follow-ups), items 5-9 a second (hygiene and guards), items
 ## Review
 
 - Design review: this ticket is the design; deviations recorded here
+- Item 1 done: the fold takes synonyms from the chosen anchor hit only
+  (the first hit with a best name); `merge_mychem_hits` tests prove
+  the >3-synonym passthrough into `ddinter_synonyms` and that a pooled
+  combination-product synonym (`dipyridamole`) no longer widens the
+  identity; the new `ddinter_identity_for_anchor` seam
+  (`src/entities/drug/interactions.rs`) is the real call-site helper
+  and `aggregate_rows` tests prove the partner row survives.
+- Item 2 done: `cached_index_freshness_ignores_later_file_replacement`
+  was vacuous and is replaced by two tests that drive
+  `cached_index_for_root` with real bundle CSVs and pin both
+  directions with `File::set_modified` (stale load stays stale after
+  fresh replacement; fresh load stays fresh after the files age).
+- Item 3 done: bundle read/parse errors carry
+  `DDINTER_BUNDLE_READ_MARKER` and only those render as "bundle could
+  be read" text; the sync HTTP failure keeps the generic API line and
+  no longer embeds the upstream body excerpt (the HTML content-type
+  check also drops its excerpt); tests pin both arms and the
+  covered-zero-rows wording.
+- Item 4 done: `validate_directory_owner_mode` and `open_directory_at`
+  classify through the errno taxonomy, so a deliberate mismatch (0755
+  mode, wrong owner, not-a-directory) is `Invalid` and those
+  generations prune; `remove_generation_if_unleased` tolerates
+  `Invalid` from its checks and still removes; the 0755-generation
+  test proves the prune end to end through a real publish cycle.
+  EACCES/ESTALE/EAGAIN decision: they map to `Unavailable` (retain),
+  because they are environmental — permission changes, NFS stale
+  handles, transient contention — and pruning a healthy generation
+  over them would be destructive; the errno unit tests record it.
+- Items 5-12: not started; next batch.
 - Code review: pending

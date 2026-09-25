@@ -478,10 +478,20 @@ impl BioMcpError {
             {
                 "PMC Open Access package-route resolution failed.".to_string()
             }
-            // DDInter parse/read errors carry the bundle file name in
-            // their message; surface it instead of a generic API line.
-            Self::Api { message, .. } if source == "DDInter" => {
-                format!("DDInter bundle could not be read: {message}")
+            // DDInter parse/read errors are marked with the bundle
+            // prefix; only those surface as a bundle-read failure.
+            // Unmarked Api errors (download failures) keep the generic
+            // line so upstream body text never leaks (ticket 1254).
+            Self::Api { message, .. }
+                if source == "DDInter"
+                    && message.starts_with(crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER) =>
+            {
+                format!(
+                    "DDInter bundle could not be read: {}",
+                    message
+                        .strip_prefix(crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER)
+                        .unwrap_or(message)
+                )
             }
             Self::Api { .. } => format!("API request to {source} failed."),
             Self::ApiJson { api, .. } if source == "DDInter" => {
@@ -898,6 +908,48 @@ mod tests {
         let bounded = bounded_external_message(&over);
         assert_eq!(bounded.len(), 512);
         assert!(bounded.is_char_boundary(bounded.len()));
+    }
+
+    #[test]
+    fn ddinter_bundle_read_errors_render_with_their_file_detail() {
+        let marker = crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER;
+        let error = BioMcpError::Api {
+            api: "DDInter".to_string(),
+            message: format!("{marker}ddinter_downloads_code_A.csv could not be parsed: bad quote"),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "DDInter bundle could not be read: ddinter_downloads_code_A.csv could not be parsed: bad quote"
+        );
+        assert!(!projection.message.contains(marker));
+    }
+
+    #[test]
+    fn ddinter_download_failures_keep_the_generic_line_and_leak_no_body() {
+        let error = BioMcpError::Api {
+            api: "DDInter".to_string(),
+            message:
+                "ddinter_downloads_code_A.csv: HTTP 503 Service Unavailable: upstream outage html"
+                    .to_string(),
+        };
+        let projection = error.public_projection();
+        assert_eq!(projection.message, "API request to DDInter failed.");
+        assert!(!projection.message.contains("503"));
+        assert!(!projection.message.contains("upstream outage html"));
+    }
+
+    #[test]
+    fn ddinter_decode_failures_name_the_api() {
+        let error = BioMcpError::ApiJson {
+            api: "DDInter".to_string(),
+            source: serde_json::from_str::<serde_json::Value>("nope").expect_err("parse error"),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "DDInter bundle could not be decoded (DDInter)"
+        );
     }
 
     #[test]

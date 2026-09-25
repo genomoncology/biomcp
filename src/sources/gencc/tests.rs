@@ -563,6 +563,60 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
 }
 #[test]
 #[serial_test::serial(source_env)]
+fn generation_cleanup_prunes_a_wrong_mode_generation_directory() {
+    // A 0755 generation is a deliberate mismatch, not a transient
+    // failure: cleanup prunes it instead of warning on every publish
+    // (ticket 1254, from the 1239 follow-up).
+    use super::store::{PublishMetadata, Store};
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("gencc");
+    let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
+    let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+    let store = Store::open().unwrap();
+    let body_sha256 = format!("{:x}", Sha256::digest(fixture()));
+    let publish = |now: &str| {
+        store
+            .publish(
+                &dataset,
+                PublishMetadata {
+                    now,
+                    etag: "\"fixture\"",
+                    last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                    endpoint: ENDPOINT,
+                    body_sha256: &body_sha256,
+                    row_count: dataset.row_count(),
+                },
+            )
+            .unwrap()
+    };
+    let g1 = publish("2026-01-01T00:00:00Z");
+    let g1_name = g1.state.active_generation.as_deref().unwrap().to_string();
+    let g1_dir = root.join("generations").join(&g1_name);
+    drop(g1);
+    drop(publish("2026-01-02T00:00:00Z"));
+    assert!(g1_dir.exists());
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&g1_dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    // Publishing again runs cleanup: the wrong-mode generation is
+    // pruned, and only the two healthy generations remain.
+    drop(publish("2026-01-03T00:00:00Z"));
+    assert!(
+        !g1_dir.exists(),
+        "a 0755 generation must be pruned, not retained"
+    );
+    assert_eq!(
+        std::fs::read_dir(root.join("generations")).unwrap().count(),
+        2
+    );
+}
+
+#[test]
+#[serial_test::serial(source_env)]
 fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
     use super::store::{PublishMetadata, Store};
     let temp = tempfile::tempdir().unwrap();

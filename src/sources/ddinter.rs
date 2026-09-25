@@ -53,6 +53,12 @@ const DDINTER_BUNDLE: [(&str, &str); 8] = [
     ),
 ];
 
+/// Message prefix marking DDInter errors that come from reading or
+/// parsing the bundle itself. Only these render as "bundle could not
+/// be read" (error.rs); download failures keep the generic API line
+/// so no upstream body text leaks (ticket 1254).
+pub(crate) const DDINTER_BUNDLE_READ_MARKER: &str = "DDInter bundle file ";
+
 pub(crate) const DDINTER_REQUIRED_FILES: &[&str] = &[
     DDINTER_BUNDLE[0].0,
     DDINTER_BUNDLE[1].0,
@@ -278,17 +284,22 @@ fn load_index(root: &Path) -> Result<DdinterIndex, BioMcpError> {
     Ok(DdinterIndex { rows, by_name })
 }
 
-fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteractionRow>, BioMcpError> {
+pub(crate) fn parse_csv_rows(
+    file_name: &str,
+    body: &[u8],
+) -> Result<Vec<DdinterInteractionRow>, BioMcpError> {
     let mut reader = ReaderBuilder::new().trim(csv::Trim::All).from_reader(body);
     let headers = reader.headers().map_err(|source| BioMcpError::Api {
         api: DDINTER_API.to_string(),
-        message: format!("{file_name} could not be parsed: {source}"),
+        message: format!("{DDINTER_BUNDLE_READ_MARKER}{file_name} could not be parsed: {source}"),
     })?;
     for required in ["DDInterID_A", "Drug_A", "DDInterID_B", "Drug_B", "Level"] {
         if !headers.iter().any(|header| header == required) {
             return Err(BioMcpError::Api {
                 api: DDINTER_API.to_string(),
-                message: format!("{file_name} is missing required column {required}"),
+                message: format!(
+                    "{DDINTER_BUNDLE_READ_MARKER}{file_name} is missing required column {required}"
+                ),
             });
         }
     }
@@ -296,7 +307,9 @@ fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteraction
     for row in reader.deserialize::<DdinterCsvRow>() {
         let row = row.map_err(|source| BioMcpError::Api {
             api: DDINTER_API.to_string(),
-            message: format!("{file_name} could not be parsed: {source}"),
+            message: format!(
+                "{DDINTER_BUNDLE_READ_MARKER}{file_name} could not be parsed: {source}"
+            ),
         })?;
         if row.ddinter_id_a.trim().is_empty()
             || row.drug_a.trim().is_empty()
@@ -305,7 +318,9 @@ fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteraction
         {
             return Err(BioMcpError::Api {
                 api: DDINTER_API.to_string(),
-                message: format!("{file_name} contained an incomplete interaction row"),
+                message: format!(
+                    "{DDINTER_BUNDLE_READ_MARKER}{file_name} contained an incomplete interaction row"
+                ),
             });
         }
         out.push(DdinterInteractionRow {
@@ -416,12 +431,12 @@ async fn sync_export(
 
     let context = crate::error::SourceContext::retry(crate::error::SourceProvider::DDINTER);
     if !status.is_success() {
+        // A download failure is not a bundle read: no marker, so the
+        // generic API line renders, and no upstream body text is
+        // embedded (ticket 1254).
         return Err(BioMcpError::Api {
             api: DDINTER_API.to_string(),
-            message: format!(
-                "{file_name}: HTTP {status}: {}",
-                crate::sources::body_excerpt(&body)
-            ),
+            message: format!("{file_name}: HTTP {status}"),
         }
         .with_source_context(context));
     }
@@ -434,7 +449,7 @@ async fn sync_export(
 
 fn ensure_csv_content_type(
     header: Option<&reqwest::header::HeaderValue>,
-    body: &[u8],
+    _body: &[u8],
 ) -> Result<(), BioMcpError> {
     let Some(header) = header else {
         return Ok(());
@@ -451,9 +466,10 @@ fn ensure_csv_content_type(
     if matches!(media_type.as_str(), "text/html" | "application/xhtml+xml") {
         return Err(BioMcpError::Api {
             api: DDINTER_API.to_string(),
+            // No body excerpt: the content-type alone names the failure
+            // and upstream text must not leak (ticket 1254).
             message: format!(
-                "Unexpected HTML response (content-type: {raw}): {}",
-                crate::sources::body_excerpt(body)
+                "{DDINTER_BUNDLE_READ_MARKER}unexpected HTML response (content-type: {raw})"
             ),
         });
     }
