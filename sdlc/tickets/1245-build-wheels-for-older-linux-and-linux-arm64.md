@@ -63,4 +63,7 @@ and a changelog line — no Rust source changes.
   binaries import GLIBC_2.39); revised to manylinux containers with a
   mechanical symbol check, ACCEPT on re-review 2026-09-24 with two P2
   wording notes folded in above
-- Code review: pending
+- Code review: REJECT once (missing changelog ticket marker; the ARM
+  artifact not pinned; both one-line fixes), ACCEPT after 2026-09-24
+  with the report-only items folded in; see
+  `sdlc/records/1245-build-wheels-for-older-linux-and-linux-arm64.md`

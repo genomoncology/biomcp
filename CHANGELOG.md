@@ -35,6 +35,14 @@
 
 ### Fixes
 
+- The glibc floor check now compares versions as integer pairs, the
+  way the dynamic loader orders them, so a highest reference of 2.9
+  passes a 2.28 floor and 2.30 no longer reads as 2.3. The Linux
+  tarballs build in the same `manylinux_2_28` containers as the wheels
+  and pass the same floor scan over the pre-tar binary, so the install
+  docs' single glibc 2.28 floor now holds for both artifact families,
+  and the release containers install a checksum-pinned rustup instead
+  of piping a remote script into a shell. (1249)
 - Restored container image publication on release. The `Release` workflow
   verifies the published sidecars of the release's Linux tarballs, pushes
   `ghcr.io/genomoncology/biomcp:<version>` with `linux/amd64` and `linux/arm64`

@@ -70,10 +70,11 @@ jobs:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             artifact: biomcp-linux-x86_64.tar.gz
-          - os: ubuntu-24.04
+            container: quay.io/pypa/manylinux_2_28_x86_64
+          - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             artifact: biomcp-linux-arm64.tar.gz
-            cross: true
+            container: quay.io/pypa/manylinux_2_28_aarch64
           - os: macos-14
             target: aarch64-apple-darwin
             artifact: biomcp-darwin-arm64.tar.gz
@@ -92,28 +93,48 @@ jobs:
           ref: ${{ inputs.tag || github.ref_name }}
 
       - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        if: runner.os != 'Linux'
         with:
           toolchain: 1.93.1
           targets: ${{ matrix.target }}
 
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b
+        if: runner.os != 'Linux'
         continue-on-error: true
         with:
           version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install cross-compilation toolchain (Linux ARM64)
-        if: runner.os == 'Linux' && matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
-          echo 'CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc' >> "$GITHUB_ENV"
-
       - name: Build release binary
+        if: runner.os != 'Linux'
         run: |
           cargo build --release --locked --target ${{ matrix.target }}
 
-      - name: Package (Unix)
-        if: runner.os != 'Windows'
+      # Linux tarballs build inside the same manylinux_2_28 container
+      # as the wheels, so both artifact families carry one documented
+      # glibc floor. The floor scan runs over the pre-tar binary: the
+      # same bytes the archive ships. rustup is pinned by version and
+      # checksum; nothing pipes a remote script into a shell.
+      - name: Build and package inside the manylinux 2_28 container
+        if: runner.os == 'Linux'
+        run: |
+          docker run --rm -v "$PWD:/io" -w /io "${{ matrix.container }}" bash -euo pipefail -c '
+            curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init
+            curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init.sha256
+            sha256sum -c rustup-init.sha256
+            chmod +x rustup-init
+            ./rustup-init -y --default-toolchain 1.93.1 --profile minimal
+            . "$HOME/.cargo/env"
+            cargo build --release --locked --target ${{ matrix.target }}
+            /opt/python/cp312-cp312/bin/python scripts/check-wheel-glibc-floor.py --elf target/${{ matrix.target }}/release/biomcp 2.28
+            cd target/${{ matrix.target }}/release
+            tar czf ../../../${{ matrix.artifact }} biomcp
+            cd ../../..
+            sha256sum ${{ matrix.artifact }} > ${{ matrix.artifact }}.sha256
+          '
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
         run: |
           cd target/${{ matrix.target }}/release
           tar czf ../../../${{ matrix.artifact }} biomcp
@@ -199,15 +220,33 @@ jobs:
 
       # Linux wheels build inside the manylinux_2_28 container so the
       # glibc 2.28 floor is true by construction, not merely tagged;
-      # the scan step enforces it against the artifact that ships.
+      # the platform tag is pinned with maturin and the scan step
+      # enforces the floor against the artifact that ships. rustup is
+      # pinned by version and checksum; nothing pipes a remote script
+      # into a shell.
       - name: Build wheels inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
           docker run --rm -v "$PWD:/io" -w /io "${{ matrix.container }}" bash -euo pipefail -c '
-            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.93.1 --profile minimal
+            curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init
+            curl --proto "=https" --tlsv1.2 -sSfO https://static.rust-lang.org/rustup/archive/1.28.2/${{ matrix.target }}/rustup-init.sha256
+            sha256sum -c rustup-init.sha256
+            chmod +x rustup-init
+            ./rustup-init -y --default-toolchain 1.93.1 --profile minimal
             . "$HOME/.cargo/env"
             /opt/python/cp312-cp312/bin/python -m pip install maturin==1.9.6
-            /opt/python/cp312-cp312/bin/python -m maturin build --release --locked --target ${{ matrix.target }} -o target/wheels
+            /opt/python/cp312-cp312/bin/python -m maturin build --release --locked --target ${{ matrix.target }} --compatibility manylinux_2_28 -o target/wheels
+            case "${{ matrix.target }}" in
+              x86_64-unknown-linux-gnu) tag=manylinux_2_28_x86_64 ;;
+              aarch64-unknown-linux-gnu) tag=manylinux_2_28_aarch64 ;;
+              *) echo "unexpected Linux target: ${{ matrix.target }}" >&2; exit 1 ;;
+            esac
+            for wheel in target/wheels/*.whl; do
+              case "$wheel" in
+                *"$tag".whl) ;;
+                *) echo "wheel must end in $tag.whl: $wheel" >&2; exit 1 ;;
+              esac
+            done
             /opt/python/cp312-cp312/bin/python scripts/check-wheel-glibc-floor.py target/wheels/*.whl 2.28
           '
 
@@ -272,6 +311,11 @@ jobs:
           docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" "${{ matrix.container }}" bash -euo pipefail -c '
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
             /opt/python/cp312-cp312/bin/biomcp --version
+            stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"
+            case "$stats" in
+              "{"*) ;;
+              *) echo "cache stats must print a JSON object, got: $stats" >&2; exit 1 ;;
+            esac
           '
 
       - name: Smoke the installed wheel on every shipped platform
