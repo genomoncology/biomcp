@@ -279,7 +279,7 @@ fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
     }
     .to_string();
     Some(format!(
-        "{} of the kept trial(s) could not be detail-verified (detail fetch failed or criteria text was missing){ids};          eligibility and facility filters may not have applied to them",
+        "{} of the kept trial(s) could not be detail-verified (detail fetch failed or criteria text was missing){ids}; eligibility and facility filters may not have applied to them",
         report.unverified_kept
     ))
 }
