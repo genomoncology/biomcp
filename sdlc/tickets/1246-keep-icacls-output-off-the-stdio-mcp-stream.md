@@ -28,3 +28,9 @@ Source issue: `sdlc/issues/2026-09-24-windows-icacls-output-corrupts-the-stdio-m
   dropped the re-securing posture), findings folded, re-review ACCEPT
   2026-09-24
 - Code review: pending
+- Implementation note: no Windows host exists for local measurement;
+  the "before" count is the reporter's ~20 spawns per call, and the
+  memo makes steady state zero by construction (every path after its
+  first secure returns from the memo). The windows-contracts job now
+  runs the stdio contract and the `cache::private` unit tests on real
+  Windows, which is where both are falsifiable.

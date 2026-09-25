@@ -489,15 +489,55 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
     } else {
         format!("{user}:F")
     };
+    secure_with_icacls(path, &grant)
+}
+
+/// Per-process memo of paths already secured by a successful `icacls`
+/// run. The first encounter in a process still repairs a pre-existing
+/// or externally broadened entry, and steady-state writes in the same
+/// process spawn nothing. `icacls` output would otherwise corrupt the
+/// stdio MCP stream, and the reporter of GitHub #283 counted about 20
+/// spawns per call. ACLs broadened after a path's first secure in this
+/// process are re-repaired only after a restart.
+#[cfg(windows)]
+fn secure_with_icacls(path: &Path, grant: &str) -> io::Result<()> {
+    let memo_key = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    {
+        let secured = icacls_secured_paths()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if secured.contains(&memo_key) {
+            return Ok(());
+        }
+    }
+    // stdio must stay the protocol stream: the child inherits the
+    // server's handles otherwise, and icacls writes a localized line
+    // (GBK bytes on zh-CN consoles) that breaks strict clients.
     let status = std::process::Command::new("icacls.exe")
         .arg(path)
         .args(["/inheritance:r", "/grant:r"])
-        .arg(&grant)
+        .arg(grant)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
         .status()?;
-    status
-        .success()
-        .then_some(())
-        .ok_or_else(|| io::Error::other(format!("cannot secure: {path:?}")))
+    if !status.success() {
+        return Err(io::Error::other(format!("cannot secure: {path:?}")));
+    }
+    icacls_secured_paths()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .insert(memo_key);
+    Ok(())
+}
+
+#[cfg(windows)]
+fn icacls_secured_paths() -> &'static std::sync::Mutex<std::collections::HashSet<std::path::PathBuf>>
+{
+    static SECURED: std::sync::OnceLock<
+        std::sync::Mutex<std::collections::HashSet<std::path::PathBuf>>,
+    > = std::sync::OnceLock::new();
+    SECURED.get_or_init(Default::default)
 }
 
 fn check_variant_article_deadline() -> io::Result<()> {
@@ -720,5 +760,47 @@ mod windows_tests {
     #[test]
     fn unreadable_handle_metadata_fails_closed() {
         assert!(windows_link_count_from_handle(std::ptr::null_mut()).is_err());
+    }
+
+    #[test]
+    fn second_secure_of_the_same_path_skips_the_child_spawn() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let entry = root.path().join("entry");
+        fs::create_dir(&entry).expect("entry directory");
+        let user = std::env::var("USERNAME").expect("current user");
+
+        secure_with_icacls(&entry, &format!("{user}:F")).expect("first secure");
+        let secured = icacls_secured_paths()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let memo_key = entry.canonicalize().expect("canonical entry");
+        assert!(secured.contains(&memo_key));
+        drop(secured);
+
+        // A real icacls run with this grant fails, so success proves the
+        // memoized path never spawned the child.
+        secure_with_icacls(&entry, "definitely-not-a-user:F")
+            .expect("memoized second secure must not spawn icacls");
+    }
+
+    #[test]
+    fn first_secure_of_each_distinct_path_still_repairs() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let first = root.path().join("first");
+        let second = root.path().join("second");
+        fs::create_dir(&first).expect("first directory");
+        fs::create_dir(&second).expect("second directory");
+        let user = std::env::var("USERNAME").expect("current user");
+
+        secure_with_icacls(&first, &format!("{user}:F")).expect("first path secures");
+        secure_with_icacls(&second, &format!("{user}:F")).expect("second path secures");
+
+        let secured = icacls_secured_paths()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let first_key = first.canonicalize().expect("canonical first");
+        let second_key = second.canonicalize().expect("canonical second");
+        assert!(secured.contains(&first_key));
+        assert!(secured.contains(&second_key));
     }
 }

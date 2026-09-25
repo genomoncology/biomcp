@@ -35,6 +35,12 @@
 
 ### Fixes
 
+- Windows: `biomcp serve` no longer lets `icacls.exe` write into the
+  stdio MCP stream. Its localized success line broke strict clients
+  between JSON-RPC frames (GBK bytes on zh-CN consoles); the child's
+  streams are now discarded, and steady-state managed writes spawn no
+  `icacls` at all. GitHub #283. (1246)
+
 - Restored container image publication on release. The `Release` workflow
   verifies the published sidecars of the release's Linux tarballs, pushes
   `ghcr.io/genomoncology/biomcp:<version>` with `linux/amd64` and `linux/arm64`
