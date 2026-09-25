@@ -316,8 +316,11 @@ fn typed_search_schema(schema: &mut schemars::Schema) {
 /// Merges branch property maps into one flat root map. Same-named fields
 /// keep one schema when identical; otherwise the collision rule applies:
 /// enum/const values union into one enum, and string-vs-array fields
-/// publish `["string","array"]` with both sides' constraints. The merged
-/// root can only be wider than any single branch, never narrower.
+/// publish `["string","array"]` with both sides' constraints. The union
+/// widens the accepted fields, but a first-seen constraint can be
+/// narrower than a permissive branch (sections keep `uniqueItems` even
+/// though adverse-event accepts duplicates); the body stays prescriptive
+/// per entity.
 fn merge_branch_properties(branches: &[Value]) -> serde_json::Map<String, Value> {
     let mut properties = serde_json::Map::new();
     for branch in branches {

@@ -98,32 +98,24 @@ fn tool_schema(tool: &Tool) -> serde_json::Value {
     serde_json::to_value(&tool.input_schema).unwrap_or_else(|_| json!({}))
 }
 
-fn get_schema_branch<'a>(
-    schema: &'a serde_json::Value,
-    entity: &str,
-) -> anyhow::Result<&'a serde_json::Value> {
-    schema["oneOf"]
-        .as_array()
-        .and_then(|branches| {
-            branches
-                .iter()
-                .find(|branch| branch["properties"]["entity"]["const"] == entity)
-        })
-        .ok_or_else(|| anyhow::anyhow!("get schema missing {entity} branch"))
+fn flat_entity_enum(schema: &serde_json::Value) -> anyhow::Result<&[serde_json::Value]> {
+    schema
+        .pointer("/properties/entity/enum")
+        .and_then(serde_json::Value::as_array)
+        .map(Vec::as_slice)
+        .ok_or_else(|| anyhow::anyhow!("schema missing flat entity enum"))
 }
 
-fn get_schema_sections<'a>(
-    schema: &'a serde_json::Value,
-    entity: &str,
-) -> anyhow::Result<Vec<&'a str>> {
-    get_schema_branch(schema, entity)?["properties"]["sections"]["items"]["enum"]
-        .as_array()
-        .ok_or_else(|| anyhow::anyhow!("get schema {entity} branch missing sections enum"))?
+fn flat_section_enum(schema: &serde_json::Value) -> anyhow::Result<Vec<&str>> {
+    schema
+        .pointer("/properties/sections/items/enum")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| anyhow::anyhow!("schema missing merged sections enum"))?
         .iter()
         .map(|section| {
             section
                 .as_str()
-                .ok_or_else(|| anyhow::anyhow!("get schema {entity} branch has non-string section"))
+                .ok_or_else(|| anyhow::anyhow!("merged sections enum has a non-string section"))
         })
         .collect()
 }
@@ -336,60 +328,58 @@ async fn print_typed_tool_surface(
     let gene_cspec_schema = tool_schema(gene_cspec);
     let variant_articles_schema = tool_schema(variant_articles);
 
-    if search_schema
-        .get("oneOf")
-        .and_then(serde_json::Value::as_array)
-        .is_none_or(|branches| branches.len() != 8)
-    {
-        anyhow::bail!("search schema must have eight entity-specific branches");
-    }
+    // Flat roots (ADR 0002): one object schema per tool, no root
+    // combinators, entity enum plus the merged union of branch properties.
     for (tool, schema) in [("search", &search_schema), ("get", &get_schema)] {
         if schema.get("type").and_then(serde_json::Value::as_str) != Some("object") {
             anyhow::bail!("{tool} schema must declare a top-level object type");
         }
+        for combinator in ["oneOf", "anyOf", "allOf"] {
+            if schema.get(combinator).is_some() {
+                anyhow::bail!("{tool} schema must publish a flat root without {combinator}");
+            }
+        }
     }
-    if !json_property_contains(&search_schema, "entity", "gwas") {
-        anyhow::bail!("search entity schema missing gwas branch");
+    let search_entities = flat_entity_enum(&search_schema)?;
+    if search_entities.len() != 8 {
+        anyhow::bail!("search entity enum must list the eight search entities");
     }
-    if !json_property_contains(&search_schema, "entity", "author") {
-        anyhow::bail!("search entity schema missing author enum");
+    let get_entities = flat_entity_enum(&get_schema)?;
+    if get_entities.len() != 13 {
+        anyhow::bail!("get entity enum must list the thirteen gettable entities");
     }
-    if get_schema_branch(&get_schema, "author")?["properties"]
-        .get("sections")
-        .is_some()
-    {
-        anyhow::bail!("get schema author branch must not accept sections");
+    for entity in ["gwas", "author", "gene"] {
+        if !search_entities.contains(&json!(entity)) {
+            anyhow::bail!("search entity enum missing {entity}");
+        }
+    }
+    if !get_entities.contains(&json!("author")) {
+        anyhow::bail!("get entity enum missing author");
+    }
+    // Gene's branch fields ride in the merged union.
+    for field in ["query", "region", "gene_type", "chromosome"] {
+        if search_schema
+            .pointer(&format!("/properties/{field}"))
+            .is_none()
+        {
+            anyhow::bail!("search flat root missing gene field {field}");
+        }
     }
     if !json_property_contains(&search_schema, "limit", "25") {
         anyhow::bail!("search limit schema missing 25 bound");
     }
-    for (section, owner) in [
-        ("ontology", "gene"),
-        ("conditions", "diagnostic"),
-        ("guidelines", "pgx"),
-        ("guidance", "adverse-event"),
-    ] {
-        let owners = get_schema["oneOf"]
-            .as_array()
-            .expect("get schema branches")
-            .iter()
-            .filter_map(|branch| {
-                let entity = branch["properties"]["entity"]["const"].as_str()?;
-                let sections = branch["properties"]["sections"]["items"]["enum"].as_array()?;
-                sections.contains(&json!(section)).then_some(entity)
-            })
-            .collect::<Vec<_>>();
-        if owners != [owner] {
-            anyhow::bail!("get section {section} must belong only to {owner}; got {owners:?}");
+    // The merged sections enum carries every entity's sections and must
+    // not expose the CLI-only terminal forms.
+    let sections = flat_section_enum(&get_schema)?;
+    for section in ["ontology", "conditions", "guidelines", "guidance", "assets"] {
+        if !sections.contains(&section) {
+            anyhow::bail!("get merged sections must contain {section}");
         }
     }
-    let article_sections = get_schema_sections(&get_schema, "article")?;
-    if !article_sections.contains(&"assets") || article_sections.contains(&"asset") {
-        anyhow::bail!("article get schema must expose assets but not CLI-only asset");
-    }
-    let trial_sections = get_schema_sections(&get_schema, "trial")?;
-    if trial_sections.contains(&"document") || trial_sections.contains(&"documents") {
-        anyhow::bail!("trial get schema must not expose terminal document forms");
+    for banned in ["asset", "document", "documents"] {
+        if sections.contains(&banned) {
+            anyhow::bail!("get merged sections must not expose CLI-only {banned}");
+        }
     }
     for bound in ["1", "50"] {
         if !named_property_contains(&variant_normalize_car_schema, "inputs", bound) {
@@ -422,11 +412,11 @@ async fn print_typed_tool_surface(
     println!("ClinGen schemas validate their named properties");
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
-    println!("search and get schemas use entity-specific branches");
+    println!("search and get schemas publish flat roots without combinators");
     println!("search and get schemas declare object roots");
     println!("search schema includes a bounded limit");
     println!("search and get schemas include author entity");
-    println!("get schema assigns sections only to their owning entities");
+    println!("get schema merges per-entity sections and hides CLI-only forms");
     println!("article schema exposes assets manifest but not asset download");
     println!("variant_articles schema includes identity verification controls");
     println!("indexing");

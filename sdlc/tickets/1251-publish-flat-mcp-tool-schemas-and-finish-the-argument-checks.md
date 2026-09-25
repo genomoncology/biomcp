@@ -107,6 +107,9 @@ stay recorded residuals, not code here.
 - The flat schemas shrink tools/list: the per-entity branch objects
   are no longer serialized eight (search), thirteen (get), and three
   (erepo) times inside oneOf wrappers.
+- An explicit JSON `null` for `limit` or `offset` is treated as absent
+  (defaults apply); only present non-null wrong types reject. Recorded
+  as deliberate leniency, not changed.
 
 ## Review
 

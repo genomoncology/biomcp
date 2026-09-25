@@ -250,11 +250,11 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2540,
+      "baseline_lines": 2543,
       "floor_lines": 1956,
       "authorized_increase": {
         "ticket": "1251",
-        "delta": 584,
+        "delta": 587,
         "reason": "Flat root schemas built from the branch consts (union merge, hoisted ENTITIES), the limit/offset rejection, and the rewritten drift tests.",
         "removal_condition": "Move the schema builders into a submodule when shell.rs next shrinks."
       }
