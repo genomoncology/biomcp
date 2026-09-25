@@ -76,7 +76,11 @@ of 18 workflow mutations outside the version-check job stay green.
 
 ## Review
 
-- Design review: pending
+- Design review: REJECT once (records-only discovery would have
+  silently skipped ticket 1246 — no record existed at its merge; the
+  blanket continue-on-error ban conflicted with the protoc
+  carve-out), findings folded to union discovery and a run-step-scoped
+  ban, re-review ACCEPT 2026-09-25
 - Code review: ACCEPT with two P2s folded (real-git fixture;
   job-level escape assert) 2026-09-25
 - Verification: yellow gate at 2159551c lint/test/spec OK; see
