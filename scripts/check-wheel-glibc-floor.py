@@ -6,8 +6,10 @@ Usage: check-wheel-glibc-floor.py WHEEL [FLOOR]
 
 FLOOR defaults to 2.28. Versions compare as integer (major, minor)
 pairs, the way the dynamic loader sees them, so 2.30 outranks 2.9
-instead of reading as the decimal 2.3. The wheel mode scans every
-member for ``GLIBC_x.y`` byte markers (the dynamic symbol versions the
+instead of reading as the decimal 2.3. The wheel mode scans every ELF
+member the wheel ships -- extension modules, the ``biomcp`` module
+binary, and the ``biomcp-cli`` console launcher -- for ``GLIBC_x.y``
+byte markers (the dynamic symbol versions the
 binary actually imports); the ``--elf`` mode scans one raw ELF file,
 so the pre-tar release binary can carry the same floor. Runs inside
 the manylinux build container so the floor is checked against the
@@ -45,16 +47,20 @@ def render(version: tuple[int, int]) -> str:
     return f"{version[0]}.{version[1]}"
 
 
+def is_scanned_member(name: str) -> bool:
+    """Every ELF member the wheel ships: native extension modules,
+    the ``biomcp`` extension-module binary, and the ``biomcp-cli``
+    console launcher (maturin places both at a package or root path)."""
+    base = name.rsplit("/", 1)[-1]
+    return name.endswith(".so") or base in ("biomcp", "biomcp-cli")
+
+
 def wheel_floor(wheel: Path) -> tuple[int, int]:
     top = NO_VERSION
     scanned = 0
     with zipfile.ZipFile(wheel) as archive:
         for name in archive.namelist():
-            if (
-                not name.endswith(".so")
-                and not name.endswith("/biomcp")
-                and name != "biomcp"
-            ):
+            if not is_scanned_member(name):
                 continue
             scanned += 1
             versions = member_versions(archive.read(name))
