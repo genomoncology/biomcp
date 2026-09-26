@@ -517,9 +517,6 @@ fn secure_with_icacls(path: &Path, grant: &str) -> io::Result<()> {
         .arg(path)
         .args(["/inheritance:r", "/grant:r"])
         .arg(grant)
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
         .status()?;
     if !status.success() {
         return Err(io::Error::other(format!("cannot secure: {path:?}")));
