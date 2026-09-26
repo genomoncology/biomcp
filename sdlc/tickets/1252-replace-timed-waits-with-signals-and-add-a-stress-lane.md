@@ -131,7 +131,10 @@ guessed at a cause from one 200 ms heartbeat sample.
 
 ## Review
 
-- Design review: pending
+- Design review: REJECT once (four P1s: the settle diagnostic could
+  not land under the size gate, the heartbeat lint rule had no
+  matcher, the scale factor's reach was overstated, and the stress
+  acceptance had no red side), all folded, re-review ACCEPT 2026-09-25
 - Code review: REJECT once (the ratchet tripped on its own test
   literals; two stale entries), fixed and verified 2026-09-25
 - Verification: yellow gate at e01ebf7a lint/test/spec/stress OK; see

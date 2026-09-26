@@ -43,7 +43,9 @@ wrong protoc rationale — folded and re-reviewed ACCEPT; code review
 REJECT once on a one-character quoting bug in the container smoke
 (`"{"*")` does not terminate a bash case pattern; every release would
 have failed the smoke step) plus the missing guard pin, both fixed
-and pinned; yellow gate at 68f885c1 — lint, test, and spec OK.
+and pinned — the fix was verified by the focused test run and the
+gate, not by a fresh reviewer pass; no separate re-review accept
+exists; yellow gate at 68f885c1 — lint, test, and spec OK.
 
 Residuals: the container legs get their first live exercise at the
 0.9.1 tag (recorded in the release-prep checklist); the two rustup

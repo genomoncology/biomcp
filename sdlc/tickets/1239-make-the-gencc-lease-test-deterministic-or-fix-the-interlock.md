@@ -87,7 +87,6 @@ tests prove the mechanism either way.
 - Verification: yellow gate at 6b09b548 lint/test/spec OK, plus two more
   full `make test` runs green at the merged SHA 6836ed54 — three
   consecutive full-suite passes
-- Code review: pending
 
 ## Recorded residuals
 

@@ -92,4 +92,7 @@ the reviewer verified every seam against the code).
   the aging signal, the synonym seam did not exist, and the cap
   deferral was not recorded; then item 7 misstated the get.rs
   inventory; revised above, final verification ACCEPT 2026-09-24
-- Code review: pending
+- Code review: REJECT once with two P0s (a Result/Option method
+  mixup that broke the build, and the synonym population edit silently
+  missing so the seam shipped dead), both fixed and verified ACCEPT
+  2026-09-24
