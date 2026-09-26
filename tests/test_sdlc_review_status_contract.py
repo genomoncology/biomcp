@@ -25,17 +25,20 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # A review-status bullet in a ticket's Review section. The optional
-# parenthetical scope ("(batch 1)", "(batches 2-3)") names the slice.
+# parenthetical scope ("(batch 1)", "(batches 2-3)") names the slice;
+# the house shape puts it after the kind, and a leading scope is
+# accepted too. A scope only exempts a pending verdict when it names
+# an actual slice (batch/item), never an open-ended "future".
 REVIEW_LINE = re.compile(
-    r"^\s*-\s*(?P<scope>\((?P<scope_text>[^)]*)\))?\s*"
+    r"^\s*-\s*(?:\((?P<scope_text_pre>[^)]*)\)\s*)?"
     r"(?P<kind>design\s+re-review|code\s+re-review|design\s+review|code\s+review|re-review|review)"
+    r"(?:\s*\((?P<scope_text>[^)]*)\))?"
     r"\s*:\s*(?P<verdict>.*?)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
 PENDING = re.compile(r"pending", re.IGNORECASE)
-SCOPED = re.compile(r"batch|item|remaining|later|future", re.IGNORECASE)
+SCOPED = re.compile(r"batch|item", re.IGNORECASE)
 
-CONFLICT_MARKER = re.compile(r"^(<{7} |> {7}\|?={7}$|>{7} )", re.MULTILINE)
 MARKER_START = re.compile(r"^<{7} ")
 MARKER_END = re.compile(r"^>{7} ")
 MARKER_SEP = re.compile(r"^={7}$")
@@ -60,7 +63,7 @@ def _pending_review_lines(ticket: Path) -> list[tuple[int, str]]:
     for match in REVIEW_LINE.finditer(text):
         if not PENDING.search(match.group("verdict")):
             continue
-        scope_text = match.group("scope_text")
+        scope_text = match.group("scope_text") or match.group("scope_text_pre")
         if scope_text and SCOPED.search(scope_text):
             # A pending slice of an otherwise landed ticket: the scope
             # names the part (batch, item) that has not landed yet.
@@ -98,6 +101,9 @@ def test_pending_review_lines_catch_the_known_shapes() -> None:
         "- Code review (batches 2-3): pending": False,
         "- Code review: ACCEPT 2026-09-25": False,
         "- Verification: pending the yellow gate": False,
+        # A scope that names no slice exempts nothing.
+        "- Code review (final): pending": True,
+        "- Code review (remaining): pending": True,
     }
     import tempfile
 
@@ -170,9 +176,12 @@ def test_conflict_marker_scan_passes_clean_text(tmp_path: Path) -> None:
 def test_review_scan_requires_a_records_directory(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The landed set comes from sdlc/records; without it nothing fails."""
+    """The landed set comes from sdlc/records; without it nothing is landed."""
     (tmp_path / "tickets").mkdir()
     (tmp_path / "tickets" / "0001-open.md").write_text(
         "## Review\n\n- Code review: pending\n", encoding="utf-8"
     )
-    assert _pending_review_lines(tmp_path / "tickets" / "0001-open.md")
+    import sys
+
+    monkeypatch.setattr(sys.modules[__name__], "REPO_ROOT", tmp_path)
+    assert _landed_ticket_paths() == []
