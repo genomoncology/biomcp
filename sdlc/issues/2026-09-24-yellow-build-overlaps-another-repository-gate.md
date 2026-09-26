@@ -19,3 +19,20 @@ This issue records the defect only. It authorizes no interruption of another job
 Edit 2026-09-24 (queue owner): the original text named the other
 repository, which this repository's zero-coupling gate forbids; the
 name is now the generic phrase "the other repository". No observation changed.
+
+## Shared-lock protocol (2026-09-26, Ian's direction)
+
+BioMCP's gate scripts now take `~/.yellow-gate.lock` for the ENTIRE
+job — acquire before `make lint` and release after `GATES-DONE` —
+using `flock` (verified working on the host):
+
+    exec 9>"$HOME/.yellow-gate.lock"
+    flock 9
+    ... make lint / test / spec / stress ...
+    flock -u 9
+
+Any future BioMCP gate runner (agent or human) uses this shape; the
+one-gate-at-a-time check by pgrep is no longer the primary guard,
+only a fallback. The other repository's runner holds the same lock,
+so a job that starts while the lock is taken waits instead of
+overlapping.
