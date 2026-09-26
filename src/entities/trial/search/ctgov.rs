@@ -282,7 +282,7 @@ fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
         format!(" ({})", report.unverified_ids.join(", "))
     };
     Some(format!(
-        "The count may be too high: {} kept trials{ids} could not be checked because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.",
+        "The count may be too high: we could not check {} of the kept trials{ids}, because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.",
         report.unverified_kept
     ))
 }

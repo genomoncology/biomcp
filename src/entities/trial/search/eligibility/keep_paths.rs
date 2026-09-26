@@ -103,7 +103,16 @@ async fn missing_eligibility_text_keeps_the_study_and_reports_it() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn a_study_without_an_nct_id_is_kept_and_reported_without_a_fetch() {
-    let (kept, report) = verify_against_fixture(&[], &[], "", vec![study(None)]).await;
+    // The fixture serves REJECTING criteria for any id it is asked
+    // for, so a stray fetch would fail the keyword check and drop the
+    // study: only the real no-NCT skip keeps it.
+    let (kept, report) = verify_against_fixture(
+        &[],
+        &[],
+        "Exclusion Criteria: patients with MSI-H tumors",
+        vec![study(None)],
+    )
+    .await;
     assert_eq!(kept.len(), 1, "the study is kept when it has no NCT ID");
     assert_eq!(report.unverified_kept, 1);
     assert!(report.unverified_ids.contains(&"<no NCT ID>".to_string()));
@@ -115,7 +124,7 @@ async fn a_verified_keyword_match_stays_out_of_the_report() {
     let (kept, report) = verify_against_fixture(
         &[],
         &[],
-        "Inclusion Criteria: patients with MSI-high tumors",
+        "Inclusion Criteria: patients with MSI-H tumors",
         vec![study(Some("NCT00000003")), study(Some("NCT00000004"))],
     )
     .await;

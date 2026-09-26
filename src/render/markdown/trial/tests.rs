@@ -304,14 +304,14 @@ fn search_results_carry_the_partial_detail_verification_note() {
         None,
         &[],
         Some(
-            "The count may be too high: 1 kept trials (NCT1) could not be checked because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.",
+            "The count may be too high: we could not check 1 of the kept trials (NCT1), because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.",
         ),
     )
     .expect("markdown");
 
     assert!(
         markdown
-            .contains("Note: The count may be too high: 1 kept trials (NCT1) could not be checked")
+            .contains("Note: The count may be too high: we could not check 1 of the kept trials")
     );
     assert!(markdown.contains("the trial had no NCT ID"));
     assert!(markdown.contains("(NCT1)"));

@@ -91,13 +91,13 @@ fn search_json_carries_the_partial_note_in_meta_notes() {
         crate::cli::shared::PaginationMeta::cursor(0, 10, 1, Some(1), None),
         Vec::new(),
         None,
-        Some("The count may be too high: 1 kept trials (NCT1) could not be checked."),
+        Some("The count may be too high: we could not check 1 of the kept trials (NCT1), because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID."),
     )
     .expect("search JSON");
     let value: serde_json::Value = serde_json::from_str(&payload).expect("valid JSON");
     assert_eq!(
         value["_meta"]["notes"][0],
-        "The count may be too high: 1 kept trials (NCT1) could not be checked."
+        "The count may be too high: we could not check 1 of the kept trials (NCT1), because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID."
     );
 }
 
