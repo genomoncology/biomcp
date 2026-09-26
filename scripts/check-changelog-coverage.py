@@ -81,6 +81,14 @@ def section_text(path: Path, tag: str) -> tuple[str, str]:
     )
 
 
+# Words that carry no description: a bullet made only of these
+# and ticket numbers is a bare list, not coverage.
+BOILERPLATE_WORDS = re.compile(
+    r"\b(?:tickets?|see|and|or|the|for|with|fix(?:es)?|changes(?:et)?)\b",
+    re.IGNORECASE,
+)
+
+
 def described_tickets(section: str) -> set[str]:
     found: set[str] = set()
     bullets: list[str] = []
@@ -107,9 +115,11 @@ def described_tickets(section: str) -> set[str]:
             # A bare number list is not a description: remove every
             # remaining bare number token and the separators around
             # them, then require at least three word characters of
-            # described text.
+            # described text. Label words like "Tickets" or "see" are
+            # boilerplate and do not count as description either.
             remainder = re.sub(r"(?<![0-9])[0-9]+(?![0-9])", "", remainder)
-            remainder = remainder.strip(" .,:;-|/")
+            remainder = BOILERPLATE_WORDS.sub(" ", remainder)
+            remainder = remainder.strip(" .,:;-|/()")
             if len(re.findall(r"[^\W\d_]", remainder, re.UNICODE)) >= 3:
                 found.add(ticket)
     return found

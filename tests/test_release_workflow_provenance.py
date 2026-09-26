@@ -230,6 +230,28 @@ def test_linux_floor_contract() -> None:
 
 PIPELINE_JOBS = ("pypi-build", "wheel-smoke", "docs-live")
 
+# A closed allowlist: any other step-level condition in the three
+# pipeline jobs is a way to switch a check off, whatever syntax it
+# uses (false, ${{ false }}, ${{ false && true }}, ${{true}}, ...).
+ALLOWED_STEP_IFS = {
+    "runner.os == 'Linux'",
+    "runner.os != 'Linux'",
+    "runner.os == 'macOS'",
+    "runner.os == 'Windows'",
+    "github.event_name == 'push'",
+}
+
+# Exit-code swallows inside run scripts. Substring bans miss spacing
+# variants, so each escape is a regex.
+RUN_ESCAPE_PATTERNS = [
+    (re.compile(r"\|\|\s*true\b"), "|| true"),
+    (re.compile(r"\|\|\s*:"), "|| :"),
+    (re.compile(r"\|\|\s*exit\s+0\b"), "|| exit 0"),
+    (re.compile(r";\s*exit\s+0\b"), "; exit 0"),
+    (re.compile(r"\bset\s\+e\b"), "set +e"),
+    (re.compile(r"\btrap\s+['\"]exit\s+0['\"]"), "trap 'exit 0'"),
+]
+
 EXPECTED_MATRICES = {
     "pypi-build": [
         {
@@ -306,35 +328,51 @@ def _assert_pipeline_contract(parsed: dict) -> None:
     # The trigger block: tag pushes only, never a release publication
     # event (the YAML 1.1 `on:` key parses as boolean True).
     triggers = parsed[True]
-    assert triggers["push"] == {"tags": ["v*"]}
-    assert "release" not in triggers
-    assert "workflow_dispatch" in triggers
+    assert triggers["push"] == {"tags": ["v*"]}, "trigger block must be tag pushes only"
+    assert "release" not in triggers, "trigger block must be tag pushes only"
+    assert "workflow_dispatch" in triggers, (
+        "trigger block must keep the manual dispatch"
+    )
 
     for job in PIPELINE_JOBS:
+        job_spec = parsed["jobs"][job]
+        assert "continue-on-error" not in job_spec, (
+            f"{job}: job-level continue-on-error is forbidden"
+        )
         steps = _pipeline_steps(parsed, job)
-        assert steps, job
-        assert parsed["jobs"][job].get("continue-on-error") is not True, job
+        assert steps, f"{job}: job must have steps"
         for step in steps:
-            # No run step may swallow its own failure, and no step may
-            # switch itself off. Only the optional protoc installer is
-            # allowed to tolerate failure.
-            if step.get("continue-on-error") is True:
-                uses = step.get("uses", "")
-                assert any(allow in uses for allow in CONTINUE_ON_ERROR_ALLOW), job
-            assert step.get("if") not in (False, "false", "${{ false }}"), job
+            uses = step.get("uses", "")
+            # Only the optional protoc installer may tolerate failure.
+            # Forbidding the key outright catches every spelling of
+            # true: the boolean, "true", "${{ true }}", and numbers.
+            if "continue-on-error" in step:
+                assert any(allow in uses for allow in CONTINUE_ON_ERROR_ALLOW), (
+                    f"{job}: continue-on-error is forbidden outside the protoc installer"
+                )
+            step_if = step.get("if")
+            if step_if is not None:
+                assert step_if in ALLOWED_STEP_IFS, (
+                    f"{job}: step if {step_if!r} is not in the allowlist"
+                )
+            shell = step.get("shell")
+            assert shell in (None, "bash"), (
+                f"{job}: custom shell {shell!r} is forbidden; declare shell: bash"
+            )
             run = step.get("run")
             if run is None:
                 continue
-            assert step.get("continue-on-error") is not True, job
-            for banned in ("|| true", "|| :", "; exit 0", "if: ${{ false }}"):
-                assert banned not in run, (job, banned)
+            for pattern, label in RUN_ESCAPE_PATTERNS:
+                assert not pattern.search(run), (
+                    f"{job}: banned escape {label!r} in a run step"
+                )
 
     # Matrix entries are pinned exactly, so a swapped runner, a new
     # leg, or a dropped leg (including the ARM wheel build and smoke)
     # breaks the contract.
     for job, expected in EXPECTED_MATRICES.items():
         matrix = parsed["jobs"][job]["strategy"]["matrix"]["include"]
-        assert matrix == expected, job
+        assert matrix == expected, f"{job}: matrix entries must be pinned exactly"
     assert parsed["jobs"]["docs-live"].get("strategy") is None
     assert parsed["jobs"]["docs-live"]["runs-on"] == "ubuntu-24.04"
 
@@ -344,29 +382,102 @@ def _assert_pipeline_contract(parsed: dict) -> None:
     wheel_build = _step_by_name(
         parsed, "pypi-build", "Build wheels inside the manylinux 2_28 container"
     )
-    assert "check-wheel-glibc-floor.py" in wheel_build["run"]
+    assert "check-wheel-glibc-floor.py" in wheel_build["run"], (
+        "pypi-build: the wheel build step must run the floor check"
+    )
 
     smoke = _step_by_name(parsed, "wheel-smoke", "Smoke the installed wheel")
     # The panic guard must return failure, not just print.
     assert re.search(
         r'echo "panic or crash \(exit \$status\) from: biomcp \$\*" >&2\s*\n\s*return 1',
         smoke["run"],
-    )
+    ), "wheel-smoke: the panic guard must return failure"
     # The not-found exit check runs after the adverse-events probe.
     run = smoke["run"]
     probe = run.index("drug adverse-events qwertyzzznonexistent999")
-    assert '[ "$status" -eq 0 ]' in run[probe:]
-    assert 'grep -q "Drug not found in FAERS"' in run[probe:]
+    assert '[ "$status" -eq 0 ]' in run[probe:], (
+        "wheel-smoke: the not-found exit check must follow the adverse-events probe"
+    )
+    assert 'grep -q "Drug not found in FAERS"' in run[probe:], (
+        "wheel-smoke: the not-found exit check must follow the adverse-events probe"
+    )
 
     # The runtime floor smoke stays on the Linux legs only.
     floor_smoke = _step_by_name(
         parsed, "wheel-smoke", "Run the wheel inside the manylinux 2_28 container"
     )
-    assert floor_smoke["if"] == "runner.os == 'Linux'"
+    assert floor_smoke["if"] == "runner.os == 'Linux'", (
+        "wheel-smoke: the runtime floor smoke must stay on the Linux legs"
+    )
+
+    # docs-live: the tag lookup must assert the SHA it resolved, and
+    # the revision timeout branch must fail the step.
+    resolve = _step_by_name(parsed, "docs-live", "Resolve the tag commit")
+    assert 'test -n "$TAG_SHA"' in resolve["run"], (
+        "docs-live: the tag lookup must assert the resolved SHA"
+    )
+    revision = _step_by_name(
+        parsed, "docs-live", "Require the live documentation revision"
+    )
+    assert re.search(
+        r"did not reach \$\{TAG_SHA\}[^\"\n]*\" >&2\s*\n\s*exit 1\b",
+        revision["run"],
+    ), "docs-live: the revision timeout branch must end in exit 1"
 
 
 def test_pipeline_jobs_contract() -> None:
-    _assert_pipeline_contract(_load_release_pipeline())
+    parsed = _load_release_pipeline()
+    _assert_pipeline_contract(parsed)
+    _assert_publish_gating(parsed)
+
+
+# Every job's condition, asserted exactly. A suffix like
+# `&& !cancelled()` would re-run a publish after an upstream failure
+# and must break the contract.
+EXPECTED_JOB_IFS = {
+    "create-draft": "github.event_name == 'push'",
+    "build": "github.event_name == 'push'",
+    "pypi-build": "github.event_name == 'push'",
+    "wheel-smoke": "github.event_name == 'push'",
+    "pypi-publish": "github.event_name == 'push'",
+    "homebrew-tap": "github.event_name == 'push'",
+    "publish-release": "github.event_name == 'push'",
+    "container-publish": (
+        "!cancelled() && ((github.event_name == 'push' && success()) || "
+        "(inputs.container_only == true && needs.version-check.result == 'success' && "
+        "needs.docs-live.result == 'success' && needs.create-draft.result == 'skipped' && "
+        "needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped'))"
+    ),
+}
+
+
+def _assert_publish_gating(parsed: dict) -> None:
+    for job in ("version-check", "docs-live"):
+        assert "if" not in parsed["jobs"][job], f"{job}: must run unconditionally"
+    for job, expected in EXPECTED_JOB_IFS.items():
+        actual = parsed["jobs"][job].get("if")
+        assert actual == expected, (
+            f"{job}: job if must be exactly {expected!r}, got {actual!r}"
+        )
+    # `!cancelled()` re-runs a job after an upstream failure. Only the
+    # container rebuild path may use it; a publish path never may.
+    for job, spec in parsed["jobs"].items():
+        if job == "container-publish":
+            continue
+        assert "!cancelled()" not in (spec.get("if") or ""), (
+            f"{job}: !cancelled() is forbidden"
+        )
+        for step in spec.get("steps", []):
+            assert "!cancelled()" not in (step.get("if") or ""), (
+                f"{job}: !cancelled() is forbidden in a step if"
+            )
+
+
+def _set_job_flag(job: str, key: str, value):
+    def mutate(parsed: dict) -> None:
+        parsed["jobs"][job][key] = value
+
+    return mutate
 
 
 def _mutated_pipeline(mutate) -> dict:
@@ -413,73 +524,187 @@ def _retarget_matrix_os(job: str, key: str, value: str, os_name: str):
 
 
 PIPELINE_MUTATIONS = {
-    "continue_on_error_on_venv_smoke": _set_step_flag(
-        "wheel-smoke", "Smoke the installed wheel", "continue-on-error", True
-    ),
-    "continue_on_error_on_docs_live": _set_step_flag(
-        "docs-live",
-        "Require the live documentation revision",
-        "continue-on-error",
-        True,
-    ),
-    "continue_on_error_on_a_non_protoc_uses_step": _set_step_flag(
-        "wheel-smoke", "actions/download-artifact", "continue-on-error", True
-    ),
-    "or_true_on_the_floor_check": _mutate_run(
-        "pypi-build",
-        "Build wheels inside the manylinux 2_28 container",
-        lambda run: run.replace(
-            "check-wheel-glibc-floor.py target/wheels/*.whl 2.28",
-            "check-wheel-glibc-floor.py target/wheels/*.whl 2.28 || true",
+    "continue_on_error_on_venv_smoke": (
+        _set_step_flag(
+            "wheel-smoke", "Smoke the installed wheel", "continue-on-error", True
         ),
+        "continue-on-error is forbidden outside the protoc installer",
     ),
-    "removing_the_floor_check": _mutate_run(
-        "pypi-build",
-        "Build wheels inside the manylinux 2_28 container",
-        lambda run: run.replace(
-            "check-wheel-glibc-floor.py target/wheels/*.whl 2.28", ":"
+    "continue_on_error_template_true_on_venv_smoke": (
+        _set_step_flag(
+            "wheel-smoke",
+            "Smoke the installed wheel",
+            "continue-on-error",
+            "${{ true }}",
         ),
+        "continue-on-error is forbidden outside the protoc installer",
     ),
-    "arm_wheel_build_dropped": _drop_matrix_entry(
-        "pypi-build", "aarch64-unknown-linux-gnu"
+    "continue_on_error_quoted_true_on_wheel_smoke_job": (
+        _set_job_flag("wheel-smoke", "continue-on-error", "true"),
+        "job-level continue-on-error is forbidden",
     ),
-    "arm_smoke_on_an_x86_runner": _retarget_matrix_os(
-        "wheel-smoke", "artifact", "wheel-aarch64-unknown-linux-gnu", "ubuntu-24.04"
-    ),
-    "if_false_on_the_runtime_floor_smoke": _set_step_flag(
-        "wheel-smoke", "Run the wheel inside the manylinux 2_28 container", "if", False
-    ),
-    "if_template_false_on_the_runtime_floor_smoke": _set_step_flag(
-        "wheel-smoke",
-        "Run the wheel inside the manylinux 2_28 container",
-        "if",
-        "${{ false }}",
-    ),
-    "deleting_the_return_1_after_the_panic_message": _mutate_run(
-        "wheel-smoke",
-        "Smoke the installed wheel",
-        lambda run: re.sub(
-            r'(echo "panic or crash \(exit \$status\) from: biomcp \$\*" >&2)\s*\n\s*return 1',
-            r"\1\n              :",
-            run,
+    "continue_on_error_on_docs_live": (
+        _set_step_flag(
+            "docs-live",
+            "Require the live documentation revision",
+            "continue-on-error",
+            True,
         ),
+        "continue-on-error is forbidden outside the protoc installer",
     ),
-    "deleting_the_not_found_exit_check": _mutate_run(
-        "wheel-smoke",
-        "Smoke the installed wheel",
-        lambda run: run.replace('grep -q "Drug not found in FAERS"', ":"),
+    "continue_on_error_on_a_non_protoc_uses_step": (
+        _set_step_flag(
+            "wheel-smoke", "actions/download-artifact", "continue-on-error", True
+        ),
+        "continue-on-error is forbidden outside the protoc installer",
     ),
-    "restoring_a_release_published_trigger": lambda parsed: parsed[True].update(
-        {"release": {"types": ["published"]}}
+    "or_true_on_the_floor_check": (
+        _mutate_run(
+            "pypi-build",
+            "Build wheels inside the manylinux 2_28 container",
+            lambda run: run.replace(
+                "check-wheel-glibc-floor.py target/wheels/*.whl 2.28",
+                "check-wheel-glibc-floor.py target/wheels/*.whl 2.28 || true",
+            ),
+        ),
+        "banned escape",
+    ),
+    "or_exit_zero_on_the_floor_check": (
+        _mutate_run(
+            "pypi-build",
+            "Build wheels inside the manylinux 2_28 container",
+            lambda run: run.replace(
+                "check-wheel-glibc-floor.py target/wheels/*.whl 2.28",
+                "check-wheel-glibc-floor.py target/wheels/*.whl 2.28||exit 0",
+            ),
+        ),
+        "banned escape",
+    ),
+    "set_plus_e_in_the_venv_smoke": (
+        _mutate_run(
+            "wheel-smoke",
+            "Smoke the installed wheel",
+            lambda run: "set +e\n" + run,
+        ),
+        "banned escape",
+    ),
+    "trap_exit_zero_in_the_venv_smoke": (
+        _mutate_run(
+            "wheel-smoke",
+            "Smoke the installed wheel",
+            lambda run: run + "\ntrap 'exit 0' EXIT\n",
+        ),
+        "banned escape",
+    ),
+    "tag_lookup_or_exit_zero": (
+        _mutate_run(
+            "docs-live",
+            "Resolve the tag commit",
+            lambda run: run.replace(
+                'test -n "$TAG_SHA"', 'test -n "$TAG_SHA" || exit 0'
+            ),
+        ),
+        "banned escape",
+    ),
+    "removing_the_floor_check": (
+        _mutate_run(
+            "pypi-build",
+            "Build wheels inside the manylinux 2_28 container",
+            lambda run: run.replace(
+                "check-wheel-glibc-floor.py target/wheels/*.whl 2.28", ":"
+            ),
+        ),
+        "must run the floor check",
+    ),
+    "arm_wheel_build_dropped": (
+        _drop_matrix_entry("pypi-build", "aarch64-unknown-linux-gnu"),
+        "matrix entries must be pinned exactly",
+    ),
+    "arm_smoke_on_an_x86_runner": (
+        _retarget_matrix_os(
+            "wheel-smoke", "artifact", "wheel-aarch64-unknown-linux-gnu", "ubuntu-24.04"
+        ),
+        "matrix entries must be pinned exactly",
+    ),
+    "if_false_on_the_runtime_floor_smoke": (
+        _set_step_flag(
+            "wheel-smoke",
+            "Run the wheel inside the manylinux 2_28 container",
+            "if",
+            False,
+        ),
+        "is not in the allowlist",
+    ),
+    "if_template_false_on_the_runtime_floor_smoke": (
+        _set_step_flag(
+            "wheel-smoke",
+            "Run the wheel inside the manylinux 2_28 container",
+            "if",
+            "${{ false }}",
+        ),
+        "is not in the allowlist",
+    ),
+    "if_template_false_and_true_on_docs_live_revision": (
+        _set_step_flag(
+            "docs-live",
+            "Require the live documentation revision",
+            "if",
+            "${{ false && true }}",
+        ),
+        "is not in the allowlist",
+    ),
+    "custom_shell_template_on_the_venv_smoke": (
+        _set_step_flag("wheel-smoke", "Smoke the installed wheel", "shell", "bash {0}"),
+        "custom shell",
+    ),
+    "docs_live_timeout_exit_zero": (
+        _mutate_run(
+            "docs-live",
+            "Require the live documentation revision",
+            lambda run: run.replace("exit 1", "exit 0"),
+        ),
+        "revision timeout branch must end in exit 1",
+    ),
+    "not_cancelled_on_pypi_publish": (
+        _set_job_flag(
+            "pypi-publish", "if", "github.event_name == 'push' && !cancelled()"
+        ),
+        "job if must be exactly",
+    ),
+    "deleting_the_return_1_after_the_panic_message": (
+        _mutate_run(
+            "wheel-smoke",
+            "Smoke the installed wheel",
+            lambda run: re.sub(
+                r'(echo "panic or crash \(exit \$status\) from: biomcp \$\*" >&2)\s*\n\s*return 1',
+                r"\1\n              :",
+                run,
+            ),
+        ),
+        "panic guard must return failure",
+    ),
+    "deleting_the_not_found_exit_check": (
+        _mutate_run(
+            "wheel-smoke",
+            "Smoke the installed wheel",
+            lambda run: run.replace('grep -q "Drug not found in FAERS"', ":"),
+        ),
+        "not-found exit check must follow",
+    ),
+    "restoring_a_release_published_trigger": (
+        lambda parsed: parsed[True].update({"release": {"types": ["published"]}}),
+        "trigger block must be tag pushes only",
     ),
 }
 
 
 @pytest.mark.parametrize("name", sorted(PIPELINE_MUTATIONS))
 def test_pipeline_mutations_break_the_contract(name: str) -> None:
-    mutated = _mutated_pipeline(PIPELINE_MUTATIONS[name])
-    with pytest.raises(AssertionError):
+    mutate, expected_message = PIPELINE_MUTATIONS[name]
+    mutated = _mutated_pipeline(mutate)
+    with pytest.raises(AssertionError, match=re.escape(expected_message)):
         _assert_pipeline_contract(mutated)
+        _assert_publish_gating(mutated)
 
 
 @pytest.mark.parametrize(

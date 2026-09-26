@@ -83,5 +83,20 @@ of 18 workflow mutations outside the version-check job stay green.
   ban, re-review ACCEPT 2026-09-25
 - Code review: ACCEPT with two P2s folded (real-git fixture;
   job-level escape assert) 2026-09-25
+- Follow-ups (2026-09-26 review): the escape set now covers the
+  string/expression forms of continue-on-error at step and job level
+  (the key is forbidden outright outside the protoc installer), the
+  `|| exit 0` / `set +e` / `trap 'exit 0'` run-script swallows, the
+  docs-live timeout exit and tag-lookup pins, the closed step-if
+  allowlist (catches `${{ false && true }}` and every other switch-off
+  spelling), the exact job-if equality with `!cancelled()` banned
+  outside container-publish, the custom `shell:` template ban, and the
+  specific-failure-message requirement on every mutation. The coverage
+  script strips boilerplate label words ("Tickets", "see", ...) so a
+  label-only bullet no longer counts as described. Each mutation now
+  asserts its own message; seven adversarial forms verified caught
+  (no-space `${{true}}`, quoted and numeric continue-on-error,
+  double-spaced pipe escapes, double-quoted traps, step-level
+  `!cancelled()`).
 - Verification: yellow gate at 2159551c lint/test/spec OK; see
   `sdlc/records/1250-make-the-changelog-gate-and-workflow-tests-total.md`
