@@ -52,3 +52,27 @@ Windows host exists here; the in-process `SetSecurityInfo` directory
 alternative is recorded as a follow-up only if memoization proves
 insufficient in the field; the reply to the #283 reporter waits for
 the release and Ian's OK.
+
+## Guard follow-ups (2026-09-26)
+
+The review's findings closed: the guard now requires all three
+streams explicitly (null, piped, or captured) for every non-test
+spawn — removing any single setter fails it, per-stream mutation
+tests pin each; path-qualified and same-file aliased Command spawns
+are caught; and the stripper no longer stops at the first mid-file
+test marker — cfg(test) module blocks are brace-stripped and the
+semicolon form `mod tests;` cuts at its own declaration, so the
+seven render files whose production code sits after an early test
+module are scanned (a fixture pins the shape; cross-module aliases
+and brace-group imports are recorded as out of scope). The wheel
+floor scan covers the biomcp-cli launcher by basename in any wheel
+directory form, with a failsafe when nothing matches. The
+fails-on-old-code evidence is real: scratch branch 9226cfe4 (PR
+#285) reverted only the three setters and CI run 36241795274's
+canonical-gates failed listing all three streams unset at
+src/cache/private.rs; the windows-contracts job passed on that
+scratch, because the runner's icacls did not pollute the piped
+stdout, so the behavioral Windows failure is recorded as not
+demonstrable on that runner. Code review REJECT once (the stripper
+swallowed production code after `mod tests;`), fixed and re-verified;
+yellow gate at 9a2ecd2a — lint, test, and spec OK.
