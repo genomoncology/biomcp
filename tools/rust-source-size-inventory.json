@@ -194,11 +194,11 @@
     },
     {
       "path": "src/entities/trial/search/ctgov/tests.rs",
-      "baseline_lines": 1112,
+      "baseline_lines": 1123,
       "floor_lines": 975,
       "authorized_increase": {
         "ticket": "1242",
-        "delta": 137,
+        "delta": 148,
         "reason": "Batch 1 fixes: plain-word partial note, age filter before detail verification, and the keep-path tests.",
         "removal_condition": "Shrink when the partial-count telemetry moves behind a shared report type."
       }
