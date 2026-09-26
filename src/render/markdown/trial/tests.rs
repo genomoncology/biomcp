@@ -285,6 +285,37 @@ fn trial_markdown_keeps_the_post_abbreviation_clause_and_json_stays_full() {
 }
 
 #[test]
+fn search_results_carry_the_partial_detail_verification_note() {
+    let results = vec![TrialSearchResult {
+        nct_id: "NCT1".to_string(),
+        title: "Study".to_string(),
+        status: "RECRUITING".to_string(),
+        phase: None,
+        conditions: Vec::new(),
+        sponsor: None,
+        matched_intervention_label: None,
+    }];
+    let markdown = trial_search_markdown_with_footer_and_hints(
+        "condition=melanoma",
+        &results,
+        Some(1),
+        "",
+        false,
+        None,
+        &[],
+        Some(
+            "1 of the kept trial(s) could not be detail-verified (detail fetch failed or criteria text was missing) (NCT1); eligibility and facility filters may not have applied to them",
+        ),
+    )
+    .expect("markdown");
+
+    assert!(markdown.contains("Note: 1 of the kept trial(s) could not be detail-verified"));
+    assert!(markdown.contains("(NCT1)"));
+    // The note must not displace the rows table.
+    assert!(markdown.contains("|NCT1|"));
+}
+
+#[test]
 fn trial_search_markdown_with_footer_shows_scoped_zero_result_nickname_hint() {
     let markdown = trial_search_markdown_with_footer(
         "condition=CodeBreaK 300",
@@ -326,6 +357,7 @@ fn trial_search_markdown_with_footer_shows_filtered_zero_result_broadening_hints
         false,
         None,
         &hints,
+        None,
     )
     .expect("markdown");
 

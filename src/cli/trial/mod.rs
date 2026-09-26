@@ -156,6 +156,8 @@ pub(crate) use self::dispatch::render_loaded_card;
 pub(super) use self::dispatch::{handle_get, handle_search};
 
 #[cfg(test)]
+mod count_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod tests_locations;

@@ -13,13 +13,16 @@ use crate::transform;
 use crate::utils::date::validate_since;
 
 use super::super::TrialCountUnknownReason;
-use super::super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};
+use super::super::{
+    TrialCount, TrialCountPartialReason, TrialSearchFilters, TrialSearchResult, TrialSource,
+};
 use super::eligibility::ctgov_nct_id;
 use super::{
-    CtGovSearchContext, build_essie_fragments, essie_escape, essie_escape_boolean_expression,
-    normalize_sex, normalize_sponsor_type, prepare_ctgov_search_context, quote_essie_literal,
-    sort_trials_by_status_priority, validate_search_page_args, validate_trial_search,
-    verify_age_eligibility, verify_detail_filters,
+    CtGovSearchContext, DetailVerificationReport, build_essie_fragments, essie_escape,
+    essie_escape_boolean_expression, normalize_sex, normalize_sponsor_type,
+    prepare_ctgov_search_context, quote_essie_literal, sort_trials_by_status_priority,
+    validate_search_page_args, validate_trial_search, verify_age_eligibility,
+    verify_detail_filters,
 };
 
 pub(super) const CTGOV_COUNT_PAGE_SIZE: usize = 1000;
@@ -249,18 +252,36 @@ async fn apply_ctgov_post_filters(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
     context: &CtGovSearchContext,
-    mut studies: Vec<CtGovStudy>,
-) -> Vec<CtGovStudy> {
+    studies: Vec<CtGovStudy>,
+) -> (Vec<CtGovStudy>, DetailVerificationReport) {
     let facility_geo = context
         .facility_geo_verification
         .as_ref()
         .map(|(facility, lat, lon, distance)| (facility.as_str(), *lat, *lon, *distance));
-    studies =
+    let (mut studies, report) =
         verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await;
     if let Some(age) = filters.age {
         studies = verify_age_eligibility(studies, age);
     }
-    studies
+    (studies, report)
+}
+
+/// Render the page-level note for kept-unverified trials. None when
+/// every kept trial passed detail verification.
+fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
+    if report.unverified_kept == 0 {
+        return None;
+    }
+    let ids = if report.unverified_ids.is_empty() {
+        String::new()
+    } else {
+        format!(" ({})", report.unverified_ids.join(", "))
+    }
+    .to_string();
+    Some(format!(
+        "{} of the kept trial(s) could not be detail-verified (detail fetch failed or criteria text was missing){ids}; eligibility and facility filters may not have applied to them",
+        report.unverified_kept
+    ))
 }
 
 #[derive(Debug)]
@@ -268,6 +289,7 @@ struct CtGovRawPage {
     total_count: Option<usize>,
     studies: Vec<CtGovStudy>,
     next_page_token: Option<String>,
+    unverified: DetailVerificationReport,
     raw_study_count: usize,
 }
 
@@ -291,6 +313,7 @@ struct CtGovSinglePageState {
     remaining_skip: usize,
     requested_total: bool,
     started_with_cursor: bool,
+    unverified: DetailVerificationReport,
 }
 
 impl CtGovSinglePageState {
@@ -298,6 +321,7 @@ impl CtGovSinglePageState {
         Self {
             rows: Vec::new(),
             total: None,
+            unverified: DetailVerificationReport::default(),
             verified_total: 0,
             exhausted: false,
             page_token: next_page
@@ -384,6 +408,7 @@ async fn fetch_ctgov_raw_page(
         raw_study_count: resp.studies.len(),
         studies: resp.studies,
         next_page_token: resp.next_page_token,
+        unverified: DetailVerificationReport::default(),
     })
 }
 
@@ -407,7 +432,10 @@ async fn fetch_ctgov_filtered_page(
     )
     .await?;
     if page.raw_study_count > 0 {
-        page.studies = apply_ctgov_post_filters(client, filters, context, page.studies).await;
+        let (studies, unverified) =
+            apply_ctgov_post_filters(client, filters, context, page.studies).await;
+        page.studies = studies;
+        page.unverified = unverified;
     }
     Ok(page)
 }
@@ -453,6 +481,7 @@ fn apply_ctgov_single_page(
         return;
     }
 
+    state.unverified.merge(&page.unverified);
     let next_page_token = page.next_page_token;
     let mut studies = page.studies;
     if context.uses_expensive_post_filters {
@@ -532,7 +561,15 @@ fn finish_ctgov_single_page(
         .then_some(state.total)
         .flatten();
 
-    SearchPage::cursor_with_upstream(state.rows, returned_total, state.page_token, upstream_total)
+    let partial_note = detail_partial_note(&state.unverified);
+    let mut page = SearchPage::cursor_with_upstream(
+        state.rows,
+        returned_total,
+        state.page_token,
+        upstream_total,
+    );
+    page.partial_note = partial_note;
+    page
 }
 
 async fn search_page_with_single_ctgov_intervention(
@@ -660,9 +697,18 @@ fn ctgov_union_total(
     }
 }
 
-fn completed_ctgov_union_count(degraded_coverage: bool, unique_count: usize) -> TrialCount {
+fn completed_ctgov_union_count(
+    degraded_coverage: bool,
+    unique_count: usize,
+    unverified: &DetailVerificationReport,
+) -> TrialCount {
     if degraded_coverage {
         TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage)
+    } else if unverified.unverified_kept > 0 {
+        TrialCount::Partial {
+            total: unique_count,
+            reason: TrialCountPartialReason::DetailVerificationIncomplete,
+        }
     } else {
         TrialCount::Exact(unique_count)
     }
@@ -685,6 +731,7 @@ async fn search_page_with_ctgov_union(
     let mut matched_labels: HashMap<String, Option<String>> = HashMap::new();
     let mut traversal_capped = false;
     let mut degraded_coverage = false;
+    let mut unverified = DetailVerificationReport::default();
 
     loop {
         let active_indices: Vec<usize> = workers
@@ -755,8 +802,9 @@ async fn search_page_with_ctgov_union(
             }
         }
 
-        let verified_studies =
+        let (verified_studies, round_unverified) =
             apply_ctgov_post_filters(client, filters, context, round_studies).await;
+        unverified.merge(&round_unverified);
         push_ctgov_union_rows(
             &mut merged_rows,
             &mut merged_index,
@@ -781,7 +829,9 @@ async fn search_page_with_ctgov_union(
     );
 
     let rows = merged_rows.into_iter().skip(offset).take(limit).collect();
-    Ok(SearchPage::cursor(rows, total, None))
+    let mut page = SearchPage::cursor(rows, total, None);
+    page.partial_note = detail_partial_note(&unverified);
+    Ok(page)
 }
 
 pub(super) async fn search_page_with_ctgov_client(
@@ -852,6 +902,7 @@ async fn count_all_with_ctgov_union(
     let mut unique_nct_ids: HashSet<String> = HashSet::new();
     let mut fetched_pages = 0usize;
     let mut degraded_coverage = false;
+    let mut unverified = DetailVerificationReport::default();
 
     loop {
         let active_indices: Vec<usize> = workers
@@ -863,6 +914,7 @@ async fn count_all_with_ctgov_union(
             return Ok(completed_ctgov_union_count(
                 degraded_coverage,
                 unique_nct_ids.len(),
+                &unverified,
             ));
         }
 
@@ -914,8 +966,9 @@ async fn count_all_with_ctgov_union(
             }
         }
 
-        let verified_studies =
+        let (verified_studies, round_unverified) =
             apply_ctgov_post_filters(client, filters, context, round_studies).await;
+        unverified.merge(&round_unverified);
         add_unique_ctgov_nct_ids(&mut unique_nct_ids, verified_studies);
     }
 }
@@ -965,6 +1018,7 @@ pub(super) async fn count_all_with_ctgov_client(
     }
 
     let mut verified_total = 0usize;
+    let mut unverified = DetailVerificationReport::default();
     let mut page_token: Option<String> = None;
     let mut page_count = 0usize;
 
@@ -987,8 +1041,10 @@ pub(super) async fn count_all_with_ctgov_client(
         page_count += 1;
 
         let next_page_token = resp.next_page_token;
-        let studies = apply_ctgov_post_filters(client, filters, &context, resp.studies).await;
+        let (studies, page_unverified) =
+            apply_ctgov_post_filters(client, filters, &context, resp.studies).await;
         verified_total = verified_total.saturating_add(studies.len());
+        unverified.merge(&page_unverified);
 
         if next_page_token.is_none() {
             break;
@@ -996,7 +1052,11 @@ pub(super) async fn count_all_with_ctgov_client(
         page_token = next_page_token;
     }
 
-    Ok(TrialCount::Exact(verified_total))
+    Ok(completed_ctgov_union_count(
+        false,
+        verified_total,
+        &unverified,
+    ))
 }
 
 #[cfg(test)]

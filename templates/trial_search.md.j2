@@ -6,6 +6,7 @@ Results: {{ count }} of {{ total }}
 Found: {{ count }} trial(s)
 {% endif %}
 {% if query %}Query: {{ query }}{% endif %}
+{% if partial_note %}Note: {{ partial_note }}{% endif %}
 
 {% if count == 0 -%}
 No trials found matching the filters.

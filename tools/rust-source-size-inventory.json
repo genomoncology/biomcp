@@ -183,24 +183,24 @@
     },
     {
       "path": "src/entities/trial/search/ctgov.rs",
-      "baseline_lines": 1003,
+      "baseline_lines": 1063,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1198",
-        "delta": 3,
-        "reason": "The honest-zero contract fills upstream_total on eligibility-verified pages.",
-        "removal_condition": "Trim when the CTGov search module is next decomposed."
+        "ticket": "1242",
+        "delta": 63,
+        "reason": "Partial-count plumbing for detail-unverified trials (telemetry, Partial arm, notes).",
+        "removal_condition": "Shrink when the eligibility telemetry moves behind a shared report type."
       }
     },
     {
       "path": "src/entities/trial/search/ctgov/tests.rs",
-      "baseline_lines": 1036,
+      "baseline_lines": 1053,
       "floor_lines": 975,
       "authorized_increase": {
-        "ticket": "1198",
-        "delta": 61,
-        "reason": "Hyphen-escape table pins and the verification-emptied zero contract tests.",
-        "removal_condition": "Move escape table pins to essie.rs when the test module is next reorganized."
+        "ticket": "1242",
+        "delta": 78,
+        "reason": "Partial-count plumbing for detail-unverified trials (telemetry, Partial arm, notes).",
+        "removal_condition": "Shrink when the eligibility telemetry moves behind a shared report type."
       }
     },
     {

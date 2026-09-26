@@ -827,8 +827,25 @@ pub enum TrialCount {
     Exact(usize),
     /// Upstream CTGov total before client-side age post-filtering.
     Approximate(usize),
+    /// Numeric count that keeps trials whose eligibility or facility
+    /// details could not be verified, for the stated reason. The
+    /// number is a floor: post-filters may not have applied to the
+    /// kept-unverified trials.
+    Partial {
+        total: usize,
+        reason: TrialCountPartialReason,
+    },
     /// The total is unknown for the stated reason.
     Unknown(TrialCountUnknownReason),
+}
+
+/// Explains why a numeric trial count is partial.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrialCountPartialReason {
+    /// Trials were kept without detail verification: the detail fetch
+    /// failed, the criteria text was missing, or the study carried no
+    /// NCT ID to fetch.
+    DetailVerificationIncomplete,
 }
 
 /// Explains why a trial count could not be stated numerically.
