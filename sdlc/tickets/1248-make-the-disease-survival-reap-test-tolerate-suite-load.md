@@ -41,3 +41,9 @@ than hoped away.
 - Design review: folded into ticket 1252's accepted design
 - Code review: folded into ticket 1252
 - Verification: yellow gate with `make stress` under ticket 1252
+
+## Review
+
+- Closed by ticket 1252's conversion (this ticket was rewritten on the
+  signal basis first); see
+  `sdlc/records/1248-make-the-disease-survival-reap-test-tolerate-suite-load.md`.
