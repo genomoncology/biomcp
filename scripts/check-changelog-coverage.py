@@ -84,7 +84,7 @@ def section_text(path: Path, tag: str) -> tuple[str, str]:
 # Words that carry no description: a bullet made only of these
 # and ticket numbers is a bare list, not coverage.
 BOILERPLATE_WORDS = re.compile(
-    r"\b(?:tickets?|see|and|or|the|for|with|fix(?:es)?|changes(?:et)?)\b",
+    r"\b(?:tickets?|see|and|or|the|for|with|fix(?:es|ed)?|change(?:s|d)?|update(?:s|d)?|add(?:s|ed)?)\b",
     re.IGNORECASE,
 )
 

@@ -233,12 +233,11 @@ PIPELINE_JOBS = ("pypi-build", "wheel-smoke", "docs-live")
 # A closed allowlist: any other step-level condition in the three
 # pipeline jobs is a way to switch a check off, whatever syntax it
 # uses (false, ${{ false }}, ${{ false && true }}, ${{true}}, ...).
+# Only the conditions actually used by steps in the guarded jobs. A
+# new legitimate condition requires an explicit, reviewable edit here.
 ALLOWED_STEP_IFS = {
     "runner.os == 'Linux'",
     "runner.os != 'Linux'",
-    "runner.os == 'macOS'",
-    "runner.os == 'Windows'",
-    "github.event_name == 'push'",
 }
 
 # Exit-code swallows inside run scripts. Substring bans miss spacing
@@ -248,7 +247,7 @@ RUN_ESCAPE_PATTERNS = [
     (re.compile(r"\|\|\s*:"), "|| :"),
     (re.compile(r"\|\|\s*exit\s+0\b"), "|| exit 0"),
     (re.compile(r";\s*exit\s+0\b"), "; exit 0"),
-    (re.compile(r"\bset\s\+e\b"), "set +e"),
+    (re.compile(r"\bset\s+\+e\b"), "set +e"),
     (re.compile(r"\btrap\s+['\"]exit\s+0['\"]"), "trap 'exit 0'"),
 ]
 
@@ -694,6 +693,25 @@ PIPELINE_MUTATIONS = {
     "restoring_a_release_published_trigger": (
         lambda parsed: parsed[True].update({"release": {"types": ["published"]}}),
         "trigger block must be tag pushes only",
+    ),
+    "no_space_template_true_on_a_smoke_step_if": (
+        lambda parsed: _step_by_name(
+            parsed, "wheel-smoke", "Smoke the installed wheel"
+        ).update({"if": "${{true}}"}),
+        "is not in the allowlist",
+    ),
+    "double_quoted_trap_exit_zero": (
+        lambda parsed: _step_by_name(
+            parsed, "wheel-smoke", "Smoke the installed wheel"
+        ).update(
+            {
+                "run": 'trap "exit 0" EXIT\n'
+                + _step_by_name(parsed, "wheel-smoke", "Smoke the installed wheel")[
+                    "run"
+                ]
+            }
+        ),
+        "banned escape",
     ),
 }
 

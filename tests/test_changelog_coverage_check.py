@@ -287,5 +287,8 @@ def test_described_tickets_rejects_label_only_bullets_directly() -> None:
     assert described_tickets("- see 1226") == set()
     assert described_tickets("- and fixes 1226") == set()
     assert described_tickets("- The changes 1226") == set()
+    assert described_tickets("- Fixed 1226") == set()
+    assert described_tickets("- Updated 1226") == set()
+    assert described_tickets("- Added 1226") == set()
     # Real description words survive the stoplist.
     assert described_tickets("- Restored container publication (1219)") == {"1219"}
