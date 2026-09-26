@@ -78,4 +78,7 @@ per-source status; these paths do not.
 - Design review: REJECT once (stale-cache label named the wrong
   seam; partial-count and per-trial surfaces unspecified; anchors
   unnamed), findings folded, re-review ACCEPT 2026-09-25
-- Code review: pending
+- Code review (batch 1): ACCEPT with P2s (spacing fixed; JSON note
+  and offset wording recorded for batch 2) 2026-09-25
+- Verification (batch 1): yellow gate at 66c55c55 lint/test/spec OK;
+  see `sdlc/records/1242-render-source-failures-honestly.md`
