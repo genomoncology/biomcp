@@ -109,7 +109,7 @@ GenCC follow-ups), items 5-9 a second (hygiene and guards), items
   handles, transient contention — and pruning a healthy generation
   over them would be destructive; the errno unit tests record it.
 - Items 5-12: not started; next batch.
-- Code review: pending
+- Code review (batches 2-3): pending (batch 1 accepted below)
 - Code review (batch 1): ACCEPT with three report-only P2s
   (unused parameter dropped; local-read line recorded; floor
   attestation confirmed) 2026-09-25

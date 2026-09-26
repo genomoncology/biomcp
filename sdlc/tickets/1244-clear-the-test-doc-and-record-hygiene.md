@@ -124,5 +124,7 @@ its in-repo textual reference updated.
   scheduled lane to move to, the migration flag item misstated what is
   falsifiable, the audit extension would turn the suite red without a
   blog exemption, and the apt pin needed a paired test update);
-  revised above, re-review pending
-- Code review: pending
+  revised above, re-review ACCEPT 2026-09-24
+- Code review: REJECT once (a dead temp-dir binding the full-feature
+  lint would fail on), fixed and verified ACCEPT with the diff
+  enumerated 2026-09-24
