@@ -40,3 +40,21 @@ spacing fixed, the redundant conversion dropped, the JSON note and
 offset wording recorded for the next batch); yellow gate at
 66c55c55 — lint, test, and spec OK after one cycle that caught the
 cli line cap and the ctgov baselines.
+
+## Batch 1 fixes (2026-09-26)
+
+The review's five findings closed: the partial count now says it may
+be too high (never a floor) on every surface; the note names all
+three keep reasons in plain words ("we could not check N of the kept
+trials (ids), because the detail fetch failed, the eligibility text
+was missing, or the trial had no NCT ID"); the three keep paths each
+have a driving test through a real fixture server and the
+BIOMCP_CTGOV_BASE seam (the no-NCT fixture serves rejecting criteria
+so a stray fetch would fail the test; the verified control carries
+the literal keyword token); trial search JSON carries the note in
+_meta.notes with the omission case tested; and the age filter runs
+before detail verification so an over-age unchecked trial cannot mark
+the count partial (both directions pinned). Code review ACCEPT with
+four P2s (the inventory miscount 59→71 corrected, the fixture
+hardening, the control's literal token, singular/plural reworded
+away); yellow gate at ca7c1fa0 — lint, test, and spec OK.
