@@ -828,9 +828,9 @@ pub enum TrialCount {
     /// Upstream CTGov total before client-side age post-filtering.
     Approximate(usize),
     /// Numeric count that keeps trials whose eligibility or facility
-    /// details could not be verified, for the stated reason. The
-    /// number is a floor: post-filters may not have applied to the
-    /// kept-unverified trials.
+    /// details could not be verified, for the stated reason. The count
+    /// may be too high: post-filters may not have applied to the
+    /// kept-unverified trials, so the true total can only be lower.
     Partial {
         total: usize,
         reason: TrialCountPartialReason,

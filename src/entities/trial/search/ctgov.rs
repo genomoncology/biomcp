@@ -258,16 +258,20 @@ async fn apply_ctgov_post_filters(
         .facility_geo_verification
         .as_ref()
         .map(|(facility, lat, lon, distance)| (facility.as_str(), *lat, *lon, *distance));
-    let (mut studies, report) =
-        verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await;
+    // The age filter runs on the search-level study data before detail
+    // verification, so a trial the age filter drops never reaches detail
+    // checks and cannot mark the count partial.
+    let mut studies = studies;
     if let Some(age) = filters.age {
         studies = verify_age_eligibility(studies, age);
     }
+    let (studies, report) =
+        verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await;
     (studies, report)
 }
 
-/// Render the page-level note for kept-unverified trials. None when
-/// every kept trial passed detail verification.
+/** Render the page-level note for kept-unverified trials. None when
+ * every kept trial passed detail verification. */
 fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
     if report.unverified_kept == 0 {
         return None;
@@ -276,10 +280,9 @@ fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
         String::new()
     } else {
         format!(" ({})", report.unverified_ids.join(", "))
-    }
-    .to_string();
+    };
     Some(format!(
-        "{} of the kept trial(s) could not be detail-verified (detail fetch failed or criteria text was missing){ids}; eligibility and facility filters may not have applied to them",
+        "The count may be too high: {} kept trials{ids} could not be checked because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.",
         report.unverified_kept
     ))
 }
