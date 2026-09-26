@@ -17,3 +17,14 @@ Filed 2026-09-24 from the review of ticket 1240 (merge 60ecdb66). The reviewer d
 - `resources/templates/list` (`src/mcp/shell/modern.rs:124`) and `prompts/list` accept a garbage cursor. Call `reject_unknown_cursor` there too.
 - The conformance tools/call case sends `{}` to `variant_erepo`, gets an `isError` result, and passes on the envelope alone. Pass `--tool-args` with a known-safe call and record the run.
 - Ticket 1240 still says "Code review: pending".
+
+## Resolved
+
+Ticket 1251. Flat roots for search, get, and variant_erepo with a
+collision rule; limit/offset type rejection; deny_unknown_fields on
+erepo (-32602, the recorded pre-body channel); the catalog walk; the
+cursor minors; ADR 0002; the changelog entries; every oneOf consumer
+updated. Residuals: the rmcp Parameters wrapper, the conformance
+--tool-args rerun, the erepo hand-restated root list, the CAID limit
+ignore. See
+`sdlc/records/1251-publish-flat-mcp-tool-schemas-and-finish-the-argument-checks.md`.
