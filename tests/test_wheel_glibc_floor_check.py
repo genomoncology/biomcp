@@ -192,3 +192,27 @@ def test_elf_mode_reads_stdin_and_fails_closed_without_markers(
     markerless.write_bytes(b"\x7fELF no markers here")
     with pytest.raises(SystemExit, match="no GLIBC marker"):
         elf_floor(markerless)
+
+
+def test_the_console_launcher_member_is_scanned(tmp_path: Path) -> None:
+    """The wheel's second program, biomcp-cli, carries the same floor.
+
+    A launcher binary referencing only GLIBC_2.34 must fail the 2.28
+    floor; before the member filter knew its name, it shipped unseen.
+    """
+    launcher = build_wheel(
+        tmp_path / "w-launcher.whl",
+        {
+            "biomcp_cli/biomcp": b"GLIBC_2.17",
+            "biomcp-cli": b"GLIBC_2.34",
+        },
+    )
+    assert wheel_floor(launcher) == (2, 34)
+
+
+def test_a_dir_qualified_launcher_is_scanned(tmp_path: Path) -> None:
+    qualified = build_wheel(
+        tmp_path / "w-qualified.whl",
+        {"bin/biomcp-cli": b"GLIBC_2.29"},
+    )
+    assert wheel_floor(qualified) == (2, 29)

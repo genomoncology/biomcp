@@ -1,12 +1,13 @@
-"""Non-test code under src/ must not spawn children that inherit stdout.
+"""Non-test code under src/ must not spawn children that inherit stdio.
 
 A child spawned by ``biomcp`` in stdio mode inherits the server's
-stdout, and anything it prints lands between JSON-RPC frames. GitHub
-#283 is the live case: ``icacls.exe`` writes a localized success line
-on every managed write and strict clients drop the session. This
-guard fails when non-test code under ``src/`` builds a
-``Command`` without an explicit captured or discarded stdout, so the
-corruption cannot come back quietly.
+stdin, stdout, and stderr, and anything it prints lands between
+JSON-RPC frames (GitHub #283: ``icacls.exe`` wrote a localized success
+line on every managed write and strict clients dropped the session).
+This guard fails when non-test code under ``src/`` builds a
+``Command`` without an explicit, non-inheriting setting for all three
+streams — stdin, stdout, and stderr — so the corruption cannot come
+back quietly through any stream.
 """
 
 from __future__ import annotations
@@ -20,14 +21,90 @@ ROOT = Path(__file__).resolve().parents[1]
 # parent's streams verbatim. It is the only allowed inheritor.
 ALLOW_INHERIT = {"src/main_biomcp_cli.rs"}
 
-COMMAND_NEW = re.compile(
-    r"(?:std::process|tokio::process)::Command::new\s*\(|(?<![:\w])Command::new\s*\("
+# Any path-qualified Command::new (std::process, tokio::process,
+# process:: after `use std::process;`) and the bare imported form.
+COMMAND_NEW = re.compile(r"(?<!\w)(?:\w+::)*Command::new\s*\(")
+# `use ... Command as X;` makes X::new a spawn of the same type.
+COMMAND_ALIAS_USE = re.compile(r"use\s+[\w:]+Command\s+as\s+(\w+)\s*;")
+# The three streams a child must not inherit.
+STREAMS = ("stdin", "stdout", "stderr")
+ITEM_KEYWORDS = (
+    "mod",
+    "static",
+    "const",
+    "fn",
+    "struct",
+    "enum",
+    "impl",
+    "use",
+    "type",
+    "trait",
 )
 
 
-def production_source(path: Path) -> str:
-    """Return the code before the first ``#[cfg(test)]`` in a file."""
-    return path.read_text(encoding="utf-8").split("#[cfg(test)]", maxsplit=1)[0]
+def spawn_pattern(source: str) -> re.Pattern[str]:
+    """The Command::new pattern for this file, aliased imports included."""
+    names = [COMMAND_ALIAS_USE.findall(source)]
+    parts = [COMMAND_NEW.pattern]
+    for alias in sorted(set(sum(names, []))):
+        parts.append(r"(?<!\w)" + re.escape(alias) + r"::new\s*\(")
+    return re.compile("|".join(parts))
+
+
+def strip_test_regions(source: str) -> str:
+    """Remove cfg(test) items so a mid-file test module hides nothing.
+
+    A file's production code continues after an in-file test module
+    (``src/sources/ca_bundle.rs`` keeps a cfg(test) static near the
+    top and real loader code after it), so cutting at the first
+    ``#[cfg(test)]`` would leave most of such a file unscanned.
+    Instead: cfg(test) module blocks are removed by brace matching,
+    cfg(test) single items by their own extent, and a cfg(test)
+    statement (an attribute inside a production function) leaves the
+    statement itself in place. Test code is skipped conservatively;
+    nothing else is.
+    """
+    out: list[str] = []
+    cursor = 0
+    for attribute in re.finditer(r"#\[cfg\(([^)]*)\)\]", source):
+        if "test" not in attribute.group(1):
+            continue
+        if attribute.start() < cursor:
+            continue
+        out.append(source[cursor : attribute.start()])
+        rest_at = attribute.end()
+        while rest_at < len(source) and source[rest_at] in " \t\r\n":
+            rest_at += 1
+        item = re.match(r"(?:pub(?:\([^)]*\))?\s+)?(\w+)", source[rest_at:])
+        keyword = item.group(1) if item else None
+        if keyword in ITEM_KEYWORDS:
+            semicolon = source.find(";", rest_at)
+            opened = source.find("{", rest_at)
+            if opened != -1 and (semicolon == -1 or opened < semicolon):
+                cursor = _matching_brace(source, opened) + 1
+            elif semicolon != -1:
+                cursor = semicolon + 1
+            else:
+                cursor = len(source)
+        else:
+            # A cfg(test) statement inside a production function: drop
+            # only the attribute text; the statement stays scannable.
+            cursor = attribute.end()
+    out.append(source[cursor:])
+    return "".join(out)
+
+
+def _matching_brace(source: str, opened: int) -> int:
+    depth = 0
+    for index in range(opened, len(source)):
+        char = source[index]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+    return len(source) - 1
 
 
 def is_test_path(relative: str) -> bool:
@@ -38,8 +115,8 @@ def is_test_path(relative: str) -> bool:
     return parts[-1].endswith("tests.rs")
 
 
-def statement_windows(source: str) -> list[str]:
-    """Return each ``Command::new`` statement plus chained continuations.
+def statement_windows(source: str, pattern: re.Pattern[str]) -> list[str]:
+    """Return each spawn statement plus chained continuations.
 
     A builder chain may span statements when the binding is reused
     (``let mut command = Command::new(x);`` followed by
@@ -47,10 +124,11 @@ def statement_windows(source: str) -> list[str]:
     following statements that begin with the same binding.
     """
     windows: list[str] = []
-    for match in COMMAND_NEW.finditer(source):
-        # Find the binding this statement creates, if any, by scanning
-        # the segment between the previous statement boundary and the
-        # Command::new occurrence.
+    seen: set[int] = set()
+    for match in pattern.finditer(source):
+        if match.start() in seen:
+            continue
+        seen.add(match.start())
         boundary = max(
             source.rfind(";", 0, match.start()),
             source.rfind("{", 0, match.start()),
@@ -86,35 +164,37 @@ def child_stdio_violations(relative: str, source: str) -> list[str]:
     if relative.replace("\\", "/") in ALLOW_INHERIT:
         return []
     violations: list[str] = []
-    for window in statement_windows(source):
+    for window in statement_windows(source, spawn_pattern(source)):
         if re.search(r"\.output\s*\(", window):
             # .output() captures stdin, stdout, and stderr.
             continue
-        stdout = re.search(r"\.stdout\s*\(\s*([^)]*)", window)
-        if stdout is None:
-            violations.append(
-                f"{relative}: child stdout unset: {window.splitlines()[0].strip()}"
-            )
-        elif "Stdio::inherit" in stdout.group(1):
-            violations.append(
-                f"{relative}: child stdout inherits: {window.splitlines()[0].strip()}"
-            )
+        head = window.splitlines()[0].strip()
+        for stream in STREAMS:
+            setter = re.search(r"\." + stream + r"\s*\(\s*([^)]*)", window)
+            if setter is None:
+                violations.append(f"{relative}: child {stream} unset: {head}")
+            elif "Stdio::inherit" in setter.group(1):
+                violations.append(f"{relative}: child {stream} inherits: {head}")
     return violations
 
 
-def test_source_children_never_inherit_stdout() -> None:
+def test_source_children_never_inherit_stdio() -> None:
     violations: list[str] = []
     for path in sorted((ROOT / "src").rglob("*.rs")):
         relative = str(path.relative_to(ROOT)).replace("\\", "/")
         if is_test_path(relative):
             continue
-        violations.extend(child_stdio_violations(relative, production_source(path)))
-    assert not violations, "children inheriting stdout:\n" + "\n".join(violations)
+        violations.extend(
+            child_stdio_violations(
+                relative, strip_test_regions(path.read_text(encoding="utf-8"))
+            )
+        )
+    assert not violations, "children inheriting stdio:\n" + "\n".join(violations)
 
 
 def test_guard_catches_the_icacls_regression_shape() -> None:
-    # The exact pre-1246 shape: a spawned icacls.exe whose stdout is
-    # unset, so the localized success line lands in the MCP stream.
+    # The exact pre-1246 shape: a spawned icacls.exe whose streams are
+    # all unset, so the localized success line lands in the MCP stream.
     regression = (
         'let status = std::process::Command::new("icacls.exe")\n'
         "    .arg(path)\n"
@@ -123,18 +203,120 @@ def test_guard_catches_the_icacls_regression_shape() -> None:
         "    .status()?;\n"
     )
     violations = child_stdio_violations("src/cache/private.rs", regression)
-    assert violations, "guard must catch the unset-stdout spawn"
-    assert "stdout unset" in violations[0]
+    assert len(violations) == 3, violations
+    for stream in STREAMS:
+        assert any(f"{stream} unset" in violation for violation in violations), (
+            stream,
+            violations,
+        )
 
 
-def test_guard_flags_inherit_and_passes_safe_shapes() -> None:
-    inherit = (
-        'let out = Command::new("tool").arg("x")\n'
-        "    .stdout(Stdio::inherit())\n"
+def test_guard_catches_each_missing_stream_alone() -> None:
+    # Removing any one of the three null streams from the fix must
+    # trip the guard for exactly that stream.
+    full = (
+        'Command::new("icacls.exe").arg(path)\n'
+        "    .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())\n"
         "    .status()?;\n"
     )
-    assert "stdout inherits" in child_stdio_violations("src/a.rs", inherit)[0]
+    assert not child_stdio_violations("src/cache/private.rs", full)
+    for stream in STREAMS:
+        broken = full.replace(f".{stream}(Stdio::null())", "")
+        violations = child_stdio_violations("src/cache/private.rs", broken)
+        assert [v for v in violations if "unset" in v] == [
+            f'src/cache/private.rs: child {stream} unset: Command::new("icacls.exe").arg(path)'
+        ], (stream, violations)
 
+
+def test_guard_flags_each_inheriting_stream_alone() -> None:
+    full = (
+        'Command::new("tool").arg("x")\n'
+        "    .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())\n"
+        "    .status()?;\n"
+    )
+    for stream in STREAMS:
+        inherit = full.replace(
+            f".{stream}(Stdio::null())", f".{stream}(Stdio::inherit())"
+        )
+        violations = child_stdio_violations("src/a.rs", inherit)
+        assert violations == [
+            f'src/a.rs: child {stream} inherits: Command::new("tool").arg("x")'
+        ], (
+            stream,
+            violations,
+        )
+
+
+def test_guard_catches_path_qualified_and_aliased_spawns() -> None:
+    qualified = (
+        'let status = process::Command::new("icacls.exe")\n'
+        "    .arg(path)\n    .status()?;\n"
+    )
+    violations = child_stdio_violations("src/a.rs", qualified)
+    assert any("stdin unset" in v for v in violations), violations
+
+    aliased = (
+        "use std::process::Command as Cmd;\n"
+        "fn f() {\n"
+        '    let out = Cmd::new("icacls.exe")\n'
+        "        .stdin(Stdio::null())\n"
+        "        .stdout(Stdio::null())\n"
+        "        .status()?;\n"
+        "}\n"
+    )
+    violations = child_stdio_violations("src/a.rs", aliased)
+    assert violations == ['src/a.rs: child stderr unset: Cmd::new("icacls.exe")'], (
+        violations
+    )
+
+
+def test_guard_scans_production_code_after_a_midfile_test_module() -> None:
+    # src/sources/ca_bundle.rs keeps a cfg(test) static near the top
+    # and production loader code after it; cutting at the first
+    # #[cfg(test)] would leave that loader unscanned.
+    source = (
+        "static RESOLVED: OnceLock<u8> = OnceLock::new();\n"
+        "#[cfg(test)]\n"
+        "static PARSE_COUNT: AtomicUsize = AtomicUsize::new(0);\n"
+        "fn parse_certificates() {\n"
+        "    #[cfg(test)]\n"
+        "    PARSE_COUNT.fetch_add(1, Ordering::SeqCst);\n"
+        "}\n"
+        "fn late_spawn() {\n"
+        '    let out = Command::new("late")\n'
+        "        .status()?;\n"
+        "}\n"
+    )
+    violations = child_stdio_violations(
+        "src/sources/ca_bundle.rs", strip_test_regions(source)
+    )
+    assert violations, "production code after a mid-file test item must be scanned"
+    assert all("late_spawn" not in v or "unset" in v for v in violations)
+    assert any("late" in v for v in violations), violations
+
+
+def test_guard_scans_production_code_after_a_semicolon_test_module() -> None:
+    # The house shape: a `#[cfg(test)] mod tests;` declaration near the
+    # top (render/markdown files) with production functions after it.
+    # The stripper must cut at the semicolon, not brace-hunt into the
+    # first production item.
+    source = (
+        "use std::fmt;\n"
+        "#[cfg(test)]\n"
+        "mod tests;\n"
+        "pub fn drug_markdown_with_region() -> String {\n"
+        '    let out = Command::new("render-helper")\n'
+        "        .status()?;\n"
+        "    String::new()\n"
+        "}\n"
+    )
+    violations = child_stdio_violations(
+        "src/render/markdown/drug.rs", strip_test_regions(source)
+    )
+    assert any("render-helper" in v for v in violations), violations
+
+
+def test_guard_passes_safe_shapes() -> None:
     for safe in (
         # Discarded streams are the 1246 fix.
         'Command::new("icacls.exe").arg(path)\n'
@@ -152,9 +334,9 @@ def test_guard_flags_inherit_and_passes_safe_shapes() -> None:
         "let mut command = Command::new(sibling);\n"
         "command\n"
         "    .args(env::args_os().skip(1))\n"
-        "    .stdin(Stdio::inherit())\n"
+        "    .stdin(Stdio::null())\n"
         "    .stdout(Stdio::piped())\n"
-        "    .stderr(Stdio::inherit());\n",
+        "    .stderr(Stdio::null());\n",
     ):
         assert not child_stdio_violations("src/a.rs", safe), safe
 

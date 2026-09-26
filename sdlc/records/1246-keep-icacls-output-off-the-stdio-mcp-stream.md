@@ -27,8 +27,15 @@ contract (`tests/windows_stdio_contract.rs`, run by the
 fresh cache directory and a refused local provider port, drives an
 HTTP-backed tool call whose shared-client construction secures the
 tree before the fetch fails, and asserts every stdout line parses as
-JSON-RPC with the call returning an isError result; it fails on the
-pre-fix code. The job also runs the memoization unit tests. The
+JSON-RPC with the call returning an isError result. Evidence
+correction 2026-09-26: a scratch branch with the fix reverted
+(9226cfe4, PR #285) proves the guard fails on the old code — CI run
+36241795274's canonical-gates failed with all three streams unset at
+src/cache/private.rs — but the windows-contracts job PASSED on that
+same scratch: GitHub's runner icacls did not pollute the piped
+stdout, so the behavioral failure of the old code is not
+demonstrable on that runner and no such claim is made. The contract
+stays as defense-in-depth for console sessions like the reporter's. The job also runs the memoization unit tests. The
 changelog names the fix and #283 for the 0.9.1 release.
 
 Evidence: design REJECT once (the guard trigger contradicted its
