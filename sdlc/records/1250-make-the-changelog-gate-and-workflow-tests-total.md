@@ -45,3 +45,25 @@ real-git fixture test; the job-level escape assert); yellow gate at
 Residuals: the fifteen missing changelog bullets are release-prep
 work, listed in ticket 1253; the build job's steps stay outside the
 three-job contract scope (recorded, not demanded by the issue).
+
+## Follow-ups (2026-09-26)
+
+The review's eight escapes closed, each with its specific failure
+message asserted: continue-on-error in any spelling at step and job
+level; || exit 0, set +e, and trap 'exit 0' in any spacing or quote
+form; every switch-off if: shape via a closed allowlist of the two
+conditions the guarded jobs actually use (a new condition needs an
+explicit, reviewable edit); shell: bash {0} banned; the docs-live
+timeout branch pinned to exit 1; and every job's if: asserted by
+exact equality with !cancelled() banned outside container-publish —
+so pypi-publish can no longer publish after a failed smoke. The
+changelog gate strips boilerplate label words (tickets, see, fixed,
+changed, updated, added) before counting word characters, so
+"- Tickets 1226, 1227" and "- see 1226" fail while every real bullet
+passes. Two adversarial forms are pinned as committed mutations
+(no-space ${{true}}, double-quoted trap); the honest residuals
+(bash-semantics wrappers like `if false; then`, a dropped shell:
+declaration, and the legitimate final exit 0) are recorded. Code
+review ACCEPT with two P2s folded (the allowlist trimmed to in-scope
+conditions; the stoplist widened); yellow gate at 60e75532 — lint,
+test, and spec OK.
