@@ -117,6 +117,21 @@ def test_bare_ticket_number_list_does_not_satisfy_coverage(tmp_path: Path) -> No
     assert "1226" in result.stderr and "1227" in result.stderr
 
 
+def test_label_word_bullets_do_not_satisfy_coverage(tmp_path: Path) -> None:
+    # "Tickets" and "see" are boilerplate labels, not descriptions:
+    # the gate must not count them as covered.
+    result = _run(
+        tmp_path,
+        subjects=[
+            "Merge branch 'tickets/1226-gate'",
+            "Merge branch 'tickets/1227-other'",
+        ],
+        changelog="# C\n\n## Unreleased\n\n- Tickets 1226, 1227\n- see 1226\n",
+    )
+    assert result.returncode == 1
+    assert "1226" in result.stderr and "1227" in result.stderr
+
+
 def test_described_number_only_bullet_after_numbers_removed(tmp_path: Path) -> None:
     # Even with three stray digits gone, at least three word
     # characters of description must remain.
@@ -190,7 +205,9 @@ def test_record_discovery_uses_real_git_history(
     git("add", "-A", cwd=repo)
     git("commit", "-q", "-m", "base", cwd=repo)
     git("tag", "v0.9.0", cwd=repo)
-    (repo / "sdlc" / "records" / "2001-real-history.md").write_text("x\n", encoding="utf-8")
+    (repo / "sdlc" / "records" / "2001-real-history.md").write_text(
+        "x\n", encoding="utf-8"
+    )
     git("add", "-A", cwd=repo)
     git("commit", "-q", "-m", "ticket 2001", cwd=repo)
     git("tag", "v0.9.1", cwd=repo)
@@ -263,3 +280,15 @@ def test_every_real_unreleased_bullet_describes_its_ticket() -> None:
 def test_described_tickets_rejects_a_number_only_bullet_directly() -> None:
     assert described_tickets("- 1226, 1227, 1228") == set()
     assert described_tickets("- Fixed the wheel floor check (1246)") == {"1246"}
+
+
+def test_described_tickets_rejects_label_only_bullets_directly() -> None:
+    assert described_tickets("- Tickets 1226, 1227") == set()
+    assert described_tickets("- see 1226") == set()
+    assert described_tickets("- and fixes 1226") == set()
+    assert described_tickets("- The changes 1226") == set()
+    assert described_tickets("- Fixed 1226") == set()
+    assert described_tickets("- Updated 1226") == set()
+    assert described_tickets("- Added 1226") == set()
+    # Real description words survive the stoplist.
+    assert described_tickets("- Restored container publication (1219)") == {"1219"}
