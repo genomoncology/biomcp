@@ -271,6 +271,7 @@ pub(in crate::cli) async fn handle_search(
                 pagination,
                 next_commands,
                 upstream_total,
+                partial_note.as_deref(),
             )
             .map(CommandOutcome::stdout);
         }
@@ -314,7 +315,7 @@ pub(in crate::cli) async fn handle_search(
     Ok(CommandOutcome::stdout(text))
 }
 
-pub(crate) const PARTIAL_COUNT_REASON_TEXT: &str = "some trials kept without detail verification";
+pub(crate) const PARTIAL_COUNT_REASON_TEXT: &str = "may include trials we could not check";
 
 pub(crate) fn render_count_only(
     count: crate::entities::trial::TrialCount,
@@ -373,16 +374,18 @@ pub(crate) fn render_count_only(
     }
 }
 
-/// Carry the provider total alongside a verification-emptied zero page.
-fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
+/** Carry the provider total alongside a verification-emptied zero page
+ * and the partial-detail note on any page. */
+pub(super) fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
     results: Vec<T>,
     pagination: super::super::PaginationMeta,
     next_commands: Vec<String>,
     upstream_total: Option<usize>,
+    partial_note: Option<&str>,
 ) -> anyhow::Result<String> {
     let count = results.len();
     let mut meta = super::super::shared::search_meta_with_suggestions(next_commands, None);
-    if let Some(n) = upstream_total {
+    if upstream_total.is_some() || partial_note.is_some() {
         let meta = meta.get_or_insert_with(|| super::super::SearchJsonMeta {
             next_commands: Vec::new(),
             suggestions: None,
@@ -393,7 +396,12 @@ fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
             upstream_total: None,
             notes: Vec::new(),
         });
-        meta.upstream_total = Some(n);
+        if let Some(n) = upstream_total {
+            meta.upstream_total = Some(n);
+        }
+        if let Some(note) = partial_note {
+            meta.notes = vec![note.to_string()];
+        }
     }
     crate::render::json::to_pretty(&super::super::shared::SearchJsonResponseWithMeta {
         pagination,

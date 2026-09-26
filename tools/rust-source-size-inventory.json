@@ -183,24 +183,24 @@
     },
     {
       "path": "src/entities/trial/search/ctgov.rs",
-      "baseline_lines": 1063,
+      "baseline_lines": 1066,
       "floor_lines": 1000,
       "authorized_increase": {
         "ticket": "1242",
-        "delta": 63,
-        "reason": "Partial-count plumbing for detail-unverified trials (telemetry, Partial arm, notes).",
-        "removal_condition": "Shrink when the eligibility telemetry moves behind a shared report type."
+        "delta": 66,
+        "reason": "Batch 1 fixes: plain-word partial note, age filter before detail verification, and the keep-path tests.",
+        "removal_condition": "Shrink when the partial-count telemetry moves behind a shared report type."
       }
     },
     {
       "path": "src/entities/trial/search/ctgov/tests.rs",
-      "baseline_lines": 1053,
+      "baseline_lines": 1123,
       "floor_lines": 975,
       "authorized_increase": {
         "ticket": "1242",
-        "delta": 78,
-        "reason": "Partial-count plumbing for detail-unverified trials (telemetry, Partial arm, notes).",
-        "removal_condition": "Shrink when the eligibility telemetry moves behind a shared report type."
+        "delta": 148,
+        "reason": "Batch 1 fixes: plain-word partial note, age filter before detail verification, and the keep-path tests.",
+        "removal_condition": "Shrink when the partial-count telemetry moves behind a shared report type."
       }
     },
     {

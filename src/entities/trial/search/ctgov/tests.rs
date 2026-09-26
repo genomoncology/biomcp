@@ -1051,3 +1051,73 @@ fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
         }
     );
 }
+
+async fn failing_detail_fixture() -> (String, tokio::task::JoinHandle<()>) {
+    use axum::{Router, http::StatusCode};
+    let router = Router::new()
+        .fallback(|| async { (StatusCode::INTERNAL_SERVER_ERROR, "fixture unavailable") });
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind failing detail fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let server = tokio::spawn(async move {
+        axum::serve(listener, router)
+            .await
+            .expect("serve failing detail fixture");
+    });
+    (base, server)
+}
+
+async fn apply_post_filters_with_age(
+    age: f64,
+    studies: Vec<CtGovStudy>,
+) -> (Vec<CtGovStudy>, DetailVerificationReport) {
+    let (base, server) = failing_detail_fixture().await;
+    let _env = crate::entities::trial::test_support::CtGovFixtureEnv::set(&base);
+    let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
+    let filters = TrialSearchFilters {
+        criteria: Some("MSI-H".into()),
+        age: Some(age),
+        ..Default::default()
+    };
+    let (context, _worker) = single_ctgov_context_and_worker(&filters);
+    let outcome = apply_ctgov_post_filters(&client, &filters, &context, studies).await;
+    server.abort();
+    outcome
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn an_over_age_unchecked_trial_never_marks_the_count_partial() {
+    let studies = ctgov_studies(vec![ctgov_search_study_fixture(
+        "NCT00000010",
+        "18 Years",
+        "65 Years",
+    )]);
+    let (kept, report) = apply_post_filters_with_age(70.0, studies).await;
+    assert!(kept.is_empty(), "the age filter drops the over-age trial");
+    assert_eq!(
+        report.unverified_kept, 0,
+        "a trial the age filter drops must not mark the count partial"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn an_in_age_unchecked_trial_marks_the_count_partial() {
+    let studies = ctgov_studies(vec![ctgov_search_study_fixture(
+        "NCT00000010",
+        "18 Years",
+        "65 Years",
+    )]);
+    let (kept, report) = apply_post_filters_with_age(50.0, studies).await;
+    assert_eq!(
+        kept.len(),
+        1,
+        "the in-age trial is kept without verification"
+    );
+    assert_eq!(
+        report.unverified_kept, 1,
+        "a kept trial that failed detail checks marks the count partial"
+    );
+}

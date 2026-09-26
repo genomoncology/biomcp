@@ -121,4 +121,15 @@ The per-item state:
 - Code review (batch 1): ACCEPT with P2s (spacing fixed; JSON note
   and offset wording recorded for batch 2) 2026-09-25
 - Verification (batch 1): yellow gate at 66c55c55 lint/test/spec OK;
+- Batch 1 fixes (2026-09-26, review follow-ups): the partial count
+  now says it may be too high (never a floor); the note names all
+  three keep reasons in plain words; the three keep paths each have a
+  driving test (failed fetch, missing criteria text, no NCT ID) plus
+  a verified control (the no-NCT fixture serves rejecting criteria
+  so a stray fetch would fail the test; the control criteria carry
+  the literal keyword token); trial search JSON carries the note in
+  _meta.notes; the age filter now runs before detail verification so
+  an over-age unchecked trial cannot mark the count partial (both
+  directions tested). Inventory: ctgov/tests.rs grew 71 lines (the
+  review's 59 was the worker's miscount; nothing unaccounted).
   see `sdlc/records/1242-render-source-failures-honestly.md`

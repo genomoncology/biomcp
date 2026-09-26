@@ -304,12 +304,16 @@ fn search_results_carry_the_partial_detail_verification_note() {
         None,
         &[],
         Some(
-            "1 of the kept trial(s) could not be detail-verified (detail fetch failed or criteria text was missing) (NCT1); eligibility and facility filters may not have applied to them",
+            "The count may be too high: we could not check 1 of the kept trials (NCT1), because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.",
         ),
     )
     .expect("markdown");
 
-    assert!(markdown.contains("Note: 1 of the kept trial(s) could not be detail-verified"));
+    assert!(
+        markdown
+            .contains("Note: The count may be too high: we could not check 1 of the kept trials")
+    );
+    assert!(markdown.contains("the trial had no NCT ID"));
     assert!(markdown.contains("(NCT1)"));
     // The note must not displace the rows table.
     assert!(markdown.contains("|NCT1|"));

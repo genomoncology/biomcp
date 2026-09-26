@@ -433,4 +433,6 @@ pub(super) fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: f64) -> Vec<
 }
 
 #[cfg(test)]
+mod keep_paths;
+#[cfg(test)]
 mod tests;
