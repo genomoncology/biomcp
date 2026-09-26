@@ -77,13 +77,7 @@ def strip_test_regions(source: str) -> str:
             rest_at += 1
         item = re.match(r"(?:pub(?:\([^)]*\))?\s+)?(\w+)", source[rest_at:])
         keyword = item.group(1) if item else None
-        if keyword == "mod" and item:
-            opened = source.find("{", rest_at)
-            if opened == -1:
-                cursor = len(source)
-                break
-            cursor = _matching_brace(source, opened) + 1
-        elif keyword in ITEM_KEYWORDS:
+        if keyword in ITEM_KEYWORDS:
             semicolon = source.find(";", rest_at)
             opened = source.find("{", rest_at)
             if opened != -1 and (semicolon == -1 or opened < semicolon):
@@ -299,6 +293,27 @@ def test_guard_scans_production_code_after_a_midfile_test_module() -> None:
     assert violations, "production code after a mid-file test item must be scanned"
     assert all("late_spawn" not in v or "unset" in v for v in violations)
     assert any("late" in v for v in violations), violations
+
+
+def test_guard_scans_production_code_after_a_semicolon_test_module() -> None:
+    # The house shape: a `#[cfg(test)] mod tests;` declaration near the
+    # top (render/markdown files) with production functions after it.
+    # The stripper must cut at the semicolon, not brace-hunt into the
+    # first production item.
+    source = (
+        "use std::fmt;\n"
+        "#[cfg(test)]\n"
+        "mod tests;\n"
+        "pub fn drug_markdown_with_region() -> String {\n"
+        '    let out = Command::new("render-helper")\n'
+        "        .status()?;\n"
+        "    String::new()\n"
+        "}\n"
+    )
+    violations = child_stdio_violations(
+        "src/render/markdown/drug.rs", strip_test_regions(source)
+    )
+    assert any("render-helper" in v for v in violations), violations
 
 
 def test_guard_passes_safe_shapes() -> None:
