@@ -6,14 +6,14 @@ here runs before that.
 
 ## Changelog bullets (from the 1234 dry run)
 
-The coverage gate is right: 15 merged tickets have no bullet. Write a
-user-facing bullet for each, in the Unreleased section, then flip the
-heading to `## 0.9.1 — <date>`:
-
-1226, 1227, 1228, 1229, 1230, 1231, 1232, 1233, 1234, 1235, 1239,
-1240, 1241, 1244, 1246 — plus whatever later tickets merge before the
-tag (1247, 1249, 1250, 1251, 1252 and any others; the gate catches
-them).
+The coverage gate is right and it lists the missing tickets itself:
+run it in dry-run form against the candidate tag and write a
+user-facing bullet for every ticket it names, in the Unreleased
+section, then flip the heading to `## 0.9.1 — <date>`. Do not trust a
+hand-copied list — the 2026-09-26 dry run reported 24 (1220, 1222,
+1223, 1224, 1226 through 1237, 1239, 1241, 1242, 1244, 1247, 1248,
+1250, 1254), and tickets with bullets already (1240, 1246, 1249,
+1251, 1252) drop off as they land.
 
 ## Residuals recorded as "exercise at the release run"
 

@@ -1,7 +1,11 @@
 # Single-CPU affinity deadlocks the pipe handshake child
 
-Filed 2026-09-25 while gating ticket 1252. Open. The stress lane works
-around it by pinning to a two-CPU set (`taskset -c 0,1`).
+Filed 2026-09-25 while gating ticket 1252. Open. Severity: P3 —
+test infrastructure only; the stress lane's two-CPU pinning removes
+the trigger, no production code path pins CPUs, and the failure is
+deterministic rather than silent. Owner: the biomcp queue (this file
+is worked when the queue reaches it). The stress lane works around it
+by pinning to a two-CPU set (`taskset -c 0,1`).
 
 ## Symptom
 
@@ -24,12 +28,20 @@ bare nextest runs fail the same way, so the sandbox is not involved.
   the parent's test thread waits on the channel. A steal-read of the
   parent's end returned end-of-stream with no bytes.
 
-That combination — the child demonstrably past its pipe write, the
-parent's reader blocked on that pipe, no bytes arriving — is not
-explainable by the kernel pipe semantics we assume. Something between
-the child's `std::io::stdout().write_all` and the pipe write end is
-affinity-sensitive in a way the static reading misses (libtest output
-capture interacting with the raw-fd write is the untested candidate).
+Correction 2026-09-26: the probe evidence is partly unreliable. The
+"steal-read returned end-of-stream" observation cannot be true while
+the child still holds the pipe's write end open — that reading was
+taken from a probe shell whose own timeout and cleanup made the
+output ambiguous. The reliable facts are the four-cell behavior
+above (deterministic 60 s watchdog at exactly one CPU; instant pass
+at two or more) and the wchan snapshots (child's test thread in a
+pipe read, parent's reader in a pipe read, parent's test thread on
+the channel). Those two wchan states are consistent with the child
+never having written the marker. The investigation should start
+there: instrument the child's write path (does write_all return?
+where do the bytes land?) under one-CPU affinity before trusting any
+steal-read. Until then, treat the mechanism as unknown, not as
+contradictory.
 
 ## What is needed
 
