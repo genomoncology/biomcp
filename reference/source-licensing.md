@@ -106,7 +106,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | AlphaFold DB | 1 | indirect_only | not_applicable | AlphaFold DB structural predictions are published for broad open use | reuse is generally open, but preserve model/source provenance and article citations | <https://alphafold.ebi.ac.uk/faq> |
 | Cancer Genome Interpreter | 3 | indirect_only | not_applicable | custom tool terms | do not assume commercial reuse rights; the official terms restrict some external and commercial use | <https://www.cancergenomeinterpreter.org/conditions> |
 | ClinVar | 1 | direct_api | optional_env | NCBI public-domain submission archive | records are broadly reusable, but preserve accession/provenance and submitter context | <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/> |
-| COSMIC | 3 | indirect_only | not_applicable | COSMIC licensing moved to cosmickb.org; commercial licence required for commercial use including patient services and clinical reporting; academic use is not-for-profit only | direct redistribution and direct integration remain unsupported without a licence; clinical-reporting use of COSMIC-derived fields requires a commercial licence | <https://www.cosmickb.org/licensing/> |
+| COSMIC | 3 | indirect_only | not_applicable | BioMCP reads only MyVariant's COSMIC v68 snapshot — "the last freely available somatic variants from COSMIC before their licence change" (MyVariant metadata, checked 2026-09-27); the current cosmickb.org licence (commercial licence for commercial use including patient services and clinical reporting) governs COSMIC's current offering, not the v68 fields | the v68-era terms govern the fields BioMCP surfaces; the practical limit is the snapshot's age, not its licence; direct use of current COSMIC releases remains commercially restricted | <https://docs.myvariant.info/en/latest/doc/data_source.html> |
 | Disease Ontology | 1 | indirect_only | not_applicable | open disease ontology project | reuse is generally open; preserve ontology version and source references | <https://disease-ontology.org/> |
 | DrugBank | 3 | indirect_only | not_applicable | custom DrugBank terms of use and licensing | use or redistribution of DrugBank content requires a DrugBank license; do not assume open downstream rights | <https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service> |
 | Drugs@FDA | 1 | indirect_only | not_applicable | FDA-origin public information | approval records are broadly reusable; avoid implying FDA endorsement | <https://open.fda.gov/apis/drug/drugsfda/> |
@@ -1004,7 +1004,7 @@ Reviewed on: `2026-09-27`
 - Integration mode: `indirect_only`
 - BioMCP auth: `not_applicable`
 - Provider access / registration: surfaced indirectly through cached MyVariant.info fields; no standalone BioMCP COSMIC client
-- License / terms summary: custom COSMIC licensing with commercial restrictions
+- License / terms summary: MyVariant's v68 snapshot (pre-licence-change) governs the fields BioMCP reads; the current cosmickb.org licence governs only COSMIC's current direct offering
 - Redistribution / reuse summary: direct redistribution and direct integration remain intentionally unsupported without a separate COSMIC license
 - Official terms URL: <https://www.sanger.ac.uk/legal/cosmic-licensing/>
 Reviewed on: `2026-09-27`
