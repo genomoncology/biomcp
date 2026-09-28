@@ -953,10 +953,10 @@ Reviewed on: `2026-09-27`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
-- License / terms summary: ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy
+- License / terms summary: PharmGKB's domain redirects to ClinPGx (same move CPIC recorded); the successor data-usage policy, read from the live page's JS bundle, states ClinPGx data is CC BY-SA 4.0 — verified 2026-09-28 against the same evidence URL as CPIC
 - Redistribution / reuse summary: reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints
 - Official terms URL: <https://api.pharmgkb.org/>
-- Reviewed on: `2026-03-20`
+- Reviewed on: `2026-09-28`
 - Notes: PharmGKB has been transitioning to ClinPGx-branded API documentation. BioMCP keeps the public `PharmGKB` source label because that is the domain vocabulary users recognize.
 
 ## Indirect-only providers surfaced through aggregators
