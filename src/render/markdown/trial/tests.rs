@@ -1,5 +1,7 @@
 use super::*;
 
+const FULL_SECTION_SUMMARY: &str = "Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens. The endpoint is survival.";
+
 fn preselected_trial_with_25_locations() -> TrialResponse {
     let locations = (1..=25)
         .map(|number| {
@@ -295,4 +297,207 @@ fn trial_search_markdown_keeps_partial_detail_note() {
     )
     .expect("markdown");
     assert!(markdown.contains(&format!("Note: {note}")));
+}
+
+#[test]
+fn trial_search_keeps_the_matched_intervention_column_only_for_labeled_hits() {
+    let mut hit = crate::entities::trial::TrialSearchHit::test("NCT00000001", "RECRUITING");
+    let without_label = trial_search_markdown("intervention=fixture", &[hit.clone()], Some(1))
+        .expect("unlabeled search markdown");
+    assert!(!without_label.contains("Matched Intervention"));
+
+    hit.matched_intervention_label = Some("RMC-6236".into());
+    let with_label = trial_search_markdown("intervention=fixture", &[hit], Some(1))
+        .expect("labeled search markdown");
+    assert!(with_label.contains("Matched Intervention"));
+    assert!(with_label.contains("RMC-6236"));
+}
+
+#[test]
+fn trial_search_keeps_scoped_zero_result_guidance() {
+    let nickname = trial_search_markdown_with_footer(
+        "condition=CodeBreaK 300",
+        &[],
+        Some(0),
+        "",
+        true,
+        Some("CodeBreaK 300"),
+    )
+    .expect("nickname guidance");
+    assert!(nickname.contains("ClinicalTrials.gov does not index trial nicknames."));
+    assert!(nickname.contains("biomcp search trial -i \"<drug>\" -c \"<condition>\""));
+    assert!(nickname.contains("biomcp search article \"CodeBreaK 300\" to find the NCT ID"));
+
+    let ordinary =
+        trial_search_markdown_with_footer("condition=melanoma", &[], Some(0), "", false, None)
+            .expect("ordinary empty search");
+    assert!(!ordinary.contains("ClinicalTrials.gov does not index trial nicknames."));
+
+    let hints = vec![
+        "loosen or drop `--mutation`; it is an exact free-text boolean search".into(),
+        "widen `--distance` or remove the geo filter".into(),
+        "relax `--status` to include non-recruiting or not-yet-recruiting trials".into(),
+        "try `--biomarker <gene>`".into(),
+    ];
+    let filtered = trial_search_markdown_with_footer_and_hints(
+        "condition=melanoma, mutation=BRAF V600E",
+        &[],
+        Some(0),
+        "",
+        false,
+        None,
+        &hints,
+        None,
+    )
+    .expect("filtered empty search");
+    for guidance in [
+        "Try broadening the filtered search:",
+        "loosen or drop `--mutation`",
+        "exact free-text boolean search",
+        "widen `--distance`",
+        "relax `--status`",
+        "try `--biomarker <gene>`",
+    ] {
+        assert!(filtered.contains(guidance), "missing {guidance}");
+    }
+}
+
+fn sectioned_trial_fixture() -> TrialResponse {
+    let input = serde_json::json!({
+        "protocolSection": {
+            "identificationModule": {"nctId": "NCT41300002", "briefTitle": "Section renderer fixture"},
+            "statusModule": {"overallStatus": "RECRUITING"},
+            "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Fixture Sponsor"}},
+            "conditionsModule": {"conditions": ["Fixture Condition"]},
+            "designModule": {"studyType": "INTERVENTIONAL"},
+            "descriptionModule": {"briefSummary": FULL_SECTION_SUMMARY},
+            "armsInterventionsModule": {
+                "armGroups": [{"label": "Fixture Arm", "type": "EXPERIMENTAL", "interventionNames": ["DRUG: Fixture Drug"]}],
+                "interventions": [{"name": "Fixture Drug", "type": "DRUG", "armGroupLabels": ["Fixture Arm"]}]
+            },
+            "eligibilityModule": {"eligibilityCriteria": "Fixture criterion", "sex": "ALL"},
+            "outcomesModule": {"primaryOutcomes": [{"measure": "Fixture Outcome"}]},
+            "contactsLocationsModule": {
+                "centralContacts": [{"name": "Central Coordinator", "role": "CONTACT", "email": "central@example.test"}],
+                "locations": [{"facility": "Fixture Site", "country": "United States", "contacts": [
+                    {"name": "Site Coordinator", "role": "CONTACT", "email": "site@example.test"}
+                ]}]
+            },
+            "referencesModule": {"references": [
+                {"pmid": "12345", "citation": "Fixture citation", "type": "BACKGROUND"},
+                {"pmid": "67890"},
+                {},
+                {"pmid": "  ", "citation": "\t", "type": "  "}
+            ]}
+        }
+    }).to_string();
+    let plan = biodata::ClinicalTrialsGovApiV2DetailPlan::new("NCT41300002", true)
+        .expect("section plan")
+        .with_arms()
+        .with_eligibility()
+        .with_outcomes()
+        .with_contacts()
+        .with_locations();
+    let response = biodata::ClinicalTrialsGovApiV2Response::parse(
+        &plan,
+        input.as_bytes(),
+        &Default::default(),
+    )
+    .expect("section response");
+    TrialResponse::new(
+        response.into_projection().expect("section projection"),
+        "ClinicalTrials.gov",
+        None,
+        crate::entities::trial::TrialSectionStates {
+            arms: crate::entities::trial::TrialSectionState::Present,
+            eligibility: crate::entities::trial::TrialSectionState::Present,
+            outcomes: crate::entities::trial::TrialSectionState::Present,
+            references: crate::entities::trial::TrialSectionState::Present,
+            contacts: crate::entities::trial::TrialSectionState::Present,
+            locations: crate::entities::trial::TrialSectionState::Present,
+        },
+    )
+}
+
+#[test]
+fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
+    let trial = sectioned_trial_fixture();
+    let markdown = trial_markdown(&trial, &["all".into()]).expect("section markdown");
+    assert!(markdown.contains("Source: ClinicalTrials.gov"));
+    for section in [
+        "Conditions",
+        "Interventions",
+        "Summary",
+        "Contacts",
+        "Eligibility",
+        "Locations",
+        "Outcomes",
+        "Arms",
+        "References",
+    ] {
+        assert!(
+            markdown.contains(&format!("## {section} (ClinicalTrials.gov)")),
+            "missing {section}"
+        );
+    }
+    for source_type in ["DRUG", "EXPERIMENTAL", "BACKGROUND"] {
+        assert!(markdown.contains(source_type), "missing {source_type}");
+    }
+    assert!(markdown.contains("| Fixture Arm | EXPERIMENTAL | Fixture Drug |"));
+    assert!(markdown.contains("[PMID: 12345] Fixture citation"));
+    assert!(markdown.contains("[PMID: 67890]"));
+    assert_eq!(
+        markdown.matches("Reference details unavailable.").count(),
+        2
+    );
+    assert!(!markdown.contains("Posted trial documents"));
+    assert!(markdown.contains("Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens..."));
+    assert!(!markdown.contains("The endpoint is survival."));
+    assert!(markdown.contains("### Central Contact\n- Name: Central Coordinator"));
+    assert!(markdown.contains("Site Coordinator (CONTACT) site@example.test"));
+    let locations = markdown
+        .split_once("## Locations (ClinicalTrials.gov)")
+        .expect("locations section")
+        .1;
+    assert!(!locations.contains("central@example.test"));
+    assert_eq!(
+        serde_json::to_value(&trial).expect("trial JSON")["summary"],
+        FULL_SECTION_SUMMARY
+    );
+    let json = serde_json::to_value(&trial).expect("trial JSON");
+    assert_eq!(json["contacts"][0]["email"], "central@example.test");
+    assert_eq!(
+        json["locations"][0]["contacts"][0]["email"],
+        "site@example.test"
+    );
+}
+
+#[test]
+fn trial_location_continuation_keeps_source_and_shell_safe_arguments() {
+    let trial = preselected_trial_with_25_locations();
+    let ordinary =
+        trial_response_markdown(&trial, &["locations".into()]).expect("ordinary continuation");
+    assert!(
+        ordinary.contains("Next: `biomcp get trial NCT41300001 --offset 20 --limit 20 locations`")
+    );
+
+    let nci = trial_location_continuation_command(
+        &trial,
+        Some(crate::entities::trial::TrialSource::NciCts),
+        20,
+        20,
+        true,
+    )
+    .expect("NCI continuation");
+    assert_eq!(
+        nci,
+        "biomcp get trial NCT41300001 --source nci --offset 20 --limit 20 contacts locations"
+    );
+    assert!(
+        crate::next_command::NextCommand::biomcp()
+            .args(["get", "trial"])
+            .arg("NCT id` ;&")
+            .render_shell()
+            .contains("\"NCT id\\` ;&\"")
+    );
 }
