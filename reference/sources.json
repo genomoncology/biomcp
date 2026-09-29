@@ -521,7 +521,7 @@
  {
   "id": "enrichr",
   "name": "Enrichr",
-  "tier": 1,
+  "tier": 3,
   "integration_mode": "direct_api",
   "via": null,
   "bioMcp_surfaces": [
@@ -530,11 +530,11 @@
   "bioMcp_auth": "none",
   "env_var": null,
   "provider_access": "open public API",
-  "license_summary": "open web/API service with citation expectations for Enrichr and its libraries",
-  "redistribution_summary": "reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries",
-  "terms_url": "https://maayanlab.cloud/Enrichr/",
+  "license_summary": "Verified 2026-09-29 against the live terms page: free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners. The terms state Enrichr is not to be used for treating or diagnosing human subjects.",
+  "redistribution_summary": "Commercial use requires a license from Mount Sinai Innovation Partners; not for treating or diagnosing human subjects. Users are responsible for their own licenses.",
+  "terms_url": "https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html",
   "key_url": null,
-  "reviewed_on": "2026-03-20",
+  "reviewed_on": "2026-09-29",
   "notes": "Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead."
  },
  {

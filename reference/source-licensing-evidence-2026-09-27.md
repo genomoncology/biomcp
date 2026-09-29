@@ -28,7 +28,7 @@ live JS bundles, which are the citable sources for those rows.
 | disgenet | https://www.disgenet.com/ | 2026-09-27 | unchanged (terms read from JS bundle) — internal noncommercial purposes only |
 | drugbank | https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service | 2026-09-27 | unchanged — commercial use requires a commercial license |
 | drugs-at-fda | https://www.fda.gov/about-fda/about-website/website-policies | 2026-09-27 | unchanged — public domain, credit appreciated |
-| enrichr | https://maayanlab.cloud/Enrichr/help | 2026-09-27 | unverifiable — terms loader script 404s provider-side for every visitor; retry next pass; date NOT moved |
+| enrichr | https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html | 2026-09-29 | verified and relabelled restricted — free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners; not for treating or diagnosing human subjects (the 09-27 call read the broken help page; the terms live on the sibling submenu page) |
 | europe-pmc | https://www.ebi.ac.uk/europepmc/webservices/rest/search | 2026-09-27 | unchanged — open REST, no key; ELIXIR core resource |
 | gnomad | https://gnomad.broadinstitute.org/policies | 2026-09-27 | unchanged — policies page JS-walled; open bucket `gcp-public-data--gnomad` confirms open summary data |
 | gprofiler | https://biit.cs.ut.ee/gprofiler/help.cgi | 2026-09-27 | unchanged (docs read from JS bundle) — open to all users free of charge; cite when used |
@@ -63,7 +63,5 @@ live JS bundles, which are the citable sources for those rows.
 Open items: only Enrichr keeps `reviewed_on` 2026-03-20 (its terms
 loader 404s provider-side for every visitor). The guard warns after
 300 days — 2027-01-15 — and fails on 2027-03-21 for that one source.
-Owner of the retry: the developer agent working Ian's ordered
-BioMCP queue (the role that ran this pass), trigger the 2027-01-15
-warning. Until verified, the 2027-03 crossing is NOT handled for
-Enrichr; the pass handles it for the other 47.
+The retry is dropped: Enrichr is verified and relabelled restricted.
+Every source now has a verified review date.

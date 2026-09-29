@@ -257,7 +257,7 @@ Reviewed on: `2026-09-27`
 - Redistribution / reuse summary: treat CPIC data as attribution-plus-share-alike until CPIC publishes terms on its own domain again; the CPIC mark/logo has separate restrictions
 - Official terms URL: <https://www.clinpgx.org/page/dataUsagePolicy>
 Reviewed on: `2026-09-27`
-- Notes: CPIC announced in March 2026 that content is moving to ClinPGx; as of the 2026-09-27 pass the move is complete: cpicpgx.org redirects and the old licence pages 404 — no CPIC-owned URL resolves to terms any more.
+- Notes: CPIC announced in March 2026 that content is moving to ClinPGx; as of the 2026-09-27 pass the move is complete: cpicpgx.org redirects and the old licence pages 404 — no CPIC-owned URL resolves to terms any more. The ClinPGx policy page is the only live terms statement.
 
 ### DGIdb
 
@@ -352,7 +352,7 @@ Reviewed on: `2026-09-27`
 - License / terms summary: open web/API service with citation expectations for Enrichr and its libraries
 - Redistribution / reuse summary: reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries
 - Official terms URL: <https://maayanlab.cloud/Enrichr/>
-- Reviewed on: `2026-03-20`
+- Reviewed on: `2026-09-29`
 - Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead.
 
 ### Europe PMC
@@ -743,7 +743,7 @@ Reviewed on: `2026-09-27`
 - Redistribution / reuse summary: pathway content is dedicated to the public domain; attribution is still good scholarly practice
 - Official terms URL: <https://www.wikipathways.org/terms.html>
 - Reviewed on: `2026-09-28`
-- Notes: Verified 2026-09-28 — the current site's terms page is live and adopts CC0; the classic-site note described the retired site.
+- Notes: Verified 2026-09-28 against the live terms page (adopts CC0); the classic site is retired and its URLs are dead.
 
 ## Tier 2 - Credential, account, or license required for the BioMCP feature
 
