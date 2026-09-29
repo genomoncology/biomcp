@@ -2,8 +2,8 @@ use super::*;
 
 const FULL_SECTION_SUMMARY: &str = "Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens. The endpoint is survival.";
 
-fn preselected_trial_with_25_locations_from(source: &str) -> TrialResponse {
-    let locations = (1..=25)
+fn preselected_trial_with_locations(source: &str, count: usize) -> TrialResponse {
+    let locations = (1..=count)
         .map(|number| {
             serde_json::json!({
                 "facility": format!("Fixture Site {number:02}"),
@@ -57,12 +57,12 @@ fn preselected_trial_with_25_locations_from(source: &str) -> TrialResponse {
             locations: crate::entities::trial::TrialSectionState::Present,
         },
     );
-    trial.set_site_page(0, 25);
+    trial.set_site_page(0, count);
     trial
 }
 
 fn preselected_trial_with_25_locations() -> TrialResponse {
-    preselected_trial_with_25_locations_from("ClinicalTrials.gov")
+    preselected_trial_with_locations("ClinicalTrials.gov", 25)
 }
 
 fn rendered_location_row_count(markdown: &str) -> usize {
@@ -96,6 +96,17 @@ fn ordinary_trial_response_rendering_keeps_20_location_cap() {
     assert_eq!(rendered_location_row_count(&markdown), 20);
     assert!(markdown.contains("Locations: showing 20 of 25 (display cap 20)."));
     assert!(!markdown.contains("| Fixture Site 21 |"));
+}
+
+#[test]
+fn ordinary_trial_response_at_exact_location_cap_has_no_continuation() {
+    let trial = preselected_trial_with_locations("ClinicalTrials.gov", 20);
+    let markdown = trial_response_markdown(&trial, &["contacts".into(), "locations".into()])
+        .expect("exact boundary markdown");
+    assert_eq!(rendered_location_row_count(&markdown), 20);
+    assert!(markdown.contains("Person 20"));
+    assert!(!markdown.contains("display cap"));
+    assert!(!markdown.contains("\nNext:"));
 }
 
 #[test]
@@ -391,9 +402,15 @@ fn trial_search_keeps_scoped_zero_result_guidance() {
     }
 }
 
-fn sectioned_trial_fixture(
+fn sectioned_trial_fixture_with_assignments(
     provenance: Option<crate::entities::trial::TrialEligibilityProvenance>,
+    swapped: bool,
 ) -> TrialResponse {
+    let (first, second) = if swapped {
+        ("Comparison Arm", "Fixture Arm")
+    } else {
+        ("Fixture Arm", "Comparison Arm")
+    };
     let input = serde_json::json!({
         "protocolSection": {
             "identificationModule": {"nctId": "NCT41300002", "briefTitle": "Section renderer fixture"},
@@ -408,8 +425,8 @@ fn sectioned_trial_fixture(
                     {"label": "Comparison Arm", "type": "ACTIVE_COMPARATOR", "interventionNames": ["DRUG: Comparison Drug"]}
                 ],
                 "interventions": [
-                    {"name": "Fixture Drug", "type": "DRUG", "armGroupLabels": ["Fixture Arm"]},
-                    {"name": "Comparison Drug", "type": "DRUG", "armGroupLabels": ["Comparison Arm"]}
+                    {"name": "Fixture Drug", "type": "DRUG", "armGroupLabels": [first]},
+                    {"name": "Comparison Drug", "type": "DRUG", "armGroupLabels": [second]}
                 ]
             },
             "eligibilityModule": {"eligibilityCriteria": "Fixture criterion", "sex": "ALL"},
@@ -417,14 +434,17 @@ fn sectioned_trial_fixture(
             "contactsLocationsModule": {
                 "centralContacts": [{"name": "Central Coordinator", "role": "CONTACT", "email": "central@example.test"}],
                 "locations": [{"facility": "Fixture Site", "country": "United States", "contacts": [
-                    {"name": "Site Coordinator", "role": "CONTACT", "email": "site@example.test"}
+                    {"name": "Site Coordinator", "role": "CONTACT", "email": "site@example.test"},
+                    {"name": "Backup | Coordinator\n\u{7}", "role": "BACK|UP", "phone": "555\n0101", "email": "backup|site@example.test"}
                 ]}]
             },
             "referencesModule": {"references": [
                 {"pmid": "12345", "citation": "Fixture citation", "type": "BACKGROUND"},
                 {"pmid": "67890"},
                 {},
-                {"pmid": "  ", "citation": "\t", "type": "  "}
+                {"pmid": "  ", "citation": "\t", "type": "  "},
+                {"pmid": "24680", "type": "HIDDEN"},
+                {"type": "CODE-ONLY"}
             ]}
         }
     }).to_string();
@@ -456,6 +476,12 @@ fn sectioned_trial_fixture(
     )
 }
 
+fn sectioned_trial_fixture(
+    provenance: Option<crate::entities::trial::TrialEligibilityProvenance>,
+) -> TrialResponse {
+    sectioned_trial_fixture_with_assignments(provenance, false)
+}
+
 #[test]
 fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
     let trial = sectioned_trial_fixture(None);
@@ -485,6 +511,9 @@ fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
     assert!(!markdown.contains("| Fixture Arm | EXPERIMENTAL | Comparison Drug |"));
     assert!(markdown.contains("[PMID: 12345] Fixture citation"));
     assert!(markdown.contains("[PMID: 67890]"));
+    assert!(markdown.contains("[PMID: 24680]"));
+    assert!(markdown.contains("CODE-ONLY"));
+    assert!(!markdown.contains("HIDDEN"));
     assert_eq!(
         markdown.matches("Reference details unavailable.").count(),
         2
@@ -494,6 +523,10 @@ fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
     assert!(!markdown.contains("The endpoint is survival."));
     assert!(markdown.contains("### Central Contact\n- Name: Central Coordinator"));
     assert!(markdown.contains("Site Coordinator (CONTACT) site@example.test"));
+    assert!(
+        markdown.contains("Backup \\| Coordinator (BACK\\|UP) 555 0101 backup\\|site@example.test")
+    );
+    assert!(!markdown.contains("555\n0101"));
     let locations = markdown
         .split_once("## Locations (ClinicalTrials.gov)")
         .expect("locations section")
@@ -509,7 +542,66 @@ fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
         json["locations"][0]["contacts"][0]["email"],
         "site@example.test"
     );
+    assert_eq!(
+        json["locations"][0]["contacts"][1]["name"],
+        "Backup | Coordinator\n\u{7}"
+    );
     assert_eq!(json["eligibility"]["sexes"][0]["code"], "ALL");
+}
+
+#[test]
+fn trial_markdown_follows_swapped_assignments_with_unchanged_names() {
+    let original = sectioned_trial_fixture_with_assignments(None, false);
+    let swapped = sectioned_trial_fixture_with_assignments(None, true);
+    let names = |trial: &TrialResponse| {
+        trial
+            .trial()
+            .interventions()
+            .expect("interventions")
+            .iter()
+            .map(|item| item.name().to_string())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(names(&original), names(&swapped));
+    let markdown = trial_markdown(&swapped, &["arms".into()]).expect("swapped arms");
+    assert!(markdown.contains("| Fixture Arm | EXPERIMENTAL | Comparison Drug |"));
+    assert!(markdown.contains("| Comparison Arm | ACTIVE_COMPARATOR | Fixture Drug |"));
+    assert!(!markdown.contains("| Fixture Arm | EXPERIMENTAL | Fixture Drug |"));
+}
+
+#[test]
+fn shared_reference_labels_prefer_display_then_meaning_then_code() {
+    let cases = [
+        (
+            Some(" Preferred display "),
+            Some("Recognized meaning"),
+            "CODE",
+            "Preferred display",
+        ),
+        (
+            None,
+            Some(" Recognized only "),
+            "CODE-TWO",
+            "Recognized only",
+        ),
+        (None, None, " Code only ", "Code only"),
+        (Some(" \t "), Some(" \t "), " \t ", ""),
+    ];
+    for (display, meaning, code, expected) in cases {
+        let source_type =
+            biodata::ExtensibleCode::new("example.org", code, display, None::<String>, meaning)
+                .expect("source type");
+        let reference = biodata::ClinicalTrialReference::new(None, None, Some(source_type))
+            .expect("source-only reference");
+        let values = [reference];
+        let views = crate::entities::trial::reference_wire::markdown_views(Some(&values))
+            .expect("reference views");
+        let label = serde_json::to_value(&views).expect("markdown view")[0]["source_type_label"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string();
+        assert_eq!(label, expected, "source code {code:?}");
+    }
 }
 
 #[test]
@@ -550,7 +642,7 @@ fn trial_location_continuation_keeps_source_and_shell_safe_arguments() {
         "biomcp get trial NCT41300001 --source nci --offset 20 --limit 20 contacts locations"
     );
     let nci_card = trial_response_markdown(
-        &preselected_trial_with_25_locations_from("NCI CTS"),
+        &preselected_trial_with_locations("NCI CTS", 25),
         &["locations".into()],
     )
     .expect("NCI continuation card");
@@ -558,7 +650,7 @@ fn trial_location_continuation_keeps_source_and_shell_safe_arguments() {
         "Next: `biomcp get trial NCT41300001 --source nci --offset 20 --limit 20 locations`"
     ));
     let unknown_card = trial_response_markdown(
-        &preselected_trial_with_25_locations_from("Unknown Provider"),
+        &preselected_trial_with_locations("Unknown Provider", 25),
         &["locations".into()],
     )
     .expect("unknown-source card");
