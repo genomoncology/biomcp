@@ -183,23 +183,23 @@
     },
     {
       "path": "src/entities/trial/search/ctgov.rs",
-      "baseline_lines": 1064,
+      "baseline_lines": 1065,
       "floor_lines": 995,
       "authorized_increase": {
         "ticket": "biodata-0203",
-        "delta": 69,
-        "reason": "The BioData plan-bound CTGov path now carries main detail-failure notes and applies age filtering before detail verification.",
+        "delta": 70,
+        "reason": "The BioData plan-bound CTGov path carries main detail-failure notes, age-before-detail filtering, and incomplete coverage for an unusable alias cursor.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
       "path": "src/entities/trial/search/ctgov/tests.rs",
-      "baseline_lines": 1157,
+      "baseline_lines": 1203,
       "floor_lines": 975,
       "authorized_increase": {
         "ticket": "biodata-0203",
-        "delta": 182,
-        "reason": "The BioData cursor and total proof retains the dedicated provider-byte fixtures while main detail-failure behavior is adapted.",
+        "delta": 228,
+        "reason": "The BioData cursor and total proof retains provider-byte fixtures, adapted main detail-failure behavior, and the blank-cursor alias-union count regression.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },

@@ -745,6 +745,52 @@ async fn alias_union_returns_the_traversal_limit_reason_at_its_cap() {
     assert!(requests.lock().expect("lock fixture requests").is_empty());
 }
 
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn alias_union_blank_cursor_cannot_claim_an_exact_total() {
+    let body = serde_json::json!({
+        "studies": [ctgov_search_study_fixture("NCT00000001", "18 Years", "75 Years")],
+        "totalCount": 2,
+        "nextPageToken": " \t "
+    })
+    .to_string();
+    let (base, requests, server) = ctgov_json_fixture(body).await;
+    let _env = CtGovFixtureEnv::set(&base);
+    let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
+    let filters = TrialSearchFilters {
+        condition: Some("melanoma".into()),
+        ..Default::default()
+    };
+    let normalized = validate_trial_search(&filters).expect("valid CTGov filters");
+    let context = prepare_ctgov_search_context(&normalized).expect("CTGov context");
+    let aliases = [
+        trial_alias("requested", TrialAliasSource::Requested),
+        trial_alias("expanded", TrialAliasSource::DrugBankSynonym),
+    ];
+    let count = count_all_with_ctgov_union(
+        &client,
+        &filters,
+        &context,
+        raw_condition_query(&filters),
+        &aliases,
+        10,
+    )
+    .await
+    .expect("alias union count");
+    assert_eq!(
+        count.value(),
+        None,
+        "unseen provider rows remain inaccessible"
+    );
+    assert_ne!(count.precision(), "exact");
+    assert_eq!(
+        count.unknown_reason(),
+        Some(ClinicalTrialSearchUnknownReason::IncompleteSourceCoverage)
+    );
+    server.abort();
+    assert_eq!(requests.lock().expect("lock fixture requests").len(), 2);
+}
+
 #[test]
 fn alias_expansion_next_page_error_is_actionable() {
     let err = fanout_next_page_error();

@@ -872,6 +872,7 @@ async fn count_all_with_ctgov_union(
     let mut verification_incomplete = false;
 
     loop {
+        degraded_coverage |= workers.iter().any(|worker| worker.cursor_unusable);
         let active_indices: Vec<usize> = workers
             .iter()
             .enumerate()

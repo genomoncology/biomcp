@@ -304,9 +304,10 @@ async fn detail_parse_failure_keeps_the_row_and_marks_verification_incomplete() 
     )])
     .remove(0);
 
-    let outcome = verify_detail_filters(&client, vec![study], None, &["BRAF".into()]).await;
-    assert_eq!(outcome.studies.len(), 1);
-    assert!(outcome.incomplete);
+    let (studies, report) =
+        verify_detail_filters(&client, vec![study], None, &["BRAF".into()]).await;
+    assert_eq!(studies.len(), 1);
+    assert_eq!(report.unverified_kept, 1);
     server.abort();
     assert_eq!(requests.lock().expect("fixture requests").len(), 1);
 }
