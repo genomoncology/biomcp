@@ -4202,10 +4202,11 @@
 <p>Per-source evidence for the delegated licensing review pass recorded
 in <code>sdlc/records/2026-09-27-source-licensing-review-pass.md</code>. Every
 row names the URL checked, the access date, and the finding. The
-correct split across the 48 sources due 2026-03-20: 42 unchanged, 2
-changed (COSMIC, CPIC), 4 unverifiable (CIViC, Enrichr, WikiPathways,
-and PharmGKB — the last reconciled to verified on 2026-09-28 against
-the CPIC page, leaving 3 open). JS-walled pages were read from their
+final split across the 48 sources due 2026-03-20: 45 verified
+(CIViC, WikiPathways and PharmGKB resolved on 2026-09-28, Enrichr on
+2026-09-29), 2 changed (COSMIC, CPIC), 1 restricted (Enrichr,
+verified and relabelled the same day from the live terms submenu
+page; the 09-27 call had read the broken help page). JS-walled pages were read from their
 live JS bundles, which are the citable sources for those rows.</p>
 <table>
 <thead>
@@ -4507,11 +4508,10 @@ live JS bundles, which are the citable sources for those rows.</p>
 </tr>
 </tbody>
 </table>
-<p>Open items: only Enrichr keeps <code>reviewed_on</code> 2026-03-20 (its terms
-loader 404s provider-side for every visitor). The guard warns after
-300 days — 2027-01-15 — and fails on 2027-03-21 for that one source.
-The retry is dropped: Enrichr is verified and relabelled restricted.
-Every source now has a verified review date.</p>
+<p>No open items remain: Enrichr was verified and relabelled restricted
+on 2026-09-29 from the live terms submenu page (the 09-27 call had
+read the broken help page), and every source now carries a verified
+review date, so the 300-day guard applies to all 48.</p>
 
 
 
