@@ -4249,9 +4249,9 @@ live JS bundles, which are the citable sources for those rows.</p>
 </tr>
 <tr>
 <td>civic</td>
-<td>(unverifiable) https://civicdb.org/home</td>
-<td>2026-09-27</td>
-<td>Angular SPA serves no terms text to curl; needs a browser check; date NOT moved</td>
+<td>https://docs.civicdb.org/en/latest/about/faq.html</td>
+<td>2026-09-28</td>
+<td>verified (2026-09-28 correction of the 09-27 call): the docs FAQ is plain HTML — "The content of CIViC ... is released under the Creative Commons Public Domain Dedication (CC0 1.0 Universal)"; research-purposes disclaimer rides with it</td>
 </tr>
 <tr>
 <td>clingen</td>
@@ -4501,18 +4501,19 @@ live JS bundles, which are the citable sources for those rows.</p>
 </tr>
 <tr>
 <td>wikipathways</td>
-<td>(unverifiable) https://www.wikipathways.org/about</td>
-<td>2026-09-27</td>
-<td>classic site retired in the GitHub transition; no live licence statement anywhere; recorded CC0 unverifiable; date NOT moved</td>
+<td>https://www.wikipathways.org/terms.html</td>
+<td>2026-09-28</td>
+<td>verified (2026-09-28 correction of the 09-27 call): the current site's terms page is live and states WikiPathways "decided to adopt the Creative Commons CC0 waiver for our content"</td>
 </tr>
 </tbody>
 </table>
-<p>Open items: CIViC, Enrichr, and WikiPathways keep <code>reviewed_on</code>
-2026-03-20. The guard warns after 300 days — 2027-01-15, not
-December — and fails on 2027-03-21. Owner of the retry: the biomcp
-queue, trigger the 2027-01-15 warning or any browser-capable session
-before it. Until verified, the 2027-03 crossing is NOT handled for
-these three; the pass handles it for the other 45.</p>
+<p>Open items: only Enrichr keeps <code>reviewed_on</code> 2026-03-20 (its terms
+loader 404s provider-side for every visitor). The guard warns after
+300 days — 2027-01-15 — and fails on 2027-03-21 for that one source.
+Owner of the retry: the developer agent working Ian's ordered
+BioMCP queue (the role that ran this pass), trigger the 2027-01-15
+warning. Until verified, the 2027-03 crossing is NOT handled for
+Enrichr; the pass handles it for the other 47.</p>
 
 
 

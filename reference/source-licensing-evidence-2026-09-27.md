@@ -16,7 +16,7 @@ live JS bundles, which are the citable sources for those rows.
 | cancer-genome-interpreter | https://www.cancergenomeinterpreter.org/website-terms-of-use | 2026-09-27 | unchanged (terms read from site JS bundle) — CGI Open research-only, CGI Industry commercial |
 | cbioportal | https://www.cbioportal.org/api/studies | 2026-09-27 | unchanged — open API answered 548 studies; study-level downstream terms as recorded |
 | chembl | https://www.ebi.ac.uk/chembl/ | 2026-09-27 | summary corrected — CC BY-SA 3.0, the ShareAlike obligation the earlier summary omitted |
-| civic | (unverifiable) https://civicdb.org/home | 2026-09-27 | Angular SPA serves no terms text to curl; needs a browser check; date NOT moved |
+| civic | https://docs.civicdb.org/en/latest/about/faq.html | 2026-09-28 | verified (2026-09-28 correction of the 09-27 call): the docs FAQ is plain HTML — "The content of CIViC ... is released under the Creative Commons Public Domain Dedication (CC0 1.0 Universal)"; research-purposes disclaimer rides with it |
 | clingen | https://clinicalgenome.org/about/terms-of-use | 2026-09-27 | unchanged — CC0 1.0, attribution requested |
 | clinicaltrials-gov | https://www.nlm.nih.gov/web_policies.html | 2026-09-27 | unchanged — US-government works not subject to copyright |
 | clinvar | https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/ | 2026-09-27 | unchanged — attribution requested on distribution |
@@ -58,11 +58,12 @@ live JS bundles, which are the citable sources for those rows.
 | string | https://string-db.org/cgi/access?footer_active_subpage=licensing | 2026-09-27 | unchanged — CC BY 4.0 with credit |
 | umls | https://www.nlm.nih.gov/databases/umls.html | 2026-09-27 | unchanged — individual license, UTS account required |
 | uniprot | https://rest.uniprot.org/uniprotkb/P12345.txt | 2026-09-27 | unchanged — CC BY 4.0 (stated in the live REST entry text) |
-| wikipathways | (unverifiable) https://www.wikipathways.org/about | 2026-09-27 | classic site retired in the GitHub transition; no live licence statement anywhere; recorded CC0 unverifiable; date NOT moved |
+| wikipathways | https://www.wikipathways.org/terms.html | 2026-09-28 | verified (2026-09-28 correction of the 09-27 call): the current site's terms page is live and states WikiPathways "decided to adopt the Creative Commons CC0 waiver for our content" |
 
-Open items: CIViC, Enrichr, and WikiPathways keep `reviewed_on`
-2026-03-20. The guard warns after 300 days — 2027-01-15, not
-December — and fails on 2027-03-21. Owner of the retry: the biomcp
-queue, trigger the 2027-01-15 warning or any browser-capable session
-before it. Until verified, the 2027-03 crossing is NOT handled for
-these three; the pass handles it for the other 45.
+Open items: only Enrichr keeps `reviewed_on` 2026-03-20 (its terms
+loader 404s provider-side for every visitor). The guard warns after
+300 days — 2027-01-15 — and fails on 2027-03-21 for that one source.
+Owner of the retry: the developer agent working Ian's ordered
+BioMCP queue (the role that ran this pass), trigger the 2027-01-15
+warning. Until verified, the 2027-03 crossing is NOT handled for
+Enrichr; the pass handles it for the other 47.

@@ -89,7 +89,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | OpenFDA | 1 | direct_api | optional_env | FDA-origin public data and API terms | data is broadly reusable, but avoid implying FDA endorsement and preserve source context | <https://open.fda.gov/apis/authentication/> |
 | OpenTargets | 1 | direct_api | none | Open Targets data is CC0; platform code is Apache 2.0 | platform data is dedicated to the public domain, but linked evidence still carries source provenance | <https://platform-docs.opentargets.org/licence> |
 | PharmacoDB | 3 | direct_api | none | PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider | treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established | none published |
-| PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://api.pharmgkb.org/> |
+| PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://www.clinpgx.org/page/dataUsagePolicy> |
 | PMC OA | 1 | direct_api | optional_env | open-access subset only; article licenses vary within PMC OA | full text is reusable only according to each article's specific PMC Open Access license | <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/> |
 | PubMed | 1 | direct_api | optional_env | NLM public-domain search and metadata service | search results are broadly reusable, but article-level abstracts, full text, and downstream reuse still depend on the returned record context | <https://www.ncbi.nlm.nih.gov/books/NBK25501/> |
 | PubTator3 | 1 | direct_api | optional_env | NCBI/NLM public-domain annotation service | results are broadly reusable, but preserve PMID/source provenance and article-level rights separately | <https://www.ncbi.nlm.nih.gov/research/pubtator3/api> |
@@ -102,7 +102,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | UniProt | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution; linked cross-references can have their own terms | <https://www.uniprot.org/help/license> |
 | VariantValidator | 1 | direct_api | none | public VariantValidator service; provider terms apply to returned validation output | preserve VariantValidator source identity, warnings, and genomic descriptions when reusing results | <https://variantvalidator.org/> |
 | WHO Prequalification | 1 | direct_api | none | WHO content generally requires attribution; commercial reuse may require permission and third-party materials can carry separate rights | preserve WHO attribution, review commercial-use conditions, and check third-party material rights before republishing | <https://www.who.int/about/policies/publishing/copyright> |
-| WikiPathways | 1 | direct_api | none | CC0 | pathway content is dedicated to the public domain; attribution is still good scholarly practice | <https://classic.wikipathways.org/index.php/WikiPathways:License_Terms> |
+| WikiPathways | 1 | direct_api | none | CC0 | pathway content is dedicated to the public domain; attribution is still good scholarly practice | <https://www.wikipathways.org/terms.html> |
 | AlphaFold DB | 1 | indirect_only | not_applicable | AlphaFold DB structural predictions are published for broad open use | reuse is generally open, but preserve model/source provenance and article citations | <https://alphafold.ebi.ac.uk/faq> |
 | Cancer Genome Interpreter | 3 | indirect_only | not_applicable | custom tool terms | do not assume commercial reuse rights; the official terms restrict some external and commercial use | <https://www.cancergenomeinterpreter.org/conditions> |
 | ClinVar | 1 | direct_api | optional_env | NCBI public-domain submission archive | records are broadly reusable, but preserve accession/provenance and submitter context | <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/> |
@@ -147,8 +147,8 @@ Reviewed on: `2026-09-27`
 - Provider access / registration: open public API
 - License / terms summary: open community knowledgebase; CIViC content is published for unrestricted reuse
 - Redistribution / reuse summary: reuse is broadly permitted; attribution remains best practice
-- Official terms URL: <https://civicdb.org/home>
-- Reviewed on: `2026-03-20`
+- Official terms URL: <https://docs.civicdb.org/en/latest/about/faq.html>
+- Reviewed on: `2026-09-28`
 - Notes: CIViC is treated here as an open-access evidence source surfaced directly by BioMCP. Drug target output may add a separate CIViC variant-target annotation line without merging those labels into the generic targets section.
 
 ### ClinGen
@@ -255,9 +255,9 @@ Reviewed on: `2026-09-27`
 - Provider access / registration: open public API
 - License / terms summary: cpicpgx.org now redirects to ClinPGx and its former CC0 licence pages are gone; the successor data-usage policy states ClinPGx data is CC BY-SA 4.0, and whether that governs CPIC content is not stated on any live page
 - Redistribution / reuse summary: treat CPIC data as attribution-plus-share-alike until CPIC publishes terms on its own domain again; the CPIC mark/logo has separate restrictions
-- Official terms URL: <https://cpicpgx.org/license/>
+- Official terms URL: <https://www.clinpgx.org/page/dataUsagePolicy>
 Reviewed on: `2026-09-27`
-- Notes: CPIC announced in March 2026 that content is moving to ClinPGx; as of the 2026-09-27 pass the move is complete (cpicpgx.org redirects; old licence pages 404).
+- Notes: CPIC announced in March 2026 that content is moving to ClinPGx; as of the 2026-09-27 pass the move is complete: cpicpgx.org redirects and the old licence pages 404 — no CPIC-owned URL resolves to terms any more.
 
 ### DGIdb
 
@@ -741,9 +741,9 @@ Reviewed on: `2026-09-27`
 - Provider access / registration: open public API
 - License / terms summary: CC0
 - Redistribution / reuse summary: pathway content is dedicated to the public domain; attribution is still good scholarly practice
-- Official terms URL: <https://classic.wikipathways.org/index.php/WikiPathways:License_Terms>
-- Reviewed on: `2026-03-20`
-- Notes: The current license statement is still hosted on the WikiPathways classic site.
+- Official terms URL: <https://www.wikipathways.org/terms.html>
+- Reviewed on: `2026-09-28`
+- Notes: Verified 2026-09-28 — the current site's terms page is live and adopts CC0; the classic-site note described the retired site.
 
 ## Tier 2 - Credential, account, or license required for the BioMCP feature
 
@@ -955,7 +955,7 @@ Reviewed on: `2026-09-27`
 - Provider access / registration: open public API
 - License / terms summary: PharmGKB's domain redirects to ClinPGx (same move CPIC recorded); the successor data-usage policy, read from the live page's JS bundle, states ClinPGx data is CC BY-SA 4.0 — verified 2026-09-28 against the same evidence URL as CPIC
 - Redistribution / reuse summary: reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints
-- Official terms URL: <https://api.pharmgkb.org/>
+- Official terms URL: <https://www.clinpgx.org/page/dataUsagePolicy>
 - Reviewed on: `2026-09-28`
 - Notes: PharmGKB has been transitioning to ClinPGx-branded API documentation. BioMCP keeps the public `PharmGKB` source label because that is the domain vocabulary users recognize.
 

@@ -154,11 +154,11 @@
   "bioMcp_auth": "none",
   "env_var": null,
   "provider_access": "open public API",
-  "license_summary": "open community knowledgebase; CIViC content is published for unrestricted reuse",
+  "license_summary": "open community knowledgebase; CIViC content is published for unrestricted reuse. Verified 2026-09-28 against the live FAQ (plain HTML): CIViC content is released under CC0 1.0 Universal; the source code is MIT; CIViC is intended for purely research purposes.",
   "redistribution_summary": "reuse is broadly permitted; attribution remains best practice",
-  "terms_url": "https://civicdb.org/home",
+  "terms_url": "https://docs.civicdb.org/en/latest/about/faq.html",
   "key_url": null,
-  "reviewed_on": "2026-03-20",
+  "reviewed_on": "2026-09-28",
   "notes": "CIViC is treated here as an open-access evidence source surfaced directly by BioMCP. Drug target output may add a separate CIViC variant-target annotation line without merging those labels into the generic targets section."
  },
  {
@@ -1538,11 +1538,11 @@
   "bioMcp_auth": "none",
   "env_var": null,
   "provider_access": "open public API",
-  "license_summary": "CC0",
+  "license_summary": "Verified 2026-09-28 against the live terms page: WikiPathways adopts the Creative Commons CC0 waiver for its content (the page says so in plain text). The earlier unverifiable call reflected the retired classic site; the current site's terms page is live.",
   "redistribution_summary": "pathway content is dedicated to the public domain; attribution is still good scholarly practice",
-  "terms_url": "https://classic.wikipathways.org/index.php/WikiPathways:License_Terms",
+  "terms_url": "https://www.wikipathways.org/terms.html",
   "key_url": null,
-  "reviewed_on": "2026-03-20",
+  "reviewed_on": "2026-09-28",
   "notes": "The current license statement is still hosted on the WikiPathways classic site."
  },
  {
