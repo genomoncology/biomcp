@@ -92,9 +92,9 @@ async fn infinite_mode_serves_an_expired_entry() {
     .expect("first call");
     assert_eq!(sidecar_records(fx.cache.path()).len(), 1);
 
-    // The mode is set after the first call so the HTTP middleware's cached
-    // mode resolution never observes it.
-    fx.set("BIOMCP_CACHE_MODE", "infinite");
+    // Set the mode after the first call through the scoped test override;
+    // the process mode has already been read and cannot observe a later env change.
+    let _infinite = crate::sources::test_cache_mode::infinite();
     fx.cold_http_cache();
     fx.clear_log();
 
