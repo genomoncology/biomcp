@@ -183,11 +183,11 @@
     },
     {
       "path": "src/entities/trial/search/ctgov.rs",
-      "baseline_lines": 1068,
+      "baseline_lines": 1064,
       "floor_lines": 995,
       "authorized_increase": {
         "ticket": "biodata-0203",
-        "delta": 73,
+        "delta": 69,
         "reason": "The BioData plan-bound CTGov path now carries main detail-failure notes and applies age filtering before detail verification.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }

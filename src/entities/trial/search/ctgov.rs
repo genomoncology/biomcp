@@ -890,9 +890,6 @@ async fn count_all_with_ctgov_union(
         }
 
         if fetched_pages.saturating_add(active_indices.len()) > traversal_page_cap {
-            if !degraded_coverage && verification_incomplete {
-                return Ok(TrialCount::partial(unique_nct_ids.len()));
-            }
             return final_ctgov_union_count(
                 degraded_coverage,
                 verification_incomplete,
@@ -1004,11 +1001,7 @@ pub(super) async fn count_all_with_ctgov_client(
 
     loop {
         if page_count >= traversal_page_cap {
-            return Ok(if verification_incomplete {
-                TrialCount::partial(verified_total)
-            } else {
-                ClinicalTrialSearchTotal::unknown(CTGOV_COUNT_CAP_REASON).into()
-            });
+            return Ok(ClinicalTrialSearchTotal::unknown(CTGOV_COUNT_CAP_REASON).into());
         }
 
         let resp = client
@@ -1047,7 +1040,10 @@ pub(super) async fn count_all_with_ctgov_client(
             biodata::ClinicalTrialProviderCursor::Present(_)
             | biodata::ClinicalTrialProviderCursor::Unavailable => {
                 return Ok(if verification_incomplete {
-                    TrialCount::partial(verified_total)
+                    ClinicalTrialSearchTotal::unknown(
+                        ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
+                    )
+                    .into()
                 } else if let Some(total) = fallback_total {
                     super::approximate_total(total)?.into()
                 } else {
