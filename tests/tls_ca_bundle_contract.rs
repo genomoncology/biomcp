@@ -421,6 +421,27 @@ async fn missing_bundle_fails_before_a_completed_handshake() {
 }
 
 #[tokio::test]
+async fn fhir_rejected_certificate_is_attempted_once() {
+    let fixture = TlsFixture::start().await;
+    let unrelated_ca = TlsFixture::start().await;
+    let output = fixture
+        .run_command(
+            &[
+                (
+                    "BIOMCP_CA_BUNDLE",
+                    unrelated_ca.bundle.to_str().expect("CA path"),
+                ),
+                ("BIOMCP_FHIR_BASE", &format!("{}/fhir", fixture.origin)),
+            ],
+            &["--no-cache", "get", "patient", "SYNTH-PT-7Q.42"],
+        )
+        .await;
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(fixture.sessions.load(Ordering::SeqCst), 0);
+    assert_eq!(fixture.connections.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
 async fn broken_bundles_fail_before_any_connection() {
     let fixture = TlsFixture::start().await;
     let dir = tempfile::tempdir().expect("bundle directory");

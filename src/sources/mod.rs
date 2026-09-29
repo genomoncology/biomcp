@@ -977,11 +977,12 @@ pub(crate) enum SharedHttpClientKind {
 #[error("semantic scholar shared-pool rate limit exceeded")]
 struct SemanticScholarSharedPoolRateLimitError;
 
-/// The one transient-retry layer every shared client uses: three retries with
-/// exponential backoff, logged at `DEBUG`.
-pub(crate) fn shared_retry_middleware() -> RetryTransientMiddleware<ExponentialBackoff> {
+/// The FHIR transient-retry layer: three retries with exponential backoff,
+/// excluding deterministic certificate-trust failures.
+pub(crate) fn shared_retry_middleware()
+-> RetryTransientMiddleware<ExponentialBackoff, NoTrustFailureStrategy> {
     let retry = ExponentialBackoff::builder().build_with_max_retries(3);
-    RetryTransientMiddleware::new_with_policy(retry).with_retry_log_level(tracing::Level::DEBUG)
+    RetryTransientMiddleware::new_with_policy_and_strategy(retry, NoTrustFailureStrategy)
 }
 
 pub(crate) struct RetryAfterTooManyRequestsMiddleware;
@@ -1161,7 +1162,7 @@ where
 /// retrying cannot fix a trust mismatch, and the backoff turned
 /// each untrusted-host dial into a ~2 s stall (2026-09-28 review).
 #[derive(Debug, Default)]
-struct NoTrustFailureStrategy;
+pub(crate) struct NoTrustFailureStrategy;
 
 const TRUST_FAILURE_MARKERS: &[&str] = &[
     "invalid peer certificate",
