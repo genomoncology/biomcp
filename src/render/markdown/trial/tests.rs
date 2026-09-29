@@ -2,7 +2,7 @@ use super::*;
 
 const FULL_SECTION_SUMMARY: &str = "Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens. The endpoint is survival.";
 
-fn preselected_trial_with_25_locations() -> TrialResponse {
+fn preselected_trial_with_25_locations_from(source: &str) -> TrialResponse {
     let locations = (1..=25)
         .map(|number| {
             serde_json::json!({
@@ -10,7 +10,8 @@ fn preselected_trial_with_25_locations() -> TrialResponse {
                 "city": format!("Fixture City {number:02}"),
                 "state": "Michigan",
                 "country": "United States",
-                "status": "RECRUITING"
+                "status": "RECRUITING",
+                "contacts": [{"name": format!("Person {number:02}"), "role": "CONTACT"}]
             })
         })
         .collect::<Vec<_>>();
@@ -26,13 +27,17 @@ fn preselected_trial_with_25_locations() -> TrialResponse {
             },
             "conditionsModule": {"conditions": ["Renderer Fixture"]},
             "designModule": {"studyType": "INTERVENTIONAL"},
-            "contactsLocationsModule": {"locations": locations}
+            "contactsLocationsModule": {
+                "centralContacts": [{"name": "Central Person", "role": "CONTACT"}],
+                "locations": locations
+            }
         }
     })
     .to_string();
     let plan = biodata::ClinicalTrialsGovApiV2DetailPlan::new("NCT41300001", false)
         .expect("test plan")
-        .with_locations();
+        .with_locations()
+        .with_contacts();
     let response = biodata::ClinicalTrialsGovApiV2Response::parse(
         &plan,
         input.as_bytes(),
@@ -41,19 +46,23 @@ fn preselected_trial_with_25_locations() -> TrialResponse {
     .expect("test response");
     let mut trial = TrialResponse::new(
         response.into_projection().expect("test projection"),
-        "ClinicalTrials.gov",
+        source,
         None,
         crate::entities::trial::TrialSectionStates {
             arms: crate::entities::trial::TrialSectionState::NotRequested,
             eligibility: crate::entities::trial::TrialSectionState::NotRequested,
             outcomes: crate::entities::trial::TrialSectionState::NotRequested,
             references: crate::entities::trial::TrialSectionState::NotRequested,
-            contacts: crate::entities::trial::TrialSectionState::NotRequested,
+            contacts: crate::entities::trial::TrialSectionState::Present,
             locations: crate::entities::trial::TrialSectionState::Present,
         },
     );
     trial.set_site_page(0, 25);
     trial
+}
+
+fn preselected_trial_with_25_locations() -> TrialResponse {
+    preselected_trial_with_25_locations_from("ClinicalTrials.gov")
 }
 
 fn rendered_location_row_count(markdown: &str) -> usize {
@@ -87,6 +96,22 @@ fn ordinary_trial_response_rendering_keeps_20_location_cap() {
     assert_eq!(rendered_location_row_count(&markdown), 20);
     assert!(markdown.contains("Locations: showing 20 of 25 (display cap 20)."));
     assert!(!markdown.contains("| Fixture Site 21 |"));
+}
+
+#[test]
+fn capped_trial_locations_keep_contact_rows_aligned() {
+    let markdown = trial_response_markdown(
+        &preselected_trial_with_25_locations(),
+        &["contacts".into(), "locations".into()],
+    )
+    .expect("contacts and locations markdown");
+    assert_eq!(rendered_location_row_count(&markdown), 20);
+    assert!(markdown.contains("Central Person"));
+    assert!(markdown.contains("Person 20"));
+    assert!(!markdown.contains("Person 21"));
+    assert!(markdown.contains(
+        "Next: `biomcp get trial NCT41300001 --offset 20 --limit 20 contacts locations`"
+    ));
 }
 
 fn criterion(
@@ -284,11 +309,14 @@ fn bounded_trial_summary_retains_clause_after_abbreviation() {
 
 #[test]
 fn trial_search_markdown_keeps_partial_detail_note() {
-    let note = "The count may be too high: we could not check 1 of the kept trials (NCT1).";
+    let note = "The count may be too high: we could not check 1 of the kept trials (NCT00000001), because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.";
     let markdown = trial_search_markdown_with_footer_and_hints(
         "condition=melanoma",
-        &[],
-        None,
+        &[crate::entities::trial::TrialSearchHit::test(
+            "NCT00000001",
+            "RECRUITING",
+        )],
+        Some(1),
         "",
         false,
         None,
@@ -297,6 +325,7 @@ fn trial_search_markdown_keeps_partial_detail_note() {
     )
     .expect("markdown");
     assert!(markdown.contains(&format!("Note: {note}")));
+    assert!(markdown.contains("|NCT00000001|"));
 }
 
 #[test]
@@ -362,7 +391,9 @@ fn trial_search_keeps_scoped_zero_result_guidance() {
     }
 }
 
-fn sectioned_trial_fixture() -> TrialResponse {
+fn sectioned_trial_fixture(
+    provenance: Option<crate::entities::trial::TrialEligibilityProvenance>,
+) -> TrialResponse {
     let input = serde_json::json!({
         "protocolSection": {
             "identificationModule": {"nctId": "NCT41300002", "briefTitle": "Section renderer fixture"},
@@ -372,8 +403,14 @@ fn sectioned_trial_fixture() -> TrialResponse {
             "designModule": {"studyType": "INTERVENTIONAL"},
             "descriptionModule": {"briefSummary": FULL_SECTION_SUMMARY},
             "armsInterventionsModule": {
-                "armGroups": [{"label": "Fixture Arm", "type": "EXPERIMENTAL", "interventionNames": ["DRUG: Fixture Drug"]}],
-                "interventions": [{"name": "Fixture Drug", "type": "DRUG", "armGroupLabels": ["Fixture Arm"]}]
+                "armGroups": [
+                    {"label": "Fixture Arm", "type": "EXPERIMENTAL", "interventionNames": ["DRUG: Fixture Drug"]},
+                    {"label": "Comparison Arm", "type": "ACTIVE_COMPARATOR", "interventionNames": ["DRUG: Comparison Drug"]}
+                ],
+                "interventions": [
+                    {"name": "Fixture Drug", "type": "DRUG", "armGroupLabels": ["Fixture Arm"]},
+                    {"name": "Comparison Drug", "type": "DRUG", "armGroupLabels": ["Comparison Arm"]}
+                ]
             },
             "eligibilityModule": {"eligibilityCriteria": "Fixture criterion", "sex": "ALL"},
             "outcomesModule": {"primaryOutcomes": [{"measure": "Fixture Outcome"}]},
@@ -407,7 +444,7 @@ fn sectioned_trial_fixture() -> TrialResponse {
     TrialResponse::new(
         response.into_projection().expect("section projection"),
         "ClinicalTrials.gov",
-        None,
+        provenance,
         crate::entities::trial::TrialSectionStates {
             arms: crate::entities::trial::TrialSectionState::Present,
             eligibility: crate::entities::trial::TrialSectionState::Present,
@@ -421,7 +458,7 @@ fn sectioned_trial_fixture() -> TrialResponse {
 
 #[test]
 fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
-    let trial = sectioned_trial_fixture();
+    let trial = sectioned_trial_fixture(None);
     let markdown = trial_markdown(&trial, &["all".into()]).expect("section markdown");
     assert!(markdown.contains("Source: ClinicalTrials.gov"));
     for section in [
@@ -444,6 +481,8 @@ fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
         assert!(markdown.contains(source_type), "missing {source_type}");
     }
     assert!(markdown.contains("| Fixture Arm | EXPERIMENTAL | Fixture Drug |"));
+    assert!(markdown.contains("| Comparison Arm | ACTIVE_COMPARATOR | Comparison Drug |"));
+    assert!(!markdown.contains("| Fixture Arm | EXPERIMENTAL | Comparison Drug |"));
     assert!(markdown.contains("[PMID: 12345] Fixture citation"));
     assert!(markdown.contains("[PMID: 67890]"));
     assert_eq!(
@@ -470,6 +509,23 @@ fn trial_markdown_keeps_source_labels_and_safe_reference_fallbacks() {
         json["locations"][0]["contacts"][0]["email"],
         "site@example.test"
     );
+    assert_eq!(json["eligibility"]["sexes"][0]["code"], "ALL");
+}
+
+#[test]
+fn trial_eligibility_documents_note_follows_biodata_capture_provenance() {
+    let provenance = crate::entities::trial::TrialEligibilityProvenance {
+        source_kind: "registry".into(),
+        source: "ClinicalTrials.gov registry".into(),
+        posted_documents_available: true,
+        documents_handle: Some("biomcp --json get trial NCT41300002 documents".into()),
+    };
+    let trial = sectioned_trial_fixture(Some(provenance));
+    let markdown = trial_markdown(&trial, &["eligibility".into()]).expect("eligibility markdown");
+    assert!(markdown.contains("**Posted trial documents:** Posted trial documents are available"));
+    assert!(markdown.contains("`biomcp --json get trial NCT41300002 documents`"));
+    assert!(!markdown.contains("central@example.test"));
+    assert!(!markdown.contains("site@example.test"));
 }
 
 #[test]
@@ -493,6 +549,20 @@ fn trial_location_continuation_keeps_source_and_shell_safe_arguments() {
         nci,
         "biomcp get trial NCT41300001 --source nci --offset 20 --limit 20 contacts locations"
     );
+    let nci_card = trial_response_markdown(
+        &preselected_trial_with_25_locations_from("NCI CTS"),
+        &["locations".into()],
+    )
+    .expect("NCI continuation card");
+    assert!(nci_card.contains(
+        "Next: `biomcp get trial NCT41300001 --source nci --offset 20 --limit 20 locations`"
+    ));
+    let unknown_card = trial_response_markdown(
+        &preselected_trial_with_25_locations_from("Unknown Provider"),
+        &["locations".into()],
+    )
+    .expect("unknown-source card");
+    assert!(!unknown_card.contains("\nNext:"));
     assert!(
         crate::next_command::NextCommand::biomcp()
             .args(["get", "trial"])
