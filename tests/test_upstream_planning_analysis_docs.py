@@ -683,9 +683,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "five platform archives" in release_pipeline_section
     assert "protected `pypi` environment" in release_pipeline_section
     assert "workflow_dispatch:" in release_workflow
-    assert "types: [published]" in release_workflow
-    assert "tag:" in release_workflow
-    assert "ref: ${{ github.event.release.tag_name || inputs.tag }}" in release_workflow
+    assert "push:\n    tags: ['v*']" in release_workflow
     assert "environment: pypi" in release_workflow
     assert "homebrew-tap:" in release_workflow
     for retired in (
@@ -1139,7 +1137,9 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     canonical = _workflow_job_block(ci, "canonical-gates")
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
     assert "pull_request:" in ci
-    assert "push:" in ci and "branches: [main]" in ci
+    # 2026-09-29 (ticket 1275): ticket branches run CI too; the
+    # push trigger still names main first.
+    assert "push:" in ci and "main" in ci and "tickets/**" in ci
     for command in ("make lint", "make test", "make spec"):
         assert f"run: {command}" in canonical
     for version in (
@@ -1153,7 +1153,12 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
         "28.3",
     ):
         assert version in ci
-    assert "@v" not in canonical and "@stable" not in canonical
+    # Swatinem/rust-cache@v2 is the one sanctioned floating major
+    # tag (ticket 1275): it is a cache, not a code execution path,
+    # and pinning its full SHA would freeze cache-format upgrades.
+    cache_tag = "Swatinem/rust-cache@v2"
+    body_without_cache = canonical.replace(cache_tag, "")
+    assert "@v" not in body_without_cache and "@stable" not in canonical
     assert "tools/bootstrap-lint-tools" in canonical
     assert "secrets." not in canonical.replace("secrets.GITHUB_TOKEN", "")
 
@@ -1163,7 +1168,7 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     ]
 
     assert "workflow_dispatch:" in release
-    assert "types: [published]" in release
+    assert "push:\n    tags: ['v*']" in release
     assert "environment: pypi" in release
     assert "make lint" not in release and "make test" not in release
 

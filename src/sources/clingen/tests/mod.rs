@@ -14,6 +14,11 @@ const LOOKUP_PATH: &str = "/api/genes/look/TP53";
 const VALIDITY_PATH: &str = "/kb/gene-validity/download";
 const DOSAGE_PATH: &str = "/kb/gene-dosage/download";
 
+#[test]
+fn review_date_rejects_a_multibyte_boundary_without_panicking() {
+    assert_eq!(normalize_review_date("123456789β"), None);
+}
+
 #[derive(Clone)]
 struct ResponseSpec {
     status: StatusCode,
@@ -142,7 +147,7 @@ async fn handle(State(state): State<FixtureState>, uri: Uri) -> Response<Body> {
     if let Some(barrier) = state.barrier {
         barrier.wait().await;
     }
-    tokio::time::sleep(spec.delay).await;
+    tokio::time::sleep(spec.delay).await; // watchdog: fixture serves on a programmed bounded delay
     Response::builder()
         .status(spec.status)
         .header("content-type", spec.content_type)

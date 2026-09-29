@@ -267,12 +267,20 @@ mod tests {
 
     struct TestEnvironment {
         previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+        /// Bypasses every cache for the environment's lifetime without
+        /// latching the process mode (ticket 1261). Replaces the former
+        /// `BIOMCP_CACHE_MODE=off` entry, which the once-read could not
+        /// forget after the variable was restored.
+        // dead-code reason: held-for-drop test cache-mode guard restores the override when the environment drops
+        #[allow(dead_code)]
+        cache_mode: crate::sources::TestCacheModeGuard,
     }
 
     impl TestEnvironment {
         fn for_fixture() -> Self {
             let mut environment = Self {
                 previous: Vec::new(),
+                cache_mode: crate::sources::test_cache_mode::off(),
             };
             let base = fixture().base.clone();
             for (key, value) in [
@@ -290,7 +298,6 @@ mod tests {
                     "BIOMCP_CACHE_DIR",
                     fixture().cache.path().to_string_lossy().into_owned(),
                 ),
-                ("BIOMCP_CACHE_MODE", "off".to_string()),
                 ("UMLS_API_KEY", String::new()),
                 ("NCBI_API_KEY", String::new()),
                 ("S2_API_KEY", String::new()),

@@ -4,7 +4,7 @@ mod config;
 mod limits;
 #[path = "clear.rs"]
 mod maintenance;
-mod manager;
+pub(crate) mod manager;
 pub(crate) mod migration;
 mod planner;
 mod private;

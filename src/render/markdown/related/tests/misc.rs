@@ -15,6 +15,7 @@ fn related_pgx_uses_search_flags() {
 #[test]
 fn related_disease_malformed_study_lookup_falls_back_to_download_list() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,

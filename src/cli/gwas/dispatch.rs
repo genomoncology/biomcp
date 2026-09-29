@@ -14,6 +14,9 @@ struct GwasJsonResponse {
 }
 
 #[derive(serde::Serialize)]
+/// No `notes` channel here on purpose: the GWAS client sends every
+/// request with `CacheMode::NoStore` (no persistence), so a stale
+/// serve cannot occur; see the get-JSON notes issue.
 struct GwasJsonMeta {
     pagination: crate::entities::variant::GwasPagination,
     #[serde(skip_serializing_if = "Vec::is_empty")]

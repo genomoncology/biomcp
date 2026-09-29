@@ -21,3 +21,14 @@ A garbage `tools/list` cursor returns the full list. Reject it with `-32602`. Th
 ## Unverified cases
 
 Prompts and the legacy-version client are correctly out of scope. Cancelled-subscription teardown has not been investigated.
+
+## Resolved
+
+Ticket 1240. Every tool root carries top-level properties (search and
+get with a derived entity enum and required; erepo with the selector
+union); in-body argument validation returns isError tool results while
+deserialization failures stay -32602; unknown cursors are rejected on
+both list paths. The conformance tools/call case becomes verifiable
+(the probe now selects variant_erepo). Live provider verification and
+the external suite rerun stay recorded residuals. See
+`sdlc/records/1240-fix-the-mcp-tool-schemas-and-argument-errors.md`.

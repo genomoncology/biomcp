@@ -480,14 +480,12 @@ async fn resolve_request_with_options(
     };
 
     let (ols_docs, (umls_rows, umls_note), medline_topics, gene_identity) = match request.no_cache {
-        false => tokio::join!(
-            ols_future,
-            umls_future,
-            medline_future,
-            gene_identity_future
-        ),
-        true => {
-            crate::sources::with_no_cache(request.no_cache, async {
+        false => {
+            // Boxed so the join's four-way state machine lives on the
+            // heap: inlining it doubled the chain's future in every
+            // caller (ticket 1243). All-to-completion semantics are
+            // unchanged by boxing.
+            Box::pin(async move {
                 tokio::join!(
                     ols_future,
                     umls_future,
@@ -495,6 +493,17 @@ async fn resolve_request_with_options(
                     gene_identity_future
                 )
             })
+            .await
+        }
+        true => {
+            Box::pin(crate::sources::with_no_cache(request.no_cache, async {
+                tokio::join!(
+                    ols_future,
+                    umls_future,
+                    medline_future,
+                    gene_identity_future
+                )
+            }))
             .await
         }
     };

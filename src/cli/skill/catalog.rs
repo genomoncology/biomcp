@@ -79,11 +79,21 @@ pub fn show_overview() -> Result<String, BioMcpError> {
 ///
 /// # Errors
 ///
-/// Returns an error if embedded skill metadata cannot be loaded.
+/// Returns an error if embedded skill metadata cannot be loaded, or
+/// when the catalog is empty: a healthy build always embeds skills,
+/// so an empty catalog means broken asset embedding (GitHub #287)
+/// and must fail loudly, not print a quiet empty listing.
 pub fn list_use_cases() -> Result<String, BioMcpError> {
-    let cases = use_case_index()?;
+    render_use_case_list(&use_case_index()?)
+}
+
+pub(crate) fn render_use_case_list(cases: &[UseCaseMeta]) -> Result<String, BioMcpError> {
     if cases.is_empty() {
-        return Ok("No skills found".into());
+        return Err(BioMcpError::NotFound {
+            entity: "skill catalog".into(),
+            id: "use-cases/".into(),
+            suggestion: "The embedded skills/ tree is empty; check the build embedded its assets (GitHub #287)".into(),
+        });
     }
 
     let mut out = String::new();
@@ -93,7 +103,7 @@ pub fn list_use_cases() -> Result<String, BioMcpError> {
     );
     for c in cases {
         out.push_str(&format!("{} {} - {}\n", c.number, c.slug, c.title));
-        if let Some(desc) = c.description {
+        if let Some(desc) = c.description.as_deref() {
             out.push_str(&format!("  {desc}\n"));
         }
         out.push('\n');

@@ -3,11 +3,12 @@ use std::borrow::Cow;
 
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
-use roxmltree::{Document, Node};
+use roxmltree::Node;
 use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 const HPA_BASE: &str = "https://www.proteinatlas.org";
 const HPA_API: &str = "hpa";
@@ -431,10 +432,11 @@ fn normalize_ensembl_id(value: &str) -> Result<String, BioMcpError> {
 }
 
 fn parse_gene_hpa(xml: &str) -> Result<GeneHpa, BioMcpError> {
-    let doc = Document::parse(xml).map_err(|source| BioMcpError::Api {
-        api: HPA_API.to_string(),
-        message: format!("Invalid XML response: {source}"),
-    })?;
+    let doc =
+        parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT).map_err(|source| BioMcpError::Api {
+            api: HPA_API.to_string(),
+            message: format!("Invalid XML response: {source}"),
+        })?;
     let root = doc.root_element();
     let entry = if root.has_tag_name("entry") {
         root

@@ -30,3 +30,13 @@ Fix: make `with_no_cache` a plain function returning `NO_CACHE.scope(no_cache, f
 
 - Retries fire on POST requests.
 - `TRIAL_ALIAS_CACHE` grows without limit.
+
+## Resolved
+
+Ticket 1243. The futures measured 225 KB and fell to 2.2 KB
+(probe-pinned); the MCP path shares the server runtime from the 8 MiB
+execute thread while CLI one-shots use shutdown_background with the
+inline-put invariant recorded; XML nesting past 64 deep is rejected
+before parse (the deviation from the post-parse design is recorded —
+the bomb proved roxmltree recurses). See
+`sdlc/records/1243-shrink-the-large-futures-and-share-the-runtime.md`.

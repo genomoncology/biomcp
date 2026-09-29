@@ -1,6 +1,7 @@
 #[test]
 fn related_disease_suggests_review_when_phenotypes_are_sparse() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0007947".to_string(),
         name: "Marfan syndrome".to_string(),
         definition: None,
@@ -73,6 +74,7 @@ fn related_disease_suggests_review_when_phenotypes_are_sparse() {
 #[test]
 fn related_disease_promotes_top_gene_context_before_generic_pivots() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0100135".to_string(),
         name: "Dravet syndrome".to_string(),
         definition: None,
@@ -126,6 +128,7 @@ fn related_disease_promotes_top_gene_context_before_generic_pivots() {
 #[test]
 fn related_disease_falls_back_to_unscored_top_gene_context() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0100135".to_string(),
         name: "Dravet syndrome".to_string(),
         definition: None,
@@ -165,6 +168,7 @@ fn related_disease_falls_back_to_unscored_top_gene_context() {
 #[test]
 fn related_disease_uses_synonym_when_name_is_raw_id() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0100605".to_string(),
         name: "MONDO:0100605".to_string(),
         definition: None,
@@ -218,6 +222,7 @@ fn related_disease_uses_synonym_when_name_is_raw_id() {
 #[test]
 fn related_disease_non_oncology_skips_study_hints() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0007947".to_string(),
         name: "Marfan syndrome".to_string(),
         definition: None,
@@ -257,6 +262,7 @@ fn related_disease_non_oncology_skips_study_hints() {
 #[test]
 fn related_disease_quotes_single_word_indication_search() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,
@@ -296,6 +302,7 @@ fn related_disease_quotes_single_word_indication_search() {
 #[test]
 fn related_disease_oncology_without_local_match_falls_back_to_download_list() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,
@@ -336,6 +343,7 @@ fn related_disease_oncology_without_local_match_falls_back_to_download_list() {
 #[test]
 fn related_disease_oncology_with_local_match_prefers_top_mutated() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0007254".to_string(),
         name: "breast cancer".to_string(),
         definition: None,
@@ -401,6 +409,7 @@ fn related_disease_oncology_with_local_match_prefers_top_mutated() {
 #[test]
 fn related_disease_oncology_matches_noncontiguous_carcinoma_study_labels() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0004989".to_string(),
         name: "breast carcinoma".to_string(),
         definition: None,

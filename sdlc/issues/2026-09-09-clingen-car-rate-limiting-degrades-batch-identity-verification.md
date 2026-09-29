@@ -24,3 +24,10 @@ readiness across a delayed second run while still asserting work-allocation
 consistency on the first full run. No design decided here. Per
 `sdlc/planning/verify-lane.md`, live failures are not gate failures; this
 note records the observation for triage.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Stays open as a 1.0 candidate: the failure is provider-side rate
+limiting, the retry/backoff budget work is real but not needed for
+0.9.1 correctness, and the live canaries already report the
+degradation honestly.

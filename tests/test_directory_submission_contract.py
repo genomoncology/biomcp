@@ -288,6 +288,7 @@ def test_readme_is_directory_review_complete() -> None:
     readme = _read("README.md")
 
     required_sections = [
+        "## Data terms",  # 2026-09-29: the licence warning comes first
         "## What is BioMCP?",
         "## Features",
         "## Quick start",

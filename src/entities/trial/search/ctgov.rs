@@ -10,14 +10,16 @@ use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 
 use super::super::ClinicalTrialSearchUnknownReason;
-use super::super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchHit, TrialSource};
-use super::eligibility::{DetailFilterOutcome, ctgov_nct_id};
+use super::super::{
+    ClinicalTrialSearchTotal, TrialCount, TrialSearchFilters, TrialSearchHit, TrialSource,
+};
+use super::eligibility::ctgov_nct_id;
 use super::{
-    CTGOV_COUNT_CAP_REASON, CTGOV_COUNT_PAGE_SIZE, CtGovSearchContext, add_unique_ctgov_nct_ids,
-    biodata_plan_error, claim_ctgov_candidate, completed_ctgov_union_count,
-    ctgov_count_from_native_total, final_ctgov_union_count, prepare_ctgov_search_context,
-    sort_trials_by_status_priority, validate_search_page_args, validate_trial_search,
-    verify_age_eligibility, verify_detail_filters,
+    CTGOV_COUNT_CAP_REASON, CTGOV_COUNT_PAGE_SIZE, CtGovSearchContext, DetailVerificationReport,
+    add_unique_ctgov_nct_ids, biodata_plan_error, claim_ctgov_candidate,
+    completed_ctgov_union_count, ctgov_count_from_native_total, final_ctgov_union_count,
+    prepare_ctgov_search_context, sort_trials_by_status_priority, validate_search_page_args,
+    validate_trial_search, verify_age_eligibility, verify_detail_filters,
 };
 
 const CTGOV_MAX_PAGE_FETCHES: usize = 20;
@@ -48,17 +50,36 @@ async fn apply_ctgov_post_filters(
     client: &ClinicalTrialsClient,
     context: &CtGovSearchContext,
     studies: Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
-) -> DetailFilterOutcome {
+) -> (
+    Vec<biodata::ClinicalTrialsGovApiV2SearchResult>,
+    DetailVerificationReport,
+) {
     let facility_geo = context
         .facility_geo_verification
         .as_ref()
         .map(|(facility, lat, lon, distance)| (facility.as_str(), *lat, *lon, *distance));
-    let mut outcome =
-        verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await;
-    if let Some(age) = context.age_verification {
-        outcome.studies = verify_age_eligibility(outcome.studies, age);
+    // Search-level age evidence decides which rows reach detail verification.
+    let studies = if let Some(age) = context.age_verification {
+        verify_age_eligibility(studies, age)
+    } else {
+        studies
+    };
+    verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await
+}
+
+fn detail_partial_note(report: &DetailVerificationReport) -> Option<String> {
+    if report.unverified_kept == 0 {
+        return None;
     }
-    outcome
+    let ids = if report.unverified_ids.is_empty() {
+        String::new()
+    } else {
+        format!(" ({})", report.unverified_ids.join(", "))
+    };
+    Some(format!(
+        "The count may be too high: we could not check {} of the kept trials{ids}, because the detail fetch failed, the eligibility text was missing, or the trial had no NCT ID. Eligibility and facility filters may not have applied to those trials.",
+        report.unverified_kept
+    ))
 }
 
 struct CtGovRawPage {
@@ -67,6 +88,7 @@ struct CtGovRawPage {
     provider_cursor: biodata::ClinicalTrialProviderCursor,
     raw_study_count: usize,
     verification_incomplete: bool,
+    unverified: DetailVerificationReport,
 }
 
 impl std::fmt::Debug for CtGovRawPage {
@@ -113,6 +135,7 @@ struct CtGovSinglePageState {
     stopped_inside_page: bool,
     unusable_cursor: bool,
     verification_incomplete: bool,
+    unverified: DetailVerificationReport,
     traversal_capped: bool,
     candidates_examined: usize,
     remaining_skip: usize,
@@ -135,6 +158,7 @@ impl CtGovSinglePageState {
             stopped_inside_page: false,
             unusable_cursor: false,
             verification_incomplete: false,
+            unverified: DetailVerificationReport::default(),
             traversal_capped: false,
             candidates_examined: 0,
             started_with_cursor: next_page
@@ -218,6 +242,7 @@ async fn fetch_ctgov_raw_page(
         studies: resp.results().unwrap_or_default().to_vec(),
         provider_cursor: resp.provider_cursor().clone(),
         verification_incomplete: false,
+        unverified: DetailVerificationReport::default(),
     })
 }
 
@@ -241,9 +266,10 @@ async fn fetch_ctgov_filtered_page(
     )
     .await?;
     if page.raw_study_count > 0 {
-        let outcome = apply_ctgov_post_filters(client, context, page.studies).await;
-        page.studies = outcome.studies;
-        page.verification_incomplete = outcome.incomplete;
+        let (studies, unverified) = apply_ctgov_post_filters(client, context, page.studies).await;
+        page.studies = studies;
+        page.verification_incomplete = unverified.unverified_kept > 0;
+        page.unverified = unverified;
     }
     Ok(page)
 }
@@ -282,6 +308,7 @@ fn apply_ctgov_single_page(
         state.provider_total = Some(page.provider_total.clone());
     }
     state.verification_incomplete |= page.verification_incomplete;
+    state.unverified.merge(&page.unverified);
     state.candidates_examined = state
         .candidates_examined
         .saturating_add(page.raw_study_count);
@@ -454,6 +481,7 @@ fn finish_ctgov_single_page(
         total,
         continuation,
         eligibility_verification_upstream_total,
+        partial_note: detail_partial_note(&state.unverified),
     })
 }
 
@@ -623,6 +651,7 @@ async fn search_page_with_ctgov_union(
     let mut traversal_capped = false;
     let mut degraded_coverage = false;
     let mut verification_incomplete = false;
+    let mut unverified = DetailVerificationReport::default();
     let mut provider_total_sum = 0usize;
     let mut provider_total_state = biodata::ClinicalTrialProviderTotal::Present(0);
 
@@ -710,13 +739,15 @@ async fn search_page_with_ctgov_union(
             traversal_capped |= cap_continuable_worker(worker);
         }
 
-        let outcome = apply_ctgov_post_filters(client, context, round_studies).await;
-        verification_incomplete |= outcome.incomplete;
+        let (studies, round_unverified) =
+            apply_ctgov_post_filters(client, context, round_studies).await;
+        verification_incomplete |= round_unverified.unverified_kept > 0;
+        unverified.merge(&round_unverified);
         push_ctgov_union_rows(
             &mut merged_rows,
             &mut merged_index,
             &matched_labels,
-            outcome.studies,
+            studies,
         );
     }
 
@@ -766,6 +797,7 @@ async fn search_page_with_ctgov_union(
         total,
         continuation,
         eligibility_verification_upstream_total: None,
+        partial_note: detail_partial_note(&unverified),
     })
 }
 
@@ -831,7 +863,7 @@ async fn count_all_with_ctgov_union(
     condition_query: Option<&str>,
     intervention_aliases: &[TrialAlias],
     traversal_page_cap: usize,
-) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
+) -> Result<TrialCount, BioMcpError> {
     let mut workers = ctgov_workers(condition_query, intervention_aliases);
     let mut seen_nct_ids: HashSet<String> = HashSet::new();
     let mut unique_nct_ids: HashSet<String> = HashSet::new();
@@ -846,20 +878,28 @@ async fn count_all_with_ctgov_union(
             .filter_map(|(index, worker)| (!worker.exhausted).then_some(index))
             .collect();
         if active_indices.is_empty() {
+            if !degraded_coverage && verification_incomplete {
+                return Ok(TrialCount::partial(unique_nct_ids.len()));
+            }
             return completed_ctgov_union_count(
                 degraded_coverage,
                 verification_incomplete,
                 unique_nct_ids.len(),
-            );
+            )
+            .map(Into::into);
         }
 
         if fetched_pages.saturating_add(active_indices.len()) > traversal_page_cap {
+            if !degraded_coverage && verification_incomplete {
+                return Ok(TrialCount::partial(unique_nct_ids.len()));
+            }
             return final_ctgov_union_count(
                 degraded_coverage,
                 verification_incomplete,
                 true,
                 unique_nct_ids.len(),
-            );
+            )
+            .map(Into::into);
         }
 
         let pages = join_all(active_indices.iter().map(|index| {
@@ -902,9 +942,9 @@ async fn count_all_with_ctgov_union(
             apply_worker_cursor(worker, page.provider_cursor);
         }
 
-        let outcome = apply_ctgov_post_filters(client, context, round_studies).await;
-        verification_incomplete |= outcome.incomplete;
-        add_unique_ctgov_nct_ids(&mut unique_nct_ids, outcome.studies);
+        let (studies, unverified) = apply_ctgov_post_filters(client, context, round_studies).await;
+        verification_incomplete |= unverified.unverified_kept > 0;
+        add_unique_ctgov_nct_ids(&mut unique_nct_ids, studies);
     }
 }
 
@@ -912,7 +952,7 @@ pub(super) async fn count_all_with_ctgov_client(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
     traversal_page_cap: usize,
-) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
+) -> Result<TrialCount, BioMcpError> {
     if !matches!(filters.source, TrialSource::ClinicalTrialsGov) {
         return Err(BioMcpError::InvalidArgument(
             "internal ctgov count helper requires --source ctgov".into(),
@@ -952,7 +992,8 @@ pub(super) async fn count_all_with_ctgov_client(
             .provider_total()
             .value()
             .and_then(|total| usize::try_from(total).ok());
-        return ctgov_count_from_native_total(total, context.age_verification.is_some());
+        return ctgov_count_from_native_total(total, context.age_verification.is_some())
+            .map(Into::into);
     }
 
     let mut verified_total = 0usize;
@@ -964,11 +1005,9 @@ pub(super) async fn count_all_with_ctgov_client(
     loop {
         if page_count >= traversal_page_cap {
             return Ok(if verification_incomplete {
-                ClinicalTrialSearchTotal::unknown(
-                    ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
-                )
+                TrialCount::partial(verified_total)
             } else {
-                ClinicalTrialSearchTotal::unknown(CTGOV_COUNT_CAP_REASON)
+                ClinicalTrialSearchTotal::unknown(CTGOV_COUNT_CAP_REASON).into()
             });
         }
 
@@ -991,14 +1030,14 @@ pub(super) async fn count_all_with_ctgov_client(
                 .and_then(|value| usize::try_from(value).ok())
         });
         let cursor = resp.provider_cursor().clone();
-        let outcome = apply_ctgov_post_filters(
+        let (studies, unverified) = apply_ctgov_post_filters(
             client,
             &context,
             resp.results().unwrap_or_default().to_vec(),
         )
         .await;
-        verification_incomplete |= outcome.incomplete;
-        verified_total = verified_total.saturating_add(outcome.studies.len());
+        verification_incomplete |= unverified.unverified_kept > 0;
+        verified_total = verified_total.saturating_add(studies.len());
 
         match cursor {
             biodata::ClinicalTrialProviderCursor::Present(value) if !value.trim().is_empty() => {
@@ -1008,25 +1047,22 @@ pub(super) async fn count_all_with_ctgov_client(
             biodata::ClinicalTrialProviderCursor::Present(_)
             | biodata::ClinicalTrialProviderCursor::Unavailable => {
                 return Ok(if verification_incomplete {
-                    ClinicalTrialSearchTotal::unknown(
-                        ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
-                    )
+                    TrialCount::partial(verified_total)
                 } else if let Some(total) = fallback_total {
-                    super::approximate_total(total)?
+                    super::approximate_total(total)?.into()
                 } else {
                     ClinicalTrialSearchTotal::unknown(
                         ClinicalTrialSearchUnknownReason::ProviderOmittedTotal,
                     )
+                    .into()
                 });
             }
         }
     }
 
     if verification_incomplete {
-        Ok(ClinicalTrialSearchTotal::unknown(
-            ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
-        ))
+        Ok(TrialCount::partial(verified_total))
     } else {
-        super::exact_total(verified_total)
+        super::exact_total(verified_total).map(Into::into)
     }
 }

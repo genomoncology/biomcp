@@ -13,7 +13,7 @@ megabytes of stack headroom on every host, proven by a measured margin, so
 the gate host completes its full Rust lane.
 
 ## Current Facts — the eight whys (all measured 2026-09-14 under gdb on the
-gate host, in sdlc/issues/2026-09-13-raw-ctgov-total-test-sigaborts-on-the-gate-host-only.md)
+gate host, in sdlc/issues/2026-09-13-raw-ctgov-total-test-sigaborts-on-the-gate-host.md)
 
 1. Why did the gate lane die? The test aborted with SIGABRT — gdb shows a
    write into the thread stack's guard page (`mov %rdi,0x8(%rsp)` faulting
@@ -99,8 +99,6 @@ None.
   raise-the-stack rejection affirmed (the downstream 1.0 integration branch's 16 MiB
   stopgap should be dropped in favor of this structural pin at its next
   merge with main — reconciliation recorded here).
-- Code review: pending
-
 - Code review: ACCEPT 2026-09-14 at 012dbcb5; one file, one line, confirmed
   by the primary agent with git show; placement, Send reasoning, and the
   tokio auto-box nuance verified from registry source. P2s closed: hunk

@@ -48,6 +48,7 @@ fn test_disease(name: &str, umls_cui: Option<&str>) -> Disease {
         xrefs.insert("umls_cui".to_string(), cui.to_string());
     }
     Disease {
+        top_gene_source: None,
         id: "MONDO:0007254".to_string(),
         name: name.to_string(),
         definition: None,

@@ -98,7 +98,14 @@ impl GwasClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<Option<T>, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req)
+        // No apply_cache_mode here on purpose (2026-09-28 review):
+        // under BIOMCP_CACHE_MODE=infinite it would replace the
+        // request's NoStore mark with force-cache, serving stale GWAS
+        // bodies — the decode failures that made this source
+        // no-store in the first place. NoStore always holds for
+        // GWAS; --no-cache and authenticated requests are already
+        // no-store everywhere else.
+        let resp = req
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::GWAS,
             ))

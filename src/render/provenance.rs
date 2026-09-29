@@ -272,16 +272,29 @@ pub(crate) fn drug_interaction_note(drug: &Drug) -> Option<String> {
     {
         return None;
     }
-    if !drug.interactions.is_empty() {
+    match drug.interaction_coverage_status {
         Some(
+            crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage,
+        ) => Some(
+            "DDInter does not cover this drug, so the absence of rows reflects coverage, not a clean bill."
+                .to_string(),
+        ),
+        Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage)
+            if drug.interactions.is_empty() =>
+        {
+            Some(
+                "This drug is in the DDInter coverage set and the current bundle holds no matching rows. DDInter warns that missing rows do not prove no interaction exists."
+                    .to_string(),
+            )
+        }
+        _ if !drug.interactions.is_empty() => Some(
             "Structured rows come from the current DDInter download bundle. DDInter warns that missing rows do not prove no interaction exists."
                 .to_string(),
-        )
-    } else {
-        Some(
+        ),
+        _ => Some(
             "The current DDInter download bundle has no matching rows for this drug. DDInter warns that missing rows do not prove no interaction exists."
                 .to_string(),
-        )
+        ),
     }
 }
 
@@ -496,19 +509,36 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
         "Parents",
         ["MONDO / Disease Ontology via MyDisease.info"],
     );
+    // The row credits whoever actually produced the top-gene list: Open
+    // Targets by default, or the fallback sources named on the disease.
+    let top_gene_sources: Vec<String> = match disease.top_gene_source.as_deref() {
+        Some(label) => label.split(", ").map(str::to_string).collect(),
+        None => vec!["Open Targets".to_string()],
+    };
     push_section(
         &mut out,
         !disease.top_genes.is_empty() || !disease.top_gene_scores.is_empty(),
         "top_genes",
         "Genes",
-        ["Open Targets"],
+        top_gene_sources,
     );
+    // Seeded DisGeNET rows (the MyDisease hit's embedded block) contribute
+    // to the associated-genes provenance when they are present (ticket
+    // 1256); otherwise the row keeps its existing sources.
+    let mut associated_gene_sources = vec!["Monarch Initiative", "Open Targets"];
+    if disease.gene_associations.iter().any(|row| {
+        row.source
+            .as_deref()
+            .is_some_and(|s| s.to_ascii_lowercase().contains("disgenet"))
+    }) {
+        associated_gene_sources.insert(0, "DisGeNET");
+    }
     push_section(
         &mut out,
         !disease.associated_genes.is_empty() || !disease.gene_associations.is_empty(),
         "associated_genes",
         "Associated Genes",
-        ["Monarch Initiative", "Open Targets"],
+        associated_gene_sources,
     );
     out.extend(outcome_section_sources(
         "disease",
@@ -981,6 +1011,31 @@ mod tests {
     }
 
     #[test]
+    fn drug_interaction_note_covers_the_zero_rows_wordings() {
+        // The covered-zero-rows arm must read as coverage information,
+        // not a clean bill (ticket 1254).
+        let mut drug: crate::entities::drug::Drug =
+            serde_json::from_value(serde_json::json!({"name": "dabigatran"})).expect("drug");
+        drug.interaction_coverage_status = Some(
+            crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage,
+        );
+        let note = drug_interaction_note(&drug).expect("note");
+        assert!(note.starts_with("This drug is in the DDInter coverage set"));
+        assert!(note.contains("no matching rows"));
+
+        // Rows present keeps the bundle wording.
+        drug.interactions = vec![crate::entities::drug::DrugInteraction {
+            drug: "aspirin".to_string(),
+            ddinter_id: None,
+            level: Some("major".to_string()),
+            description: None,
+            partner_classes: Vec::new(),
+        }];
+        let note = drug_interaction_note(&drug).expect("note");
+        assert!(note.starts_with("Structured rows come from the current DDInter"));
+    }
+
+    #[test]
     fn drug_provenance_emits_variant_targets_when_present() {
         let drug = Drug {
             section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
@@ -1006,6 +1061,8 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1058,6 +1115,8 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1131,6 +1190,8 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: vec!["PD-1 inhibitors".to_string()],
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1195,6 +1256,7 @@ mod tests {
     #[test]
     fn disease_section_sources_include_survival_when_note_present() {
         let disease = Disease {
+            top_gene_source: None,
             id: "MONDO:0007947".to_string(),
             name: "Marfan syndrome".to_string(),
             definition: None,
@@ -1436,6 +1498,7 @@ mod tests {
     #[test]
     fn disease_section_sources_include_funding_when_note_present() {
         let disease = Disease {
+            top_gene_source: None,
             id: "MONDO:0007947".to_string(),
             name: "Marfan syndrome".to_string(),
             definition: None,
@@ -1483,6 +1546,7 @@ mod tests {
     #[test]
     fn disease_section_sources_include_diagnostics_from_rows() {
         let disease = Disease {
+            top_gene_source: None,
             id: "MONDO:0005105".to_string(),
             name: "melanoma".to_string(),
             definition: None,
@@ -1561,6 +1625,7 @@ mod tests {
     #[test]
     fn disease_section_sources_include_clinical_features() {
         let disease = Disease {
+            top_gene_source: None,
             id: "MONDO:0004277".to_string(),
             name: "uterine leiomyoma".to_string(),
             definition: None,
@@ -1619,6 +1684,7 @@ mod tests {
     #[test]
     fn disease_section_sources_include_diagnostics_note_sources() {
         let disease = Disease {
+        top_gene_source: None,
             id: "MONDO:0018076".to_string(),
             name: "tuberculosis".to_string(),
             definition: None,

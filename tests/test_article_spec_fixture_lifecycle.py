@@ -7,7 +7,6 @@ import shutil
 import signal
 import socket
 import subprocess
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -19,12 +18,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _wait_until(predicate, timeout: float = 10.0) -> None:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if predicate():
-            return
-        time.sleep(0.05)
-    assert predicate()
+    # Delegates to the shared, scaled, marked helper (ticket 1269):
+    # one wait implementation instead of per-file duplicates.
+    from support import wait_until
+
+    wait_until(predicate, watchdog_secs=timeout)
 
 
 _FATAL_RUNNER_SIGNALS = (
@@ -810,7 +808,9 @@ def test_failing_parallel_pages_are_named_without_stopping_later_batches(
     assert result.returncode != 0
     for failed_page in failed_pages:
         assert f"spec page failed: {failed_page} (exit 7)" in result.stderr
-        assert f"page {failed_page} (exit 7)" in result.stderr
+        # The end-of-run summary line (two-space indented), not a
+        # substring of the per-page line above.
+        assert f"  page {failed_page} (exit 7)" in result.stderr
         assert f"=== spec page: {failed_page} ===" in result.stdout
         assert f"mustmatch-output:test {failed_page}" in result.stdout
     # A failing batch must not hide the pages behind it.

@@ -196,6 +196,185 @@ fn ensure_variant_article_time() -> Result<(), BioMcpError> {
     Ok(())
 }
 
+/// One stale-cache serve observed during a command: the provider whose
+/// cached data was served past its freshness window, and the age of that
+/// data in seconds. Recorded at the send seam so the clinician-facing
+/// outputs can carry the same honesty the log line has.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct StaleServeNote {
+    provider: &'static str,
+    age_seconds: u64,
+}
+
+impl StaleServeNote {
+    /// The user-facing sentence, matching the log wording: age plus the
+    /// freshness-window fact, never implying a revalidation failure.
+    pub(crate) fn sentence(&self) -> String {
+        let age = stale_serve_age_wording(self.age_seconds);
+        format!(
+            "{} data served from cache, {age} old (older than the provider's freshness window).",
+            self.provider
+        )
+    }
+}
+
+fn stale_serve_age_wording(age_seconds: u64) -> String {
+    let hours = age_seconds / 3600;
+    if hours >= 1 {
+        format!("{hours} h")
+    } else {
+        format!("{} s", age_seconds.max(1))
+    }
+}
+
+type StaleServeNotesHandle = std::sync::Arc<std::sync::Mutex<Vec<StaleServeNote>>>;
+
+tokio::task_local! {
+    /// Per-command stale-cache serves. Scoped around the command future
+    /// (see `with_stale_serve_notes`) so concurrent commands never mix
+    /// notes; the value is an `Arc<Mutex<_>>` because the command future
+    /// must stay `Send` across the worker-thread boundary (ticket 1243).
+    static STALE_SERVE_NOTES: std::sync::Arc<std::sync::Mutex<Vec<StaleServeNote>>>;
+}
+
+/// Scope stale-serve recording around a command future. A plain function
+/// returning the scoped future, mirroring `with_no_cache` so the dispatch
+/// future keeps one copy of its state (ticket 1243).
+pub(crate) fn with_stale_serve_notes<R, F>(fut: F) -> impl Future<Output = R>
+where
+    F: Future<Output = R>,
+{
+    STALE_SERVE_NOTES.scope(std::sync::Arc::new(std::sync::Mutex::new(Vec::new())), fut)
+}
+
+/// Run a command future inside the stale-serve scope and append the
+/// text note to a non-JSON text outcome, mirroring what
+/// `run_outcome_on_current_stack` does for the CLI path (ticket
+/// 1256). MCP callers use this so the task-local exists on their
+/// drive thread too.
+pub(crate) async fn run_command_with_stale_serve_notes<F>(
+    fut: F,
+    wants_text_note: bool,
+) -> anyhow::Result<crate::cli::CommandOutcome>
+where
+    F: Future<Output = anyhow::Result<crate::cli::CommandOutcome>>,
+{
+    with_stale_serve_notes(async move {
+        let mut outcome = fut.await?;
+        if wants_text_note && outcome.bytes.is_none() {
+            append_stale_serve_notes_to_text(&mut outcome.text);
+        }
+        Ok(outcome)
+    })
+    .await
+}
+
+/// The current command's stale-serve collector, for handing to a task
+/// started with `tokio::spawn`: the spawned task does not inherit the
+/// task-local, so a stale serve inside it would only log. The ClinGen
+/// prefetch in `get gene` is the production case (2026-09-28 review);
+/// every other spawned fetch in the tree is test scaffolding, which
+/// this audit confirmed by module.
+pub(crate) fn stale_serve_notes_handle() -> Option<StaleServeNotesHandle> {
+    STALE_SERVE_NOTES.try_with(std::sync::Arc::clone).ok()
+}
+
+/// Re-enter the parent command's stale-serve scope inside a spawned
+/// task. `None` (no active command scope, e.g. a background sync)
+/// scopes onto a private collector nobody drains — log-only, exactly
+/// as before this seam existed.
+pub(crate) fn with_stale_serve_notes_handle<R, F>(
+    handle: Option<StaleServeNotesHandle>,
+    fut: F,
+) -> impl Future<Output = R>
+where
+    F: Future<Output = R>,
+{
+    // None scopes onto a fresh collector nobody drains — the same
+    // behavior as before this seam: log-only, never reaching output.
+    let collector =
+        handle.unwrap_or_else(|| std::sync::Arc::new(std::sync::Mutex::new(Vec::new())));
+    STALE_SERVE_NOTES.scope(collector, fut)
+}
+
+/// Record a stale serve when a command scope is active. Sends outside a
+/// command (background syncs) only log.
+fn record_stale_serve(note: StaleServeNote) {
+    let _ = STALE_SERVE_NOTES.try_with(|notes| {
+        let mut notes = notes.lock().expect("stale-serve notes lock");
+        if !notes.contains(&note) {
+            notes.push(note);
+        }
+    });
+}
+
+/// The stale-serve sentences for this command, oldest-recording order,
+/// draining them so each output channel states them once.
+pub(crate) fn take_stale_serve_sentences() -> Vec<String> {
+    STALE_SERVE_NOTES
+        .try_with(|notes| std::mem::take(&mut *notes.lock().expect("stale-serve notes lock")))
+        .unwrap_or_default()
+        .iter()
+        .map(StaleServeNote::sentence)
+        .collect()
+}
+
+/// Read the stale-serve marker and log the honest wording. The label says
+/// the entry is older than the provider's freshness window — it never
+/// implies a revalidation failure, because a revalidated response cannot
+/// carry the marker (put strips it). The age is also recorded for the
+/// command's output notes so MCP and JSON consumers see it, not just the
+/// log (ticket 1256).
+fn note_stale_cache_serve(response: &mut reqwest::Response, provider: &'static str) {
+    if let Some(value) = response
+        .headers()
+        .get(crate::cache::manager::STALE_SERVE_AGE_HEADER)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.parse::<u64>().ok())
+    {
+        let hours = value / 3600;
+        let wording = if hours >= 1 {
+            format!("{hours} h old")
+        } else {
+            format!("{} s old", value.max(1))
+        };
+        warn!(
+            age_seconds = value,
+            "served from cache, older than the provider's freshness window ({wording})"
+        );
+        record_stale_serve(StaleServeNote {
+            provider,
+            age_seconds: value,
+        });
+    }
+    response
+        .headers_mut()
+        .remove(crate::cache::manager::STALE_SERVE_AGE_HEADER);
+}
+
+/// Append the stale-cache notes to a rendered text body (the markdown card
+/// path). Must run inside the command scope: it drains the notes. JSON
+/// bodies get their notes through the `_meta.notes` channel at payload
+/// build time instead, so this must never touch JSON.
+pub(crate) fn append_stale_serve_notes_to_text(text: &mut String) {
+    if text.is_empty() {
+        return;
+    }
+    let sentences = take_stale_serve_sentences();
+    if sentences.is_empty() {
+        return;
+    }
+    if !text.ends_with('\n') {
+        text.push('\n');
+    }
+    text.push('\n');
+    for sentence in sentences {
+        text.push_str("Cache note: ");
+        text.push_str(&sentence);
+        text.push('\n');
+    }
+}
+
 fn attach_variant_article_deadline(request: RequestBuilder) -> RequestBuilder {
     match current_variant_article_deadline() {
         Some(deadline) => request.with_extension(deadline),
@@ -228,14 +407,16 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
             }
             None => request.send().await,
         };
-        response.map_err(BioMcpError::from).map_err(|error| {
+        let mut response = response.map_err(BioMcpError::from).map_err(|error| {
             let context = if matches!(error, BioMcpError::BodyLimit { .. }) {
                 SourceContext::narrow(context.provider())
             } else {
                 context
             };
             error.with_source_context(context)
-        })
+        })?;
+        note_stale_cache_serve(&mut response, context.provider().label());
+        Ok(response)
     }
 }
 
@@ -244,10 +425,13 @@ impl RequestBuilderSourceContextExt for reqwest::RequestBuilder {
         self,
         context: SourceContext,
     ) -> Result<reqwest::Response, BioMcpError> {
-        self.send()
+        let mut response = self
+            .send()
             .await
             .map_err(BioMcpError::from)
-            .map_err(|error| error.with_source_context(context))
+            .map_err(|error| error.with_source_context(context))?;
+        note_stale_cache_serve(&mut response, context.provider().label());
+        Ok(response)
     }
 }
 
@@ -370,6 +554,73 @@ fn env_cache_mode() -> Option<CacheMode> {
     })
 }
 
+/// Test-only override slot for the process cache mode (ticket 1261).
+/// The guard sets the mode on creation and restores the previous value
+/// on drop, so a test cannot latch a mode for the rest of the binary the
+/// way a set-and-restore of `BIOMCP_CACHE_MODE` latched the `OnceLock`
+/// above. Compiled only into test builds, so release reads never touch
+/// it.
+#[cfg(test)]
+static TEST_CACHE_MODE_OVERRIDE: std::sync::Mutex<Option<CacheMode>> = std::sync::Mutex::new(None);
+
+#[cfg(test)]
+fn test_cache_mode_override() -> Option<CacheMode> {
+    *TEST_CACHE_MODE_OVERRIDE
+        .lock()
+        .expect("test cache-mode override lock poisoned")
+}
+
+#[cfg(test)]
+pub(crate) struct TestCacheModeGuard(Option<CacheMode>);
+
+#[cfg(test)]
+impl Drop for TestCacheModeGuard {
+    fn drop(&mut self) {
+        if let Ok(mut slot) = TEST_CACHE_MODE_OVERRIDE.lock() {
+            *slot = self.0.take();
+        }
+    }
+}
+
+#[cfg(test)]
+fn set_test_cache_mode(mode: CacheMode) -> TestCacheModeGuard {
+    let mut slot = TEST_CACHE_MODE_OVERRIDE
+        .lock()
+        .expect("test cache-mode override lock poisoned");
+    let guard = TestCacheModeGuard(*slot);
+    *slot = Some(mode);
+    guard
+}
+
+/// Test-only scoped cache modes. Hold the guard for the duration of the
+/// test (or its fixture environment); every cache-mode reader sees the
+/// mode while the guard lives and the previous mode returns after it.
+#[cfg(test)]
+pub(crate) mod test_cache_mode {
+    /// Bypass every cache for the guard's lifetime (`off`).
+    pub(crate) fn off() -> super::TestCacheModeGuard {
+        super::set_test_cache_mode(http_cache_reqwest::CacheMode::NoStore)
+    }
+
+    /// Serve expired entries without revalidation (`infinite`).
+    pub(crate) fn infinite() -> super::TestCacheModeGuard {
+        super::set_test_cache_mode(http_cache_reqwest::CacheMode::ForceCache)
+    }
+}
+
+/// The process's one cache-mode read: the test override while a guard
+/// holds one, otherwise the once-read environment mode. Every reader —
+/// the HTTP middleware, the bypass and infinite checks, the FDA orphan
+/// sidecar — goes through here, so no two readers can disagree about
+/// when a mode change takes effect (ticket 1261).
+pub(crate) fn current_cache_mode() -> Option<CacheMode> {
+    #[cfg(test)]
+    if let Some(mode) = test_cache_mode_override() {
+        return Some(mode);
+    }
+    env_cache_mode()
+}
+
 fn resolve_cache_mode(
     no_cache: bool,
     authenticated: bool,
@@ -381,11 +632,33 @@ fn resolve_cache_mode(
     env_mode
 }
 
-pub(crate) async fn with_no_cache<R, F>(no_cache: bool, fut: F) -> R
+/// A plain function returning the scoped future. Taking the future
+/// by value inside an `async fn` kept the generator holding both the
+/// `Scope` future and the inner future's state, doubling the dispatch
+/// future's size; returning the scope directly keeps one copy (ticket
+/// 1243).
+/// Re-enter the parent command's no-cache scope inside a spawned
+/// task (2026-09-28 review): `tokio::spawn` drops the NO_CACHE
+/// task-local the way it drops the stale-serve scope, so a prefetch
+/// that runs outside the command's `--no-cache` would read and write
+/// the cache the caller asked to bypass.
+pub(crate) fn no_cache_flag() -> bool {
+    is_no_cache_enabled()
+}
+
+/// Scope a carried no-cache flag back onto a spawned future.
+pub(crate) fn with_no_cache_flag<R, F>(flag: bool, fut: F) -> impl Future<Output = R>
 where
     F: Future<Output = R>,
 {
-    NO_CACHE.scope(no_cache, fut).await
+    NO_CACHE.scope(flag, fut)
+}
+
+pub(crate) fn with_no_cache<R, F>(no_cache: bool, fut: F) -> impl Future<Output = R>
+where
+    F: Future<Output = R>,
+{
+    NO_CACHE.scope(no_cache, fut)
 }
 
 pub(crate) fn is_no_cache_enabled() -> bool {
@@ -393,25 +666,23 @@ pub(crate) fn is_no_cache_enabled() -> bool {
 }
 
 pub(crate) fn cache_is_bypassed() -> bool {
-    is_no_cache_enabled() || env_cache_mode() == Some(CacheMode::NoStore)
+    is_no_cache_enabled() || current_cache_mode() == Some(CacheMode::NoStore)
 }
 
 /// Whether cache reads ignore entry expiry (`BIOMCP_CACHE_MODE=infinite`).
 ///
-/// Unlike the HTTP middleware, the citation-evidence sidecar resolves the
-/// mode per call from the environment; the operator knob does not change
-/// mid-process, and the fresh read lets the debug-only test seam exercise
-/// the infinite mode in-process.
+/// Reads the process mode through [`current_cache_mode`] like every other
+/// cache-mode reader: the test override applies here too, and the
+/// once-read environment mode keeps this check in agreement with the HTTP
+/// middleware (ticket 1261; the earlier per-call environment read let the
+/// two readers disagree about when a change takes effect).
 pub(crate) fn cache_is_infinite() -> bool {
-    let mode = std::env::var("BIOMCP_CACHE_MODE")
-        .ok()
-        .map(|value| value.trim().to_ascii_lowercase());
-    parse_cache_mode(mode.as_deref()) == Some(CacheMode::ForceCache)
+    current_cache_mode() == Some(CacheMode::ForceCache)
 }
 
 pub(crate) fn apply_cache_mode(req: RequestBuilder) -> RequestBuilder {
     let no_cache = is_no_cache_enabled();
-    if let Some(mode) = resolve_cache_mode(no_cache, false, env_cache_mode()) {
+    if let Some(mode) = resolve_cache_mode(no_cache, false, current_cache_mode()) {
         return req.with_extension(mode);
     }
     attach_variant_article_deadline(req)
@@ -422,7 +693,7 @@ pub(crate) fn apply_cache_mode_with_auth(
     authenticated: bool,
 ) -> RequestBuilder {
     let no_cache = is_no_cache_enabled();
-    if let Some(mode) = resolve_cache_mode(no_cache, authenticated, env_cache_mode()) {
+    if let Some(mode) = resolve_cache_mode(no_cache, authenticated, current_cache_mode()) {
         return req.with_extension(mode);
     }
     req
@@ -884,6 +1155,51 @@ where
     }
 }
 
+/// A retry strategy that refuses to retry TLS trust failures.
+/// reqwest-retry's default marks every connect-layer error
+/// transient, but a rejected certificate is deterministic:
+/// retrying cannot fix a trust mismatch, and the backoff turned
+/// each untrusted-host dial into a ~2 s stall (2026-09-28 review).
+#[derive(Debug, Default)]
+struct NoTrustFailureStrategy;
+
+const TRUST_FAILURE_MARKERS: &[&str] = &[
+    "invalid peer certificate",
+    "unknown certificate",
+    "certificate verify failed",
+    "CertNotValidForName",
+    "self-signed certificate",
+];
+
+fn is_trust_failure(error: &reqwest_middleware::Error) -> bool {
+    let mut source: Option<&dyn std::error::Error> = Some(error);
+    while let Some(error) = source {
+        let text = error.to_string();
+        if TRUST_FAILURE_MARKERS
+            .iter()
+            .any(|marker| text.contains(marker))
+        {
+            return true;
+        }
+        source = error.source();
+    }
+    false
+}
+
+impl reqwest_retry::RetryableStrategy for NoTrustFailureStrategy {
+    fn handle(
+        &self,
+        res: &Result<reqwest::Response, reqwest_middleware::Error>,
+    ) -> Option<reqwest_retry::Retryable> {
+        if let Err(error) = res
+            && is_trust_failure(error)
+        {
+            return None;
+        }
+        reqwest_retry::DefaultRetryableStrategy.handle(res)
+    }
+}
+
 fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware, BioMcpError> {
     if is_no_cache_enabled() {
         return build_uncached_http_client(kind, None);
@@ -904,10 +1220,14 @@ pub(crate) fn build_uncached_http_client(
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(headers);
     let base = ca_bundle::build(base, bundle)?;
+    let retry = ExponentialBackoff::builder().build_with_max_retries(3);
     let builder = ClientBuilder::new(base);
     let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
     let builder = builder.with(rate_limit::RateLimitMiddleware::provider_pool());
-    let builder = builder.with(shared_retry_middleware());
+    let builder = builder.with(RetryTransientMiddleware::new_with_policy_and_strategy(
+        retry,
+        NoTrustFailureStrategy,
+    ));
     let builder = match kind {
         SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
         SharedHttpClientKind::SemanticScholarSharedPool => {
@@ -984,6 +1304,8 @@ pub(crate) fn finish_cached_http_client(
         .default_headers(default_headers);
     let base_client = ca_bundle::build(base_client, bundle)?;
 
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
+
     let cache_options = HttpCacheOptions {
         cache_options: Some(CacheOptions {
             // Shared-cache semantics: do not store private/authenticated responses.
@@ -1003,7 +1325,10 @@ pub(crate) fn finish_cached_http_client(
         manager,
         options: cache_options,
     }));
-    let builder = builder.with(shared_retry_middleware());
+    let builder = builder.with(RetryTransientMiddleware::new_with_policy_and_strategy(
+        retry_policy,
+        NoTrustFailureStrategy,
+    ));
     let builder = match kind {
         SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
         SharedHttpClientKind::SemanticScholarSharedPool => {
@@ -1690,6 +2015,145 @@ mod tests {
             .into()
     }
 
+    #[test]
+    fn stale_serve_age_wording_uses_hours_only_past_an_hour() {
+        assert_eq!(stale_serve_age_wording(30), "30 s");
+        assert_eq!(stale_serve_age_wording(3599), "3599 s");
+        assert_eq!(stale_serve_age_wording(3600), "1 h");
+        assert_eq!(stale_serve_age_wording(7200), "2 h");
+    }
+
+    #[tokio::test]
+    async fn note_stale_cache_serve_records_the_age_and_strips_the_header() {
+        let (header_gone, sentences) = with_stale_serve_notes(async {
+            let mut response = test_response(
+                StatusCode::OK,
+                &[("x-biomcp-cache-stale-age", "7200")],
+                "payload",
+            );
+            note_stale_cache_serve(&mut response, "MyDisease.info");
+            let header_gone = response
+                .headers()
+                .get(crate::cache::manager::STALE_SERVE_AGE_HEADER)
+                .is_none();
+            (header_gone, take_stale_serve_sentences())
+        })
+        .await;
+        assert!(header_gone, "the marker must not cross the wire");
+        assert_eq!(
+            sentences,
+            vec![
+                "MyDisease.info data served from cache, 2 h old (older than the provider's freshness window)."
+                    .to_string(),
+            ],
+            "the age reaches the output-note channel with the log line's honesty"
+        );
+        assert!(
+            take_stale_serve_sentences().is_empty(),
+            "taking the sentences drains them so each channel states them once"
+        );
+    }
+
+    #[tokio::test]
+    async fn note_stale_cache_serve_ignores_absent_and_malformed_markers() {
+        let sentences = with_stale_serve_notes(async {
+            let mut plain = test_response(StatusCode::OK, &[], "payload");
+            note_stale_cache_serve(&mut plain, "MyDisease.info");
+            let mut malformed = test_response(
+                StatusCode::OK,
+                &[("x-biomcp-cache-stale-age", "not-a-number")],
+                "payload",
+            );
+            note_stale_cache_serve(&mut malformed, "MyDisease.info");
+            take_stale_serve_sentences()
+        })
+        .await;
+        assert!(sentences.is_empty(), "no honest note without a real age");
+        assert!(
+            take_stale_serve_sentences().is_empty(),
+            "sends outside a command scope record nothing"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_spawned_task_inherits_the_command_note_scope() {
+        // The ClinGen prefetch runs under tokio::spawn, which drops the
+        // task-local: without the handle seam its stale serves would
+        // only log. This test drives the seam the prefetch uses.
+        let sentences = with_stale_serve_notes(async {
+            let handle = stale_serve_notes_handle();
+            let spawned = tokio::spawn(with_stale_serve_notes_handle(handle, async {
+                let mut response = test_response(
+                    StatusCode::OK,
+                    &[("x-biomcp-cache-stale-age", "90")],
+                    "payload",
+                );
+                note_stale_cache_serve(&mut response, "ClinGen");
+            }))
+            .await;
+            assert!(spawned.is_ok(), "the spawned scope must join cleanly");
+            take_stale_serve_sentences()
+        })
+        .await;
+        assert_eq!(
+            sentences,
+            vec![
+                StaleServeNote {
+                    provider: "ClinGen",
+                    age_seconds: 90,
+                }
+                .sentence()
+            ],
+            "the spawned task's note reaches the parent command's output"
+        );
+    }
+
+    #[tokio::test]
+    async fn stale_serve_notes_do_not_leak_between_scopes() {
+        with_stale_serve_notes(async {
+            let mut response = test_response(
+                StatusCode::OK,
+                &[("x-biomcp-cache-stale-age", "60")],
+                "payload",
+            );
+            note_stale_cache_serve(&mut response, "DisGeNET");
+        })
+        .await;
+        assert!(
+            take_stale_serve_sentences().is_empty(),
+            "a completed command's notes die with its scope"
+        );
+    }
+
+    #[tokio::test]
+    async fn append_stale_serve_notes_to_text_adds_plain_cache_note_lines() {
+        let mut text = String::from("# Marfan syndrome\n");
+        with_stale_serve_notes(async {
+            let mut response = test_response(
+                StatusCode::OK,
+                &[("x-biomcp-cache-stale-age", "10800")],
+                "payload",
+            );
+            note_stale_cache_serve(&mut response, "MyDisease.info");
+            append_stale_serve_notes_to_text(&mut text);
+        })
+        .await;
+        assert!(
+            text.contains(
+                "\nCache note: MyDisease.info data served from cache, 3 h old (older than the provider's freshness window).\n"
+            ),
+            "the markdown card carries the note: {text}"
+        );
+    }
+
+    #[test]
+    fn append_stale_serve_notes_to_text_leaves_bodies_without_notes_alone() {
+        // Outside a scope no notes exist; the text must pass through intact.
+        let mut text = String::from("unchanged\n");
+        append_stale_serve_notes_to_text(&mut text);
+        assert_eq!(text, "unchanged\n");
+    }
+
     fn test_cache_config(cache_root: impl Into<std::path::PathBuf>) -> ResolvedCacheConfig {
         ResolvedCacheConfig {
             cache_root: cache_root.into(),
@@ -1759,6 +2223,38 @@ mod tests {
     #[test]
     fn resolve_cache_mode_defaults_to_none() {
         assert!(resolve_cache_mode(false, false, None).is_none());
+    }
+
+    #[test]
+    #[serial_test::serial(source_env)]
+    fn the_test_cache_mode_guard_applies_and_restores_the_mode() {
+        let baseline = current_cache_mode();
+        {
+            let _off = test_cache_mode::off();
+            assert!(matches!(current_cache_mode(), Some(CacheMode::NoStore)));
+            assert!(cache_is_bypassed());
+            assert!(!cache_is_infinite());
+            // A nested guard restores the outer mode, not the baseline.
+            {
+                let _infinite = test_cache_mode::infinite();
+                assert!(matches!(current_cache_mode(), Some(CacheMode::ForceCache)));
+                assert!(cache_is_infinite());
+            }
+            assert!(matches!(current_cache_mode(), Some(CacheMode::NoStore)));
+        }
+        // The drop restores whatever the process mode was before the
+        // guard, so a test cannot latch `off` for the rest of the binary
+        // (ticket 1261).
+        let after = current_cache_mode();
+        assert_eq!(
+            after == Some(CacheMode::NoStore),
+            baseline == Some(CacheMode::NoStore),
+            "the guard must restore the mode it found, not latch off",
+        );
+        assert_eq!(
+            after == Some(CacheMode::ForceCache),
+            baseline == Some(CacheMode::ForceCache),
+        );
     }
 
     #[test]

@@ -88,8 +88,8 @@ only Markdown leaf output changes.
   dotted circle) with the implementation unchanged; (c) the stale package
   path count corrected to the enforced 1,305.
 
-- Full gates (final): merged as PR #270. At a186340f: lint OK, Rust 3525/3525,
+- Verification (final): merged as PR #270. At a186340f: lint OK, Rust 3525/3525,
   spec OK; pytest failures exactly the eight documented contention tests.
-  Code review ACCEPT with the Unicode 17 NFC / Unicode 16 predicate split
+- Code review: ACCEPT with the Unicode 17 NFC / Unicode 16 predicate split
   confirmed as the ticket's intended reading; remediation added twelve
   boundary negatives and froze the replacement-character-as-base rule.

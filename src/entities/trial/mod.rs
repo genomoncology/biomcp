@@ -432,3 +432,45 @@ pub const TRIAL_SECTION_NAMES: &[&str] = &[
     TRIAL_SECTION_REFERENCES,
     TRIAL_SECTION_ALL,
 ];
+
+/// Product count presentation around BioData's authoritative precision state.
+/// A partial upper bound is kept only when detail verification retained rows
+/// that could not be checked; it never turns BioData's unknown total into an
+/// exact or approximate one.
+#[derive(Debug)]
+pub struct TrialCount {
+    pub total: ClinicalTrialSearchTotal,
+    pub partial_upper_bound: Option<usize>,
+}
+
+impl From<ClinicalTrialSearchTotal> for TrialCount {
+    fn from(total: ClinicalTrialSearchTotal) -> Self {
+        Self {
+            total,
+            partial_upper_bound: None,
+        }
+    }
+}
+
+impl TrialCount {
+    pub fn partial(upper_bound: usize) -> Self {
+        Self {
+            total: ClinicalTrialSearchTotal::unknown(
+                ClinicalTrialSearchUnknownReason::IncompleteLocalVerification,
+            ),
+            partial_upper_bound: Some(upper_bound),
+        }
+    }
+
+    pub fn unknown_reason(&self) -> Option<ClinicalTrialSearchUnknownReason> {
+        self.total.unknown_reason()
+    }
+
+    pub fn value(&self) -> Option<u64> {
+        self.total.value()
+    }
+
+    pub fn precision(&self) -> &'static str {
+        self.total.precision()
+    }
+}

@@ -325,6 +325,7 @@ pub(crate) fn disease_markdown_with_identity_notice(
         gene_associations => &disease.gene_associations,
         gene_association_rows => gene_association_rows,
         top_genes => &disease.top_genes,
+        top_gene_source => disease.top_gene_source.as_deref(),
         top_gene_scores => &disease.top_gene_scores,
         top_gene_score_labels => top_gene_score_labels,
         treatment_landscape => &disease.treatment_landscape,

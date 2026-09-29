@@ -533,7 +533,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | adverse_event | vaers | outcome-only | additive | CDC CVX / CDC VAERS | `vaers` outcome and provenance projection |
 | disease | treatments | outcome-only | fallback | MyChem.info indication search | `treatments` outcome and provenance projection |
 | disease | recruiting_trials | outcome-only | fallback | ClinicalTrials.gov | `recruiting_trials` outcome and provenance projection |
-| disease | genes | canonical | additive | Monarch Initiative / CIViC / Open Targets | `genes` outcome and provenance projection |
+| disease | genes | canonical | additive | Monarch Initiative / CIViC / Open Targets / DisGeNET | `genes` outcome and provenance projection |
 | disease | pathways | canonical | additive | Reactome | `pathways` outcome and provenance projection |
 | disease | phenotypes | canonical | additive | MyDisease.info / Monarch Initiative / HPO | `phenotypes` outcome and provenance projection |
 | disease | diagnostics | canonical | fallback | NCBI Genetic Testing Registry / WHO Prequalified IVD | `diagnostics` outcome and provenance projection |

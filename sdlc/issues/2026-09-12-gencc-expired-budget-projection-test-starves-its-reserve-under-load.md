@@ -41,3 +41,11 @@ Third variant, 2026-09-14: `sources::gencc::cancelling_stalled_headers_and_strea
 failed once in a full lane at 8.4 s on an otherwise passing run
 ("request barrier: Elapsed"); passes solo 3/3 at 0.03 s. Same family: a
 GenCC fixture whose internal barrier window is load-sensitive.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Stays open as a watch item under the signal-wait rules ticket 1252 introduced (tests wait on child-exit signals, not wall-clock sleeps): one load-dependent
+failure, never reproduced since, and the stress lane now exercises
+the GenCC family repeatedly. If it recurs, convert its 50 ms reserve
+to the watchdog-marker form (a `watchdog:` comment with a reason word on the wait line, which the wait ratchet inventory tracks) the way ticket 1252 converted the lease waits;
+do not lengthen the deadline instead.

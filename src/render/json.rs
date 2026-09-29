@@ -1002,10 +1002,18 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
-            label: None,
+            label: Some(crate::entities::drug::DrugLabel {
+                indication_summary: Vec::new(),
+                indications: None,
+                boxed_warning: Some("WARNING: QT PROLONGATION".to_string()),
+                warnings: None,
+                dosage: None,
+            }),
             label_set_id: None,
             shortage: None,
             approvals: None,
@@ -1025,6 +1033,23 @@ mod tests {
         assert!(json.contains("\"target_family\": \"PARP\""));
         assert!(json.contains("\"target_family_name\": \"poly(ADP-ribose) polymerase\""));
         assert!(json.contains("\"targets\""));
+        assert!(json.contains("\"boxed_warning\": \"WARNING: QT PROLONGATION\""));
+        // The coverage status is additive and absent when not populated
+        // (ticket 1241); the synonym list never serializes.
+        assert!(
+            !json.contains("interaction_coverage_status"),
+            "absent coverage must not serialize: {json}"
+        );
+        assert!(!json.contains("ddinter_synonyms"));
+        let mut covered = drug.clone();
+        covered.interaction_coverage_status = Some(
+            crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage,
+        );
+        let json = to_pretty(&covered).expect("covered drug json");
+        assert!(
+            json.contains("\"interaction_coverage_status\": \"not_in_ddinter_coverage\""),
+            "covered status must serialize: {json}"
+        );
     }
 
     #[test]
@@ -1053,6 +1078,8 @@ mod tests {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,

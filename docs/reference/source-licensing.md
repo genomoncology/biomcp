@@ -44,14 +44,14 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | CDC CVX/MVX | 1 | direct_api | none | most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply | reuse is generally allowed with CDC attribution and non-endorsement language; avoid CDC logos and review exceptions before republishing | <https://www.cdc.gov/other/agencymaterials.html> |
 | CDC WONDER VAERS | 1 | direct_api | none | CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts | reuse is allowed for statistical reporting and analysis with source attribution, but do not try to identify individuals or publish identifying linkages | <https://wonder.cdc.gov/datause.html> |
 | Cellosaurus | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution and the requested citation; every BioMCP cell line output carries both | <https://www.cellosaurus.org/description.html> |
-| ChEMBL | 1 | direct_api | none | EMBL-EBI open data service; ChEMBL is published for broad reuse | reuse is generally allowed under the provider's open-data terms with attribution where required | <https://www.ebi.ac.uk/chembl/> |
+| ChEMBL | 1 | direct_api | none | EMBL-EBI open data service; ChEMBL is CC BY-SA 3.0 (attribution and share-alike) | reuse is allowed with attribution and share-alike for adaptations | <https://www.ebi.ac.uk/chembl/> |
 | CIViC | 1 | direct_api | none | open community knowledgebase; CIViC content is published for unrestricted reuse | reuse is broadly permitted; attribution remains best practice | <https://civicdb.org/home> |
 | ClinGen | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://clinicalgenome.org/> |
 | ClinGen LDH | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://ldh.genome.network> |
 | GenCC | 1 | direct_api | none | CC0 1.0 data with requested attribution to GenCC and contributing submitters | reuse is permitted under CC0; preserve GenCC and submitter attribution and the non-diagnostic context | <https://thegencc.org/terms> |
 | ClinicalTrials.gov | 1 | direct_api | none | U.S. government public information service | records are broadly reusable; preserve identifiers and avoid implying NLM endorsement | <https://clinicaltrials.gov/data-api/about-api> |
 | ComplexPortal | 1 | direct_api | none | EMBL-EBI open data service | reuse follows EMBL-EBI resource terms and any embedded third-party source obligations | <https://www.ebi.ac.uk/complexportal/> |
-| CPIC | 1 | direct_api | none | CPIC content is published under CC0 with trademark and attribution guidance | content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions | <https://cpicpgx.org/license/> |
+| CPIC | 1 | direct_api | none | cpicpgx.org redirects to ClinPGx (March 2026 move complete); the former CC0 pages are gone and the successor policy states CC BY-SA 4.0 | treat CPIC data as attribution-plus-share-alike until CPIC publishes terms on its own domain again | <https://www.clinpgx.org/page/dataUsagePolicy> |
 | DGIdb | 1 | direct_api | none | open interaction service; aggregated claims may still reflect upstream source terms | treat DGIdb as an aggregation layer and preserve source attribution for underlying claim providers | <https://www.dgidb.org/about> |
 | DDInter | 3 | direct_api | none | CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists | reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims | <https://ddinter.scbdd.com/terms/> |
 | dbSNP | 1 | direct_api | none | NCBI public data service with attribution and non-endorsement expectations | RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement | <https://www.ncbi.nlm.nih.gov/home/about/policies/> |
@@ -90,7 +90,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | OpenFDA | 1 | direct_api | optional_env | FDA-origin public data and API terms | data is broadly reusable, but avoid implying FDA endorsement and preserve source context | <https://open.fda.gov/apis/authentication/> |
 | OpenTargets | 1 | direct_api | none | Open Targets data is CC0; platform code is Apache 2.0 | platform data is dedicated to the public domain, but linked evidence still carries source provenance | <https://platform-docs.opentargets.org/licence> |
 | PharmacoDB | 3 | direct_api | none | PharmacoDB publishes no licence or terms page; its source code is GPL-3.0 and the describing paper is CC BY-NC 4.0, and the terms for the data itself are unstated by the provider | treat reuse as non-commercial and attribute PharmacoDB; the provider states no terms for the data, so redistribution rights are not established | none published |
-| PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://api.pharmgkb.org/> |
+| PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://www.clinpgx.org/page/dataUsagePolicy> |
 | PMC OA | 1 | direct_api | optional_env | open-access subset only; article licenses vary within PMC OA | full text is reusable only according to each article's specific PMC Open Access license | <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/> |
 | PubMed | 1 | direct_api | optional_env | NLM public-domain search and metadata service | search results are broadly reusable, but article-level abstracts, full text, and downstream reuse still depend on the returned record context | <https://www.ncbi.nlm.nih.gov/books/NBK25501/> |
 | PubTator3 | 1 | direct_api | optional_env | NCBI/NLM public-domain annotation service | results are broadly reusable, but preserve PMID/source provenance and article-level rights separately | <https://www.ncbi.nlm.nih.gov/research/pubtator3/api> |
@@ -103,11 +103,11 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | UniProt | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution; linked cross-references can have their own terms | <https://www.uniprot.org/help/license> |
 | VariantValidator | 1 | direct_api | none | public VariantValidator service; provider terms apply to returned validation output | preserve VariantValidator source identity, warnings, and genomic descriptions when reusing results | <https://variantvalidator.org/> |
 | WHO Prequalification | 1 | direct_api | none | WHO content generally requires attribution; commercial reuse may require permission and third-party materials can carry separate rights | preserve WHO attribution, review commercial-use conditions, and check third-party material rights before republishing | <https://www.who.int/about/policies/publishing/copyright> |
-| WikiPathways | 1 | direct_api | none | CC0 | pathway content is dedicated to the public domain; attribution is still good scholarly practice | <https://classic.wikipathways.org/index.php/WikiPathways:License_Terms> |
+| WikiPathways | 1 | direct_api | none | CC0 | pathway content is dedicated to the public domain; attribution is still good scholarly practice | <https://www.wikipathways.org/terms.html> |
 | AlphaFold DB | 1 | indirect_only | not_applicable | AlphaFold DB structural predictions are published for broad open use | reuse is generally open, but preserve model/source provenance and article citations | <https://alphafold.ebi.ac.uk/faq> |
 | Cancer Genome Interpreter | 3 | indirect_only | not_applicable | custom tool terms | do not assume commercial reuse rights; the official terms restrict some external and commercial use | <https://www.cancergenomeinterpreter.org/conditions> |
 | ClinVar | 1 | direct_api | optional_env | NCBI public-domain submission archive | records are broadly reusable, but preserve accession/provenance and submitter context | <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/> |
-| COSMIC | 3 | indirect_only | not_applicable | custom COSMIC licensing with commercial restrictions | direct redistribution and direct integration remain intentionally unsupported without a separate COSMIC license | <https://www.sanger.ac.uk/legal/cosmic-licensing/> |
+| COSMIC | 3 | indirect_only | not_applicable | BioMCP reads only MyVariant's COSMIC v68 snapshot — "the last freely available somatic variants from COSMIC before their licence change" (MyVariant metadata, checked 2026-09-27); the current cosmickb.org licence (commercial licence for commercial use including patient services and clinical reporting) governs COSMIC's current offering, not the v68 fields | the v68-era terms govern the fields BioMCP surfaces; the practical limit is the snapshot's age, not its licence; direct use of current COSMIC releases remains commercially restricted | <https://docs.myvariant.info/en/latest/doc/data_source.html> |
 | Disease Ontology | 1 | indirect_only | not_applicable | open disease ontology project | reuse is generally open; preserve ontology version and source references | <https://disease-ontology.org/> |
 | DrugBank | 3 | indirect_only | not_applicable | custom DrugBank terms of use and licensing | use or redistribution of DrugBank content requires a DrugBank license; do not assume open downstream rights | <https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service> |
 | Drugs@FDA | 1 | indirect_only | not_applicable | FDA-origin public information | approval records are broadly reusable; avoid implying FDA endorsement | <https://open.fda.gov/apis/drug/drugsfda/> |
@@ -134,10 +134,10 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
-- License / terms summary: EMBL-EBI open data service; ChEMBL is published for broad reuse
+- License / terms summary: EMBL-EBI open data service; ChEMBL is CC BY-SA 3.0 (attribution and share-alike)
 - Redistribution / reuse summary: reuse is generally allowed under the provider's open-data terms with attribution where required
 - Official terms URL: <https://www.ebi.ac.uk/chembl/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: `get drug <name> targets` keeps ChEMBL as the generic target/mechanism source; CIViC variant labels are rendered separately when present.
 
 ### CIViC
@@ -148,8 +148,8 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Provider access / registration: open public API
 - License / terms summary: open community knowledgebase; CIViC content is published for unrestricted reuse
 - Redistribution / reuse summary: reuse is broadly permitted; attribution remains best practice
-- Official terms URL: <https://civicdb.org/home>
-- Reviewed on: `2026-03-20`
+- Official terms URL: <https://docs.civicdb.org/en/latest/about/faq.html>
+- Reviewed on: `2026-09-28`
 - Notes: CIViC is treated here as an open-access evidence source surfaced directly by BioMCP. Drug target output may add a separate CIViC variant-target annotation line without merging those labels into the generic targets section.
 
 ### ClinGen
@@ -161,7 +161,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: public ClinGen curation resources with publication and attribution expectations
 - Redistribution / reuse summary: generally queryable and reusable, but users should preserve attribution and source context
 - Official terms URL: <https://clinicalgenome.org/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly.
 
 ### ClinGen Allele Registry
@@ -221,7 +221,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: U.S. government public information service
 - Redistribution / reuse summary: records are broadly reusable; preserve identifiers and avoid implying NLM endorsement
 - Official terms URL: <https://clinicaltrials.gov/data-api/about-api>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses the public v2 API as the baseline trial backend.
 
 ### GenCC
@@ -245,7 +245,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: EMBL-EBI open data service
 - Redistribution / reuse summary: reuse follows EMBL-EBI resource terms and any embedded third-party source obligations
 - Official terms URL: <https://www.ebi.ac.uk/complexportal/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP calls the IntAct Complex Portal web service. Complex membership data is queried on demand only.
 
 ### CPIC
@@ -254,11 +254,11 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
-- License / terms summary: CPIC content is published under CC0 with trademark and attribution guidance
-- Redistribution / reuse summary: content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions
-- Official terms URL: <https://cpicpgx.org/license/>
-- Reviewed on: `2026-03-20`
-- Notes: CPIC announced in March 2026 that content is moving to ClinPGx, but current CPIC URLs continue to resolve.
+- License / terms summary: cpicpgx.org now redirects to ClinPGx and its former CC0 licence pages are gone; the successor data-usage policy states ClinPGx data is CC BY-SA 4.0, and whether that governs CPIC content is not stated on any live page
+- Redistribution / reuse summary: treat CPIC data as attribution-plus-share-alike until CPIC publishes terms on its own domain again; the CPIC mark/logo has separate restrictions
+- Official terms URL: <https://www.clinpgx.org/page/dataUsagePolicy>
+Reviewed on: `2026-09-27`
+- Notes: CPIC announced in March 2026 that content is moving to ClinPGx; as of the 2026-09-27 pass the move is complete: cpicpgx.org redirects and the old licence pages 404 — no CPIC-owned URL resolves to terms any more. The ClinPGx policy page is the only live terms statement.
 
 ### DGIdb
 
@@ -269,7 +269,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: open interaction service; aggregated claims may still reflect upstream source terms
 - Redistribution / reuse summary: treat DGIdb as an aggregation layer and preserve source attribution for underlying claim providers
 - Official terms URL: <https://www.dgidb.org/about>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: DGIdb itself is open to query, but it aggregates claims from many external drug-gene sources.
 
 ### CDC CVX/MVX
@@ -353,7 +353,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: open web/API service with citation expectations for Enrichr and its libraries
 - Redistribution / reuse summary: reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries
 - Official terms URL: <https://maayanlab.cloud/Enrichr/>
-- Reviewed on: `2026-03-20`
+- Reviewed on: `2026-09-29`
 - Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead.
 
 ### Europe PMC
@@ -365,7 +365,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: open literature metadata service; article and full-text licenses vary by record
 - Redistribution / reuse summary: metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses
 - Official terms URL: <https://europepmc.org/RestfulWebService>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses Europe PMC for search, bibliographic metadata, article full-text XML, and the second article-asset rung after PMC OA. Supplementary ZIP bytes do not imply reusable status: BioMCP reports unknown reuse unless article metadata or a retained PMC OA manifest supplies a license, and retained PMC licenses keep PMC OA source attribution.
 
 ### Figshare
@@ -389,7 +389,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: open enrichment service with provider citation expectations
 - Redistribution / reuse summary: results are queryable and reusable, but cite g:Profiler and any underlying databases you depend on
 - Official terms URL: <https://biit.cs.ut.ee/gprofiler/help.cgi>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses g:Profiler only for top-level gene-set enrichment.
 
 ### GTEx
@@ -401,7 +401,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: NIH-hosted public-access expression resource
 - Redistribution / reuse summary: public summary/expression views are broadly reusable; controlled-access data remains outside BioMCP's scope
 - Official terms URL: <https://gtexportal.org/home/documentationPage>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP only queries public GTEx expression endpoints, not controlled-access donor-level data.
 
 ### GWAS Catalog
@@ -413,7 +413,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: EMBL-EBI resource terms; summary statistics may carry separate licenses
 - Redistribution / reuse summary: query results are generally reusable, but dataset-level summary statistics can have separate downstream terms
 - Official terms URL: <https://www.ebi.ac.uk/gwas/docs/about>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: Open Targets reports GWAS Catalog summary statistics under CC0 while the service remains under EMBL-EBI terms.
 
 ### HPO JAX API
@@ -425,7 +425,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: open HPO data with attribution and integrity requirements
 - Redistribution / reuse summary: reuse is allowed, but users should preserve attribution, version context, and source integrity
 - Official terms URL: <https://human-phenotype-ontology.github.io/license.html>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: The HPO project's own license page is more specific than generic JAX site text and is the clearest official usage statement currently exposed.
 
 ### InterPro
@@ -437,7 +437,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: EMBL-EBI open data resource
 - Redistribution / reuse summary: reuse follows InterPro/EMBL-EBI resource terms and any embedded member-database obligations
 - Official terms URL: <https://www.ebi.ac.uk/interpro/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: InterPro aggregates signatures from multiple member databases; downstream interpretation should keep that provenance.
 
 ### MedlinePlus
@@ -449,7 +449,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: NLM public-information service with trademark and endorsement guidance
 - Redistribution / reuse summary: content is widely reusable, but preserve attribution and avoid implying MedlinePlus/NLM endorsement
 - Official terms URL: <https://medlineplus.gov/about/using/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses MedlinePlus for best-effort plain-language discover context.
 
 ### Monarch Initiative
@@ -461,7 +461,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: open integrated knowledge graph; underlying source licenses still matter
 - Redistribution / reuse summary: results can be queried openly, but downstream reuse should respect the original sources folded into Monarch
 - Official terms URL: <https://monarchinitiative.org/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses Monarch as an aggregator for disease, phenotype, and model-organism relationships rather than as the legal source of every embedded assertion.
 
 ### Mutalyzer
@@ -485,7 +485,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: BioThings aggregation service; upstream source terms continue to apply
 - Redistribution / reuse summary: do not assume aggregator responses are relicensed; preserve source provenance for downstream reuse
 - Official terms URL: <https://docs.mychem.info/en/latest/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: DrugBank and other upstream providers appear in MyChem payloads with their own terms.
 
 ### MyDisease.info
@@ -497,7 +497,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: BioThings aggregation service; source ontologies and datasets keep their own terms
 - Redistribution / reuse summary: treat payloads as aggregated source data rather than a new umbrella license
 - Official terms URL: <https://docs.mydisease.info/en/latest/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: Disease Ontology and MONDO appear through MyDisease.info as indirect provenance sources.
 
 ### MyGene.info
@@ -509,7 +509,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: BioThings aggregation service; source-specific terms remain attached to underlying records
 - Redistribution / reuse summary: reuse should preserve provenance back to NCBI Gene, UniProt, and other upstream sources
 - Official terms URL: <https://docs.mygene.info/en/latest/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data.
 
 ### MyVariant.info
@@ -521,7 +521,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: BioThings aggregation service; indirect providers retain their own terms
 - Redistribution / reuse summary: ClinVar, COSMIC, Cancer Genome Interpreter, and gnomAD-related fields should be treated according to their original providers' terms
 - Official terms URL: <https://docs.myvariant.info/en/latest/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP intentionally documents several indirect-only provenance rows that arrive through MyVariant.info payloads. Exact variant-search transcript annotations identify MyVariant.info as the direct carrier and SnpEff `ann` as their indirect annotation provenance.
 
 ### NCBI ID Converter
@@ -534,7 +534,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: utility results are broadly reusable; keep article-level identifiers and downstream article licenses distinct
 - Official terms URL: <https://pmc.ncbi.nlm.nih.gov/tools/idconv/>
 - API key / account URL: <https://www.ncbi.nlm.nih.gov/account/settings/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: NCBI API keys increase throughput but are not required for baseline BioMCP usage.
 
 ### NCBI E-utilities
@@ -571,7 +571,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: EMBL-EBI ontology browser; each ontology keeps its own license
 - Redistribution / reuse summary: ontology metadata is queryable, but downstream reuse depends on the specific ontology surfaced
 - Official terms URL: <https://www.ebi.ac.uk/ols4/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: OLS4 is BioMCP's required backbone for discover. It is an ontology index, not a single-license data source.
 
 ### FDA Orphan Drug Designations and Approvals
@@ -620,7 +620,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: Open Targets data is CC0; platform code is Apache 2.0
 - Redistribution / reuse summary: platform data is dedicated to the public domain, but linked evidence still carries source provenance
 - Official terms URL: <https://platform-docs.opentargets.org/licence>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: `get drug <name> targets` keeps Open Targets in the generic target section while CIViC variant annotations, when present, are labeled separately.
 
 ### PMC OA
@@ -633,7 +633,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: full text and assets are reusable only according to each article's specific PMC Open Access license
 - Official terms URL: <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/>
 - API key / account URL: <https://www.ncbi.nlm.nih.gov/account/settings/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP queries PMC OA's versioned S3 metadata objects on demand as one XML full-text rung and article-asset route; it also resolves recognized PMC JATS/HTML supplement links behind stable BioMCP handles without exposing provider URLs. It does not ship the article corpus. When PMC OA cannot supply bytes but Europe PMC can, a parsed PMC OA license fact is retained with PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses.
 
 ### PubMed
@@ -659,7 +659,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: results are broadly reusable, but preserve PMID/source provenance and article-level rights separately
 - Official terms URL: <https://www.ncbi.nlm.nih.gov/research/pubtator3/api>
 - API key / account URL: <https://www.ncbi.nlm.nih.gov/account/settings/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses PubTator3 for article search fan-out and article annotation. `NCBI_API_KEY` is optional quota uplift only.
 
 ### QuickGO
@@ -671,7 +671,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: GO/EMBL-EBI open data service
 - Redistribution / reuse summary: query results are generally reusable; preserve GO/EMBL-EBI attribution where expected
 - Official terms URL: <https://www.ebi.ac.uk/QuickGO/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: QuickGO exposes GO data and annotations; some embedded evidence sources can carry their own provenance requirements.
 
 ### Reactome
@@ -683,7 +683,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: Reactome pathway content is CC BY 4.0, with some data exports additionally placed under CC0
 - Redistribution / reuse summary: reuse is allowed with attribution; preserve pathway/source provenance in downstream materials
 - Official terms URL: <https://reactome.org/license>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: Reactome announced in 2017 that some annotation files moved to CC0 while core site/code materials remained under CC BY 4.0.
 
 ### SEER Explorer
@@ -707,7 +707,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: CC BY 4.0
 - Redistribution / reuse summary: reuse is allowed with attribution to STRING and the original publication/resource
 - Official terms URL: <https://string-db.org/cgi/access?footer_active_subpage=licensing>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP queries STRING network endpoints on demand and does not package STRING interaction datasets.
 
 ### UniProt
@@ -719,7 +719,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: CC BY 4.0
 - Redistribution / reuse summary: reuse is allowed with attribution; linked cross-references can have their own terms
 - Official terms URL: <https://www.uniprot.org/help/license>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly.
 
 ### VariantValidator
@@ -742,9 +742,9 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Provider access / registration: open public API
 - License / terms summary: CC0
 - Redistribution / reuse summary: pathway content is dedicated to the public domain; attribution is still good scholarly practice
-- Official terms URL: <https://classic.wikipathways.org/index.php/WikiPathways:License_Terms>
-- Reviewed on: `2026-03-20`
-- Notes: The current license statement is still hosted on the WikiPathways classic site.
+- Official terms URL: <https://www.wikipathways.org/terms.html>
+- Reviewed on: `2026-09-28`
+- Notes: Verified 2026-09-28 against the live terms page (adopts CC0); the classic site is retired and its URLs are dead.
 
 ## Tier 2 - Credential, account, or license required for the BioMCP feature
 
@@ -758,7 +758,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: do not assume open redistribution rights for returned prediction outputs
 - Official terms URL: <https://deepmind.google/science/alphagenome/>
 - API key / account URL: <https://deepmind.google/science/alphagenome/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP calls the hosted gRPC endpoint directly. The public product page is the closest official access reference currently exposed.
 
 ### DisGeNET
@@ -771,7 +771,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: do not assume unrestricted redistribution; use according to the provider account terms
 - Official terms URL: <https://www.disgenet.com/>
 - API key / account URL: <https://www.disgenet.com/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: DisGeNET's public site advertises free and commercial plans. BioMCP documents the API as key-gated and treats it as provider-controlled.
 
 ### FHIR (operator server)
@@ -796,7 +796,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: query output is usable for search and review, but downstream reuse should follow NCI API terms and record provenance
 - Official terms URL: <https://clinicaltrialsapi.cancer.gov/>
 - API key / account URL: <https://clinicaltrialsapi.cancer.gov/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP treats NCI CTS as an alternate oncology-focused trial backend, not the default public trial source.
 
 ### ORCID
@@ -821,7 +821,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: do not assume open redistribution rights for OncoKB data or proprietary treatment descriptions
 - Official terms URL: <https://faq.oncokb.org/licensing>
 - API key / account URL: <https://www.oncokb.org/account/register>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: The FAQ states that programmatic access for academic use still requires registration and provider approval.
 
 ### Semantic Scholar
@@ -834,7 +834,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: the API license restricts repackaging, resale, and broad commercial redistribution without expanded licensing
 - Official terms URL: <https://www.semanticscholar.org/product/api/license>
 - API key / account URL: <https://www.semanticscholar.org/product/api>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. Author search/detail expose exact provider records without cross-provider resolution. Article search can use Semantic Scholar through compatible default federation or `--source semanticscholar`. For `get article <id> fulltext --pdf`, BioMCP uses Semantic Scholar `openAccessPdf` metadata, then fetches the PDF after explicit PDF opt-in only when its HTTPS origin is on BioMCP's Semantic Scholar/CDN allowlist; the PDF's article-level reuse terms remain separate.
 
 ### UMLS
@@ -847,7 +847,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: do not assume unrestricted redistribution; some embedded vocabularies add their own restrictions or affiliate licenses
 - Official terms URL: <https://www.nlm.nih.gov/databases/umls.html>
 - API key / account URL: <https://uts.nlm.nih.gov/uts/signup-login>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: The UMLS landing page explicitly states that you must accept the license and create a UTS account for access.
 
 ## Tier 3 - Open or queryable, but with notable terms
@@ -873,7 +873,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: public API with study-specific downstream terms
 - Redistribution / reuse summary: reuse depends on the specific study or consortium behind each dataset
 - Official terms URL: <https://www.cbioportal.org/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses the public API. TCGA-derived studies are broadly open, while some cohorts such as AACR Project GENIE carry additional access or reuse conditions.
 
 ### DDInter
@@ -909,7 +909,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: Broad Institute data policies with attribution and service-specific conditions
 - Redistribution / reuse summary: querying is open, but users should review the gnomAD policies before bulk reuse or republishing
 - Official terms URL: <https://gnomad.broadinstitute.org/policies>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: Open Targets currently reports gnomAD as CC0 for its own ingestion pipeline. BioMCP links to gnomAD's own policy page for user-facing guidance.
 
 ### Human Protein Atlas
@@ -933,7 +933,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: custom KEGG terms; academic users may freely use the website, non-academic use requires a commercial license
 - Redistribution / reuse summary: do not assume commercial redistribution rights; query access does not grant a redistribution license
 - Official terms URL: <https://www.kegg.jp/kegg/legal.html>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: KEGG's official legal page was updated on October 1, 2024 and explicitly distinguishes academic from non-academic use.
 
 ### LitSense2
@@ -966,10 +966,10 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
-- License / terms summary: ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy
+- License / terms summary: PharmGKB's domain redirects to ClinPGx (same move CPIC recorded); the successor data-usage policy, read from the live page's JS bundle, states ClinPGx data is CC BY-SA 4.0 — verified 2026-09-28 against the same evidence URL as CPIC
 - Redistribution / reuse summary: reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints
-- Official terms URL: <https://api.pharmgkb.org/>
-- Reviewed on: `2026-03-20`
+- Official terms URL: <https://www.clinpgx.org/page/dataUsagePolicy>
+- Reviewed on: `2026-09-28`
 - Notes: PharmGKB has been transitioning to ClinPGx-branded API documentation. BioMCP keeps the public `PharmGKB` source label because that is the domain vocabulary users recognize.
 
 ## Indirect-only providers surfaced through aggregators
@@ -983,7 +983,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: AlphaFold DB structural predictions are published for broad open use
 - Redistribution / reuse summary: reuse is generally open, but preserve model/source provenance and article citations
 - Official terms URL: <https://alphafold.ebi.ac.uk/faq>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP does not call AlphaFold DB directly. Structure links appear through UniProt cross-references.
 
 ### Cancer Genome Interpreter
@@ -995,7 +995,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: custom tool terms
 - Redistribution / reuse summary: do not assume commercial reuse rights; the official terms restrict some external and commercial use
 - Official terms URL: <https://www.cancergenomeinterpreter.org/conditions>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: There is no standalone CGI source client in BioMCP; provenance appears only when MyVariant includes CGI fields.
 
 ### ClinVar
@@ -1008,7 +1008,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: NCBI public-domain submission archive
 - Redistribution / reuse summary: records are broadly reusable, but preserve accession/provenance and submitter context
 - Official terms URL: <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: Explicit `clinvar` and `all` variant requests use NCBI EFetch by resolved Variation ID; the default card and degraded fallback use MyVariant.info.
 
 ### COSMIC
@@ -1017,10 +1017,10 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Integration mode: `indirect_only`
 - BioMCP auth: `not_applicable`
 - Provider access / registration: surfaced indirectly through cached MyVariant.info fields; no standalone BioMCP COSMIC client
-- License / terms summary: custom COSMIC licensing with commercial restrictions
+- License / terms summary: MyVariant's v68 snapshot (pre-licence-change) governs the fields BioMCP reads; the current cosmickb.org licence governs only COSMIC's current direct offering
 - Redistribution / reuse summary: direct redistribution and direct integration remain intentionally unsupported without a separate COSMIC license
 - Official terms URL: <https://www.sanger.ac.uk/legal/cosmic-licensing/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: This is the most important indirect-only caution row. BioMCP intentionally does not support direct COSMIC querying because of licensing risk.
 
 ### Disease Ontology
@@ -1032,7 +1032,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: open disease ontology project
 - Redistribution / reuse summary: reuse is generally open; preserve ontology version and source references
 - Official terms URL: <https://disease-ontology.org/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP does not maintain a standalone Disease Ontology client.
 
 ### DrugBank
@@ -1044,7 +1044,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: custom DrugBank terms of use and licensing
 - Redistribution / reuse summary: use or redistribution of DrugBank content requires a DrugBank license; do not assume open downstream rights
 - Official terms URL: <https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: DrugBank does not have a standalone BioMCP source client. It appears as provenance carried through MyChem.info.
 
 ### Drugs@FDA
@@ -1056,7 +1056,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: FDA-origin public information
 - Redistribution / reuse summary: approval records are broadly reusable; avoid implying FDA endorsement
 - Official terms URL: <https://open.fda.gov/apis/drug/drugsfda/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP documents Drugs@FDA as an indirect provenance label because approval fields arrive through OpenFDA, not a dedicated Drugs@FDA client.
 
 ### MONDO
@@ -1068,7 +1068,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: CC BY 4.0
 - Redistribution / reuse summary: reuse is allowed with attribution and ontology version tracking
 - Official terms URL: <https://mondo.monarchinitiative.org/pages/download/>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP uses MONDO identifiers through MyDisease.info and other aggregators rather than calling MONDO directly.
 
 ### PDB
@@ -1080,7 +1080,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - License / terms summary: PDB archive data is CC0 1.0
 - Redistribution / reuse summary: data is broadly reusable; attribution to original structure authors is encouraged
 - Official terms URL: <https://www.rcsb.org/pages/usage-policy>
-- Reviewed on: `2026-03-20`
+Reviewed on: `2026-09-27`
 - Notes: BioMCP currently exposes PDB identifiers from UniProt rather than querying RCSB PDB directly.
 
 ## Source notes

@@ -106,3 +106,13 @@ Raw material for every claim above is archived locally under
 non-Markdown command captures. Any published measurement should be re-run and
 pinned to a git SHA rather than a version string: `0.8.25` names at least
 three materially different binaries.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Closed as a study record: its actionable findings became records
+1091-1100, 1104, 0899 and 0950, and the honesty themes they seeded
+(trustworthy zeros, per-source status) landed across 1240-1242. What
+remains in its tail is the observation that provenance coverage is
+partial — true, tracked by ticket 1242's source-failure rendering work (each failed source names itself in the output), and a 1.0
+completeness goal rather than an open defect. The archived raw
+material stays under `archive/notes-2026-09-09/`.

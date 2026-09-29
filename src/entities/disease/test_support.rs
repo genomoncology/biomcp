@@ -17,6 +17,7 @@ pub(super) use crate::sources::mydisease::MyDiseaseHit;
 
 pub(super) fn test_disease(id: &str, name: &str) -> Disease {
     Disease {
+        top_gene_source: None,
         id: id.to_string(),
         name: name.to_string(),
         definition: None,

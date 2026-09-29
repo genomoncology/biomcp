@@ -30,6 +30,34 @@ type BeforeKeyLockDirCreateFn = dyn Fn(&Path) + Send + Sync;
 const POST_WRITE_FINALIZATION_ERROR: &str =
     "cache security finalization failed after successful put";
 
+/// Marker header stamped on a cached response served past its freshness
+/// window (see `SizeAwareCacheManager::get`). The header survives only on
+/// direct stale serves: http-cache's conditional fetch serves `put`'s
+/// return after a 304/200 revalidation, and `put` strips the marker, so a
+/// freshly revalidated response can never carry it.
+pub(crate) const STALE_SERVE_AGE_HEADER: &str = "x-biomcp-cache-stale-age";
+
+/// Stamp the stale-serve marker from the stored policy when the entry is
+/// past its freshness window. The age comes from the policy clock, not the
+/// file's write time, and the marker is never stamped on a fresh entry.
+fn stamp_stale_serve_marker(response: &mut HttpResponse, policy: &CachePolicy) {
+    let now = SystemTime::now();
+    if !policy.is_stale(now) {
+        return;
+    }
+    let age_seconds = policy.age(now).as_secs();
+    response
+        .headers
+        .insert(STALE_SERVE_AGE_HEADER.to_string(), age_seconds.to_string());
+}
+
+/// Strip the stale-serve marker. Called on every `put` path — both the
+/// revalidated cached response and a fresh 200 — so the stored entry and
+/// the served response never carry a marker a later serve would misread.
+fn strip_stale_serve_marker(response: &mut HttpResponse) {
+    response.headers.remove(STALE_SERVE_AGE_HEADER);
+}
+
 #[derive(Clone)]
 struct ManagerServices {
     estimate_cache_bytes: Arc<EstimateCacheBytesFn>,
@@ -226,7 +254,12 @@ impl CacheManager for SizeAwareCacheManager {
             (self.services.observe_get)(&self.inner.path, cache_key);
             let content_root = super::content_root(&self.inner.path);
             super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
-            self.inner.get(cache_key).await
+            let stored = self.inner.get(cache_key).await;
+            if let Ok(Some((mut response, policy))) = stored {
+                stamp_stale_serve_marker(&mut response, &policy);
+                return Ok(Some((response, policy)));
+            }
+            stored
         };
         run_with_variant_article_deadline(operation).await
     }
@@ -234,9 +267,12 @@ impl CacheManager for SizeAwareCacheManager {
     async fn put(
         &self,
         cache_key: String,
-        res: HttpResponse,
+        mut res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
+        // A revalidated (304) or freshly fetched (200) response is not a
+        // stale serve: strip any marker before storing and returning.
+        strip_stale_serve_marker(&mut res);
         // Cancellation is safe only until CACache atomically publishes the entry.
         let safe_return = crate::sources::current_cache_publication_state().unwrap_or_default();
         #[derive(Serialize)]
@@ -554,6 +590,8 @@ mod tests {
     use crate::test_support::TempDirGuard;
     use http_cache::CacheManager;
 
+    #[path = "stale_marker_tests.rs"]
+    mod stale_marker_tests;
     #[path = "write_security_tests.rs"]
     mod write_security_tests;
     #[path = "write_security_windows_tests.rs"]

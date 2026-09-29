@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
-use crate::entities::disease::{Disease, DiseasePhenotype, DiseaseSearchResult};
+use crate::entities::disease::{
+    Disease, DiseaseGeneAssociation, DiseasePhenotype, DiseaseSearchResult,
+};
 use crate::sources::mydisease::MyDiseaseHit;
 use regex::Regex;
 
@@ -536,7 +538,22 @@ fn collect_xrefs(
     out
 }
 
-fn collect_associated_genes(disgenet: Option<&serde_json::Value>, max: usize) -> Vec<String> {
+/// The source label for gene associations seeded from the MyDisease
+/// document's embedded DisGeNET block: the data is DisGeNET's curation,
+/// carried by the MyDisease hit. The card's association table shows this
+/// full provenance; the top-gene heading uses the display name "DisGeNET".
+const SEEDED_GENE_SOURCE: &str = "DisGeNET (via MyDisease.info)";
+
+/// Gene associations seeded from the MyDisease hit's embedded DisGeNET
+/// block, highest score first. Seeding `gene_associations` (not just the
+/// bare `associated_genes` list) keeps the seed's source visible to the
+/// card's provenance table and to `assign_top_genes`, so the top-gene
+/// heading credits DisGeNET instead of Open Targets when Open Targets
+/// produced nothing (ticket 1256).
+fn seeded_gene_associations(
+    disgenet: Option<&serde_json::Value>,
+    max: usize,
+) -> Vec<DiseaseGeneAssociation> {
     let Some(disgenet) = disgenet else {
         return Vec::new();
     };
@@ -568,14 +585,19 @@ fn collect_associated_genes(disgenet: Option<&serde_json::Value>, max: usize) ->
     }
 
     rows.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-    let mut out: Vec<String> = Vec::new();
+    let mut out: Vec<DiseaseGeneAssociation> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
     for (symbol, _) in rows {
         let key = symbol.to_ascii_lowercase();
         if !seen.insert(key) {
             continue;
         }
-        out.push(symbol);
+        out.push(DiseaseGeneAssociation {
+            gene: symbol,
+            relationship: None,
+            source: Some(SEEDED_GENE_SOURCE.to_string()),
+            opentargets_score: None,
+        });
         if out.len() >= max {
             break;
         }
@@ -692,13 +714,17 @@ pub fn from_mydisease_hit(hit: MyDiseaseHit) -> Disease {
 
     let synonyms = collect_synonyms(hit.mondo.as_ref(), hit.disease_ontology.as_ref(), &name, 10);
     let parents = collect_parents(hit.mondo.as_ref(), hit.disease_ontology.as_ref(), 10);
-    let associated_genes = collect_associated_genes(hit.disgenet.as_ref(), 5);
     let phenotypes = collect_phenotypes(&hit, 30);
     let xrefs = collect_xrefs(
         hit.mondo.as_ref(),
         hit.disease_ontology.as_ref(),
         hit.umls.as_ref(),
     );
+    let gene_associations = seeded_gene_associations(hit.disgenet.as_ref(), 5);
+    let associated_genes = gene_associations
+        .iter()
+        .map(|row| row.gene.clone())
+        .collect::<Vec<_>>();
     let mut disease = Disease {
         id: hit.id,
         name,
@@ -706,8 +732,9 @@ pub fn from_mydisease_hit(hit: MyDiseaseHit) -> Disease {
         synonyms,
         parents,
         associated_genes,
-        gene_associations: Vec::new(),
+        gene_associations,
         top_genes: Vec::new(),
+        top_gene_source: None,
         top_gene_scores: Vec::new(),
         treatment_landscape: Vec::new(),
         recruiting_trial_count: None,
@@ -816,6 +843,49 @@ mod tests {
             synonyms_preview(&["a".into(), "b".into(), "c".into()]),
             Some("a, b (and 1 more)".to_string())
         );
+    }
+
+    #[test]
+    fn from_mydisease_hit_seeds_gene_associations_with_the_disgenet_source() {
+        // The embedded DisGeNET block seeds both the gene list and the
+        // association rows, so the card's table and `assign_top_genes` can
+        // credit the real source instead of Open Targets (ticket 1256).
+        let hit: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005233",
+            "disgenet": {
+                "genes_related_to_disease": [
+                    {"gene_symbol": "EGFR", "score": 0.9},
+                    {"gene_symbol": "KRAS", "score": 0.8},
+                    {"gene_symbol": "EGFR", "score": 0.5}
+                ]
+            }
+        }))
+        .expect("valid hit");
+
+        let disease = from_mydisease_hit(hit);
+        assert_eq!(
+            disease.associated_genes,
+            vec!["EGFR".to_string(), "KRAS".to_string()],
+            "highest score first, deduplicated"
+        );
+        assert_eq!(disease.gene_associations.len(), 2);
+        let row = &disease.gene_associations[0];
+        assert_eq!(row.gene, "EGFR");
+        assert_eq!(row.relationship, None);
+        assert_eq!(
+            row.source.as_deref(),
+            Some("DisGeNET (via MyDisease.info)"),
+            "the seed's provenance stays visible to the card and the label logic"
+        );
+    }
+
+    #[test]
+    fn from_mydisease_hit_without_disgenet_data_seeds_no_rows() {
+        let hit: MyDiseaseHit =
+            serde_json::from_value(serde_json::json!({"_id": "MONDO:0017309"})).expect("valid hit");
+        let disease = from_mydisease_hit(hit);
+        assert!(disease.associated_genes.is_empty());
+        assert!(disease.gene_associations.is_empty());
     }
 
     #[test]
@@ -978,6 +1048,7 @@ mod tests {
     #[test]
     fn derive_key_features_supplements_definition_with_high_frequency_phenotypes() {
         let disease = Disease {
+            top_gene_source: None,
             id: "MONDO:0008222".to_string(),
             name: "Andersen-Tawil syndrome".to_string(),
             definition: Some(

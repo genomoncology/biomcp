@@ -563,6 +563,60 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
 }
 #[test]
 #[serial_test::serial(source_env)]
+fn generation_cleanup_prunes_a_wrong_mode_generation_directory() {
+    // A 0755 generation is a deliberate mismatch, not a transient
+    // failure: cleanup prunes it instead of warning on every publish
+    // (ticket 1254, from the 1239 follow-up).
+    use super::store::{PublishMetadata, Store};
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("gencc");
+    let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
+    let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+    let store = Store::open().unwrap();
+    let body_sha256 = format!("{:x}", Sha256::digest(fixture()));
+    let publish = |now: &str| {
+        store
+            .publish(
+                &dataset,
+                PublishMetadata {
+                    now,
+                    etag: "\"fixture\"",
+                    last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                    endpoint: ENDPOINT,
+                    body_sha256: &body_sha256,
+                    row_count: dataset.row_count(),
+                },
+            )
+            .unwrap()
+    };
+    let g1 = publish("2026-01-01T00:00:00Z");
+    let g1_name = g1.state.active_generation.as_deref().unwrap().to_string();
+    let g1_dir = root.join("generations").join(&g1_name);
+    drop(g1);
+    drop(publish("2026-01-02T00:00:00Z"));
+    assert!(g1_dir.exists());
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&g1_dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    // Publishing again runs cleanup: the wrong-mode generation is
+    // pruned, and only the two healthy generations remain.
+    drop(publish("2026-01-03T00:00:00Z"));
+    assert!(
+        !g1_dir.exists(),
+        "a 0755 generation must be pruned, not retained"
+    );
+    assert_eq!(
+        std::fs::read_dir(root.join("generations")).unwrap().count(),
+        2
+    );
+}
+
+#[test]
+#[serial_test::serial(source_env)]
 fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
     use super::store::{PublishMetadata, Store};
     let temp = tempfile::tempdir().unwrap();
@@ -622,6 +676,58 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
         2
     );
 }
+#[test]
+#[serial_test::serial(source_env)]
+fn transient_cleanup_classification_retains_generations() {
+    use super::store::{PublishMetadata, Store};
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("gencc");
+    let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
+    let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+    let store = Store::open().unwrap();
+    let body_sha256 = format!("{:x}", Sha256::digest(fixture()));
+    let publish = |now: &str| {
+        store
+            .publish(
+                &dataset,
+                PublishMetadata {
+                    now,
+                    etag: "\"fixture\"",
+                    last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                    endpoint: ENDPOINT,
+                    body_sha256: &body_sha256,
+                    row_count: dataset.row_count(),
+                },
+            )
+            .unwrap()
+    };
+    publish("2026-01-01T00:00:00Z");
+    publish("2026-01-02T00:00:00Z");
+    {
+        // Every classification load reports a transient environment
+        // failure. Cleanup must retain both older generations instead of
+        // classifying them invalid and pruning them.
+        let _fail = EnvRestore::set(
+            "BIOMCP_GENCC_TEST_FAIL_AT",
+            std::ffi::OsStr::new("cleanup-classify-generation"),
+        );
+        publish("2026-01-03T00:00:00Z");
+        assert_eq!(
+            std::fs::read_dir(root.join("generations")).unwrap().count(),
+            3,
+            "a transient classification failure must retain every generation"
+        );
+    }
+    let loaded = store.load().unwrap().expect("active generation loads");
+    drop(loaded);
+    publish("2026-01-04T00:00:00Z");
+    assert_eq!(
+        std::fs::read_dir(root.join("generations")).unwrap().count(),
+        2,
+        "normal retention resumes once the transient failure clears"
+    );
+}
+
 #[test]
 #[serial_test::serial(source_env)]
 fn expired_open_budget_completes_publish_and_deferred_cleanup() {
@@ -786,16 +892,16 @@ fn gencc_subprocess_client() {
         else { store.record_failure(state, "2026-03-01T00:00:00Z").unwrap(); }
         panic!("configured state crash point was not reached");
     }
-    if let Some(entered) = std::env::var_os("BIOMCP_GENCC_CHILD_HOLD_LEASE") {
+    if std::env::var_os("BIOMCP_GENCC_CHILD_HOLD_LEASE").is_some() {
         use super::store::Store;
         let snapshot = Store::open().unwrap().load().unwrap().unwrap();
-        std::fs::write(entered, b"entered").unwrap();
-        let release = std::env::var_os("BIOMCP_GENCC_CHILD_RELEASE").unwrap();
-        let deadline = std::time::Instant::now() + Duration::from_secs(5);
-        while !std::path::Path::new(&release).exists() {
-            assert!(std::time::Instant::now() < deadline);
-            std::thread::sleep(Duration::from_millis(5));
-        }
+        // Handshake, not polling: signal readiness on the raw stdout fd
+        // (libtest captures println!), then block on stdin. The parent
+        // closing the pipe is the release, and a dead parent closes it
+        // at the kernel, so no deadline and no orphan are needed.
+        crate::test_support::signal_ready_on_raw_stdout("entered");
+        let received = crate::test_support::block_until_stdin_closes();
+        assert!(received.is_empty(), "unexpected stdin data: {received:?}");
         assert_eq!(snapshot.dataset.assertions().len(), 3);
         return;
     }
@@ -916,7 +1022,7 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
                 assert!(status.success());
                 return;
             }
-            assert!(tokio::time::Instant::now() < deadline, "GenCC child hung");
+            assert!(tokio::time::Instant::now() < deadline, "GenCC child hung"); // watchdog: bounded child-liveness poll
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
     }
@@ -928,7 +1034,7 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
                 "leader exited before HTTP"
             );
             assert!(
-                tokio::time::Instant::now() < deadline,
+                tokio::time::Instant::now() < deadline, // watchdog: bounded drain poll
                 "leader never entered HTTP"
             );
             tokio::time::sleep(Duration::from_millis(5)).await;
@@ -1063,7 +1169,7 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
         });
         let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
         while !entered.exists() {
-            assert!(!leader.is_finished() && tokio::time::Instant::now() < deadline);
+            assert!(!leader.is_finished() && tokio::time::Instant::now() < deadline); // watchdog: bounded leader poll
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
         assert_eq!(

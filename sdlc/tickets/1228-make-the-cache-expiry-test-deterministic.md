@@ -43,6 +43,6 @@ The cache-expiry test stops racing real file IO against a paused clock, so it ei
 
 ## Review
 
-- Design review: REJECT 2026-09-22 (gpt-5.6-sol, medium) — the first draft's acceptance criterion had no bound; the rewrite named the red repro and three consecutive runs
+- Design review: REJECT 2026-09-22 (gpt-5.6-sol, medium) — the first draft's acceptance criterion had no bound; the rewrite named the red repro and three consecutive runs and superseded the first draft
 - Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — confirmed the race is removed rather than narrowed; the record names `src/cache/migration.rs:889` as the refusal evidence
 - Verification: red repro panicked with `unwrap_err()` on an `Ok`, fmt and clippy clean, isolated test passes, three consecutive full nextest runs 3756/3756, yellow `make lint` and `make test` OK at 76633b95; see `sdlc/records/1228-make-the-cache-expiry-test-deterministic.md`

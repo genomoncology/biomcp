@@ -1,4 +1,6 @@
-.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
+SHELL := /bin/bash
+
+.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev stress
 .PHONY: output-footprint
 .PHONY: prepare-test prepare-test-contracts prepare-routine-test-tmp prepare-website test-contracts-prepared prepare-spec
 
@@ -56,6 +58,7 @@ lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
 		PATH="$$tool_dir:$$PATH" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-quality-ratchet.sh
+	tools/check-test-wait-ratchet.py
 
 full-feature-check:
 	$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features -- -D warnings
@@ -110,6 +113,7 @@ spec-contracts:
 verify:
 	$(CARGO_WITH_IDENTITY) build --release --locked
 	$(CARGO_WITH_IDENTITY) nextest run --release --test rmcp_client_contract --run-ignored only
+	$(CARGO_WITH_IDENTITY) nextest run --release --test rmcp_client_contract rmcp_stdio_recovers_from_tool_panic
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci discover ERBB1
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci search disease melanoma --limit 3
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci search article -g BRAF --limit 3
@@ -124,3 +128,22 @@ validate-skills:
 	$(MAKE) sync-python-dev
 	PATH="$(CURDIR)/target/release:$(PATH)" \
 		uv run --no-sync sh -c 'PATH="$(CURDIR)/target/release:$$PATH" ./scripts/validate-skills.sh'
+
+# Stress lane: run the known load-flaky tests pinned to a two-CPU set
+# with forced worker parallelism, repeated BIOMCP_STRESS_REPEAT times
+# (default 3). The build runs unpinned; only the test invocations are
+# pinned, because the runners auto-serialize on the detected CPU count.
+# One-CPU pinning is avoided deliberately: it deadlocks the pipe
+# handshake child deterministically (issue
+# sdlc/issues/2026-09-25-single-cpu-affinity-deadlocks-the-handshake-child.md).
+stress:
+	$(MAKE) prepare-test
+	@set -euo pipefail; \
+	repeat="$${BIOMCP_STRESS_REPEAT:-3}"; \
+	scale="$${BIOMCP_TEST_TIMEOUT_SCALE:-6}"; \
+	for round in $$(seq 1 "$$repeat"); do \
+	  echo "=== stress round $$round/$$repeat (two CPUs, 4 workers, timeout scale $$scale) ==="; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" -j 4 \
+	    -E 'test(subprocess_lease_defers_old_generation_cleanup_until_reader_exits) | test(subprocess_lease_child_exits_on_parent_end_of_input) | test(cancelling_stalled_headers_and_streamed_body_drops_request_and_store_work) | test(cancelled_publication_settles_and_the_previous_generation_survives)'; \
+	  BIOMCP_TEST_TIMEOUT_SCALE="$$scale" taskset -c 0,1 tools/run-offline -- env TMPDIR="$(TMPDIR)" BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/test_disease_survival_fixture_lifecycle.py -n 4 --dist loadfile --basetemp "$(PYTEST_BASETEMP)"; \
+	done

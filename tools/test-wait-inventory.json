@@ -1,0 +1,262 @@
+{
+  "schema": "biomcp-test-wait-inventory-v1",
+  "files": {
+    "src/cache/migration.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/cli/health/tests/runner.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/cli/system/batch.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/cli/system/dispatch.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/cli/system/tests/dev2_contracts.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/entities/article/assets.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/entities/article/backends/tests.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/entities/article/graph/citation_evidence.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 1
+    },
+    "src/entities/article/graph/tests.rs": {
+      "count": 4,
+      "language": "rust"
+    },
+    "src/entities/article/graph/tests/admission.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/entities/article/variant_search.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/entities/disease/get/tests.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 3
+    },
+    "src/entities/disease/search.rs": {
+      "count": 4,
+      "language": "rust"
+    },
+    "src/entities/disease/search/tests.rs": {
+      "count": 3,
+      "language": "rust"
+    },
+    "src/entities/gene/gencc.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/entities/gene/gencc/tests.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 2
+    },
+    "src/sources/clingen/tests/mod.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 1
+    },
+    "src/sources/clingen_cspec.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "src/sources/gencc.rs": {
+      "count": 4,
+      "language": "rust",
+      "markers": 9
+    },
+    "src/sources/gencc/store.rs": {
+      "count": 3,
+      "language": "rust"
+    },
+    "src/sources/gencc/tests.rs": {
+      "count": 12,
+      "language": "rust",
+      "markers": 1
+    },
+    "src/sources/mod.rs": {
+      "count": 5,
+      "language": "rust"
+    },
+    "src/sources/orcid/tests.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "src/sources/rate_limit.rs": {
+      "count": 2,
+      "language": "rust",
+      "markers": 1
+    },
+    "src/sources/tests/provider_network.rs": {
+      "count": 3,
+      "language": "rust"
+    },
+    "tests/article_usage_stderr.rs": {
+      "count": 2,
+      "language": "rust"
+    },
+    "tests/biomcp_cli_shim.rs": {
+      "count": 1,
+      "language": "rust"
+    },
+    "tests/json_error_contract.rs": {
+      "count": 5,
+      "language": "rust",
+      "markers": 1
+    },
+    "tests/managed_state_permissions.rs": {
+      "count": 3,
+      "language": "rust",
+      "markers": 1
+    },
+    "tests/rmcp_client_contract.rs": {
+      "count": 6,
+      "language": "rust"
+    },
+    "tests/support.py": {
+      "count": 0,
+      "language": "python",
+      "markers": 2
+    },
+    "tests/test_author_surface_docs.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_disease_survival_fixture_lifecycle.py": {
+      "count": 0,
+      "language": "python",
+      "markers": 2
+    },
+    "tests/test_mcp_2026_protocol.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_mcp_http_surface.py": {
+      "count": 2,
+      "language": "python"
+    },
+    "tests/test_mychem_empty_spec_fixture_contract.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_release_smoke_script.py": {
+      "count": 1,
+      "language": "python"
+    },
+    "tests/test_test_wait_ratchet_check.py": {
+      "count": 0,
+      "language": "python",
+      "markers": 17
+    },
+    "tests/tls_ca_bundle_contract.rs": {
+      "count": 2,
+      "language": "rust",
+      "markers": 1
+    },
+    "tests/windows_stdio_contract.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 1
+    }
+  },
+  "marker_total_ceiling": 43,
+  "raises": [
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 25,
+      "to": 40,
+      "reason": "the 1264 wait patterns found in-tree waits; each was marked with a bounded reason",
+      "ticket": "1264"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 40,
+      "to": 41,
+      "reason": "citation-evidence markers restored to fmt-stable statement lines",
+      "ticket": "1264"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 41,
+      "to": 42,
+      "reason": "one more fmt-stable marker move",
+      "ticket": "1264"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 42,
+      "to": 46,
+      "reason": "three loop-condition lines marked by the round-three patterns (shared poll window, kill window, fixture delay)",
+      "ticket": "1269"
+    },
+    {
+      "file": "src/sources/clingen/tests/mod.rs",
+      "field": "markers",
+      "from": 0,
+      "to": 1,
+      "reason": "the ratchet's duration_since pattern counts the fixture server's programmed response delay; it is a bounded fixture delay, marked on its line",
+      "ticket": "1269"
+    },
+    {
+      "file": "tests/support.py",
+      "field": "markers",
+      "from": 1,
+      "to": 2,
+      "reason": "the monotonic pattern counts the shared wait_until poll-loop line; the window is the same vouched one its marked sleep defines",
+      "ticket": "1269"
+    },
+    {
+      "file": "tests/test_disease_survival_fixture_lifecycle.py",
+      "field": "markers",
+      "from": 1,
+      "to": 2,
+      "reason": "the monotonic pattern counts the kill-window condition line; the window is the same vouched one its marked sleep defines",
+      "ticket": "1269"
+    },
+    {
+      "file": "src/sources/gencc.rs",
+      "field": "markers",
+      "from": 6,
+      "to": 9,
+      "reason": "the 1264 gate cycles moved markers onto fmt-stable statement lines after rustfmt relocated brace-trailing comments; each is a bounded poll marked in place",
+      "ticket": "1264"
+    },
+    {
+      "file": "tests/test_test_wait_ratchet_check.py",
+      "field": "markers",
+      "from": 14,
+      "to": 17,
+      "reason": "the round-three probes carry their planted literals as marked source lines; each marker vouches for a literal inside a string the test plants",
+      "ticket": "1269"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 46,
+      "to": 43,
+      "reason": "re-pinned down to the tree's true marker count after the both-operator floor rule made several polls exempt; decreases are safe and need no review",
+      "ticket": "1269"
+    }
+  ]
+}

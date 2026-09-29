@@ -535,7 +535,7 @@ provider and nothing more.
 
 - Design review: accepted in the frozen ticket text above; ADR 0001 records
   the approved boundary reversal of 2026-09-07.
-- Code review 2026-09-13: REJECT with findings — (P1) ORCID body-limit
+- Code review: REJECT with findings 2026-09-13 — (P1) ORCID body-limit
   overruns retried instead of failing; api_credential_invalid projected the
   Display recovery sentence inside the JSON message; the works dedupe
   deduplicated on unrecognized identifier types; `--offset` above 10,000 on
@@ -543,7 +543,8 @@ provider and nothing more.
   credential states across surfaces, cross-group dedupe, page-slice goldens,
   the works-root path mismatch, and `--full` rejection through every surface.
   Architecture, boundary decision, transport containment, renderer, health
-  row, and documentation stood as landed.
+  row, and documentation stood as landed; superseded by the remediation
+  below the same day.
 - Remediation 2026-09-13 (6717203a, 31013688, 1897f425, f7d79702): the four
   contract fixes landed with their proof tests (body-limit fail-close without
   retry-burn, bare JSON projection message with the human Display intact,

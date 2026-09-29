@@ -1,6 +1,7 @@
 #[test]
 fn disease_markdown_renders_opentargets_scores_in_summary_and_genes_table() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,
@@ -116,6 +117,7 @@ fn disease_markdown_renders_diagnostics_note_then_shell_safe_search_command() {
 
 pub(crate) fn proof_disease_markdown_renders_ot_only_gene_association_table() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0003864".to_string(),
         name: "chronic lymphocytic leukemia".to_string(),
         definition: None,
@@ -206,6 +208,7 @@ fn disease_markdown_renders_ot_only_gene_association_table() {
 #[test]
 fn disease_markdown_links_source_cells_and_footer_evidence_urls() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0009061".to_string(),
         name: "cystic fibrosis".to_string(),
         definition: None,
@@ -335,6 +338,7 @@ fn disease_markdown_preserves_full_definition_text() {
     );
     let disease = Disease {
         id: "MONDO:0100605".to_string(),
+        top_gene_source: None,
         name: "4H leukodystrophy".to_string(),
         definition: Some(full_definition.to_string()),
         synonyms: Vec::new(),
@@ -376,6 +380,7 @@ fn disease_markdown_preserves_full_definition_text() {
 #[test]
 fn disease_markdown_phenotypes_section_renders_key_features() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0008222".to_string(),
         name: "Andersen-Tawil syndrome".to_string(),
         definition: Some(
@@ -436,6 +441,7 @@ fn disease_markdown_phenotypes_section_renders_key_features() {
 #[test]
 fn disease_markdown_phenotypes_section_renders_definition_hint_when_key_features_missing() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0001111".to_string(),
         name: "Example syndrome".to_string(),
         definition: Some("Example syndrome is a rare inherited condition.".to_string()),
@@ -490,6 +496,7 @@ fn disease_markdown_phenotypes_section_renders_definition_hint_when_key_features
 #[test]
 fn disease_markdown_phenotypes_section_without_definition_only_shows_completeness_note() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0002222".to_string(),
         name: "Undocumented syndrome".to_string(),
         definition: None,
@@ -542,6 +549,7 @@ fn disease_markdown_phenotypes_section_without_definition_only_shows_completenes
 #[test]
 fn disease_markdown_renders_top_variant_summary() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,
@@ -595,6 +603,7 @@ fn disease_markdown_renders_top_variant_summary() {
 #[test]
 fn disease_markdown_renders_survival_summary_and_note() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0001234".to_string(),
         name: "chronic myeloid leukemia".to_string(),
         definition: None,
@@ -756,4 +765,154 @@ fn disease_markdown_renders_survival_summary_and_note() {
     assert!(note_markdown.contains("## Survival (SEER Explorer)"));
     assert!(note_markdown.contains("SEER survival data not available for this condition."));
     assert!(!note_markdown.contains("| Sex | Latest observed year |"));
+}
+
+#[test]
+fn disease_markdown_heading_and_provenance_credit_the_disgenet_seed() {
+    // Open Targets failed; the MyDisease hit's embedded DisGeNET block
+    // seeded the genes (ticket 1256). The heading, the association table,
+    // and the provenance rows must all say so — none may credit Open
+    // Targets for the seed.
+    let mut disease = Disease {
+        top_gene_source: None,
+        id: "MONDO:0007947".to_string(),
+        name: "Huntington disease".to_string(),
+        definition: None,
+        synonyms: Vec::new(),
+        parents: Vec::new(),
+        associated_genes: vec!["HTT".to_string()],
+        gene_associations: vec![crate::entities::disease::DiseaseGeneAssociation {
+            gene: "HTT".to_string(),
+            relationship: None,
+            source: Some("DisGeNET (via MyDisease.info)".to_string()),
+            opentargets_score: None,
+        }],
+        top_genes: Vec::new(),
+        top_gene_scores: Vec::new(),
+        treatment_landscape: Vec::new(),
+        recruiting_trial_count: None,
+        pathways: Vec::new(),
+        phenotypes: Vec::new(),
+        clinical_features: Vec::new(),
+        key_features: Vec::new(),
+        variants: Vec::new(),
+        top_variant: None,
+        models: Vec::new(),
+        prevalence: Vec::new(),
+        prevalence_note: None,
+        survival: None,
+        survival_note: None,
+        funding: None,
+        funding_note: None,
+        diagnostics: None,
+        diagnostics_note: None,
+        civic: None,
+        disgenet: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
+        xrefs: std::collections::HashMap::new(),
+    };
+    crate::entities::disease::enrichment::assign_top_genes_for_render_test(&mut disease, false);
+    // The association table renders only when the genes section
+    // carried a payload; a seeded card has one.
+    disease
+        .section_outcomes
+        .complete("genes", crate::entities::section_outcome::SectionOutcome::data_sources([
+            "DisGeNET",
+        ]));
+
+    // The heading lives on the main card; the association table is
+    // the genes section. Assert each against its own card.
+    let main_card = disease_markdown(&disease, &[]).expect("main disease markdown");
+    assert!(
+        main_card.contains("Genes (DisGeNET): HTT"),
+        "the heading must credit the DisGeNET seed, not Open Targets: {main_card}"
+    );
+    let genes_card =
+        disease_markdown(&disease, &["genes".to_string()]).expect("genes disease markdown");
+    assert!(
+        genes_card.contains("DisGeNET (via MyDisease.info)"),
+        "the association table keeps the full seed provenance: {genes_card}"
+    );
+
+    let provenance = crate::render::provenance::disease_section_sources(&disease);
+    let top_gene_row = provenance
+        .iter()
+        .find(|row| row.key == "top_genes")
+        .expect("the top-gene provenance row exists");
+    assert_eq!(
+        top_gene_row.sources,
+        vec!["DisGeNET".to_string()],
+        "the top-gene row credits the seed: {provenance:?}"
+    );
+    let associated_row = provenance
+        .iter()
+        .find(|row| row.key == "associated_genes")
+        .expect("the associated-genes provenance row exists");
+    assert!(
+        associated_row.sources.contains(&"DisGeNET".to_string()),
+        "the associated-genes row names the seed: {provenance:?}"
+    );
+}
+
+#[test]
+fn disease_markdown_heading_and_provenance_credit_the_fallback_source() {
+    // Open Targets failed; Monarch produced the top-gene list. The card
+    // heading and the provenance row must both name Monarch — neither may
+    // credit Open Targets for another source's genes.
+    let mut disease = Disease {
+        top_gene_source: None,
+        id: "MONDO:0003864".to_string(),
+        name: "chronic lymphocytic leukemia".to_string(),
+        definition: None,
+        synonyms: Vec::new(),
+        parents: Vec::new(),
+        associated_genes: vec!["TP53".to_string(), "BCL2".to_string()],
+        gene_associations: vec![crate::entities::disease::DiseaseGeneAssociation {
+            gene: "TP53".to_string(),
+            relationship: Some("causal".to_string()),
+            source: Some("Monarch".to_string()),
+            opentargets_score: None,
+        }],
+        top_genes: vec!["TP53".to_string(), "BCL2".to_string()],
+        top_gene_scores: Vec::new(),
+        treatment_landscape: Vec::new(),
+        recruiting_trial_count: None,
+        pathways: Vec::new(),
+        phenotypes: Vec::new(),
+        clinical_features: Vec::new(),
+        key_features: Vec::new(),
+        variants: Vec::new(),
+        top_variant: None,
+        models: Vec::new(),
+        prevalence: Vec::new(),
+        prevalence_note: None,
+        survival: None,
+        survival_note: None,
+        funding: None,
+        funding_note: None,
+        diagnostics: None,
+        diagnostics_note: None,
+        civic: None,
+        disgenet: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
+        xrefs: std::collections::HashMap::new(),
+    };
+    crate::entities::disease::enrichment::assign_top_genes_for_render_test(&mut disease, false);
+
+    let markdown = disease_markdown(&disease, &[]).expect("disease markdown");
+    assert!(
+        markdown.contains("Genes (Monarch Initiative): TP53, BCL2"),
+        "the heading must name the fallback source: {markdown}"
+    );
+
+    let provenance = crate::render::provenance::disease_section_sources(&disease);
+    let top_gene_row = provenance
+        .iter()
+        .find(|row| row.key == "top_genes")
+        .expect("the top-gene provenance row exists");
+    assert_eq!(
+        top_gene_row.sources,
+        vec!["Monarch Initiative".to_string()],
+        "the top-gene row must credit exactly the fallback source: {provenance:?}"
+    );
 }

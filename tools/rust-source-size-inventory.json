@@ -4,20 +4,36 @@
   "entries": [
     {
       "path": "src/cache/manager.rs",
-      "baseline_lines": 1077,
+      "baseline_lines": 1115,
       "floor_lines": 985,
       "authorized_increase": {
-        "ticket": "1150",
-        "delta": 92,
-        "reason": "Deadline-aware cache get, put, delete, and size traversal remain beside the cache manager trait implementation.",
-        "removal_condition": "Extract cache deadline adapters when the cache manager is next decomposed."
+        "ticket": "1242",
+        "delta": 130,
+        "reason": "Batch 2: stale-serve marker helpers, the cache note consumer, the honest top-gene source label, and the required new struct field.",
+        "removal_condition": "Shrink when the stale label moves into per-source status plumbing and the test field inserts fold into shared fixtures."
+      }
+    },
+    {
+      "path": "src/cache/migration.rs",
+      "baseline_lines": 1096,
+      "floor_lines": 927,
+      "authorized_increase": {
+        "ticket": "biodata-0203",
+        "delta": 169,
+        "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
       "path": "src/cache/provider_capture.rs",
-      "baseline_lines": 1507,
+      "baseline_lines": 1508,
       "floor_lines": 1507,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1246",
+        "delta": 1,
+        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+        "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
+      }
     },
     {
       "path": "src/entities/adverse_event.rs",
@@ -94,35 +110,35 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4044,
+      "baseline_lines": 4053,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "0979, 1086, 1201",
-        "delta": 350,
-        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, pagination, and traced-test timing contract; ticket 1201 adds the inline article-search result and its captured render inputs.",
-        "removal_condition": "Extract discovery provider orchestration and its tests when the discovery entity is next decomposed."
+        "ticket": "1243",
+        "delta": 359,
+        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
+        "removal_condition": "None; the boxing is the point."
       }
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1117,
-      "floor_lines": 1094,
+      "baseline_lines": 1122,
+      "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1205, 1232",
-        "delta": 23,
-        "reason": "Ticket 1205 adds the drug cell_lines section flag, its parse arm, and its load call. Main ticket 1232 adds boxed-warning population, region zeroing, and the safety contributor check beside the US safety assembly (+14).",
-        "removal_condition": "Extract the drug section flags and their loads when the drug get path is next decomposed."
+        "ticket": "1254",
+        "delta": 19,
+        "reason": "Poison-recovery scoping (get.rs) and the shared panic-payload helper (shell.rs).",
+        "removal_condition": "Revisit when the trial-alias cache moves behind a type and the panic arm shrinks."
       }
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3858,
+      "baseline_lines": 3871,
       "floor_lines": 3812,
       "authorized_increase": {
-        "ticket": "0973, 1213",
-        "delta": 46,
-        "reason": "Canonical MyGene alias identity reuses the existing gene query and ambiguity rules rather than duplicating them in discovery, and the cell_lines helper module declaration (ticket 1213, +1).",
-        "removal_condition": "Extract MyGene identity resolution when the gene entity provider helpers are next decomposed."
+        "ticket": "1263",
+        "delta": 59,
+        "reason": "The stale-serve spawn-inheritance seam (ClinGen prefetch) and its tests in sources; the prefetch re-scope comment in gene.",
+        "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
       }
     },
     {
@@ -134,6 +150,17 @@
         "delta": 37,
         "reason": "Short-version selection tests and exact-IRI duplicate validation preserve manifest identity guarantees.",
         "removal_condition": "Remove when CSpec selection tests move out of this source module."
+      }
+    },
+    {
+      "path": "src/entities/gene/gencc/tests.rs",
+      "floor_lines": 976,
+      "baseline_lines": 1019,
+      "authorized_increase": {
+        "ticket": "1252",
+        "delta": 43,
+        "reason": "the lease handshake conversion and the end-of-input orphan proof",
+        "removal_condition": "Move the helper out or shrink when the size budget tightens."
       }
     },
     {
@@ -156,24 +183,24 @@
     },
     {
       "path": "src/entities/trial/search/ctgov.rs",
-      "baseline_lines": 1032,
+      "baseline_lines": 1068,
       "floor_lines": 995,
       "authorized_increase": {
-        "ticket": "1198, biodata-0146",
-        "delta": 37,
-        "reason": "Carry the narrowly gated eligibility-verification diagnostic on the trial page while preserving typed totals and continuations.",
-        "removal_condition": "Extract CTGov page finalization when the search module is next decomposed."
+        "ticket": "biodata-0203",
+        "delta": 73,
+        "reason": "The BioData plan-bound CTGov path now carries main detail-failure notes and applies age filtering before detail verification.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
       "path": "src/entities/trial/search/ctgov/tests.rs",
-      "baseline_lines": 1154,
-      "floor_lines": 1000,
+      "baseline_lines": 1157,
+      "floor_lines": 975,
       "authorized_increase": {
-        "ticket": "1198, biodata-0146",
-        "delta": 154,
-        "reason": "Preserve CTGov maintenance coverage through BioData plans and prove the exact eligibility-verification diagnostic predicate.",
-        "removal_condition": "Extract CTGov page-state tests when the search test module is next decomposed."
+        "ticket": "biodata-0203",
+        "delta": 182,
+        "reason": "The BioData cursor and total proof retains the dedicated provider-byte fixtures while main detail-failure behavior is adapted.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
@@ -217,13 +244,13 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1140,
+      "baseline_lines": 1246,
       "floor_lines": 1109,
       "authorized_increase": {
-        "ticket": "1142, biodata-0144, 1196, 1200, 1202, 1205, 1221, 2002",
-        "delta": 31,
-        "reason": "Register ORCID and its credential-invalid projection after BioData trial-error consolidation (+4), incorporate the GenCC source registration (+3), register OpenCitations as the confirmation source (+3), and add Cellosaurus (+1) and PharmacoDB (+2) provider registrations. Main ticket 1221 adds the CA bundle variant with its path-carrying projection for operator TLS trust (+12). Ticket 2002 adds the FHIR error variant and its projections (+6).",
-        "removal_condition": "Fold the provider registry and shared error projections into a dedicated source registry module."
+        "ticket": "biodata-0203",
+        "delta": 137,
+        "reason": "The FHIR error projection on the dedicated branch combines with main source and output error corrections.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
@@ -234,24 +261,24 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2216,
+      "baseline_lines": 2744,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "0127, 1031, 1150, 1158, 1202, 1213, 1205, 1223, 1230, 2002",
-        "delta": 260,
-        "reason": "Keep trial pagination and count typed MCP schema beside the existing shell contract, together with the typed cell-line get branch, gene cell-lines allowlist arm, and PharmacoDB row helpers. Main tickets 1223 and 1230 add the typed search and get object roots with their rejection test and the panic-survival path for tool calls. Ticket 2002 adds the filterless typed patient search branch and the one call into the patient transport gate.",
-        "removal_condition": "Extract trial paging, typed tool schema transforms, and count schema transforms when the MCP shell is decomposed."
+        "ticket": "biodata-0203",
+        "delta": 788,
+        "reason": "The dedicated patient gate and typed branches combine with the main flat typed MCP schema and argument-failure correction.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
       "path": "src/mcp/shell/typed_get_tests.rs",
-      "baseline_lines": 1608,
+      "baseline_lines": 1587,
       "floor_lines": 1558,
       "authorized_increase": {
-        "ticket": "0128, 1163",
-        "delta": 50,
-        "reason": "Keep the private ClinVar cache fixture and its environment-restoration regression plus the typed article keyword mapper proof beside the typed MCP contract it isolates.",
-        "removal_condition": "Extract typed MCP environment fixtures when this oversized test module is decomposed."
+        "ticket": "biodata-0203",
+        "delta": 29,
+        "reason": "The normal main-to-1.0 merge preserves both independently reviewed behavior paths at this source boundary.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
@@ -262,13 +289,13 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1563,
-      "floor_lines": 1555,
+      "baseline_lines": 1590,
+      "floor_lines": 1561,
       "authorized_increase": {
-        "ticket": "1158, 1201, 1205, 1232",
-        "delta": 8,
-        "reason": "Project the optional GenCC section through the shared JSON entity surface; ticket 1201 adds the discover result's article-search constructor argument in the JSON renderer tests, and the PharmacoDB section fields on the cell line and drug JSON shapes (ticket 1205, +2). Main ticket 1232 carries the boxed-warning field through the drug JSON serializer (+2).",
-        "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
+        "ticket": "1241",
+        "delta": 29,
+        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+        "removal_condition": "Shrink when the drug card model is next refactored."
       }
     },
     {
@@ -284,13 +311,13 @@
     },
     {
       "path": "src/render/markdown/drug/tests.rs",
-      "baseline_lines": 1084,
-      "floor_lines": 943,
+      "floor_lines": 954,
+      "baseline_lines": 1004,
       "authorized_increase": {
-        "ticket": "1232",
-        "delta": 141,
-        "reason": "Two render-order tests pin the boxed warning ahead of the ordinary warnings in raw, summary, and safety modes.",
-        "removal_condition": "Move the render-order tests into the drug renderer suite when it is next decomposed."
+        "ticket": "1254",
+        "delta": 50,
+        "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it.",
+        "removal_condition": "Shrink when the card fixtures share a builder."
       }
     },
     {
@@ -317,13 +344,13 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1797,
+      "baseline_lines": 1863,
       "floor_lines": 1745,
       "authorized_increase": {
-        "ticket": "1202, 1214, 1205, 1232, 2002",
-        "delta": 52,
-        "reason": "Add the cell-line section-sources builder and its ChEMBL and PharmacoDB outcome sections while retaining the dedicated trial provenance module. Main ticket 1232 records the boxed-warning contributor in section provenance (+3). Ticket 2002 adds the patient section-sources builder.",
-        "removal_condition": "Extract cell-line provenance when the renderer is next decomposed."
+        "ticket": "biodata-0203",
+        "delta": 118,
+        "reason": "The dedicated patient and publication provenance paths combine with main disease and drug source-state corrections.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
     {
@@ -345,42 +372,58 @@
     },
     {
       "path": "src/sources/fda_orphan.rs",
-      "baseline_lines": 1003,
+      "baseline_lines": 1006,
       "floor_lines": 999,
       "authorized_increase": {
-        "ticket": "1221",
-        "delta": 4,
-        "reason": "The bounded acquisition and health-probe clients route through the shared operator CA bundle helper so a private root CA is trusted without disabling verification.",
+        "ticket": "1221+1261",
+        "delta": 7,
+        "reason": "The cache-mode read routes through the shared once-read reader so all cache-mode readers agree on when a change takes effect (ticket 1261).",
         "removal_condition": "Fold the two fixed-route clients into the shared bounded client builder when the FDA orphan lane is decomposed."
       }
     },
     {
+      "path": "src/sources/gencc.rs",
+      "floor_lines": 1000,
+      "baseline_lines": 1016,
+      "authorized_increase": {
+        "ticket": "1252",
+        "delta": 16,
+        "reason": "The 2026-09-28 wait-ratchet markers moved onto their compare lines (fmt split several one-line polls); count follows the split.",
+        "removal_condition": "Move the helper out or shrink when the size budget tightens."
+      }
+    },
+    {
       "path": "src/sources/gencc/store.rs",
-      "baseline_lines": 1039,
+      "baseline_lines": 1208,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1187",
-        "delta": 39,
-        "reason": "Deadline semantics concentrate in the three bounded lock waits beside their helpers after post-lock budget checks were removed; rustfmt reflow widens the shortened signatures and cleanup bodies.",
-        "removal_condition": "Extract the lock-wait helpers or the cleanup passes when the GenCC store is next decomposed."
+        "ticket": "1257",
+        "delta": 208,
+        "reason": "The wrong-owner (EACCES stand-in) and not-a-directory cleanup tests the 2026-09-26 review named as dropped.",
+        "removal_condition": "Shrink if the cleanup tests fold into a shared gencc store fixture module."
       }
     },
     {
       "path": "src/sources/gencc/tests.rs",
-      "baseline_lines": 1083,
+      "baseline_lines": 1189,
       "floor_lines": 982,
       "authorized_increase": {
-        "ticket": "1187",
-        "delta": 101,
-        "reason": "The expired-budget and reopen-after-release regressions join the bounded-wait and lease-deferral proofs beside the store fixtures they exercise.",
-        "removal_condition": "Extract shared GenCC store test fixtures when the test module is next decomposed."
+        "ticket": "1254",
+        "delta": 207,
+        "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+        "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
       }
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2290,
-      "floor_lines": 2290,
-      "authorized_increase": null
+      "baseline_lines": 2786,
+      "floor_lines": 1847,
+      "authorized_increase": {
+        "ticket": "biodata-0203",
+        "delta": 939,
+        "reason": "The dedicated FHIR retry helper combines with main TLS trust-failure and cache-mode transport corrections.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+      }
     },
     {
       "path": "src/sources/myvariant.rs",
@@ -423,12 +466,12 @@
     },
     {
       "path": "src/sources/tests/provider_network.rs",
-      "baseline_lines": 1005,
+      "baseline_lines": 1006,
       "floor_lines": 994,
       "authorized_increase": {
-        "ticket": "1221",
-        "delta": 11,
-        "reason": "The FDA orphan fetch chain now returns a result so an unusable operator CA bundle fails the command; each existing fetch assertion unwraps that result explicitly.",
+        "ticket": "1221+1261",
+        "delta": 12,
+        "reason": "The cache-mode table takes the shared CacheMode type (ticket 1261).",
         "removal_condition": "Return to a single fetch helper when the FDA orphan cache and client fixtures are consolidated."
       }
     },
@@ -445,9 +488,25 @@
     },
     {
       "path": "src/transform/disease.rs",
-      "baseline_lines": 1050,
+      "baseline_lines": 1121,
       "floor_lines": 1050,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1256",
+        "delta": 71,
+        "reason": "The seeded gene-association helper and its tests.",
+        "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+      }
+    },
+    {
+      "path": "src/transform/drug.rs",
+      "floor_lines": 1000,
+      "baseline_lines": 1062,
+      "authorized_increase": {
+        "ticket": "1254",
+        "delta": 62,
+        "reason": "Anchor-only synonym fold plus the end-to-end identity tests.",
+        "removal_condition": "Split the merge tests into a dedicated tests submodule."
+      }
     },
     {
       "path": "src/transform/variant.rs",

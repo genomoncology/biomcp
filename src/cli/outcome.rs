@@ -4,6 +4,7 @@ use super::response_contract::{
     require_json_document,
 };
 use super::skill::SkillCommand;
+use super::worker::{WorkerDrive, drive_one_shot};
 use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity};
 use std::io::IsTerminal;
 fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
@@ -51,10 +52,10 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
         match command {
             Commands::Get {
                 entity: GetEntity::Author(args),
-            } => outcome_to_string(super::author::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::author::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Gene(args),
-            } => outcome_to_string(super::gene::handle_get(args, json, false).await?),
+            } => outcome_to_string(Box::pin(super::gene::handle_get(args, json, false)).await?),
             Commands::Get {
                 entity: GetEntity::Article(args),
             } => outcome_to_string(Box::pin(super::article::handle_get(args, json, false)).await?),
@@ -63,68 +64,68 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             } => outcome_to_string(Box::pin(super::disease::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Diagnostic(args),
-            } => outcome_to_string(super::diagnostic::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::diagnostic::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Pgx(args),
-            } => outcome_to_string(super::pgx::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::pgx::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Trial(args),
-            } => outcome_to_string(super::trial::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::trial::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Variant(args),
             } => outcome_to_string(Box::pin(super::variant::handle_get(args, json, false)).await?),
             Commands::Get {
                 entity: GetEntity::Drug(args),
-            } => outcome_to_string(super::drug::handle_get(args, json, false).await?),
+            } => outcome_to_string(Box::pin(super::drug::handle_get(args, json, false)).await?),
             Commands::Get {
                 entity: GetEntity::CellLine(args),
-            } => outcome_to_string(super::cell_line::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::cell_line::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Pathway(args),
-            } => outcome_to_string(super::pathway::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::pathway::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Patient(args),
             } => outcome_to_string(super::patient::handle_get(args, json).await?),
             Commands::Get {
                 entity: GetEntity::Protein(args),
-            } => outcome_to_string(super::protein::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::protein::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::AdverseEvent(args),
-            } => outcome_to_string(super::adverse_event::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::adverse_event::handle_get(args, json)).await?),
             Commands::Variant { cmd } => {
                 outcome_to_string(Box::pin(super::variant::handle_command(cmd, json)).await?)
             }
             Commands::Drug { cmd } => {
-                outcome_to_string(super::drug::handle_command(cmd, json, false).await?)
+                outcome_to_string(Box::pin(super::drug::handle_command(cmd, json, false)).await?)
             }
             Commands::CellLine { cmd } => {
-                outcome_to_string(super::cell_line::handle_command(cmd, json).await?)
+                outcome_to_string(Box::pin(super::cell_line::handle_command(cmd, json)).await?)
             }
             Commands::Disease { cmd } => {
-                outcome_to_string(super::disease::handle_command(cmd, json).await?)
+                outcome_to_string(Box::pin(super::disease::handle_command(cmd, json)).await?)
             }
             Commands::Article { cmd } => {
                 outcome_to_string(Box::pin(super::article::handle_command(cmd, json)).await?)
             }
-            Commands::Author { cmd } => outcome_to_string(super::author::handle(cmd, json).await?),
+            Commands::Author { cmd } => outcome_to_string(Box::pin(super::author::handle(cmd, json)).await?),
             Commands::Gene { cmd } => {
-                outcome_to_string(super::gene::handle_command(cmd, json, false).await?)
+                outcome_to_string(Box::pin(super::gene::handle_command(cmd, json, false)).await?)
             }
             Commands::Pathway { cmd } => {
-                outcome_to_string(super::pathway::handle_command(cmd, json).await?)
+                outcome_to_string(Box::pin(super::pathway::handle_command(cmd, json)).await?)
             }
             Commands::Protein { cmd } => {
-                outcome_to_string(super::protein::handle_command(cmd, json).await?)
+                outcome_to_string(Box::pin(super::protein::handle_command(cmd, json)).await?)
             }
             Commands::Study { cmd } => {
-                outcome_to_string(super::study::handle_command(cmd, json).await?)
+                outcome_to_string(Box::pin(super::study::handle_command(cmd, json)).await?)
             }
             Commands::Batch(args) => {
-                outcome_to_string(super::system::handle_batch(args, json).await?)
+                outcome_to_string(Box::pin(super::system::handle_batch(args, json)).await?)
             }
             Commands::Search { entity } => match entity {
                 SearchEntity::Author(args) => {
-                    outcome_to_string(super::author::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::author::handle_search(args, json)).await?)
                 }
                 SearchEntity::All(args) => {
                     let keyword = super::resolve_query_input(
@@ -143,15 +144,14 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         counts_only: args.counts_only,
                         debug_plan: args.debug_plan,
                     };
-                    let results = crate::cli::search_all::dispatch(&input).await?;
+                    let results = Box::pin(crate::cli::search_all::dispatch(&input)).await?;
                     if json {
-                        if input.counts_only {
-                            Ok(crate::render::json::to_pretty(
-                                &crate::cli::search_all::counts_only_json(&results),
-                            )?)
-                        } else {
-                            Ok(crate::render::json::to_pretty(&results)?)
-                        }
+                        // Search-all JSON carries the stale-cache note in a
+                        // `_meta.notes` channel like every other search body
+                        // (ticket 1263); omitted when nothing was recorded.
+                        let notes = crate::sources::take_stale_serve_sentences();
+                        let body = crate::cli::search_all::json_body(&results, input.counts_only, notes)?;
+                        Ok(crate::render::json::to_pretty(&body)?)
                     } else {
                         Ok(crate::render::markdown::search_all_markdown(
                             &results,
@@ -160,53 +160,53 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     }
                 }
                 SearchEntity::Gene(args) => {
-                    outcome_to_string(super::gene::handle_search(args, json, false).await?)
+                    outcome_to_string(Box::pin(super::gene::handle_search(args, json, false)).await?)
                 }
                 SearchEntity::Disease(args) => {
-                    outcome_to_string(super::disease::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::disease::handle_search(args, json)).await?)
                 }
                 SearchEntity::Diagnostic(args) => {
-                    outcome_to_string(super::diagnostic::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::diagnostic::handle_search(args, json)).await?)
                 }
                 SearchEntity::Pgx(args) => {
-                    outcome_to_string(super::pgx::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::pgx::handle_search(args, json)).await?)
                 }
                 SearchEntity::Phenotype(args) => {
-                    outcome_to_string(super::phenotype::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::phenotype::handle_search(args, json)).await?)
                 }
                 SearchEntity::Gwas(args) => {
-                    outcome_to_string(super::gwas::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::gwas::handle_search(args, json)).await?)
                 }
                 SearchEntity::Article(args) => {
                     outcome_to_string(Box::pin(super::article::handle_search(args, json)).await?)
                 }
                 SearchEntity::Trial(args) => {
-                    outcome_to_string(super::trial::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::trial::handle_search(args, json)).await?)
                 }
                 SearchEntity::Variant(args) => {
-                    outcome_to_string(super::variant::handle_search_bounded(args, json, false).await?)
+                    outcome_to_string(Box::pin(super::variant::handle_search_bounded(args, json, false)).await?)
                 }
                 SearchEntity::Drug(args) => {
-                    outcome_to_string(super::drug::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::drug::handle_search(args, json)).await?)
                 }
                 SearchEntity::CellLine(args) => {
-                    outcome_to_string(super::cell_line::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::cell_line::handle_search(args, json)).await?)
                 }
                 SearchEntity::Pathway(args) => {
-                    outcome_to_string(super::pathway::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::pathway::handle_search(args, json)).await?)
                 }
                 SearchEntity::Patient(args) => {
                     outcome_to_string(super::patient::handle_search(args)?)
                 }
                 SearchEntity::Protein(args) => {
-                    outcome_to_string(super::protein::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::protein::handle_search(args, json)).await?)
                 }
                 SearchEntity::AdverseEvent(args) => {
-                    outcome_to_string(super::adverse_event::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::adverse_event::handle_search(args, json)).await?)
                 }
             },
             Commands::Health(args) => {
-                outcome_to_string(crate::cli::health::command(args, json).await?)
+                outcome_to_string(Box::pin(crate::cli::health::command(args, json)).await?)
             }
             Commands::Cache { cmd } => match cmd {
                 super::cache::CacheCommand::Path => {
@@ -247,18 +247,18 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     .into())
                 }
             },
-            Commands::Ema { cmd } => outcome_to_string(super::system::handle_ema(cmd, json).await?),
-            Commands::Who { cmd } => outcome_to_string(super::system::handle_who(cmd, json).await?),
-            Commands::Cvx { cmd } => outcome_to_string(super::system::handle_cvx(cmd, json).await?),
+            Commands::Ema { cmd } => outcome_to_string(Box::pin(super::system::handle_ema(cmd, json)).await?),
+            Commands::Who { cmd } => outcome_to_string(Box::pin(super::system::handle_who(cmd, json)).await?),
+            Commands::Cvx { cmd } => outcome_to_string(Box::pin(super::system::handle_cvx(cmd, json)).await?),
             Commands::Ddinter { cmd } => {
-                outcome_to_string(super::system::handle_ddinter(cmd, json).await?)
+                outcome_to_string(Box::pin(super::system::handle_ddinter(cmd, json)).await?)
             }
-            Commands::Gtr { cmd } => outcome_to_string(super::system::handle_gtr(cmd, json).await?),
+            Commands::Gtr { cmd } => outcome_to_string(Box::pin(super::system::handle_gtr(cmd, json)).await?),
             Commands::Gencc { cmd } => {
-                outcome_to_string(super::system::handle_gencc(cmd, json).await?)
+                outcome_to_string(Box::pin(super::system::handle_gencc(cmd, json)).await?)
             }
             Commands::WhoIvd { cmd } => {
-                outcome_to_string(super::system::handle_who_ivd(cmd, json).await?)
+                outcome_to_string(Box::pin(super::system::handle_who_ivd(cmd, json)).await?)
             }
             Commands::Skill { command } => match command {
                 None => {
@@ -303,7 +303,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 } else { Ok(content) }
             }
             Commands::Update(super::system::UpdateArgs { check }) => {
-                let content = crate::cli::update::run(check).await?;
+                let content = Box::pin(crate::cli::update::run(check)).await?;
                 if json {
                     Ok(crate::render::json::to_pretty(&serde_json::json!({
                         "kind":"update",
@@ -313,12 +313,12 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     }))?)
                 } else { Ok(content) }
             }
-            Commands::Uninstall => outcome_to_string(super::system::handle_uninstall(json).await?),
+            Commands::Uninstall => outcome_to_string(Box::pin(super::system::handle_uninstall(json)).await?),
             Commands::Enrich(args) => {
-                outcome_to_string(super::system::handle_enrich(args, json).await?)
+                outcome_to_string(Box::pin(super::system::handle_enrich(args, json)).await?)
             }
             Commands::Discover(super::system::DiscoverArgs { query, limit, offset, full, search }) => {
-                crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query, limit, offset, full, search }, json).await
+                Box::pin(crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query, limit, offset, full, search }, json)).await
             }
             Commands::List(super::system::ListArgs { entity }) => {
                 if json {
@@ -340,7 +340,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
             }
             Commands::Version(args) => {
-                outcome_to_string(super::system::handle_version(args, json).await?)
+                outcome_to_string(Box::pin(super::system::handle_version(args, json)).await?)
             }
         }
     })
@@ -395,41 +395,41 @@ async fn run_outcome_inner(
         Commands::Get {
             entity: GetEntity::Gene(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::gene::handle_get(args, json, alias_suggestions_as_json).await
-            })
+            }))
             .await
         }
         Commands::Get {
             entity: GetEntity::Drug(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::drug::handle_get(args, json, alias_suggestions_as_json).await
-            })
+            }))
             .await
         }
         Commands::Get {
             entity: GetEntity::Variant(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::variant::handle_get_bounded(args, json, alias_suggestions_as_json).await
-            })
+            }))
             .await
         }
         Commands::Search {
             entity: SearchEntity::Gene(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::gene::handle_search(args, json, alias_suggestions_as_json).await
-            })
+            }))
             .await
         }
         Commands::Search {
             entity: SearchEntity::Variant(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::variant::handle_search_bounded(args, json, alias_suggestions_as_json).await
-            })
+            }))
             .await
         }
         Commands::Search {
@@ -444,9 +444,9 @@ async fn run_outcome_inner(
         Commands::Get {
             entity: GetEntity::Article(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::article::handle_get(args, json, alias_suggestions_as_json).await
-            })
+            }))
             .await
         }
         Commands::Get {
@@ -459,17 +459,17 @@ async fn run_outcome_inner(
             .await
         }
         Commands::Article { cmd } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::article::handle_command(cmd, json).await
-            })
+            }))
             .await
         }
         Commands::Get {
             entity: GetEntity::Trial(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::trial::handle_get(args, json).await
-            })
+            }))
             .await
         }
         Commands::Discover(super::system::DiscoverArgs {
@@ -479,9 +479,8 @@ async fn run_outcome_inner(
             full,
             search,
         }) => {
-            crate::sources::with_no_cache(
-                no_cache,
-                Box::pin(crate::cli::discover::run_outcome(
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
+                crate::cli::discover::run_outcome(
                     crate::cli::discover::DiscoverArgs {
                         query,
                         limit,
@@ -490,8 +489,9 @@ async fn run_outcome_inner(
                         search,
                     },
                     json,
-                )),
-            )
+                )
+                .await
+            }))
             .await
         }
         Commands::Gene {
@@ -504,58 +504,58 @@ async fn run_outcome_inner(
         Commands::Gene {
             cmd: super::GeneCommand::Definition { symbol },
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
-                Box::pin(super::gene::handle_command(
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
+                super::gene::handle_command(
                     super::GeneCommand::Definition { symbol },
                     json,
                     alias_suggestions_as_json,
-                ))
+                )
                 .await
-            })
+            }))
             .await
         }
         Commands::Drug {
             cmd: super::DrugCommand::External(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::drug::handle_command(
                     super::DrugCommand::External(args),
                     json,
                     alias_suggestions_as_json,
                 )
                 .await
-            })
+            }))
             .await
         }
         Commands::Gene {
             cmd: super::GeneCommand::External(args),
         } => {
-            crate::sources::with_no_cache(no_cache, async move {
-                Box::pin(super::gene::handle_command(
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
+                super::gene::handle_command(
                     super::GeneCommand::External(args),
                     json,
                     alias_suggestions_as_json,
-                ))
+                )
                 .await
-            })
+            }))
             .await
         }
         Commands::Variant { cmd } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 Box::pin(super::variant::handle_command(cmd, json)).await
-            })
+            }))
             .await
         }
         Commands::Study { cmd } => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::study::handle_command(cmd, json).await
-            })
+            }))
             .await
         }
         Commands::Batch(args) => {
-            crate::sources::with_no_cache(no_cache, async move {
+            Box::pin(crate::sources::with_no_cache(no_cache, async move {
                 super::system::handle_batch(args, json).await
-            })
+            }))
             .await
         }
         command => Ok(CommandOutcome::stdout(
@@ -573,7 +573,18 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
     let json = cli.json || command_requests_json(&cli.command);
     let trusted_terminal_chart = is_charted_mcp_study_command(&cli).unwrap_or(false);
     let contract = JsonResponseContract::for_command(&cli.command);
-    match Box::pin(run_outcome_inner(cli, false)).await {
+    // The stale-cache scope wraps the command so every send inside it can
+    // record what it served stale (ticket 1256). The markdown note is
+    // appended inside the scope, before sanitization; JSON bodies get
+    // their notes through the `_meta.notes` channel at payload build time.
+    let command = crate::sources::with_stale_serve_notes(async {
+        let mut outcome = Box::pin(run_outcome_inner(cli, false)).await?;
+        if !json && outcome.bytes.is_none() && !trusted_terminal_chart {
+            crate::sources::append_stale_serve_notes_to_text(&mut outcome.text);
+        }
+        Ok::<CommandOutcome, anyhow::Error>(outcome)
+    });
+    match command.await {
         Ok(mut outcome) => Ok(if json {
             outcome = finalize_structured_error(outcome, contract);
             require_json_document(outcome)
@@ -601,26 +612,47 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
 async fn run_outcome_with_worker_stack(
     cli: Cli,
     alias_suggestions_as_json: bool,
+    drive: WorkerDrive,
 ) -> anyhow::Result<CommandOutcome> {
+    // Ticket 1225 pins the execute stack at 8 MiB: the command futures
+    // once reached 145 KB, and deep render recursion needs the margin.
     const EXECUTE_STACK_BYTES: usize = 8 * 1024 * 1024;
     tokio::task::spawn_blocking(move || {
         let handle = std::thread::Builder::new()
             .name("biomcp-cli-execute".into())
             .stack_size(EXECUTE_STACK_BYTES)
             .spawn(move || -> anyhow::Result<CommandOutcome> {
-                let runtime = tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()?;
-                if alias_suggestions_as_json {
-                    runtime.block_on(Box::pin(run_outcome_inner(cli, true)))
-                } else {
-                    runtime.block_on(run_outcome_on_current_stack(cli))
-                }
+                let command = async {
+                    if alias_suggestions_as_json {
+                        // MCP path (ticket 1256): the helper scopes the
+                        // command with the stale-serve task-local (JSON
+                        // bodies drain notes into _meta.notes inside
+                        // run_outcome_inner) and appends the text note
+                        // before shell.rs redacts MCP output.
+                        let wants_text_note = !(cli.json
+                            || command_requests_json(&cli.command)
+                            || is_charted_mcp_study_command(&cli).unwrap_or(false));
+                        crate::sources::run_command_with_stale_serve_notes(
+                            Box::pin(run_outcome_inner(cli, true)),
+                            wants_text_note,
+                        )
+                        .await
+                    } else {
+                        run_outcome_on_current_stack(cli).await
+                    }
+                };
+                Ok(match drive {
+                    WorkerDrive::Shared(handle) => handle.block_on(command)?,
+                    WorkerDrive::OneShot => drive_one_shot(command)??,
+                })
             })?;
 
-        handle
-            .join()
-            .map_err(|_| anyhow::anyhow!("in-process CLI worker panicked"))?
+        handle.join().map_err(|payload| {
+            anyhow::anyhow!(
+                "in-process CLI worker panicked: {}",
+                crate::utils::panic_payload_message(payload.as_ref())
+            )
+        })?
     })
     .await
     .map_err(|err| anyhow::anyhow!("failed to join in-process CLI worker: {err}"))?
@@ -629,7 +661,7 @@ async fn run_outcome_with_worker_stack(
 /// Execute a parsed CLI command on the bounded worker stack used by every
 /// in-process caller, including the native CLI and MCP transports.
 pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
-    run_outcome_with_worker_stack(cli, false).await
+    run_outcome_with_worker_stack(cli, false, WorkerDrive::OneShot).await
 }
 /// Main CLI execution - called by the MCP `biomcp` tool.
 ///
@@ -641,7 +673,7 @@ pub async fn execute(mut args: Vec<String>) -> anyhow::Result<String> {
         args.push("biomcp".to_string());
     }
     let cli = crate::cli::try_parse_cli(args)?;
-    let outcome = run_outcome_with_worker_stack(cli, false).await?;
+    let outcome = run_outcome_with_worker_stack(cli, false, WorkerDrive::OneShot).await?;
     outcome_to_string(outcome)
 }
 
@@ -656,9 +688,16 @@ pub async fn execute_mcp(mut args: Vec<String>) -> anyhow::Result<CliOutput> {
 /// Execute a parsed CLI command through MCP without reparsing it.
 pub async fn execute_mcp_cli(mut cli: Cli) -> anyhow::Result<CliOutput> {
     prepare_mcp_chart(&mut cli)?;
-    let outcome = run_outcome_with_worker_stack(cli, true).await?;
+    // The MCP path drives on the shared server runtime (falling back
+    // to a one-shot only when no ambient runtime exists, e.g. a
+    // standalone embedder): pooled connections survive between tool
+    // calls and no runtime is built per call (ticket 1243).
+    let outcome = run_outcome_with_worker_stack(cli, true, WorkerDrive::for_shared_call()).await?;
     outcome_to_mcp_output(outcome)
 }
+#[cfg(test)]
+#[path = "outcome/probe_tests.rs"]
+mod probe_tests;
 #[cfg(test)]
 #[path = "outcome/tests.rs"]
 mod tests;

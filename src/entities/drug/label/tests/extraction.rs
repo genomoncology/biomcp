@@ -119,6 +119,40 @@ fn extract_inline_label_falls_back_to_legacy_warnings_field() {
 }
 
 #[test]
+fn extract_label_warnings_prefers_warnings_and_cautions_over_legacy_warnings() {
+    let response = serde_json::json!({
+        "results": [{
+            "warnings_and_cautions": ["Modern warnings text."],
+            "warnings": ["Legacy warnings text."]
+        }]
+    });
+
+    assert_eq!(
+        extract_label_warnings_text(&response).as_deref(),
+        Some("Modern warnings text.")
+    );
+}
+
+#[test]
+fn extract_label_warnings_truncates_with_exact_dailymed_link() {
+    let response = serde_json::json!({
+        "results": [{
+            "set_id": "warning-set-123",
+            "warnings_and_cautions": ["w".repeat(LABEL_MAX_CHARS + 7)]
+        }]
+    });
+
+    let warnings = extract_label_warnings_text(&response).expect("warnings");
+    assert_eq!(
+        warnings.chars().take(LABEL_MAX_CHARS).count(),
+        LABEL_MAX_CHARS
+    );
+    assert!(warnings.ends_with(
+        "(truncated, 2007 chars total; full label: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=warning-set-123)"
+    ));
+}
+
+#[test]
 fn extract_inline_label_summary_mode_keeps_boxed_warning() {
     let response = serde_json::json!({
         "results": [{
@@ -158,17 +192,27 @@ fn extract_inline_label_boxed_only_still_returns_a_label() {
 }
 
 #[test]
-fn extract_label_boxed_warning_reads_the_first_result() {
+fn extract_label_boxed_warning_reads_all_strings_from_the_first_result() {
     let response = serde_json::json!({
         "results": [
-            {"boxed_warning": ["WARNING: FIRST RESULT"]},
+            {"boxed_warning": ["WARNING: FIRST PART", "SECOND PART"]},
             {"boxed_warning": ["WARNING: SECOND RESULT"]}
         ]
     });
 
     assert_eq!(
         extract_label_boxed_warning(&response).as_deref(),
-        Some("WARNING: FIRST RESULT")
+        Some("WARNING: FIRST PART SECOND PART")
     );
     assert!(extract_label_boxed_warning(&serde_json::json!({"results": []})).is_none());
+}
+
+#[test]
+fn extract_label_boxed_warning_is_truncated() {
+    let response = serde_json::json!({
+        "results": [{"boxed_warning": ["x".repeat(LABEL_MAX_CHARS + 1)]}]
+    });
+
+    let warning = extract_label_boxed_warning(&response).expect("boxed warning");
+    assert!(warning.ends_with("(truncated, 2001 chars total)"));
 }

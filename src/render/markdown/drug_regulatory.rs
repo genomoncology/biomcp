@@ -328,7 +328,12 @@ fn render_who_regulatory_block(heading: &str, rows: Option<&[WhoPrequalification
     out
 }
 
-fn render_us_safety_block(drug: &Drug, heading: &str) -> String {
+fn render_us_safety_block(
+    drug: &Drug,
+    heading: &str,
+    show_boxed_warning: bool,
+    label_section_renders_warnings: bool,
+) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "{heading}\n");
 
@@ -339,18 +344,31 @@ fn render_us_safety_block(drug: &Drug, heading: &str) -> String {
         let _ = writeln!(out, "{}", drug.top_adverse_events.join(", "));
     }
 
-    if let Some(boxed) = drug.us_boxed_warning.as_deref() {
-        out.push_str("\n### FDA boxed warning\n");
+    if show_boxed_warning && let Some(boxed) = drug.us_boxed_warning.as_deref() {
+        out.push_str("\n### Boxed Warning\n");
         out.push_str(boxed);
         out.push('\n');
     }
 
-    out.push_str("\n### FDA label warnings\n");
-    if let Some(warnings) = drug.us_safety_warnings.as_deref() {
-        out.push_str(warnings);
-        out.push('\n');
-    } else {
-        out.push_str("No data found (OpenFDA label)\n");
+    // The raw label section already carries the ordinary warnings when
+    // both label and safety are requested (both read the same DailyMed
+    // field); printing them here too would show the text twice under
+    // two Warnings headings. The caller says whether that section is
+    // actually rendering them on this card.
+    let duplicated_by_raw_label = label_section_renders_warnings
+        && drug
+            .label
+            .as_ref()
+            .and_then(|label| label.warnings.as_deref())
+            .is_some_and(|text| Some(text) == drug.us_safety_warnings.as_deref());
+    if !duplicated_by_raw_label {
+        out.push_str("\n### Warnings\n");
+        if let Some(warnings) = drug.us_safety_warnings.as_deref() {
+            out.push_str(warnings);
+            out.push('\n');
+        } else {
+            out.push_str("No data found (OpenFDA label)\n");
+        }
     }
 
     out
@@ -605,6 +623,8 @@ pub(super) fn render_safety_block(
     region: DrugRegion,
     status: Option<&str>,
     payload_allowed: bool,
+    show_boxed_warning: bool,
+    label_section_renders_warnings: bool,
 ) -> String {
     if !payload_allowed {
         let heading = match region {
@@ -623,11 +643,21 @@ pub(super) fn render_safety_block(
         |status| format!("## Safety (EU - EMA)\n\n{status}"),
     );
     match region {
-        DrugRegion::Us => render_us_safety_block(drug, &us_heading),
+        DrugRegion::Us => render_us_safety_block(
+            drug,
+            &us_heading,
+            show_boxed_warning,
+            label_section_renders_warnings,
+        ),
         DrugRegion::Eu => render_eu_safety_block(&eu_heading, drug.ema_safety.as_ref()),
         DrugRegion::Who => String::new(),
         DrugRegion::All => {
-            let us = render_us_safety_block(drug, &us_heading);
+            let us = render_us_safety_block(
+                drug,
+                &us_heading,
+                show_boxed_warning,
+                label_section_renders_warnings,
+            );
             let eu = render_eu_safety_block("## Safety (EU - EMA)", drug.ema_safety.as_ref());
             [us, eu]
                 .into_iter()

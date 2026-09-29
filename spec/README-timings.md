@@ -209,6 +209,10 @@ sources the shared article fixture's source bases and signal only inside the art
 subshell; later Markdown and the Python canary retain the caller environment instead of
 inheriting article overrides.
 
+`BIOMCP_TEST_PANIC_TOOL=1` is an internal panic-recovery test signal. The exact value registers
+one non-catalog tool for the MCP stdio contract test. The contract harness removes inherited
+values from every child and adds the signal only for that test.
+
 ## Ticket 635 G5 Live Canary Timing
 
 The pre-change release-binary G5 observation was **228s** against the unchanged

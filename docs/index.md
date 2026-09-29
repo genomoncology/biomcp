@@ -239,6 +239,7 @@ biomcp study query --study msk_impact_2017 --gene RET --type fusion
 - [BioASQ Benchmark](reference/bioasq-benchmark.md)
 - [Discover](user-guide/discover.md)
 - [Source Licensing and Terms](reference/source-licensing.md)
+- [Source Licensing Evidence, 2026-09-27 pass](reference/source-licensing-evidence-2026-09-27.md)
 - [Data Sources](reference/data-sources.md)
 - [Quick Reference](reference/quick-reference.md)
 - [Troubleshooting](troubleshooting.md)

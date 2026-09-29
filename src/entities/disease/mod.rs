@@ -64,6 +64,13 @@ pub struct Disease {
     pub gene_associations: Vec<DiseaseGeneAssociation>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub top_genes: Vec<String>,
+    /// The source that actually produced `top_genes` when Open Targets did
+    /// not: its genes came from the Monarch, CIViC, or seeded DisGeNET
+    /// fallbacks, and the card heading and provenance row must say so
+    /// instead of crediting Open Targets. `None` means Open Targets
+    /// produced them (or there are none).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top_gene_source: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub top_gene_scores: Vec<DiseaseTargetScore>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -347,7 +354,7 @@ pub const DISEASE_SECTION_NAMES: &[&str] = &[
 ];
 
 mod associations;
-mod enrichment;
+pub(crate) mod enrichment;
 mod fallback;
 mod get;
 mod resolution;

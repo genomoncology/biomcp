@@ -314,7 +314,7 @@ cases; the corrected contract was accepted with no remaining findings.
   compression of serde wire types. Primary-agent decision; overturnable by
   demanding compression instead.
 
-- Review note (remediation, 2026-09-13): the 35-second monotonic wrapper
+- Remediation note (2026-09-13): the 35-second monotonic wrapper
   lives in `fetch_author_papers_page` (src/entities/author/papers.rs) around
   client construction, request admission, body read, and decode; the
   synchronous projection and rendering run after the wrapper returns, which

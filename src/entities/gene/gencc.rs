@@ -113,6 +113,7 @@ async fn project_until(
 ) -> (GeneGenCc, SectionOutcome) {
     let status = data.status.clone();
     if tokio::time::Instant::now() >= deadline {
+        // watchdog: bounded projection deadline
         return projection_unavailable(status);
     }
     let symbol = symbol.to_string();

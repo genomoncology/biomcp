@@ -111,6 +111,7 @@ None.
 
 ## Review
 
-- Design review: pending (parent-held evidence: mechanisms verified from
+- Design review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the work landed without one) (parent-held evidence: mechanisms verified from
   source in this ticket's Current Facts)
-- Code review: pending
+- Code review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the work landed without one)
+- Verification: shipped in the 0.8.x series (no gate record was kept before ticket 1219 introduced records); see CHANGELOG and git history

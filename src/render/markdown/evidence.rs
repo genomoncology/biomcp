@@ -70,13 +70,7 @@ pub(super) fn openfda_count_query_url(
 }
 
 pub(super) fn dailymed_setid_url(set_id: &str) -> Option<String> {
-    let set_id = set_id.trim();
-    if set_id.is_empty() {
-        return None;
-    }
-    let mut url = reqwest::Url::parse("https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm").ok()?;
-    url.query_pairs_mut().append_pair("setid", set_id);
-    Some(url.into())
+    crate::entities::drug::label::dailymed_setid_url(set_id)
 }
 
 pub(super) fn dailymed_search_url(name: &str) -> Option<String> {
@@ -349,12 +343,15 @@ pub(super) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
     {
         urls.push(("OpenFDA FAERS", url));
     }
-    if drug.label.is_some()
-        && let Some(url) = drug
-            .label_set_id
-            .as_deref()
-            .and_then(dailymed_setid_url)
-            .or_else(|| dailymed_search_url(&drug.name))
+    if let Some(url) = drug
+        .label_set_id
+        .as_deref()
+        .and_then(dailymed_setid_url)
+        .or_else(|| {
+            drug.label
+                .as_ref()
+                .and_then(|_| dailymed_search_url(&drug.name))
+        })
     {
         urls.push(("DailyMed", url));
     }

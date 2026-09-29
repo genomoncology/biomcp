@@ -53,6 +53,21 @@ const DDINTER_BUNDLE: [(&str, &str); 8] = [
     ),
 ];
 
+/// Message prefix marking DDInter errors that come from reading or
+/// parsing the bundle itself. Only these render as "bundle could not
+/// be read" (error.rs); download failures keep the generic API line
+/// so no upstream body text leaks (ticket 1254).
+pub(crate) const DDINTER_BUNDLE_READ_MARKER: &str = "DDInter bundle file ";
+
+/// Message prefix marking DDInter download replies that are not the
+/// expected bundle — an HTML page where the CSV should be. Distinct from
+/// the read marker so the public wording names the download, not a
+/// corrupted bundle (ticket 1256). The content-type value comes from the
+/// upstream response header, not the body, so no upstream body text
+/// leaks through it (2026-09-28 review corrected this comment: the
+/// header is upstream's, not ours).
+pub(crate) const DDINTER_BUNDLE_DOWNLOAD_MARKER: &str = "DDInter bundle download ";
+
 pub(crate) const DDINTER_REQUIRED_FILES: &[&str] = &[
     DDINTER_BUNDLE[0].0,
     DDINTER_BUNDLE[1].0,
@@ -145,9 +160,12 @@ impl DdinterClient {
         #[cfg(test)]
         DDINTER_READY_CALLS.fetch_add(1, Ordering::SeqCst);
         let root = resolve_ddinter_root();
-        let index = cached_index_for_root(&root)?;
-        let freshness = bundle_freshness(&root);
-        Ok(Self { index, freshness })
+        let cached = cached_index_for_root(&root)?;
+        let freshness = basis_freshness(cached.oldest_mtime);
+        Ok(Self {
+            index: cached.index,
+            freshness,
+        })
     }
 
     pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<bool, BioMcpError> {
@@ -200,23 +218,33 @@ pub(crate) fn ready_call_count() -> usize {
     DDINTER_READY_CALLS.load(Ordering::SeqCst)
 }
 
-fn cached_index_map() -> &'static Mutex<HashMap<PathBuf, Arc<DdinterIndex>>> {
-    static CACHE: OnceLock<Mutex<HashMap<PathBuf, Arc<DdinterIndex>>>> = OnceLock::new();
+fn cached_index_map() -> &'static Mutex<HashMap<PathBuf, CachedDdinterIndex>> {
+    static CACHE: OnceLock<Mutex<HashMap<PathBuf, CachedDdinterIndex>>> = OnceLock::new();
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn cached_index_for_root(root: &Path) -> Result<Arc<DdinterIndex>, BioMcpError> {
-    if let Ok(cache) = cached_index_map().lock()
-        && let Some(index) = cache.get(root)
-    {
-        return Ok(index.clone());
-    }
+/// The index plus the freshness basis (the oldest file mtime) captured
+/// at load time. Freshness derives from this basis and the clock, never
+/// from a later re-read: an externally replaced bundle cannot flip a
+/// loaded index's label (ticket 1241).
+#[derive(Debug, Clone)]
+struct CachedDdinterIndex {
+    index: Arc<DdinterIndex>,
+    oldest_mtime: Option<std::time::SystemTime>,
+}
 
-    let parsed = Arc::new(load_index(root)?);
-    let mut cache = cached_index_map().lock().map_err(|_| BioMcpError::Api {
-        api: DDINTER_API.to_string(),
-        message: "DDInter index cache lock poisoned".into(),
-    })?;
+fn cached_index_for_root(root: &Path) -> Result<CachedDdinterIndex, BioMcpError> {
+    let cache = crate::utils::sync::recover_poison(cached_index_map().lock());
+    if let Some(cached) = cache.get(root) {
+        return Ok(cached.clone());
+    }
+    drop(cache);
+
+    let parsed = CachedDdinterIndex {
+        index: Arc::new(load_index(root)?),
+        oldest_mtime: oldest_bundle_mtime(root),
+    };
+    let mut cache = crate::utils::sync::recover_poison(cached_index_map().lock());
     Ok(cache
         .entry(root.to_path_buf())
         .or_insert_with(|| parsed.clone())
@@ -224,9 +252,16 @@ fn cached_index_for_root(root: &Path) -> Result<Arc<DdinterIndex>, BioMcpError> 
 }
 
 fn evict_cached_index(root: &Path) {
-    if let Ok(mut cache) = cached_index_map().lock() {
-        cache.remove(root);
-    }
+    let mut cache = crate::utils::sync::recover_poison(cached_index_map().lock());
+    cache.remove(root);
+}
+
+fn oldest_bundle_mtime(root: &Path) -> Option<std::time::SystemTime> {
+    DDINTER_REQUIRED_FILES
+        .iter()
+        .filter_map(|file_name| std::fs::metadata(root.join(file_name)).ok())
+        .filter_map(|metadata| metadata.modified().ok())
+        .min()
 }
 
 fn load_index(root: &Path) -> Result<DdinterIndex, BioMcpError> {
@@ -258,17 +293,22 @@ fn load_index(root: &Path) -> Result<DdinterIndex, BioMcpError> {
     Ok(DdinterIndex { rows, by_name })
 }
 
-fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteractionRow>, BioMcpError> {
+pub(crate) fn parse_csv_rows(
+    file_name: &str,
+    body: &[u8],
+) -> Result<Vec<DdinterInteractionRow>, BioMcpError> {
     let mut reader = ReaderBuilder::new().trim(csv::Trim::All).from_reader(body);
     let headers = reader.headers().map_err(|source| BioMcpError::Api {
         api: DDINTER_API.to_string(),
-        message: format!("{file_name} could not be parsed: {source}"),
+        message: format!("{DDINTER_BUNDLE_READ_MARKER}{file_name} could not be parsed: {source}"),
     })?;
     for required in ["DDInterID_A", "Drug_A", "DDInterID_B", "Drug_B", "Level"] {
         if !headers.iter().any(|header| header == required) {
             return Err(BioMcpError::Api {
                 api: DDINTER_API.to_string(),
-                message: format!("{file_name} is missing required column {required}"),
+                message: format!(
+                    "{DDINTER_BUNDLE_READ_MARKER}{file_name} is missing required column {required}"
+                ),
             });
         }
     }
@@ -276,7 +316,9 @@ fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteraction
     for row in reader.deserialize::<DdinterCsvRow>() {
         let row = row.map_err(|source| BioMcpError::Api {
             api: DDINTER_API.to_string(),
-            message: format!("{file_name} could not be parsed: {source}"),
+            message: format!(
+                "{DDINTER_BUNDLE_READ_MARKER}{file_name} could not be parsed: {source}"
+            ),
         })?;
         if row.ddinter_id_a.trim().is_empty()
             || row.drug_a.trim().is_empty()
@@ -285,7 +327,9 @@ fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteraction
         {
             return Err(BioMcpError::Api {
                 api: DDINTER_API.to_string(),
-                message: format!("{file_name} contained an incomplete interaction row"),
+                message: format!(
+                    "{DDINTER_BUNDLE_READ_MARKER}{file_name} contained an incomplete interaction row"
+                ),
             });
         }
         out.push(DdinterInteractionRow {
@@ -299,19 +343,14 @@ fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteraction
     Ok(out)
 }
 
-fn file_is_stale(path: &Path, stale_after: Duration) -> bool {
-    path.metadata()
-        .ok()
-        .and_then(|metadata| metadata.modified().ok())
-        .and_then(|modified| std::time::SystemTime::now().duration_since(modified).ok())
-        .is_none_or(|age| age >= stale_after)
-}
-
-fn bundle_freshness(root: &Path) -> DdinterBundleFreshness {
-    if DDINTER_REQUIRED_FILES
-        .iter()
-        .any(|file_name| file_is_stale(&root.join(file_name), DDINTER_STALE_AFTER))
-    {
+fn basis_freshness(basis: Option<std::time::SystemTime>) -> DdinterBundleFreshness {
+    let stale = basis.is_none_or(|mtime| {
+        std::time::SystemTime::now()
+            .duration_since(mtime)
+            .ok()
+            .is_none_or(|age| age >= DDINTER_STALE_AFTER)
+    });
+    if stale {
         DdinterBundleFreshness::Stale
     } else {
         DdinterBundleFreshness::Fresh
@@ -401,17 +440,17 @@ async fn sync_export(
 
     let context = crate::error::SourceContext::retry(crate::error::SourceProvider::DDINTER);
     if !status.is_success() {
+        // A download failure is not a bundle read: no marker, so the
+        // generic API line renders, and no upstream body text is
+        // embedded (ticket 1254).
         return Err(BioMcpError::Api {
             api: DDINTER_API.to_string(),
-            message: format!(
-                "{file_name}: HTTP {status}: {}",
-                crate::sources::body_excerpt(&body)
-            ),
+            message: format!("{file_name}: HTTP {status}"),
         }
         .with_source_context(context));
     }
 
-    ensure_csv_content_type(content_type.as_ref(), &body)
+    ensure_csv_content_type(content_type.as_ref())
         .map_err(|error| error.with_source_context(context))?;
     parse_csv_rows(file_name, &body).map_err(|error| error.with_source_context(context))?;
     crate::utils::download::write_atomic_bytes(&root.join(file_name), &body).await
@@ -419,7 +458,6 @@ async fn sync_export(
 
 fn ensure_csv_content_type(
     header: Option<&reqwest::header::HeaderValue>,
-    body: &[u8],
 ) -> Result<(), BioMcpError> {
     let Some(header) = header else {
         return Ok(());
@@ -436,9 +474,10 @@ fn ensure_csv_content_type(
     if matches!(media_type.as_str(), "text/html" | "application/xhtml+xml") {
         return Err(BioMcpError::Api {
             api: DDINTER_API.to_string(),
+            // No body excerpt: the content-type alone names the failure
+            // and upstream text must not leak (ticket 1254).
             message: format!(
-                "Unexpected HTML response (content-type: {raw}): {}",
-                crate::sources::body_excerpt(body)
+                "{DDINTER_BUNDLE_DOWNLOAD_MARKER}endpoint answered HTML (content-type: {raw}), not the CSV bundle"
             ),
         });
     }

@@ -9,6 +9,7 @@ use crate::error::BioMcpError;
 use crate::sources::archive_budget::{ArchiveBudget, ArchiveEntry, ArchiveLimits};
 use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
 use crate::sources::{RequestPlan, request_from_plan};
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 // PubMed Central Open Access (OA) service
 // Docs: https://www.ncbi.nlm.nih.gov/pmc/tools/oa/
@@ -224,8 +225,8 @@ fn decode_text(status: reqwest::StatusCode, bytes: &[u8]) -> Result<String, BioM
 
 fn parse_archive_manifest_xml(body: &str) -> Result<Option<PmcOaArchiveManifest>, BioMcpError> {
     if body.trim_start().starts_with('<') {
-        let document = roxmltree::Document::parse(body)
-            .map_err(|_| route_error("invalid S3 version listing"))?;
+        let document = parse_external_xml(body, ARTICLE_XML_NODE_LIMIT)
+            .map_err(|error| route_error(&format!("invalid S3 version listing: {error}")))?;
         if document.root_element().tag_name().name() != "ListBucketResult" {
             return Err(route_error("invalid S3 version listing"));
         }

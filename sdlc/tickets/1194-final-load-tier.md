@@ -68,8 +68,8 @@ The full parent gate verifies the merged lane.
 
 ## Review
 
-- Design review: pending.
-- Code review: pending.
+- Design review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the work landed without one).
+- Code review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the work landed without one).
 
 ## Proof
 
@@ -78,3 +78,4 @@ The full parent gate verifies the merged lane.
   `spec/entity/drug.md` passed 15 Bash blocks.
 - With twelve busy loops through a single-page copy of `scripts/run-specs.sh`,
   `spec/entity/gene.md` passed 22 Bash blocks.
+- Verification: shipped in the 0.8.x series (no gate record was kept before ticket 1219 introduced records); see CHANGELOG and git history

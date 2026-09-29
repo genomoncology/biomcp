@@ -31,6 +31,12 @@ pub fn drug_markdown_with_region(
     let show_regulatory_section = include_all || has_requested("regulatory");
     let show_safety_section =
         !matches!(region, DrugRegion::Who) && (include_all || has_requested("safety"));
+    let show_safety_boxed_warning = !(show_label_section
+        && drug
+            .label
+            .as_ref()
+            .and_then(|label| label.boxed_warning.as_deref())
+            .is_some());
     let show_shortage_section = !matches!(region, DrugRegion::Who)
         && (!section_only || include_all || has_requested("shortage"));
     let show_approvals_section = has_requested("approvals");
@@ -87,6 +93,11 @@ pub fn drug_markdown_with_region(
         interaction_text => &drug.interaction_text,
         interaction_pagination => &drug.interaction_pagination,
         interaction_bundle_freshness => drug.interaction_bundle_freshness.as_ref().map(|value| value.status.as_str()),
+        interaction_coverage => match drug.interaction_coverage_status {
+            Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage) => Some("not in the DDInter coverage set"),
+            Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage) => Some("in the DDInter coverage set"),
+            None => None,
+        },
         label => &drug.label,
         raw_label => raw_label,
         civic => &drug.civic,
@@ -96,7 +107,7 @@ pub fn drug_markdown_with_region(
         show_interactions_section => show_interactions_section,
         show_civic_section => show_civic_section,
         regulatory_block => if show_regulatory_section { render_regulatory_block(drug, region) } else { String::new() },
-        safety_block => if show_safety_section { render_safety_block(drug, region, safety_status, safety_state.payload_allowed) } else { String::new() },
+        safety_block => if show_safety_section { render_safety_block(drug, region, safety_status, safety_state.payload_allowed, show_safety_boxed_warning, raw_label && show_label_section) } else { String::new() },
         shortage_block => if show_shortage_section { render_shortage_block(drug, region) } else { String::new() },
         approvals_block => if show_approvals_section {
             match drug.section_outcomes.get("approvals").map(|value| value.outcome()) {

@@ -3,7 +3,7 @@
 pub(crate) mod cell_lines;
 mod get;
 pub(crate) mod interactions;
-mod label;
+pub(crate) mod label;
 mod metadata;
 mod query;
 mod search;
@@ -92,6 +92,10 @@ pub struct Drug {
     pub interaction_pagination: Option<interactions::DrugInteractionPagination>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interaction_bundle_freshness: Option<interactions::DrugInteractionBundleFreshness>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interaction_coverage_status: Option<interactions::DrugInteractionCoverageStatus>,
+    #[serde(skip)]
+    pub ddinter_synonyms: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pharm_classes: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

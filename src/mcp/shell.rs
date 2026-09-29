@@ -1,11 +1,14 @@
 use std::collections::BTreeSet;
 use std::future::Future;
+use std::panic::AssertUnwindSafe;
 use std::time::Duration;
 
 use base64::Engine;
+use futures::FutureExt;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
-    AnnotateAble, CallToolResult, Content, Implementation, ListResourcesResult, ListToolsResult,
+    AnnotateAble, CallToolRequestParams, CallToolResult, Content, Implementation,
+    ListPromptsResult, ListResourceTemplatesResult, ListResourcesResult, ListToolsResult,
     PaginatedRequestParams, RawResource, ReadResourceRequestParams, ReadResourceResult,
     ResourceContents, ServerCapabilities, ServerInfo,
 };
@@ -19,6 +22,9 @@ use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 mod patient_gate;
 mod structured_error;
+
+const TEST_PANIC_TOOL: &str = "__biomcp_test_panic";
+
 mod typed_get;
 use self::typed_get::{
     typed_get_allowed_keys, typed_get_capabilities, typed_get_schema, typed_trial_source_args,
@@ -56,6 +62,7 @@ struct TypedVariantCar {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 #[schemars(transform = typed_variant_erepo_schema)]
 struct TypedVariantErepo {
     #[serde(default)]
@@ -144,6 +151,13 @@ fn short_string_schema() -> Value {
 fn string_array_schema() -> Value {
     json!({"type":"array","minItems":1,"maxItems":3,"uniqueItems":true,"items":short_string_schema()})
 }
+
+/// The typed search entities, in catalog order. The root schema enum,
+/// the per-entity branch builder, and the argument checks share this one
+/// list so they cannot drift.
+const ENTITIES: [&str; 9] = [
+    "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein", "patient",
+];
 
 fn typed_search_branch(entity: &str) -> Value {
     let (fields, required): (&[(&str, &str)], &[&str]) = match entity {
@@ -296,24 +310,192 @@ fn typed_search_branch(entity: &str) -> Value {
 }
 
 fn typed_search_schema(schema: &mut schemars::Schema) {
-    let branches = [
-        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein", "patient",
-    ]
-    .into_iter()
-    .map(typed_search_branch)
-    .collect::<Vec<_>>();
-    *schema = serde_json::from_value(json!({"type":"object","oneOf":branches}))
-        .expect("valid typed search schema");
+    // Flat root for OpenAI/Gemini function calling, which reject top-level
+    // oneOf: the entity enum plus the union of every branch's properties.
+    // The body stays prescriptive (ADR 0002); the root is descriptive.
+    let branches = ENTITIES
+        .iter()
+        .map(|entity| typed_search_branch(entity))
+        .collect::<Vec<_>>();
+    let mut properties = merge_branch_properties(&branches);
+    properties.insert("entity".into(), json!({"type":"string","enum":ENTITIES}));
+    *schema = serde_json::from_value(json!({
+        "type":"object",
+        "additionalProperties":false,
+        "properties":properties,
+        "required":["entity"]
+    }))
+    .expect("valid typed search schema");
+}
+
+/// Merges branch property maps into one flat root map. Same-named fields
+/// keep one schema when identical; otherwise the collision rule applies:
+/// enum/const values union into one enum, and string-vs-array fields
+/// publish `["string","array"]` with each arm's constraints. The union
+/// never narrows what any branch accepted — a constraint on one side of
+/// a same-type merge is a named clash in `merge_property`, not a quiet
+/// keep (ticket 1258) — and the body stays prescriptive per entity.
+fn merge_branch_properties(branches: &[Value]) -> serde_json::Map<String, Value> {
+    let mut properties = serde_json::Map::new();
+    for branch in branches {
+        let Some(fields) = branch.get("properties").and_then(Value::as_object) else {
+            continue;
+        };
+        for (name, value) in fields {
+            if name == "entity" {
+                continue;
+            }
+            match properties.get(name) {
+                Some(existing) => {
+                    properties.insert(name.clone(), merge_property(existing, value));
+                }
+                None => {
+                    properties.insert(name.clone(), value.clone());
+                }
+            }
+        }
+    }
+    properties
+}
+
+/// Constraint keywords that narrow what a schema accepts. A value on
+/// exactly one side of a same-type merge silently narrowed the flat
+/// root until ticket 1258 made it a named clash; the enum/const pair
+/// has its own union rule above.
+const ONE_SIDED_CONSTRAINT_KEYS: [&str; 16] = [
+    "uniqueItems",
+    "maxLength",
+    "minLength",
+    "pattern",
+    "format",
+    "multipleOf",
+    "minimum",
+    "maximum",
+    "exclusiveMinimum",
+    "exclusiveMaximum",
+    "minItems",
+    "maxItems",
+    "minProperties",
+    "maxProperties",
+    "items",
+    "additionalProperties",
+];
+
+fn merge_property(left: &Value, right: &Value) -> Value {
+    if left == right {
+        return left.clone();
+    }
+    let enum_values = |schema: &Value| {
+        schema
+            .get("enum")
+            .and_then(Value::as_array)
+            .cloned()
+            .or_else(|| schema.get("const").map(|value| vec![value.clone()]))
+    };
+    if let (Some(values), Some(extra)) = (enum_values(left), enum_values(right)) {
+        let mut merged = values;
+        for value in extra {
+            if !merged.contains(&value) {
+                merged.push(value);
+            }
+        }
+        return json!({"enum":merged});
+    }
+    if let (Some(l), Some(r)) = (left.as_object(), right.as_object()) {
+        fn schema_type(schema: &Value) -> &str {
+            schema
+                .get("type")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        }
+        // Only three type pairs may ride the object merge: identical
+        // types, both undeclared (the enum path handled those with
+        // values above; scalars under a shared object fall through),
+        // and the flat text-or-list pair. Anything else is a clash
+        // the collision rule does not cover: fail loudly here, at
+        // build and test time, rather than publishing a quietly
+        // wrong union.
+        match (schema_type(left), schema_type(right)) {
+            ("string", "array") | ("array", "string") => {}
+            (a, b) if a == b => {}
+            _ => panic!("schema type clash the collision rule does not cover: {left} vs {right}"),
+        }
+        let flat_types = matches!(
+            (schema_type(left), schema_type(right)),
+            ("string", "array") | ("array", "string")
+        );
+        // An enum or const on exactly one side of a same-type merge
+        // narrows what the bare side accepted: that is a clash too,
+        // not a quiet keep.
+        let one_sided_enum = (left.get("enum").is_some() != right.get("enum").is_some())
+            || (left.get("const").is_some() != right.get("const").is_some());
+        if one_sided_enum {
+            panic!(
+                "one-sided enum or const clash the collision rule does not cover: {left} vs {right}"
+            );
+        }
+        // A constraint keyword on exactly one side of a SAME-type
+        // merge narrows the root to the stricter branch: that is a
+        // clash, and it names the keyword. The flat text-or-list pair
+        // is exempt — each arm's constraints (minLength/maxLength for
+        // the string arm, minItems/uniqueItems/items for the array
+        // arm) ride together by design, because a JSON Schema
+        // validator applies each keyword only to its own type.
+        if !flat_types {
+            for key in ONE_SIDED_CONSTRAINT_KEYS {
+                if l.contains_key(key) != r.contains_key(key) {
+                    panic!(
+                        "one-sided `{key}` constraint narrows the merged root \
+                         (present on one branch only): {left} vs {right}"
+                    );
+                }
+            }
+        }
+        let mut merged = l.clone();
+        if flat_types {
+            merged.insert("type".into(), json!(["string", "array"]));
+        }
+        for (key, value) in r {
+            if key == "type" {
+                continue;
+            }
+            match merged.get(key) {
+                Some(existing) if existing != value => {
+                    merged.insert(key.clone(), merge_property(existing, value));
+                }
+                Some(_) => {}
+                None => {
+                    merged.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        return Value::Object(merged);
+    }
+    // Scalars and arrays that differ (bounds, lengths, defaults), or
+    // an enum against free text: no rule covers the clash, so the
+    // drift tripwire fires instead of the first value winning.
+    panic!("unmerged schema clash: {left} vs {right}");
 }
 
 fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
-    let branches = [
-        json!({"type":"object","additionalProperties":false,"properties":{"caid":{"type":"string","minLength":1},"detail":{"type":"boolean"},"assertion_id":{"type":"string"},"version":{"type":"string"}},"required":["caid"]}),
-        json!({"type":"object","additionalProperties":false,"properties":{"caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}}},"required":["caids"]}),
-        json!({"type":"object","additionalProperties":false,"properties":{"gene":{"type":"string","minLength":1},"limit":{"type":"integer","minimum":1,"maximum":100,"default":25},"offset":{"type":"integer","minimum":0,"default":0}},"required":["gene"]}),
-    ];
-    *schema = serde_json::from_value(json!({"type":"object","oneOf":branches}))
-        .expect("valid typed ERepo schema");
+    // Flat union of the selector fields; the typed struct's
+    // deny_unknown_fields keeps the body prescriptive (ADR 0002).
+    let properties = json!({
+        "caid":{"type":"string","minLength":1},
+        "caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}},
+        "gene":{"type":"string","minLength":1},
+        "detail":{"type":"boolean"},
+        "assertion_id":{"type":"string"},
+        "version":{"type":"string"},
+        "limit":{"type":"integer","minimum":1,"maximum":100,"default":25},
+        "offset":{"type":"integer","minimum":0,"default":0},
+    });
+    *schema = serde_json::from_value(json!({
+        "type":"object",
+        "additionalProperties":false,
+        "properties":properties
+    }))
+    .expect("valid typed ERepo schema");
 }
 
 fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
@@ -344,8 +526,33 @@ const LOCAL_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: --input file and stdin a
 impl BioMcpServer {
     pub fn new() -> Self {
         let mut tool_router = Self::tool_router();
+        let panic_route = tool_router
+            .map
+            .remove(TEST_PANIC_TOOL)
+            .expect("test panic route should be generated");
         super::catalog::apply(&mut tool_router);
+        // Internal panic-recovery test hook. Only the exact value enables this
+        // route, and the contract harness clears inherited values from children.
+        if std::env::var("BIOMCP_TEST_PANIC_TOOL").as_deref() == Ok("1") {
+            tool_router.add_route(panic_route);
+        }
         Self { tool_router }
+    }
+
+    /// Argument-validation failures become tool results with `isError`
+    /// (spec-sanctioned for tool-originated errors, and the model can
+    /// self-correct); protocol-shape errors pass through as-is.
+    async fn argument_errors_as_results<F>(future: F) -> Result<CallToolResult, McpError>
+    where
+        F: Future<Output = Result<CallToolResult, McpError>>,
+    {
+        match future.await {
+            Ok(result) => Ok(result),
+            Err(error) if error.code == rmcp::model::ErrorCode::INVALID_PARAMS => {
+                Ok(Self::tool_error(error.message.into_owned()))
+            }
+            Err(error) => Err(error),
+        }
     }
 
     fn tool_error(message: impl Into<String>) -> CallToolResult {
@@ -623,6 +830,13 @@ fn args_with_json(mut args: Vec<String>) -> Vec<String> {
     args
 }
 
+fn unknown_cursor_error(request: Option<&PaginatedRequestParams>) -> Option<McpError> {
+    // The catalogs fit one page and the server never issues a cursor, so
+    // any cursor a client presents is unknown.
+    let cursor = request?.cursor.as_deref()?;
+    (!cursor.is_empty()).then(|| McpError::invalid_params("unknown cursor", None))
+}
+
 fn cli_may_return_article_fulltext(cli: &crate::cli::Cli) -> bool {
     matches!(
         cli.command,
@@ -673,12 +887,11 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
         .as_object()
         .ok_or_else(|| input_error("typed search input must be an object"))?;
     let entity = checked_text(object.get("entity").unwrap_or(&Value::Null), "entity", 256)?;
-    if ![
-        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein", "patient",
-    ]
-    .contains(&entity.as_str())
-    {
-        return Err(input_error("invalid typed search entity"));
+    if !ENTITIES.contains(&entity.as_str()) {
+        return Err(input_error(format!(
+            "invalid typed search entity; valid entities: {}",
+            ENTITIES.join(", ")
+        )));
     }
     let branch = typed_search_branch(&entity);
     let allowed = branch["properties"].as_object().expect("branch properties");
@@ -705,8 +918,20 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
             "{entity} search requires at least one identity field"
         )));
     }
-    let limit = object.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
-    let offset = object.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+    let limit = match object.get("limit") {
+        Some(value) if !value.is_null() => value
+            .as_u64()
+            .ok_or_else(|| input_error("limit must be an integer"))?
+            as usize,
+        _ => 10,
+    };
+    let offset = match object.get("offset") {
+        Some(value) if !value.is_null() => value
+            .as_u64()
+            .ok_or_else(|| input_error("offset must be an integer"))?
+            as usize,
+        _ => 0,
+    };
     if !(1..=25).contains(&limit)
         || offset > 1000
         || (entity == "gwas" && offset.checked_add(limit).is_none_or(|end| end > 50))
@@ -1077,6 +1302,14 @@ fn append_default_mcp_footer(text: String, json_text: &str) -> String {
 
 #[tool_router]
 impl BioMcpServer {
+    #[tool(
+        name = "__biomcp_test_panic",
+        description = "Internal panic recovery test hook"
+    )]
+    async fn test_panic(&self) -> Result<CallToolResult, McpError> {
+        panic!("injected MCP tool panic")
+    }
+
     #[tool]
     async fn biomcp(
         &self,
@@ -1117,13 +1350,16 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedSearch>,
     ) -> Result<CallToolResult, McpError> {
-        let json = input
-            .0
-            .get("json")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let args = search_args(input)?;
-        Self::execute_args(args, json).await
+        Self::argument_errors_as_results(async {
+            let json = input
+                .0
+                .get("json")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let args = search_args(input)?;
+            Self::execute_args(args, json).await
+        })
+        .await
     }
 
     #[tool]
@@ -1131,13 +1367,16 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedGet>,
     ) -> Result<CallToolResult, McpError> {
-        let json = input
-            .0
-            .get("json")
-            .and_then(Value::as_bool)
-            .unwrap_or(false);
-        let args = get_args(input)?;
-        Self::execute_args(args, json).await
+        Self::argument_errors_as_results(async {
+            let json = input
+                .0
+                .get("json")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let args = get_args(input)?;
+            Self::execute_args(args, json).await
+        })
+        .await
     }
 
     #[tool]
@@ -1146,9 +1385,8 @@ impl BioMcpServer {
         Parameters(input): Parameters<TypedVariantCar>,
     ) -> Result<CallToolResult, McpError> {
         if input.inputs.is_empty() || input.inputs.len() > 50 {
-            return Err(McpError::invalid_params(
+            return Ok(Self::tool_error(
                 "variant_normalize_car inputs must contain 1-50 HGVS strings",
-                None,
             ));
         }
         match crate::entities::variant::normalize_car_batch(input.inputs).await {
@@ -1178,9 +1416,8 @@ impl BioMcpServer {
                 || input.limit == 0
                 || input.limit > 100
             {
-                return Err(McpError::invalid_params(
+                return Ok(Self::tool_error(
                     "variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100",
-                    None,
                 ));
             }
             return match crate::entities::variant::search_erepo_gene(
@@ -1205,18 +1442,16 @@ impl BioMcpServer {
             (Some(caid), None) => vec![caid],
             (None, Some(caids)) if !caids.is_empty() && caids.len() <= 50 => caids,
             _ => {
-                return Err(McpError::invalid_params(
+                return Ok(Self::tool_error(
                     "variant_erepo requires exactly one of caid or caids (1-50)",
-                    None,
                 ));
             }
         };
         if caids.len() != 1
             && (input.detail || input.assertion_id.is_some() || input.version.is_some())
         {
-            return Err(McpError::invalid_params(
+            return Ok(Self::tool_error(
                 "variant_erepo detail selectors require singular caid",
-                None,
             ));
         }
         match crate::entities::variant::retrieve_erepo(
@@ -1257,9 +1492,8 @@ impl BioMcpServer {
             || input.limit > 50
             || input.files && input.version_iri.is_none() && input.capture_id.is_none()
         {
-            return Err(McpError::invalid_params(
+            return Ok(Self::tool_error(
                 "gene_cspec version_iri and capture_id are mutually exclusive; files requires one of them; limit must be 1-50",
-                None,
             ));
         }
         let result = if input.files {
@@ -1312,64 +1546,85 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedVariantArticles>,
     ) -> Result<CallToolResult, McpError> {
-        if input.items.is_empty() || input.items.len() > 10 {
-            return Err(McpError::invalid_params(
-                "variant_articles requires between 1 and 10 items",
-                None,
-            ));
-        }
-        if input.limit == 0 || input.limit > 50 {
-            return Err(McpError::invalid_params(
-                "variant_articles limit must be between 1 and 50",
-                None,
-            ));
-        }
-        if input.confirmed_only && !input.verify_identity {
-            return Err(McpError::invalid_params(
-                "variant_articles confirmed_only requires verify_identity",
-                None,
-            ));
-        }
-        let strategy = variant_article_strategy(&input.strategy)?;
-        match crate::entities::article::search_variant_article_batch_with_options(
-            input.items,
-            strategy,
-            input.limit,
-            input.offset,
-            input.debug_plan,
-            crate::entities::article::VariantArticleVerificationOptions {
-                verify_identity: input.verify_identity,
-                confirmed_only: input.confirmed_only,
-            },
-        )
-        .await
-        {
-            Ok(outcome) => {
-                let text = crate::render::json::to_pretty(&outcome.response).map_err(|error| {
-                    McpError::internal_error(
-                        format!("Failed to serialize variant article response: {error}"),
-                        None,
-                    )
-                })?;
-                let text = redact_mcp_json_text(&text).map_err(|error| {
-                    McpError::internal_error(
-                        format!("Failed to sanitize variant article response: {error}"),
-                        None,
-                    )
-                })?;
-                Ok(if outcome.hard_error {
-                    CallToolResult::error(vec![Content::text(text)])
-                } else {
-                    CallToolResult::success(vec![Content::text(text)])
-                })
+        Self::argument_errors_as_results(async {
+            if input.items.is_empty() || input.items.len() > 10 {
+                return Ok(Self::tool_error(
+                    "variant_articles requires between 1 and 10 items",
+                ));
             }
-            Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
-        }
+            if input.limit == 0 || input.limit > 50 {
+                return Ok(Self::tool_error(
+                    "variant_articles limit must be between 1 and 50",
+                ));
+            }
+            if input.confirmed_only && !input.verify_identity {
+                return Ok(Self::tool_error(
+                    "variant_articles confirmed_only requires verify_identity",
+                ));
+            }
+            let strategy = variant_article_strategy(&input.strategy)?;
+            match crate::entities::article::search_variant_article_batch_with_options(
+                input.items,
+                strategy,
+                input.limit,
+                input.offset,
+                input.debug_plan,
+                crate::entities::article::VariantArticleVerificationOptions {
+                    verify_identity: input.verify_identity,
+                    confirmed_only: input.confirmed_only,
+                },
+            )
+            .await
+            {
+                Ok(outcome) => {
+                    let text =
+                        crate::render::json::to_pretty(&outcome.response).map_err(|error| {
+                            McpError::internal_error(
+                                format!("Failed to serialize variant article response: {error}"),
+                                None,
+                            )
+                        })?;
+                    let text = redact_mcp_json_text(&text).map_err(|error| {
+                        McpError::internal_error(
+                            format!("Failed to sanitize variant article response: {error}"),
+                            None,
+                        )
+                    })?;
+                    Ok(if outcome.hard_error {
+                        CallToolResult::error(vec![Content::text(text)])
+                    } else {
+                        CallToolResult::success(vec![Content::text(text)])
+                    })
+                }
+                Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+            }
+        })
+        .await
     }
 }
 
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for BioMcpServer {
+    async fn call_tool(
+        &self,
+        request: CallToolRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, McpError> {
+        let context = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
+        match AssertUnwindSafe(self.tool_router.call(context))
+            .catch_unwind()
+            .await
+        {
+            Ok(result) => result,
+            Err(payload) => {
+                let message = crate::utils::panic_payload_message(payload.as_ref());
+                Ok(Self::tool_error(format!(
+                    "Error: MCP tool panicked: {message}"
+                )))
+            }
+        }
+    }
+
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(
             ServerCapabilities::builder()
@@ -1383,9 +1638,12 @@ impl ServerHandler for BioMcpServer {
 
     fn list_tools(
         &self,
-        _request: Option<PaginatedRequestParams>,
+        request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> impl Future<Output = Result<ListToolsResult, McpError>> + Send + '_ {
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
         std::future::ready(Ok(ListToolsResult::with_all_items(super::catalog::list(
             &self.tool_router,
         ))))
@@ -1393,15 +1651,42 @@ impl ServerHandler for BioMcpServer {
 
     fn list_resources(
         &self,
-        _request: Option<PaginatedRequestParams>,
+        request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> impl Future<Output = Result<ListResourcesResult, McpError>> + Send + '_ {
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
         std::future::ready(Ok(ListResourcesResult::with_all_items(
             build_resource_list()
                 .into_iter()
                 .map(|r| r.no_annotation())
                 .collect(),
         )))
+    }
+
+    fn list_prompts(
+        &self,
+        request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> impl Future<Output = Result<ListPromptsResult, McpError>> + Send + '_ {
+        // The server has no prompts; the override exists only so a garbage
+        // cursor is rejected with the same -32602 as every other list.
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
+        std::future::ready(Ok(ListPromptsResult::default()))
+    }
+
+    fn list_resource_templates(
+        &self,
+        request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> impl Future<Output = Result<ListResourceTemplatesResult, McpError>> + Send + '_ {
+        if let Some(error) = unknown_cursor_error(request.as_ref()) {
+            return std::future::ready(Err(error));
+        }
+        std::future::ready(Ok(ListResourceTemplatesResult::default()))
     }
 
     fn read_resource(
@@ -1474,6 +1759,7 @@ fn is_handshake_startup_error(err: &anyhow::Error) -> bool {
 }
 
 pub async fn run_stdio() -> anyhow::Result<()> {
+    crate::sources::ca_bundle::validate()?;
     let shutdown = CancellationToken::new();
 
     let cancel = shutdown.clone();
@@ -1513,13 +1799,15 @@ mod typed_get_tests;
 #[cfg(test)]
 mod tests {
     use super::{
-        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
+        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, ENTITIES, GENERIC_MCP_REJECTION_MESSAGE,
         LOCAL_INPUT_MCP_REJECTION_MESSAGE, ShellCommand, TypedGeneCspec, TypedGet, TypedSearch,
         TypedVariantArticles, TypedVariantCar, binary_download_rejection_for_args,
         cli_may_return_article_fulltext, get_args, is_allowed_mcp_args,
-        mcp_rejection_message_for_args, redact_mcp_json_text, redact_mcp_text, search_args,
+        mcp_rejection_message_for_args, merge_branch_properties, merge_property,
+        redact_mcp_json_text, redact_mcp_text, search_args, typed_get_capabilities,
+        typed_search_branch,
     };
-    use serde_json::json;
+    use serde_json::{Value, json};
     mod ticket_0117;
     mod ticket_0134;
     mod ticket_1120;
@@ -1650,71 +1938,203 @@ mod tests {
     }
 
     #[test]
-    fn typed_schemas_are_entity_specific() {
-        let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
-        assert_eq!(search["oneOf"].as_array().unwrap().len(), 9);
-        let gwas = search["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "gwas")
-            .unwrap();
+    fn typed_branches_stay_entity_specific() {
+        // The published roots are flat unions (ADR 0002), so
+        // entity-specificity is pinned on the branch builders the body
+        // validates against, plus the root fields only one entity declares.
+        let gwas = typed_search_branch("gwas");
         assert!(gwas["properties"].get("trait").is_some());
         assert!(gwas["properties"].get("region").is_none());
+        let capabilities = typed_get_capabilities();
+        let cell_line = capabilities
+            .iter()
+            .find(|capability| capability.entity == "cell-line")
+            .expect("typed get serves cell-line");
+        assert!(cell_line.sections.is_some());
+        let author = capabilities
+            .iter()
+            .find(|capability| capability.entity == "author")
+            .expect("typed get serves author");
+        assert!(author.sections.is_none());
+        let gene = capabilities
+            .iter()
+            .find(|capability| capability.entity == "gene")
+            .expect("typed get serves gene");
+        let gene_sections = gene.sections.as_deref().unwrap_or(&[]);
+        assert!(gene_sections.contains(&"pathways"));
+        assert!(!gene_sections.contains(&"population"));
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
-        assert_eq!(get["oneOf"].as_array().unwrap().len(), 14);
-        let cell_line = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "cell-line")
-            .expect("typed get publishes a cell-line branch");
-        assert!(cell_line["properties"].get("sections").is_some());
-        let author = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "author")
-            .unwrap();
-        assert!(author["properties"].get("sections").is_none());
-        let gene = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "gene")
-            .unwrap();
-        assert!(
-            gene["properties"]["sections"]["items"]["enum"]
-                .as_array()
-                .unwrap()
-                .contains(&json!("pathways"))
-        );
-        assert!(
-            !gene["properties"]["sections"]["items"]["enum"]
-                .as_array()
-                .unwrap()
-                .contains(&json!("population"))
-        );
-        let variant = get["oneOf"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|branch| branch["properties"]["entity"]["const"] == "variant")
-            .unwrap();
         assert_eq!(
-            variant["properties"]["assembly"]["enum"],
+            get["properties"]["assembly"]["enum"],
             json!(["grch37", "hg19", "grch38", "hg38"])
         );
     }
 
     #[test]
-    fn typed_search_and_get_schemas_declare_object_roots_and_reject_bad_input() {
+    fn typed_schemas_publish_flat_roots_and_reject_bad_input() {
         let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
         assert_eq!(search["type"], json!("object"));
-        assert_eq!(search["oneOf"].as_array().unwrap().len(), 9);
+        for combinator in ["oneOf", "anyOf", "allOf"] {
+            assert!(
+                search.get(combinator).is_none(),
+                "flat search root must not carry {combinator}"
+            );
+        }
+        // The key set may derive from the branch table; the collision
+        // rule itself is pinned against hand-written literals below,
+        // so the merge cannot vouch for itself.
+        let branches = ENTITIES
+            .iter()
+            .map(|entity| typed_search_branch(entity))
+            .collect::<Vec<_>>();
+        let expected_keys: Vec<String> = branches
+            .iter()
+            .flat_map(|branch| {
+                branch["properties"]
+                    .as_object()
+                    .expect("branch properties object")
+                    .keys()
+                    .cloned()
+                    .chain(std::iter::once("entity".to_string()))
+            })
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        let mut published_keys: Vec<String> = search["properties"]
+            .as_object()
+            .expect("published properties object")
+            .keys()
+            .cloned()
+            .collect();
+        published_keys.sort_unstable();
+        assert_eq!(published_keys, expected_keys);
+        assert_eq!(search["required"], json!(["entity"]));
+        assert_eq!(
+            search["properties"]["entity"],
+            json!({"type":"string","enum":ENTITIES})
+        );
+        // Shared scalar bounds pinned literally: a drift in any
+        // branch's pagination shape fails here, not silently in the
+        // merge.
+        assert_eq!(
+            search["properties"]["limit"],
+            json!({"default":10,"maximum":25,"minimum":1,"type":"integer"})
+        );
+        assert_eq!(
+            search["properties"]["offset"],
+            json!({"default":0,"maximum":1000,"minimum":0,"type":"integer"})
+        );
+
+        // Collision rule spot checks on the merged union.
+        assert_eq!(
+            search["properties"]["source"]["enum"],
+            json!([
+                "semanticscholar",
+                "all",
+                "pubtator",
+                "europepmc",
+                "pubmed",
+                "litsense2",
+                "ctgov",
+                "nci"
+            ])
+        );
+        for field in ["disease", "drug"] {
+            assert_eq!(
+                search["properties"][field]["type"],
+                json!(["string", "array"]),
+                "{field} is text on some branches and a list on others"
+            );
+            assert!(search["properties"][field]["items"].is_object());
+        }
+        // gene is plain text on every branch that declares it.
+        assert_eq!(search["properties"]["gene"]["type"], json!("string"));
+        // gene-specific fields ride in the union; limit and offset keep
+        // their shared bounds.
+        assert!(search["properties"].get("region").is_some());
+        assert!(search["properties"].get("query").is_some());
+        assert_eq!(search["properties"]["limit"]["maximum"], json!(25));
+
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
         assert_eq!(get["type"], json!("object"));
-        assert_eq!(get["oneOf"].as_array().unwrap().len(), 14);
+        for combinator in ["oneOf", "anyOf", "allOf"] {
+            assert!(
+                get.get(combinator).is_none(),
+                "flat get root must not carry {combinator}"
+            );
+        }
+        let mut get_keys: Vec<&str> = get["properties"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        get_keys.sort_unstable();
+        assert_eq!(
+            get_keys,
+            vec!["assembly", "entity", "id", "json", "sections", "source"]
+        );
+        assert_eq!(get["required"], json!(["entity", "id"]));
+        // The sections items enum unions every entity's sections, and the
+        // entity enum derives from the same capabilities as validation.
+        let capabilities = typed_get_capabilities();
+        let mut sections: Vec<serde_json::Value> = Vec::new();
+        for capability in &capabilities {
+            for section in capability.sections.iter().flatten() {
+                let value = json!(section);
+                if !sections.contains(&value) {
+                    sections.push(value);
+                }
+            }
+        }
+        assert_eq!(
+            get["properties"]["sections"]["items"]["enum"],
+            Value::Array(sections)
+        );
+        // The descriptive root never narrows below adverse-event, the
+        // branch that accepts duplicate sections (ticket 1258): the
+        // merged property carries no `uniqueItems`, and duplicate
+        // rejection stays body-side per entity.
+        assert!(
+            get["properties"]["sections"].get("uniqueItems").is_none(),
+            "the flat get root must not carry uniqueItems on sections"
+        );
+        assert_eq!(get["properties"]["sections"]["maxItems"], json!(16));
+        assert_eq!(
+            get["properties"]["entity"]["enum"],
+            json!(
+                capabilities
+                    .iter()
+                    .map(|capability| capability.entity)
+                    .collect::<Vec<_>>()
+            )
+        );
+
+        let erepo =
+            serde_json::to_value(rmcp::schemars::schema_for!(super::TypedVariantErepo)).unwrap();
+        assert_eq!(erepo["type"], json!("object"));
+        for combinator in ["oneOf", "anyOf", "allOf"] {
+            assert!(
+                erepo.get(combinator).is_none(),
+                "flat erepo root must not carry {combinator}"
+            );
+        }
+        for field in [
+            "caid",
+            "caids",
+            "gene",
+            "detail",
+            "assertion_id",
+            "version",
+            "limit",
+            "offset",
+        ] {
+            assert!(
+                erepo["properties"].get(field).is_some(),
+                "erepo root missing {field}"
+            );
+        }
+        assert!(erepo.get("required").is_none());
 
         assert!(search_args(TypedSearch(json!({"entity":"pathway","query":"MAPK"}))).is_err());
         assert!(
@@ -1722,6 +2142,100 @@ mod tests {
                 json!({"entity":"gene","id":"BRAF","sections":["population"]})
             ))
             .is_err()
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "one-sided `uniqueItems` constraint")]
+    fn a_one_sided_unique_items_clash_panics_instead_of_narrowing() {
+        let _ = merge_property(
+            &json!({"type":"array","maxItems":16,"uniqueItems":true}),
+            &json!({"type":"array","maxItems":16}),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "one-sided `maxLength` constraint")]
+    fn a_one_sided_max_length_clash_panics_instead_of_narrowing() {
+        let _ = merge_property(
+            &json!({"type":"string","maxLength":256}),
+            &json!({"type":"string","minLength":1}),
+        );
+    }
+
+    #[test]
+    fn flat_pairs_keep_each_arms_constraints_without_panicking() {
+        let merged = merge_property(
+            &json!({"type":"string","minLength":1,"maxLength":256}),
+            &json!({"type":"array","minItems":1,"maxItems":3,"uniqueItems":true}),
+        );
+        assert_eq!(merged["type"], json!(["string", "array"]));
+        assert_eq!(merged["minLength"], json!(1));
+        assert_eq!(merged["uniqueItems"], json!(true));
+    }
+
+    #[test]
+    #[should_panic(expected = "unmerged schema clash")]
+    fn a_conflicting_scalar_bound_panics_instead_of_first_value_wins() {
+        let branches = [
+            json!({"type":"object","properties":{"score":{"maximum":5}}}),
+            json!({"type":"object","properties":{"score":{"maximum":10}}}),
+        ];
+        // Must panic: no collision rule covers differing scalar
+        // bounds, so the drift tripwire fires rather than publishing
+        // the first branch's bound quietly. Both values are named in
+        // the panic message.
+        let _ = merge_branch_properties(&branches);
+    }
+
+    #[test]
+    #[should_panic(expected = "schema type clash")]
+    fn a_type_clash_between_branches_panics_instead_of_first_value_wins() {
+        let branches = [
+            json!({"type":"object","properties":{"grade":{"type":"integer"}}}),
+            json!({"type":"object","properties":{"grade":{"type":"string"}}}),
+        ];
+        let _ = merge_branch_properties(&branches);
+    }
+
+    #[test]
+    #[should_panic(expected = "one-sided enum or const clash")]
+    fn an_enum_on_one_side_of_a_same_type_merge_panics() {
+        let branches = [
+            json!({"type":"object","properties":{"grade":{"type":"string","enum":["G1","G2"]}}}),
+            json!({"type":"object","properties":{"grade":{"type":"string"}}}),
+        ];
+        let _ = merge_branch_properties(&branches);
+    }
+
+    #[test]
+    fn typed_search_rejects_wrong_type_pagination_and_lists_valid_entities() {
+        for (field, wrong) in [("limit", json!("abc")), ("offset", json!(1.5))] {
+            let error = search_args(TypedSearch(json!({
+                "entity":"gene", "query":"BRAF", field: wrong
+            })))
+            .expect_err("a present non-integer pagination field must reject");
+            assert!(
+                error.message.contains(field),
+                "the rejection must name {field}: {}",
+                error.message
+            );
+            assert!(error.message.contains("integer"));
+        }
+        // Absent values keep their defaults; negative numbers are not u64.
+        assert!(search_args(TypedSearch(json!({"entity":"author","query":"Doe"}))).is_ok());
+        assert!(
+            search_args(TypedSearch(
+                json!({"entity":"gene","query":"BRAF","limit":-1})
+            ))
+            .is_err()
+        );
+        let error = search_args(TypedSearch(json!({"entity":"pathway","query":"MAPK"})))
+            .expect_err("an unknown entity rejects");
+        assert!(
+            error.message.contains("author"),
+            "the rejection lists the valid entities: {}",
+            error.message
         );
     }
 
@@ -1753,10 +2267,24 @@ mod tests {
             }))
             .await;
 
+        let result = result.expect("argument validation returns a tool result");
+        assert_eq!(result.is_error, Some(true));
         assert!(
-            result.is_err(),
-            "mutually exclusive CSpec selectors must fail"
+            biomcp_mcp_contract_client_text(&result).contains("mutually exclusive"),
+            "the error text must name the conflict"
         );
+    }
+
+    fn biomcp_mcp_contract_client_text(result: &rmcp::model::CallToolResult) -> String {
+        result
+            .content
+            .iter()
+            .filter_map(|chunk| match &chunk.raw {
+                rmcp::model::RawContent::Text(text) => Some(text.text.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]

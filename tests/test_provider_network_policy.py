@@ -55,10 +55,12 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     # requests only to the one origin and base path in BIOMCP_FHIR_BASE, and
     # its redirect policy refuses every other target, so the ordinary DNS
     # policy has nothing further to bind.
+    # ca_bundle.rs constructs three builders in the process-reentry parse-once test.
     assert found == Counter(
         {
             "src/sources/fhir.rs": 1,
             "src/sources/mod.rs": 3,
+            "src/sources/ca_bundle.rs": 3,
             "src/sources/ordinary_url_policy.rs": 3,
             "src/sources/clingen_cspec.rs": 1,
             "src/sources/provider_url_policy.rs": 1,
@@ -111,7 +113,9 @@ def test_alphagenome_is_the_single_documented_non_reqwest_provider_transport() -
 
     reference = (ROOT / "docs/reference/data-sources.md").read_text()
     assert "authenticated gRPC/Tonic provider transport" in reference
-    assert "not part of this ordinary Reqwest boundary" in " ".join(reference.split())
+    normalized = " ".join(reference.split())
+    assert "does not use `BIOMCP_CA_BUNDLE`" in normalized
+    assert "`SSL_CERT_FILE` and `SSL_CERT_DIR`" in normalized
 
 
 def test_no_path_disables_certificate_verification_or_replaces_bundled_roots() -> None:
@@ -125,22 +129,51 @@ def test_no_path_disables_certificate_verification_or_replaces_bundled_roots() -
         ):
             assert marker not in text, f"{relative} weakens TLS trust: {marker}"
 
+    cargo = (ROOT / "Cargo.toml").read_text()
+    reqwest_features = (
+        'reqwest = { version = "0.12", default-features = false, '
+        'features = ["json", "rustls-tls"'
+    )
+    assert reqwest_features in cargo
+
     helper = (ROOT / "src/sources/ca_bundle.rs").read_text()
     assert "add_root_certificate" in helper
     assert "RootCertStore::empty()" in helper
     assert "tls_built_in_root_certs" not in helper
 
 
+def production_text(path) -> str:
+    # Count code, not commented-out code: drop whole-line comments.
+    # (Trailing comments cannot be stripped without Rust-aware
+    # parsing; a call spelling inside a string literal is not a
+    # realistic regression here.)
+    lines = path.read_text().splitlines()
+    return "\n".join(line for line in lines if not line.lstrip().startswith("//"))
+
+
 def test_every_touched_production_builder_applies_the_operator_ca_bundle() -> None:
     # The inventory above counts constructions; this pins that every builder
     # this ticket touched routes through the shared CA-bundle helper so an
     # operator-supplied private root is trusted without disabling verification.
-    for relative, expected in {
-        "src/sources/ordinary_url_policy.rs": 3,
-        "src/sources/fda_orphan.rs": 2,
-        "src/entities/trial/documents.rs": 1,
-        "src/cli/health/runner.rs": 1,
-        "src/sources/fhir.rs": 1,
+    # src/sources/mod.rs carries the two shared-pool builders (cached and
+    # uncached), and fhir.rs uses the same CA-bundle helper for the
+    # operator-configured patient server.
+    for relative, calls in {
+        "src/sources/ordinary_url_policy.rs": {
+            "ca_bundle::configure(": 2,
+            "ca_bundle::build_client(": 1,
+        },
+        "src/sources/fda_orphan.rs": {
+            "ca_bundle::configure(": 1,
+            "ca_bundle::build_client(": 1,
+        },
+        "src/entities/trial/documents.rs": {"ca_bundle::build_client(": 1},
+        "src/cli/health/runner.rs": {"ca_bundle::build_client(": 1},
+        "src/sources/fhir.rs": {"ca_bundle::build_client(": 1},
+        "src/sources/orcid.rs": {"ca_bundle::build(": 1},
+        "src/sources/clingen_cspec.rs": {"ca_bundle::build(": 1},
+        "src/sources/mod.rs": {"ca_bundle::build(": 2},
     }.items():
-        text = (ROOT / relative).read_text()
-        assert text.count("ca_bundle::") >= expected, relative
+        text = production_text(ROOT / relative)
+        for call, expected in calls.items():
+            assert text.count(call) == expected, (relative, call)

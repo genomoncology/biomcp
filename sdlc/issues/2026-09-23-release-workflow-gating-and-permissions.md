@@ -21,3 +21,7 @@ Top-level `contents: write`, `id-token: write`, and `packages: write` (`release.
 - `container-publish` uses `always()` (line 337) and starts after a cancel. Use `!cancelled()`.
 - The "Resolve the tag commit" step (line 224) has no retry.
 - No workflow-level `concurrency`, so a dispatch can race a release on the tap push.
+
+## Resolved
+
+Ticket 1234 moves release validation ahead of a draft-last GitHub release, checks versions and changelog coverage with behavior-tested scripts, pins the complete publish-job dependency graph with mutation tests, smokes every built wheel, narrows permissions, and preserves the explicit container-backfill dispatch. See `sdlc/records/1234-rework-the-release-gates-so-v0-9-1-can-pass-them.md` after verification.

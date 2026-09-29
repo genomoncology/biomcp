@@ -330,14 +330,17 @@ pub(crate) enum SourceCacheMode {
 fn cache_mode() -> SourceCacheMode {
     source_cache_mode(
         crate::sources::cache_is_bypassed(),
-        std::env::var("BIOMCP_CACHE_MODE").ok().as_deref(),
+        crate::sources::current_cache_mode(),
     )
 }
 
-pub(crate) fn source_cache_mode(no_cache: bool, env: Option<&str>) -> SourceCacheMode {
-    if no_cache || env.is_some_and(|v| v.trim().eq_ignore_ascii_case("off")) {
+pub(crate) fn source_cache_mode(
+    no_cache: bool,
+    mode: Option<http_cache_reqwest::CacheMode>,
+) -> SourceCacheMode {
+    if no_cache || mode == Some(http_cache_reqwest::CacheMode::NoStore) {
         SourceCacheMode::Off
-    } else if env.is_some_and(|v| v.trim().eq_ignore_ascii_case("infinite")) {
+    } else if mode == Some(http_cache_reqwest::CacheMode::ForceCache) {
         SourceCacheMode::Infinite
     } else {
         SourceCacheMode::Normal

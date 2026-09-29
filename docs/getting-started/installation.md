@@ -12,6 +12,12 @@ curl -fsSL https://biomcp.org/install.sh | bash
 
 The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA-256 checksum, smokes a destination-directory staging file, and atomically places `biomcp` in `~/.local/bin`. It records standalone ownership in adjacent `biomcp.install.json` so update and uninstall cannot damage package-managed installs. It fails closed before replacement when verification fails, and a pending receipt makes interruption recovery deterministic.
 
+The prebuilt Linux binaries carry a glibc 2.28 floor: they are built
+in the `manylinux_2_28` environment and run on RHEL 8, Debian 10, and
+Ubuntu 20.04 onward. Linux older than that cannot run them; build
+from source instead (Option 3). The PyPI wheels for Linux carry the
+same floor.
+
 The installer never edits shell startup files. If `~/.local/bin` is missing from
 `PATH`, it prints one `export PATH=...` command for you to copy. Install
 `sha256sum`, `shasum -a 256`, or `openssl dgst -sha256` before running it.
@@ -40,6 +46,12 @@ Install the `biomcp-cli` package, then use the `biomcp` command in the rest of
 this guide. The package also keeps a small `biomcp-cli` compatibility command;
 it forwards to the sibling `biomcp` executable without changing command output
 or exit status.
+
+The Linux wheels are tagged `manylinux_2_28` and carry the same glibc
+2.28 floor as the prebuilt Linux tarballs (RHEL 8, Debian 10, Ubuntu
+20.04 onward). Older Linux cannot run them; build from source
+instead (Option 3). A current `pip` is needed so the `manylinux_2_28`
+tag resolves.
 
 Verify:
 

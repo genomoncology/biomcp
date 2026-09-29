@@ -133,13 +133,71 @@ pub(in crate::cli::health) async fn send_request(
     }
 }
 
+/// Rewrites a probe URL's scheme and authority onto a test endpoint
+/// when `BIOMCP_HEALTH_PROBE_BASE` is allowed, keeping the path and
+/// query. Test-only seam (ticket 1254, item 8): the health probes
+/// carry static catalog URLs, so the handshake test needs one address
+/// override through the shared client. Authed probes attach operator
+/// credentials, so the override is gated exactly like the GenCC
+/// endpoint override: debug builds, or a base that names the same
+/// loopback origin as `BIOMCP_TEST_UNPACED_ORIGIN`. Unset, not
+/// allowed, or unparseable (either side) leaves the catalog URL
+/// unchanged.
+fn probe_url(url: &str) -> String {
+    let Ok(base) = std::env::var("BIOMCP_HEALTH_PROBE_BASE") else {
+        return url.to_string();
+    };
+    if !(cfg!(debug_assertions) || fixture_override_allowed(&base)) {
+        return url.to_string();
+    }
+    let Ok(base) = reqwest::Url::parse(base.trim()) else {
+        return url.to_string();
+    };
+    let Ok(mut parsed) = reqwest::Url::parse(url) else {
+        return url.to_string();
+    };
+    let _ = parsed.set_scheme(base.scheme());
+    let Ok(()) = parsed.set_host(base.host_str()) else {
+        return url.to_string();
+    };
+    if let Some(port) = base.port() {
+        let _ = parsed.set_port(Some(port));
+    } else {
+        let _ = parsed.set_port(None);
+    }
+    parsed.to_string()
+}
+
+/// Mirrors `sources::gencc::fixture_override_allowed` (kept there at
+/// its pinned size): the release-build half of the endpoint override
+/// gate. The base must name exactly the loopback origin the test
+/// signal allows.
+#[rustfmt::skip]
+fn fixture_override_allowed(value: &str) -> bool {
+    let Ok(endpoint) = reqwest::Url::parse(value) else { return false };
+    let Ok(signal) = std::env::var("BIOMCP_TEST_UNPACED_ORIGIN") else { return false };
+    let Ok(signal) = reqwest::Url::parse(signal.trim()) else { return false };
+    signal.username().is_empty()
+        && signal.password().is_none()
+        && signal.path() == "/"
+        && signal.query().is_none()
+        && signal.fragment().is_none()
+        && signal
+            .host_str()
+            .and_then(|host| host.parse::<std::net::IpAddr>().ok())
+            .is_some_and(|address| address.is_loopback())
+        && endpoint.scheme() == signal.scheme()
+        && endpoint.host_str() == signal.host_str()
+        && endpoint.port_or_known_default() == signal.port_or_known_default()
+}
+
 pub(in crate::cli::health) async fn check_get(
     client: reqwest::Client,
     api: &str,
     url: &str,
     affects: Option<&'static str>,
 ) -> ProbeOutcome {
-    send_request(api, affects, client.get(url), None).await
+    send_request(api, affects, client.get(probe_url(url)), None).await
 }
 
 pub(in crate::cli::health) async fn check_post_json(
@@ -153,7 +211,7 @@ pub(in crate::cli::health) async fn check_post_json(
         api,
         affects,
         client
-            .post(url)
+            .post(probe_url(url))
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .body(payload.to_string()),
         None,
@@ -179,7 +237,7 @@ pub(in crate::cli::health) async fn check_auth_get(
     send_request(
         api,
         affects,
-        client.get(url).header(header_name, header_value),
+        client.get(probe_url(url)).header(header_name, header_value),
         Some(true),
     )
     .await
@@ -210,7 +268,7 @@ pub(in crate::cli::health) async fn check_orcid_get(
                 api,
                 affects,
                 client
-                    .get(url)
+                    .get(probe_url(url))
                     .header("Accept", "application/vnd.orcid+json")
                     .header("Authorization", format!("Bearer {token}")),
                 Some(true),
@@ -284,9 +342,9 @@ pub(in crate::cli::health) async fn check_optional_auth_get(
     let key_configured = Some(key.is_some());
     let request = match key {
         Some(key) => client
-            .get(url)
+            .get(probe_url(url))
             .header(header_name, format!("{header_value_prefix}{key}")),
-        None => client.get(url),
+        None => client.get(probe_url(url)),
     };
     let start = Instant::now();
     let error_outcome = |latency: String| {
@@ -318,7 +376,7 @@ pub(in crate::cli::health) async fn check_auth_query_param(
         return excluded_outcome(api, env_var, affects);
     };
 
-    let req = match reqwest::Url::parse(url) {
+    let req = match reqwest::Url::parse(&probe_url(url)) {
         Ok(mut parsed) => {
             parsed.query_pairs_mut().append_pair(param_name, &key);
             client.get(parsed)
@@ -361,7 +419,7 @@ pub(in crate::cli::health) async fn check_auth_post_json(
         api,
         affects,
         client
-            .post(url)
+            .post(probe_url(url))
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .header(header_name, header_value)
             .body(payload.to_string()),
@@ -446,5 +504,86 @@ pub(in crate::cli::health) fn vaers_query_outcome(
             ),
             ProbeClass::Error,
         ),
+    }
+}
+
+#[cfg(test)]
+mod probe_override_tests {
+    use super::{fixture_override_allowed, probe_url};
+
+    #[test]
+    #[serial_test::serial(unpaced_origin)]
+    fn a_non_loopback_probe_base_is_never_allowed() {
+        // No signal is set in this process: without the fixture signal
+        // nothing is allowed, and a non-loopback base is not allowed
+        // even by a matching-looking signal (checked below).
+        unsafe {
+            std::env::remove_var("BIOMCP_TEST_UNPACED_ORIGIN");
+        }
+        assert!(!fixture_override_allowed("https://example.com"));
+        assert!(!fixture_override_allowed("https://127.0.0.1:9"));
+        assert!(!fixture_override_allowed("not a url"));
+    }
+
+    #[test]
+    #[serial_test::serial(unpaced_origin)]
+    fn a_non_loopback_base_with_a_loopback_signal_is_rejected() {
+        unsafe {
+            std::env::set_var("BIOMCP_TEST_UNPACED_ORIGIN", "https://127.0.0.1:9443");
+        }
+        assert!(!fixture_override_allowed("https://example.com"));
+        unsafe {
+            std::env::remove_var("BIOMCP_TEST_UNPACED_ORIGIN");
+        }
+    }
+
+    #[test]
+    #[serial_test::serial(unpaced_origin)]
+    fn the_exact_loopback_origin_the_signal_names_is_allowed() {
+        unsafe {
+            std::env::set_var("BIOMCP_TEST_UNPACED_ORIGIN", "https://127.0.0.1:9443");
+        }
+        assert!(fixture_override_allowed("https://127.0.0.1:9443"));
+        unsafe {
+            std::env::remove_var("BIOMCP_TEST_UNPACED_ORIGIN");
+        }
+    }
+
+    #[test]
+    #[serial_test::serial(unpaced_origin)]
+    fn an_unparseable_base_leaves_the_catalog_url_unchanged() {
+        // Serial with the other override tests: both set process
+        // variables. The base cannot parse, so in release builds the
+        // gate blocks the rewrite and in debug builds the parse
+        // fallback returns the original — the observable is the same
+        // URL either way, which is what this pins (ticket 1257).
+        unsafe {
+            std::env::set_var("BIOMCP_HEALTH_PROBE_BASE", "::not a url::");
+        }
+        let url = "https://mygene.info/v3/query?q=BRAF&size=1";
+        assert_eq!(probe_url(url), url.to_string());
+        unsafe {
+            std::env::remove_var("BIOMCP_HEALTH_PROBE_BASE");
+        }
+    }
+
+    #[test]
+    #[serial_test::serial(unpaced_origin)]
+    fn an_allowed_base_keeps_the_path_and_query() {
+        // The exact pair the release gate demands: the base names the
+        // same loopback origin as the signal, so `probe_url` rewrites
+        // in debug AND release builds — the old test set only the
+        // base, which debug builds let through and release builds
+        // correctly refused (ticket 1257).
+        unsafe {
+            std::env::set_var("BIOMCP_HEALTH_PROBE_BASE", "https://127.0.0.1:9443");
+            std::env::set_var("BIOMCP_TEST_UNPACED_ORIGIN", "https://127.0.0.1:9443");
+        }
+        let rewritten = probe_url("https://mygene.info/v3/query?q=BRAF&size=1");
+        assert_eq!(rewritten, "https://127.0.0.1:9443/v3/query?q=BRAF&size=1");
+        unsafe {
+            std::env::remove_var("BIOMCP_HEALTH_PROBE_BASE");
+            std::env::remove_var("BIOMCP_TEST_UNPACED_ORIGIN");
+        }
     }
 }

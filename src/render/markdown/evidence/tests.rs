@@ -111,6 +111,7 @@ fn variant_evidence_urls_fall_back_to_hgvs_slug_for_population_data() {
 #[test]
 fn disease_evidence_urls_include_record_links() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0009061".to_string(),
         name: "cystic fibrosis".to_string(),
         definition: None,
@@ -209,6 +210,8 @@ fn drug_evidence_urls_include_chembl() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -260,6 +263,8 @@ fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
             interaction_text: None,
             interaction_pagination: None,
             interaction_bundle_freshness: None,
+            interaction_coverage_status: None,
+            ddinter_synonyms: Vec::new(),
             pharm_classes: Vec::new(),
             top_adverse_events: vec!["Rash".to_string()],
             faers_query: Some(

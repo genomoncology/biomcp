@@ -6,6 +6,7 @@ use super::citation_evidence::{
 };
 use super::*;
 #[cfg(test)]
+#[cfg(unix)]
 mod admission;
 #[cfg(test)]
 mod cache;
@@ -16,7 +17,6 @@ use crate::sources::semantic_scholar::{
 };
 use crate::transform::article::{JatsCitationExtraction, JatsCitationTargetIds};
 use reqwest::StatusCode;
-
 fn semantic_paper(
     paper_id: &str,
     pmid: &str,

@@ -13,7 +13,9 @@ RUST_BIOMCP_CONST_RE = re.compile(
 RUST_DIRECT_ENV_READ_RE = re.compile(
     r'(?:std::)?env::var(?:_os)?\(\s*"(BIOMCP_[A-Z0-9_]+)"\s*\)'
 )
-RUST_INDIRECT_ENV_READ_RE = re.compile(r"(?:std::)?env::var(?:_os)?\(\s*([A-Z][A-Z0-9_]*)\s*\)")
+RUST_INDIRECT_ENV_READ_RE = re.compile(
+    r"(?:std::)?env::var(?:_os)?\(\s*([A-Z][A-Z0-9_]*)\s*\)"
+)
 RUST_OPTION_ENV_RE = re.compile(r'option_env!\(\s*"(BIOMCP_[A-Z0-9_]+)"\s*\)')
 RUST_ENV_BASE_RE = re.compile(r"env_base\([^)]*,\s*([A-Z][A-Z0-9_]*)\s*\)", re.S)
 
@@ -29,10 +31,12 @@ PRODUCTION_READ_ENV_ALLOWLIST = {
     "BIOMCP_GENCC_CHILD_EXPECT": "test-subprocess assertion, not operator configuration",
     "BIOMCP_GENCC_CHILD_HOLD_LEASE": "test-subprocess barrier, not operator configuration",
     "BIOMCP_GENCC_CHILD_OPEN": "test-subprocess instruction, not operator configuration",
-    "BIOMCP_GENCC_CHILD_RELEASE": "test-subprocess barrier, not operator configuration",
     "BIOMCP_GENCC_CHILD_TIMEOUT_MS": "test-subprocess deadline, not operator configuration",
     "BIOMCP_GENCC_TEST_BLOCK_PUBLICATION": "debug-only test barrier, not operator configuration",
     "BIOMCP_GENCC_TEST_CRASH_AT": "debug-only crash injection, not operator configuration",
+    "BIOMCP_TEST_PANIC_TOOL": "internal MCP panic-recovery test hook, exact value 1, not operator configuration",
+    "BIOMCP_CA_TEST_EXPECT": "unit-test child-process selector, not operator configuration",
+    "BIOMCP_HEALTH_PROBE_BASE": "health handshake endpoint gated by an exact loopback test signal, not operator configuration",
     "BIOMCP_GENCC_TEST_CRASH_MARKER": "debug-only crash marker, not operator configuration",
     "BIOMCP_GENCC_TEST_FAIL_AT": "debug-only failure injection, not operator configuration",
     "BIOMCP_GENCC_TEST_NOW": "debug-only clock injection, not operator configuration",

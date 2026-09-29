@@ -6,6 +6,7 @@ use crate::entities::trial::TrialResponse;
 #[test]
 fn disease_json_next_commands_parse() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,
@@ -72,6 +73,7 @@ fn disease_json_next_commands_parse() {
 #[test]
 fn disease_json_next_commands_omit_requested_section_follow_up() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,
@@ -129,6 +131,7 @@ fn disease_json_next_commands_omit_requested_section_follow_up() {
 #[test]
 fn disease_json_suggestions_match_see_also_without_more_hints() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,
@@ -178,6 +181,7 @@ fn disease_json_suggestions_match_see_also_without_more_hints() {
 #[test]
 fn disease_json_next_commands_include_top_gene_context() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0100135".to_string(),
         name: "Dravet syndrome".to_string(),
         definition: None,

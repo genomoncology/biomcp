@@ -64,7 +64,10 @@ async fn disease_card_fixture_server()
                 let body = if request.starts_with("GET /query?") {
                     r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
-                    r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]}}"#
+                    // The embedded DisGeNET block seeds the card's genes
+                    // (ticket 1256): with Open Targets unreachable these
+                    // genes must carry DisGeNET's name, not Open Targets'.
+                    r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
                 } else if request.contains("query.cond=Medulloblastoma") {
                     r#"{"studies":[{"protocolSection":{"identificationModule":{"nctId":"NCT00000001","briefTitle":"Medulloblastoma Trial 1"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000002","briefTitle":"Medulloblastoma Trial 2"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000003","briefTitle":"Medulloblastoma Trial 3"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000004","briefTitle":"Medulloblastoma Trial 4"},"statusModule":{"overallStatus":"RECRUITING"}}},{"protocolSection":{"identificationModule":{"nctId":"NCT00000005","briefTitle":"Medulloblastoma Trial 5"},"statusModule":{"overallStatus":"RECRUITING"}}}],"totalCount":36,"nextPageToken":"fixture-next-page"}"#
                 } else {
@@ -123,6 +126,274 @@ async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
     }
     let requests = requests.lock().expect("lock fixture requests").join("\n");
     assert!(requests.contains("query.cond=Medulloblastoma"));
+}
+
+/// A fixture that answers every request with a fresh-cacheable 200:
+/// one-second freshness window, so a later fetch past that window with
+/// the server gone is a stale serve.
+async fn stale_serve_fixture_server()
+-> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind stale-serve fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock fixture requests")
+                    .push(request.clone());
+                let body = if request.starts_with("GET /query?") {
+                    r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
+                } else if request.starts_with("GET /disease/MONDO:0007959") {
+                    // Same DisGeNET seed as the card fixture: the stale
+                    // card must still credit DisGeNET for its genes, so
+                    // the fixture has to seed them (ticket 1256).
+                    r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]},"disgenet":{"genes_related_to_disease":[{"gene_symbol":"PIK3CA","score":0.7}]}}"#
+                } else if request.contains("query.cond=Medulloblastoma") {
+                    r#"{"studies":[],"totalCount":36}"#
+                } else {
+                    r#"{"studies":[],"totalCount":0}"#
+                };
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: max-age=1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+fn stale_serve_env(env: &mut DiseaseCardFixtureEnv, cache_root: &std::path::Path, base: &str) {
+    env.set(
+        "BIOMCP_CACHE_DIR",
+        cache_root.to_str().expect("utf-8 cache root"),
+    );
+    env.set("BIOMCP_MYDISEASE_BASE", base);
+    env.set("BIOMCP_CTGOV_BASE", base);
+    env.set("BIOMCP_OLS4_BASE", "://unavailable-ols-fixture");
+    env.set("BIOMCP_MYCHEM_BASE", "://unavailable-mychem-fixture");
+    env.set(
+        "BIOMCP_OPENTARGETS_BASE",
+        "://unavailable-opentargets-fixture",
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_stale_disease_card_tells_the_clinician_the_cache_age() {
+    let (base, _requests, server) = stale_serve_fixture_server().await;
+    let root = crate::test_support::TempDirGuard::new("stale-card-cache");
+    let mut env = DiseaseCardFixtureEnv::new();
+    stale_serve_env(&mut env, root.path(), &base);
+
+    let first = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "disease".to_string(),
+        "Medulloblastoma".to_string(),
+    ])
+    .await
+    .expect("fresh disease card");
+    assert!(
+        !first.contains("Cache note:"),
+        "a fresh serve carries no cache note: {first}"
+    );
+
+    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
+    server.abort();
+
+    let stale = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "disease".to_string(),
+        "Medulloblastoma".to_string(),
+    ])
+    .await
+    .expect("stale disease card");
+    assert!(
+        stale.contains("Cache note: MyDisease.info data served from cache,"),
+        "the stale card states the provider and the cache fact: {stale}"
+    );
+    assert!(
+        stale.contains("older than the provider's freshness window)."),
+        "the note keeps the log line's honest wording: {stale}"
+    );
+    assert!(
+        stale.contains("Genes (DisGeNET): PIK3CA"),
+        "with Open Targets unreachable, the seeded genes carry DisGeNET's name, not Open Targets': {stale}"
+    );
+    assert!(
+        !stale.contains("Genes (Open Targets)"),
+        "Open Targets must not be credited for another source's genes: {stale}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn stale_search_json_carries_the_cache_age_in_the_meta_notes() {
+    let (base, _requests, server) = stale_serve_fixture_server().await;
+    let root = crate::test_support::TempDirGuard::new("stale-search-cache");
+    let mut env = DiseaseCardFixtureEnv::new();
+    stale_serve_env(&mut env, root.path(), &base);
+
+    let first = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "search".to_string(),
+        "disease".to_string(),
+        "-q".to_string(),
+        "Medulloblastoma".to_string(),
+        "--json".to_string(),
+    ])
+    .await
+    .expect("fresh search json");
+    assert!(
+        !first.contains("served from cache"),
+        "a fresh serve carries no stale note: {first}"
+    );
+
+    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
+    server.abort();
+
+    let stale = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "search".to_string(),
+        "disease".to_string(),
+        "-q".to_string(),
+        "Medulloblastoma".to_string(),
+        "--json".to_string(),
+    ])
+    .await
+    .expect("stale search json");
+    let body: serde_json::Value = serde_json::from_str(&stale).expect("search json parses");
+    let notes = body
+        .pointer("/_meta/notes")
+        .and_then(|v| v.as_array())
+        .unwrap_or_else(|| panic!("_meta.notes must exist on a stale search: {stale}"));
+    let joined = notes
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        joined.contains("MyDisease.info data served from cache,"),
+        "the JSON consumer sees the provider and the cache fact: {joined}"
+    );
+    assert!(
+        joined.contains("older than the provider's freshness window)."),
+        "the note keeps the log line's honest wording: {joined}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_stale_mcp_call_tells_the_clinician_the_cache_age_on_both_channels() {
+    // Ticket 1256, review P0-3: the MCP path drives the alias arm of
+    // run_outcome_with_worker_stack, which once called run_outcome_inner
+    // directly — outside the stale-serve scope — so neither the card note
+    // nor the JSON _meta.notes sentence could ever appear over MCP. This
+    // test drives execute_mcp (the MCP entry) against the stale fixture
+    // and proves both channels.
+    let (base, _requests, server) = stale_serve_fixture_server().await;
+    let root = crate::test_support::TempDirGuard::new("stale-mcp-cache");
+    let mut env = DiseaseCardFixtureEnv::new();
+    stale_serve_env(&mut env, root.path(), &base);
+
+    let fresh_card = crate::cli::execute_mcp(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "disease".to_string(),
+        "Medulloblastoma".to_string(),
+    ])
+    .await
+    .expect("fresh mcp card");
+    assert!(
+        !fresh_card.text.contains("Cache note:"),
+        "a fresh MCP serve carries no cache note: {}",
+        fresh_card.text
+    );
+    let fresh_json = crate::cli::execute_mcp(vec![
+        "biomcp".to_string(),
+        "search".to_string(),
+        "disease".to_string(),
+        "-q".to_string(),
+        "Medulloblastoma".to_string(),
+        "--json".to_string(),
+    ])
+    .await
+    .expect("fresh mcp search json");
+    assert!(
+        !fresh_json.text.contains("served from cache"),
+        "a fresh MCP serve carries no stale note: {}",
+        fresh_json.text
+    );
+
+    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
+    server.abort();
+
+    let stale_card = crate::cli::execute_mcp(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "disease".to_string(),
+        "Medulloblastoma".to_string(),
+    ])
+    .await
+    .expect("stale mcp card");
+    assert!(
+        stale_card
+            .text
+            .contains("Cache note: MyDisease.info data served from cache,"),
+        "the MCP card states the provider and the cache fact: {}",
+        stale_card.text
+    );
+    assert!(
+        stale_card
+            .text
+            .contains("older than the provider's freshness window)."),
+        "the MCP note keeps the log line's honest wording: {}",
+        stale_card.text
+    );
+
+    let stale_json = crate::cli::execute_mcp(vec![
+        "biomcp".to_string(),
+        "search".to_string(),
+        "disease".to_string(),
+        "-q".to_string(),
+        "Medulloblastoma".to_string(),
+        "--json".to_string(),
+    ])
+    .await
+    .expect("stale mcp search json");
+    let body: serde_json::Value =
+        serde_json::from_str(&stale_json.text).expect("mcp search json parses");
+    let notes = body
+        .pointer("/_meta/notes")
+        .and_then(|v| v.as_array())
+        .unwrap_or_else(|| panic!("_meta.notes must exist over MCP: {}", stale_json.text));
+    let joined = notes
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        joined.contains("MyDisease.info data served from cache,"),
+        "the MCP JSON consumer sees the provider and the cache fact: {joined}"
+    );
 }
 
 #[test]

@@ -476,7 +476,40 @@ impl BioMcpError {
             {
                 "PMC Open Access package-route resolution failed.".to_string()
             }
+            // DDInter parse/read errors are marked with the bundle
+            // prefix; only those surface as a bundle-read failure.
+            // Unmarked Api errors (download failures) keep the generic
+            // line so upstream body text never leaks (ticket 1254).
+            Self::Api { message, .. }
+                if source == "DDInter"
+                    && message.starts_with(crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER) =>
+            {
+                format!(
+                    "DDInter bundle could not be read: {}",
+                    message
+                        .strip_prefix(crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER)
+                        .unwrap_or(message)
+                )
+            }
+            // An HTML reply where the bundle was expected is a download
+            // failure, not an unreadable bundle (ticket 1256). The
+            // content-type is our header, not upstream body text.
+            Self::Api { message, .. }
+                if source == "DDInter"
+                    && message
+                        .starts_with(crate::sources::ddinter::DDINTER_BUNDLE_DOWNLOAD_MARKER) =>
+            {
+                format!(
+                    "DDInter bundle download failed: {}",
+                    message
+                        .strip_prefix(crate::sources::ddinter::DDINTER_BUNDLE_DOWNLOAD_MARKER)
+                        .unwrap_or(message)
+                )
+            }
             Self::Api { .. } => format!("API request to {source} failed."),
+            Self::ApiJson { api, .. } if source == "DDInter" => {
+                format!("DDInter bundle could not be decoded ({api})")
+            }
             Self::ApiJson { .. } => format!("API response from {source} could not be decoded."),
             Self::BodyLimit { max_bytes, .. } => {
                 format!("API error from {source}: Response body exceeded {max_bytes} bytes")
@@ -882,6 +915,79 @@ mod tests {
         let bounded = bounded_external_message(&over);
         assert_eq!(bounded.len(), 512);
         assert!(bounded.is_char_boundary(bounded.len()));
+    }
+
+    #[test]
+    fn ddinter_bundle_read_errors_render_with_their_file_detail() {
+        let marker = crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER;
+        let error = BioMcpError::Api {
+            api: "DDInter".to_string(),
+            message: format!("{marker}ddinter_downloads_code_A.csv could not be parsed: bad quote"),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "DDInter bundle could not be read: ddinter_downloads_code_A.csv could not be parsed: bad quote"
+        );
+        // The internal read sentinel must not surface in the public
+        // wording.
+        assert!(
+            !projection
+                .message
+                .contains(crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER)
+        );
+    }
+
+    #[test]
+    fn ddinter_download_failures_keep_the_generic_line_and_leak_no_body() {
+        let error = BioMcpError::Api {
+            api: "DDInter".to_string(),
+            message:
+                "ddinter_downloads_code_A.csv: HTTP 503 Service Unavailable: upstream outage html"
+                    .to_string(),
+        };
+        let projection = error.public_projection();
+        assert_eq!(projection.message, "API request to DDInter failed.");
+        assert!(!projection.message.contains("503"));
+        assert!(!projection.message.contains("upstream outage html"));
+    }
+
+    #[test]
+    fn ddinter_html_download_replies_name_the_download_not_the_bundle_read() {
+        let marker = crate::sources::ddinter::DDINTER_BUNDLE_DOWNLOAD_MARKER;
+        let error = BioMcpError::Api {
+            api: "DDInter".to_string(),
+            message: format!(
+                "{marker}endpoint answered HTML (content-type: text/html), not the CSV bundle"
+            ),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "DDInter bundle download failed: endpoint answered HTML (content-type: text/html), not the CSV bundle",
+            "an HTML reply says the download failed; it is not an unreadable bundle"
+        );
+        // The marker is consumed by the projection prefix; what must
+        // never leak is the other arm's sentinel (a read failure
+        // surfacing as download wording).
+        assert!(
+            !projection
+                .message
+                .contains(crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER)
+        );
+    }
+
+    #[test]
+    fn ddinter_decode_failures_name_the_api() {
+        let error = BioMcpError::ApiJson {
+            api: "DDInter".to_string(),
+            source: serde_json::from_str::<serde_json::Value>("nope").expect_err("parse error"),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "DDInter bundle could not be decoded (DDInter)"
+        );
     }
 
     #[test]

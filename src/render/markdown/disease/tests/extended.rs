@@ -1,6 +1,7 @@
 #[test]
 fn disease_markdown_section_only_shows_disgenet_section() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0007254".to_string(),
         name: "breast cancer".to_string(),
         definition: None,
@@ -55,6 +56,7 @@ fn disease_markdown_section_only_shows_disgenet_section() {
 #[test]
 fn disease_markdown_disgenet_renders_sparse_optional_fields() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0000001".to_string(),
         name: "sparse disease".to_string(),
         definition: None,
@@ -107,6 +109,7 @@ fn disease_markdown_disgenet_renders_sparse_optional_fields() {
 #[test]
 fn disease_markdown_funding_renders_truthful_notes_without_table() {
     let mut disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0007947".to_string(),
         name: "Marfan syndrome".to_string(),
         definition: None,

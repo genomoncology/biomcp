@@ -93,5 +93,6 @@ Ticket 1190's sixty-second waits stay; they cover genuine teardown latency.
   that previously failed every [1] parametrization. A third signal-dependent
   site (the parallel-workers terminate test) was converted too; two
   non-signaled completion sites were deliberately left untouched.
-- Design review: pending
-- Code review: pending
+- Design review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the work landed without one)
+- Code review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the work landed without one)
+- Verification: shipped in the 0.8.x series (no gate record was kept before ticket 1219 introduced records); see CHANGELOG and git history

@@ -87,3 +87,20 @@ fn decode_aggregate_response_rejects_http_html_and_non_utf8_errors() {
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(format!("{err:?}").contains("UTF-8"));
 }
+
+#[test]
+fn parse_aggregate_response_rejects_a_nesting_bomb() {
+    // A >64-deep VAERS body must be rejected by the pre-parse depth
+    // scan (ticket 1255): roxmltree's parser recurses per open tag,
+    // so the scan must reject before any parse runs. The honest Api
+    // error names the limit, and the open tail proves rejection
+    // happens before the unclosed document reaches the parser.
+    let bomb = format!("<page>{}", "<e>".repeat(100));
+    let err = parse_aggregate_response(&bomb).expect_err("depth bomb rejected");
+    let expected = format!(
+        "nesting exceeds {} levels",
+        crate::xml::EXTERNAL_XML_DEPTH_LIMIT
+    );
+    let msg = format!("{err:?}");
+    assert!(msg.contains(&expected), "got: {msg}");
+}

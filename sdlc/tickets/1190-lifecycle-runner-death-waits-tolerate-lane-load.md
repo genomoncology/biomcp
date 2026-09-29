@@ -107,17 +107,17 @@ None.
 
 ## Review
 
-- Amendment 1 design review: ACCEPT 2026-09-12 with no blockers; four text
+- Design re-review (amendment 1): ACCEPT 2026-09-12 with no blockers; four text
   corrections incorporated (citations 350-361 and :368, solo-pass
   reconciliation, complexity wording, and the two load-bearing constraints:
   timer at Popen, pid-only kill with start_new_session). Equivalence proven:
   supervisor and server were never in the wrapper's killed group; owner-death
   detection is pid-based; the exit assertion strengthens.
-- Amendment 1 code review: ACCEPT 2026-09-12 at 5eefd94c; one file, 8
+- Code re-review (amendment 1): ACCEPT 2026-09-12 at 5eefd94c; one file, 8
   insertions, 1 deletion, confirmed by the primary agent with git show --stat;
   constraints verified, loop termination proven, ordering race ruled out.
   Report-only: kill lands within one 0.05s poll interval of the deadline.
-- Original design review: ACCEPT 2026-09-12 with no blockers; three ticket corrections
+- Design review: ACCEPT 2026-09-12 with no blockers; three ticket corrections
   incorporated (disease-site wording, thirteen-case count, preventive sites
   774/100/166, slug filename). Residual risks noted: article:817 setup wait
   and routine-fixture-recovery post-kill waits share the exposure class and

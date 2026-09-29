@@ -1101,6 +1101,24 @@
       "owner": "render-contracts",
       "reason": "Ticket 1186 freezes the Unicode-16 provider sanitizer; ticket 1142 is the first consumer.",
       "removal_condition": "Remove when a Markdown renderer consumes sanitize_provider_inline."
+    },
+    {
+      "path": "src/cli/discover.rs",
+      "scope": "item",
+      "item": "cache_mode: crate::sources::TestCacheModeGuard,",
+      "occurrence": 1,
+      "owner": "1261",
+      "reason": "held-for-drop test cache-mode guard restores the override when the environment drops",
+      "removal_condition": "Goes when the discover tests stop pinning the cache mode or the guard moves into a shared fixture helper"
+    },
+    {
+      "path": "src/cli/stale_json_note_tests.rs",
+      "scope": "item",
+      "item": "root: crate::test_support::TempDirGuard,",
+      "occurrence": 1,
+      "owner": "1263",
+      "reason": "held-for-drop guard keeps the temp cache root alive",
+      "removal_condition": "Goes when the stale-note tests stop using a private cache directory"
     }
   ]
 }

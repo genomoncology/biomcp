@@ -9,3 +9,10 @@ Outcome needed before the record entity is enabled over HTTP: an authenticated p
 Also needed: logs for record calls must carry only an allowlist of fields (request id, operation, duration, error category) and nothing else from the record payload, since these calls touch a real patient's own data.
 
 No design decided here. This is a gate for a future ticket, not the ticket itself.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Stays open as the standing gate for the FHIR record entity: nothing
+record-bound ships over the HTTP transport until that transport has
+authenticated per-user session isolation with immutable context
+handles. This is the 1.0 design precondition, not a defect.

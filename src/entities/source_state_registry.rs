@@ -372,7 +372,7 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "disease",
         "genes",
         "Genes",
-        &["Monarch Initiative", "CIViC", "Open Targets"],
+        &["Monarch Initiative", "CIViC", "Open Targets", "DisGeNET"],
         Aggregation::Additive,
     ),
     state(

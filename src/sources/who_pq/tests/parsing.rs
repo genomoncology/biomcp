@@ -7,6 +7,11 @@ use crate::test_support::TempDirGuard;
 use reqwest::header::HeaderValue;
 
 #[test]
+fn boundary_phrase_rejection_advances_across_multibyte_character() {
+    assert!(!contains_boundary_phrase("β-blockers", "β-blocker"));
+}
+
+#[test]
 fn parsers_require_expected_headers() {
     let err = parse_who_pq_csv("wrong,header\n1,2\n").expect_err("parse should fail");
     assert!(format!("{err:?}").contains("missing required column"));

@@ -336,22 +336,16 @@ assert [tool["name"] for tool in tools_before] == [
     "gene_cspec", "variant_articles"]
 assert len(tools_before) == 7
 search_schema = next(tool["inputSchema"] for tool in tools_before if tool["name"] == "search")
-gene_branch = next(branch for branch in search_schema["oneOf"]
-                   if branch["properties"]["entity"] == {"const": "gene"})
-assert gene_branch == {
-    "additionalProperties": False,
-    "anyOf": [{"required": ["query"]}, {"required": ["gene_type"]},
-              {"required": ["chromosome"]}, {"required": ["region"]}],
-    "properties": {
-        "chromosome": {"maxLength": 256, "minLength": 1, "type": "string"},
-        "entity": {"const": "gene"},
-        "gene_type": {"maxLength": 256, "minLength": 1, "type": "string"},
-        "json": {"default": False, "type": "boolean"},
-        "limit": {"default": 10, "maximum": 25, "minimum": 1, "type": "integer"},
-        "offset": {"default": 0, "maximum": 1000, "minimum": 0, "type": "integer"},
-        "query": {"maxLength": 256, "minLength": 1, "type": "string"},
-        "region": {"maxLength": 256, "minLength": 1, "type": "string"}},
-    "required": ["entity"], "type": "object"}
+assert search_schema["type"] == "object"
+assert "oneOf" not in search_schema and "anyOf" not in search_schema and "allOf" not in search_schema
+assert search_schema["required"] == ["entity"]
+assert search_schema["additionalProperties"] is False
+assert "gene" in search_schema["properties"]["entity"]["enum"]
+for field in ("query", "region", "gene_type", "chromosome"):
+    assert search_schema["properties"][field] == {"maxLength": 256, "minLength": 1, "type": "string"}
+assert search_schema["properties"]["limit"] == {"default": 10, "maximum": 25, "minimum": 1, "type": "integer"}
+assert search_schema["properties"]["offset"] == {"default": 0, "maximum": 1000, "minimum": 0, "type": "integer"}
+assert search_schema["properties"]["json"] == {"default": False, "type": "boolean"}
 help_before = subprocess.check_output([binary, "search", "gene", "--help"], text=True, env=env)
 help_after = subprocess.check_output([binary, "search", "gene", "--help"], text=True, env=env)
 assert help_before == help_after == """Search genes by symbol, name, type, or chromosome (MyGene.info)

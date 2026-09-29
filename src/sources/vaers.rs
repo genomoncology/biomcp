@@ -8,6 +8,7 @@ use roxmltree::{Document, Node};
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 const VAERS_BASE: &str = "https://wonder.cdc.gov";
 const VAERS_API: &str = "vaers";
@@ -326,10 +327,11 @@ fn decode_aggregate_response(
 }
 
 fn parse_aggregate_response(xml: &str) -> Result<VaersAggregateTable, BioMcpError> {
-    let doc = Document::parse(xml).map_err(|source| BioMcpError::Api {
-        api: VAERS_API.to_string(),
-        message: format!("Invalid CDC WONDER VAERS XML response: {source}"),
-    })?;
+    let doc =
+        parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT).map_err(|source| BioMcpError::Api {
+            api: VAERS_API.to_string(),
+            message: format!("Invalid CDC WONDER VAERS XML response: {source}"),
+        })?;
 
     if let Some(message) = processing_error_message(&doc) {
         return Err(BioMcpError::Api {

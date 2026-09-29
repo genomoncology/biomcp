@@ -85,7 +85,7 @@ fn counts_only_json_projection_reports_truthful_exact_counts() {
             count: 1,
             total: Some(12),
             error: None,
-            note: Some("Counts-only projection".to_string()),
+            note: None,
             results: vec![json!({"symbol":"BRAF"})],
             links: vec![SearchAllLink {
                 rel: "get.top".to_string(),
@@ -108,7 +108,7 @@ fn counts_only_json_projection_reports_truthful_exact_counts() {
     assert_eq!(section["total"], 12);
     assert_eq!(section["count_exact"], true);
     assert!(section["total_lower_bound"].is_null());
-    assert_eq!(section["note"], "Counts-only projection");
+    assert!(section["note"].is_null());
     assert!(section.get("results").is_none());
     assert!(section.get("links").is_none());
 }

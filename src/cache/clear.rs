@@ -151,23 +151,21 @@ fn shared_leases() -> &'static (Mutex<LeaseMap>, Condvar) {
     SHARED_LEASES.get_or_init(|| (Mutex::new(HashMap::new()), Condvar::new()))
 }
 
-fn lease_registry() -> io::Result<MutexGuard<'static, LeaseMap>> {
-    shared_leases()
-        .0
-        .lock()
-        .map_err(|_| io::Error::other("cache operation lease registry is poisoned"))
+fn lease_registry() -> MutexGuard<'static, LeaseMap> {
+    // A poisoned registry still holds a structurally valid map; the
+    // guarded invariants are re-established by the caller's checks.
+    crate::utils::sync::recover_poison(shared_leases().0.lock())
 }
 
-fn register_shared(root: &Path) -> io::Result<SharedLease> {
+fn register_shared(root: &Path) -> SharedLease {
     let root = root.to_path_buf();
-    *lease_registry()?.entry(root.clone()).or_default() += 1;
-    Ok(SharedLease { root })
+    *lease_registry().entry(root.clone()).or_default() += 1;
+    SharedLease { root }
 }
 
 fn unregister_shared(root: &Path) {
-    if let Ok(mut leases) = shared_leases().0.lock()
-        && let Some(count) = leases.get_mut(root)
-    {
+    let mut leases = crate::utils::sync::recover_poison(shared_leases().0.lock());
+    if let Some(count) = leases.get_mut(root) {
         *count -= 1;
         if *count == 0 {
             leases.remove(root);
@@ -191,7 +189,7 @@ fn local_shared_upgrade_error() -> io::Error {
 }
 
 fn try_exclusive_without_local_shared(cache_root: &Path, file: &File) -> io::Result<bool> {
-    let leases = lease_registry()?;
+    let leases = lease_registry();
     if leases.get(cache_root).copied().unwrap_or_default() > 0 {
         return Err(local_shared_upgrade_error());
     }
@@ -207,7 +205,7 @@ pub(crate) fn lock_cache_maintenance(cache_root: &Path) -> io::Result<CacheOpera
     if crate::sources::current_variant_article_deadline().is_some() {
         return lock_maintenance_with_deadline(cache_root, file);
     }
-    let leases = lease_registry()?;
+    let leases = lease_registry();
     if leases.get(cache_root).copied().unwrap_or_default() > 0 {
         return Err(local_shared_upgrade_error());
     }
@@ -220,12 +218,9 @@ pub(crate) fn lock_cache_maintenance_after_shared(
     cache_root: &Path,
 ) -> io::Result<CacheOperationGuard> {
     let file = operation_lock_file(cache_root)?;
-    let mut leases = lease_registry()?;
+    let mut leases = lease_registry();
     while leases.get(cache_root).copied().unwrap_or_default() > 0 {
-        leases = shared_leases()
-            .1
-            .wait(leases)
-            .map_err(|_| io::Error::other("cache operation lease registry is poisoned"))?;
+        leases = crate::utils::sync::recover_poison(shared_leases().1.wait(leases));
     }
     file.lock_exclusive()?;
     drop(leases);
@@ -266,7 +261,7 @@ pub(crate) fn try_lock_cache_maintenance(
 
 pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
     let file = operation_lock_file(cache_root)?;
-    let lease = register_shared(cache_root)?;
+    let lease = register_shared(cache_root);
     let result = if let Some(deadline) = crate::sources::current_variant_article_deadline() {
         loop {
             match FileExt::try_lock_shared(&file) {
@@ -364,7 +359,7 @@ where
     F: FnMut(),
 {
     let file = operation_lock_file(cache_root)?;
-    let lease = register_shared(cache_root)?;
+    let lease = register_shared(cache_root);
     lock_file_shared_until(file, lease, deadline, waiting).await
 }
 

@@ -90,3 +90,11 @@ against binaries that were not the one PyPI served.
 ## Priority
 
 Resolved on main; the issue stays open until 0.9.1 ships the fixed wheel.
+
+## Resolved
+
+Fixed by ticket 1225 (main `de21f89e`, merge and record in
+`sdlc/records/1225-stop-the-wheel-binary-from-overflowing-the-execute-stack.md`);
+the 0.9.1 wheel path re-verifies it via the release smoke's
+stack-overflow assertions, and ticket 1249 keeps the wheel floor
+true by construction.

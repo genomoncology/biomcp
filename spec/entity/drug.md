@@ -275,8 +275,13 @@ try:
     tools = rpc(server, {"jsonrpc":"2.0", "id":99, "method":"tools/list", "params":{}})["result"]["tools"]
     assert [tool["name"] for tool in tools] == ["biomcp", "search", "get", "variant_normalize_car", "variant_erepo", "gene_cspec", "variant_articles"]
     get_schema = next(tool["inputSchema"] for tool in tools if tool["name"] == "get")
-    drug_branch = next(branch for branch in get_schema["oneOf"] if branch["properties"]["entity"]["const"] == "drug")
-    assert drug_branch["properties"]["sections"]["items"]["enum"] == ["label", "regulatory", "safety", "shortage", "targets", "indications", "interactions", "civic", "approvals", "cell_lines", "all"]
+    assert get_schema["type"] == "object" and "oneOf" not in get_schema
+    drug_sections = ["label", "regulatory", "safety", "shortage", "targets",
+                     "indications", "interactions", "civic", "approvals", "cell_lines", "all"]
+    merged_sections = get_schema["properties"]["sections"]["items"]["enum"]
+    # The root sections enum is the cross-entity union, so drug's sections
+    # are a subset rather than an equality.
+    assert set(drug_sections) <= set(merged_sections)
 finally:
     server.terminate()
     server.wait(timeout=5)

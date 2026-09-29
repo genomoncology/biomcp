@@ -80,7 +80,7 @@ def _declarations() -> dict[str, set[str]]:
     }
 
 
-def _trial_tool_schema(tool_name: str) -> dict[str, object]:
+def _tool_schema(tool_name: str) -> dict[str, object]:
     result = subprocess.run(
         [str(BIOMCP_BIN), "mcp", "tools"],
         cwd=REPO_ROOT,
@@ -89,12 +89,7 @@ def _trial_tool_schema(tool_name: str) -> dict[str, object]:
         text=True,
     )
     tools = json.loads(result.stdout)
-    tool = next(tool for tool in tools if tool["name"] == tool_name)
-    return next(
-        branch
-        for branch in tool["inputSchema"]["oneOf"]
-        if branch["properties"]["entity"].get("const") == "trial"
-    )
+    return next(tool["inputSchema"] for tool in tools if tool["name"] == tool_name)
 
 
 def _long_options(help_text: str) -> set[str]:
@@ -156,10 +151,14 @@ def test_trial_capability_declarations_match_cli_and_typed_mcp() -> None:
         _run_help("search", "trial", "--help")
     )
 
-    search = _trial_tool_schema("search")
-    get = _trial_tool_schema("get")
-    assert declarations["typed-mcp-search-fields"] == set(search["properties"])
-    assert declarations["typed-mcp-detail-sections"] == set(
+    search = _tool_schema("search")
+    get = _tool_schema("get")
+    assert "trial" in search["properties"]["entity"]["enum"]
+    assert "trial" in get["properties"]["entity"]["enum"]
+    # The typed roots are flat cross-entity unions (ADR 0002), so the
+    # declared trial sets are subsets of the merged unions, not equalities.
+    assert declarations["typed-mcp-search-fields"] <= set(search["properties"])
+    assert declarations["typed-mcp-detail-sections"] <= set(
         get["properties"]["sections"]["items"]["enum"]
     )
 
@@ -168,7 +167,9 @@ def test_trial_capability_declarations_match_cli_and_typed_mcp() -> None:
     assert declared_cli_sections == _cli_trial_sections(get_help)
 
     sources = declarations["trial-sources"]
-    assert sources == set(search["properties"]["source"]["enum"])
+    # The root source enum is the cross-author/article/trial union, so the
+    # declared trial sources are a subset (ADR 0002).
+    assert sources <= set(search["properties"]["source"]["enum"])
     assert sources == _cli_trial_sources(_run_help("search", "trial", "--help"))
 
     exclusions = declarations["typed-mcp-cli-only-exclusions"]

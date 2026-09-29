@@ -561,7 +561,7 @@ mod tests {
         limiter.wait_for_url(&url_b).await;
 
         assert!(
-            start.elapsed() < Duration::from_millis(80),
+            start.elapsed() < Duration::from_millis(80), // watchdog: same-host prefix independence window
             "same host, different prefixes should not block each other"
         );
     }

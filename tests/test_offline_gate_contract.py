@@ -75,11 +75,14 @@ def test_authoritative_linux_job_installs_unpinned_gate_tools() -> None:
     assert "BUBBLEWRAP_VERSION" not in WORKFLOW
     assert "APPARMOR_VERSION" not in WORKFLOW
     assert "RIPGREP_VERSION" not in WORKFLOW
-    assert "sudo apt-get install --no-install-recommends" in canonical
+    assert "sudo apt-get install -y --no-install-recommends" in canonical
     install = canonical.split("sudo apt-get install", 1)[1]
     install = install.split("sudo install", 1)[0]
     assert "=" not in install
-    packages = set(install.replace("\\", " ").split()) - {"--no-install-recommends"}
+    packages = (
+        set(install.replace("\\", " ").split())
+        - {"--no-install-recommends", "-y"}
+    )
     assert packages == {"bubblewrap", "apparmor", "apparmor-profiles", "ripgrep"}
     assert "make test" in canonical
     assert "make spec" in canonical
@@ -89,9 +92,9 @@ def test_authoritative_linux_job_fetches_release_history_for_version_contracts()
     None
 ):
     workflow = yaml.safe_load(WORKFLOW)
-    checkout = workflow["jobs"]["canonical-gates"]["steps"][0]
+    steps = workflow["jobs"]["canonical-gates"]["steps"]
+    checkout = next(s for s in steps if s.get("name") == "Check out the exact revision")
 
-    assert checkout["name"] == "Check out the exact revision"
     assert checkout["with"]["fetch-depth"] == 0
     assert checkout["with"]["filter"] == "blob:none"
     full_history_checkouts = [
@@ -123,8 +126,10 @@ def test_authoritative_linux_job_loads_scoped_apparmor_before_compilation() -> N
     )
     for contract in expected:
         assert contract in canonical
+    # nextest installs as a prebuilt binary now (ticket 1275); the
+    # sandbox still loads before any cargo install runs.
     assert canonical.index("tools/run-offline -- true") < canonical.index(
-        "cargo install cargo-nextest"
+        "cargo install cargo-deny"
     )
     assert canonical.index("tools/run-offline -- true") < canonical.index("make lint")
 
@@ -434,3 +439,41 @@ def test_enclosed_runner_revalidates_privilege_and_network_state() -> None:
         in completed.stdout
     )
     assert completed.stdout.rstrip().endswith("reused")
+
+
+def test_release_panic_contract_runs_in_ci_and_is_pinned() -> None:
+    # Ticket 1257: the release-mode panic-recovery test moved from
+    # the opt-in `make verify` lane onto the canonical CI lane. The
+    # job's build and test commands are pinned exactly so a
+    # profile swap, a filter change, or a dropped job breaks here
+    # first.
+    parsed = yaml.safe_load(WORKFLOW)
+    job = parsed["jobs"].get("release-panic")
+    assert job is not None, "ci.yml must run the release-panic job"
+    assert job["runs-on"] == "ubuntu-24.04"
+
+    run_steps = [s for s in job["steps"] if "run" in s]
+    assert len(run_steps) == 2, "release-panic: install step plus one contract step"
+
+    contract = run_steps[-1]["run"]
+    assert contract == (
+        "cargo build --release --locked\n"
+        "cargo nextest run --release --test rmcp_client_contract"
+        " rmcp_stdio_recovers_from_tool_panic\n"
+    ), "release-panic: the contract step must build release and run the panic test"
+    assert "run-offline" not in contract, (
+        "release-panic: the lane must not enter the offline namespace"
+    )
+    for step in job["steps"]:
+        assert step.get("continue-on-error") is None, (
+            "release-panic: no step may continue on error"
+        )
+        assert "if:" not in step, "release-panic: no step may be conditional"
+
+    # `make verify` keeps its release invocation: the CI job and the
+    # live lane must not drift apart silently.
+    verify = MAKEFILE.split("verify:\n", 1)[1].split("\nrelease-live-smoke:", 1)[0]
+    assert (
+        "nextest run --release --test rmcp_client_contract"
+        " rmcp_stdio_recovers_from_tool_panic" in verify
+    ), "make verify must keep the release-mode panic contract"

@@ -67,6 +67,10 @@ pub(super) async fn add_genes_section(disease: &mut Disease) -> Result<(), BioMc
             disease.top_gene_scores = top_gene_scores;
             disease.associated_genes.truncate(20);
             disease.top_gene_scores.truncate(20);
+            // Open Targets replaced the gene list wholesale, so the seed
+            // rows (DisGeNET via the MyDisease hit) describe a list that
+            // no longer exists — drop them with it (ticket 1256).
+            disease.gene_associations.clear();
             return Ok(());
         }
     }

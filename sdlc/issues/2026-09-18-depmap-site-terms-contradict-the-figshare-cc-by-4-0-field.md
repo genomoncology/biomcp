@@ -39,3 +39,67 @@ grant governs the mirrored 24Q4 bytes despite the site terms, and a reworded
 attribution line for acceptance item 11. The mirror's twenty-one-month staleness
 is the weaker of the two reasons but the easier one to watch: if Figshare group
 36075 gains 25Q2 or later, the data-age objection goes away on its own.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Stays open as a gate on ticket 1206 and on Ian: DepMap's own terms
+(research use, no rehosting, no AI-training use) govern, not the
+Figshare CC BY 4.0 field, and no DepMap-sourced data ships or is
+labelled until Ian rules whether the research-use restriction fits
+BioMCP's use. 1206 must cite this file before any DepMap integration
+lands.
+
+## Decision 2026-09-27 (developer's, under Ian's delegation)
+
+Ian's direction of 2026-09-27 (recorded in
+`sdlc/issues/2026-09-27-review-follow-ups-after-the-1238-close.md`)
+moved the source licensing review, DepMap included, from himself to
+the developer: research, decide, record with citations, and bring
+him only decisions that spend money, sign an agreement, or contact a
+provider. This section supersedes the 2026-09-19 note's reservation
+of the call for Ian and the 2026-09-26 note's "until Ian rules"
+gate on the same point.
+
+Evidence re-verified 2026-09-27 from this network:
+
+- `https://depmap.org/portal/terms_text` still serves both clauses
+  the issue quotes verbatim (Commercial Use; Continuity of Terms).
+  New since the issue's quote, the terms add a clarification
+  sentence: "For clarity, machine learning and AI models are
+  permitted to be utilized with or on the Data for your own
+  internal use, or shared for non-profit research purposes,
+  including for process optimization and analysis." The Last
+  Revised date is no longer reachable (the rendered page sits
+  behind Cloudflare Turnstile; the Wayback 2026-08-10 capture is
+  the verification wall), so the revision date is unverifiable —
+  the text itself is the authority available.
+- `https://api.figshare.com/v2/articles/27993248` still reports
+  license CC BY 4.0, published 2024-12-10, group 36075. Unchanged.
+- The Figshare mirror's newest DepMap release is still 24Q4; the
+  DepMap forum announces 26Q1 (2026-04-01) as current. The mirror
+  remains three releases and about twenty-one months behind.
+
+Decision: DepMap stays out of shipped sources. No DepMap bytes are
+recorded as fixtures, no licence row is added, and ticket 1206
+stays parked. Reasons: the site terms restrict Commercial Use and
+require rehosters to bind every user to the full terms — carrying
+DepMap bytes in a public MIT repository would impose on BioMCP's
+users restrictions narrower than the MIT licence grants them; the
+CC BY 4.0 Figshare reading remains plausible (the Broad's own
+deposit, an irrevocable grant, and a fetch path that never touches
+depmap.org) but it is a legal judgement about contradictory
+statements by the same publisher, and settling it wrong ships
+restricted bytes; and the mirror is twenty-one months stale, so the
+clinical value of integrating now is low while the terms risk is
+undiminished. Nothing in BioMCP reads DepMap today, so the cost of
+staying out is zero.
+
+Revisit triggers: Figshare group 36075 gains a release of 25Q2 or
+later (the staleness objection dies); or DepMap publishes terms
+that resolve the contradiction (for example, stating the Figshare
+deposit governs the mirrored bytes); or Ian overrules — this
+decision is his to overturn, and only he can accept the residual
+legal exposure of the CC BY reading.
+
+No money, agreement, or provider contact is involved in this
+decision, so it does not go to Ian under the 2026-09-27 direction.

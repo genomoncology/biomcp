@@ -546,10 +546,13 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
     }
 
     let cache_key = trial_alias_cache_key(requested_name);
-    if let Ok(cache) = trial_alias_cache().lock()
-        && let Some(cached) = cache.get(&cache_key)
-    {
-        let mut resolution = cached.clone();
+    let cached_resolution = {
+        // Scoped: the recovered guard must not live across the
+        // resolution await below.
+        let cache = crate::utils::sync::recover_poison(trial_alias_cache().lock());
+        cache.get(&cache_key).cloned()
+    };
+    if let Some(mut resolution) = cached_resolution {
         if let Some(requested_alias) = resolution.aliases.first_mut() {
             requested_alias.label = requested_name.to_string();
         }
@@ -564,7 +567,8 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
         });
     let (resolution, cacheable) = trial_alias_resolution_from_lookup_result(requested_name, lookup);
 
-    if cacheable && let Ok(mut cache) = trial_alias_cache().lock() {
+    if cacheable {
+        let mut cache = crate::utils::sync::recover_poison(trial_alias_cache().lock());
         cache.insert(cache_key, resolution.clone());
     }
 
@@ -763,6 +767,7 @@ async fn populate_common_sections(
         drug.interaction_text = None;
         drug.interaction_pagination = None;
         drug.interaction_bundle_freshness = None;
+        drug.interaction_coverage_status = None;
     }
 
     if section_flags.include_targets {

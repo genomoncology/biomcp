@@ -34,6 +34,8 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         interaction_text: Some("DRUG INTERACTIONS\n\nWarfarin interacts with aspirin.".to_string()),
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -85,6 +87,8 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -109,6 +113,38 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
             .contains("The current DDInter download bundle has no matching rows for this drug.")
     );
     assert!(!markdown.contains("No known drug-drug interactions found."));
+
+    // Coverage states carry their own wording (ticket 1241): an
+    // uncovered drug never reads as a clean no-rows result, and the
+    // coverage line names the set.
+    let mut uncovered = drug.clone();
+    uncovered.interaction_coverage_status = Some(
+        crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage,
+    );
+    uncovered.interaction_pagination = Some(
+        crate::entities::drug::interactions::DrugInteractionPagination {
+            total: 0,
+            count: 0,
+            offset: 0,
+            limit: 10,
+            next_command: None,
+        },
+    );
+    uncovered.interaction_bundle_freshness = Some(
+        crate::entities::drug::interactions::DrugInteractionBundleFreshness {
+            status: crate::entities::drug::interactions::DrugInteractionFreshnessStatus::Fresh,
+        },
+    );
+    let markdown = drug_markdown(&uncovered, &["interactions".to_string()]).expect("markdown");
+    assert!(
+        markdown.contains("DDInter does not cover this drug"),
+        "not-covered note: {markdown}"
+    );
+    assert!(markdown.contains("DDInter coverage: not in the DDInter coverage set"));
+    assert!(
+        !markdown
+            .contains("The current DDInter download bundle has no matching rows for this drug.")
+    );
 }
 
 #[test]
@@ -174,6 +210,8 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -223,6 +261,8 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -273,6 +313,8 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -323,6 +365,8 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Rash".to_string()],
         faers_query: None,
@@ -416,7 +460,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
     ));
     assert!(!eu_regulatory.contains("BLA125514"));
     assert!(us_safety.contains(
-        "### Top adverse events (FAERS)\nRash\n\n### FDA label warnings\nImmune-mediated adverse reactions."
+        "### Top adverse events (FAERS)\nRash\n\n### Warnings\nImmune-mediated adverse reactions."
     ));
     assert!(!us_safety.contains("Updated safety communication"));
     assert!(
@@ -457,6 +501,8 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -659,6 +705,8 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Fatigue".to_string(), "Rash".to_string()],
         faers_query: None,
@@ -734,6 +782,8 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -951,134 +1001,4 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
     );
 }
 
-#[test]
-fn drug_markdown_renders_label_boxed_warning_ahead_of_other_label_sections() {
-    let drug = Drug {
-        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
-        name: "pembrolizumab".to_string(),
-        drugbank_id: None,
-        chembl_id: None,
-        unii: None,
-        drug_type: None,
-        mechanism: None,
-        mechanisms: Vec::new(),
-        approval_date: None,
-        approval_date_raw: None,
-        approval_date_display: None,
-        approval_summary: None,
-        brand_names: Vec::new(),
-        route: None,
-        targets: Vec::new(),
-        variant_targets: Vec::new(),
-        target_family: None,
-        target_family_name: None,
-        indications: Vec::new(),
-        interactions: Vec::new(),
-        interaction_text: None,
-        interaction_pagination: None,
-        interaction_bundle_freshness: None,
-        pharm_classes: Vec::new(),
-        top_adverse_events: Vec::new(),
-        faers_query: None,
-        label: Some(crate::entities::drug::DrugLabel {
-            indication_summary: vec![crate::entities::drug::DrugLabelIndication {
-                name: "melanoma".to_string(),
-                approval_date: None,
-                pivotal_trial: None,
-            }],
-            indications: None,
-            boxed_warning: Some("WARNING: SERIOUS SKIN REACTIONS".to_string()),
-            warnings: Some("Immune-mediated adverse reactions.".to_string()),
-            dosage: None,
-        }),
-        label_set_id: None,
-        shortage: None,
-        approvals: None,
-        fda_orphan_designations: None,
-        us_safety_warnings: None,
-        us_boxed_warning: None,
-        ema_regulatory: None,
-        ema_safety: None,
-        ema_shortage: None,
-        who_prequalification: None,
-        civic: None,
-        cell_lines: None,
-    };
-
-    let raw = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, true)
-        .expect("markdown");
-    let boxed_at = raw
-        .find("### Boxed Warning\nWARNING: SERIOUS SKIN REACTIONS")
-        .expect("boxed block in raw mode");
-    let warnings_at = raw
-        .find("### Warnings and Precautions")
-        .expect("warnings heading in raw mode");
-    assert!(boxed_at < warnings_at);
-    assert!(raw.contains("Immune-mediated adverse reactions."));
-
-    let summary = drug_markdown_with_region(&drug, &["label".to_string()], DrugRegion::Us, false)
-        .expect("markdown");
-    let boxed_at = summary
-        .find("### Boxed Warning\nWARNING: SERIOUS SKIN REACTIONS")
-        .expect("boxed block in summary mode");
-    let indications_at = summary
-        .find("### Approved Indications")
-        .expect("indications heading in summary mode");
-    assert!(boxed_at < indications_at);
-}
-
-#[test]
-fn drug_markdown_us_safety_block_renders_boxed_warning_first() {
-    let drug = Drug {
-        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
-        name: "pembrolizumab".to_string(),
-        drugbank_id: None,
-        chembl_id: None,
-        unii: None,
-        drug_type: None,
-        mechanism: None,
-        mechanisms: Vec::new(),
-        approval_date: None,
-        approval_date_raw: None,
-        approval_date_display: None,
-        approval_summary: None,
-        brand_names: Vec::new(),
-        route: None,
-        targets: Vec::new(),
-        variant_targets: Vec::new(),
-        target_family: None,
-        target_family_name: None,
-        indications: Vec::new(),
-        interactions: Vec::new(),
-        interaction_text: None,
-        interaction_pagination: None,
-        interaction_bundle_freshness: None,
-        pharm_classes: Vec::new(),
-        top_adverse_events: vec!["Rash".to_string()],
-        faers_query: None,
-        label: None,
-        label_set_id: None,
-        shortage: None,
-        approvals: None,
-        fda_orphan_designations: None,
-        us_safety_warnings: Some("Immune-mediated adverse reactions.".to_string()),
-        us_boxed_warning: Some("WARNING: SERIOUS SKIN REACTIONS".to_string()),
-        ema_regulatory: None,
-        ema_safety: None,
-        ema_shortage: None,
-        who_prequalification: None,
-        civic: None,
-        cell_lines: None,
-    };
-
-    let markdown = drug_markdown_with_region(&drug, &["safety".to_string()], DrugRegion::Us, false)
-        .expect("markdown");
-    let boxed_at = markdown
-        .find("### FDA boxed warning\nWARNING: SERIOUS SKIN REACTIONS")
-        .expect("boxed subsection in safety block");
-    let warnings_at = markdown
-        .find("### FDA label warnings")
-        .expect("warnings subsection in safety block");
-    assert!(boxed_at < warnings_at);
-    assert!(markdown.contains("Immune-mediated adverse reactions."));
-}
+mod label_warnings;

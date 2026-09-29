@@ -35,6 +35,7 @@ fn verification_empty_json_carries_the_trial_specific_upstream_total() {
         pagination,
         vec!["biomcp search trial --mutation anti-PD-1".into()],
         Some(2),
+        None,
     )
     .unwrap();
     let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();

@@ -213,6 +213,11 @@ fn replace_owned_binary_at(
         drop(stage_file);
         let smoke = std::process::Command::new(&stage_path)
             .arg("version")
+            // A stdio-mode server owns its streams and the smoke
+            // child must not write between frames (1264 guard catch)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
             .output()?;
         let reported = String::from_utf8_lossy(&smoke.stdout);
         let requested = new_version.trim().trim_start_matches('v');

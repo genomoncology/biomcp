@@ -18,6 +18,7 @@ fn clinical_feature_row() -> DiseasePhenotype {
 
 fn disease_with_clinical_features() -> Disease {
     Disease {
+        top_gene_source: None,
         id: "MONDO:0004277".to_string(),
         name: "uterine leiomyoma".to_string(),
         definition: None,

@@ -102,3 +102,107 @@ fn client_coverage_status_distinguishes_absent_drug_from_empty_matches() {
     assert!(!client.contains_identity(&uncovered));
     assert!(client.interactions(&uncovered).is_empty());
 }
+
+#[test]
+fn identity_terms_match_ddinter_rows_through_synonyms() {
+    // A row filed under the chemical name is found from the brand name
+    // when the anchor's synonym list carries it (ticket 1241).
+    let identity = DdinterIdentity::with_aliases(
+        "aspirin",
+        Some("Aspirin"),
+        &["Bayer".to_string(), "acetylsalicylic acid".to_string()],
+    );
+    assert!(
+        identity
+            .terms()
+            .contains(&normalize_name_key("acetylsalicylic acid").expect("key"))
+    );
+
+    let row = DdinterInteractionRow {
+        drug_a_id: "D0001".to_string(),
+        drug_a: "acetylsalicylic acid".to_string(),
+        drug_b_id: "D0002".to_string(),
+        drug_b: "warfarin".to_string(),
+        level: Some("major".to_string()),
+    };
+    let mut index = DdinterIndex {
+        rows: Vec::new(),
+        by_name: HashMap::new(),
+    };
+    let idx = index.rows.len();
+    if let Some(key) = normalize_name_key(&row.drug_a) {
+        index.by_name.entry(key).or_default().push(idx);
+    }
+    if let Some(key) = normalize_name_key(&row.drug_b) {
+        index.by_name.entry(key).or_default().push(idx);
+    }
+    index.rows.push(row);
+
+    let client = DdinterClient {
+        index: Arc::new(index),
+        freshness: DdinterBundleFreshness::Fresh,
+    };
+    assert!(client.contains_identity(&identity));
+    assert_eq!(client.interactions(&identity).len(), 1);
+
+    // Without the synonym, the same row stays unreachable from aspirin.
+    let brand_only =
+        DdinterIdentity::with_aliases("aspirin", Some("Aspirin"), &["Bayer".to_string()]);
+    assert!(
+        !brand_only
+            .terms()
+            .contains(&normalize_name_key("acetylsalicylic acid").expect("key"))
+    );
+}
+
+#[test]
+fn bundle_parse_errors_carry_the_read_marker() {
+    // Only marked errors render as "bundle could not be read"; the
+    // marker travels with the file detail (ticket 1254).
+    let body = b"DDInterID_A,Drug_A,DDInterID_B,Drug_B\nDDI1A,aspirin,DDI1B,warfarin\n";
+    let error = parse_csv_rows("ddinter_downloads_code_A.csv", body).expect_err("missing column");
+    let BioMcpError::Api { message, .. } = &error else {
+        panic!("expected Api error, got {error:?}");
+    };
+    assert!(message.starts_with(super::super::DDINTER_BUNDLE_READ_MARKER));
+    assert!(message.contains("ddinter_downloads_code_A.csv"));
+}
+
+#[test]
+fn html_download_replies_are_download_failures_not_read_failures() {
+    // The endpoint answered an HTML page where the CSV bundle was
+    // expected: a download failure with our own content-type fact, never
+    // an "unreadable bundle" (ticket 1256).
+    let header = reqwest::header::HeaderValue::from_static("text/html; charset=utf-8");
+    let error = super::super::ensure_csv_content_type(Some(&header)).expect_err("html reply");
+    let BioMcpError::Api { message, .. } = &error else {
+        panic!("expected Api error, got {error:?}");
+    };
+    assert!(
+        message.starts_with(super::super::DDINTER_BUNDLE_DOWNLOAD_MARKER),
+        "the HTML reply must carry the download marker: {message}"
+    );
+    assert!(
+        !message.starts_with(super::super::DDINTER_BUNDLE_READ_MARKER),
+        "an HTML reply is not an unreadable bundle: {message}"
+    );
+    assert!(message.contains("not the CSV bundle"));
+
+    let xhtml = reqwest::header::HeaderValue::from_static("application/xhtml+xml");
+    let error = super::super::ensure_csv_content_type(Some(&xhtml)).expect_err("xhtml reply");
+    let BioMcpError::Api { message, .. } = &error else {
+        panic!("expected Api error, got {error:?}");
+    };
+    assert!(message.starts_with(super::super::DDINTER_BUNDLE_DOWNLOAD_MARKER));
+
+    // The bundle's own content types and a missing header stay fine.
+    for okay in [
+        "text/csv",
+        "text/csv; charset=utf-8",
+        "application/octet-stream",
+    ] {
+        let header = reqwest::header::HeaderValue::from_str(okay).expect("header");
+        assert!(super::super::ensure_csv_content_type(Some(&header)).is_ok());
+    }
+    assert!(super::super::ensure_csv_content_type(None).is_ok());
+}

@@ -2,11 +2,16 @@
 
 One binary. One grammar. Evidence from the biomedical sources you already trust.
 
+## Data terms
+
+BioMCP retrieves data from upstream biomedical sources. Those sources' terms govern how you use the data they return: some restrict commercial or clinical use. Check each source's terms and obtain any licence you need before relying on the data. See [Source Licensing and Terms](docs/reference/source-licensing.md) for the per-source breakdown.
+
 ## What is BioMCP?
 
-BioMCP is one CLI binary over a single command grammar that reaches ~30 trusted
-biomedical sources (PubMed, ClinVar, ClinicalTrials.gov, OncoKB, Reactome, and
-more). It is also an MCP (Model Context Protocol) server, so the same tools are
+BioMCP is one CLI binary over a single command grammar that reaches 70 trusted
+biomedical sources directly (PubMed, ClinVar, ClinicalTrials.gov, OncoKB,
+Reactome, and more; eight further sources arrive inside another source's
+answer). It is also an MCP (Model Context Protocol) server, so the same tools are
 available to AI agents such as Claude Code, Codex, and Claude Desktop.
 
 BioMCP cuts through the usual biomedical data maze: one query reaches the
@@ -220,6 +225,7 @@ agents do not synthesize unsupported `get` commands.
 | protein | UniProt, InterPro, STRING, ComplexPortal, PDB, AlphaFold | `biomcp get protein P15056 complexes` |
 | adverse-event | OpenFDA FAERS/MAUDE/recalls plus CDC WONDER VAERS aggregate vaccine search | `biomcp search adverse-event --drug pembrolizumab` |
 | pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
+| cell-line | Cellosaurus with ChEMBL, PharmacoDB, DepMap, COSMIC, GDSC, and LINCS cross-references | `biomcp get cell-line CVCL_0004 xrefs` |
 
 ### Search-only entities
 

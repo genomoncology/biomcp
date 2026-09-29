@@ -152,3 +152,30 @@ has accumulated large history blobs from the growth audit.
 3. F1-F4 — Deferred quality-of-life tickets
 4. F7 — MCPB bundle (if Claude Desktop directory is a goal)
 5. F8-F9 — Housekeeping
+
+## Owners and revisit triggers for the 1.0 candidates (2026-09-27,
+## from the review follow-ups ticket 1259)
+
+Every parked candidate names an owner and a trigger; "the queue"
+means the biomcp developer agents working Ian's ordered tickets.
+
+| Candidate | Owner | Revisit trigger |
+|---|---|---|
+| Variant transcript numbering (ticket 1260) | the queue | any molecular-tumor-board experiment matching report IDs, or 1.0 track start |
+| Citation sidecar for rendered output | the queue | 1.0 feature-track start |
+| CAR T-cell rate limiting | the queue | first consumer report of CAR-source throttling |
+| Health-record gate (FHIR) | the queue | a consumer requesting FHIR record rendering |
+| Git pack history audit (F9) | the queue | before the 1.0 tag, or repo size doubling, whichever first |
+| Five drug sources evaluation | the queue with Ian's priorities | a named consumer request naming a source |
+| Interface-study record | the queue | the next interface-change ticket |
+| F1 author bare-name search | the queue | 1.0 track start |
+| F2 sync per-file change detail | the queue | the next sync-command ticket |
+| F3 ORCID claim counts | the queue | the next author-card ticket |
+| F4 MCP discover typed tool | the queue | a consumer asking for tool discovery |
+| F5 stack stopgap drop | the queue, coordinate with the downstream consumer | that consumer merges its branch with main |
+| F6 Linux ARM64 PyPI wheel | the queue | 1.0 track start (runner available today) |
+| F7 MCPB bundle | the queue, design review first | Claude Desktop directory installation becomes a goal |
+| F8 tokenizer blob-diff noise | the queue | the next benchmark-contract change |
+
+Nothing here changes 0.9.1 scope. Ian sets the order when the 1.0
+track opens.

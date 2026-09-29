@@ -338,6 +338,10 @@ pub(super) struct DiseaseSearchMeta {
     workflow_rationale: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     workflow_playbook: Option<String>,
+    /// Stale-cache and provider-window notes carried to the JSON consumer
+    /// (ticket 1256); empty meta objects never gain a `notes` key.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    notes: Vec<String>,
 }
 
 #[derive(serde::Serialize)]
@@ -364,6 +368,7 @@ pub(super) fn disease_search_json(
             workflow: meta.workflow,
             workflow_rationale: meta.workflow_rationale,
             workflow_playbook: meta.workflow_playbook,
+            notes: meta.notes,
         }
     });
     crate::render::json::to_pretty(&DiseaseSearchJsonResponse {

@@ -689,6 +689,7 @@ fn format_sections_block_keeps_gene_ontology_in_top_more_entries() {
 #[test]
 fn sections_disease_base_card_surfaces_diagnostics_before_optional_sections() {
     let disease = Disease {
+        top_gene_source: None,
         id: "MONDO:0005105".to_string(),
         name: "melanoma".to_string(),
         definition: None,

@@ -5,10 +5,10 @@ use std::sync::OnceLock;
 use regex::Regex;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
-use roxmltree::Document;
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 const MEDLINEPLUS_BASE: &str = "https://wsearch.nlm.nih.gov";
 const MEDLINEPLUS_API: &str = "medlineplus";
@@ -182,10 +182,11 @@ fn clean_text(value: &str) -> String {
 }
 
 fn parse_topics(xml: &str) -> Result<Vec<MedlinePlusTopic>, BioMcpError> {
-    let doc = Document::parse(xml).map_err(|source| BioMcpError::Api {
-        api: MEDLINEPLUS_API.to_string(),
-        message: format!("Invalid XML response: {source}"),
-    })?;
+    let doc =
+        parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT).map_err(|source| BioMcpError::Api {
+            api: MEDLINEPLUS_API.to_string(),
+            message: format!("Invalid XML response: {source}"),
+        })?;
 
     let mut out = Vec::new();
     for document in doc

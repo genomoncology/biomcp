@@ -33,6 +33,7 @@ fn raw_page_debug_redacts_ignored_untrusted_values() {
         provider_cursor: biodata::ClinicalTrialProviderCursor::Absent,
         raw_study_count: 1,
         verification_incomplete: false,
+        unverified: DetailVerificationReport::default(),
     };
     assert!(!format!("{page:?}").contains(SENTINEL));
 }
@@ -57,6 +58,7 @@ fn paging_wrapper_debug_redacts_condition_alias_label_and_cursor() {
         provider_cursor: biodata::ClinicalTrialProviderCursor::Present(SENTINEL.into()),
         raw_study_count: 0,
         verification_incomplete: false,
+        unverified: DetailVerificationReport::default(),
     };
     assert!(!format!("{worker:?} {page:?}").contains(SENTINEL));
 }
@@ -98,6 +100,7 @@ fn filtered_page(
             }),
         raw_study_count,
         verification_incomplete: false,
+        unverified: DetailVerificationReport::default(),
     }
 }
 

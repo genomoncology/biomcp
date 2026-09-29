@@ -53,7 +53,10 @@ pub struct SearchAllSection {
 
 impl SearchAllSection {
     fn count_exact(&self) -> bool {
-        self.error.is_none() && self.total.is_some()
+        // A note is a degradation the user must see (a dropped filter, a
+        // widened fallback), so a note-carrying section never claims an
+        // exact count even when a total survives.
+        self.error.is_none() && self.note.is_none() && self.total.is_some()
     }
 
     fn total_lower_bound(&self) -> Option<usize> {
@@ -127,6 +130,33 @@ pub(crate) struct SearchAllCountsOnlySection<'a> {
     pub note: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<&'a str>,
+}
+
+/// The search-all JSON body: the results (or the counts-only view)
+/// plus a `_meta.notes` channel for this command's stale-cache
+/// serves, omitted when none were recorded (ticket 1263).
+pub(crate) fn json_body(
+    results: &SearchAllResults,
+    counts_only: bool,
+    notes: Vec<String>,
+) -> Result<serde_json::Value, BioMcpError> {
+    let mut body = if counts_only {
+        serde_json::to_value(counts_only_json(results)).map_err(|error| BioMcpError::Api {
+            api: "search-all".to_string(),
+            message: format!("counts-only JSON serialization failed: {error}"),
+        })?
+    } else {
+        serde_json::to_value(results).map_err(|error| BioMcpError::Api {
+            api: "search-all".to_string(),
+            message: format!("JSON serialization failed: {error}"),
+        })?
+    };
+    if !notes.is_empty()
+        && let Some(object) = body.as_object_mut()
+    {
+        object.insert("_meta".to_string(), serde_json::json!({ "notes": notes }));
+    }
+    Ok(body)
 }
 
 pub(crate) fn counts_only_json(results: &SearchAllResults) -> SearchAllCountsOnlyJson<'_> {

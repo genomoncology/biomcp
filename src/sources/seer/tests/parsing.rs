@@ -50,6 +50,7 @@ fn survival_inner_json(site_code: u16) -> String {
 
 fn disease(name: &str, synonyms: Vec<String>) -> Disease {
     Disease {
+        top_gene_source: None,
         id: "MONDO:123".to_string(),
         name: name.to_string(),
         definition: None,

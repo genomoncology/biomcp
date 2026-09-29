@@ -176,3 +176,100 @@ fn merge_trial_backfill_rows_respects_limit_with_preferred_only() {
         .collect::<Vec<_>>();
     assert_eq!(ids, vec!["NCT00000001", "NCT00000002"]);
 }
+
+#[test]
+fn trial_recruiting_filter_note_names_the_failure_and_the_widening() {
+    let none = super::super::dispatch::trial_recruiting_filter_note(&None);
+    assert!(none.is_none(), "no preferred failure carries no note");
+
+    let err = crate::error::BioMcpError::Api {
+        api: "ClinicalTrials.gov".to_string(),
+        message: "HTTP 503 Service Unavailable: upstream outage html".to_string(),
+    };
+    let note = super::super::dispatch::trial_recruiting_filter_note(&Some(err)).expect("note");
+    assert_eq!(
+        note,
+        "Recruiting-status filter unavailable for ClinicalTrials.gov. Results may include trials that are not recruiting.",
+        "the note names the source in our words and states the widening"
+    );
+    assert!(
+        !note.contains("503") && !note.contains("upstream outage html"),
+        "raw upstream text must not paste into the note: {note}"
+    );
+
+    // An error without a recognized provider still names something plain
+    // instead of pasting the raw error text.
+    let opaque = crate::error::BioMcpError::Api {
+        api: "not-a-real-source".to_string(),
+        message: "secret internals must not leak".to_string(),
+    };
+    let note = super::super::dispatch::trial_recruiting_filter_note(&Some(opaque)).expect("note");
+    assert!(
+        !note.contains("secret internals"),
+        "no upstream or internal text in the note: {note}"
+    );
+}
+
+#[test]
+fn a_degraded_trial_section_renders_the_note_and_drops_count_exact() {
+    let prepared = PreparedInput::new(&SearchAllInput {
+        gene: None,
+        variant: None,
+        disease: Some("melanoma".to_string()),
+        drug: None,
+        keyword: None,
+        since: None,
+        limit: 3,
+        counts_only: true,
+        debug_plan: false,
+    })
+    .expect("valid prepared input");
+
+    let section = SearchAllSection {
+        entity: SectionKind::Trial.entity().to_string(),
+        label: SectionKind::Trial.label().to_string(),
+        count: 3,
+        total: Some(41),
+        error: None,
+        note: Some(
+            "Recruiting-status filter unavailable: HTTP 503. Results may include trials that are not recruiting.".to_string(),
+        ),
+        results: Vec::new(),
+        links: Vec::new(),
+    };
+
+    let value = serde_json::to_value(super::super::counts_only_json(&SearchAllResults {
+        query: prepared.query_summary(),
+        sections: vec![section.clone()],
+        searches_dispatched: 1,
+        searches_with_results: 1,
+        wall_time_ms: 0,
+        debug_plan: None,
+    }))
+    .expect("counts-only json");
+    let json_section = &value["sections"][0];
+    assert_eq!(json_section["total"], 41);
+    // The note is a degradation: the surviving total is no longer exact.
+    assert_eq!(json_section["count_exact"], false);
+    assert!(json_section["total_lower_bound"].is_null());
+    assert!(
+        json_section["note"]
+            .as_str()
+            .is_some_and(|v| v.contains("may include trials that are not recruiting"))
+    );
+
+    let markdown = crate::render::markdown::search_all_markdown(
+        &SearchAllResults {
+            query: prepared.query_summary(),
+            sections: vec![section],
+            searches_dispatched: 1,
+            searches_with_results: 1,
+            wall_time_ms: 0,
+            debug_plan: None,
+        },
+        true,
+    )
+    .expect("counts-only markdown should render");
+    assert!(markdown.contains("Recruiting-status filter unavailable"));
+    assert!(markdown.contains("may include trials that are not recruiting"));
+}

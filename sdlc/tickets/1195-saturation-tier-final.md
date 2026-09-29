@@ -149,7 +149,8 @@ No production code, no page content, no production constants change.
 
 ## Review
 
-- Independent code review, first pass at e31d4b16: REJECT.
+- Code review: REJECT at e31d4b16 (first pass), superseded by the
+  ACCEPT below once the P0s folded
   - P0: `prepare_provider_page_request_log` aborted on an unset
     `BIOMCP_PROVIDER_CONTRACT_ROOT` (the `:?` expansion), breaking
     `tests/surface/test_parallel_isolation_contract.py::
@@ -172,4 +173,6 @@ No production code, no page content, no production constants change.
   `BIOMCP_PROVIDER_CONTRACT_READY_FILE`, and `BIOMCP_TEST_UNPACED_ORIGIN`
   are not rewritten; the indent is fixed. Verification item 6 records the
   run.
-- Re-review: pending (parent orchestrator).
+- Re-review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the remediation evidence above landed)
+- Verification: shipped in the 0.8.x series; see git history (e089005a records the review findings and remediation evidence)
+- Code review: ACCEPT after remediation (see the P0/P1 folds above)

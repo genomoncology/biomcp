@@ -1298,9 +1298,13 @@ async fn raw_and_typed_mcp_reject_unknown_adverse_event_sections_before_provider
                 .collect(),
             ),
         )
-        .await
-        .expect_err("typed MCP rejects an unknown section at its schema boundary");
-    assert!(typed.to_string().contains("invalid adverse-event section"));
+        .await?;
+    // In-body argument validation returns a tool result with isError.
+    assert_eq!(typed.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&typed.content)
+            .contains("invalid adverse-event section")
+    );
 
     client.cancel().await?;
     Ok(())
@@ -1487,6 +1491,94 @@ async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> 
     assert!(markdown.contains("not incidence"));
     assert!(markdown.contains("does not establish causality"));
 
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn rmcp_stdio_recovers_from_tool_panic_on_the_same_session() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness
+        .spawn_stdio_client(&[("BIOMCP_TEST_PANIC_TOOL", "1".to_string())])
+        .await?;
+
+    let panic_result = client
+        .peer()
+        .call_tool(CallToolRequestParams::new("__biomcp_test_panic"))
+        .await?;
+    assert_eq!(panic_result.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&panic_result.content)
+            .contains("injected MCP tool panic")
+    );
+
+    let success = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
+    assert_eq!(success.is_error, Some(false));
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn rmcp_client_rejects_unknown_list_cursors() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness.spawn_stdio_client(&[]).await?;
+    let garbage =
+        || Some(rmcp::model::PaginatedRequestParams::default().with_cursor(Some("garbage".into())));
+    let tools_error = client
+        .peer()
+        .list_tools(garbage())
+        .await
+        .expect_err("an unknown tools/list cursor must be rejected");
+    let prompts_error = client
+        .peer()
+        .list_prompts(garbage())
+        .await
+        .expect_err("an unknown prompts/list cursor must be rejected");
+    let templates_error = client
+        .peer()
+        .list_resource_templates(garbage())
+        .await
+        .expect_err("an unknown resources/templates/list cursor must be rejected");
+    for error in [tools_error, prompts_error, templates_error] {
+        match error {
+            rmcp::ServiceError::McpError(data) => {
+                assert_eq!(data.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+            }
+            other => panic!("expected an MCP protocol error, got: {other:?}"),
+        }
+    }
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn rmcp_variant_erepo_rejects_unknown_fields_with_a_protocol_error() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness.spawn_stdio_client(&[]).await?;
+    // Unknown fields fail inside rmcp's Parameters deserialization, before
+    // the handler body, so the rejection is -32602 (ADR 0002), not an
+    // isError tool result.
+    let error = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("variant_erepo").with_arguments(
+                BTreeMap::from([
+                    ("caid".to_string(), json!("CA123456")),
+                    ("bogus".to_string(), json!("unknown field")),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await
+        .expect_err("an unknown field must fail parameter deserialization");
+    match error {
+        rmcp::ServiceError::McpError(data) => {
+            assert_eq!(data.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+            assert!(data.message.to_lowercase().contains("bogus"));
+        }
+        other => panic!("expected an MCP protocol error, got: {other:?}"),
+    }
     client.cancel().await?;
     Ok(())
 }

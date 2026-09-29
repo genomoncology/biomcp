@@ -158,6 +158,8 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms: Vec::new(),
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Cough".to_string()],
         faers_query: None,
@@ -189,6 +191,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
 
     let disease = crate::entities::disease::Disease {
         id: "MONDO:0009061".to_string(),
+        top_gene_source: None,
         name: "cystic fibrosis".to_string(),
         definition: Some("Inherited disease affecting chloride transport.".to_string()),
         synonyms: vec!["CF".to_string()],
@@ -484,4 +487,123 @@ fn pagination_footer_offset_suppresses_more_on_last_page() {
     let footer = pagination_footer(8, 2, 2, Some(10));
     assert!(footer.contains("Showing 9-10 of 10 results."));
     assert!(!footer.contains("Use --offset"));
+}
+
+#[test]
+fn every_registry_source_status_row_survives_the_render_context() {
+    // Anti-regression walk over SOURCE_STATE_ROWS (mirroring the shell's
+    // recovery-command walk): complete each entity's keys as Unavailable
+    // and assert the status line survives the render-context seam with the
+    // row's label, its providers, and the unavailable state.
+    use crate::entities::section_outcome::SectionOutcome;
+    use crate::entities::source_state_registry::SOURCE_STATE_ROWS;
+
+    for row in SOURCE_STATE_ROWS {
+        let mut outcomes = crate::entities::section_outcome::SectionOutcomes::with_keys(&[row.key]);
+        outcomes.complete(
+            row.key,
+            SectionOutcome::unavailable("Source data is unavailable."),
+        );
+        let contexts = section_render_contexts(row.entity, "TEST-ID", &outcomes);
+        let context = contexts
+            .get(row.key)
+            .unwrap_or_else(|| panic!("{}/{} missing from contexts", row.entity, row.key));
+        let status = context
+            .status
+            .as_ref()
+            .unwrap_or_else(|| panic!("{}/{} dropped its status line", row.entity, row.key));
+        assert!(
+            status.contains(row.label),
+            "{}/{}: status lacks the label: {status}",
+            row.entity,
+            row.key
+        );
+        assert!(
+            status.contains(&row.providers.join(" / ")),
+            "{}/{}: status lacks the providers: {status}",
+            row.entity,
+            row.key
+        );
+        assert!(
+            status.contains("unavailable"),
+            "{}/{}: status lacks the state: {status}",
+            row.entity,
+            row.key
+        );
+    }
+}
+
+#[test]
+fn a_fully_unavailable_disease_card_keeps_every_status_line() {
+    // End to end: the template must not drop the status lines the context
+    // builds. A disease with every registry key unavailable renders each
+    // row's status line into the markdown.
+    use crate::entities::section_outcome::SectionOutcome;
+    use crate::entities::source_state_registry::SOURCE_STATE_ROWS;
+
+    let mut disease = crate::entities::disease::Disease {
+        id: "MONDO:0009061".to_string(),
+        top_gene_source: None,
+        name: "cystic fibrosis".to_string(),
+        definition: Some("Inherited disease affecting chloride transport.".to_string()),
+        synonyms: vec!["CF".to_string()],
+        parents: vec!["autosomal recessive disease".to_string()],
+        associated_genes: Vec::new(),
+        gene_associations: Vec::new(),
+        top_genes: Vec::new(),
+        top_gene_scores: Vec::new(),
+        treatment_landscape: Vec::new(),
+        recruiting_trial_count: None,
+        pathways: Vec::new(),
+        phenotypes: Vec::new(),
+        clinical_features: Vec::new(),
+        key_features: Vec::new(),
+        variants: Vec::new(),
+        top_variant: None,
+        models: Vec::new(),
+        prevalence: Vec::new(),
+        prevalence_note: None,
+        survival: None,
+        survival_note: None,
+        funding: None,
+        funding_note: None,
+        diagnostics: None,
+        diagnostics_note: None,
+        civic: None,
+        disgenet: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
+        xrefs: std::collections::HashMap::new(),
+    };
+    let disease_keys: Vec<&'static str> = SOURCE_STATE_ROWS
+        .iter()
+        .filter(|row| row.entity == "disease")
+        .map(|row| row.key)
+        .collect();
+    for key in disease_keys {
+        disease.section_outcomes.complete(
+            key,
+            SectionOutcome::unavailable("Source data is unavailable."),
+        );
+    }
+
+    // "all" covers the aggregate sections; diagnostics, funding, and
+    // clinical_features are opt-in sections the card only renders when
+    // named, so name them too.
+    let requested = [
+        "all".to_string(),
+        "diagnostics".to_string(),
+        "funding".to_string(),
+        "clinical_features".to_string(),
+    ];
+    let markdown = disease_markdown(&disease, &requested).expect("disease markdown");
+    for row in SOURCE_STATE_ROWS
+        .iter()
+        .filter(|row| row.entity == "disease")
+    {
+        assert!(
+            markdown.contains(&format!("**{} status (", row.label)),
+            "the disease template dropped the {} status line",
+            row.key
+        );
+    }
 }

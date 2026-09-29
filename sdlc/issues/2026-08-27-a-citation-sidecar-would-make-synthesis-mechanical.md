@@ -15,3 +15,9 @@ matching prose. Nothing about default output changes.
 
 Not validated as a requirement by anyone outside our own experiments yet;
 recorded for triage.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Stays open for 1.0 triage: an unvalidated idea with no consumer
+outside our own experiments. If the 1.0 knowledge-base work wants
+mechanical citations, this is its design seed.

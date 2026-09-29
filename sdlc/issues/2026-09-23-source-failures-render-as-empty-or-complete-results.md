@@ -19,3 +19,16 @@ Variant, gene, and drug safety pages already report per-source status. These pat
 - Report each failure in the output's source status and mark counts as partial.
 - Label fallback data with its real source.
 - Add a check that fails when a renderer drops source status, so new paths cannot regress.
+
+## Resolved
+
+Ticket 1242 (both batches; see
+`sdlc/records/1242-render-source-failures-honestly.md`): trial
+partial counts with the may-be-too-high direction and the
+three-reason note in markdown, count JSON, and search JSON;
+search-all notes a dropped recruiting filter and stops reporting
+exact counts; the CIViC discriminator turns schema breaks into
+source failures; enrichment fallback genes carry their real source
+in heading and provenance; stale cache serves log their age from the
+verified seam; the SOURCE_STATE_ROWS walk guards the renderers. The
+default-card owns=true mislabel path is recorded as the next pass.

@@ -142,11 +142,14 @@ async fn required_label_failures_make_zero_ddinter_ready_calls() {
     let (base, server) = required_label_failure_server().await;
     let root = crate::test_support::TempDirGuard::new("required-label-ddinter-counter");
     let missing_ddinter = root.path().join("missing-ddinter");
+    // The guard bypasses every cache for the test without latching the
+    // process mode the way the former `BIOMCP_CACHE_MODE=off` set did
+    // (ticket 1261).
+    let _cache_mode = crate::sources::test_cache_mode::off();
     let mut env = RequiredLabelFixtureEnv(Vec::new());
     env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
     env.set("BIOMCP_OPENFDA_BASE", &base);
     env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
-    env.set("BIOMCP_CACHE_MODE", "off");
     env.set(
         "BIOMCP_DDINTER_DIR",
         missing_ddinter.to_str().expect("UTF-8 fixture path"),

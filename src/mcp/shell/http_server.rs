@@ -432,6 +432,7 @@ pub(in crate::mcp) async fn run_http(
     allowed_hosts: Vec<String>,
     unsafe_allow_any_host: bool,
 ) -> anyhow::Result<()> {
+    crate::sources::ca_bundle::validate()?;
     let ip: std::net::IpAddr = host
         .parse()
         .map_err(|e| anyhow::anyhow!("Invalid host address: {e}"))?;

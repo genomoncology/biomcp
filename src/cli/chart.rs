@@ -237,3 +237,13 @@ mod tests {
         assert!(doc.contains("study compare --type expression --chart scatter"));
     }
 }
+
+#[cfg(test)]
+mod github_287_tests {
+    #[test]
+    fn a_missing_chart_exits_nonzero() {
+        let error = super::embedded_text("no-such-chart-287.md")
+            .expect_err("a missing chart must be an error");
+        assert_eq!(i32::from(error.exit_code()), 1);
+    }
+}

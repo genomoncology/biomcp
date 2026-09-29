@@ -61,6 +61,7 @@ An expanded index of the BioMCP documentation.
 - [Quick Reference](https://biomcp.org/reference/quick-reference/): Reference details for Quick Reference.
 - [Release Process](https://biomcp.org/reference/release-process/): Reference details for Release Process.
 - [Source Licensing and Terms](https://biomcp.org/reference/source-licensing/): Reference details for Source Licensing and Terms.
+- [Source Licensing Evidence, 2026-09-27 pass](https://biomcp.org/reference/source-licensing-evidence-2026-09-27/): Per-source URLs, access dates, and findings for the delegated licensing review.
 - [Source Versioning Matrix](https://biomcp.org/reference/source-versioning/): Reference details for Source Versioning Matrix.
 - [cBioPortal](https://biomcp.org/sources/cbioportal/): Access details and query guidance for the cBioPortal data source.
 - [CDC CVX/MVX](https://biomcp.org/sources/cdc-cvx/): Access details and query guidance for the CDC CVX/MVX data source.

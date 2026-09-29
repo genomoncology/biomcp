@@ -15,9 +15,9 @@ ID: {{ id }}
 {{ definition }}
 {% endif -%}
 {% if top_gene_score_labels -%}
-Genes (Open Targets): {{ top_gene_score_labels | join(", ") }}
+Genes ({{ top_gene_source or "Open Targets" }}): {{ top_gene_score_labels | join(", ") }}
 {% elif top_genes -%}
-Genes (Open Targets): {{ top_genes | join(", ") }}
+Genes ({{ top_gene_source or "Open Targets" }}): {{ top_genes | join(", ") }}
 {% endif -%}
 {% if source_states.treatments.status -%}
 ## Treatments (MyChem.info indication search)

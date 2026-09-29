@@ -193,6 +193,10 @@ pub(super) struct ArticleSearchJsonMeta {
     suggestions: Vec<ArticleSuggestion>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     source_status: Vec<crate::entities::article::ArticleSourceStatus>,
+    /// Stale-cache serves recorded during this command (ticket 1263):
+    /// the same `_meta.notes` channel the disease search uses.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    notes: Vec<String>,
 }
 
 pub(super) fn article_search_json_meta(
@@ -208,16 +212,19 @@ pub(super) fn article_search_json_meta(
             !suggestion.command.trim().is_empty() && !suggestion.reason.trim().is_empty()
         })
         .collect::<Vec<_>>();
+    let notes = crate::sources::take_stale_serve_sentences();
 
     (!warnings.is_empty()
         || !next_commands.is_empty()
         || !suggestions.is_empty()
-        || !source_status.is_empty())
+        || !source_status.is_empty()
+        || !notes.is_empty())
     .then_some(ArticleSearchJsonMeta {
         warnings,
         next_commands,
         suggestions,
         source_status,
+        notes,
     })
 }
 

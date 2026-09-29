@@ -3,6 +3,11 @@
 
 use super::super::*;
 
+#[test]
+fn boundary_phrase_rejection_advances_across_multibyte_character() {
+    assert!(!contains_boundary_phrase("β-blockers", "β-blocker"));
+}
+
 fn fixture_client() -> EmaClient {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("spec")

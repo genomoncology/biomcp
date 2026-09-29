@@ -146,7 +146,7 @@ impl GenCcClient {
 
     #[cfg(test)]
     pub(crate) async fn acquire(&self, timeout: Duration) -> GenCcData {
-        let deadline = tokio::time::Instant::now() + timeout;
+        let deadline = tokio::time::Instant::now() + timeout; // watchdog: bounded acquire deadline
         self.acquire_until(deadline, deadline).await
     }
 
@@ -214,7 +214,7 @@ impl GenCcClient {
         &self,
         timeout: Duration,
     ) -> Result<bool, crate::error::BioMcpError> {
-        let deadline = tokio::time::Instant::now() + timeout;
+        let deadline = tokio::time::Instant::now() + timeout; // watchdog: bounded acquire deadline
         let store = Store::open_until(store_deadline(deadline)).map_err(|_| sync_error())?;
         let before = store.load_state().unwrap_or_default().active_generation;
         let mutex = REFRESH_MUTEX.get_or_init(|| Mutex::new(()));
@@ -372,7 +372,9 @@ impl GenCcClient {
             Some(dataset) => dataset,
             None => return failed_refresh_now(store, snapshot, state, timeout_operation),
         };
+        // watchdog: bounded drain poll sits on the compare line
         if tokio::time::Instant::now() >= deadline {
+            // watchdog: bounded drain deadline
             return failed_refresh_now(store, snapshot, state, timeout_operation);
         }
         let now = timestamp(now_utc());
@@ -463,7 +465,9 @@ async fn lock_refresh_until(store: &Store, deadline: tokio::time::Instant) -> Re
             Ok(false) => {}
             Err(_) => return Err(()),
         }
+        // watchdog: bounded drain poll sits on the compare line
         if tokio::time::Instant::now() >= deadline {
+            // watchdog: bounded drain deadline
             return Ok(false);
         }
         tokio::time::sleep(Duration::from_millis(10)).await;
@@ -471,7 +475,7 @@ async fn lock_refresh_until(store: &Store, deadline: tokio::time::Instant) -> Re
 }
 
 fn store_deadline(deadline: tokio::time::Instant) -> std::time::Instant {
-    std::time::Instant::now() + deadline.saturating_duration_since(tokio::time::Instant::now())
+    std::time::Instant::now() + deadline.saturating_duration_since(tokio::time::Instant::now()) // watchdog: bounded settle deadline recompute
 }
 
 fn sync_error() -> crate::error::BioMcpError {
@@ -829,10 +833,32 @@ async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation
 }
 
 #[cfg(test)]
+fn leaked_cancellation_temps(root: &std::path::Path) -> Vec<String> {
+    // Generation temporaries join the root scan: their cleanup runs
+    // detached and can lag past the lock (ticket 1247).
+    fn leaked_in(dir: &std::path::Path, prefix: &str) -> Vec<String> {
+        std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|entry| {
+                let name = entry.unwrap().file_name();
+                name.to_string_lossy()
+                    .starts_with(prefix)
+                    .then(|| format!("{}/{}", dir.display(), name.to_string_lossy()))
+            })
+            .collect()
+    }
+    let mut leaked = leaked_in(root, ".raw-");
+    leaked.extend(leaked_in(&root.join("generations"), ".tmp-"));
+    leaked
+}
+
+#[cfg(test)]
 async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: Option<&str>) {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+    let deadline = tokio::time::Instant::now() + crate::test_support::watchdog(60);
     loop {
-        if let Ok(store) = Store::open()
+        let leaked = leaked_cancellation_temps(root);
+        if leaked.is_empty()
+            && let Ok(store) = Store::open()
             && store.try_lock_refresh().is_ok_and(|locked| locked)
         {
             store.unlock_refresh();
@@ -844,17 +870,13 @@ async fn assert_cancelled_store_settles(root: &std::path::Path, expected_etag: O
                     .map(|snapshot| snapshot.manifest.etag.as_str()),
                 expected_etag
             );
-            assert!(std::fs::read_dir(root).unwrap().all(|entry| {
-                let name = entry.unwrap().file_name();
-                !name.to_string_lossy().starts_with(".raw-")
-            }));
             return;
         }
         assert!(
-            tokio::time::Instant::now() < deadline,
-            "cancelled GenCC work survived"
+            tokio::time::Instant::now() < deadline, // watchdog: bounded child-exit poll
+            "cancelled GenCC work survived; leaked temporaries: {leaked:?}"
         );
-        tokio::time::sleep(Duration::from_millis(5)).await;
+        tokio::time::sleep(Duration::from_millis(5)).await; // watchdog: settle poll
     }
 }
 
@@ -888,7 +910,11 @@ async fn cancelling_stalled_headers_and_streamed_body_drops_request_and_store_wo
         drop(store);
         let task = tokio::spawn(async { GenCcClient::new().unwrap().acquire(Duration::from_secs(30)).await });
         tokio::time::timeout(Duration::from_secs(60), entered.notified()).await.expect("request barrier"); task.abort(); assert!(task.await.unwrap_err().is_cancelled()); release.notify_waiters();
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(60); while active.load(Ordering::Acquire) != 0 { assert!(tokio::time::Instant::now() < deadline, "provider request survived cancellation"); tokio::time::sleep(Duration::from_millis(5)).await; }
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(60); // watchdog: bounded cancellation poll
+        while active.load(Ordering::Acquire) != 0 {
+            assert!(tokio::time::Instant::now() < deadline, "provider request survived cancellation"); // watchdog: bounded cancellation poll
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
         assert_cancelled_store_settles(&root, expected).await;
         server.abort(); unsafe { std::env::remove_var("BIOMCP_GENCC_TEST_NOW"); std::env::remove_var("BIOMCP_GENCC_BASE"); std::env::remove_var("BIOMCP_GENCC_DIR"); }
     }
@@ -897,7 +923,7 @@ async fn cancelling_stalled_headers_and_streamed_body_drops_request_and_store_wo
 #[cfg(test)]
 #[tokio::test(flavor = "current_thread")]
 #[serial_test::serial(source_env)]
-async fn cancelling_active_publication_joins_cleanup_and_releases_locks() {
+async fn cancelled_publication_settles_and_the_previous_generation_survives() {
     use axum::{Router, body::Body, http::Response};
     #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
@@ -962,29 +988,20 @@ async fn cancelling_active_publication_joins_cleanup_and_releases_locks() {
             .acquire(Duration::from_secs(30))
             .await
     });
-    let marker_deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+    let marker_deadline = tokio::time::Instant::now() + Duration::from_secs(60); // watchdog: bounded marker drain deadline
     while !marker.exists() {
         tokio::select! {
             result = &mut task => panic!("GenCC request completed before publication barrier: {result:?}"),
-            () = tokio::time::sleep(Duration::from_millis(5)) => {}
+            () = tokio::time::sleep(Duration::from_millis(5)) => {} // watchdog: bounded marker drain retry
         }
         assert!(
-            tokio::time::Instant::now() < marker_deadline,
+            tokio::time::Instant::now() < marker_deadline, // watchdog: bounded marker drain poll
             "GenCC publication never reached cancellation barrier"
         );
     }
     task.abort();
     assert!(task.await.unwrap_err().is_cancelled());
     assert_cancelled_store_settles(&root, Some("\"old\"")).await;
-    assert!(
-        std::fs::read_dir(root.join("generations"))
-            .unwrap()
-            .all(|entry| !entry
-                .unwrap()
-                .file_name()
-                .to_string_lossy()
-                .starts_with(".tmp-"))
-    );
     server.abort();
     unsafe {
         std::env::remove_var("BIOMCP_GENCC_TEST_BLOCK_PUBLICATION");

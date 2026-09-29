@@ -11,6 +11,11 @@
   URL or patient ID. Patient commands run on the CLI and stdio MCP only, and
   `serve-http` refuses them. `biomcp health` reports the FHIR row as
   configured or not configured. `search patient` is not yet available. (2002)
+- Linux wheels now target `manylinux_2_28` (built in the official
+  manylinux containers and verified against the glibc 2.28 symbol floor)
+  and a Linux ARM64 wheel ships, so `pip install biomcp-cli` works on
+  RHEL 8, Debian 10, and Ubuntu 20.04 onward (with a current pip) and
+  on ARM64 Linux (1245).
 
 - Added the `cell-line` entity: `search cell-line <name>` resolves common
   spellings to Cellosaurus accessions, and `get cell-line <CVCL_xxxx>` returns
@@ -18,9 +23,90 @@
   curated variants. DepMap, Cell Model Passports, ChEMBL, and PharmacoDB IDs
   resolve through one cross-reference search, and every output names the
   Cellosaurus release with its CC BY 4.0 attribution. (1202)
+- Added PharmacoDB drug-response evidence: `get cell-line <CVCL_xxxx>
+  drug_response` counts the experiments per dataset for the line with a
+  per-dataset drill-down, and `get drug <name> cell_lines` resolves to the
+  matched lines and per-experiment metrics (AAC, IC50, EC50, Einf, HS, DSS1)
+  filterable by cell line or dataset. (bccd2871)
+- Added `gene cell-lines <symbol> --group <cancer>` for Human Protein Atlas
+  expression across one cancer group of cell lines, paginated with the
+  per-line expression level and the HPA attribution. (6d8fd435)
+- Added `get cell-line <CVCL_xxxx> chembl` for the ChEMBL molecule record
+  behind a Cellosaurus cross-reference. (fd6a100c)
+- Added `BIOMCP_CA_BUNDLE` for outbound TLS behind a private root: the bundle
+  adds to the built-in Mozilla roots for every ordinary HTTP client, is
+  validated in-process before any request, and fails closed naming the path.
+  A set `SSL_CERT_FILE` is honored as a fallback when it parses; a fallback
+  that cannot be parsed warns and continues with the bundled roots. GitHub
+  #250. (1221)
+
+### Changed
+
+- The `get` tool's flat schema no longer carries `uniqueItems` on
+  `sections`: adverse-event accepts duplicate sections, so the
+  descriptive root must accept them too on every entity. Per-entity
+  duplicate rejection is unchanged (the body rejects duplicates where
+  the entity demands uniqueness). A schema constraint present on only
+  one side of a merge is now a named build-time clash instead of a
+  silent narrowing. (1258)
+
+
+- A response served from cache past the provider's freshness window
+  now says so in the output a clinician sees, not only the log: the
+  markdown card (CLI and MCP) gains a trailing `Cache note:` line
+  naming the provider and age, and search JSON carries the sentence
+  in `_meta.notes`. (1256)
+
+- Disease cards credit the source that actually seeded the top-gene
+  list: genes seeded by MyDisease's embedded DisGeNET block are
+  labeled DisGeNET (the combined seed string no longer double-credits
+  MyDisease), a pure MyDisease seed is labeled MyDisease.info, and
+  Open Targets is never credited for another source's genes. (1256)
+
+- The search-all dropped-filter note names the failed source in plain
+  words instead of pasting upstream error text, and a DDInter
+  download that answers HTML is reported as the download failure it
+  is instead of an unreadable bundle. (1256)
+
+- In-body MCP argument validation now comes back as `isError` tool
+  results instead of `-32602` protocol errors, so a model can read the
+  message (which names the field and its bounds) and self-correct.
+  Failures rmcp raises while deserializing the arguments before the
+  handler runs — a missing required field, a wrong type, an unknown
+  `variant_erepo` field — still return `-32602`, with the message
+  visible either way. (1240)
+
+- An unknown non-empty cursor on `tools/list`, `resources/list`,
+  `resources/templates/list`, or `prompts/list` is now rejected with
+  `-32602` instead of silently returning the full list; the server
+  never paginates, so any cursor it did not issue is unknown. (1240)
+
+- Every MCP tool publishes one flat JSON Schema root — the merged
+  union of its per-entity fields, with no top-level `oneOf` — so
+  OpenAI and Gemini function calling, which reject `oneOf` roots, see
+  the real argument shape. Same-named fields merge: source enums
+  union, and fields that are text on some entities and lists on
+  others accept either form. `variant_erepo` now rejects unknown
+  fields (a `-32602` deserialization error), and a wrong-type `limit`
+  or `offset` errors instead of being ignored. Per-entity validation
+  in the tool bodies is unchanged. (1251)
 
 ### Fixes
 
+- The glibc floor check now compares versions as integer pairs, the
+  way the dynamic loader orders them, so a highest reference of 2.9
+  passes a 2.28 floor and 2.30 no longer reads as 2.3. The Linux
+  tarballs build in the same `manylinux_2_28` containers as the wheels
+  and pass the same floor scan over the pre-tar binary, so the install
+  docs' single glibc 2.28 floor now holds for both artifact families,
+  and the release containers install a checksum-pinned rustup instead
+  of piping a remote script into a shell. (1249)
+
+- Windows: `biomcp serve` no longer lets `icacls.exe` write into the
+  stdio MCP stream. Its localized success line broke strict clients
+  between JSON-RPC frames (GBK bytes on zh-CN consoles); the child's
+  streams are now discarded, and steady-state managed writes spawn no
+  `icacls` at all. GitHub #283. (1246)
 - Restored container image publication on release. The `Release` workflow
   verifies the published sidecars of the release's Linux tarballs, pushes
   `ghcr.io/genomoncology/biomcp:<version>` with `linux/amd64` and `linux/arm64`
@@ -29,9 +115,28 @@
   repository's latest release, so a `container_only` dispatch can rebuild the
   image for an already-published release, starting with v0.9.0, without moving
   the shared pointer. (1219)
+- Fixed the PyPI wheel binary aborting with a stack overflow on the trial
+  search, drug trial, and adverse-event paths and failing in JSON mode with a
+  missing skill-asset error. The wheel was built in the debug profile; wheels
+  now build with `--release --locked` like the tarballs, the skills tree is
+  compiled into the binary, and a pre-publish smoke runs the deep paths, the
+  not-found adverse-event fallback, and JSON-mode commands from the installed
+  wheel. The execute stack keeps its designed 8 MiB. GitHub #282. (1225)
+- Declared a top-level `"type": "object"` on the typed MCP `search` and `get`
+  tool schemas, so strict clients validate arguments as objects instead of
+  accepting any value. (e559cae2)
 
 ### Internal
 
+- Test waits that polled the clock now wait on signals: the GenCC lease
+  child handshakes over a pipe and exits when its parent's stdin closes
+  (a dying parent can no longer leave it polling for two minutes), the
+  cancellation settle failure names the leaked temporary paths, and the
+  disease-survival reap test reads `/proc` instead of sampling heartbeats.
+  A `make stress` lane runs the known load-flaky tests pinned to a
+  two-CPU set, a lint ratchets against new timed waits, and
+  `BIOMCP_TEST_TIMEOUT_SCALE` stretches the watchdogs built through
+  the test helpers at once for slow hosts. (1252)
 - Advanced the development package identity to Rust `0.9.1-dev.1` and Python
   `0.9.1.dev1` after the public 0.9.0 release. Citation, MCP directory,
   registry, and Homebrew metadata stay on the latest published release, v0.9.0.

@@ -37,8 +37,7 @@ repository's latest release.
 
 ```bash
 cat ../../.github/workflows/release.yml | mustmatch like 'container-publish:
-concurrency:
-group: container-publish-
+group: release-
 platforms: linux/amd64,linux/arm64
 sha256sum -c biomcp-linux-x86_64.tar.gz.sha256
 gh release view

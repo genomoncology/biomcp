@@ -107,3 +107,23 @@ enforce it.
 Do not commit secrets, PHI, absolute local paths, planning notes, or March
 runtime artifacts. Keep `.march/` runtime state, `.march-runtime/`, local caches,
 and generated build outputs out of git.
+
+## CI and merging
+
+- Push every change to a `tickets/*` branch first. CI runs on ticket
+  branches; merge to main only after that branch's CI run has
+  finished green. A started run does not count. No direct commits to
+  main.
+- If main goes red, fix it before anything else lands.
+- The release bar is the tagged commit, not main: the commit you tag
+  must have a finished, green CI run and pass the release workflow.
+- Commit messages starting with `docs:` skip the Rust CI jobs (the
+  repository-contract checks still run, because they test the docs).
+  Use that prefix for record-only, ticket-file, and review-file
+  commits.
+## Source licensing
+
+State each source's terms plainly in its registry entry and on the
+licensing page. Label restricted terms as restricted. Users are
+responsible for their own licenses. BioMCP never buys a license or
+contacts a provider without Ian's approval.

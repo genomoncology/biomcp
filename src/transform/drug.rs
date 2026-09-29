@@ -461,6 +461,14 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut mechanisms_seen: HashSet<String> = HashSet::new();
     let mut brand_names: Vec<String> = Vec::new();
     let mut brand_names_seen: HashSet<String> = HashSet::new();
+    let mut ddinter_synonyms: Vec<String> = Vec::new();
+    // Only the chosen anchor hit feeds the synonym fold (ticket 1254):
+    // a pooled combination-product synonym would widen DDInter identity
+    // to a real interaction partner, and interactions aggregation then
+    // skips that row silently because both sides match the anchor.
+    let anchor_index = hits
+        .iter()
+        .position(|hit| best_name_from_hit(hit).is_some());
 
     let mut targets: Vec<String> = Vec::new();
     let mut indications: Vec<String> = Vec::new();
@@ -473,7 +481,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut interactions_seen: HashSet<String> = HashSet::new();
     let mut approval_date: Option<String> = None;
 
-    for hit in hits {
+    for (hit_index, hit) in hits.iter().enumerate() {
         if name.is_empty()
             && let Some(n) = best_name_from_hit(hit)
         {
@@ -508,7 +516,9 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
             approval_date = approval_date_from_hit(hit);
         }
 
-        if let Some(drugbank) = hit.drugbank.as_ref() {
+        if Some(hit_index) == anchor_index
+            && let Some(drugbank) = hit.drugbank.as_ref()
+        {
             for synonym in &drugbank.synonyms {
                 let synonym = synonym.trim();
                 if synonym.is_empty() {
@@ -520,12 +530,17 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     continue;
                 }
                 let key = synonym.to_ascii_lowercase();
-                if !brand_names_seen.insert(key) {
+                if !brand_names_seen.insert(key.clone()) {
                     continue;
                 }
-                brand_names.push(synonym.to_string());
-                if brand_names.len() >= 3 {
-                    break;
+                // The full synonym list feeds DDInter identity matching
+                // (ticket 1241); the card keeps the three-brand cap, so
+                // the loop does not break here.
+                if ddinter_synonyms.len() < 32 {
+                    ddinter_synonyms.push(synonym.to_string());
+                }
+                if brand_names.len() < 3 {
+                    brand_names.push(synonym.to_string());
                 }
             }
         }
@@ -645,6 +660,8 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         interaction_text: None,
         interaction_pagination: None,
         interaction_bundle_freshness: None,
+        interaction_coverage_status: None,
+        ddinter_synonyms,
         pharm_classes,
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -667,6 +684,11 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn approval_date_rejects_multibyte_input_with_matching_byte_length() {
+        assert_eq!(normalize_approval_date("β23456789"), None);
+    }
 
     #[test]
     fn search_mechanism_ranking_prefers_kinase_moa_and_rejects_metabolism_only() {
@@ -755,6 +777,94 @@ mod tests {
         assert_eq!(drug.mechanisms[1], "Agonist of TP53");
         assert_eq!(drug.mechanisms[2], "Antagonist of EGFR");
         assert_eq!(drug.mechanism.as_deref(), Some("Inhibitor of BRAF"));
+    }
+
+    #[test]
+    fn merge_mychem_hits_feeds_anchor_synonyms_past_the_brand_cap() {
+        // More than three DrugBank synonyms: the fourth still reaches
+        // ddinter_synonyms even though brand_names caps at three, and
+        // the interactions seam passes it on (ticket 1254).
+        let anchor: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "1",
+            "_score": 10.0,
+            "drugbank": {
+                "name": "Aspirin",
+                "id": "DB00945",
+                "synonyms": [
+                    "Bayer",
+                    "ECM",
+                    "2-Acetoxybenzoic acid",
+                    "acetylsalicylic acid",
+                    "Acenterine"
+                ]
+            }
+        }))
+        .expect("valid anchor hit");
+
+        let drug = merge_mychem_hits(&[&anchor], "aspirin");
+        assert!(
+            drug.ddinter_synonyms
+                .iter()
+                .any(|synonym| synonym.eq_ignore_ascii_case("acetylsalicylic acid"))
+        );
+        assert!(drug.brand_names.len() <= 3);
+
+        let identity =
+            crate::entities::drug::interactions::ddinter_identity_for_anchor("aspirin", &drug);
+        assert!(identity.terms().contains(
+            &crate::sources::ddinter::normalize_name_key("acetylsalicylic acid").expect("key")
+        ));
+    }
+
+    #[test]
+    fn merge_mychem_hits_does_not_pool_synonyms_across_hits() {
+        // A combination product's synonym must not widen the anchor's
+        // DDInter identity: pooled, "dipyridamole" would name a real
+        // interaction partner and the aggregation would skip that row
+        // because both sides match the anchor (ticket 1254).
+        let anchor: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "1",
+            "_score": 10.0,
+            "drugbank": {
+                "name": "Aspirin",
+                "synonyms": ["Bayer", "acetylsalicylic acid"]
+            }
+        }))
+        .expect("valid anchor hit");
+        let combination: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "2",
+            "_score": 5.0,
+            "drugbank": {
+                "name": "Aspirin/dipyridamole",
+                "synonyms": ["dipyridamole", "Aggrenox"]
+            }
+        }))
+        .expect("valid combination-product hit");
+
+        let drug = merge_mychem_hits(&[&anchor, &combination], "aspirin");
+        assert!(
+            drug.ddinter_synonyms
+                .iter()
+                .any(|synonym| synonym.eq_ignore_ascii_case("acetylsalicylic acid"))
+        );
+        assert!(
+            drug.ddinter_synonyms
+                .iter()
+                .all(|synonym| !synonym.eq_ignore_ascii_case("dipyridamole"))
+        );
+        assert!(
+            drug.brand_names
+                .iter()
+                .all(|synonym| !synonym.eq_ignore_ascii_case("dipyridamole"))
+        );
+
+        let identity =
+            crate::entities::drug::interactions::ddinter_identity_for_anchor("aspirin", &drug);
+        assert!(
+            !identity.terms().contains(
+                &crate::sources::ddinter::normalize_name_key("dipyridamole").expect("key")
+            )
+        );
     }
 
     #[test]

@@ -47,3 +47,10 @@ refresh on a loaded or slow-disk host. Preferred direction: bound lock
 acquisition with the deadline and let filesystem work proceed once the lock
 is held; add a separate operation deadline only if the product needs one.
 Test-side deadline scaling would hide that production behavior.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Subsumed as a watch item: the deadline family it belonged to was
+replaced by signal waits (1239, 1247, 1252), the publish helper's
+deadline now scales with the test timeout factor, and the stress
+lane watches the family. Reopen only on a recurrence.

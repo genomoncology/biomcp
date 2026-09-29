@@ -68,3 +68,19 @@ fn decode_response_body_rejects_invalid_utf8() {
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(format!("{err:?}").contains("valid UTF-8 XML"));
 }
+
+#[test]
+fn parse_topics_rejects_a_nesting_bomb() {
+    // External MedlinePlus XML clears the shared pre-parse depth
+    // scan before roxmltree's per-open-tag recursion runs (ticket
+    // 1255); the rejection surfaces as the site's Api error naming
+    // the limit.
+    let bomb = format!("<nlmSearchResult>{}", "<document>".repeat(100));
+    let err = parse_topics(&bomb).expect_err("depth bomb rejected");
+    let expected = format!(
+        "nesting exceeds {} levels",
+        crate::xml::EXTERNAL_XML_DEPTH_LIMIT
+    );
+    let msg = format!("{err:?}");
+    assert!(msg.contains(&expected), "got: {msg}");
+}

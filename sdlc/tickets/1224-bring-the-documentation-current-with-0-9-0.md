@@ -84,4 +84,3 @@ Enforcement gap:
 - Design review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — one round; the citation and acceptance-coverage findings were folded in before implementation
 - Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — two rounds; the P1 ticket contradiction and three guard-hardening notes were remediated
 - Verification: `make lint`, `make test`, and `make spec` pass on yellow at 3f40e5b3; CI run 35739248091 succeeded; documentation run 35739247812 deployed and verified the live revision; see `sdlc/records/1224-bring-the-documentation-current-with-0-9-0.md`
-- Code review: pending

@@ -9,3 +9,10 @@ This ticket does not assert what the weight is. That needs an audit: `git filter
 Remediation is a decision for Ian, not a default. A history rewrite changes every SHA. That touches tags, the Homebrew formula, PyPI provenance, and both machines' clones. Partial clone with a blob filter shrinks CI and developer fetches without touching history.
 
 Worth considering: run the audit first, then choose between rewrite, partial-clone policy, and acceptance with a check that blocks new large blobs at the gate.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Stays open as 1.0 prep: run the read-only audit
+(`git filter-repo --analyze` or a verify-pack top-blob listing),
+then bring Ian the numbers — history rewrite and partial clone are
+his call, not defaults.

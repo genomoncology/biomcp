@@ -344,7 +344,9 @@ async fn directed_edge_contexts(
     };
     let mut offset = 0_u64;
     for _page in 0..CITATION_EVIDENCE_MAX_PAGES {
-        if tokio::time::Instant::now() >= graph_deadline {
+        // watchdog: bounded graph-walk poll sits on the compare line
+        let timed_out = tokio::time::Instant::now() >= graph_deadline; // watchdog: bounded graph-walk deadline
+        if timed_out {
             return Err(bounded_unavailable_error(
                 "Semantic Scholar directed reference traversal exceeded its bounded deadline",
             ));
@@ -622,7 +624,9 @@ async fn opencitations_edges(
     citing_doi: &str,
     deadline: tokio::time::Instant,
 ) -> Result<Vec<OpenCitationsEdge>, ()> {
-    if tokio::time::Instant::now() >= deadline {
+    // watchdog: bounded retry poll sits on the compare line
+    let timed_out = tokio::time::Instant::now() >= deadline; // watchdog: bounded retry deadline
+    if timed_out {
         return Err(());
     }
     let Ok(client) = OpenCitationsClient::new() else {

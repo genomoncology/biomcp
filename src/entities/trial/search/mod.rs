@@ -14,12 +14,15 @@ use crate::sources::nci_cts::NciCtsClient;
 
 use self::ctgov::{count_all_with_ctgov_client, search_page_with_ctgov_client};
 use self::eligibility::{
-    collect_eligibility_keywords, verify_age_eligibility, verify_detail_filters,
+    DetailVerificationReport, collect_eligibility_keywords, verify_age_eligibility,
+    verify_detail_filters,
 };
 use self::nci::search_page_with_nci_clients;
 use self::normalization::sort_trials_by_status_priority;
 
-use super::{ClinicalTrialSearchTotal, TrialSearchFilters, TrialSearchHit, TrialSource};
+use super::{
+    ClinicalTrialSearchTotal, TrialCount, TrialSearchFilters, TrialSearchHit, TrialSource,
+};
 
 const CTGOV_COUNT_CAP_REASON: biodata::ClinicalTrialSearchUnknownReason =
     biodata::ClinicalTrialSearchUnknownReason::TraversalLimitReached;
@@ -32,6 +35,7 @@ pub(crate) struct TrialSearchPage {
     pub(crate) total: biodata::ClinicalTrialSearchTotal,
     pub(crate) continuation: biodata::ClinicalTrialSearchContinuation,
     pub(crate) eligibility_verification_upstream_total: Option<usize>,
+    pub(crate) partial_note: Option<String>,
 }
 
 impl std::fmt::Debug for TrialSearchPage {
@@ -305,9 +309,7 @@ fn reduce_compatibility_page(page: TrialSearchPage) -> (Vec<TrialSearchHit>, Opt
     (page.results, total)
 }
 
-pub async fn count_all(
-    filters: &TrialSearchFilters,
-) -> Result<ClinicalTrialSearchTotal, BioMcpError> {
+pub async fn count_all(filters: &TrialSearchFilters) -> Result<TrialCount, BioMcpError> {
     validate_trial_search(filters)?;
     match filters.source {
         TrialSource::ClinicalTrialsGov => {
@@ -316,7 +318,7 @@ pub async fn count_all(
         }
         TrialSource::NciCts => {
             let page = search_page(filters, 1, 0, None).await?;
-            Ok(page.total)
+            Ok(page.total.into())
         }
     }
 }

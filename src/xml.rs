@@ -2,12 +2,22 @@ use roxmltree::{Document, ParsingOptions};
 
 pub(crate) const ARTICLE_XML_NODE_LIMIT: u32 = 1_000_000;
 
+/// Element-nesting ceiling for external XML. The node limit bounds
+/// breadth; this bounds depth, which is what overflows the 2-4 MiB
+/// blocking-thread stacks through the recursive JATS and ClinVar
+/// walkers. Measured: the deepest tracked fixture nests 9 levels
+/// (VAERS responses); JATS publisher markup stays an order below
+/// this cap (ticket 1243).
+pub(crate) const EXTERNAL_XML_DEPTH_LIMIT: u32 = 64;
+
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum ExternalXmlError {
     #[error("XML entity declarations are not supported")]
     EntityDeclaration,
-    #[error("invalid XML")]
+    #[error("invalid XML: {0}")]
     Parse(#[source] roxmltree::Error),
+    #[error("XML nesting exceeds {0} levels")]
+    DepthLimitExceeded(u32),
 }
 
 pub(crate) fn parse_external_xml(
@@ -18,6 +28,14 @@ pub(crate) fn parse_external_xml(
     let mut index = 0;
     let mut in_markup = false;
     let mut quote = None;
+    // Depth is counted in the pre-parse scan, not after parsing: the
+    // acceptance nesting-bomb test proved roxmltree's own parse
+    // recurses per open tag, so the rejection must happen before
+    // Document::parse or the parser stack overflows first (ticket
+    // 1243; the ticket's post-parse-walk plan was revised on that
+    // evidence). Comments, CDATA, and processing instructions are
+    // skipped wholesale below and never move the counter.
+    let mut depth: u32 = 0;
     while index < bytes.len() {
         if let Some(delimiter) = quote {
             if bytes[index] == delimiter {
@@ -63,12 +81,28 @@ pub(crate) fn parse_external_xml(
                 continue;
             }
             in_markup = true;
+            // An opening tag (not a close, declaration, or PI).
+            if !matches!(bytes.get(index + 1), Some(b'/') | Some(b'!') | Some(b'?')) {
+                depth += 1;
+                if depth > EXTERNAL_XML_DEPTH_LIMIT {
+                    return Err(ExternalXmlError::DepthLimitExceeded(
+                        EXTERNAL_XML_DEPTH_LIMIT,
+                    ));
+                }
+            } else if bytes.get(index + 1) == Some(&b'/') {
+                depth = depth.saturating_sub(1);
+            }
         }
         if matches!(bytes[index], b'\'' | b'"') {
             quote = Some(bytes[index]);
         } else if remainder.starts_with(b"<!ENTITY") {
             return Err(ExternalXmlError::EntityDeclaration);
-        } else if bytes[index] == b'>' {
+        } else if bytes[index] == b'>' && in_markup {
+            // A self-closing tag opened one level above; its `/>`
+            // closes what it opened.
+            if bytes.get(index.wrapping_sub(1)) == Some(&b'/') {
+                depth = depth.saturating_sub(1);
+            }
             in_markup = false;
         }
         index += 1;
@@ -145,6 +179,56 @@ mod tests {
             .find(|node| node.has_tag_name("body"))
             .expect("body");
         assert_eq!(body.text(), Some("<!ENTITY text>"));
+    }
+
+    #[test]
+    fn rejects_a_nesting_bomb_with_an_error() {
+        // the scan rejects the document before parse: roxmltree's
+        // parser recurses per open tag (the recorded deviation), so a
+        // recursive parse would overflow the blocking-thread stack
+        // here without the pre-parse rejection.
+        let opens = "<b>".repeat(100_000);
+        let bomb = format!("<a>{opens}");
+        assert!(matches!(
+            parse_external_xml(&bomb, 1_000_000),
+            Err(ExternalXmlError::DepthLimitExceeded(_))
+        ));
+    }
+
+    #[test]
+    fn accepts_nesting_well_under_the_cap() {
+        let opens = "<b>".repeat(20);
+        let closes = "</b>".repeat(20);
+        let ok = format!("<a>{opens}{closes}</a>");
+        let doc = parse_external_xml(&ok, 64).expect("20 levels are well under the cap");
+        assert!(doc.root_element().has_tag_name("a"));
+    }
+
+    #[test]
+    fn comments_cdata_and_self_closing_tags_do_not_move_the_depth() {
+        // Each family's hidden opens outnumber the cap (64) on
+        // their own: if the scanner ever counted any one of comment,
+        // CDATA, or processing instruction text as markup, that
+        // family alone would exceed the depth limit and fail instead
+        // of parsing. Real depth stays at one (the root).
+        let hidden = 65;
+        let comment_opens = format!("<!--{}-->", "<d>".repeat(hidden));
+        let cdata = format!("<![CDATA[<a><b><c>{}]]>", "<e>".repeat(hidden));
+        let pi_opens = format!("<?pi {}?>", "<f>".repeat(hidden));
+        // roxmltree's Element::text() returns only the FIRST text
+        // child, so the CDATA block leads the root's content; the
+        // self-closing tag and the comment come after it.
+        let xml = format!("<root>{cdata}<self/>{comment_opens}{pi_opens}</root>");
+        let doc = parse_external_xml(&xml, 1_000)
+            .expect("opens hidden in comments, CDATA, and PIs must not move the depth counter");
+        assert!(doc.root_element().has_tag_name("root"));
+        // The CDATA content is text that looks like markup and must
+        // survive the parse as text.
+        let text = doc.root_element().text().unwrap_or_default();
+        assert!(
+            text.contains("<a><b><c>"),
+            "CDATA kept its markup-looking text"
+        );
     }
 
     #[test]

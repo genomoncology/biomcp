@@ -695,6 +695,212 @@ mod tests {
         assert!(root.path().join("http").is_dir());
     }
 
+    #[tokio::test]
+    async fn body_limit_epoch_lock_contention_obeys_variant_article_deadline() {
+        let root = TempDirGuard::new("body-limit-epoch-deadline");
+        fs::create_dir_all(root.path()).expect("cache root");
+        let held = open_epoch_lock(root.path()).expect("epoch lock");
+        held.lock_exclusive().expect("hold epoch lock");
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
+
+        let error = ensure_body_limited_cache_epoch_until(root.path(), false, &deadline)
+            .await
+            .expect_err("contended epoch lock must not outlive the invocation");
+
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+        FileExt::unlock(&held).expect("release epoch lock");
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn maintenance_contention_expires_without_partial_migration_and_releases_for_retry() {
+        let root = TempDirGuard::new("migration-maintenance-deadline");
+        fs::create_dir_all(root.path().join("http-cacache")).unwrap();
+        fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
+        let held = super::super::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .expect("hold maintenance lock");
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
+
+        let error = migrate_http_cache_with_deadline(root.path(), &deadline)
+            .await
+            .expect_err("contended migration must expire");
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert_eq!(
+            fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
+            b"legacy"
+        );
+        assert!(!root.path().join("http").exists());
+
+        drop(held);
+        let retry =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
+        assert!(matches!(
+            migrate_http_cache_with_deadline(root.path(), &retry)
+                .await
+                .unwrap(),
+            MigrationOutcome::Renamed
+        ));
+        assert_eq!(
+            fs::read(root.path().join("http/sentinel")).unwrap(),
+            b"legacy"
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn epoch_cleanup_stops_mutating_after_a_mid_traversal_deadline() {
+        let root = TempDirGuard::new("epoch-mid-cleanup-deadline");
+        let cache = root.path().join("http");
+        fs::create_dir_all(&cache).unwrap();
+        fs::write(cache.join("a"), b"first").unwrap();
+        fs::write(cache.join("b"), b"second").unwrap();
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+        let epoch_lock = open_epoch_lock(root.path()).unwrap();
+        epoch_lock.try_lock_exclusive().unwrap();
+        let maintenance = super::super::lock_cache_maintenance_until(root.path(), &deadline)
+            .await
+            .unwrap();
+        let paused = std::sync::Arc::new(tokio::sync::Notify::new());
+        let release = std::sync::Arc::new(tokio::sync::Notify::new());
+        let driving = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+        let driver = tokio::spawn({
+            let driving = std::sync::Arc::clone(&driving);
+            async move {
+                while driving.load(std::sync::atomic::Ordering::SeqCst) {
+                    tokio::task::yield_now().await;
+                }
+            }
+        });
+        let cleanup = ensure_body_limited_cache_epoch_async(
+            root.path(),
+            epoch_lock,
+            maintenance,
+            EpochState::Rebuild,
+            &deadline,
+            {
+                let (paused, release) = (
+                    std::sync::Arc::clone(&paused),
+                    std::sync::Arc::clone(&release),
+                );
+                move |path| {
+                    let (paused, release) = (
+                        std::sync::Arc::clone(&paused),
+                        std::sync::Arc::clone(&release),
+                    );
+                    async move {
+                        if path.file_name().is_some_and(|name| name == "a") {
+                            paused.notify_one();
+                            release.notified().await;
+                        }
+                    }
+                }
+            },
+        );
+        tokio::pin!(cleanup);
+        tokio::select! {
+            () = paused.notified() => {}
+            result = &mut cleanup => panic!("cleanup settled before injected pause: {result:?}"),
+        }
+        driving.store(false, std::sync::atomic::Ordering::SeqCst);
+        driver.await.unwrap();
+        tokio::time::advance(std::time::Duration::from_secs(11)).await;
+        assert!(cache.join("b").is_file());
+        release.notify_one();
+        assert_eq!(cleanup.await.unwrap_err().kind(), io::ErrorKind::TimedOut);
+        assert!(cache.join("b").is_file());
+        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+    }
+
+    #[tokio::test]
+    async fn synchronous_staging_window_is_deadline_raced_responsive_and_orphan_free() {
+        let root = TempDirGuard::new("epoch-staging-window-deadline");
+        fs::create_dir_all(root.path()).unwrap();
+        let entered = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
+        let task = tokio::spawn({
+            let root = root.path().to_path_buf();
+            let entered = std::sync::Arc::clone(&entered);
+            let barrier = std::sync::Arc::clone(&barrier);
+            async move {
+                deadline_blocking_io(&deadline, move |cancelled| {
+                    entered.store(true, Ordering::Release);
+                    barrier.wait();
+                    if cancelled.load(Ordering::Acquire) {
+                        return Err(deadline_elapsed());
+                    }
+                    create_epoch_staging(&root)
+                })
+                .await
+            }
+        });
+        while !entered.load(Ordering::Acquire) {
+            tokio::task::yield_now().await;
+        }
+        let responsive = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let heartbeat = tokio::spawn({
+            let responsive = std::sync::Arc::clone(&responsive);
+            async move {
+                tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+                responsive.store(true, Ordering::Release);
+            }
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+        assert!(responsive.load(Ordering::Acquire));
+        barrier.wait();
+        heartbeat.await.unwrap();
+        assert_eq!(
+            task.await.unwrap().unwrap_err().kind(),
+            io::ErrorKind::TimedOut
+        );
+        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+        assert!(fs::read_dir(root.path()).unwrap().all(|entry| {
+            !entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .contains(".tmp-")
+        }));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn async_io_crossing_expiry_settles_without_admitting_a_mutation() {
+        let entered = std::sync::Arc::new(tokio::sync::Notify::new());
+        let release = std::sync::Arc::new(tokio::sync::Notify::new());
+        let settled_post_yield = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+        let io = deadline_io(&deadline, {
+            let entered = std::sync::Arc::clone(&entered);
+            let release = std::sync::Arc::clone(&release);
+            let settled_post_yield = std::sync::Arc::clone(&settled_post_yield);
+            async move {
+                entered.notify_one();
+                release.notified().await;
+                tokio::task::yield_now().await; // pending while the expired timer is checked
+                settled_post_yield.store(true, std::sync::atomic::Ordering::SeqCst);
+                Ok(())
+            }
+        });
+        tokio::pin!(io);
+        tokio::select! {
+            biased;
+            () = entered.notified() => {}
+            result = &mut io => panic!("I/O settled before injected pause: {result:?}"),
+        }
+        tokio::time::advance(std::time::Duration::from_secs(11)).await;
+        release.notify_one();
+        assert_eq!(io.await.unwrap_err().kind(), io::ErrorKind::TimedOut);
+        // The settle contract: the operation's post-yield code runs to
+        // completion after the deadline fires. Real disk non-mutation is
+        // covered by epoch_cleanup_stops_mutating_after_a_mid_traversal_deadline.
+        assert!(settled_post_yield.load(std::sync::atomic::Ordering::SeqCst));
+    }
+
     #[cfg(unix)]
     #[test]
     fn body_limit_epoch_observes_a_private_temp_and_removes_it_after_publication() {

@@ -9,6 +9,9 @@ EXPECTED_GITATTRIBUTES = """*.pdf binary
 *.png binary
 *.gif binary
 *.ico binary
+
+# The vendored tokenizer cache is an offline asset, not reviewable text
+benchmarks/output-footprint/tokenizer-cache/* -diff
 """
 
 

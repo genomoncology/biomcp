@@ -41,6 +41,7 @@ mod trial;
 mod types;
 pub mod update;
 mod variant;
+pub(super) mod worker;
 
 pub use self::article::ArticleCommand;
 pub use self::author::AuthorCommand;
@@ -92,5 +93,7 @@ use self::shared::{
     search_meta_with_section_sources, search_meta_with_workflow, try_alias_fallback_outcome,
 };
 
+#[cfg(test)]
+mod stale_json_note_tests;
 #[cfg(test)]
 mod tests;

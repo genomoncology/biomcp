@@ -306,9 +306,14 @@ async fn run_section(
             {
                 return Err(err);
             }
+            let note = trial_recruiting_filter_note(&preferred_error);
 
             rows.truncate(limit);
-            Ok(SectionResult::new(to_json_array(rows)?, total))
+            Ok(SectionResult {
+                rows: to_json_array(rows)?,
+                total,
+                note,
+            })
         }
         SectionKind::Article => {
             let filters = article_filters(input);
@@ -412,6 +417,28 @@ pub(super) fn section_fetch_limit(kind: SectionKind, input: &PreparedInput) -> u
         | SectionKind::Gwas
         | SectionKind::AdverseEvent => input.limit,
     }
+}
+
+/// The recruiting-status note for a trial section whose preferred
+/// (status-filtered) search failed while the unfiltered backfill still
+/// returned rows: the filter is unavailable, and the user must see that
+/// the results may include trials that are not recruiting. The note names
+/// the source in our words; the raw upstream error stays in the log line
+/// where it cannot paste upstream text into the card (ticket 1256).
+pub(super) fn trial_recruiting_filter_note(
+    preferred_error: &Option<BioMcpError>,
+) -> Option<String> {
+    preferred_error.as_ref().map(|err| {
+        let provider = err.public_projection().source.unwrap_or("the trial source");
+        tracing::warn!(
+            provider = %provider,
+            error = %err,
+            "recruiting-status filter unavailable; serving the unfiltered backfill"
+        );
+        format!(
+            "Recruiting-status filter unavailable for {provider}. Results may include trials that are not recruiting."
+        )
+    })
 }
 
 pub(super) fn merge_trial_backfill_rows(

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use roxmltree::Document;
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 use super::node_text;
 
@@ -19,7 +19,8 @@ const SERIOUS_RESPONSE_FIXTURE: &str =
 const AGE_RESPONSE_FIXTURE: &str = include_str!("../../../../spec/fixtures/vaers/age-response.xml");
 
 fn parameter_map(xml: &str) -> BTreeMap<String, String> {
-    let doc = Document::parse(xml).expect("request fixture should parse");
+    let doc =
+        parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT).expect("request fixture should parse");
     doc.descendants()
         .filter(|node| node.has_tag_name("parameter"))
         .filter_map(|parameter| {

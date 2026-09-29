@@ -478,9 +478,11 @@ pub fn trial_search_markdown_with_footer(
         show_zero_result_nickname_hint,
         nickname_query,
         &[],
+        None,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn trial_search_markdown_with_footer_and_hints(
     query: &str,
     results: &[TrialSearchHit],
@@ -489,6 +491,7 @@ pub fn trial_search_markdown_with_footer_and_hints(
     show_zero_result_nickname_hint: bool,
     nickname_query: Option<&str>,
     zero_result_broadening_hints: &[String],
+    partial_note: Option<&str>,
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("trial_search.md.j2")?;
     let show_matched_intervention_column = results
@@ -504,6 +507,7 @@ pub fn trial_search_markdown_with_footer_and_hints(
         show_zero_result_nickname_hint => show_zero_result_nickname_hint,
         nickname_query => nickname_query,
         zero_result_broadening_hints => zero_result_broadening_hints,
+        partial_note => partial_note,
     })?;
     Ok(with_pagination_footer(body, pagination_footer))
 }

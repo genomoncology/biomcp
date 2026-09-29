@@ -70,3 +70,51 @@ fn decode_json_response_maps_http_and_content_type_errors() {
     .unwrap_err();
     assert_eq!(err.code(), "api");
 }
+
+#[test]
+fn context_response_rejects_a_missing_data_block() {
+    // A schema change that renames the data block must not read as
+    // "no evidence": the envelope parses, the data block is absent, and
+    // no GraphQL error was surfaced.
+    let resp: GraphQlResponse<CivicContextData> =
+        serde_json::from_value(serde_json::json!({})).unwrap();
+
+    let err = CivicClient::context_from_response(resp).unwrap_err();
+    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert!(format!("{err:?}").contains("no data block"));
+}
+
+#[test]
+fn context_response_rejects_a_total_without_parsed_rows() {
+    // A renamed evidence node field leaves the total intact but the rows
+    // empty: that shape is a schema change, not a healthy empty page.
+    let resp: GraphQlResponse<CivicContextData> = serde_json::from_value(serde_json::json!({
+        "data": {
+            "evidenceItems": {"totalCount": 17, "nodes": []},
+            "assertions": {"totalCount": 0, "nodes": []}
+        }
+    }))
+    .unwrap();
+
+    let err = CivicClient::context_from_response(resp).unwrap_err();
+    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert!(format!("{err:?}").contains("evidence total is 17"));
+}
+
+#[test]
+fn context_response_accepts_a_genuine_empty_page() {
+    // totalCount=0 with no rows is a healthy empty: no error, real zeros.
+    let resp: GraphQlResponse<CivicContextData> = serde_json::from_value(serde_json::json!({
+        "data": {
+            "evidenceItems": {"totalCount": 0, "nodes": []},
+            "assertions": {"totalCount": 0, "nodes": []}
+        }
+    }))
+    .unwrap();
+
+    let out = CivicClient::context_from_response(resp).expect("healthy empty context");
+    assert_eq!(out.evidence_total_count, 0);
+    assert_eq!(out.assertion_total_count, 0);
+    assert!(out.evidence_items.is_empty());
+    assert!(out.assertions.is_empty());
+}

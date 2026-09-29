@@ -327,3 +327,65 @@ fn missing_skill_suggests_skill_catalog() {
     assert!(msg.contains("skill '99' not found"));
     assert!(msg.contains("Try: biomcp skill list"));
 }
+
+#[test]
+fn a_missing_skill_exits_nonzero_github_287() {
+    // 0.9.0's debug-profile wheels printed the error and exited 0;
+    // the NotFound mapping must keep exit 1.
+    let err = show_use_case("definitely-not-a-skill-287").expect_err("missing skill errors");
+    assert_eq!(err.exit_code(), 1, "a missing skill must exit 1");
+}
+
+#[test]
+fn an_empty_skill_catalog_fails_loudly_github_287() {
+    // A healthy build always embeds skills; an empty catalog means
+    // broken asset embedding, and "No skills found" with exit 0
+    // masked exactly that on the 0.9.0 wheels.
+    let err = super::super::catalog::render_use_case_list(&[])
+        .expect_err("an empty catalog must error, not list nothing");
+    assert_eq!(err.exit_code(), 1);
+    let msg = err.to_string();
+    assert!(msg.contains("skill catalog"), "{msg}");
+    assert!(msg.contains("embedded skills/ tree is empty"), "{msg}");
+    assert!(msg.contains("GitHub #287"), "{msg}");
+}
+
+#[test]
+fn the_healthy_catalog_still_lists_github_287() {
+    let listing = list_use_cases().expect("the embedded catalog lists");
+    assert!(listing.contains("# BioMCP Worked Examples"));
+    assert!(
+        !listing.contains("No skills found"),
+        "the healthy listing names real content"
+    );
+}
+
+#[test]
+fn debug_builds_embed_the_skill_and_chart_assets_github_287() {
+    // With rust-embed's debug-embed feature, the debug profile this
+    // test binary builds in embeds the same assets the release
+    // ships. Reading both through the embedded path only passes
+    // when that is true — the exact failure the 0.9.0 wheels had.
+    let prompt = render_system_prompt().expect("SKILL.md is embedded in debug");
+    assert!(prompt.contains("BioMCP"), "the embedded prompt has content");
+
+    let chart = crate::cli::chart::show(Some(&crate::cli::chart::ChartCommand::Bar))
+        .expect("bar.md is embedded in debug");
+    assert!(
+        !chart.trim().is_empty(),
+        "the embedded chart doc has content"
+    );
+}
+
+#[test]
+fn chart_asset_misses_exit_nonzero_github_287() {
+    // Chart has no listing path to mask: every command resolves one
+    // embedded doc, and a miss maps to NotFound. Pin the mapping the
+    // chart's embedded_text builds.
+    let miss = crate::error::BioMcpError::NotFound {
+        entity: "chart".into(),
+        id: "no-such-chart.md".into(),
+        suggestion: "Try: biomcp chart".into(),
+    };
+    assert_eq!(miss.exit_code(), 1);
+}

@@ -148,3 +148,7 @@ RxNorm adds exact identity on top. DailyMed sections supplement, not
 replace, the OpenFDA label path. All five sources are free and
 keyless (RxNorm's public RxNav API; the UMLS key path exists if richer
 data is needed later).
+
+## Decision (ticket 1238, 2026-09-26)
+
+Stays open as the 1.0 source-evaluation backlog it was filed to be.

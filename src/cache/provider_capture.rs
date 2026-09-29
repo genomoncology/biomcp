@@ -1338,6 +1338,7 @@ mod tests {
         );
     }
 
+    #[cfg(unix)]
     #[test]
     fn concurrent_same_content_captures_publish_one_complete_record() {
         let root = TempDirGuard::new("provider-capture-concurrent");

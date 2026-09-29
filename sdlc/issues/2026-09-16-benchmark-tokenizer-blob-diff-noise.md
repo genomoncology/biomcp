@@ -7,3 +7,10 @@ Observed 2026-09-16 during the v0.8.25..v0.9.0 growth audit.
 The working-tree cost is modest and the pack already compresses the blob well. The real cost is diff noise: `git diff --stat` and numstat readings of a cycle report the tokenizer before they report the product.
 
 Worth considering: mark the file `-diff` in `.gitattributes` so git reports it as binary. That is a one-line change and removes the noise while keeping the offline guarantee. LFS or a documented one-time download are heavier alternatives.
+
+## Resolved
+
+The vendored tokenizer cache is marked `-diff` in `.gitattributes`
+(landed with ticket 1238's decisions): git now reports it as binary
+in diffstat and numstat, the offline guarantee is unchanged, and the
+growth audits read the product first.

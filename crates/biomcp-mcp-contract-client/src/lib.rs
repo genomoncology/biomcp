@@ -284,15 +284,15 @@ where
                 .collect(),
             ),
         )
-        .await
-        .expect_err("out-of-schema typed search limit should be rejected");
-    match invalid {
-        ServiceError::McpError(data) => assert!(
-            data.message
-                .contains("typed search pagination is outside its supported bounds")
-        ),
-        other => panic!("expected MCP invalid params error, got {other:?}"),
-    }
+        .await?;
+    // Argument validation is a tool result with isError so a model can
+    // read the bounds and retry.
+    assert_eq!(invalid.is_error, Some(true));
+    let text = first_text(&invalid.content);
+    assert!(
+        text.contains("typed search pagination is outside its supported bounds"),
+        "bounds message: {text}"
+    );
     Ok(())
 }
 
@@ -390,10 +390,16 @@ where
         .find(|tool| tool.name == "get")
         .expect("typed get tool listed");
     let search_schema = serde_json::to_value(&search.input_schema)?;
+    assert!(
+        search_schema.get("oneOf").is_none(),
+        "typed search schema must publish a flat root: {search_schema}"
+    );
     assert_eq!(
-        search_schema["oneOf"].as_array().map(Vec::len),
+        search_schema["properties"]["entity"]["enum"]
+            .as_array()
+            .map(Vec::len),
         Some(9),
-        "typed search schema must have nine entity-specific branches: {search_schema}"
+        "typed search entity enum must carry all nine entities: {search_schema}"
     );
     assert!(
         json_property_contains(&search_schema, "entity", "gwas"),
@@ -404,10 +410,16 @@ where
         "typed search limit schema missing 25 bound: {search_schema}"
     );
     let get_schema = serde_json::to_value(&get.input_schema)?;
+    assert!(
+        get_schema.get("oneOf").is_none(),
+        "typed get schema must publish a flat root: {get_schema}"
+    );
     assert_eq!(
-        get_schema["oneOf"].as_array().map(Vec::len),
+        get_schema["properties"]["entity"]["enum"]
+            .as_array()
+            .map(Vec::len),
         Some(14),
-        "typed get schema must have fourteen entity-specific branches: {get_schema}"
+        "typed get entity enum must carry all fourteen entities: {get_schema}"
     );
     assert!(
         json_property_contains(&get_schema, "entity", "gene"),
@@ -643,11 +655,12 @@ where
                     .collect(),
                 ),
             )
-            .await
-            .expect_err("typed binary download must be rejected");
+            .await?;
+        assert_eq!(typed.is_error, Some(true), "typed {entity} rejection");
+        let text = first_text(&typed.content);
         assert!(
-            typed.to_string().contains("CLI-only"),
-            "typed {entity} rejection: {typed}"
+            text.contains("CLI-only"),
+            "typed {entity} rejection: {text}"
         );
     }
     Ok(())
@@ -1060,6 +1073,7 @@ impl ContractHarness {
     fn base_server_command(&self, extra_env: &[EnvVar]) -> Command {
         let mut command = Command::new(&self.biomcp_bin);
         command.env_remove("RUST_MIN_STACK");
+        command.env_remove("BIOMCP_TEST_PANIC_TOOL");
         command.env("UMLS_API_KEY", "");
         for (key, value) in extra_env {
             command.env(key, value);

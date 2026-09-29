@@ -57,3 +57,9 @@ host's "[2]" (SIGINT) failures were the same mechanism through its chain.
 Fixed by restoring fatal-signal dispositions at spawn in the lifecycle
 tests, with a leak-simulating regression test. The sixty-second waits from
 1190 remain as cover for genuine teardown latency only.
+
+## Decision (ticket 1238, 2026-09-26)
+
+Watch item under the stress lane; the ten-second subprocess timeout
+has held across every gate since the observation. If it recurs,
+convert the wait to the shared helper with a scaled watchdog.

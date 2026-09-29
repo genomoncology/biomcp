@@ -7,7 +7,7 @@ use super::{TrialGetArgs, TrialSearchArgs};
 use crate::cli::CommandOutcome;
 
 #[derive(serde::Serialize)]
-struct TrialPaginationMeta {
+pub(super) struct TrialPaginationMeta {
     offset: usize,
     limit: usize,
     returned: usize,
@@ -25,7 +25,7 @@ struct TrialPaginationMeta {
 }
 
 impl TrialPaginationMeta {
-    fn new(
+    pub(super) fn new(
         offset: usize,
         limit: usize,
         returned: usize,
@@ -64,7 +64,7 @@ fn trial_search_json<T: serde::Serialize>(
     pagination: TrialPaginationMeta,
     next_commands: Vec<String>,
 ) -> anyhow::Result<String> {
-    search_json_with_meta_and_upstream_total(results, pagination, next_commands, None)
+    search_json_with_meta_and_upstream_total(results, pagination, next_commands, None, None)
 }
 
 fn trial_pagination_footer(meta: &TrialPaginationMeta) -> String {
@@ -351,6 +351,7 @@ pub(in crate::cli) async fn handle_search(
             &page.total,
             &page.continuation,
         );
+        let partial_note = page.partial_note;
         let upstream_total = page.eligibility_verification_upstream_total;
         let results = page.results;
         if json {
@@ -364,6 +365,7 @@ pub(in crate::cli) async fn handle_search(
                 pagination,
                 next_commands,
                 upstream_total,
+                partial_note.as_deref(),
             )
             .map(CommandOutcome::stdout);
         }
@@ -396,16 +398,20 @@ pub(in crate::cli) async fn handle_search(
             show_zero_result_nickname_hint,
             positional_trial_query.as_deref(),
             &zero_result_broadening_hints,
+            partial_note.as_deref(),
         )?
     };
 
     Ok(CommandOutcome::stdout(text))
 }
 
+pub(crate) const PARTIAL_COUNT_REASON_TEXT: &str = "may include trials we could not check";
+
 pub(super) fn render_count_only(
-    count: crate::entities::trial::ClinicalTrialSearchTotal,
+    count: impl Into<crate::entities::trial::TrialCount>,
     json: bool,
 ) -> anyhow::Result<String> {
+    let count = count.into();
     if json {
         #[derive(serde::Serialize)]
         struct ClinicalTrialSearchTotalOnlyJson {
@@ -415,39 +421,64 @@ pub(super) fn render_count_only(
             total_reason: Option<&'static str>,
             #[serde(skip_serializing_if = "Option::is_none")]
             approximate: Option<bool>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            partial: Option<bool>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            partial_reason: Option<&'static str>,
         }
 
+        let partial = count.partial_upper_bound.is_some().then_some(true);
         let approximate = (count.precision() == "approximate").then_some(true);
+        let total = count
+            .partial_upper_bound
+            .map(u64::try_from)
+            .transpose()?
+            .or(count.value());
         Ok(crate::render::json::to_pretty(
             &ClinicalTrialSearchTotalOnlyJson {
-                total: count.value(),
-                total_precision: count.precision(),
-                total_reason: count.reason(),
+                total,
+                total_precision: if partial.is_some() {
+                    "partial"
+                } else {
+                    count.precision()
+                },
+                total_reason: count.total.reason(),
                 approximate,
+                partial,
+                partial_reason: partial.map(|_| PARTIAL_COUNT_REASON_TEXT),
             },
         )?)
     } else {
-        Ok(match (count.value(), count.precision(), count.reason()) {
-            (Some(total), "exact", _) => format!("Total: {total}"),
-            (Some(total), "approximate", Some(reason)) => {
-                format!("Total: {total} (approximate: {reason})")
-            }
-            (None, "unknown", Some(reason)) => format!("Total: unknown ({reason})"),
-            _ => "Total: unknown".to_string(),
-        })
+        if let Some(total) = count.partial_upper_bound {
+            return Ok(format!(
+                "Total: {total} (partial, {PARTIAL_COUNT_REASON_TEXT})"
+            ));
+        }
+        Ok(
+            match (count.value(), count.precision(), count.total.reason()) {
+                (Some(total), "exact", _) => format!("Total: {total}"),
+                (Some(total), "approximate", Some(reason)) => {
+                    format!("Total: {total} (approximate: {reason})")
+                }
+                (None, "unknown", Some(reason)) => format!("Total: unknown ({reason})"),
+                _ => "Total: unknown".to_string(),
+            },
+        )
     }
 }
 
-/// Carry the provider total alongside a verification-emptied zero page.
-fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
+/** Carry the provider total alongside a verification-emptied zero page
+ * and the partial-detail note on any page. */
+pub(super) fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
     results: Vec<T>,
     pagination: TrialPaginationMeta,
     next_commands: Vec<String>,
     upstream_total: Option<usize>,
+    partial_note: Option<&str>,
 ) -> anyhow::Result<String> {
     let count = results.len();
     let mut meta = super::super::shared::search_meta_with_suggestions(next_commands, None);
-    if let Some(n) = upstream_total {
+    if upstream_total.is_some() || partial_note.is_some() {
         let meta = meta.get_or_insert_with(|| super::super::SearchJsonMeta {
             next_commands: Vec::new(),
             suggestions: None,
@@ -458,7 +489,12 @@ fn search_json_with_meta_and_upstream_total<T: serde::Serialize>(
             upstream_total: None,
             notes: Vec::new(),
         });
-        meta.upstream_total = Some(n);
+        if let Some(n) = upstream_total {
+            meta.upstream_total = Some(n);
+        }
+        if let Some(note) = partial_note {
+            meta.notes = vec![note.to_string()];
+        }
     }
     crate::render::json::to_pretty(&TrialSearchJsonResponse {
         pagination,

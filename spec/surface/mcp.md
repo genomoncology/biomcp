@@ -144,12 +144,12 @@ curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.
 ClinGen schemas validate their named properties
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
-search and get schemas use entity-specific branches
+search and get schemas publish flat roots without combinators
 search and get schemas declare object roots
 search schema includes a bounded limit
-get schema assigns sections only to their owning entities
-article schema exposes assets manifest but not asset download
 search and get schemas include author entity
+get schema merges per-entity sections and hides CLI-only forms
+article schema exposes assets manifest but not asset download
 variant_articles schema includes identity verification controls
 indexing'
 ```

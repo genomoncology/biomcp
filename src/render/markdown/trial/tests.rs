@@ -270,3 +270,29 @@ fn bounded_trial_summary_distinguishes_sentence_final_and_suffix_collisions() {
         "Background is established. The study enrolls 40 PTS. with disease..."
     );
 }
+
+#[test]
+fn bounded_trial_summary_retains_clause_after_abbreviation() {
+    let text = "Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens. The endpoint is survival.";
+    assert_eq!(
+        bounded_trial_summary(text),
+        "Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens..."
+    );
+}
+
+#[test]
+fn trial_search_markdown_keeps_partial_detail_note() {
+    let note = "The count may be too high: we could not check 1 of the kept trials (NCT1).";
+    let markdown = trial_search_markdown_with_footer_and_hints(
+        "condition=melanoma",
+        &[],
+        None,
+        "",
+        false,
+        None,
+        &[],
+        Some(note),
+    )
+    .expect("markdown");
+    assert!(markdown.contains(&format!("Note: {note}")));
+}

@@ -226,7 +226,37 @@ impl CivicClient {
             }
         }
 
-        let data = resp.data.unwrap_or_default();
+        let data = match resp.data {
+            Some(data) => data,
+            None => {
+                // A response with no data block and no surfaced error message
+                // is a schema change (or an unexpected envelope), not "no
+                // evidence": surface it as a source failure so it can never
+                // read as a healthy empty result.
+                return Err(BioMcpError::Api {
+                    api: CIVIC_API.to_string(),
+                    message: "response carried no data block (schema change?)".to_string(),
+                });
+            }
+        };
+        if data.evidence_items.total_count > 0 && data.evidence_items.nodes.is_empty() {
+            return Err(BioMcpError::Api {
+                api: CIVIC_API.to_string(),
+                message: format!(
+                    "evidence total is {} but no evidence rows parsed (schema change?)",
+                    data.evidence_items.total_count
+                ),
+            });
+        }
+        if data.assertions.total_count > 0 && data.assertions.nodes.is_empty() {
+            return Err(BioMcpError::Api {
+                api: CIVIC_API.to_string(),
+                message: format!(
+                    "assertion total is {} but no assertion rows parsed (schema change?)",
+                    data.assertions.total_count
+                ),
+            });
+        }
         Ok(CivicContext {
             evidence_total_count: data.evidence_items.total_count,
             assertion_total_count: data.assertions.total_count,

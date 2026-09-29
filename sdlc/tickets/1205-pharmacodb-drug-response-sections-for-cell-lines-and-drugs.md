@@ -164,8 +164,8 @@ These follow the 2026-09-17 source survey. Ian can overturn any of them.
 
 ## Review
 
-- Design review: pending
-- Code review: pending
+- Design review: record not kept at the time; the 2026-09-17 ticket review verdict was "needs a fix" (acceptance 6 contradicted measured sizes), and the fixes were applied to the ticket text before implementation
+- Code review: record not kept at the time (the review process before ticket 1219 recorded no verdict; the work landed without one)
 
 ## Licence findings, 2026-09-18
 
@@ -177,3 +177,4 @@ The original Terms sentence above claimed CC BY-NC 4.0 for the PharmacoDB API an
 - The only licence the project itself publishes is for its source code: GPL-3.0, at `https://github.com/bhklab/PharmacoDB/blob/master/LICENSE`.
 - Conclusion recorded in both registries with `reviewed_on: 2026-09-18`, tier 3, and `terms_url: null`: PharmacoDB publishes no licence or terms page, its source code is GPL-3.0, the describing paper is CC BY-NC 4.0, and redistribution terms for the data itself are unstated by the provider. The user-facing attribution line says the same and asks the reader to treat reuse as non-commercial, because a user cannot tell that from the data.
 - `the_license_agrees_across_the_attribution_line_and_both_registries` in `src/entities/pharmacodb/tests.rs` pins that the attribution line, `docs/reference/sources.json` and `docs/reference/source-licensing.md` carry one value and that no bare `CC BY-NC 4.0` row returns.
+- Verification: shipped in the 0.8.x series (no gate record was kept before ticket 1219 introduced records); see CHANGELOG and git history

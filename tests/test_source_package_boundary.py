@@ -462,9 +462,9 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     # (ticket 1226) and the CA-bundle helper and its TLS contract test
     # (ticket 1221). Ticket 2002 adds the FHIR source, the patient entity,
     # CLI, renderer, template, MCP gate, contract test, guide, and spec page
-    # (13 files). The exact package contains 1,413 files, with no spare
-    # capacity.
-    assert len(paths) == 1413
+    # (13 files). Main's later source, test, and release corrections bring
+    # the synchronized 1.0 package to 1,438 reviewed members.
+    assert len(paths) == 1438
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
