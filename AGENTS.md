@@ -110,20 +110,10 @@ and generated build outputs out of git.
 
 ## CI and merging
 
-- Push every change to a `tickets/*` branch first. CI runs on ticket
-  branches; merge to main only after that branch's CI run has
-  finished green. A started run does not count. No direct commits to
-  main.
-- If main goes red, fix it before anything else lands.
-- The release bar is the tagged commit, not main: the commit you tag
-  must have a finished, green CI run and pass the release workflow.
-- Commit messages starting with `docs:` skip the Rust CI jobs (the
-  repository-contract checks still run, because they test the docs).
-  Use that prefix for record-only, ticket-file, and review-file
-  commits.
+Push every change to a `tickets/*` branch first. CI runs on ticket branches; merge to main only after that branch's CI run has finished green. A started run does not count. No direct commits to main. A red main is fixed promptly, and it does not block a release by itself: the release bar is the tagged commit, which must have a finished green CI run and pass the release workflow. Ian ruled on both points on 2026-09-29.
+
+CI skips the Rust jobs only when every file a push changes is documentation, an `sdlc/` file, or a `notes/` file; the classify job decides by the changed files, never by the commit message, and the repository-contract job still runs the docs and record tests plus the strict documentation build. Never rely on a commit-message prefix to skip CI.
+
 ## Source licensing
 
-State each source's terms plainly in its registry entry and on the
-licensing page. Label restricted terms as restricted. Users are
-responsible for their own licenses. BioMCP never buys a license or
-contacts a provider without Ian's approval.
+State each source's terms plainly in its registry entry and on the licensing page. Label restricted terms as restricted. Users are responsible for their own licenses. BioMCP never buys a license or contacts a provider without Ian's approval.

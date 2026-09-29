@@ -10,6 +10,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BIOMCP_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/release/biomcp"))

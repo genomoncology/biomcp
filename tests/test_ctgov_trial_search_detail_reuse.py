@@ -15,6 +15,8 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from jsonschema import Draft202012Validator
 
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_SETUP = (

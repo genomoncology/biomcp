@@ -49,7 +49,9 @@ transcript in use.
 - `src/cli/variant/dispatch.rs`, `src/cli/variant/normalization_json.rs`
   and `src/transform/variant.rs` — where the cDNA/protein pair
   renders without naming its transcripts.
-- The variant lookup argument parser in the variant CLI module —
+- The variant lookup argument parser in `src/cli/variant/dispatch.rs`
+  (argument handling) and `src/transform/variant.rs` (transcript
+  mapping) —
   where an alternate numbering must be accepted as a key.
 
 ## Proof

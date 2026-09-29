@@ -9,6 +9,9 @@ import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]  # needs bubblewrap/offline toolchain; docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MCP_SCRIPT = REPO_ROOT / "tools" / "check-mcp-allowlist.py"

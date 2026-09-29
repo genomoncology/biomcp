@@ -4,6 +4,10 @@ import os
 from pathlib import Path
 import subprocess
 
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC_DOCS = [

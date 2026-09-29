@@ -34,8 +34,14 @@ spelling it was never told about.
   the multi-line assert! floor exemption is tested; gencc's unmarked
   pin repins to its true count.
 - Still open after 1269, recorded here because the round-three
-  review listed them: an expression-form env carrying PATH or ENV
-  (not only BASH_ENV and BASH_FUNC_) is not banned at job level;
+  review listed them: job `container.env` blocks are an unscanned
+  env surface; `options: -e BASH_ENV=...` inside a container
+  definition escapes the env scan; `with:` inputs are checked for
+  BASH_ENV but not BASH_FUNC_; time-function spellings
+  (`time.time()`, `from time import monotonic`,
+  `checked_duration_since`) escape the wait ratchet; an
+  expression-form env carrying PATH or ENV (not only BASH_ENV and
+  BASH_FUNC_) is not banned at job level;
   `<Command>::new`-style generics in an expression position outside
   a statement window, and setters bound through function returns,
   remain fail-closed rather than named. The wait ratchet counts

@@ -194,6 +194,29 @@ impl StaleNoteEnv {
         Self { root, previous }
     }
 
+    /// Distinct bases per source key (the search-all fixture pins
+    /// four federated legs to two different servers).
+    fn bases(pairs: &[(&'static str, &str)]) -> Self {
+        let root = crate::test_support::TempDirGuard::new("stale-json-notes");
+        let mut previous = Vec::new();
+        for (key, base) in pairs.iter().copied() {
+            // SAFETY: serialized on the source_env key; restored on drop.
+            unsafe {
+                previous.push((key, std::env::var(key).ok()));
+                std::env::set_var(key, base);
+            }
+        }
+        // SAFETY: as above.
+        unsafe {
+            previous.push(("BIOMCP_CACHE_DIR", std::env::var("BIOMCP_CACHE_DIR").ok()));
+            std::env::set_var(
+                "BIOMCP_CACHE_DIR",
+                root.path().to_str().expect("utf-8 cache root"),
+            );
+        }
+        Self { root, previous }
+    }
+
     fn new(base: &str, keys: &[&'static str]) -> Self {
         let root = crate::test_support::TempDirGuard::new("stale-json-notes");
         let mut previous = Vec::new();
@@ -286,6 +309,58 @@ async fn a_stale_article_search_json_states_the_cache_age_in_meta_notes() {
 // always bypass persistence, recorded after cache decode failures),
 // so no stale serve exists to describe. The exclusion is recorded
 // in sdlc/issues/2026-09-27-get-json-bodies-have-no-notes-channel-for-the-stale-cache-age.md.
+
+/// The search-all end-to-end stale serve (restored 2026-09-29 per
+/// Ian's refusal of the deferral): Europe PMC alone rides the
+/// killable fixture whose body the cache holds; the other three
+/// federated legs (PubMed, PubTator, Semantic Scholar) point at a
+/// live fixture that answers 404 on every path. A 404 is terminal,
+/// so those legs never retry a dead port and burn the 12 s
+/// per-source budget — the 2026-09-29 review measured the stale run
+/// at 11.8 s when all four legs hit the killed port and ~4.6 s with
+/// the 404 legs.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_stale_search_all_json_states_the_cache_age_in_meta_notes() {
+    let (epmc_base, epmc_server) = stale_note_fixture_server(EPMC_BODY).await;
+    let (notfound_base, _notfound_server) = stale_note_routes_server(Vec::new()).await;
+    let _env = StaleNoteEnv::bases(&[
+        ("BIOMCP_EUROPEPMC_BASE", epmc_base.as_str()),
+        ("BIOMCP_PUBMED_BASE", notfound_base.as_str()),
+        ("BIOMCP_PUBTATOR_BASE", notfound_base.as_str()),
+        ("BIOMCP_S2_BASE", notfound_base.as_str()),
+    ]);
+    let args = [
+        "--json",
+        "search",
+        "all",
+        "--keyword",
+        "aspirin",
+        "--limit",
+        "1",
+    ];
+    let fresh = run(&args).await;
+    assert!(
+        meta_notes(&fresh).is_empty(),
+        "fresh serve carries no note: {fresh}"
+    );
+    assert!(
+        fresh.contains("\"article\""),
+        "the article section ran: {fresh}"
+    );
+
+    tokio::time::sleep(std::time::Duration::from_millis(1600)).await; // watchdog: freshness-window wait, bounded at 1.6 s
+    epmc_server.abort();
+
+    let stale = run(&args).await;
+    let notes = meta_notes(&stale);
+    assert!(
+        notes
+            .iter()
+            .any(|note| note.contains("older than the provider's freshness window")),
+        "the stale search-all JSON carries the parsed note: {stale}"
+    );
+}
 
 const MYGENE_BODY: &str =
     r#"{"total":1,"hits":[{"symbol":"BRAF","name":"B-Raf proto-oncogene","entrezgene":"673"}]}"#;
@@ -398,11 +473,9 @@ async fn no_cache_skips_the_cache_for_the_spawned_clingen_fetch() {
 }
 
 /// Search-all's note plumbing, pinned deterministically: the JSON
-/// builder inserts `_meta` exactly when notes exist (ticket 1263
-/// added the channel; ticket 1268's e2e could not hold under CI
-/// load — the federated fixture never caches there — so the
-/// end-to-end sentence coverage lives with the article test above,
-/// which CI passes).
+/// builder inserts `_meta` exactly when notes exist. The end-to-end
+/// stale serve runs again above (restored 2026-09-29 with the 404
+/// federated legs); this pin covers the builder shape directly.
 #[test]
 fn search_all_json_body_carries_notes_only_when_present() {
     let results = crate::cli::search_all::SearchAllResults {

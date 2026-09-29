@@ -57,7 +57,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | dbSNP | 1 | direct_api | none | NCBI public data service with attribution and non-endorsement expectations | RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement | <https://www.ncbi.nlm.nih.gov/home/about/policies/> |
 | DisGeNET | 2 | direct_api | required_env | custom provider terms for API and downloads | do not assume unrestricted redistribution; use according to the provider account terms | <https://www.disgenet.com/> |
 | EMA | 1 | direct_api | none | EMA website material may be reused with source attribution; third-party content can carry separate rights | EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission | <https://www.ema.europa.eu/en/about-us/about-website/legal-notice> |
-| Enrichr | 1 | direct_api | none | open web/API service with citation expectations for Enrichr and its libraries | reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries | <https://maayanlab.cloud/Enrichr/> |
+| Enrichr | 3 | direct_api | none | free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners; the terms state it is not for treating or diagnosing human subjects | academic and non-profit reuse with citation; commercial use needs the Mount Sinai license; never use for clinical treatment or diagnosis decisions | <https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html> |
 | Europe PMC | 1 | direct_api | none | open literature metadata service; article and full-text licenses vary by record | metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses | <https://europepmc.org/RestfulWebService> |
 | FHIR (operator server) | 2 | direct_api | not_applicable | an operator-run FHIR R4 server that publishes no licence or terms page; the operator's own data-use agreements govern every record | patient records are protected health information; BioMCP caches nothing and the operator decides every reuse | none published |
 | Figshare | 1 | direct_api | none | public repository API; each article/file carries its own license metadata | reuse downloaded article assets according to the Figshare item license and preserve Figshare/article provenance | <https://figshare.com/terms> |
@@ -349,10 +349,10 @@ Reviewed on: `2026-09-27`
 - BioMCP surfaces: `get gene <symbol> ontology`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
-- Provider access / registration: open public API
-- License / terms summary: open web/API service with citation expectations for Enrichr and its libraries
-- Redistribution / reuse summary: reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries
-- Official terms URL: <https://maayanlab.cloud/Enrichr/>
+- Provider access / registration: open public API for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners
+- License / terms summary: free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners; the terms state it is not for treating or diagnosing human subjects
+- Redistribution / reuse summary: academic and non-profit reuse with citation to Enrichr and its libraries; commercial reuse needs the Mount Sinai license; the service must not be used to treat or diagnose human subjects
+- Official terms URL: <https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html>
 - Reviewed on: `2026-09-29`
 - Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead.
 

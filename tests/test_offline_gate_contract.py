@@ -10,6 +10,8 @@ import subprocess
 import pytest
 import yaml
 
+pytestmark = [pytest.mark.needs_binary]  # needs bubblewrap/offline toolchain; docs-only CI excludes this module
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MAKEFILE = (ROOT / "Makefile").read_text(encoding="utf-8")
@@ -104,7 +106,10 @@ def test_authoritative_linux_job_fetches_release_history_for_version_contracts()
         if step.get("uses", "").startswith("actions/checkout@")
         and step.get("with", {}).get("fetch-depth") == 0
     ]
-    assert len(full_history_checkouts) == 2
+    # Three jobs need full history: canonical-gates (release
+    # version contracts), repository-contracts (record lineage) and
+    # changes (the docs-only classification diffs the whole push).
+    assert len(full_history_checkouts) == 3
     assert all(
         step["with"].get("filter") == "blob:none" for step in full_history_checkouts
     )

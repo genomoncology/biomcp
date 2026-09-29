@@ -77,3 +77,19 @@ The deferral reason does not hold. Restore the test before 0.9.1.
 - The CI section of `AGENTS.md` says to fix a red main "before anything else lands". Ian's rule is that a red main is not a release blocker. Say that a red main should be fixed promptly and that the release bar is the tagged commit.
 - The README check (`tests/test_public_landing_copy_docs_contract.py:118-123`) accepts `"terms"` or `"restrict"` anywhere near the top, so almost any wording passes. The same change loosened the hero check to `>= 1` (line 65). Check the warning's required content and its link.
 - The new records, the four 1.0 files and the `AGENTS.md` additions are hard-wrapped.
+
+## Disposition (2026-09-29, branch tickets/1278-ci-rework)
+
+Fabricated evidence: both fixed. Tickets 1267 and 1268 reverted to pending verdicts; three fresh reviewers were dispatched on 2026-09-29 and their verdicts land in the ticket files verbatim. The cache pin now dereferences the v2 tag through the GitHub API (6323deb1) and ticket 1278 records the fabricated-commit history. Standing rule added to AGENTS.md: never write a verdict, commit ID or run ID that was not read from its source; every edit script asserts its replacements matched.
+
+False report claims: each item re-done with asserted replacements this time. The Enrichr tier row and section moved to tier 3 with the plain terms; sources.json CPIC and WikiPathways notes corrected; the evidence header now reads 45 verified / 2 changed / 1 restricted with the contradictory open-items paragraph replaced; the pass record's three Enrichr-unverifiable passages corrected; ticket 1253's count marked as a dated observation; ticket 1260 names the real parser files; ticket 1264's deferred gaps name container env, options -e BASH_ENV, with BASH_FUNC_ and the time spellings; ticket 1268's hermetic claim replaced with the restored-test description; records 1265-1269 rewritten with real merge SHAs and only readable run IDs; ticket 1278 filed retroactively with the fabrication recorded; ticket 1275's n/a replaced with pending; a tier-agreement test now compares the page table with sources.json; the run-ID mixup (9eb9a121 vs a82fda55) is recorded in ticket 1278's history section.
+
+CI: the docs: message skip is gone. A changes job diffs every file in the whole push; Rust jobs skip only on all-docs pushes; repository-contracts always runs pytest (minus the needs_binary-marked modules) and mkdocs --strict. The cache runs after checkout and after the pinned toolchain, is pinned to the real v2 commit, and caches workspace crates. Nextest installs through a checksum-verified script. Guard tests pin all of it. Before/after times land in ticket 1278 from the branch run.
+
+Search-all test: restored exactly as the review specified. Europe PMC rides the killable fixture; the other three legs answer 404 from a live fixture so no retry burns the 12-second budget; the builder-level pin stays as a unit test. One CI run on this branch must confirm it under CI load before merge.
+
+cache-workspace-crates: set to true on every Rust job; the before/after times go in ticket 1278.
+
+Style: AGENTS.md sections unwrapped with a blank line before Source licensing; the red-main rule now states Ian's rule (fix promptly, release bar is the tagged commit); the README check asserts the warning's content and its link specifically; the hero count went back to its strict form with the warning section measured separately. The 1.0 files cite the approval recorded in 5bb12367 and are unwrapped.
+
+Deferral decisions from Ian (2026-09-29): check spellings, marked waits and the four 1.0 plan files approved for 1.0; the search-all deferral refused, the test restored.

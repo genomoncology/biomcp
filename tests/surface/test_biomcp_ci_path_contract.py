@@ -3,6 +3,9 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WRAPPER_SCRIPT = REPO_ROOT / "tools" / "biomcp-ci"

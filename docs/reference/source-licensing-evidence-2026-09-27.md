@@ -3,10 +3,11 @@
 Per-source evidence for the delegated licensing review pass recorded
 in `sdlc/records/2026-09-27-source-licensing-review-pass.md`. Every
 row names the URL checked, the access date, and the finding. The
-correct split across the 48 sources due 2026-03-20: 42 unchanged, 2
-changed (COSMIC, CPIC), 4 unverifiable (CIViC, Enrichr, WikiPathways,
-and PharmGKB — the last reconciled to verified on 2026-09-28 against
-the CPIC page, leaving 3 open). JS-walled pages were read from their
+final split across the 48 sources due 2026-03-20: 45 verified
+(CIViC, WikiPathways and PharmGKB resolved on 2026-09-28, Enrichr on
+2026-09-29), 2 changed (COSMIC, CPIC), 1 restricted (Enrichr,
+verified and relabelled the same day from the live terms submenu
+page; the 09-27 call had read the broken help page). JS-walled pages were read from their
 live JS bundles, which are the citable sources for those rows.
 
 | Source | Evidence URL | Accessed | Finding |
@@ -60,8 +61,7 @@ live JS bundles, which are the citable sources for those rows.
 | uniprot | https://rest.uniprot.org/uniprotkb/P12345.txt | 2026-09-27 | unchanged — CC BY 4.0 (stated in the live REST entry text) |
 | wikipathways | https://www.wikipathways.org/terms.html | 2026-09-28 | verified (2026-09-28 correction of the 09-27 call): the current site's terms page is live and states WikiPathways "decided to adopt the Creative Commons CC0 waiver for our content" |
 
-Open items: only Enrichr keeps `reviewed_on` 2026-03-20 (its terms
-loader 404s provider-side for every visitor). The guard warns after
-300 days — 2027-01-15 — and fails on 2027-03-21 for that one source.
-The retry is dropped: Enrichr is verified and relabelled restricted.
-Every source now has a verified review date.
+No open items remain: Enrichr was verified and relabelled restricted
+on 2026-09-29 from the live terms submenu page (the 09-27 call had
+read the broken help page), and every source now carries a verified
+review date, so the 300-day guard applies to all 48.

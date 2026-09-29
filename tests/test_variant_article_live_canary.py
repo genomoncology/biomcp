@@ -18,6 +18,8 @@ def write_fake_binary(path: Path, marker: Path) -> None:
 import json
 from pathlib import Path
 
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 Path({str(marker)!r}).touch()
 print(json.dumps({{
     "complete": True,
@@ -181,6 +183,7 @@ def write_strict_query_fake_binary(path: Path, mode: str = "valid") -> None:
         f"""#!/usr/bin/env python3
 import json
 import sys
+
 
 mode = {mode!r}
 requested = sys.argv[sys.argv.index("articles") + 1]

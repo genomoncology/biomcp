@@ -1172,7 +1172,7 @@ const TRUST_FAILURE_MARKERS: &[&str] = &[
     "self-signed certificate",
 ];
 
-fn is_trust_failure(error: &reqwest_middleware::Error) -> bool {
+fn error_chain_carries(error: &(dyn std::error::Error + '_)) -> bool {
     let mut source: Option<&dyn std::error::Error> = Some(error);
     while let Some(error) = source {
         let text = error.to_string();
@@ -1186,6 +1186,13 @@ fn is_trust_failure(error: &reqwest_middleware::Error) -> bool {
     }
     false
 }
+
+fn is_trust_failure(error: &reqwest_middleware::Error) -> bool {
+    error_chain_carries(error)
+}
+
+#[cfg(test)]
+mod trust_failure_tests;
 
 impl reqwest_retry::RetryableStrategy for NoTrustFailureStrategy {
     fn handle(

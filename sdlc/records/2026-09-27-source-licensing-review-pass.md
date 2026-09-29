@@ -53,9 +53,10 @@ verifiable — their current docs and terms pages are plain HTML
 (CIViC's FAQ states CC0 1.0 Universal; WikiPathways' terms page
 adopts the CC0 waiver; both cited in the evidence table) — and
 PharmGKB verified against the same ClinPGx policy page CPIC uses.
-Only Enrichr stays undated (its terms loader 404s provider-side).
-The guard warns for Enrichr on 2027-01-15 and fails on 2027-03-21;
-the owner of the retry is the developer agent working Ian's ordered
+Enrichr was the last open row: verified and relabelled restricted
+on 2026-09-29 from the live terms submenu page (the 09-27 pass had
+read the broken help page), so the guard's 300-day warning now
+applies to all 48 sources and no retry remains. The owner of the
 BioMCP queue.
 
 **Improvements folded in:** the four BioThings services
@@ -73,9 +74,10 @@ GTEx, CGI, and cbioportal were read from their live JS bundles,
 which are the citable sources. The per-source evidence table with
 URL, access date, and finding for all 48 is committed at
 `docs/reference/source-licensing-evidence-2026-09-27.md`
-(corrected 2026-09-28: PharmGKB, CIViC and WikiPathways all verified against live pages, leaving one unverifiable; the
-warning date is 2027-01-15 and the fail date 2027-03-21 for
-Enrichr alone — the 2027-03 crossing is handled for the other 47).
+(corrected 2026-09-28: PharmGKB, CIViC and WikiPathways all verified against live pages; corrected again 2026-09-29:
+Enrichr verified from the live terms submenu page and relabelled
+restricted, closing the last open row — the 300-day guard now
+applies to all 48 sources).
 
 ## Registry state
 
@@ -86,7 +88,8 @@ government journal articles are public domain, and open-access
 articles still carry article-level licences and third-party
 material, matching the recorded summary). The 2026-09-28
 corrections re-dated CIViC and WikiPathways to 09-28 in both
-registries; Enrichr alone stays 2026-03-20. `tools/check-source-registry.py`
+registries, and the 09-29 correction re-dated Enrichr and moved it
+to tier 3. `tools/check-source-registry.py`
 status=pass; the licensing docs contract suite is green (17
 passed).
 

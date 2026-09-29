@@ -5,7 +5,11 @@ import json
 import os
 from pathlib import Path
 import subprocess
+
+import pytest
 import threading
+
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 
 ROOT = Path(__file__).resolve().parents[1]

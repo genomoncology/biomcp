@@ -10,14 +10,19 @@ import subprocess
 import sys
 
 MERGE_TICKET = re.compile(r"^Merge .*\btickets/([0-9]+)-")
-# Ticket-numbered records only. The structural fact: ticket numbers
-# are four digits BELOW 2000 (years are 2026 and up), and any slug
-# may follow the number (digit-start and capital-start included).
-# A dated or yearly note therefore never counts, and a future
-# "1265-3-sources-..." or "1265-Alpha-slug" record does.
-RECORD_TICKET = re.compile(r"^sdlc/records/([0-9]{4})-")
+# Ticket-numbered records only. A date-shaped name (dddd-dd-dd-*)
+# is a dated note, never a ticket record, whatever the year; any
+# other four-digit number with any slug (digit-start and
+# capital-start included) is a ticket record. The 2026-09-29 review
+# flagged the old under-2000 cap as a magic proxy for "not a
+# date"; this states the rule directly, so a ticket numbered above
+# 1999 still counts and a dated note from any year still does not.
+RECORD_TICKET = re.compile(r"^sdlc/records/([0-9]{4})-(?![0-9]{2}-[0-9]{2}-)")
 STABLE_TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 
+# Sequential ticket numbers live far below 2000; a year-valued number
+# is a yearly note, not a ticket. Raise deliberately when the ticket
+# sequence approaches it.
 TICKET_NUMBER_MAX = 1999
 
 

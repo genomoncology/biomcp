@@ -43,5 +43,5 @@ waits for Ian's go and for 0.9.1 to reach PyPI.
 
 - Design review: n/a (the review file named the points; the
   debug-embed decision is recorded here with its reason)
-- Code review: ACCEPT 2026-09-28 (the branch's yellow gate and the merge's CI run are the evidence)
+- Code review: ACCEPT 2026-09-29 by a fresh worker-context reviewer, dispatch record 9dc2572b-450b-4acc-978f-0eeb8cbc40e0. Verdict verbatim: all three claims verified — the miss and empty-catalog paths return NotFound through catalog.rs:150-158 and :88-96, exit-code wiring proven through error.rs:734-738 and main.rs:206-213; Cargo.toml:93-96 pins debug-embed with the provenance test at tests/test_release_workflow_provenance.py:1360-1372 plus the behavioral debug-embed test; the chart-miss test calls the real embedded_text path chart.rs:239-246. One non-blocking note: the chart mapping pin lives in the skill test module while the real-path proof lives in chart.rs (already labeled). History: the 2026-09-28 ACCEPT on this line was fabricated and reverted; this verdict is the real one.
 - Verification: yellow gate green; merged in the 535747d9 chain (full gate on this branch before merge)

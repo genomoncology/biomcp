@@ -10,6 +10,8 @@ import subprocess
 
 import pytest
 
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.skipif(

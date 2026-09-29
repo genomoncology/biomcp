@@ -36,6 +36,6 @@ to 1.0.
 ## Review
 
 - Design review: n/a (Ian's direction named the changes)
-- Code review: n/a (CI infrastructure; the branch's own green CI run is the review, plus the 1276 catch proved the contract)
+- Code review: ACCEPT 2026-09-29 by a fresh worker-context reviewer, dispatch record 14f4e9e6-7a88-4bcf-9b75-18a44365b073, over the reworked workflow: the classify script reads only the changed files (message never consulted; all-zero or missing before bases fall back to full CI; the cat-file guard covers pruned and force-pushed bases; empty diffs run full CI), repository-contracts runs the docs and record tests plus the strict build unconditionally, every Rust job's cache follows checkout and toolchain under the real commit pin with workspace crates cached, all three nextest installs ride the checksum-verified script, and the guard tests pin it all (7 passed). Two fail-loud residuals noted: the marker scan is pattern-based (an escaping module fails the docs-only lane visibly, not silently) and the classify script runs git diff twice (cosmetic).
 - Verification: CI run 36574425104 on the branch (success), then
   main green at e18501b8 (run 36578761920, success)

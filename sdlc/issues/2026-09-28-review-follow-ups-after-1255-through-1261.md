@@ -31,8 +31,7 @@ Filed 2026-09-28 from an independent read-only review of main at `d5bcdd69`. Fiv
 - Workflow contract. These pass with all 81 tests green:
   - `BASH_ENV` set at job or workflow level, pointing at a file with `trap 'exit 0' EXIT`;
   - a new step before a pinned step that writes `BASH_ENV` to `$GITHUB_ENV` or swaps the installed binary;
-  - a duplicate `needs:` line in `pypi-publish`, since the YAML parser keeps the last and the text check reads the first.
-  Require each pinned job's step list to match exactly, and ban `BASH_ENV` in every `env:` block.
+  - a duplicate `needs:` line in `pypi-publish`, since the YAML parser keeps the last and the text check reads the first. Require each pinned job's step list to match exactly, and ban `BASH_ENV` in every `env:` block.
 - Review grammar. These pass on a landed ticket:
   - `Code review: awaiting reviewer`, with no state word;
   - `Security review: pending` and `Ticket review: pending`;
@@ -40,8 +39,7 @@ Filed 2026-09-28 from an independent read-only review of main at `d5bcdd69`. Fiv
   - `(batch final)`;
   - `REJECT, not yet fixed`, because "fixed" counts as a resolution;
   - an unindented wrapped pending line;
-  - a landed ticket with no Review lines.
-  Parse against an allowlist of the whole line and fail anything else.
+  - a landed ticket with no Review lines. Parse against an allowlist of the whole line and fail anything else.
 - Wait ratchet. These pass:
   - Rust `elapsed() <= limit`;
   - `use std::thread::sleep as nap`, because aliases resolve only in Python;
@@ -50,8 +48,7 @@ Filed 2026-09-28 from an independent read-only review of main at `d5bcdd69`. Fiv
 - Stdio guard. These pass:
   - `.stderr(Stdio::inherit()).output()`, because `.output()` is exempted before the inherit check;
   - `.stdout(std::io::stdout())`;
-  - `let s = Stdio::inherit(); … .stdout(s)`.
-  The fail-closed branch in `spawn_pattern` is `pass`, so the ticket's "unknown spellings fail" claim is false.
+  - `let s = Stdio::inherit(); … .stdout(s)`. The fail-closed branch in `spawn_pattern` is `pass`, so the ticket's "unknown spellings fail" claim is false.
 - 1258 lists its report-only gaps in a Review line only. Give it a Deferred gaps section, and name the new-step and `BASH_ENV` holes there.
 
 ## Records and licensing
@@ -75,30 +72,6 @@ CI is green at `d5bcdd69`. Nine of the ten CI runs before it failed: the stdio f
 
 ## Disposition (2026-09-29, tickets 1265-1270)
 
-The changelog gate's dated-record bug: fixed (ticket 1265, merges
-b1393806 via 535747d9's chain; gates 21d42b2a, b1393806; the
-regression test drives record_tickets end to end). #287 confirmed:
-fixed (the wheel job builds --release and the smoke exercises the
-asset paths positively, ticket 1266 at 80095256; #286 and #287 are
-in 1253's close list). Job order: fixed (PyPI last; the tap waits
-for the public release; ticket 1266). The stdio test: fixed at the
-mechanism (stdin held open until replies arrive, ticket 1268 at
-f86a548e; the flake issue carries the rmcp citation). The three
-JSON note gaps: fixed (ticket 1268; GWAS excluded by its NoStore,
-now pinned structurally since reqwest hides request extensions).
-The spawned-fetch note loss: fixed (ticket 1268). The TLS retry
-and probe counter: fixed and decided respectively (ticket 1268).
-The checks: closed (ticket 1269 at 346068be and 535747d9's chain;
-every named bypass, plus the raise-review mechanism Ian's
-direction demanded). The licensing evidence: committed in the repo
-(docs/reference/source-licensing-evidence-2026-09-27.md, corrected
-in c1b2ab0d; CIViC and WikiPathways verified, PharmGKB reconciled,
-one unverifiable source remains). The counts: corrected (45
-verified, 2 changed, 1 unverifiable after the corrections). The
-records: citations now name commits; the open-until lines closed;
-the 1255 citation corrected to 9148e874; the aspirin gap filed;
-1260's sections concrete; the dispositions unwrapped. The dry-run
-mode: DECIDED against, per Ian's 2026-09-28 message — PyPI-last
-makes a failed tag run deletable and retryable, so a separate
-dry-run lane adds cost without adding safety; the manual dispatch
-keeps its container-only path.
+The changelog gate's dated-record bug: fixed (ticket 1265, merges b1393806 via 535747d9's chain; gates 21d42b2a, b1393806; the regression test drives record_tickets end to end). #287 confirmed: fixed (the wheel job builds --release and the smoke exercises the asset paths positively, ticket 1266 at 80095256; #286 and #287 are in 1253's close list). Job order: fixed (PyPI last; the tap waits for the public release; ticket 1266). The stdio test: fixed at the mechanism (stdin held open until replies arrive, ticket 1268 at f86a548e; the flake issue carries the rmcp citation). The three JSON note gaps: fixed (ticket 1268; GWAS excluded by its NoStore, now pinned at runtime on the built request (the extensions claim was corrected 2026-09-29; the text contract stays as a belt)). The spawned-fetch note loss: fixed (ticket 1268). The TLS retry and probe counter: fixed and decided respectively (ticket 1268). The checks: closed (ticket 1269 at 346068be and 535747d9's chain; every named bypass, plus the raise-review mechanism Ian's direction demanded). The licensing evidence: committed in the repo (docs/reference/source-licensing-evidence-2026-09-27.md, corrected in c1b2ab0d; CIViC, WikiPathways and PharmGKB verified; Enrichr verified and relabelled restricted on 2026-09-29, so no unverifiable source remains). The counts: corrected (45 verified, 2 changed, 1 restricted — Enrichr, verified and relabelled the same day). The records: citations now name commits; the open-until lines closed; the 1255 citation corrected to 9148e874; the aspirin gap filed; 1260's sections concrete; the dispositions unwrapped. The dry-run mode: DECIDED against, per Ian's 2026-09-28 message — PyPI-last makes a failed tag run deletable and retryable, so a separate dry-run lane adds cost without adding safety; the manual dispatch keeps its container-only path.
+
+Run IDs for the cited commits, read from the Actions API on 2026-09-29: 9148e874 → CI 36322185493 (success), 16952792 → CI 36337520412 (success), 95a5eacc → CI 36346407347 (success), 65e140de → CI 36350566808 (failure, the merge-day runs the fix-ups chased), dbefb4d0 → CI 36356735062 (failure, same window), 3d293ad7 → CI 36566765215 (success).

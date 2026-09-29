@@ -376,7 +376,7 @@
     "terms_url": "https://www.clinpgx.org/page/dataUsagePolicy",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "CPIC announced in March 2026 that content is moving to ClinPGx, but current CPIC URLs continue to resolve."
+    "notes": "CPIC announced in March 2026 that its content is moving to ClinPGx; cpicpgx.org now redirects and the old CPIC licence pages 404, so the ClinPGx policy page is the only live terms statement."
   },
   {
     "id": "dbsnp",
@@ -1586,6 +1586,6 @@
     "terms_url": "https://www.wikipathways.org/terms.html",
     "key_url": null,
     "reviewed_on": "2026-09-28",
-    "notes": "The current license statement is still hosted on the WikiPathways classic site."
+    "notes": "Verified against the live terms page 2026-09-28: WikiPathways adopts the CC0 waiver for its content; the classic site is retired."
   }
 ]

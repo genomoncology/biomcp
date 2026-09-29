@@ -12,7 +12,9 @@ user-facing bullet for every ticket it names, in the Unreleased
 section, then flip the heading to `## 0.9.1 — <date>`. Do not trust a
 hand-copied list. The dry run observed 2026-09-27 (the tool's
 discovery applied over v0.9.0..HEAD against the Unreleased section)
-reported 30 (2026-09-28, after the dated-record fix in the gate):
+reported 30 as of 2026-09-28 (after the dated-record fix in the
+ gate; the count grows with every merged ticket — recompute from
+ the tool, never from this list):
 1220, 1222, 1223, 1224, 1226 through 1239, 1241, 1242, 1243, 1244,
 1247, 1248, 1250, 1254, 1255, 1257, 1259, 1261. The 2026-09-27
 licensing note first parsed as ticket 2026 until the gate's record

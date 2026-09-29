@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PLANNING_ROOT = REPO_ROOT / "tests" / "fixtures" / "planning" / "biomcp"
 
@@ -1147,18 +1149,15 @@ def test_pull_request_contracts_remain_separate_from_protected_release() -> (
         "3.12.3",
         "0.8.0",
         "0.13.2",
-        "0.9.132",
+        "0.9.146",
         "0.19.4",
         "0.1.0",
         "28.3",
     ):
         assert version in ci
-    # Swatinem/rust-cache@v2 is the one sanctioned floating major
-    # tag (ticket 1275): it is a cache, not a code execution path,
-    # and pinning its full SHA would freeze cache-format upgrades.
-    cache_tag = "Swatinem/rust-cache@v2"
-    body_without_cache = canonical.replace(cache_tag, "")
-    assert "@v" not in body_without_cache and "@stable" not in canonical
+    # The rust cache is pinned by its v2 commit (2026-09-29
+    # review), so every action in the file carries a commit pin.
+    assert "@v" not in canonical and "@stable" not in canonical
     assert "tools/bootstrap-lint-tools" in canonical
     assert "secrets." not in canonical.replace("secrets.GITHUB_TOKEN", "")
 

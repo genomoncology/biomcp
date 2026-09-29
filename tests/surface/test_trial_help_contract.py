@@ -6,6 +6,9 @@ import re
 import shlex
 import subprocess
 from pathlib import Path
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BIOMCP_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/release/biomcp"))

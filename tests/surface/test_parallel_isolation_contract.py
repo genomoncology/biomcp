@@ -5,6 +5,9 @@ import os
 import re
 import subprocess
 from pathlib import Path
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

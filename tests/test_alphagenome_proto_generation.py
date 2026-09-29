@@ -4,6 +4,9 @@ import importlib.machinery
 import importlib.util
 from pathlib import Path
 import subprocess
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]  # runs cargo; docs-only CI excludes this module
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

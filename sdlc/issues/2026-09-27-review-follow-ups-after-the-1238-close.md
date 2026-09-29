@@ -49,11 +49,7 @@ Each check now catches the named cases, and a neighboring spelling still passes.
 
 ## Earlier review file
 
-The previous review file,
-`sdlc/issues/2026-09-26-review-follow-ups-for-1242-through-1254.md`,
-now carries its own item-by-item disposition section (added with
-this file's follow-ups); its four dropped findings are accounted
-for there.
+The previous review file, `sdlc/issues/2026-09-26-review-follow-ups-for-1242-through-1254.md`, now carries its own item-by-item disposition section (added with this file's follow-ups); its four dropped findings are accounted for there.
 
 ## Records
 
@@ -80,51 +76,16 @@ for there.
 
 ## Disposition (2026-09-27, tickets 1255-1261)
 
-Every item in this file, marked. Tickets name their merge; the
-gates ran green at the SHAs in each ticket's Review section.
+Every item in this file, marked. Tickets name their merge; the gates ran green at the SHAs in each ticket's Review section.
 
-Product — all fixed: the four XML sources route through the depth
-cap with a structural guard on any direct parse (ticket 1255, merged 9148e874, gate 8bf9884a); the stale-cache age reaches the MCP card,
-the CLI card, and search JSON `_meta.notes`, and MyDisease/DisGeNET
-genes carry their real labels on both paths (ticket 1256, rebased landing at 16952792);
-the search-all note names the failed source in plain words and the
-DDInter HTML reply is a download failure (both in ticket 1256's landing); the DDInter
-HTML label from the 2026-09-26 file closed with it.
+Product — all fixed: the four XML sources route through the depth cap with a structural guard on any direct parse (ticket 1255, merged 9148e874, gate 8bf9884a); the stale-cache age reaches the MCP card, the CLI card, and search JSON `_meta.notes`, and MyDisease/DisGeNET genes carry their real labels on both paths (ticket 1256, rebased landing at 16952792); the search-all note names the failed source in plain words and the DDInter HTML reply is a download failure (both in ticket 1256's landing); the DDInter HTML label from the 2026-09-26 file closed with it.
 
-Tests — all fixed: the shared-runtime test drives `execute_mcp_cli`
-with its own armed-window counter (1257, gate a9dee294); the CDATA
-test carries real CDATA and 65 hidden opens per family; the
-release-mode panic test is a pinned CI job; the health tests pass
-in release honestly with serial guards; the TLS test's evidence is
-now the dial-and-refuse proof; the GenCC wrong-owner and
-not-a-directory tests exist.
+Tests — all fixed: the shared-runtime test drives `execute_mcp_cli` with its own armed-window counter (1257, gate a9dee294); the CDATA test carries real CDATA and 65 hidden opens per family; the release-mode panic test is a pinned CI job; the health tests pass in release honestly with serial guards; the TLS test's evidence is now the dial-and-refuse proof; the GenCC wrong-owner and not-a-directory tests exist.
 
-Checks — rebuilt structurally (1258, gate 3f6916db): one review
-grammar with scope-vocabulary matching and backfilled legacy
-verdicts; 19 workflow steps hash-pinned; the wait ratchet counts
-markers against a ceiling and resolves aliased waits; the stdio
-guard resolves import aliases; merge_property panics on one-sided
-constraints; ADR 0002 states the precise rule.
+Checks — rebuilt structurally (1258, gate 3f6916db): one review grammar with scope-vocabulary matching and backfilled legacy verdicts; 19 workflow steps hash-pinned; the wait ratchet counts markers against a ceiling and resolves aliased waits; the stdio guard resolves import aliases; merge_property panics on one-sided constraints; ADR 0002 states the precise rule.
 
-Records — fixed through ticket 1259's commits: both review files
-carry dispositions (this section and the 2026-09-26 file's); the
-four no-decision files have Decision or Resolved sections; the
-ticket contradictions, frontmatter heads, credentials claim,
-Status lines, yellow-lock wording, 1253 counts (26 plus the #284
-close), 1.0 owners and triggers (variant transcripts → ticket
-1260), and the shorthand rewrites are all on main.
+Records — fixed through ticket 1259's commits: both review files carry dispositions (this section and the 2026-09-26 file's); the four no-decision files have Decision or Resolved sections; the ticket contradictions, frontmatter heads, credentials claim, Status lines, yellow-lock wording, 1253 counts (26 plus the #284 close), 1.0 owners and triggers (variant transcripts → ticket 1260), and the shorthand rewrites are all on main.
 
-Direction items — done: the Mac DDInter run executed on the M5 at
-a7d503be with all three checks passing (its issue file carries the
-run and numbers); the licensing review pass covered all 48 sources
-due 2026-03-20 (45 verified after the 2026-09-28 corrections, COSMIC
-and CPIC materially changed and updated, Enrichr unverifiable and
-kept dated, record
-`sdlc/records/2026-09-27-source-licensing-review-pass.md`);
-DepMap decided under the delegation with citations (stays out; the
-2026-09-19 note's reservation superseded by the recorded decision);
-the 2027-03 crossing handled for 47 of 48 — Enrichr fails 2027-03-21
-unless its terms page is fixed and verified first.
+Direction items — done: the Mac DDInter run executed on the M5 at a7d503be with all three checks passing (its issue file carries the run and numbers); the licensing review pass covered all 48 sources due 2026-03-20 (45 verified after the 2026-09-28 corrections, COSMIC and CPIC materially changed and updated, Enrichr unverifiable and kept dated, record `sdlc/records/2026-09-27-source-licensing-review-pass.md`); DepMap decided under the delegation with citations (stays out; the 2026-09-19 note's reservation superseded by the recorded decision); the 2027-03 crossing handled for 47 of 48 — Enrichr fails 2027-03-21 unless its terms page is fixed and verified first.
 
-Beyond this file: ticket 1261 fixed the cache-mode leak from
-GitHub #286 (Ian's filing; close #286 at the release).
+Beyond this file: ticket 1261 fixed the cache-mode leak from GitHub #286 (Ian's filing; close #286 at the release).

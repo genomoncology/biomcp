@@ -432,3 +432,36 @@ def test_docs_index_documentation_section_links_new_reference() -> None:
     assert (
         "[Source Licensing and Terms](reference/source-licensing.md)" in documentation
     )
+
+
+def test_the_licensing_page_tier_table_agrees_with_the_registry() -> None:
+    """2026-09-29 review: the page still listed Enrichr as tier 1
+    after sources.json moved it to tier 3, and nothing compared the
+    two. This test fails the moment they disagree again.
+    """
+    page = _read("docs/reference/source-licensing.md")
+    rows = {}
+    for line in page.splitlines():
+        m = re.match(r"^\|\s*([A-Za-z0-9 .&/-]+?)\s*\|\s*(\d)\s*\|", line)
+        if m:
+            rows[m.group(1).strip().lower()] = int(m.group(2))
+    sections = set(
+        m.group(1).strip().lower()
+        for m in re.finditer(r"^### (.+)$", page, re.M)
+    )
+    inventory = _source_inventory()
+    assert inventory, "the registry must parse"
+    mismatches = []
+    for entry in inventory:
+        name = str(entry.get("name") or "")
+        row = rows.get(name.lower())
+        if row is None:
+            # A few grouped services carry a detail section instead
+            # of a table row; they must still appear somewhere.
+            if name.lower() not in sections:
+                mismatches.append(f"{name}: absent from the page tier table and sections")
+        elif row != int(entry.get("tier", 0)):
+            mismatches.append(
+                f"{name}: page says tier {row}, registry says tier {entry.get('tier')}"
+            )
+    assert not mismatches, "\n".join(mismatches)

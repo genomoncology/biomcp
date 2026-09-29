@@ -14,6 +14,8 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
+pytestmark = [pytest.mark.needs_binary]  # runs cargo; docs-only CI excludes this module
+
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
@@ -463,8 +465,8 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     # (ticket 1221). Ticket 2002 adds the FHIR source, the patient entity,
     # CLI, renderer, template, MCP gate, contract test, guide, and spec page
     # (13 files). Main's later source, test, and release corrections bring
-    # the synchronized 1.0 package to 1,438 reviewed members.
-    assert len(paths) == 1438
+    # the synchronized 1.0 package to 1,438 reviewed members; the 1278 CI and TLS additions bring it to 1,442.
+    assert len(paths) == 1442
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

@@ -9,6 +9,17 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+def pytest_configure(config: pytest.Config) -> None:
+    """Register the needs_binary marker: the test drives a built
+    biomcp binary or the spec runner. The docs-only CI lane excludes
+    these with -m "not needs_binary"; the canonical-gates lane runs
+    the full suite.
+    """
+    config.addinivalue_line(
+        "markers", "needs_binary: requires a built biomcp binary"
+    )
+
+
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup("mcp")

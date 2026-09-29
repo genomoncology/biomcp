@@ -6,6 +6,8 @@ import subprocess
 
 import pytest
 
+pytestmark = [pytest.mark.needs_binary]  # drives cargo; docs-only CI excludes this module
+
 
 ROOT = Path(__file__).resolve().parents[1]
 

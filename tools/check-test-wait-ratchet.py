@@ -285,18 +285,27 @@ def raise_is_accepted(root: Path, record: dict) -> tuple[bool, str]:
     if not matches:
         return False, f"raise cites ticket {ticket}, which has no file"
     text = matches[0].read_text(encoding="utf-8")
-    accepted = re.search(
+    verdicts = re.finditer(
         r"^\s*-?\s*\**code\s+re(?:view|-review)\**\s*(?:\([^)]*\))?\s*:"
-        r".{0,200}?\bACCEPT\b",
+        r"(?P<rest>.{0,200})",
         text,
         re.IGNORECASE | re.MULTILINE,
     )
-    if not accepted:
-        return False, (
-            f"raise cites ticket {ticket}, whose code review has not "
-            f"been accepted — the gate stays red until it is"
-        )
-    return True, ""
+    # Any verdict line may carry the acceptance; a line counts only
+    # when its ACCEPT is not negated: "REJECT, not ACCEPT yet",
+    # "ACCEPT is missing" and "no ACCEPT" stay rejections, while a
+    # history line like "REJECT once, folded; ACCEPT 2026-09-28" is
+    # a real acceptance (2026-09-29 review).
+    for verdict in verdicts:
+        rest = verdict.group("rest")
+        if re.search(r"(?<!not )\bACCEPT\b", rest) and not re.search(
+            r"\bACCEPT\b\s+(?:is|was)\s+(?:not|missing|pending)", rest, re.IGNORECASE
+        ):
+            return True, ""
+    return False, (
+        f"raise cites ticket {ticket}, whose code review has not "
+        f"been accepted — the gate stays red until it is"
+    )
 
 
 def accepted_raise_for(
@@ -430,18 +439,6 @@ def main(argv: list[str]) -> int:
                 f"global ceiling {marker_ceiling} ({why})"
             )
 
-    if args.update:
-        fresh = {name: entry for name, entry in sorted(current.items())}
-        inventory["files"] = fresh
-        inventory["marker_total_ceiling"] = sum(
-            int(e.get("markers", 0)) for e in fresh.values()
-        )
-        inventory_path.write_text(
-            json.dumps(inventory, indent=2) + "\n", encoding="utf-8"
-        )
-        print(f"re-pinned {len(current)} file ceilings in {inventory_path}")
-        return 0
-
     for note in notes:
         print(f"note: {note}")
     if failures:
@@ -449,6 +446,34 @@ def main(argv: list[str]) -> int:
         for failure in failures:
             print(f"  {failure}")
         return 1
+
+    if args.update:
+        # --update ratchets DOWN or holds; it must never silently
+        # absorb a raise (2026-09-29 review). Any file whose current
+        # count or marker total exceeds its pin needs an accepted
+        # raise record first — the comparison loop above already
+        # failed the run in that case, so reaching here means every
+        # change is a decrease or a hold.
+        fresh = {name: entry for name, entry in sorted(current.items())}
+        lowered = sum(
+            1
+            for name, entry in fresh.items()
+            if name in pinned
+            and int(entry["count"]) < int(pinned[name].get("count", entry["count"]))
+        )
+        inventory["files"] = fresh
+        inventory["marker_total_ceiling"] = sum(
+            int(e.get("markers", 0)) for e in fresh.values()
+        )
+        inventory_path.write_text(
+            json.dumps(inventory, indent=2) + "\n", encoding="utf-8"
+        )
+        print(
+            f"re-pinned {len(fresh)} file ceilings in {inventory_path} "
+            f"({lowered} lowered; no raise absorbed — raises require an "
+            f"accepted review record)"
+        )
+        return 0
     print(
         f"test-wait ratchet ok ({len(current)} files with pinned ceilings, "
         f"{total_markers} watchdog markers under the ceiling {marker_ceiling})"

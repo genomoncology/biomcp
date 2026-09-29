@@ -10,6 +10,8 @@ import sys
 
 import pytest
 
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS_LIST_BYTE_CEILING = 22_600

@@ -416,12 +416,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2787,
+      "baseline_lines": 2794,
       "floor_lines": 1847,
       "authorized_increase": {
         "ticket": "biodata-0203",
-        "delta": 940,
-        "reason": "The dedicated FHIR retry helper now uses main's TLS trust-failure strategy alongside cache-mode transport corrections.",
+        "delta": 947,
+        "reason": "The dedicated FHIR retry helper uses the shared TLS trust-failure strategy; main 1268 additionally extracts the error-chain check and adds its separate unit-test module.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },

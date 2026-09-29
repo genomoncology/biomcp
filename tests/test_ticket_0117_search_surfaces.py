@@ -9,6 +9,10 @@ import subprocess
 import threading
 from typing import Iterator
 
+import pytest
+
+pytestmark = [pytest.mark.needs_binary]
+
 
 ROOT = Path(__file__).resolve().parents[1]
 BINARY = Path(os.environ.get("BIOMCP_BIN", ROOT / "target/debug/biomcp"))

@@ -11,6 +11,8 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
