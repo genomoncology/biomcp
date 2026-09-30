@@ -115,6 +115,109 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ## Tier 1 - Baseline use without credentials
 
+### AlphaFold DB
+
+- BioMCP surfaces: `get protein <id> structures`
+- Integration mode: `indirect_only`
+- BioMCP auth: `not_applicable`
+- Provider access / registration: surfaced through UniProt cross-references; no standalone BioMCP client
+- License / terms summary: AlphaFold DB structural predictions are published for broad open use
+- Redistribution / reuse summary: reuse is generally open, but preserve model/source provenance and article citations
+- Official terms URL: <https://alphafold.ebi.ac.uk/faq>
+Reviewed on: `2026-09-27`
+- Notes: BioMCP does not call AlphaFold DB directly. Structure links appear through UniProt cross-references.
+
+### ClinVar
+
+- BioMCP surfaces: `get variant <id> clinvar`
+- Integration mode: `direct_api`
+- BioMCP auth: `optional_env`
+- Credential environment variable: `NCBI_API_KEY`
+- Provider access / registration: open public NCBI E-utilities API; MyVariant.info is the fallback carrier
+- License / terms summary: NCBI public-domain submission archive
+- Redistribution / reuse summary: records are broadly reusable, but preserve accession/provenance and submitter context
+- Official terms URL: <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/>
+Reviewed on: `2026-09-27`
+- Notes: Explicit `clinvar` and `all` variant requests use NCBI EFetch by resolved Variation ID; the default card and degraded fallback use MyVariant.info.
+
+### dbSNP
+
+- BioMCP surfaces: `get variant <id> population`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public API
+- License / terms summary: NCBI public data service with attribution and non-endorsement expectations
+- Redistribution / reuse summary: RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement
+- Official terms URL: <https://www.ncbi.nlm.nih.gov/home/about/policies/>
+- Reviewed on: `2026-08-20`
+- Notes: BioMCP uses the NCBI Variation RefSNP API only to recover an explicitly labeled GRCh38 chromosome coordinate for eligible identifier-based gnomAD population lookups.
+
+### Disease Ontology
+
+- BioMCP surfaces: `search disease; get disease <id>`
+- Integration mode: `indirect_only`
+- BioMCP auth: `not_applicable`
+- Provider access / registration: surfaced indirectly through MyDisease.info
+- License / terms summary: open disease ontology project
+- Redistribution / reuse summary: reuse is generally open; preserve ontology version and source references
+- Official terms URL: <https://disease-ontology.org/>
+Reviewed on: `2026-09-27`
+- Notes: BioMCP does not maintain a standalone Disease Ontology client.
+
+### Drugs@FDA
+
+- BioMCP surfaces: `get drug <name> approvals`
+- Integration mode: `indirect_only`
+- BioMCP auth: `not_applicable`
+- Provider access / registration: surfaced through OpenFDA-derived approval fields
+- License / terms summary: FDA-origin public information
+- Redistribution / reuse summary: approval records are broadly reusable; avoid implying FDA endorsement
+- Official terms URL: <https://open.fda.gov/apis/drug/drugsfda/>
+Reviewed on: `2026-09-27`
+- Notes: BioMCP documents Drugs@FDA as an indirect provenance label because approval fields arrive through OpenFDA, not a dedicated Drugs@FDA client.
+
+### LitSense2
+
+- BioMCP surfaces: `search article --source litsense2 -k <query>`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public API
+- License / terms summary: NCBI/NLM public-domain literature service
+- Redistribution / reuse summary: query results are broadly reusable, but preserve article-level provenance and record rights separately
+- Official terms URL: <https://www.ncbi.nlm.nih.gov/research/litsense2-api/>
+- Reviewed on: `2026-04-10`
+- Notes: LitSense2 is individually selectable with `search article --source litsense2` and contributes semantic-signal metadata; it is not part of the default `--source all` federation.
+
+### MONDO
+
+- BioMCP surfaces: `search disease; discover <query>`
+- Integration mode: `indirect_only`
+- BioMCP auth: `not_applicable`
+- Provider access / registration: surfaced indirectly through MyDisease.info payloads
+- License / terms summary: CC BY 4.0
+- Redistribution / reuse summary: reuse is allowed with attribution and ontology version tracking
+- Official terms URL: <https://mondo.monarchinitiative.org/pages/download/>
+Reviewed on: `2026-09-27`
+- Notes: BioMCP uses MONDO identifiers through MyDisease.info and other aggregators rather than calling MONDO directly.
+
+### PDB
+
+- BioMCP surfaces: `get protein <id> structures`
+- Integration mode: `indirect_only`
+- BioMCP auth: `not_applicable`
+- Provider access / registration: surfaced through UniProt cross-references; no standalone BioMCP PDB client
+- License / terms summary: PDB archive data is CC0 1.0
+- Redistribution / reuse summary: data is broadly reusable; attribution to original structure authors is encouraged
+- Official terms URL: <https://www.rcsb.org/pages/usage-policy>
+Reviewed on: `2026-09-27`
+- Notes: BioMCP currently exposes PDB identifiers from UniProt rather than querying RCSB PDB directly.
+
+## Source notes
+
+- `PubMed`, `PubTator3`, `Europe PMC`, `LitSense2`, `NCBI E-utilities`, `PMC OA`, `NCBI ID Converter`, `Semantic Scholar`, and `Figshare` are separate direct inventory rows inside BioMCP's article stack because search, annotation, identifier, PDF metadata, full-text, and asset-byte responsibilities come from different NCBI/EMBL/AI2/Figshare service surfaces. PMC article HTML is documented as a PMC web fallback in the data-source matrix rather than as a separate source-client row.
+- `OpenFDA FAERS`, `OpenFDA label`, `OpenFDA shortage`, and `Drugs@FDA` are user-facing provenance labels that resolve back to the `OpenFDA` direct row plus the `Drugs@FDA` indirect row.
+- `AlphaFold DB` and `PDB` are indirect-only because BioMCP currently surfaces those structure IDs via `UniProt` cross-references rather than maintaining standalone source clients.
+- `COSMIC` is indirect-only provenance through `MyVariant.info`. Direct COSMIC integration is not part of BioMCP's supported source surface because the provider's licensing model creates unacceptable redistribution and deployment risk for an MIT-licensed open tool.
 ### Cellosaurus
 
 - BioMCP surfaces: `search cell-line <name>; get cell-line <id>; get cell-line <id> xrefs; get cell-line <id> variants`
@@ -342,18 +445,6 @@ Reviewed on: `2026-09-27`
 - Official terms URL: <https://www.who.int/about/policies/publishing/copyright>
 - Reviewed on: `2026-04-18`
 - Notes: BioMCP auto-downloads `who_ivd.csv` into `BIOMCP_WHO_IVD_DIR` or the default data directory on first use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`.
-
-### Enrichr
-
-- BioMCP surfaces: `get gene <symbol> ontology`
-- Integration mode: `direct_api`
-- BioMCP auth: `none`
-- Provider access / registration: open public API for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners
-- License / terms summary: free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners; the terms state it is not for treating or diagnosing human subjects
-- Redistribution / reuse summary: academic and non-profit reuse with citation to Enrichr and its libraries; commercial reuse needs the Mount Sinai license; the service must not be used to treat or diagnose human subjects
-- Official terms URL: <https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html>
-- Reviewed on: `2026-09-29`
-- Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead.
 
 ### Europe PMC
 
@@ -839,6 +930,18 @@ Reviewed on: `2026-09-27`
 
 ## Tier 3 - Open or queryable, but with notable terms
 
+### Enrichr
+
+- BioMCP surfaces: `get gene <symbol> ontology`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public API for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners
+- License / terms summary: free for academic and non-profit use; commercial use requires a license from Mount Sinai Innovation Partners; the terms state it is not for treating or diagnosing human subjects
+- Redistribution / reuse summary: academic and non-profit reuse with citation to Enrichr and its libraries; commercial reuse needs the Mount Sinai license; the service must not be used to treat or diagnose human subjects
+- Official terms URL: <https://maayanlab.cloud/Enrichr/templates/help/terms-submenu.html>
+- Reviewed on: `2026-09-29`
+- Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level `biomcp enrich` uses g:Profiler instead.
+
 ### Cancerhotspots.org
 
 - BioMCP surfaces: `get variant <gene> <change> all`
@@ -874,18 +977,6 @@ Reviewed on: `2026-09-27`
 - Official terms URL: <https://ddinter.scbdd.com/terms/>
 - Reviewed on: `2026-04-25`
 - Notes: BioMCP reads the eight required DDInter CSV files from `BIOMCP_DDINTER_DIR` or the default data directory without automatic maintenance. `biomcp ddinter sync` explicitly downloads, validates, and publishes a complete replacement bundle. Reads report fresh/stale state, and empties remain current-bundle misses instead of clinical absence.
-
-### dbSNP
-
-- BioMCP surfaces: `get variant <id> population`
-- Integration mode: `direct_api`
-- BioMCP auth: `none`
-- Provider access / registration: open public API
-- License / terms summary: NCBI public data service with attribution and non-endorsement expectations
-- Redistribution / reuse summary: RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement
-- Official terms URL: <https://www.ncbi.nlm.nih.gov/home/about/policies/>
-- Reviewed on: `2026-08-20`
-- Notes: BioMCP uses the NCBI Variation RefSNP API only to recover an explicitly labeled GRCh38 chromosome coordinate for eligible identifier-based gnomAD population lookups.
 
 ### gnomAD
 
@@ -923,18 +1014,6 @@ Reviewed on: `2026-09-27`
 Reviewed on: `2026-09-27`
 - Notes: KEGG's official legal page was updated on October 1, 2024 and explicitly distinguishes academic from non-academic use.
 
-### LitSense2
-
-- BioMCP surfaces: `search article --source litsense2 -k <query>`
-- Integration mode: `direct_api`
-- BioMCP auth: `none`
-- Provider access / registration: open public API
-- License / terms summary: NCBI/NLM public-domain literature service
-- Redistribution / reuse summary: query results are broadly reusable, but preserve article-level provenance and record rights separately
-- Official terms URL: <https://www.ncbi.nlm.nih.gov/research/litsense2-api/>
-- Reviewed on: `2026-04-10`
-- Notes: LitSense2 is individually selectable with `search article --source litsense2` and contributes semantic-signal metadata; it is not part of the default `--source all` federation.
-
 ### PharmacoDB
 
 - BioMCP surfaces: `get cell-line <accession> drug_response; get drug <name> cell_lines; cell-line drug-response <accession> --dataset <name>; drug cell-lines <name> --cell-line <id>; drug cell-lines <name> --dataset <name>`
@@ -961,18 +1040,6 @@ Reviewed on: `2026-09-27`
 
 ## Indirect-only providers surfaced through aggregators
 
-### AlphaFold DB
-
-- BioMCP surfaces: `get protein <id> structures`
-- Integration mode: `indirect_only`
-- BioMCP auth: `not_applicable`
-- Provider access / registration: surfaced through UniProt cross-references; no standalone BioMCP client
-- License / terms summary: AlphaFold DB structural predictions are published for broad open use
-- Redistribution / reuse summary: reuse is generally open, but preserve model/source provenance and article citations
-- Official terms URL: <https://alphafold.ebi.ac.uk/faq>
-Reviewed on: `2026-09-27`
-- Notes: BioMCP does not call AlphaFold DB directly. Structure links appear through UniProt cross-references.
-
 ### Cancer Genome Interpreter
 
 - BioMCP surfaces: `get variant <id>`
@@ -984,19 +1051,6 @@ Reviewed on: `2026-09-27`
 - Official terms URL: <https://www.cancergenomeinterpreter.org/conditions>
 Reviewed on: `2026-09-27`
 - Notes: There is no standalone CGI source client in BioMCP; provenance appears only when MyVariant includes CGI fields.
-
-### ClinVar
-
-- BioMCP surfaces: `get variant <id> clinvar`
-- Integration mode: `direct_api`
-- BioMCP auth: `optional_env`
-- Credential environment variable: `NCBI_API_KEY`
-- Provider access / registration: open public NCBI E-utilities API; MyVariant.info is the fallback carrier
-- License / terms summary: NCBI public-domain submission archive
-- Redistribution / reuse summary: records are broadly reusable, but preserve accession/provenance and submitter context
-- Official terms URL: <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/>
-Reviewed on: `2026-09-27`
-- Notes: Explicit `clinvar` and `all` variant requests use NCBI EFetch by resolved Variation ID; the default card and degraded fallback use MyVariant.info.
 
 ### COSMIC
 
@@ -1010,18 +1064,6 @@ Reviewed on: `2026-09-27`
 Reviewed on: `2026-09-27`
 - Notes: This is the most important indirect-only caution row. BioMCP intentionally does not support direct COSMIC querying because of licensing risk.
 
-### Disease Ontology
-
-- BioMCP surfaces: `search disease; get disease <id>`
-- Integration mode: `indirect_only`
-- BioMCP auth: `not_applicable`
-- Provider access / registration: surfaced indirectly through MyDisease.info
-- License / terms summary: open disease ontology project
-- Redistribution / reuse summary: reuse is generally open; preserve ontology version and source references
-- Official terms URL: <https://disease-ontology.org/>
-Reviewed on: `2026-09-27`
-- Notes: BioMCP does not maintain a standalone Disease Ontology client.
-
 ### DrugBank
 
 - BioMCP surfaces: `get drug <name> interactions; get drug <name> label`
@@ -1034,45 +1076,3 @@ Reviewed on: `2026-09-27`
 Reviewed on: `2026-09-27`
 - Notes: DrugBank does not have a standalone BioMCP source client. It appears as provenance carried through MyChem.info.
 
-### Drugs@FDA
-
-- BioMCP surfaces: `get drug <name> approvals`
-- Integration mode: `indirect_only`
-- BioMCP auth: `not_applicable`
-- Provider access / registration: surfaced through OpenFDA-derived approval fields
-- License / terms summary: FDA-origin public information
-- Redistribution / reuse summary: approval records are broadly reusable; avoid implying FDA endorsement
-- Official terms URL: <https://open.fda.gov/apis/drug/drugsfda/>
-Reviewed on: `2026-09-27`
-- Notes: BioMCP documents Drugs@FDA as an indirect provenance label because approval fields arrive through OpenFDA, not a dedicated Drugs@FDA client.
-
-### MONDO
-
-- BioMCP surfaces: `search disease; discover <query>`
-- Integration mode: `indirect_only`
-- BioMCP auth: `not_applicable`
-- Provider access / registration: surfaced indirectly through MyDisease.info payloads
-- License / terms summary: CC BY 4.0
-- Redistribution / reuse summary: reuse is allowed with attribution and ontology version tracking
-- Official terms URL: <https://mondo.monarchinitiative.org/pages/download/>
-Reviewed on: `2026-09-27`
-- Notes: BioMCP uses MONDO identifiers through MyDisease.info and other aggregators rather than calling MONDO directly.
-
-### PDB
-
-- BioMCP surfaces: `get protein <id> structures`
-- Integration mode: `indirect_only`
-- BioMCP auth: `not_applicable`
-- Provider access / registration: surfaced through UniProt cross-references; no standalone BioMCP PDB client
-- License / terms summary: PDB archive data is CC0 1.0
-- Redistribution / reuse summary: data is broadly reusable; attribution to original structure authors is encouraged
-- Official terms URL: <https://www.rcsb.org/pages/usage-policy>
-Reviewed on: `2026-09-27`
-- Notes: BioMCP currently exposes PDB identifiers from UniProt rather than querying RCSB PDB directly.
-
-## Source notes
-
-- `PubMed`, `PubTator3`, `Europe PMC`, `LitSense2`, `NCBI E-utilities`, `PMC OA`, `NCBI ID Converter`, `Semantic Scholar`, and `Figshare` are separate direct inventory rows inside BioMCP's article stack because search, annotation, identifier, PDF metadata, full-text, and asset-byte responsibilities come from different NCBI/EMBL/AI2/Figshare service surfaces. PMC article HTML is documented as a PMC web fallback in the data-source matrix rather than as a separate source-client row.
-- `OpenFDA FAERS`, `OpenFDA label`, `OpenFDA shortage`, and `Drugs@FDA` are user-facing provenance labels that resolve back to the `OpenFDA` direct row plus the `Drugs@FDA` indirect row.
-- `AlphaFold DB` and `PDB` are indirect-only because BioMCP currently surfaces those structure IDs via `UniProt` cross-references rather than maintaining standalone source clients.
-- `COSMIC` is indirect-only provenance through `MyVariant.info`. Direct COSMIC integration is not part of BioMCP's supported source surface because the provider's licensing model creates unacceptable redistribution and deployment risk for an MIT-licensed open tool.

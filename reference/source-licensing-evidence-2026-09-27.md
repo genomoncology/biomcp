@@ -1,14 +1,4 @@
-# Source licensing review evidence, 2026-09-27/28 pass
-
-Per-source evidence for the delegated licensing review pass recorded
-in `sdlc/records/2026-09-27-source-licensing-review-pass.md`. Every
-row names the URL checked, the access date, and the finding. The
-final split across the 48 sources due 2026-03-20: 45 verified
-(CIViC, WikiPathways and PharmGKB resolved on 2026-09-28, Enrichr on
-2026-09-29), 2 changed (COSMIC, CPIC), 1 restricted (Enrichr,
-verified and relabelled the same day from the live terms submenu
-page; the 09-27 call had read the broken help page). JS-walled pages were read from their
-live JS bundles, which are the citable sources for those rows.
+# Source licensing review evidence, 2026-09-27/28 pass  Per-source evidence for the delegated licensing review pass recorded in `sdlc/records/2026-09-27-source-licensing-review-pass.md`. Every row names the URL checked, the access date, and the finding. The final split across the 48 sources due 2026-03-20: 45 verified (CIViC, WikiPathways and PharmGKB resolved on 2026-09-28, Enrichr on 2026-09-29), 2 changed (COSMIC, CPIC), 1 restricted (Enrichr, verified and relabelled the same day from the live terms submenu page; the 09-27 call had read the broken help page). JS-walled pages were read from their live JS bundles, which are the citable sources for those rows.
 
 | Source | Evidence URL | Accessed | Finding |
 |---|---|---|---|
