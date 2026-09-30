@@ -65,7 +65,7 @@ Do not tag `d9ae247d`. The release would leave the GHCR `latest` tag on 0.9.0, a
 | `ticket/1142-design-refresh`, `ticket/1164-design-refresh` | unlanded | design text only; no record |
 | `planning/1143-refresh`, `planning/1145-refresh`, `planning/1163-refresh` | unlanded | design refresh; the ticket on main differs; no record |
 | `tickets/kids26-cell-line-dataset` | unlanded | records 1202, 1205, 1213 and 1214, the 1206 draft hold, licensing and ChEMBL row edits |
-| `scratch/biodata-0203-sync-candidate` | unlanded | merge of 0.9 main into 1.0; owned by the 1.0 team |
+| the 1.0 sync-candidate scratch branch | unlanded | merge of 0.9 main into 1.0; owned by the 1.0 team |
 
 ## Branch decision
 
@@ -73,4 +73,4 @@ Ian directed on 2026-09-30 that leftover branches be removed. The reviewer appli
 
 - Delete the superseded branches and the design-only branches.
 - For `tickets/kids26-cell-line-dataset`, compare its licensing and ChEMBL row edits with main. Carry any that are still true and missing into a reviewed ticket, then delete the branch.
-- Leave `scratch/biodata-*` and `biodata/*` to the 1.0 team.
+- Leave the 1.0 team's scratch and feature branches to the 1.0 team (their names redacted here; the zero-coupling gate forbids naming that project in this repository).

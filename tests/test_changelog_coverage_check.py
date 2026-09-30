@@ -20,19 +20,30 @@ described_tickets = _MODULE.described_tickets
 record_tickets = _MODULE.record_tickets
 
 
-def _fake_git(directory: Path, responses: dict[str, list[str]]) -> None:
+def _fake_git(
+    directory: Path,
+    responses: dict[str, list[str]] | dict[str, dict[str, str]],
+) -> None:
     """Answer git subprocess calls by leading subcommand, not by order.
 
-    The coverage check runs `git tag`, `git log`, and `git diff` in
-    whatever order it needs them, so dispatching on the first argument
-    keeps the harness honest when the script changes.
+    The coverage check runs `git tag`, `git log`, `git diff` and
+    `git show <ref>:<path>` in whatever order it needs them, so
+    dispatching on the first argument keeps the harness honest when
+    the script changes. The `show` value maps `ref:path` to a body.
     """
     script = directory / "git"
     body = "#!/usr/bin/env bash\nset -euo pipefail\n"
     body += 'printf \'%s\\n\' "$*" >> "$GIT_FAKE_CALLS"\n'
     body += 'case "$1" in\n'
     for subcommand, lines in responses.items():
-        body += f"  {subcommand}) printf '%s\\n' {shlex.join(lines)}; exit 0 ;;\n"
+        if subcommand == "show":
+            body += "  show)\n"
+            for ref_path, content in lines.items():
+                safe = shlex.quote(content)
+                body += f"    if [ \"$*\" = \"show {shlex.quote(ref_path)}\" ]; then printf %s {safe}; exit 0; fi\n"
+            body += '    printf ""; exit 0 ;;\n'
+        else:
+            body += f"  {subcommand}) printf '%s\\n' {shlex.join(lines)}; exit 0 ;;\n"
     body += 'esac\necho "unexpected git call: $*" >&2\nexit 1\n'
     script.write_text(body, encoding="utf-8")
     script.chmod(0o755)
@@ -44,6 +55,7 @@ def _run(
     changelog: str,
     subjects: list[str],
     records: list[str] | None = None,
+    record_bodies: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     _fake_git(
         tmp_path,
@@ -51,6 +63,7 @@ def _run(
             "tag": ["v0.9.0", "v0.9.1"],
             "log": subjects,
             "diff": records or [],
+            "show": record_bodies or {},
         },
     )
     path = tmp_path / "CHANGELOG.md"
@@ -338,3 +351,37 @@ def test_dated_and_yearly_records_do_not_count_as_tickets(tmp_path: Path, monkey
     # Date-shaped names never count (any year); ticket numbers of
     # 2000 and above count — the cap is gone (2026-09-29 review).
     assert found == {"1265", "0843", "1255", "2000", "2027"}, found
+
+
+def test_a_backfilled_record_demands_no_bullet(tmp_path: Path) -> None:
+    """Records marked `backfill:` document work that shipped in an
+    earlier release; they are bookkeeping and demand no bullet here
+    (the kids26 carry added four such records for v0.9.0 work).
+    """
+    result = _run(
+        tmp_path,
+        subjects=["Record ticket 1214 directly"],
+        records=["sdlc/records/1214-chembl-cell-line-section.md"],
+        record_bodies={
+            "v0.9.1:sdlc/records/1214-chembl-cell-line-section.md": (
+                "---\nbackfill: v0.9.0\nflow: build\n---\n# 1214\n"
+            )
+        },
+        changelog="# C\n\n## 0.9.1 — 2026-09-30\n\n- Unrelated fix. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+    # The merge subject still demands its bullet even when the record
+    # is a backfill: the subject means the ticket's work is in this
+    # release's range.
+    result2 = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1214-chembl'"],
+        records=["sdlc/records/1214-chembl-cell-line-section.md"],
+        record_bodies={
+            "v0.9.1:sdlc/records/1214-chembl-cell-line-section.md": (
+                "---\nbackfill: v0.9.0\nflow: build\n---\n# 1214\n"
+            )
+        },
+        changelog="# C\n\n## 0.9.1 — 2026-09-30\n\n- Unrelated fix. (1234)\n",
+    )
+    assert result2.returncode == 1, result2.stderr

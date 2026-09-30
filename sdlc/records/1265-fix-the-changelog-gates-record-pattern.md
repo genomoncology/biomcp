@@ -8,7 +8,7 @@ merge: cbe6233a chain
 
 ## What changed
 
-The changelog coverage gate accepted ticket references as bare four-digit numbers with any following slug. The gate now treats a record reference as four digits whose value stays under 2000 followed by an arbitrary slug, and dated records (the `2026-09-27-...` shape) ride a separate branch the gate already handled. A regression test drives the gate's record parser end to end against a scratch changelog.
+The changelog coverage gate dropped real ticket records whose slug started with a digit or a capital, read dated notes as tickets, and its regression test exercised the pattern alone. The landing accepted any four-digit number with any slug, rejected date-shaped names outright, and drove `record_tickets()` end to end against a scratch git repo. The under-2000 cap that first landing kept was later removed entirely (see the follow-up note below).
 
 ## Known defect, recorded not hidden
 

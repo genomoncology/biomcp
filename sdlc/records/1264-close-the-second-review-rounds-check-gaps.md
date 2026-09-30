@@ -3,7 +3,7 @@ base: ec1c8f9a
 head: 4de8e686
 ---
 
-Closed the round-two check gaps from the 2026-09-28 review file.
+Closed the second review round's check gaps from the 2026-09-28 review file.
 
 The workflow contract now pins each pinned release job's ENTIRE
 step list — ids, order, and count — so a step slipped before a

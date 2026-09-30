@@ -52,15 +52,32 @@ def merge_subject_tickets(previous: str, tag: str) -> set[str]:
     }
 
 
+def record_is_backfill(previous: str, tag: str, name: str) -> bool:
+    """A record whose frontmatter carries `backfill: <version>`
+    documents work that already shipped in an earlier release (the
+    kids26 carry on 2026-09-30 added four such records for code
+    released in v0.9.0); it is bookkeeping, not a new ticket, so it
+    demands no changelog bullet for this release.
+    """
+    body = run_git("show", f"{tag}:{name}")
+    return body.lstrip().startswith("---") and re.search(
+        r"(?m)^backfill:\s*\S", body.split("---", 2)[1]
+    )
+
+
 def record_tickets(previous: str, tag: str) -> set[str]:
     names = run_git(
         "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/records/"
     ).splitlines()
-    return {
-        match.group(1)
-        for name in names
-        if (match := RECORD_TICKET.match(name)) is not None
-    }
+    tickets: set[str] = set()
+    for name in names:
+        match = RECORD_TICKET.match(name)
+        if match is None:
+            continue
+        if record_is_backfill(previous, tag, name):
+            continue
+        tickets.add(match.group(1))
+    return tickets
 
 
 def merged_tickets(previous: str, tag: str) -> set[str]:

@@ -466,7 +466,7 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     # CLI, renderer, template, MCP gate, contract test, guide, and spec page
     # (13 files). Main's later source, test, and release corrections bring
     # the synchronized 1.0 package to 1,438 reviewed members; the 1278 CI and TLS additions bring it to 1,442.
-    assert len(paths) == 1444
+    assert len(paths) == 1446
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(

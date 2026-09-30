@@ -155,11 +155,11 @@
     "env_var": null,
     "provider_access": "open public API",
     "license_summary": "ChEMBL data is provided under Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0); attribution is required and share-alike applies to adaptations (2026-09-27 pass added the ShareAlike obligation the earlier summary omitted).",
-    "redistribution_summary": "reuse is generally allowed under the provider's open-data terms with attribution where required",
+    "redistribution_summary": "reuse, redistribution and adaptation are allowed with attribution under ShareAlike; preserve ChEMBL IDs and name the release, and note that compound property calculations derived from commercial software carry their own terms",
     "terms_url": "https://www.ebi.ac.uk/chembl/",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "BioMCP only queries live ChEMBL endpoints and does not ship ChEMBL data in the repository. Drug target output keeps ChEMBL in the generic target/mechanism section while CIViC variant labels are rendered separately when present."
+    "notes": "BioMCP only queries live ChEMBL endpoints and does not ship ChEMBL data in the repository. Drug target output keeps ChEMBL in the generic target/mechanism section while CIViC variant labels are rendered separately when present. The about page reads \"The ChEMBL data is made available on a Creative Commons Attribution-Share Alike 3.0 Unported License\", and the release LICENSE file at https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/LICENSE carries the same grant; the shipped ChEMBL attribution line has said CC BY-SA 3.0 since ticket 1214."
   },
   {
     "id": "civic",
@@ -351,7 +351,7 @@
     "bioMcp_auth": "not_applicable",
     "env_var": null,
     "provider_access": "surfaced indirectly through cached MyVariant.info fields; no standalone BioMCP COSMIC client",
-    "license_summary": "BioMCP reads COSMIC only through MyVariant.info, whose COSMIC fields are the v68 snapshot — per MyVariant's metadata: 'COSMIC v68 was imported from UCSC database dump. This is the last freely available somatic variants from COSMIC before their licence change' (checked 2026-09-27). The v68-era terms, not the current cosmickb.org licence, govern those fields. The current licence requires a commercial licence for commercial use including patient services and clinical reporting; it governs COSMIC's current direct offering only. The practical limit of the v68 fields is age, not licence.",
+    "license_summary": "BioMCP reads COSMIC only through MyVariant.info, whose COSMIC fields are the v68 snapshot \u2014 per MyVariant's metadata: 'COSMIC v68 was imported from UCSC database dump. This is the last freely available somatic variants from COSMIC before their licence change' (checked 2026-09-27). The v68-era terms, not the current cosmickb.org licence, govern those fields. The current licence requires a commercial licence for commercial use including patient services and clinical reporting; it governs COSMIC's current direct offering only. The practical limit of the v68 fields is age, not licence.",
     "redistribution_summary": "MyVariant's COSMIC v68 snapshot predates the current COSMIC licence; treat the fields under the v68-era terms and cite MyVariant as the serving source. Direct use of current COSMIC releases remains commercially restricted.",
     "terms_url": "https://docs.myvariant.info/en/latest/doc/data_source.html",
     "key_url": null,

@@ -160,7 +160,12 @@ def _assert_release_contract(workflow: str) -> None:
 
     final = _job_block(workflow, "publish-release")
     assert 'gh release edit "$TAG" --draft=false' in final
-    assert "gh release view" in final
+    # The latest decision is a version comparison against published
+    # releases (2026-09-30 blocker fix): the draft-skipping
+    # "gh release view" call is gone entirely.
+    assert "gh release view" not in final
+    assert "gh release list" in final and "--exclude-drafts" in final
+    assert "scripts/should-move-latest.sh" in final
     assert "docker buildx imagetools create --tag" in final
     assert "gh release view" not in container
     assert "imagetools create --tag" not in container

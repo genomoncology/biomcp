@@ -1,4 +1,4 @@
-# Close the round-three check gaps
+# Close the third review round's check gaps
 
 From sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md
 (Checks section). Ian's standing bar holds — catch the next spelling,

@@ -32,19 +32,23 @@ cat ../../.dockerignore | mustmatch like '**
 The release workflow verifies the release's Linux tarballs against their
 published sidecars, stages them, pushes one image index for both architectures
 under the release's version tag, smokes each platform from the registry, and
-moves `latest` only after both smokes pass and only when the tag is the
-repository's latest release.
+moves `latest` only after both smokes pass and only when the tag's version
+number sorts newest against every already-published release (GitHub's
+"latest release" view skips drafts, so asking it while the tag is still a
+draft answers with the previous release; 2026-09-30 second go-request
+review).
 
 ```bash
 cat ../../.github/workflows/release.yml | mustmatch like 'container-publish:
 group: release-
 platforms: linux/amd64,linux/arm64
 sha256sum -c biomcp-linux-x86_64.tar.gz.sha256
-gh release view
---jq .tagName
+gh release list
+--exclude-drafts
 org.opencontainers.image.revision
 Smoke the linux/amd64 image from the registry
 Smoke the linux/arm64 image from the registry
+should-move-latest.sh
 docker buildx imagetools create'
 ```
 

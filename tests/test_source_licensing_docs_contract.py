@@ -494,6 +494,21 @@ def test_the_evidence_table_keeps_one_row_per_line() -> None:
     assert all(row.count("|") >= 4 for row in table_lines), (
         "a table row is malformed (fewer than four cells)"
     )
+    # Exact coverage (second go-request review: a one-row collapse
+    # passed the >= 49 floor). The pass documented 48 rows (45
+    # verified, 2 changed, 1 restricted), so the table is exactly 50
+    # pipe lines, every row key is unique, and no row names a source
+    # the registry does not know (the registry has grown past the
+    # pass, so registry-to-row is not one-to-one).
+    def _normalize(value: str) -> str:
+        return value.strip().lower().replace(" ", "-").replace(".", "")
+
+    row_keys = {_normalize(row.split("|")[1]) for row in table_lines[2:]}
+    assert len(table_lines) == 50, (
+        f"the pass documented 48 rows plus header and separator; found {len(table_lines)}"
+    )
+    assert len(row_keys) == 48, f"duplicate or missing row keys: {len(row_keys)}"
+
     # The separator row must be its own line, not glued to the header.
     separator = table_lines[1]
     assert set(separator.replace("|", "").replace("-", "").strip()) == set(), (

@@ -238,10 +238,10 @@ Reviewed on: `2026-09-27`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
 - License / terms summary: EMBL-EBI open data service; ChEMBL is CC BY-SA 3.0 (attribution and share-alike)
-- Redistribution / reuse summary: reuse is generally allowed under the provider's open-data terms with attribution where required
+- Redistribution / reuse summary: reuse, redistribution and adaptation are allowed with attribution under ShareAlike; preserve ChEMBL IDs and name the release, and note that compound property calculations derived from commercial software carry their own terms
 - Official terms URL: <https://www.ebi.ac.uk/chembl/>
 Reviewed on: `2026-09-27`
-- Notes: `get drug <name> targets` keeps ChEMBL as the generic target/mechanism source; CIViC variant labels are rendered separately when present.
+- Notes: `get drug <name> targets` keeps ChEMBL as the generic target/mechanism source; CIViC variant labels are rendered separately when present. The about page and the release LICENSE file both carry the CC BY-SA 3.0 grant, and the shipped ChEMBL attribution line has said CC BY-SA 3.0 since ticket 1214.
 
 ### CIViC
 
