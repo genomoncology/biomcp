@@ -93,3 +93,5 @@ cache-workspace-crates: set to true on every Rust job; the before/after times go
 Style: AGENTS.md sections unwrapped with a blank line before Source licensing; the red-main rule now states Ian's rule (fix promptly, release bar is the tagged commit); the README check asserts the warning's content and its link specifically; the hero count went back to its strict form with the warning section measured separately. The 1.0 files cite the approval recorded in 5bb12367 and are unwrapped.
 
 Deferral decisions from Ian (2026-09-29): check spellings, marked waits and the four 1.0 plan files approved for 1.0; the search-all deferral refused, the test restored.
+
+Run IDs for the round's commits, read from the Actions API on 2026-09-29: ac51eceb → CI 36593025808 success; d251cc43 → CI 36589139221 success; bd75c81e → CI 36593165018 success; a82fda55 → CI 36596356718 success; 9eb9a121 → CI 36600156017 success; 37951529 → CI 36636929043 success (all eight jobs).

@@ -267,7 +267,13 @@ def test_no_previous_release_passes_without_git_log(tmp_path: Path) -> None:
 
 def test_every_real_unreleased_bullet_describes_its_ticket() -> None:
     content = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    match = re.search(r"^## Unreleased\s*([\s\S]*?)(?=^## |\Z)", content, re.MULTILINE)
+    # After the 0.9.1 release the live section is the 0.9.1 heading
+    # (an Unreleased section returns with the next dev cycle).
+    match = re.search(
+        r"^## (?:Unreleased|0\.9\.1 — 2026-09-30)\s*([\s\S]*?)(?=^## |\Z)",
+        content,
+        re.MULTILINE,
+    )
     assert match is not None
     section = match.group(1)
     described = described_tickets(section)
@@ -305,8 +311,9 @@ def test_dated_and_yearly_records_do_not_count_as_tickets(tmp_path: Path, monkey
     records.mkdir(parents=True)
     names = [
         "2026-09-27-source-licensing-review-pass.md",
-        "2026-q3-review.md",
-        "2026-sept-review.md",
+        "1999-12-31-pre-y2k-dated-note.md",
+        "2000-fix-the-four-digit-boundary.md",
+        "2027-three-years-out.md",
         "1265-3-sources-behind-one-api.md",
         "1265-Alpha-sort-the-catalog.md",
         "0843-something-old.md",
@@ -328,4 +335,6 @@ def test_dated_and_yearly_records_do_not_count_as_tickets(tmp_path: Path, monkey
                           capture_output=True, text=True, check=True).stdout.strip()
     monkeypatch.chdir(repo)
     found = _MODULE.record_tickets(base, "HEAD")
-    assert found == {"1265", "0843", "1255"}, found
+    # Date-shaped names never count (any year); ticket numbers of
+    # 2000 and above count — the cap is gone (2026-09-29 review).
+    assert found == {"1265", "0843", "1255", "2000", "2027"}, found

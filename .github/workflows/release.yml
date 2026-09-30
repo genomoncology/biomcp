@@ -694,11 +694,10 @@ jobs:
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
-      - name: Publish the GitHub release after every publisher succeeds
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "$TAG" --draft=false
-
+      # Docker work runs BEFORE the release goes public (2026-09-30
+      # review): if any of it fails, the release is still a deletable
+      # draft. The `latest` check reads the release through the API,
+      # which sees drafts, so the reorder changes no semantics.
       - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
 
       - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
@@ -720,3 +719,8 @@ jobs:
           fi
           docker buildx imagetools create --tag "${IMAGE}:latest" "${IMAGE}:${VERSION}"
           docker buildx imagetools inspect "${IMAGE}:latest"
+
+      - name: Publish the GitHub release after every publisher succeeds
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "$TAG" --draft=false

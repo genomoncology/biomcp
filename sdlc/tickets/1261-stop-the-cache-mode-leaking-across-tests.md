@@ -28,7 +28,7 @@ function so a future mode value cannot split them again.
 ## Review
 
 - Design review: n/a (Ian's issue specified option 2)
-- Code review: REJECT on two P1s (unserialized unit test on the
+- Code review: REJECT on two serious findings (unserialized unit test on the
   shared override slot; stale line pin), fixed and verified 2026-09-27
 - Verification: yellow gate at 8c37f045 — lint, test, spec, stress
   OK, zero failed lines

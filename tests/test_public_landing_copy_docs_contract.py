@@ -53,16 +53,17 @@ def test_readme_landing_copy_matches_public_contract() -> None:
         < readme.index("## Installation")
     )
 
-    hero = readme.split("\n## What is BioMCP?\n", 1)[0].split("# BioMCP\n\n", 1)[1].strip()
+    above_hero = readme.split("\n## What is BioMCP?\n", 1)[0].split("# BioMCP\n\n", 1)[1].strip()
+    hero = above_hero.split("\n## Data terms\n", 1)[0].strip()
     description = _markdown_section_block(
         readme, "## What is BioMCP?\n\n", "\n## Features\n"
     )
     features = _markdown_section_block(readme, "## Features\n\n", "\n## Quick start\n")
     quick_start = _markdown_section_block(readme, "## Quick start\n\n", "\n```bash\n")
 
-    # The hero block now includes the licence warning (2026-09-29),
-    # so the hero carries the tagline plus the warning paragraph.
-    assert _paragraph_count(hero) >= 1
+    # The hero block is the tagline alone again (2026-09-29 second
+    # review): the warning lives in its own section after the hero.
+    assert _paragraph_count(hero) == 1
     # 2026-09-28: the count is computed from sources.json so it
     # cannot drift from the registry the way "~30" did.
     import json
@@ -114,13 +115,20 @@ def test_readme_carries_the_licence_warning_and_link() -> None:
     licensing page. This check fails if either goes missing.
     """
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    # The warning's own section, verbatim requirements (2026-09-29
+    # second review): the earlier or-forms accepted almost anything.
     top = readme[: readme.index("## What is BioMCP?")]
-    assert "terms govern" in top.lower() or "terms" in top.lower(), (
-        "the README must state that upstream terms govern the use of retrieved data"
+    assert "## Data terms" in top, "the Data terms section must precede the hero"
+    section = _markdown_section_block(readme, "## Data terms\n\n", "\n## What is BioMCP?")
+    assert "terms govern how you use the data" in section.lower(), (
+        "the warning must say the upstream terms govern the retrieved data"
     )
-    assert "restrict commercial or clinical use" in top or "restrict" in top, (
+    assert "restrict commercial or clinical use" in section, (
         "the warning must name the restriction class"
     )
-    assert "docs/reference/source-licensing.md" in top, (
+    assert "obtain any licence you need" in section or "license you need" in section, (
+        "the warning must tell the reader to obtain their own licence"
+    )
+    assert "[Source Licensing and Terms](docs/reference/source-licensing.md)" in section, (
         "the warning must link to the Source Licensing and Terms page"
     )

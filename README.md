@@ -8,7 +8,7 @@ BioMCP retrieves data from upstream biomedical sources. Those sources' terms gov
 
 ## What is BioMCP?
 
-BioMCP is one CLI binary over a single command grammar that reaches 70 trusted
+BioMCP is one CLI binary over a single command grammar that reaches 71 trusted
 biomedical sources directly (PubMed, ClinVar, ClinicalTrials.gov, OncoKB,
 Reactome, and more; eight further sources arrive inside another source's
 answer). It is also an MCP (Model Context Protocol) server, so the same tools are

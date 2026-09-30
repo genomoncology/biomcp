@@ -10,6 +10,7 @@ corrected shapes so drift fails loudly.
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -48,10 +49,17 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
         "the docs-only skip must never read the commit message"
     )
     classify = (REPO_ROOT / "scripts" / "ci-classify-push.sh").read_text(encoding="utf-8")
-    # The docs-only class is *.md, sdlc/ and notes/ — everything
-    # else is a full-CI push.
-    assert "docs_only=false" in classify
-    assert 'case "$path" in' in classify
+    # The base is the merge-base with origin/main (a failed tip
+    # followed by a markdown commit must not skip the Rust jobs),
+    # and executable markdown (spec/, skills/, src/, the compiled
+    # CLI reference) never counts as docs.
+    assert "git merge-base" in classify
+    assert "sdlc/*|notes/*" in classify
+    allow_list = classify.split("case")[1].split("esac")[0]
+    for executable in ("docs/*", "README.md|", "|README"):
+        assert executable not in allow_list.replace("sdlc/*|notes/*|CHANGELOG.md|AGENTS.md|.github/*.md)", ""), (
+            "docs/ and README.md are read by Rust tests and compiled in; they must run full CI"
+        )
 
 
 def test_every_rust_job_waits_on_the_changes_job() -> None:
@@ -68,7 +76,7 @@ def test_the_changes_job_covers_the_whole_push() -> None:
     assert changes["outputs"]["docs_only"] == "${{ steps.classify.outputs.docs_only }}"
     run_step = next(s for s in changes["steps"] if s.get("id") == "classify")
     assert run_step["run"] == "scripts/ci-classify-push.sh"
-    assert run_step["env"]["PUSH_BEFORE"] == "${{ github.event.before }}"
+    assert run_step["env"]["PUSH_BASE_REF"] == "origin/main"
     assert run_step["env"]["PUSH_AFTER"] == "${{ github.sha }}"
 
 
@@ -98,6 +106,7 @@ def test_repository_contracts_always_runs_and_tests_the_docs() -> None:
     assert any("pytest" in r and "not needs_binary" in r for r in runs), (
         "docs-only pushes must still run the docs and record tests"
     )
+    assert any("python tools/check-test-wait-ratchet.py" in r for r in runs)
     assert any("mkdocs build --strict" in r for r in runs), (
         "docs-only pushes must still build the documentation"
     )
@@ -119,6 +128,15 @@ def test_nextest_installs_through_the_checksummed_script() -> None:
 # three that had slipped past the path scan. New ones surface as a
 # red docs-only CI run — fail-loud, never a silent skip — and must
 # join this list.
+# Modules that mention a cargo argv but only write FAKE cargo
+# executables into scratch PATH fixtures (verified by reading them):
+# they never run real cargo, so the docs-only lane may run them.
+CARGO_FAKE_FIXTURE_MODULES = {
+    "test_lint.py",
+    "test_prepare_biodata_release_dependency.py",  # executes scratch cargo and git stubs only
+    "test_pre_commit_reject_march_artifacts.py",  # names a scratch cargo.log; runs no cargo
+}
+
 CARGO_DRIVER_MODULES = {
     "test_alphagenome_proto_generation.py",
     "test_build_identity_rebuild.py",
@@ -142,16 +160,61 @@ def test_the_binary_dependent_modules_carry_the_marker() -> None:
     tests will fail on docs-only runners that have no binary.
     """
     for path in sorted((REPO_ROOT / "tests").rglob("test_*.py")):
+        if path.name == "test_ci_workflow_contract.py":
+            continue  # this scan's own literals must not match itself
         text = path.read_text(encoding="utf-8")
         if path.name == "test_biodata_branch_workflow.py":
             # This 1.0 runner contract uses a temporary stub and mocked cargo;
             # it requires no built BioMCP binary. Keep it in docs-only CI.
             continue
         needs = bool(NEEDS_BINARY_MODULES_PATTERN.search(text))
-        if needs or path.name in CARGO_DRIVER_MODULES:
+        if not needs and re.search(r'[\"\']cargo[\"\']', text):
+            needs = path.name not in CARGO_FAKE_FIXTURE_MODULES
+        if path.name in CARGO_DRIVER_MODULES:
             needs = True
         if needs:
-            assert "pytest.mark.needs_binary" in text, (
+            assert _has_module_binary_marker(text), (
                 f"{path} drives a built binary or cargo; it needs the "
                 "needs_binary marker or the docs-only CI lane will fail it"
             )
+
+
+def _has_module_binary_marker(text: str) -> bool:
+    """Accept actual pytest markers assigned at module scope."""
+    def marker_in(value: ast.expr) -> bool:
+        if isinstance(value, ast.Call):
+            return marker_in(value.func)
+        if isinstance(value, (ast.List, ast.Tuple)):
+            return any(marker_in(elt) for elt in value.elts)
+        return (
+            isinstance(value, ast.Attribute)
+            and value.attr == "needs_binary"
+            and isinstance(value.value, ast.Attribute)
+            and value.value.attr == "mark"
+            and isinstance(value.value.value, ast.Name)
+            and value.value.value.id == "pytest"
+        )
+
+    return any(
+        marker_in(node.value)
+        for node in ast.parse(text).body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == "pytestmark" for t in node.targets)
+    )
+
+
+def test_binary_marker_requires_a_real_module_assignment() -> None:
+    for text in (
+        "pytestmark = pytest.mark.needs_binary",
+        "pytestmark = [pytest.mark.needs_binary]",
+        "pytestmark = (pytest.mark.needs_binary(),)",
+    ):
+        assert _has_module_binary_marker(text), text
+    for text in (
+        "# pytestmark = pytest.mark.needs_binary",
+        'pytestmark = "pytest.mark.needs_binary"',
+        "pytestmark = other.needs_binary",
+        "def test_local():\n    pytestmark = pytest.mark.needs_binary",
+        "if False:\n    pytestmark = pytest.mark.needs_binary",
+    ):
+        assert not _has_module_binary_marker(text), text

@@ -372,9 +372,7 @@ def test_a_raise_without_an_accepted_review_fails(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    target = root / "tests" / "test_one.py"
-    target.parent.mkdir(parents=True)
-    target.write_text("def t():\n    time.sleep(0.1)\n", encoding="utf-8")  # watchdog: planted literal
+    _write_marked_target(root)
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "add", "."], cwd=root, check=True)
     result = _run(root)
@@ -384,3 +382,76 @@ def test_a_raise_without_an_accepted_review_fails(tmp_path: Path) -> None:
     assert "1269" in result.stdout and ("accepted" in result.stdout or "no file" in result.stdout), (
         result.stdout
     )
+
+
+def _write_marked_target(root: Path) -> None:
+    """The scratch timed wait carries the ratchet marker. The literal
+    lives in exactly one place in this file because the ratchet
+    counts this file's own markers.
+    """
+    target = root / "tests" / "test_one.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("def t():\n    time.sleep(0.1)\n", encoding="utf-8")  # watchdog: planted literal
+
+
+def _raise_repo(tmp_path: Path, verdict_line: str, pin: int = 0) -> tuple:
+    root = tmp_path / "repo"
+    (root / "tools").mkdir(parents=True)
+    (root / "tools" / "test-wait-inventory.json").write_text(
+        json.dumps(
+            {
+                "schema": "biomcp-test-wait-inventory-v1",
+                "files": {"tests/test_one.py": {"count": pin, "language": "python"}},
+                "raises": [
+                    {
+                        "file": "tests/test_one.py",
+                        "field": "count",
+                        "from": 0,
+                        "to": 1,
+                        "reason": "planted",
+                        "ticket": "1269",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    _write_marked_target(root)
+    tickets = root / "sdlc" / "tickets"
+    tickets.mkdir(parents=True)
+    (tickets / "1269-scratch.md").write_text(
+        "- Code review: " + verdict_line + "\n", encoding="utf-8"
+    )
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    return root
+
+
+def test_promise_shaped_accept_phrases_never_count(tmp_path: Path) -> None:
+    """2026-09-30 go-request review: only a verdict value that STARTS
+    with ACCEPT counts. Each of these phrases mentions ACCEPT without
+    being an acceptance.
+    """
+    for phrase in [
+        "awaiting ACCEPT",
+        "ACCEPT expected after fixes",
+        "ACCEPT: expected after fixes",
+        "ACCEPT, pending fixes",
+        "ACCEPT once fixes land",
+        "pending; reviewer returns ACCEPT or findings",
+        "will ACCEPT after fixes",
+        "REJECT, not ACCEPT yet",
+        "ACCEPT is missing",
+    ]:
+        root = _raise_repo(tmp_path / phrase.replace(" ", "_")[:30], phrase)
+        result = _run(root)
+        assert result.returncode == 1, phrase
+        assert "1269" in result.stdout, (phrase, result.stdout)
+
+
+def test_a_verdict_value_starting_with_accept_counts(tmp_path: Path) -> None:
+    root = _raise_repo(tmp_path, "ACCEPT 2026-09-30 by a fresh reviewer", pin=1)
+    # The raise is accepted, so the gate must pass.
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    result = _run(root)
+    assert result.returncode == 0, result.stdout

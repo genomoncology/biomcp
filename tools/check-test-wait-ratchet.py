@@ -291,16 +291,22 @@ def raise_is_accepted(root: Path, record: dict) -> tuple[bool, str]:
         text,
         re.IGNORECASE | re.MULTILINE,
     )
-    # Any verdict line may carry the acceptance; a line counts only
-    # when its ACCEPT is not negated: "REJECT, not ACCEPT yet",
-    # "ACCEPT is missing" and "no ACCEPT" stay rejections, while a
-    # history line like "REJECT once, folded; ACCEPT 2026-09-28" is
-    # a real acceptance (2026-09-29 review).
+    # A raise counts only when a verdict line's VALUE starts with
+    # ACCEPT (2026-09-30 go-request review): promises, expectations
+    # and pendings that merely mention ACCEPT — "awaiting ACCEPT",
+    # "ACCEPT expected after fixes", "ACCEPT once fixes land",
+    # "reviewer returns ACCEPT or findings", "REJECT, not ACCEPT yet"
+    # — stay rejections. A history line like "REJECT once, folded;
+    # ACCEPT 2026-09-28 ..." qualifies because its value continues
+    # from ACCEPT after the semicolon only if the ACCEPT token starts
+    # the value; folded history therefore records its acceptance on
+    # its own verdict line.
     for verdict in verdicts:
-        rest = verdict.group("rest")
-        if re.search(r"(?<!not )\bACCEPT\b", rest) and not re.search(
-            r"\bACCEPT\b\s+(?:is|was)\s+(?:not|missing|pending)", rest, re.IGNORECASE
-        ):
+        rest = verdict.group("rest").strip()
+        # ACCEPT must be the verdict itself: the token starts the
+        # value AND is not immediately an expectation ("ACCEPT
+        # expected after fixes", "ACCEPT once fixes land").
+        if re.match(r"ACCEPT\b(?![\s,:;]*(?:expected|once|pending|after|is|was|if|when|awaited)\b)", rest):
             return True, ""
     return False, (
         f"raise cites ticket {ticket}, whose code review has not "

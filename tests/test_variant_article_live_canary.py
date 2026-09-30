@@ -7,7 +7,12 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
+
 CANARY = REPO_ROOT / "spec/fixtures/run-variant-articles-live-canary.sh"
 G5_CANARY = REPO_ROOT / "spec/fixtures/run-g5-v2-identity-live-canary.sh"
 
@@ -17,8 +22,6 @@ def write_fake_binary(path: Path, marker: Path) -> None:
         f"""#!/usr/bin/env python3
 import json
 from pathlib import Path
-
-pytestmark = [pytest.mark.needs_binary]  # docs-only CI excludes this module
 
 Path({str(marker)!r}).touch()
 print(json.dumps({{

@@ -29,7 +29,7 @@ slot), and the issue's success criterion end to end — under the
 guard the sidecar is not written; after the drop the same binary
 writes it; a later read serves from it with no upstream requests.
 
-Evidence: code review REJECT on two P1s (the unserialized unit test
+Evidence: code review REJECT on two serious findings (the unserialized unit test
 against the process-global slot — exactly the flake class this
 ticket kills — and a stale line-count pin), both fixed; gate cycles
 caught clippy (a Copy-clone and a held-for-Drop field needing the

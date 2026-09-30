@@ -373,10 +373,11 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "Smoke the linux/arm64 image from the registry",
     ],
     "publish-release": [
-        "Publish the GitHub release after every publisher succeeds",
+        # Docker work precedes the public flip (2026-09-30 review).
         "docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435",
         "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567",
         "Move latest after both platform smokes pass",
+        "Publish the GitHub release after every publisher succeeds",
     ],
     "create-draft": [
         "Create the draft release",
@@ -701,16 +702,21 @@ def _assert_release_locked_builds(parsed: dict) -> None:
         steps = parsed["jobs"][job_id]["steps"]
         for index, step in enumerate(steps):
             run = step.get("run", "")
-            is_build = "maturin build" in run or "cargo build" in run
-            if not is_build:
+            # Per command, not per step (2026-09-29 second review):
+            # a step mixing an unlocked build with a locked one
+            # passed the substring check.
+            build_commands = [
+                line
+                for line in run.splitlines()
+                if "maturin build" in line or "cargo build" in line
+            ]
+            if not build_commands:
                 continue
-            has_release = "--release" in run
-            has_locked = "--locked" in run
-            if not (has_release and has_locked):
-                offenders.append(
-                    f"{job_id} step {index} ({step.get('name', 'run')}): "
-                    f"release={has_release} locked={has_locked}"
-                )
+            offenders.extend(
+                f"{job_id} step {index}: {line.strip()[:70]}"
+                for line in build_commands
+                if "--release" not in line or "--locked" not in line
+            )
     assert not offenders, (
         "every wheel and tarball build must pass --release --locked "
         f"(GitHub #287): {offenders}"

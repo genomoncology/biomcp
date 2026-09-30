@@ -308,17 +308,17 @@ def test_cli_surface_contract_compares_release_process_versions_to_metadata(
     (root / "docs" / "reference").mkdir(parents=True)
     cargo = root / "Cargo.toml"
     cargo.write_text(
-        '[package]\nname = "biomcp-cli"\nversion = "0.9.1-dev.1"\n',
+        '[package]\nname = "biomcp-cli"\nversion = "0.9.2-dev.1"\n',
         encoding="utf-8",
     )
     (root / "pyproject.toml").write_text(
-        '[project]\nname = "biomcp-cli"\nversion = "0.9.1.dev1"\n',
+        '[project]\nname = "biomcp-cli"\nversion = "0.9.2.dev1"\n',
         encoding="utf-8",
     )
     release_process = root / "docs" / "reference" / "release-process.md"
     release_process.write_text(
-        "The private development candidate is Cargo `0.9.1-dev.1` and Python\n"
-        "`0.9.1.dev1`; public metadata stays on the latest published release.\n",
+        "The private development candidate is Cargo `0.9.2-dev.1` and Python\n"
+        "`0.9.2.dev1`; public metadata stays on the latest published release.\n",
         encoding="utf-8",
     )
 
@@ -329,23 +329,7 @@ def test_cli_surface_contract_compares_release_process_versions_to_metadata(
     )
 
     release_process.write_text(
-        "The private development candidate is Cargo `0.8.0` and Python `0.9.1.dev1`.\n",
-        encoding="utf-8",
-    )
-    result = module.check_release_process_versions_match_package_metadata(root)
-
-    assert result["status"] == "fail"
-    assert any(
-        finding.get("fragment") == "Cargo `0.9.1-dev.1`"
-        for finding in result["findings"]
-    )
-
-    release_process.write_text(
-        "The private development candidate is Cargo `0.9.1-dev.1` and Python `0.9.1.dev1`.\n",
-        encoding="utf-8",
-    )
-    cargo.write_text(
-        '[package]\nname = "biomcp-cli"\nversion = "0.9.2-dev.1"\n',
+        "The private development candidate is Cargo `0.8.0` and Python `0.9.2.dev1`.\n",
         encoding="utf-8",
     )
     result = module.check_release_process_versions_match_package_metadata(root)
@@ -353,6 +337,23 @@ def test_cli_surface_contract_compares_release_process_versions_to_metadata(
     assert result["status"] == "fail"
     assert any(
         finding.get("fragment") == "Cargo `0.9.2-dev.1`"
+        for finding in result["findings"]
+    )
+
+    release_process.write_text(
+        "The private development candidate is Cargo `0.9.2-dev.1` and Python `0.9.2.dev1`.\n",
+        encoding="utf-8",
+    )
+    # The page is now stale again: Cargo advanced past the named pair.
+    cargo.write_text(
+        '[package]\nname = "biomcp-cli"\nversion = "0.9.3-dev.1"\n',
+        encoding="utf-8",
+    )
+    result = module.check_release_process_versions_match_package_metadata(root)
+
+    assert result["status"] == "fail"
+    assert any(
+        finding.get("fragment") == "Cargo `0.9.3-dev.1`"
         for finding in result["findings"]
     )
 

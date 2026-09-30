@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 import json
 import re
+
+import pytest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -445,23 +447,88 @@ def test_the_licensing_page_tier_table_agrees_with_the_registry() -> None:
         m = re.match(r"^\|\s*([A-Za-z0-9 .&/-]+?)\s*\|\s*(\d)\s*\|", line)
         if m:
             rows[m.group(1).strip().lower()] = int(m.group(2))
-    sections = set(
-        m.group(1).strip().lower()
-        for m in re.finditer(r"^### (.+)$", page, re.M)
-    )
+    sections: dict[str, int] = {}
+    current_tier: int | None = None
+    for line in page.splitlines():
+        m = re.match(r"^## Tier (\d)", line)
+        if m:
+            current_tier = int(m.group(1))
+            continue
+        m = re.match(r"^### (.+)$", line)
+        if m and current_tier is not None:
+            sections[m.group(1).strip().lower()] = current_tier
     inventory = _source_inventory()
     assert inventory, "the registry must parse"
     mismatches = []
     for entry in inventory:
         name = str(entry.get("name") or "")
+        tier = int(entry.get("tier", 0))
         row = rows.get(name.lower())
-        if row is None:
-            # A few grouped services carry a detail section instead
-            # of a table row; they must still appear somewhere.
-            if name.lower() not in sections:
-                mismatches.append(f"{name}: absent from the page tier table and sections")
-        elif row != int(entry.get("tier", 0)):
+        if row is not None and row != tier:
             mismatches.append(
-                f"{name}: page says tier {row}, registry says tier {entry.get('tier')}"
+                f"{name}: table says tier {row}, registry says tier {tier}"
             )
+        # Every source with a detail section must sit under the
+        # heading tier that matches the registry (2026-09-29 second
+        # review: eight tier-1 sections sat under Tier 3 and Enrichr
+        # sat under Tier 1, and no test looked at headings).
+        if name.lower() in sections and sections[name.lower()] != tier:
+            mismatches.append(
+                f"{name}: heading tier {sections[name.lower()]}, registry tier {tier}"
+            )
+        if row is None and name.lower() not in sections:
+            mismatches.append(f"{name}: absent from the page tier table and sections")
     assert not mismatches, "\n".join(mismatches)
+
+
+def test_the_evidence_table_keeps_one_row_per_line() -> None:
+    """2026-09-30 review: an unwrap pass collapsed the 49-row table
+    onto a single physical line, which markdown renders as a wall of
+    text. Each table row must start its own line.
+    """
+    text = _read("docs/reference/source-licensing-evidence-2026-09-27.md")
+    table_lines = [row for row in text.splitlines() if row.startswith("|")]
+    assert len(table_lines) == 50, (
+        f"the evidence table lost its rows: {len(table_lines)} pipe-prefixed lines"
+    )
+    assert all(row.count("|") >= 4 for row in table_lines), (
+        "a table row is malformed (fewer than four cells)"
+    )
+    # The separator row must be its own line, not glued to the header.
+    separator = table_lines[1]
+    assert set(separator.replace("|", "").replace("-", "").strip()) == set(), (
+        "the second table line must be the pure separator row"
+    )
+
+
+def test_licensing_contract_rejects_a_misplaced_restricted_section(monkeypatch) -> None:
+    page = _read("docs/reference/source-licensing.md")
+    start = page.index("### Enrichr\n")
+    end = page.find("\n### ", start + 1)
+    if end == -1:
+        end = len(page)
+    section = page[start:end]
+    without = page[:start] + page[end:]
+    tier_two = without.index("## Tier 2")
+    misplaced = without[:tier_two] + section + "\n" + without[tier_two:]
+    original_read = _read
+    monkeypatch.setattr(
+        __import__(__name__, fromlist=["_read"]), "_read",
+        lambda path: misplaced if path == "docs/reference/source-licensing.md" else original_read(path),
+    )
+    with pytest.raises(AssertionError, match="Enrichr: heading tier 1, registry tier 3"):
+        test_the_licensing_page_tier_table_agrees_with_the_registry()
+
+
+def test_evidence_table_contract_rejects_one_missing_row(monkeypatch) -> None:
+    original_read = _read
+    path = "docs/reference/source-licensing-evidence-2026-09-27.md"
+    lines = original_read(path).splitlines()
+    first_data = next(i for i, line in enumerate(lines) if line.startswith("|") ) + 2
+    del lines[first_data]
+    monkeypatch.setattr(
+        __import__(__name__, fromlist=["_read"]), "_read",
+        lambda name: "\n".join(lines) if name == path else original_read(name),
+    )
+    with pytest.raises(AssertionError, match="lost its rows"):
+        test_the_evidence_table_keeps_one_row_per_line()

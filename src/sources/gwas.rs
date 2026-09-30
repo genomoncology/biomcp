@@ -70,7 +70,10 @@ impl GwasClient {
         Ok(plan)
     }
 
-    fn request_no_store(&self, plan: &RequestPlan) -> reqwest_middleware::RequestBuilder {
+    pub(crate) fn request_no_store(
+        &self,
+        plan: &RequestPlan,
+    ) -> reqwest_middleware::RequestBuilder {
         // GWAS responses occasionally produce cache decode failures when a stale
         // body entry is reused. Always bypass persistence for this source.
         request_from_plan(&self.client, self.base.as_ref(), plan).with_extension(CacheMode::NoStore)

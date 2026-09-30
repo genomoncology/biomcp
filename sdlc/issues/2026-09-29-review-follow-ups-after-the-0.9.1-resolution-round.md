@@ -65,3 +65,19 @@ The product fixes hold. The job order, the stdio test, #287's build profile, the
 - The 2026-09-26 disposition still says "the pending-review merge" (line 71), "the 1251 fix merge" (78), "the 1250 fix merge" (97), "1252/1248" (110), "(in flight)" (88, 114) and "1242 b1" (121). It is still hard-wrapped. The 1263/1264 disposition says it was rewritten.
 - The 1263/1264 disposition says the hard-wrapped files were unwrapped in `c1b2ab0d`. These are still hard-wrapped: both new dispositions, the 1263/1264 addendum, both 1270 files, both 1275 files, all four 2026-09-29 issues, the pass record, the evidence file's open-items paragraph and the aspirin issue. Shorthand remains: "535747d9's chain", "P2s", "MECHANIZED", "round-three" and "~14 MB".
 - Ticket 1260 still says "the variant JSON payload builder" and "the variant CLI module". Name `src/cli/variant/dispatch.rs`, `src/cli/variant/normalization_json.rs` and `src/transform/variant.rs`. Its prior evidence points at a local experiment that is not in the repo. Summarize the finding in the ticket.
+
+## Disposition (2026-09-29, ticket 1279 branch)
+
+The red-commits-reached-main finding: the standing rule is now the CI merge gate (ticket 1275/1278) — ticket branches carry the work, the branch's finished green run is the merge condition, and the classify job diffs the merge-base with main so a failed tip followed by a markdown commit cannot skip the Rust jobs (the exact 95a4998b/7e9b42c5 hole this file's successor review demonstrated).
+
+The false no-commit-to-main claim: corrected in the 1263/1264 disposition with the first-parent list this file named.
+
+The cache-before-checkout finding: fixed on the 1278 branch (cache after checkout and after the pinned toolchain, real commit pin, workspace crates cached); the @v2 exemption and the checksumless nextest install are gone (checksum-verified script).
+
+Ticket 1275's n/a review: replaced with real read-only review verdicts recorded in the ticket.
+
+The 62 remote branches: deleted in the 1276 round (all merged branches removed; the lander rule now removes each branch at merge).
+
+The 0.8.x no-yank reasons: corrected in the 1263/1264 disposition (kept the decision, removed the two false reasons).
+
+Run IDs (read from the Actions API 2026-09-29): 95a5eacc → CI 36346407347 success; 3d293ad7 → CI 36566765215 success; 37951529 → CI 36636929043 success (all eight jobs).

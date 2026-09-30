@@ -3,13 +3,12 @@
 //! Every FHIR response here is synthetic and comes from an in-test fixture.
 
 use std::io::{Read, Write};
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
 
 use biomcp_mcp_contract_client::{ContractHarness, call_biomcp, first_text};
 use rmcp::model::CallToolRequestParams;
@@ -34,7 +33,6 @@ impl FhirFixture {
         route: impl Fn(&str) -> (u16, Vec<(String, String)>, String) + Send + Sync + 'static,
     ) -> Self {
         let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind fixture");
-        listener.set_nonblocking(true).expect("nonblocking");
         let base = format!("http://{}", listener.local_addr().expect("address"));
         let targets = Arc::new(Mutex::new(Vec::new()));
         let stop = Arc::new(AtomicBool::new(false));
@@ -44,7 +42,9 @@ impl FhirFixture {
             while !thread_stop.load(Ordering::SeqCst) {
                 match listener.accept() {
                     Ok((mut stream, _)) => {
-                        stream.set_nonblocking(false).ok();
+                        if thread_stop.load(Ordering::SeqCst) {
+                            return;
+                        }
                         let mut request = Vec::new();
                         let mut chunk = [0_u8; 4096];
                         while !request.windows(4).any(|w| w == b"\r\n\r\n") {
@@ -72,9 +72,6 @@ impl FhirFixture {
                         let _ = stream.write_all(head.as_bytes());
                         let _ = stream.write_all(body.as_bytes());
                     }
-                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        thread::sleep(Duration::from_millis(5));
-                    }
                     Err(_) => return,
                 }
             }
@@ -99,6 +96,8 @@ impl FhirFixture {
 impl Drop for FhirFixture {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::SeqCst);
+        // Wake the blocking accept without polling or recording a request.
+        let _ = TcpStream::connect(self.base.trim_start_matches("http://"));
         if let Some(thread) = self.thread.take() {
             let _ = thread.join();
         }

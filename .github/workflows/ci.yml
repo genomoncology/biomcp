@@ -39,7 +39,7 @@ jobs:
       - name: Decide whether the push touches only docs
         id: classify
         env:
-          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_BASE_REF: origin/main
           PUSH_AFTER: ${{ github.sha }}
         run: scripts/ci-classify-push.sh
 
@@ -337,6 +337,8 @@ jobs:
           version: 0.8.0
       - name: Sync the Python contract environment
         run: uv sync --extra dev --no-install-project
+      - name: Test wait ratchet (including record-only pushes)
+        run: uv run --no-sync python tools/check-test-wait-ratchet.py
       - name: Python contract tests (docs and records)
         run: uv run --no-sync pytest tests/ -q -m "not needs_binary"
       - name: Documentation build

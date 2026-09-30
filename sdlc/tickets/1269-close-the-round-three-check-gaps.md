@@ -47,5 +47,5 @@ without a reviewer-accepted reason.
 ## Review
 
 - Design review: n/a (the review file names the structures)
-- Code review: REJECT once, folded and re-reviewed; ACCEPT 2026-09-28 — this ACCEPT activates the 1269-cited raise records (prior findings: folded-raise acceptance unenforced, the bullet_status term dropped, 1202's verdict invented)
+- Code review: ACCEPT 2026-09-28 — an earlier REJECT was folded and re-reviewed; this acceptance activates the 1269-cited raise records (prior findings: folded-raise acceptance unenforced, the bullet_status term dropped, 1202's verdict invented)
 - Verification: yellow gate at 346068be; merged in the 535747d9 chain

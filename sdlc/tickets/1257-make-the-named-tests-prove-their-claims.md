@@ -50,7 +50,7 @@ product behavior; each needs an honest test.
    workflow-contract test the way the other pinned steps are.
 4. Make `an_allowed_base_keeps_the_path_and_query` pass in release
    builds honestly (the override must stay release-safe by the
-   1254-b2 gating rule: debug_assertions or exact loopback plus the
+   ticket 1254's second follow-up batch gating rule: debug_assertions or exact loopback plus the
    test signal), and add a serial guard (lock or single-process
    pattern the repo already uses) for the two process-variable
    tests. If the test cannot be made release-honest without
@@ -63,7 +63,7 @@ product behavior; each needs an honest test.
 6. Add the two GenCC cleanup tests: wrong owner (another uid's
    directory — simulate with an unwritable path the test controls)
    and not-a-directory (a regular file where the directory should
-   be), asserting the retain/classify behavior 1254 b1 recorded.
+   be), asserting the retain/classify behavior ticket 1254's first follow-up batch recorded.
 
 ## Review
 

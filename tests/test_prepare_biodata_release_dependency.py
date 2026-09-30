@@ -3,9 +3,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import signal
+import select
 import subprocess
 import sys
-import time
 
 import pytest
 
@@ -17,7 +17,7 @@ CONFIG = f"url.{SSH}.insteadOf={HTTPS}\n"
 KEYS = "GIT_CONFIG_GLOBAL GIT_CONFIG_NOSYSTEM GIT_TERMINAL_PROMPT GIT_SSH_COMMAND CARGO_NET_GIT_FETCH_WITH_CLI GIT_CONFIG_COUNT GIT_CONFIG_PARAMETERS GIT_CONFIG"
 GIT_FAKE = "#!/usr/bin/env bash\nif [[ $1 == config && $2 == --file ]]; then printf '%s=%s\\n' \"$4\" \"$5\" > \"$3.new\" && mv \"$3.new\" \"$3\"; fi\n"
 CARGO_FAKE = ("#!/usr/bin/env bash\n{ printf 'argv=%s\\n' \"$*\"; for k in " + KEYS + "; do [[ -v $k ]] && printf '%s=%s\\n' \"$k\" \"${!k}\"; done; stat -c 'mode=%a' \"$GIT_CONFIG_GLOBAL\"; } > \"$FAKE_LOG/env\"\n"
-    'cp "$GIT_CONFIG_GLOBAL" "$FAKE_LOG/config"; if (("${FAKE_CARGO_SLEEP:-0}")); then echo $$ > "$FAKE_LOG/cargopid"; sleep "$FAKE_CARGO_SLEEP" & echo $! > "$FAKE_LOG/descendant"; wait; fi\n'
+    'cp "$GIT_CONFIG_GLOBAL" "$FAKE_LOG/config"; if (("${FAKE_CARGO_SLEEP:-0}")); then echo $$ > "$FAKE_LOG/cargopid"; sleep "$FAKE_CARGO_SLEEP" & echo $! > "$FAKE_LOG/descendant"; echo ready; wait; fi\n'
     'exit "${FAKE_CARGO_STATUS:-0}"\n')
 RESET = ("import os, signal, sys\n"
          "assert len(sys.argv) == 2 and os.path.isfile(sys.argv[1])\n"
@@ -29,14 +29,16 @@ IGNORE = ("import os, signal, sys\n"
 
 
 def _gone(path: Path) -> None:
-    pid, deadline = int(path.read_text()), time.monotonic() + 5
-    while True:
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return
-        assert time.monotonic() < deadline, f"{path.name} survived signal"
-        time.sleep(0.05)
+    pid = int(path.read_text())
+    try:
+        descriptor = os.pidfd_open(pid)
+    except ProcessLookupError:
+        return
+    try:
+        readable, _, _ = select.select([descriptor], [], [], 5)
+        assert readable, f"{path.name} survived signal"
+    finally:
+        os.close(descriptor)
 
 
 def _run(script, tmp_path, status="0", sig=0, cargo_sleep="0", extra=None):
@@ -57,10 +59,9 @@ def _run(script, tmp_path, status="0", sig=0, cargo_sleep="0", extra=None):
         command, cwd=tmp_path, env=env, text=True, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, start_new_session=True)
     if sig:
-        deadline = time.monotonic() + 10
-        while not (tmp_path / "log/descendant").exists():
-            assert time.monotonic() < deadline, "fake cargo never spawned"
-            time.sleep(0.02)
+        # Wait for the fixture's readiness signal, bounded by an I/O watchdog.
+        ready, _, _ = select.select([process.stdout], [], [], 10)
+        assert ready and process.stdout.readline() == "ready\n", "fake cargo never spawned"
         os.kill(process.pid, sig)
     output = process.communicate(timeout=45)[0]
     env_file, config_file = tmp_path / "log/env", tmp_path / "log/config"

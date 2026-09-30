@@ -1683,7 +1683,17 @@ where
                 last_server_status = Some(response.status());
             }
             Ok(response) => return Ok(response),
-            Err(error) => last_error = Some(error),
+            Err(error) => {
+                // A certificate-trust failure is permanent for this
+                // endpoint (2026-09-29 second review: Enrichr and
+                // UniProt ride this plain-send path and retried
+                // trust failures like any transient error). Stop
+                // immediately and surface the error.
+                if is_trust_failure(&error) {
+                    return Err(BioMcpError::from(error).with_source_context(context));
+                }
+                last_error = Some(error);
+            }
         }
         if attempt + 1 < total_attempts
             && let Some(duration) = next_retry_sleep(&mut retry_sleep_state, retry_after_floor)

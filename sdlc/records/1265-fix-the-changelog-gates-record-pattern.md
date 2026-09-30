@@ -12,9 +12,9 @@ The changelog coverage gate accepted ticket references as bare four-digit number
 
 ## Known defect, recorded not hidden
 
-The 2026-09-29 review flagged the under-2000 cap as a defect: it is a magic number standing in for "not a date." The honest rule is "reject date-shaped names outright." The cap stays until the gate is rewritten with that explicit rule; ticket 1275's follow-up list carries it.
+The follow-up closed on 2026-09-30: the under-2000 cap is gone, and date-shape rejection is the whole rule — a date-shaped name (dddd-dd-dd, any year) never counts, and any other four-digit number does, including 2000 and above (the gate test plants tickets 2000 and 2027 counting).
 
 ## Evidence
 
-- Branch head `b1393806` ("Fold the review P2s"); the branch's CI run at record time is beyond the retrievable window of the Actions API, so no run ID is cited here. The merge chain reached main; the runs readable at the merge are recorded in the 1269 entry.
-- Code review: none recorded before the merge; the ticket file carries the round's verdict lines.
+- Branch head `b1393806` ("Fold the review pass-two findings"); yellow gates 21d42b2a and b1393806 passed on the gate host. The branch-head run has expired in the Actions API's retrievable window; no run ID exists to cite for it. The chain's final green state is 3d293ad7 → CI 36566765215 (success), and the 0.9.1-candidate main runs 36687060448 and 36693388098 are green with this code in them.
+- Code review: none was recorded before the merge, and no reviewer has reviewed this ticket since; that is a fact, not a verdict. The raise-review mechanism that demands accepted reviews landed later (ticket 1269).
