@@ -1,6 +1,6 @@
 """Behavioral tests for scripts/ci-classify-push.sh.
 
-The 2026-09-29 second review's P1: the contract suite only asserted
+The 2026-09-29 second review's blocking finding: the contract suite only asserted
 substrings of the script, which would pass with broken logic around
 them — and a broken classify flow is exactly what once let a failed
 tree look green (a failed commit followed by a markdown-only commit

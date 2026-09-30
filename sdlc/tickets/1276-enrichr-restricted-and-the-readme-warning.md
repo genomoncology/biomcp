@@ -12,4 +12,4 @@ Branch run 36593025808 green at ac51eceb; main green at 36600156017 on the merge
 
 ## Review
 
-- Code review: covered by this round's final read-only review (dispatch recorded in ticket 1281's history when it returns); no dedicated dispatch existed at landing, which the earlier record's prose ACCEPT hid.
+- Code review: no dedicated reviewer dispatch existed at landing — stated plainly; the earlier record's prose acceptance hid that. The landed state was later verified by the 1281 round's read-only reviews (dispatches 85cf92fc and 94c43888, Claude vendor), which read the tier table, the README warning and the evidence corrections this ticket's follow-ups landed.

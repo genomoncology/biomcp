@@ -306,7 +306,14 @@ def raise_is_accepted(root: Path, record: dict) -> tuple[bool, str]:
         # ACCEPT must be the verdict itself: the token starts the
         # value AND is not immediately an expectation ("ACCEPT
         # expected after fixes", "ACCEPT once fixes land").
-        if re.match(r"ACCEPT\b(?![\s,:;]*(?:expected|once|pending|after|is|was|if|when|awaited)\b)", rest):
+        # ACCEPT counts only when followed by nothing, a date, or a
+        # reviewer/dispatch reference (third go-request review):
+        # "ACCEPT - will fix", "ACCEPT (pending)", "ACCEPT; will fix
+        # later" and "ACCEPT, to be confirmed" stay rejections.
+        if re.match(
+            r"ACCEPT(?=[\s]*(?:$|\d{4}-\d{2}-\d{2}|by |from |dispatch|#[0-9a-f]))",
+            rest,
+        ):
             return True, ""
     return False, (
         f"raise cites ticket {ticket}, whose code review has not "

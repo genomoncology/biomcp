@@ -694,6 +694,14 @@ jobs:
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
+      # The repository must be present before any step runs a
+      # repository script (2026-09-30 third go-request review: the
+      # latest-decision script was missing on the runner and the step
+      # logged "stays put" and passed).
+      - name: Check out the exact revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
       # Docker work runs BEFORE the release goes public (2026-09-30
       # review): if any of it fails, the release is still a deletable
       # draft. The `latest` decision compares version numbers against
@@ -715,12 +723,31 @@ jobs:
         run: |
           IMAGE="ghcr.io/genomoncology/biomcp"
           VERSION="${TAG#v}"
-          mapfile -t PUBLISHED < <(gh release list --repo "$GITHUB_REPOSITORY"             --exclude-drafts --json tagName --jq '.[].tagName' \
-            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+          # A failed query must fail the job, not read as "no
+          # published releases" and move latest (third go-request
+          # review).
+          if ! gh release list --repo "$GITHUB_REPOSITORY" \
+              --exclude-drafts --json tagName --jq '.[].tagName' \
+              > "$RUNNER_TEMP/published-tags.txt"; then
+            echo "gh release list failed; refusing to decide latest" >&2
+            exit 1
+          fi
+          PUBLISHED=()
+          while IFS= read -r published; do
+            if [[ "$published" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              PUBLISHED+=("$published")
+            fi
+          done < "$RUNNER_TEMP/published-tags.txt"
+          test -x scripts/should-move-latest.sh
           if scripts/should-move-latest.sh "$TAG" "${PUBLISHED[@]}"; then
             docker buildx imagetools create --tag "${IMAGE}:latest" "${IMAGE}:${VERSION}"
             docker buildx imagetools inspect "${IMAGE}:latest"
           else
+            decision_status=$?
+            if [ "$decision_status" -ne 1 ]; then
+              echo "latest helper failed with status $decision_status" >&2
+              exit "$decision_status"
+            fi
             echo "$TAG does not sort newest; latest stays put."
           fi
 

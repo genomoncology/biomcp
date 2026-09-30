@@ -8,7 +8,8 @@
 # newer, this tag becomes latest once published.
 #
 # Usage: should-move-latest.sh <publishing-tag> <published-tag>...
-# Exit 0 when latest should move; exit 1 (with a reason) when not.
+# Exit 0 when latest should move; exit 1 when it should stay.
+# Invalid input returns 2; the caller must stop on every other failure.
 set -euo pipefail
 
 publishing="${1:?usage: should-move-latest.sh <publishing-tag> <published-tag>...}"
@@ -16,14 +17,14 @@ shift
 
 if ! printf '%s' "$publishing" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
     echo "not a stable tag: $publishing" >&2
-    exit 1
+    exit 2
 fi
 
 key_of() {
     local tag="$1"
     if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
         echo "not a stable tag: $tag" >&2
-        return 1
+        return 2
     fi
     local major minor patch
     major="${tag#v}"

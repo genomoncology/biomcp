@@ -378,6 +378,9 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
         "Smoke the linux/arm64 image from the registry",
     ],
     "publish-release": [
+        # The repository must be checked out before any repository
+        # script runs (2026-09-30 third go-request review).
+        "Check out the exact revision",
         # Docker work precedes the public flip (2026-09-30 review).
         "docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435",
         "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567",
@@ -1381,3 +1384,36 @@ def test_rust_embed_carries_debug_embed_github_287() -> None:
     assert 'features = ["debug-embed"]' in match.group(0), (
         f"rust-embed must keep debug-embed (GitHub #287): {match.group(0)}"
     )
+
+
+def test_every_job_running_a_repository_script_checks_out_first() -> None:
+    """2026-09-30 third go-request review: publish-release ran
+    scripts/should-move-latest.sh with no checkout step, so the script
+    was missing on the runner and the step passed while doing nothing.
+    Any job that runs a scripts/ or tools/ path must check out the
+    repository first.
+    """
+    parsed = yaml.safe_load(
+        (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    )
+    for job_id, job in parsed["jobs"].items():
+        steps = job.get("steps", [])
+        has_checkout = any(
+            str(step.get("uses", "")).startswith("actions/checkout@")
+            for step in steps
+        )
+        for index, step in enumerate(steps):
+            run = str(step.get("run", ""))
+            if "scripts/" in run or " tools/" in run or run.startswith("tools/"):
+                assert has_checkout, (
+                    f"{job_id} step {index} runs repository code ({run.splitlines()[0][:60]}) "
+                    "without an actions/checkout step"
+                )
+                checkout_at = next(
+                    i
+                    for i, s in enumerate(steps)
+                    if str(s.get("uses", "")).startswith("actions/checkout@")
+                )
+                assert checkout_at < index, (
+                    f"{job_id}: the checkout must precede the step running repository code"
+                )

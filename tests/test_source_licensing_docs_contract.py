@@ -508,6 +508,19 @@ def test_the_evidence_table_keeps_one_row_per_line() -> None:
         f"the pass documented 48 rows plus header and separator; found {len(table_lines)}"
     )
     assert len(row_keys) == 48, f"duplicate or missing row keys: {len(row_keys)}"
+    # Every row names a source the registry knows: strip punctuation
+    # and spaces so "ClinicalTrials.gov", "g:Profiler" and
+    # "Cancerhotspots.org" match their registry keys.
+    inventory = _source_inventory()
+
+    def _squash(value: str) -> str:
+        return re.sub(r"[^a-z0-9]", "", value.lower())
+
+    known = {
+        _squash(str(entry.get("id") or entry.get("key") or "")) for entry in inventory
+    } | {_squash(str(entry.get("name") or "")) for entry in inventory}
+    squashed = {_squash(key) for key in row_keys}
+    assert squashed <= known, f"rows naming no registry source: {sorted(squashed - known)[:5]}"
 
     # The separator row must be its own line, not glued to the header.
     separator = table_lines[1]

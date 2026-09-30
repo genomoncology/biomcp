@@ -1,6 +1,6 @@
 # 1281 — carry the kids26 branch's still-true work, then retire it
 
-Filed 2026-09-30 under Ian's branch direction (second go-request review): `tickets/kids26-cell-line-dataset` holds four records for cell-line work whose CODE landed on main long ago (the records name their green gates — 37336c22 and later) and a ChEMBL licensing row with citation URLs main lacks. This ticket carries the still-true parts and deletes the branch.
+Filed 2026-09-30 under Ian's branch direction (second go-request review): `tickets/kids26-cell-line-dataset` holds four records for cell-line work whose code merged to main the day after v0.9.0 was tagged (commits 37336c22, eed4f2c1, fd6a100c, bccd2871 — none in v0.9.0), so 0.9.1 is that work's first release and the records were missing from main (corrected 2026-09-30 third go-request review; the earlier 'backfill' marker wrongly treated the work as already released) and a ChEMBL licensing row with citation URLs main lacks. This ticket carries the still-true parts and deletes the branch.
 
 ## What is carried
 
