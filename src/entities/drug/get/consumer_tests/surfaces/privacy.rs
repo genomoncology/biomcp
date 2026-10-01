@@ -123,7 +123,7 @@ async fn rejected_identity_cli_and_mcp_channels_match_complete_private_error_obj
     );
     assert_eq!(
         String::from_utf8_lossy(&output.stderr),
-        expected["cli"]["stderr"]
+        expected["cli"]["stderr"].as_str().unwrap()
     );
     private_channels((
         String::from_utf8_lossy(&output.stdout),
