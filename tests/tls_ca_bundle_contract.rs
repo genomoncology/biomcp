@@ -29,7 +29,13 @@ const FAERS_REPORT_PAGE: &str = r#"{
 }"#;
 
 const CTGOV_DOCUMENT_STUDY: &str = r#"{
-  "protocolSection":{"identificationModule":{"nctId":"NCT00000001"}},
+  "protocolSection":{
+    "identificationModule":{"nctId":"NCT00000001","briefTitle":"Synthetic TLS study"},
+    "statusModule":{"overallStatus":"RECRUITING"},
+    "sponsorCollaboratorsModule":{"leadSponsor":{"name":"Example sponsor"}},
+    "conditionsModule":{"conditions":["Example condition"]},
+    "designModule":{"studyType":"INTERVENTIONAL"}
+  },
   "documentSection":{"largeDocumentModule":{"largeDocs":[
     {"typeAbbrev":"Prot","filename":"protocol.pdf","size":17}
   ]}}
@@ -339,6 +345,8 @@ async fn fda_orphan_client_reaches_a_private_ca_provider() {
 
 #[tokio::test]
 async fn trial_document_client_reaches_a_private_ca_provider() {
+    // The document manifest passes through BioData's required core projection
+    // before the product can request the advertised file from the CDN.
     let fixture = TlsFixture::start_with_body(CTGOV_DOCUMENT_STUDY).await;
     let output = fixture
         .run_command(
@@ -363,6 +371,11 @@ async fn trial_document_client_reaches_a_private_ca_provider() {
             .any(|request| request.contains("protocol.pdf")),
         "document CDN request missing; status={:?}, stderr={}, requests={requests:?}",
         output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        output.status.success(),
+        "document command failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
 }
