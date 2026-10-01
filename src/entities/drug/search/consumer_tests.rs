@@ -13,6 +13,24 @@ async fn ranked_drug_paging_table() {
         .into_iter()
         .filter(|case| case["input"]["operation"] == "search_ranked_name_us_page")
     {
+        for response in case["responses"].as_array().unwrap() {
+            let data = std::fs::read(
+                crate::sources::mychem::consumer_tests::root()
+                    .join(response["body"]["path"].as_str().unwrap()),
+            )
+            .unwrap();
+            let page =
+                crate::sources::mychem::projection::decode(&data, biodata::MyChemProfile::Search)
+                    .unwrap();
+            for hit in &page.hits {
+                eprintln!(
+                    "{}: {:?} {:?}",
+                    case["id"],
+                    hit.openfda,
+                    mychem_match_kind(hit, case["input"]["query"].as_str().unwrap())
+                );
+            }
+        }
         let fixture = CaseHttp::new(&case).await;
         let cache = tempfile::tempdir().unwrap();
         let mut env = TestEnv::new();
