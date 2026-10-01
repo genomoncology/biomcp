@@ -41,6 +41,10 @@ INTEGRATION_SELECTORS = {
     "mygene_fixture_without_request_stops_on_drop",
     "gene_identity_error_table",
 }
+SCHEMA_ASSERTION_SELECTORS = {
+    "mcp::shell::tests::typed_schemas_publish_flat_roots_and_reject_bad_input",
+    "mcp::shell::tests::typed_search_maps_each_published_entity_and_rejects_schema_mismatches",
+}
 CREDENTIAL_ASSERTION_SELECTORS = {
     "entities::trial::search::plan_tests::clients_execute_exact_biodata_pairs_and_only_nci_adds_a_credential",
     "sources::tests::request_plan_transport::biodata_nci_search_keeps_one_logical_value_and_adds_one_credential",
@@ -79,7 +83,7 @@ def load_selection(path: Path) -> FocusedSelection:
         raise SelectionError(f"duplicate focused selector: {duplicates[0]}")
     for selector in selection.rust + selection.python:
         lowered = selector.casefold()
-        if any(fragment in lowered for fragment in FORBIDDEN_FRAGMENTS):
+        if any(fragment in lowered for fragment in FORBIDDEN_FRAGMENTS) and selector not in SCHEMA_ASSERTION_SELECTORS:
             raise SelectionError(f"forbidden focused selector: {selector}")
         if "credential" in lowered and selector not in CREDENTIAL_ASSERTION_SELECTORS:
             raise SelectionError(f"credential-bearing focused selector: {selector}")
