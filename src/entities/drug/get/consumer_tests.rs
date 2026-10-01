@@ -13,6 +13,7 @@ pub(crate) struct CaseHttp {
     fixture: TestHttpFixture,
     requests: Arc<Mutex<Vec<String>>>,
     expected: Vec<Value>,
+    order: Option<String>,
 }
 impl CaseHttp {
     pub(crate) async fn new(case: &Value) -> Self {
@@ -51,7 +52,7 @@ impl CaseHttp {
         let captured = requests.clone();
         let fixture = TestHttpFixture::spawn(move |request| {
             let mut captured = captured.lock().unwrap();
-            captured.push(request.lines().next().unwrap_or("").to_owned());
+            captured.push(request.to_owned());
             let mut consumed = consumed.lock().unwrap();
             let index = plans.iter().enumerate().position(|(index, plan)| {
                 !consumed.get(index).copied().unwrap_or(true) && request_matches(request, plan)
@@ -79,6 +80,7 @@ impl CaseHttp {
             fixture,
             requests,
             expected,
+            order: case["input"]["request_order"].as_str().map(str::to_owned),
         }
     }
     pub(crate) fn environment(&self, env: &mut TestEnv, cache: &std::path::Path) {
@@ -108,22 +110,40 @@ impl CaseHttp {
     pub(crate) fn assert_requests(&self, id: &Value) {
         let actual = self.requests.lock().unwrap();
         assert_eq!(actual.len(), self.expected.len(), "{id}: {actual:?}");
-        for (actual, expected) in actual.iter().zip(&self.expected) {
-            let tokens = actual.split_whitespace().collect::<Vec<_>>();
-            assert_eq!(tokens[0], expected["method"].as_str().unwrap(), "{id}");
-            let url = reqwest::Url::parse(&format!("http://fixture{}", tokens[1])).unwrap();
-            assert_eq!(url.path(), expected["path"].as_str().unwrap(), "{id}");
-            if let Some(query) = expected["query"].as_array() {
-                assert_eq!(
-                    json!(
-                        url.query_pairs()
-                            .map(|(key, value)| (key.into_owned(), value.into_owned()))
-                            .collect::<Vec<_>>()
-                    ),
-                    json!(query),
-                    "{id}"
-                );
+        let mut matched = vec![false; actual.len()];
+        let positions = self
+            .expected
+            .iter()
+            .map(|expected| {
+                let index = actual
+                    .iter()
+                    .enumerate()
+                    .position(|(index, actual)| {
+                        !matched[index] && request_matches(actual, expected)
+                    })
+                    .unwrap_or_else(|| panic!("{id}: missing exact request {expected}"));
+                matched[index] = true;
+                index
+            })
+            .collect::<Vec<_>>();
+        match self.order.as_deref() {
+            Some(
+                "two independent item chains concurrently; each MyChem request precedes its own OpenFDA request; output remains input order",
+            ) => {
+                for chain in positions.chunks_exact(2) {
+                    assert!(chain[0] < chain[1], "{id}: item request dependency");
+                }
             }
+            Some(
+                "MyChem first; CTGov worker plans in listed order, dispatched concurrently; network arrival order is not contractual",
+            ) => {
+                assert_eq!(positions[0], 0, "{id}: identity before fanout");
+            }
+            _ => assert_eq!(
+                positions,
+                (0..actual.len()).collect::<Vec<_>>(),
+                "{id}: sequential request order"
+            ),
         }
     }
 }
@@ -141,13 +161,30 @@ fn request_matches(request: &str, expected: &Value) -> bool {
     if Some(url.path()) != expected["path"].as_str() {
         return false;
     }
-    expected.get("query").is_none_or(|query| {
+    if expected.get("query").is_some_and(|query| {
         json!(
             url.query_pairs()
                 .map(|(key, value)| (key.into_owned(), value.into_owned()))
                 .collect::<Vec<_>>()
-        ) == *query
-    })
+        ) != *query
+    }) {
+        return false;
+    }
+    if let Some(body) = expected.get("body") {
+        let Some((_, actual)) = request.split_once("\r\n\r\n") else {
+            return false;
+        };
+        let Ok(actual) = serde_json::from_str::<Value>(actual) else {
+            return false;
+        };
+        let query =
+            std::fs::read_to_string(root().join(body["query_file"]["path"].as_str().unwrap()))
+                .unwrap();
+        if actual != json!({"query":query,"variables":body["variables"]}) {
+            return false;
+        }
+    }
+    true
 }
 fn failure(result: BioMcpError, wanted: &Value, id: &Value) {
     let wanted = if let Some(path) = wanted.as_str() {
