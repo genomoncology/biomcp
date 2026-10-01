@@ -120,17 +120,6 @@
       }
     },
     {
-      "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1122,
-      "floor_lines": 1103,
-      "authorized_increase": {
-        "ticket": "1254",
-        "delta": 19,
-        "reason": "Poison-recovery scoping (get.rs) and the shared panic-payload helper (shell.rs).",
-        "removal_condition": "Revisit when the trial-alias cache moves behind a type and the panic arm shrinks."
-      }
-    },
-    {
       "path": "src/entities/gene.rs",
       "baseline_lines": 3871,
       "floor_lines": 3812,
@@ -484,17 +473,6 @@
         "delta": 58,
         "reason": "The seeded gene-association helper and its tests.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
-      }
-    },
-    {
-      "path": "src/transform/drug.rs",
-      "floor_lines": 1000,
-      "baseline_lines": 1062,
-      "authorized_increase": {
-        "ticket": "1254",
-        "delta": 62,
-        "reason": "Anchor-only synonym fold plus the end-to-end identity tests.",
-        "removal_condition": "Split the merge tests into a dedicated tests submodule."
       }
     },
     {

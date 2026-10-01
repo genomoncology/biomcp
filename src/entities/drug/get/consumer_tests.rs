@@ -312,3 +312,69 @@ async fn adopted_alias_cache_and_downstream_table() {
 mod surfaces;
 
 mod absence;
+
+fn discover_input(path: &str) -> crate::entities::discover::DiscoverResult {
+    use crate::entities::discover::*;
+    let input = asset(path);
+    assert_eq!(input["intent"], "General");
+    assert!(input["plain_language"].is_null() && input["article_search"].is_null());
+    let concepts = input["concepts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| {
+            assert_eq!(value["primary_type"], "Drug");
+            assert_eq!(value["match_tier"], "Exact");
+            assert_eq!(value["confidence"], "CanonicalId");
+            assert_eq!(value["xrefs"], json!([]));
+            assert_eq!(value["sources"], json!([]));
+            DiscoverConcept {
+                label: value["label"].as_str().unwrap().to_owned(),
+                primary_id: value["primary_id"].as_str().map(str::to_owned),
+                primary_type: DiscoverType::Drug,
+                synonyms: serde_json::from_value(value["synonyms"].clone()).unwrap(),
+                xrefs: vec![],
+                sources: vec![],
+                match_tier: MatchTier::Exact,
+                confidence: DiscoverConfidence::CanonicalId,
+            }
+        })
+        .collect();
+    let stats = |value: &Value| DiscoverPreviewStats {
+        returned: value["returned"].as_u64().unwrap() as usize,
+        total: value["total"].as_u64().unwrap() as usize,
+        has_more: value["has_more"].as_bool().unwrap(),
+        omitted_oversized: value["omitted_oversized"].as_u64().unwrap() as usize,
+    };
+    let preview_meta = input["preview_meta"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| DiscoverConceptPreviewMeta {
+            label_truncated: value["label_truncated"].as_bool().unwrap(),
+            synonyms: stats(&value["synonyms"]),
+            xrefs: stats(&value["xrefs"]),
+        })
+        .collect();
+    DiscoverResult {
+        query: input["query"].as_str().unwrap().to_owned(),
+        normalized_query: input["normalized_query"].as_str().unwrap().to_owned(),
+        concepts,
+        plain_language: None,
+        next_commands: serde_json::from_value(input["next_commands"].clone()).unwrap(),
+        notes: serde_json::from_value(input["notes"].clone()).unwrap(),
+        ambiguous: input["ambiguous"].as_bool().unwrap(),
+        intent: DiscoverIntent::General,
+        offset: input["offset"].as_u64().unwrap() as usize,
+        limit: input["limit"].as_u64().unwrap() as usize,
+        returned: input["returned"].as_u64().unwrap() as usize,
+        has_more: input["has_more"].as_bool().unwrap(),
+        next_offset: input["next_offset"].as_u64().map(|value| value as usize),
+        budget_truncated: input["budget_truncated"].as_bool().unwrap(),
+        malformed_candidates: input["malformed_candidates"].as_u64().unwrap() as usize,
+        continuation_command: input["continuation_command"].as_str().map(str::to_owned),
+        preview_meta,
+        full: input["full"].as_bool().unwrap(),
+        article_search: None,
+    }
+}

@@ -54,7 +54,6 @@ const DISCOVER_GENERAL_RELATIONAL_PHRASES: &[&str] = &[
     "in the",
 ];
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct DiscoverResult {
     pub query: String,
@@ -83,7 +82,6 @@ pub(crate) struct DiscoverResult {
     #[serde(skip)]
     pub full: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(test, serde(deserialize_with = "absent_article_search"))]
     pub article_search: Option<DiscoverArticleSearch>,
 }
 
@@ -146,7 +144,6 @@ impl Default for DiscoverOptions {
     }
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct DiscoverConcept {
     pub label: String,
@@ -163,14 +160,12 @@ pub(crate) struct DiscoverConcept {
     pub confidence: DiscoverConfidence,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct ConceptXref {
     pub source: String,
     pub id: String,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct ConceptSource {
     pub source: String,
@@ -179,7 +174,6 @@ pub(crate) struct ConceptSource {
     pub source_type: String,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct PlainLanguageTopic {
     pub title: String,
@@ -187,7 +181,6 @@ pub(crate) struct PlainLanguageTopic {
     pub summary_excerpt: String,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub(crate) enum DiscoverType {
     Gene,
@@ -199,7 +192,6 @@ pub(crate) enum DiscoverType {
     Unknown,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub(crate) enum DiscoverIntent {
     TrialSearch,
@@ -211,7 +203,6 @@ pub(crate) enum DiscoverIntent {
     General,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub(crate) enum MatchTier {
     Exact,
@@ -220,7 +211,6 @@ pub(crate) enum MatchTier {
     Weak,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub(crate) enum DiscoverConfidence {
     CanonicalId,
@@ -275,7 +265,6 @@ struct GeneralDiscoverScore {
     strong_survivor: bool,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct AliasCanonicalMatch {
     pub requested_entity: DiscoverType,
@@ -289,7 +278,6 @@ pub(crate) struct AliasCanonicalMatch {
     pub next_commands: Vec<String>,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct AliasCandidateSummary {
     pub label: String,
@@ -300,7 +288,6 @@ pub(crate) struct AliasCandidateSummary {
     pub match_tier: MatchTier,
 }
 
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct AliasAmbiguity {
     pub requested_entity: DiscoverType,
@@ -4063,17 +4050,4 @@ mod tests {
         assert_eq!(preview.xrefs.returned, 5);
         assert!(preview.xrefs.has_more);
     }
-}
-
-#[cfg(test)]
-fn absent_article_search<'de, D: serde::Deserializer<'de>>(
-    deserializer: D,
-) -> Result<Option<DiscoverArticleSearch>, D::Error> {
-    let value: Option<serde_json::Value> = serde::Deserialize::deserialize(deserializer)?;
-    if value.is_some() {
-        return Err(serde::de::Error::custom(
-            "drug control has unexpected article search",
-        ));
-    }
-    Ok(None)
 }
