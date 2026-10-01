@@ -16,6 +16,7 @@ pub(crate) fn table(number: u8) -> Vec<Value> {
 pub(crate) fn bytes(case: &Value) -> Vec<u8> {
     let reference = case["input"]
         .get("page")
+        .or_else(|| case["input"].get("body"))
         .unwrap_or(&case["responses"][0]["body"]);
     std::fs::read(root().join(reference["path"].as_str().unwrap())).unwrap()
 }

@@ -27,11 +27,15 @@ async fn ranked_drug_paging_table() {
             input["offset"].as_u64().unwrap() as usize,
         )
         .await;
+        fixture.assert_requests(&case["id"]);
         if expected["failure"].is_null() {
             let page = result.unwrap();
             assert_eq!(
                 json!(page.results.iter().map(search_value).collect::<Vec<_>>()),
-                expected["results"]
+                expected["results"],
+                "{}: {:?}",
+                case["id"],
+                page.match_kinds
             );
             assert_eq!(json!(page.total), expected["total"]);
             assert_eq!(
