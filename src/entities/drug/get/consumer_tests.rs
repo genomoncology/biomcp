@@ -185,8 +185,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                         input["label_required"].as_bool().unwrap_or(false),
                         async {
                             if let Some(path) = injection.as_str() {
-                                let result: crate::entities::discover::DiscoverResult =
-                                    serde_json::from_value(asset(path)).unwrap();
+                                let result = discover_input(path);
                                 classify_sparse_drug_rescue(&result)
                             } else {
                                 SparseDrugDiscoverRescue::None
