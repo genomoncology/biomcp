@@ -1,6 +1,12 @@
 //! Complete provider ranking and retained source custody.
 use super::*;
 
+#[derive(Debug)]
+pub(super) struct RankedSearchCustody {
+    pub(super) pages: Vec<crate::sources::mychem::MyChemQueryResponse>,
+    pub(super) candidates: Vec<(DrugSearchResult, DrugSearchMatchKind, MyChemHit)>,
+}
+
 pub(super) async fn search_ranked_name_us_page(
     filters: &DrugSearchFilters,
     query: &str,
@@ -19,13 +25,7 @@ pub(super) async fn search_ranked_name_us_page_with_custody(
     query: &str,
     limit: usize,
     offset: usize,
-) -> Result<
-    (
-        RankedDrugSearchPage<DrugSearchResult>,
-        Vec<crate::sources::mychem::MyChemQueryResponse>,
-    ),
-    BioMcpError,
-> {
+) -> Result<(RankedDrugSearchPage<DrugSearchResult>, RankedSearchCustody), BioMcpError> {
     const PAGE_SIZE: usize = 50;
     crate::sources::validate_biothings_result_window("MyChem search", limit, offset)?;
     let q = build_mychem_query(filters)?;
@@ -112,7 +112,10 @@ pub(super) async fn search_ranked_name_us_page_with_custody(
             .collect();
         return Ok((
             RankedDrugSearchPage::offset(page.results, page.total, kinds),
-            pages,
+            RankedSearchCustody {
+                pages,
+                candidates: Vec::new(),
+            },
         ));
     }
 
@@ -141,6 +144,14 @@ pub(super) async fn search_ranked_name_us_page_with_custody(
             }
         }
     }
+    let candidate_custody = candidates
+        .iter()
+        .filter_map(|(row, kind)| {
+            origins
+                .get(&row.name)
+                .map(|hit| (row.clone(), *kind, hit.clone()))
+        })
+        .collect();
     let selected = candidates
         .into_iter()
         .skip(offset)
@@ -150,6 +161,9 @@ pub(super) async fn search_ranked_name_us_page_with_custody(
     let results = selected.into_iter().map(|(row, _)| row).collect();
     Ok((
         RankedDrugSearchPage::offset(results, Some(total), kinds),
-        pages,
+        RankedSearchCustody {
+            pages,
+            candidates: candidate_custody,
+        },
     ))
 }

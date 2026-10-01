@@ -505,6 +505,8 @@ rust = [
   "entities::drug::get::consumer_tests::adopted_alias_cache_and_downstream_table",
   "entities::drug::get::consumer_tests::adopted_request_search_and_nested_failure_table",
   "entities::drug::get::consumer_tests::surfaces::cli_and_raw_typed_mcp_drug_table",
+  "entities::drug::get::consumer_tests::surfaces::privacy::rejected_trial_alias_lookup_never_contacts_ctgov_or_populates_cache",
+  "entities::drug::get::consumer_tests::surfaces::privacy::rejected_identity_cli_and_mcp_channels_match_complete_private_error_objects",
   "entities::drug::search::consumer_tests::adopted_ema_source_admission_table",
   "entities::drug::search::consumer_tests::ranked_drug_paging_table",
   "sources::mychem::consumer_tests::checked_total_width_and_inclusive_byte_table",

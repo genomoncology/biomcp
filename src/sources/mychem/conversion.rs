@@ -39,7 +39,7 @@ pub struct DrugConversion {
     pub stage: &'static str,
     pub action: &'static str,
     pub reason: &'static str,
-    pub target: Option<String>,
+    pub target: Option<serde_json::Value>,
 }
 impl MyChemHit {
     pub(crate) fn record(
@@ -80,7 +80,7 @@ impl MyChemHit {
             stage,
             action,
             reason,
-            target,
+            target: target.map(serde_json::Value::String),
         });
     }
     pub(crate) fn record_field(
@@ -125,6 +125,22 @@ impl MyChemHit {
         action: &'static str,
         reason: &'static str,
         target: Option<String>,
+    ) {
+        self.record_source_value(
+            pointer,
+            stage,
+            action,
+            reason,
+            target.map(serde_json::Value::String),
+        );
+    }
+    pub(crate) fn record_source_value(
+        &self,
+        pointer: &str,
+        stage: &'static str,
+        action: &'static str,
+        reason: &'static str,
+        target: Option<serde_json::Value>,
     ) {
         let Ok(raw) = serde_json::from_str::<serde_json::Value>(self.row.source().raw()) else {
             return;

@@ -131,207 +131,8 @@ fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
     out
 }
 
-fn drug_type_from_hit(hit: &MyChemHit) -> Option<String> {
-    let v = hit
-        .chembl
-        .as_ref()
-        .and_then(|c| c.molecule_type.as_deref())
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .map(|v| v.to_ascii_lowercase());
-
-    match v.as_deref() {
-        Some("antibody") => Some("biologic".into()),
-        Some("small molecule") => Some("small-molecule".into()),
-        Some(other) => Some(other.to_string()),
-        None => None,
-    }
-}
-
-fn title_case_words(value: &str) -> String {
-    value
-        .split_whitespace()
-        .filter(|w| !w.is_empty())
-        .map(|w| {
-            let mut chars = w.chars();
-            let Some(first) = chars.next() else {
-                return String::new();
-            };
-            let first = first.to_uppercase().collect::<String>();
-            let rest = chars.as_str().to_ascii_lowercase();
-            format!("{first}{rest}")
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
-fn normalize_action_type(action: &str) -> String {
-    let v = action.trim().replace('_', " ");
-    if v.is_empty() {
-        return String::new();
-    }
-    if v.chars().any(|c| c.is_ascii_lowercase()) {
-        return v;
-    }
-    title_case_words(&v.to_ascii_lowercase())
-}
-
-fn chembl_mechanisms_from_hit(hit: &MyChemHit) -> Vec<String> {
-    let Some(chembl) = hit.chembl.as_ref() else {
-        return Vec::new();
-    };
-
-    let mut out: Vec<String> = Vec::new();
-    for mech in &chembl.drug_mechanisms {
-        if let Some(mechanism) = mech
-            .mechanism_of_action
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-            .map(str::to_string)
-        {
-            out.push(mechanism);
-            continue;
-        }
-
-        let action = mech
-            .action_type
-            .as_deref()
-            .map(normalize_action_type)
-            .map(|v| v.trim().to_string())
-            .filter(|v| !v.is_empty());
-        let target = mech
-            .target_name
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty());
-        if action.is_none() && target.is_none() {
-            continue;
-        }
-
-        let mechanism = match (action, target) {
-            (Some(a), Some(t)) => format!("{a} of {t}"),
-            (Some(a), None) => a,
-            (None, Some(t)) => t.to_string(),
-            (None, None) => continue,
-        };
-        out.push(mechanism);
-    }
-    out
-}
-
-fn fallback_mechanism_from_hit(hit: &MyChemHit) -> Option<String> {
-    let classes = moa_pharm_classes(hit);
-    classes
-        .iter()
-        .find(|class| {
-            let class = class.to_ascii_lowercase();
-            class.contains("kinase") || class.contains("braf") || class.contains("b-raf")
-        })
-        .cloned()
-        .or_else(|| {
-            classes.into_iter().find(|class| {
-                let class = class.to_ascii_lowercase();
-                !(class.contains("cytochrome p450")
-                    || class.contains("metabol")
-                    || class.contains("enzyme") && class.contains("induc"))
-            })
-        })
-}
-
-fn normalize_approval_date(value: &str) -> Option<String> {
-    let v = value.trim();
-    if v.is_empty() {
-        return None;
-    }
-    if v.len() == 10 {
-        // Only an ASCII YYYY-MM-DD shape is accepted, so later slicing by
-        // callers stays on character boundaries for any external value.
-        let bytes = v.as_bytes();
-        let valid = bytes[0..4].iter().all(|b| b.is_ascii_digit())
-            && bytes[4] == b'-'
-            && bytes[5..7].iter().all(|b| b.is_ascii_digit())
-            && bytes[7] == b'-'
-            && bytes[8..10].iter().all(|b| b.is_ascii_digit());
-        return valid.then(|| v.to_string());
-    }
-    if v.len() == 8 && v.chars().all(|c| c.is_ascii_digit()) {
-        return Some(format!("{}-{}-{}", &v[0..4], &v[4..6], &v[6..8]));
-    }
-    None
-}
-
-fn approval_date_display(raw: &str) -> Option<String> {
-    let normalized = normalize_approval_date(raw)?;
-    let year: i32 = normalized[0..4].parse().ok()?;
-    let month: u8 = normalized[5..7].parse().ok()?;
-    let day: u8 = normalized[8..10].parse().ok()?;
-    let month = Month::try_from(month).ok()?;
-    Some(format!("{month} {day}, {year}"))
-}
-
-fn approval_summary(display: Option<&str>) -> Option<String> {
-    display.map(|value| format!("FDA approved on {value}"))
-}
-
-fn approval_date_from_hit(hit: &MyChemHit) -> Option<String> {
-    let approvals = hit.drugcentral.as_ref().map(|d| &d.approval)?;
-    let mut fda_dates: Vec<String> = approvals
-        .iter()
-        .filter(|a| {
-            a.agency
-                .as_deref()
-                .map(str::trim)
-                .is_some_and(|v| v.eq_ignore_ascii_case("FDA"))
-        })
-        .filter_map(|a| a.date.as_deref())
-        .filter_map(normalize_approval_date)
-        .collect();
-
-    if !fda_dates.is_empty() {
-        fda_dates.sort();
-        return fda_dates.first().cloned();
-    }
-
-    let mut any_dates = approvals
-        .iter()
-        .filter_map(|a| a.date.as_deref())
-        .filter_map(normalize_approval_date)
-        .collect::<Vec<_>>();
-    any_dates.sort();
-    any_dates.first().cloned()
-}
-
-fn first_target_from_hit(hit: &MyChemHit) -> Option<String> {
-    if let Some(gtopdb) = hit.gtopdb.as_ref() {
-        for target in &gtopdb.interaction_targets {
-            let Some(symbol) = target
-                .symbol
-                .as_deref()
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-            else {
-                continue;
-            };
-            return Some(symbol.to_string());
-        }
-    }
-
-    let chembl = hit.chembl.as_ref()?;
-    for mechanism in &chembl.drug_mechanisms {
-        let Some(target) = mechanism
-            .target_name
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        else {
-            continue;
-        };
-        return Some(target.to_string());
-    }
-
-    None
-}
+mod enrichment;
+use enrichment::*;
 
 fn name_matches_requested(candidate: &str, requested: &str) -> bool {
     if candidate == requested {
@@ -357,7 +158,7 @@ fn interactions_from_hit(hit: &MyChemHit) -> Vec<DrugInteraction> {
     };
 
     let mut out: Vec<DrugInteraction> = Vec::new();
-    for row in &drugbank.drug_interactions {
+    for (index, row) in drugbank.drug_interactions.iter().enumerate() {
         let Some(obj) = row.as_object() else { continue };
         let drug = obj
             .get("name")
@@ -371,6 +172,30 @@ fn interactions_from_hit(hit: &MyChemHit) -> Vec<DrugInteraction> {
             .or_else(|| obj.get("interaction"))
             .or_else(|| obj.get("comment"))
             .and_then(json_first_string);
+        for (fields, action, reason, target) in [
+            (
+                &["name", "drug", "drug_name", "drugbank_name"][..],
+                "select_interaction_partner",
+                "name owns interaction partner under existing field precedence",
+                Some(drug.clone()),
+            ),
+            (
+                &["description", "interaction", "comment"][..],
+                "select_interaction_description",
+                "description owns interaction text",
+                description.clone(),
+            ),
+        ] {
+            if let Some(field) = fields.iter().find(|field| obj.contains_key(**field)) {
+                hit.record_source(
+                    &format!("/drugbank/drug_interactions/{index}/{field}"),
+                    "enrichment",
+                    action,
+                    reason,
+                    target,
+                );
+            }
+        }
         out.push(DrugInteraction {
             drug,
             ddinter_id: None,
@@ -590,6 +415,11 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut approval_date: Option<String> = None;
 
     for (hit_index, hit) in hits.iter().enumerate() {
+        if let Some(chembl) = &hit.chembl {
+            for index in 0..chembl.atc_classifications.clone().into_vec().len() {
+                hit.record_source(&format!("/chembl/atc_classifications/{index}"), "enrichment", "omit_get_atc", "ATC remains source-only; Get profile does not request it and no merged Drug field consumes it", None);
+            }
+        }
         if name.is_empty()
             && let Some(n) = best_name_from_hit(hit)
         {
@@ -724,12 +554,28 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         }
 
         if let Some(gtopdb) = hit.gtopdb.as_ref() {
-            for t in &gtopdb.interaction_targets {
+            for (index, t) in gtopdb.interaction_targets.iter().enumerate() {
                 let Some(sym) = t.symbol.as_deref().map(str::trim).filter(|v| !v.is_empty()) else {
                     continue;
                 };
                 let sym = sym.to_string();
-                if targets_seen.insert(sym.clone()) {
+                let selected = targets_seen.insert(sym.clone());
+                hit.record_source(
+                    &format!("/gtopdb/interaction_targets/{index}/symbol"),
+                    "enrichment",
+                    if selected {
+                        "select_target"
+                    } else {
+                        "deduplicate_target"
+                    },
+                    if selected {
+                        "first unique trimmed GtoPdb symbol"
+                    } else {
+                        "duplicate trimmed GtoPdb symbol"
+                    },
+                    selected.then(|| sym.clone()),
+                );
+                if selected {
                     targets.push(sym);
                 }
             }
@@ -738,7 +584,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         if let Some(dc) = hit.drugcentral.as_ref()
             && let Some(use_) = dc.drug_use.as_ref()
         {
-            for ind in &use_.indication {
+            for (index, ind) in use_.indication.iter().enumerate() {
                 let Some(name) = ind
                     .concept_name
                     .as_deref()
@@ -748,15 +594,47 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     continue;
                 };
                 let key = name.to_ascii_lowercase();
-                if indications_seen.insert(key) {
+                let selected = indications_seen.insert(key);
+                hit.record_source(
+                    &format!("/drugcentral/drug_use/indication/{index}/concept_name"),
+                    "enrichment",
+                    if selected {
+                        "select_indication"
+                    } else {
+                        "deduplicate_indication"
+                    },
+                    if selected {
+                        "first unique trimmed indication name"
+                    } else {
+                        "duplicate case-insensitive indication"
+                    },
+                    selected.then(|| name.to_owned()),
+                );
+                if selected {
                     indications.push(name.to_string());
                 }
             }
         }
 
-        for cls in moa_pharm_classes(hit) {
+        for (pointer, cls) in enrichment::moa_class_occurrences(hit) {
             let key = cls.to_ascii_lowercase();
-            if classes_seen.insert(key) {
+            let selected = classes_seen.insert(key);
+            hit.record_source(
+                &pointer,
+                "enrichment",
+                if selected {
+                    "strip_moa_suffix"
+                } else {
+                    "deduplicate_class"
+                },
+                if selected {
+                    "pharmacologic class keeps text before [MoA]"
+                } else {
+                    "duplicate normalized pharmacologic class"
+                },
+                selected.then(|| cls.clone()),
+            );
+            if selected {
                 pharm_classes.push(cls);
             }
         }
