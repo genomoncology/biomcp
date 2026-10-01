@@ -2947,14 +2947,16 @@ fn gene_hit_matches_local_filters(
     normalized_region: Option<&(String, i64, i64)>,
 ) -> bool {
     let type_ok = expected_gene_type.is_none_or(|expected| {
-        hit.enrichment.type_of_gene
+        hit.enrichment
+            .type_of_gene
             .as_deref()
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .is_some_and(|actual| actual.eq_ignore_ascii_case(expected))
     });
     let chr_ok = expected_chr.is_none_or(|expected| {
-        hit.enrichment.genomic_pos
+        hit.enrichment
+            .genomic_pos
             .as_ref()
             .and_then(|g| g.chr())
             .map(|v| v.trim_start_matches("chr").to_ascii_uppercase())
@@ -3369,10 +3371,16 @@ mod tests {
         assert_eq!(mygene_query_term("P53"), "(symbol:P53 OR alias:P53)");
     }
     fn mygene_hit(symbol: &str, aliases: &[&str]) -> MyGeneRecord {
-        crate::sources::mygene::decode_search(&serde_json::to_vec(&serde_json::json!({
-            "total": 1, "hits": [{"symbol": symbol, "name": format!("{symbol} gene"),
-                "entrezgene": 1, "alias": aliases, "type_of_gene": "protein-coding"}]
-        })).unwrap()).unwrap().hits.remove(0)
+        crate::sources::mygene::decode_search(
+            &serde_json::to_vec(&serde_json::json!({
+                "total": 1, "hits": [{"symbol": symbol, "name": format!("{symbol} gene"),
+                    "entrezgene": 1, "alias": aliases, "type_of_gene": "protein-coding"}]
+            }))
+            .unwrap(),
+        )
+        .unwrap()
+        .hits
+        .remove(0)
     }
 
     #[test]

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, is_valid_gene_symbol, request_from_plan};
 mod projection;
-pub use projection::{GeneConversionReport,MyGeneRecord, MyGeneSearchResponse};
+pub use projection::{GeneConversionReport, MyGeneRecord, MyGeneSearchResponse};
 pub(crate) use projection::{decode_get, decode_search};
 
 const MYGENE_BASE: &str = "https://mygene.info/v3";
@@ -70,7 +70,8 @@ impl MyGeneClient {
             return Err(BioMcpError::Api {
                 api: context.provider().label().into(),
                 message: format!("HTTP {status}: {}", crate::sources::body_excerpt(&bytes)),
-            }.with_source_context(context));
+            }
+            .with_source_context(context));
         }
         crate::sources::ensure_json_content_type(context, content_type.as_ref(), &bytes)?;
         Ok(bytes.to_vec())
@@ -84,8 +85,11 @@ impl MyGeneClient {
         crate::sources::decode_json(
             crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
             reqwest::StatusCode::OK,
-            Some(&reqwest::header::HeaderValue::from_static("application/json")),
-            &bytes, true,
+            Some(&reqwest::header::HeaderValue::from_static(
+                "application/json",
+            )),
+            &bytes,
+            true,
         )
     }
 
@@ -526,8 +530,18 @@ mod tests {
         fn parses_get_response_fields_from_real_fixture() {
             let hit = decode_get(fixture!("get_braf_20260811.json"), "BRAF").unwrap();
             assert_eq!(hit.symbol(), Some("BRAF"));
-            assert_eq!(hit.conversion.ensembl_display.as_deref(), Some("ENSG00000157764"));
-            assert_eq!(hit.enrichment.genomic_pos.as_ref().and_then(|pos| pos.chr()).map(String::as_str), Some("7"));
+            assert_eq!(
+                hit.conversion.ensembl_display.as_deref(),
+                Some("ENSG00000157764")
+            );
+            assert_eq!(
+                hit.enrichment
+                    .genomic_pos
+                    .as_ref()
+                    .and_then(|pos| pos.chr())
+                    .map(String::as_str),
+                Some("7")
+            );
             assert_eq!(hit.row().source().ordinal(), 0);
         }
 
@@ -536,19 +550,37 @@ mod tests {
             for (wire, expected) in [
                 (serde_json::json!("008109"), vec!["HGNC:8109"]),
                 (serde_json::json!(8109), vec!["HGNC:8109"]),
-                (serde_json::json!(["hgnc:8109", 8109, "HGNC:00042"]), vec!["HGNC:8109", "HGNC:42"]),
+                (
+                    serde_json::json!(["hgnc:8109", 8109, "HGNC:00042"]),
+                    vec!["HGNC:8109", "HGNC:42"],
+                ),
             ] {
-                let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]})).unwrap();
+                let bytes = serde_json::to_vec(
+                    &serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]}),
+                )
+                .unwrap();
                 let hit = decode_get(&bytes, "BRAF").unwrap();
                 assert_eq!(hit.hgnc_ids().unwrap(), expected);
                 assert!(hit.row().identity().qualified().is_none());
             }
-            for wire in [serde_json::json!(0), serde_json::json!(-1), serde_json::json!(1.5), serde_json::json!([8109, false]), serde_json::json!([[8109]])] {
-                let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]})).unwrap();
+            for wire in [
+                serde_json::json!(0),
+                serde_json::json!(-1),
+                serde_json::json!(1.5),
+                serde_json::json!([8109, false]),
+                serde_json::json!([[8109]]),
+            ] {
+                let bytes = serde_json::to_vec(
+                    &serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]}),
+                )
+                .unwrap();
                 assert!(decode_get(&bytes, "BRAF").is_err());
             }
             for wire in ["0", "4294967296", "invalid"] {
-                let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]})).unwrap();
+                let bytes = serde_json::to_vec(
+                    &serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]}),
+                )
+                .unwrap();
                 assert!(decode_get(&bytes, "BRAF").unwrap().hgnc_ids().is_err());
             }
         }
@@ -557,7 +589,10 @@ mod tests {
         fn extract_uniprot_prefers_swiss_prot_from_real_fixture() {
             let bytes = br#"{ "total":1,"hits":[{"symbol":"BRAF","uniprot":{"Swiss-Prot":"P15056","TrEMBL":"OTHER"}}]}"#;
             let hit = decode_get(bytes, "BRAF").unwrap();
-            assert_eq!(extract_uniprot_accession(hit.enrichment.uniprot.as_ref().unwrap()).as_deref(), Some("P15056"));
+            assert_eq!(
+                extract_uniprot_accession(hit.enrichment.uniprot.as_ref().unwrap()).as_deref(),
+                Some("P15056")
+            );
         }
 
         #[test]

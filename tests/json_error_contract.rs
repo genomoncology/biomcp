@@ -327,7 +327,9 @@ impl NoProviderContactFixture {
 }
 
 impl MyGeneFixture {
-    fn start() -> Self { Self::with_body(None) }
+    fn start() -> Self {
+        Self::with_body(None)
+    }
 
     fn with_body(body: Option<Vec<u8>>) -> Self {
         let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind MyGene fixture");
@@ -427,7 +429,9 @@ fn serve_mygene_request(mut stream: TcpStream, supplied: Option<&[u8]>) -> Resul
         body.len()
     )
     .map_err(|error| format!("write fixture response: {error}"))?;
-    stream.write_all(body).map_err(|error| format!("write fixture body: {error}"))?;
+    stream
+        .write_all(body)
+        .map_err(|error| format!("write fixture body: {error}"))?;
     stream
         .flush()
         .map_err(|error| format!("flush fixture response: {error}"))?;
@@ -1098,7 +1102,6 @@ fn human_mode_error_stays_plain_stderr() {
     );
 }
 
-
 #[path = "support/gene_identity_cases.rs"]
 mod gene_identity_controls;
 
@@ -1106,24 +1109,57 @@ mod gene_identity_controls;
 fn gene_identity_error_table() {
     for case in gene_identity_controls::cases() {
         for (get, error) in [(true, case.get_error.is_some()), (false, case.search_error)] {
-            if !error { continue; }
+            if !error {
+                continue;
+            }
             let fixture = MyGeneFixture::with_body(Some(case.bytes.clone()));
             let cache = tempfile::tempdir().unwrap();
             let cache_path = cache.path().to_str().unwrap();
-            let args = if get { vec!["--json","--no-cache","get","gene","BRAF"] }
-                else { vec!["--json","--no-cache","search","gene","-q","BRAF","--type","pseudo"] };
-            let result = run_biomcp_with_env(&args, &[
-                ("BIOMCP_MYGENE_BASE", &fixture.base_url),
-                ("BIOMCP_OLS4_BASE", &fixture.base_url),
-                ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
-                ("BIOMCP_CACHE_DIR", cache_path),
-                ("RUST_LOG", "off"),
-            ]);
-            assert_json_error(&result, 1, if get && case.get_error == Some("not_found") { "not_found" } else { "api" });
-            assert!(!result.stdout.contains("SOURCE-ONLY-CANARY"), "{}", case.label);
+            let args = if get {
+                vec!["--json", "--no-cache", "get", "gene", "BRAF"]
+            } else {
+                vec![
+                    "--json",
+                    "--no-cache",
+                    "search",
+                    "gene",
+                    "-q",
+                    "BRAF",
+                    "--type",
+                    "pseudo",
+                ]
+            };
+            let result = run_biomcp_with_env(
+                &args,
+                &[
+                    ("BIOMCP_MYGENE_BASE", &fixture.base_url),
+                    ("BIOMCP_OLS4_BASE", &fixture.base_url),
+                    ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
+                    ("BIOMCP_CACHE_DIR", cache_path),
+                    ("RUST_LOG", "off"),
+                ],
+            );
+            assert_json_error(
+                &result,
+                1,
+                if get && case.get_error == Some("not_found") {
+                    "not_found"
+                } else {
+                    "api"
+                },
+            );
+            assert!(
+                !result.stdout.contains("SOURCE-ONLY-CANARY"),
+                "{}",
+                case.label
+            );
             assert!(fixture.received_request().starts_with("/query?"));
             if get && case.get_error != Some("not_found") {
-                assert!(fixture.request_rx.try_recv().is_err(), "terminal failure retried alias: {}", case.label);
+                assert!(
+                    fixture.request_rx.try_recv().is_err(),
+                    "terminal failure retried alias: {}",
+                    case.label
+                );
             }
             // Same table is included in library proof; display is irrelevant for errors.
             let _ = case.display;

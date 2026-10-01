@@ -1,6 +1,6 @@
 use crate::entities::gene::{GENE_OUTCOME_KEYS, Gene, GenePathway, GeneSearchResult};
 use crate::entities::section_outcome::SectionOutcomes;
-use crate::sources::mygene::{MyGeneRecord};
+use crate::sources::mygene::MyGeneRecord;
 
 fn normalize_summary(summary: Option<String>) -> Option<String> {
     let summary = summary?;
@@ -132,9 +132,7 @@ fn extract_kegg_pathways(value: Option<&serde_json::Value>) -> Option<Vec<GenePa
     if out.is_empty() { None } else { Some(out) }
 }
 
-fn format_genomic_coordinates(
-    resp: &MyGeneRecord,
-) -> Option<crate::entities::GenomicCoordinate> {
+fn format_genomic_coordinates(resp: &MyGeneRecord) -> Option<crate::entities::GenomicCoordinate> {
     let pos = resp.enrichment.genomic_pos.as_ref()?;
     let chr = pos.chr()?.trim();
     let start = pos.start()?;
@@ -151,7 +149,9 @@ fn format_genomic_coordinates(
     })
 }
 
-pub fn from_mygene_get(resp: &MyGeneRecord) -> (Gene, crate::sources::mygene::GeneConversionReport) {
+pub fn from_mygene_get(
+    resp: &MyGeneRecord,
+) -> (Gene, crate::sources::mygene::GeneConversionReport) {
     let genomic_coordinates = format_genomic_coordinates(&resp);
     let omim_id = extract_omim_id(resp.enrichment.mim.as_ref());
     let uniprot_id = extract_uniprot_id(resp.enrichment.uniprot.as_ref());
@@ -159,8 +159,20 @@ pub fn from_mygene_get(resp: &MyGeneRecord) -> (Gene, crate::sources::mygene::Ge
     let source_aliases = resp.aliases();
     let aliases = normalize_aliases(source_aliases.clone());
     let mut report = resp.conversion.clone();
-    for alias in source_aliases.iter().filter(|alias| !aliases.contains(alias)) {
-        let reason = if alias.chars().any(|c| c.is_ascii_lowercase()) { "lowercase alias omitted from display" } else if alias.rsplit_once('-').is_some_and(|(_, tail)| !tail.is_empty() && tail.bytes().all(|b| b.is_ascii_digit())) { "number-suffix alias omitted from display" } else { "alias display capped at five" };
+    for alias in source_aliases
+        .iter()
+        .filter(|alias| !aliases.contains(alias))
+    {
+        let reason = if alias.chars().any(|c| c.is_ascii_lowercase()) {
+            "lowercase alias omitted from display"
+        } else if alias
+            .rsplit_once('-')
+            .is_some_and(|(_, tail)| !tail.is_empty() && tail.bytes().all(|b| b.is_ascii_digit()))
+        {
+            "number-suffix alias omitted from display"
+        } else {
+            "alias display capped at five"
+        };
         report.losses.push(("alias", reason));
     }
 
@@ -170,7 +182,12 @@ pub fn from_mygene_get(resp: &MyGeneRecord) -> (Gene, crate::sources::mygene::Ge
         name: resp.name().unwrap_or_default().to_owned(),
         entrez_id: resp.code("NCBI Gene").unwrap_or_default().to_owned(),
         ensembl_id: resp.conversion.ensembl_display.clone(),
-        location: resp.enrichment.genomic_pos.as_ref().and_then(|g| g.chr()).cloned(),
+        location: resp
+            .enrichment
+            .genomic_pos
+            .as_ref()
+            .and_then(|g| g.chr())
+            .cloned(),
         genomic_coordinates,
         omim_id,
         uniprot_id,
@@ -233,7 +250,11 @@ mod tests {
     use crate::sources::mygene::decode_get;
     fn projected(value: serde_json::Value) -> MyGeneRecord {
         let symbol = value["symbol"].as_str().unwrap().to_owned();
-        decode_get(&serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [value]})).unwrap(), &symbol).unwrap()
+        decode_get(
+            &serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [value]})).unwrap(),
+            &symbol,
+        )
+        .unwrap()
     }
 
     #[test]

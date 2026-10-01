@@ -260,7 +260,11 @@ pub(super) async fn classify_provider_zero(
             let requested_key = requested.to_ascii_uppercase();
             let mut seen = HashSet::new();
             'hits: for hit in matches.hits {
-                let candidates = hit.symbol().map(str::to_owned).into_iter().chain(hit.aliases());
+                let candidates = hit
+                    .symbol()
+                    .map(str::to_owned)
+                    .into_iter()
+                    .chain(hit.aliases());
                 for candidate in candidates {
                     let candidate = candidate.trim();
                     let key = candidate.to_ascii_uppercase();

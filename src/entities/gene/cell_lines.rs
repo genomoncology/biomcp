@@ -142,17 +142,12 @@ async fn resolve_accessions(names: &[String]) -> (Vec<Option<String>>, Vec<Strin
 /// The Ensembl gene ID behind one symbol, through the existing gene lookup.
 async fn resolve_ensembl_id(symbol: &str) -> Result<(String, String), BioMcpError> {
     let hit = MyGeneClient::new()?.get(symbol, false).await?;
-    let resolved = hit
-        .symbol()
-        .unwrap_or(symbol.trim()).to_owned();
-    let ensembl_id = hit
-        .conversion.ensembl_display
-        .clone()
-        .ok_or_else(|| {
-            BioMcpError::InvalidArgument(format!(
-                "`{resolved}` has no Ensembl gene ID, and HPA cell line expression is keyed by it"
-            ))
-        })?;
+    let resolved = hit.symbol().unwrap_or(symbol.trim()).to_owned();
+    let ensembl_id = hit.conversion.ensembl_display.clone().ok_or_else(|| {
+        BioMcpError::InvalidArgument(format!(
+            "`{resolved}` has no Ensembl gene ID, and HPA cell line expression is keyed by it"
+        ))
+    })?;
     Ok((resolved, ensembl_id))
 }
 
