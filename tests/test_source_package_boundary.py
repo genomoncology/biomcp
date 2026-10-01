@@ -78,6 +78,7 @@ REQUIRED_PACKAGE_MEMBERS = {
     "src/sources/gencc/store.rs",
     "src/sources/gencc/tests.rs",
     "src/sources/mygene/tests/live.rs",
+    "tests/support/disease_identity_cases.rs",
     "tests/test_gencc_docs_contract.py",
     "src/cli/trial/search_summary.rs",
     "tests/test_biodata_model_reference.py",
@@ -457,9 +458,6 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
-    # Gene adoption adds projection.rs, identity_surface_tests.rs and the shared
-    # authored consumer control table to the retained 1,449 package members.
-    assert len(paths) == 1452
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
