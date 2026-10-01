@@ -34,6 +34,8 @@ impl Fixture {
                 .build(),
             self.base.clone(),
         );
+        let started = tokio::time::Instant::now();
+        let completion_bound = started + Duration::from_millis(41);
         let request = client.gene_context(symbol, Duration::from_millis(40));
         tokio::pin!(request);
         let driver = tokio::spawn(async {
@@ -54,6 +56,14 @@ impl Fixture {
         driver.abort();
         let _ = driver.await;
         tokio::time::advance(Duration::from_millis(41)).await;
-        request.await.expect("partial ClinGen context")
+        let context = tokio::time::timeout_at(completion_bound, request)
+            .await
+            .expect("ClinGen context must complete by 41 ms")
+            .expect("partial ClinGen context");
+        assert!(
+            started.elapsed() <= Duration::from_millis(41),
+            "ClinGen completion exceeded the virtual deadline"
+        );
+        context
     }
 }
