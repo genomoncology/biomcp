@@ -9,7 +9,7 @@ fn reply(status: &str, body: &str) -> TestHttpReply {
     ))
 }
 pub(super) async fn optional_paths(harness: &ContractHarness) {
-    for _ in [false] {
+    {
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = Arc::clone(&requests);
         let fixture = TestHttpFixture::spawn(move |request| {
@@ -47,7 +47,7 @@ pub(super) async fn optional_paths(harness: &ContractHarness) {
         assert!(observed.iter().any(|line| line.starts_with("POST /")));
     }
     for detail in [false, true] {
-        for _ in [false] {
+        {
             let requests = Arc::new(Mutex::new(Vec::new()));
             let captured = Arc::clone(&requests);
             let discovers = Mutex::new(0);
@@ -71,7 +71,7 @@ pub(super) async fn optional_paths(harness: &ContractHarness) {
                     *count += 1;
                     if detail && *count == 1 {
                         reply("200 OK", r#"{"_id":"MONDO:1","mondo":{"name":"Synthetic cancer"}}"#)
-                    } else if transport { unavailable() } else { reply("404 Not Found", "{}") }
+                    } else { reply("404 Not Found", "{}") }
                 } else if request.starts_with("GET /disease/MONDO:2?") {
                     reply("200 OK", r#"{"_id":"MONDO:2","mondo":{"name":"Synthetic cancer"}}"#)
                 } else { reply("200 OK", r#"{"data":{}}"#) }
