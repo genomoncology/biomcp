@@ -44,6 +44,8 @@ async fn cli_raw_typed_gene_identity_table() {
                 page.digest(),
                 format!("sha256:{:x}", Sha256::digest(&case.bytes))
             );
+            let original: Value = serde_json::from_slice(&case.bytes).unwrap();
+            assert_eq!(page.total(), original.get("total").and_then(Value::as_u64));
             for (ordinal, disposition) in page.rows().iter().enumerate() {
                 match disposition {
                     biodata::MyGeneRowDisposition::Projected(row) => {
@@ -76,6 +78,24 @@ async fn cli_raw_typed_gene_identity_table() {
             }
         } else {
             let record = get.unwrap();
+            use biodata::MyGeneField;
+            match case.label {
+                "missing name" => assert!(matches!(record.row().source().name(), MyGeneField::Missing)),
+                "null name" => assert!(matches!(record.row().source().name(), MyGeneField::Null)),
+                "blank name" => assert!(matches!(record.row().source().name(), MyGeneField::Blank)),
+                "null id" => assert!(matches!(record.row().source().provider_id(), MyGeneField::Null)),
+                "HGNC equivalent" => assert_eq!(record.row().source().hgnc_was_number(), [false, false, true]),
+                _ => {}
+            }
+            if ["missing name", "null name", "blank name"].contains(&case.label) {
+                assert_eq!(crate::transform::gene::from_mygene_get(&record).0.name, "");
+            }
+            if case.label == "null id" { assert_eq!(record.code("NCBI Gene"), None); }
+            if case.label == "E10 heterogeneous" {
+                assert!(record.row().source().raw().contains("T1"));
+                assert!(record.row().source().raw().contains("P2"));
+            }
+
             assert_eq!(
                 record.conversion.ensembl_display.as_deref(),
                 case.display,
@@ -239,7 +259,8 @@ async fn cli_raw_typed_gene_identity_table() {
                 .unwrap()
                 .iter()
                 .all(|request| request.starts_with("GET /query?")
-                    || request.starts_with("GET /api/"))
+                    || request.starts_with("GET /api/")
+                    || request.starts_with("POST /graphql"))
         );
     }
 }
