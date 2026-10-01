@@ -1489,6 +1489,7 @@ pub(crate) fn scripted_client(
 #[cfg(test)]
 pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
     let base_client = reqwest::Client::builder()
+        .no_proxy()
         .timeout(std::time::Duration::from_secs(30))
         .connect_timeout(std::time::Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
@@ -2017,7 +2018,7 @@ mod tests {
         Arc, Mutex,
         atomic::{AtomicUsize, Ordering},
     };
-    use tokio::io::AsyncWriteExt;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     fn test_response(
         status: StatusCode,
         headers: &[(&'static str, &'static str)],
@@ -2541,6 +2542,8 @@ mod tests {
         let address = listener.local_addr().expect("fixture address");
         let server = tokio::spawn(async move {
             let (mut stream, _) = listener.accept().await.expect("accept request");
+            let mut request = [0; 1024];
+            stream.read(&mut request).await.expect("read fixture request");
             stream
                 .write_all(
                     b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\nshort",
@@ -2548,7 +2551,10 @@ mod tests {
                 .await
                 .expect("write truncated response");
         });
-        let response = reqwest::Client::new()
+        let response = reqwest::Client::builder()
+            .no_proxy()
+            .build()
+            .expect("fixture client")
             .get(format!("http://{address}"))
             .send()
             .await
