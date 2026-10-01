@@ -208,3 +208,7 @@ impl<'de> Deserialize<'de> for MyChemQueryResponse {
         decode(&bytes, MyChemProfile::Search).map_err(serde::de::Error::custom)
     }
 }
+
+pub(super) fn checked_total<T: TryFrom<u64>>(total: u64) -> Result<T, BioMcpError> {
+    T::try_from(total).map_err(|_| failure("MyChem total is not representable"))
+}

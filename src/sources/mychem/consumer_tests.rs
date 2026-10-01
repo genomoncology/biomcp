@@ -258,3 +258,20 @@ pub(crate) fn product_value(drug: &crate::entities::drug::Drug) -> Value {
 pub(crate) fn search_value(row: &crate::entities::drug::DrugSearchResult) -> Value {
     json!({"name":row.name,"drugbank_id":row.drugbank_id,"drug_type":row.drug_type,"mechanism":row.mechanism,"target":row.target})
 }
+
+#[test]
+fn checked_total_width_and_inclusive_byte_table() {
+    for case in table(1)
+        .into_iter()
+        .filter(|case| case["input"]["operation"] == "checked_total_conversion")
+    {
+        if case["input"]["target_usize_bits"] == 32 {
+            let error = projection::checked_total::<u32>(case["input"]["total"].as_u64().unwrap())
+                .unwrap_err();
+            assert_eq!(error.code(), case["expected"]["failure"]["code"]);
+        } else {
+            let response = projection::decode(&bytes(&case), profile(&case)).unwrap();
+            assert_eq!(json!(response.total), case["expected"]["product_total"]);
+        }
+    }
+}

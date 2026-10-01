@@ -17,6 +17,10 @@ fn environment(fixture: &CaseHttp, cache: &std::path::Path) -> Vec<(&'static str
         ("BIOMCP_CACHE_DIR", cache.display().to_string()),
         ("BIOMCP_CACHE_MODE", "off".into()),
         ("RUST_LOG", "off,reqwest_retry=error".into()),
+        ("OPENFDA_API_KEY", "".into()),
+        ("UMLS_API_KEY", "".into()),
+        ("NCBI_API_KEY", "".into()),
+        ("S2_API_KEY", "".into()),
     ]
 }
 fn content(actual: &str, wanted: &Value) {

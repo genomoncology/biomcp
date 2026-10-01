@@ -72,6 +72,15 @@ impl CaseHttp {
         }
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &self.fixture.base);
         env.set("BIOMCP_CACHE_DIR", cache);
+        for key in [
+            "NCI_API_KEY",
+            "OPENFDA_API_KEY",
+            "UMLS_API_KEY",
+            "NCBI_API_KEY",
+            "S2_API_KEY",
+        ] {
+            env.set(key, "");
+        }
     }
     pub(crate) fn assert_requests(&self, id: &Value) {
         let actual = self.requests.lock().unwrap();
