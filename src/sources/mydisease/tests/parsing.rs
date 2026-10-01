@@ -35,6 +35,18 @@ fn decode_json_maps_http_error_status_with_excerpt() {
 }
 #[test]
 fn disease_identity_transport_table() {
+    // A typed connection failure inside a trust-rejection chain is terminal.
+    // The existing shared trust guard rejects this wrapper before optional routing.
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let connect = runtime
+        .block_on(reqwest::Client::new().get("http://127.0.0.1:0").send())
+        .unwrap_err();
+    assert!(connect.is_connect());
+    let trust = BioMcpError::HttpMiddleware(reqwest_middleware::Error::Middleware(
+        anyhow::Error::new(connect).context("invalid peer certificate: authored wrapper"),
+    ));
+    assert!(!crate::sources::mydisease::optional_failure(&trust));
+
     for case in crate::entities::disease::identity_surface_tests::controls::cases() {
         let get = decode_get(&case.get);
         let search = decode_search(&case.search);

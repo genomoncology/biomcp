@@ -138,14 +138,19 @@ impl<'de> Deserialize<'de> for MyDiseaseQueryResponse {
 }
 
 fn unavailable_transport(error: &reqwest::Error) -> bool {
-    error.is_connect()
-        || (error.is_timeout()
-            && error.status().is_none()
-            && !error.is_body()
-            && !error.is_decode())
+    !crate::sources::error_chain_carries(error)
+        && (error.is_connect()
+            || (error.is_timeout()
+                && error.status().is_none()
+                && !error.is_body()
+                && !error.is_decode()))
 }
 
 fn unavailable_middleware(error: &reqwest_middleware::Error) -> bool {
+    // Trust rejection is terminal even when a nested error has connect status.
+    if crate::sources::is_trust_failure(error) {
+        return false;
+    }
     match error {
         reqwest_middleware::Error::Reqwest(error) => unavailable_transport(error),
         reqwest_middleware::Error::Middleware(error) => {
