@@ -25,3 +25,7 @@ October1,2026. Root coordinator approves implementation within existing BioData0
 ## Implementation handoff
 
 October 1, 2026. Implementation and bounded offline authoring proof are complete on this ticket lane. [Implementation record](../records/2007-implement-mygene-consumer.md) names the exact code candidate, retained behavior, source custody, dependency closure, maintenance cutoff, failures, actual timings and finite post-review commands. Fresh independent CODE review is next. Root retains final composite proof, BioData gates, hosted-verifier metadata, shared advancement and completion under BioData 0182.
+
+## Root repair handoff
+
+October 1, 2026. Root coordinator authorized repairs after CODE findings at `803585617dca39a92f63aa3e63137b65c38adb44`. The [repair record](../records/2007-repair-gene-consumer-review.md) closes the credential fixture and capture/public assertion findings with five actual passing offline selections and explicit executable/source bindings. Fresh independent review of the pushed repair tip remains next. Root retains the final 175-selector composite and later adoption obligations. No Ian repair approval is claimed.
