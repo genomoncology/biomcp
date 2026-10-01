@@ -201,7 +201,7 @@ fn display_selection_and_product_table() {
                     if let Some(index) = event.claim_index {
                         assert_eq!(
                             event.origin.as_ref(),
-                            Some(hit.row.identity().claims()[index].origin())
+                            Some(&hit.row.identity().claims()[index].origin().into())
                         );
                     }
                 }
