@@ -217,7 +217,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                         2,
                         0,
                         region,
-                        WhoProductTypeFilter::Any,
+                        WhoProductTypeFilter::Both,
                     )
                     .await;
                     failure(
