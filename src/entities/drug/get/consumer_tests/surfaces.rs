@@ -161,3 +161,5 @@ async fn cli_and_raw_typed_mcp_drug_table() {
         "surface alternatives failed: {failures:?}"
     );
 }
+
+mod privacy;
