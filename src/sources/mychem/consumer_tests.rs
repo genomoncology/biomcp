@@ -230,7 +230,7 @@ pub(crate) fn product_value(drug: &crate::entities::drug::Drug) -> Value {
         "target_family":drug.target_family,
         "target_family_name":drug.target_family_name,
         "indications":drug.indications,
-        "interactions":drug.interactions,
+        "interactions":drug.interactions.iter().map(|row|json!({"drug":row.drug,"description":row.description,"ddinter_id":row.ddinter_id,"level":row.level,"partner_classes":row.partner_classes})).collect::<Vec<_>>(),
         "interaction_text":drug.interaction_text,
         "interaction_pagination":drug.interaction_pagination,
         "interaction_bundle_freshness":drug.interaction_bundle_freshness,

@@ -142,7 +142,14 @@ async fn adopted_request_search_and_nested_failure_table() {
                 .unwrap_or("sampledrug");
             match op {
                 "direct_drug_lookup" => {
-                    let result = direct_drug_lookup(name).await;
+                    let result = if let Some(max) = input["transport_max_body_bytes"].as_u64() {
+                        crate::sources::mychem::MyChemClient::new()
+                            .unwrap()
+                            .test_get_with_body_limit(name, max as usize)
+                            .await
+                    } else {
+                        direct_drug_lookup(name).await
+                    };
                     if !expected["failure"].is_null() {
                         failure(result.unwrap_err(), &expected["failure"], id);
                     } else {

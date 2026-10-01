@@ -67,6 +67,14 @@ impl MyChemClient {
         req: reqwest_middleware::RequestBuilder,
         profile: biodata::MyChemProfile,
     ) -> Result<MyChemQueryResponse, BioMcpError> {
+        self.get_identity_with_limit(req, profile, 1_048_576).await
+    }
+    async fn get_identity_with_limit(
+        &self,
+        req: reqwest_middleware::RequestBuilder,
+        profile: biodata::MyChemProfile,
+        max_body_bytes: usize,
+    ) -> Result<MyChemQueryResponse, BioMcpError> {
         let resp = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::MYCHEM,
@@ -77,11 +85,23 @@ impl MyChemClient {
         let bytes = crate::sources::read_limited_source_body_with_limit(
             resp,
             crate::error::SourceContext::narrow(crate::error::SourceProvider::MYCHEM),
-            1_048_576,
+            max_body_bytes,
         )
         .await?;
         projection::validate_transport(status, content_type.as_ref(), &bytes)?;
         projection::decode(&bytes, profile)
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn test_get_with_body_limit(
+        &self,
+        name: &str,
+        max: usize,
+    ) -> Result<MyChemQueryResponse, BioMcpError> {
+        let plan = Self::query_with_fields_plan(name, 25, 0, MYCHEM_FIELDS_GET)?;
+        let request = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.get_identity_with_limit(request, biodata::MyChemProfile::Get, max)
+            .await
     }
 
     pub(crate) fn query_with_fields_plan(
