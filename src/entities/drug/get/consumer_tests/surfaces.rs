@@ -11,7 +11,7 @@ fn environment(fixture: &CaseHttp, cache: &std::path::Path) -> Vec<(&'static str
         ("BIOMCP_MYCHEM_BASE", format!("{base}/v1")),
         ("BIOMCP_OPENFDA_BASE", base.clone()),
         ("BIOMCP_CTGOV_BASE", format!("{base}/api/v2")),
-        ("BIOMCP_CIVIC_BASE", format!("{base}/api/graphql")),
+        ("BIOMCP_CIVIC_BASE", format!("{base}/api")),
         ("BIOMCP_OPENTARGETS_BASE", base.clone()),
         ("BIOMCP_CHEMBL_BASE", base.clone()),
         ("BIOMCP_OLS4_BASE", base.clone()),
