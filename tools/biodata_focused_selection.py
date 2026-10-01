@@ -100,7 +100,11 @@ def nextest_names(output: str) -> tuple[str, ...]:
     try:
         document = json.loads(output)
         suites = document["rust-suites"]
-        return tuple(name for suite in suites.values() for name in suite["testcases"])
+        return tuple(
+            name for suite in suites.values()
+            for name, testcase in suite["testcases"].items()
+            if not testcase.get("ignored", False)
+        )
     except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as error:
         raise SelectionError("nextest discovery did not return the expected JSON") from error
 

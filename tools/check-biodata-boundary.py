@@ -19,6 +19,11 @@ VERSION = "0.0.36"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (
+    "MyGeneHit",
+    "MyGeneGetResponse",
+    "MyGeneGetQueryResponse",
+    "EnsemblField",
+    "EnsemblInfo",
     "Trial",
     "TrialIdentity",
     "TrialDesign",

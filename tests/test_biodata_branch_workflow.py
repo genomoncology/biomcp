@@ -24,6 +24,7 @@ from biodata_focused_selection import (  # noqa: E402
     SelectionError,
     load_selection,
     nextest_filter,
+    nextest_names,
     validate_python_collection,
     validate_rust_discovery,
     validate_rust_execution,
@@ -258,3 +259,12 @@ def test_execution_requires_exact_successful_terminal_selections() -> None:
     for events in [passed[:1], passed+passed[:1], passed+[{"type":"test","event":"ok","name":"other"}], [passed[0], {"type":"test","event":"ignored","name":selection.rust[1]}]]:
         with pytest.raises(SelectionError, match="each selected test exactly once"):
             validate_rust_execution(selection, encode(events))
+
+
+def test_ignored_discovery_cannot_satisfy_a_selected_name() -> None:
+    selection = FocusedSelection(("module::bounded", "gene_identity_error_table"), ("tests/test_biodata_boundary.py",))
+    discovery = json.dumps({"rust-suites": {"library": {"testcases": {
+        "module::bounded": {"ignored": False}, "gene_identity_error_table": {"ignored": True}
+    }}}})
+    with pytest.raises(SelectionError, match="matched 0"):
+        validate_rust_discovery(selection, nextest_names(discovery))

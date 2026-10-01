@@ -190,6 +190,11 @@ def test_biodata_boundary_rejects_patch_and_source_replacements(
         "pub struct TrialIdentity { nct_id: String }",
         "pub struct TrialDesign { arms: Vec<String> }",
         "pub struct TrialSearchResult { title: String }",
+        "pub struct MyGeneHit { symbol: String }",
+        "pub struct MyGeneGetResponse { symbol: String }",
+        "pub struct MyGeneGetQueryResponse { hits: Vec<String> }",
+        "pub enum EnsemblField { Single(String) }",
+        "pub struct EnsemblInfo { gene: String }",
     ],
 )
 def test_biodata_boundary_rejects_retired_declarations_in_new_tracked_rust_files(
