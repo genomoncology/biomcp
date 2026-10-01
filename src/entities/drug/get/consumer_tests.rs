@@ -101,6 +101,7 @@ fn failure(result: BioMcpError, wanted: &Value, id: &Value) {
     } else {
         wanted.clone()
     };
+    let wanted = wanted.get("product").unwrap_or(&wanted);
     assert_eq!(result.code(), wanted["code"].as_str().unwrap(), "{id}");
     if let Some(display) = wanted["display"].as_str() {
         assert_eq!(result.to_string(), display, "{id}");

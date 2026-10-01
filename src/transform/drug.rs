@@ -389,6 +389,14 @@ pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
         return None;
     };
     record_display(hit, &name, "search projection");
+    if name.is_empty() {
+        hit.record_row(
+            "search projection",
+            "discard",
+            "display normalizes to empty",
+        );
+        return None;
+    }
     let mechanisms = chembl_mechanisms_from_hit(hit);
     let mechanism = mechanisms
         .first()
