@@ -194,6 +194,17 @@ pub fn cases() -> Vec<Case> {
             false,
         ),
         (
+            "ranked rows",
+            json!({"total":4,"hits":[
+                {"symbol":"OTHER","name":"First","entrezgene":1},
+                {"symbol":"BRAF","name":"Exact","entrezgene":"673"},
+                {"symbol":"OTHER","name":"Duplicate","entrezgene":"1"},
+                {"symbol":"THIRD","name":"Last","entrezgene":3}
+            ]}),
+            None,
+            false,
+        ),
+        (
             "ambiguous",
             json!({"total":2,"hits":[{"symbol":"BRAF"},{"symbol":"BRAF"}]}),
             Some("Ambiguous"),

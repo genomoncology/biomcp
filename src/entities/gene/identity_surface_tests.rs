@@ -18,13 +18,43 @@ fn assert_public(text: &str, error: bool, label: &str, get: bool, display: Optio
         return;
     }
     let value: Value = serde_json::from_str(text).expect("public JSON");
+    // Independent public expectations cover every successful authored page.
+    let rows: Vec<(&str, &str, &str)> = match label {
+        label if label.starts_with('E') => vec![("BRAF", "Source name", "673")],
+        "empty" => vec![],
+        "mismatch" => vec![("OTHER", "", "1")],
+        "case mismatch" => vec![("braf", "", "673")],
+        "missing symbol" => vec![("", "", "673")],
+        "null symbol" | "blank symbol" => vec![("", "", "")],
+        "missing name" | "scalar alias" => vec![("BRAF", "", "673")],
+        "null name" | "blank name" | "null id" | "HGNC equivalent" | "HGNC distinct"
+        | "source shape" | "ambiguous" => vec![("BRAF", "", "")],
+        "repeated id" => vec![("BRAF", "", "673"), ("OTHER", "", "1")],
+        "ranked rows" => vec![
+            ("BRAF", "Exact", "673"),
+            ("OTHER", "First", "1"),
+            ("THIRD", "Last", "3"),
+        ],
+        _ => panic!("missing independent public expectation for {label}"),
+    };
     if get {
-        assert_eq!(value["symbol"], "BRAF", "{label}");
+        let (symbol, name, entrez) = rows[0];
+        assert_eq!(value["symbol"], symbol, "{label}");
+        assert_eq!(value["name"], name, "{label}");
+        assert_eq!(value["entrez_id"], entrez, "{label}");
         assert_eq!(value["ensembl_id"].as_str(), display, "{label}");
         assert!(value.get("identity").is_none());
         assert!(value.get("qualified").is_none());
     } else {
-        assert!(value["results"].is_array(), "{label}: {value}");
+        let actual = value["results"].as_array().expect("search results");
+        assert_eq!(value["count"], rows.len(), "{label}");
+        assert_eq!(value["total"], rows.len(), "{label}");
+        assert_eq!(actual.len(), rows.len(), "{label}");
+        for (row, (symbol, name, entrez)) in actual.iter().zip(rows) {
+            assert_eq!(row["symbol"], symbol, "{label}");
+            assert_eq!(row["name"], name, "{label}");
+            assert_eq!(row["entrez_id"], entrez, "{label}");
+        }
     }
 }
 
