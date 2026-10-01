@@ -67,7 +67,8 @@ impl MyChemClient {
         req: reqwest_middleware::RequestBuilder,
         profile: biodata::MyChemProfile,
     ) -> Result<MyChemQueryResponse, BioMcpError> {
-        self.get_identity_with_limit(req, profile, 1_048_576).await
+        self.get_identity_with_limit(req, profile, crate::sources::DEFAULT_MAX_BODY_BYTES)
+            .await
     }
     async fn get_identity_with_limit(
         &self,

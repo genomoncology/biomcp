@@ -28,13 +28,10 @@ pub(crate) fn failure(message: &'static str) -> BioMcpError {
 pub(crate) fn validate_transport(
     status: reqwest::StatusCode,
     content_type: Option<&reqwest::header::HeaderValue>,
-    bytes: &[u8],
+    _bytes: &[u8],
 ) -> Result<(), BioMcpError> {
     if !status.is_success() {
         return Err(failure("MyChem response status rejected"));
-    }
-    if bytes.len() > 1_048_576 {
-        return Err(failure("MyChem response body limit rejected"));
     }
     let media = content_type
         .and_then(|value| value.to_str().ok())
@@ -174,8 +171,7 @@ pub(crate) fn decode(
     let rows = page
         .require_complete()
         .map_err(|_| failure("MyChem identity page rejected"))?;
-    let total =
-        usize::try_from(page.total()).map_err(|_| failure("MyChem total is not representable"))?;
+    let total = checked_total::<usize>(page.total())?;
     let hits = rows
         .into_iter()
         .map(|row| convert(row, Arc::clone(&page)))
