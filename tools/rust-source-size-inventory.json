@@ -261,11 +261,11 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2744,
+      "baseline_lines": 2575,
       "floor_lines": 1956,
       "authorized_increase": {
         "ticket": "biodata-0203",
-        "delta": 788,
+        "delta": 619,
         "reason": "The dedicated patient gate and typed branches combine with the main flat typed MCP schema and argument-failure correction.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
@@ -477,11 +477,11 @@
     },
     {
       "path": "src/transform/disease.rs",
-      "baseline_lines": 1121,
+      "baseline_lines": 1108,
       "floor_lines": 1050,
       "authorized_increase": {
         "ticket": "1256",
-        "delta": 71,
+        "delta": 58,
         "reason": "The seeded gene-association helper and its tests.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
       }

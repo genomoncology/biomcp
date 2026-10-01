@@ -187,7 +187,7 @@ async fn fallback_refusal(harness: &ContractHarness) {
             } else if query { r#"{"total":0,"hits":[]}"# }
             else if request.starts_with("GET /api/search?") {
                 if crosswalk {
-                    r#"{"response":{"docs":[{"iri":"https://example.invalid/MESH_1","obo_id":"MESH:D000001","ontology_prefix":"mesh","label":"Synthetic tumor","type":"class"}]}}"#
+                    r#"{"response":{"docs":[{"iri":"https://example.invalid/MESH_1","obo_id":"MESH:D000001","ontology_prefix":"mesh","label":"Synthetic disease tumor","type":"class"}]}}"#
                 } else {
                     r#"{"response":{"docs":[{"iri":"https://example.invalid/MONDO_1","obo_id":"MONDO:1","ontology_prefix":"mondo","label":"Synthetic tumor","type":"class"}]}}"#
                 }
@@ -216,7 +216,10 @@ async fn fallback_refusal(harness: &ContractHarness) {
         .await;
         let observed = requests.lock().unwrap().clone();
         if error {
-            assert_eq!(value["error"]["code"], "api");
+            assert_eq!(
+                value["error"]["code"], "api",
+                "crosswalk={crosswalk} detail={reject_detail}: {observed:?} {value}"
+            );
             assert_eq!(
                 observed
                     .iter()
@@ -392,7 +395,6 @@ async fn diagnostic_resolution(harness: &ContractHarness) {
             harness,
             &[
                 "--json",
-                "--no-cache",
                 "search",
                 "diagnostic",
                 "--disease",

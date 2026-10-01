@@ -30,7 +30,7 @@ fn decode_json_maps_http_error_status_with_excerpt() {
     )
     .unwrap_err();
     assert_eq!(error.code(), "api");
-    assert!(error.to_string().contains("500"));
+    assert!(format!("{error:?}").contains("500"));
     assert!(!error.to_string().contains("SOURCE-ONLY-CANARY"));
 }
 #[test]

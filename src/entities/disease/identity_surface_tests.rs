@@ -15,10 +15,14 @@ pub(crate) mod controls;
 
 fn public(text: &str, error: bool, get: bool, name: &str) {
     assert!(!text.contains("SOURCE-ONLY-CANARY"), "{text}");
-    let value: Value = serde_json::from_str(text).expect("public JSON");
     if error {
-        assert!(value["error"]["code"].is_string(), "{value}");
-    } else if get {
+        // Existing MCP failure envelope uses safe text; CLI errors are checked separately.
+        assert!(text.starts_with("Error:"), "{text}");
+        assert!(text.contains("MyDisease"), "{text}");
+        return;
+    }
+    let value: Value = serde_json::from_str(text).expect("public JSON");
+    if get {
         assert_eq!(value["id"], "MONDO:1");
         assert_eq!(value["name"], name);
         assert!(value.get("row").is_none());
@@ -101,12 +105,14 @@ async fn cli_raw_typed_disease_identity_table() {
                 "{}",
                 String::from_utf8_lossy(&output.stderr)
             );
-            public(
-                &String::from_utf8(output.stdout).unwrap(),
-                case.error,
-                get,
-                case.name,
-            );
+            let text = String::from_utf8(output.stdout).unwrap();
+            if case.error {
+                let value: Value = serde_json::from_str(&text).unwrap();
+                assert_eq!(value["error"]["code"], "api");
+                assert!(!text.contains("SOURCE-ONLY-CANARY"));
+            } else {
+                public(&text, false, get, case.name);
+            }
             if case.error {
                 assert_eq!(
                     requests.lock().unwrap().len() - before,

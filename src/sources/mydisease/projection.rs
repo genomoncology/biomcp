@@ -19,14 +19,10 @@ pub struct MyDiseaseHit {
     pub page: Arc<MyDiseasePage>,
     // Presentation conversion is temporary until direct disease-document presentation.
     // Remove it before public release. Source-only enrichment has separate ownership.
-    // dead-code reason: internal conversion losses remain beside the source report
-    #[allow(dead_code)]
     pub conversion: DiseaseConversionReport,
 }
 #[derive(Debug, Clone, Default)]
 pub struct DiseaseConversionReport {
-    // dead-code reason: internal presentation losses do not change public response fields
-    #[allow(dead_code)]
     pub losses: Vec<(&'static str, &'static str)>,
 }
 #[derive(Debug)]
@@ -118,10 +114,8 @@ pub(crate) fn optional_failure(error: &BioMcpError) -> bool {
     match error {
         BioMcpError::WithSourceContext { source, .. } => optional_failure(source),
         BioMcpError::NotFound { .. } => true,
-        BioMcpError::Http(error)
-        | BioMcpError::HttpMiddleware(reqwest_middleware::Error::Reqwest(error)) => {
-            error.is_connect() || (error.is_timeout() && !error.is_body() && !error.is_decode())
-        }
+        BioMcpError::Http(error) => unavailable_transport(error),
+        BioMcpError::HttpMiddleware(error) => unavailable_middleware(error),
         _ => false,
     }
 }
@@ -140,5 +134,32 @@ impl<'de> Deserialize<'de> for MyDiseaseQueryResponse {
         let value = serde_json::Value::deserialize(deserializer)?;
         let bytes = serde_json::to_vec(&value).map_err(serde::de::Error::custom)?;
         decode_search(&bytes).map_err(serde::de::Error::custom)
+    }
+}
+
+fn unavailable_transport(error: &reqwest::Error) -> bool {
+    error.is_connect()
+        || (error.is_timeout()
+            && error.status().is_none()
+            && !error.is_body()
+            && !error.is_decode())
+}
+
+fn unavailable_middleware(error: &reqwest_middleware::Error) -> bool {
+    match error {
+        reqwest_middleware::Error::Reqwest(error) => unavailable_transport(error),
+        reqwest_middleware::Error::Middleware(error) => {
+            if let Some(retry) = error.downcast_ref::<reqwest_retry::RetryError>() {
+                match retry {
+                    reqwest_retry::RetryError::WithRetries { err, .. }
+                    | reqwest_retry::RetryError::Error(err) => unavailable_middleware(err),
+                }
+            } else {
+                error
+                    .chain()
+                    .filter_map(|cause| cause.downcast_ref::<reqwest::Error>())
+                    .any(unavailable_transport)
+            }
+        }
     }
 }

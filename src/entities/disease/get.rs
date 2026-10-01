@@ -222,6 +222,7 @@ pub(crate) async fn get_with_context(
     let identity = hit.row.clone();
     let mut conversion = hit.conversion.clone();
     let mut disease = transform::disease::from_mydisease_hit(hit);
+    disease.parents = resolve_parent_names(&client, &disease.parents).await?;
     if let Err(err) = enrich_sparse_disease_identity(&mut disease).await {
         warn!("OLS4 unavailable for sparse disease identity repair: {err}");
     }
@@ -233,7 +234,6 @@ pub(crate) async fn get_with_context(
             .losses
             .push(("name", "requested-term display fallback; not a source name"));
     }
-    disease.parents = resolve_parent_names(&client, &disease.parents).await?;
     if !parsed_sections.explicit {
         enrich_base_context(&mut disease).await;
     }

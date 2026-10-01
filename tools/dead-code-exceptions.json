@@ -644,15 +644,6 @@
       "removal_condition": "Remove when `pub fn get_request_plan(&self, id: &str) -> Result<MyDiseaseGetRequestPlan, BioMcpError> {` is used by every compiled target or deleted."
     },
     {
-      "path": "src/sources/mydisease.rs",
-      "scope": "item",
-      "item": "pub total: usize,",
-      "occurrence": 1,
-      "owner": "source-contracts",
-      "reason": "mydisease::total preserves the provider shape used by source contract fixtures",
-      "removal_condition": "Remove when `pub total: usize,` is used by every compiled target or deleted."
-    },
-    {
       "path": "src/sources/ncbi_idconv.rs",
       "scope": "item",
       "item": "pub status: Option<String>,",
@@ -1146,6 +1137,33 @@
       "owner": "gene-consumer",
       "reason": "get transcript and protein shapes retain source-only validation",
       "removal_condition": "Remove when this source-custody member is consumed by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/disease/get.rs",
+      "scope": "item",
+      "item": "pub(crate) conversion: crate::sources::mydisease::projection::DiseaseConversionReport,",
+      "occurrence": 1,
+      "owner": "biodata-0221",
+      "reason": "presentation losses are internal, not public response fields",
+      "removal_condition": "Replace temporary presentation custody with direct accepted disease-document presentation before public release under ticket 0221."
+    },
+    {
+      "path": "src/entities/disease/get.rs",
+      "scope": "item",
+      "item": "pub(crate) identity: biodata::MyDiseaseRow,",
+      "occurrence": 1,
+      "owner": "biodata-0221",
+      "reason": "identity custody and loss stay beside assembly until public rendering",
+      "removal_condition": "Replace temporary presentation custody with direct accepted disease-document presentation before public release under ticket 0221."
+    },
+    {
+      "path": "src/sources/mydisease/projection.rs",
+      "scope": "item",
+      "item": "pub page: Arc<MyDiseasePage>,",
+      "occurrence": 1,
+      "owner": "biodata-0221",
+      "reason": "retained original response custody until product assembly",
+      "removal_condition": "Replace temporary presentation custody with direct accepted disease-document presentation before public release under ticket 0221."
     }
   ]
 }
