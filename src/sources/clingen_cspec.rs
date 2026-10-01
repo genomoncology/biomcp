@@ -82,6 +82,7 @@ impl CspecClient {
         request: Duration,
     ) -> Result<Self, BioMcpError> {
         let client = reqwest::Client::builder()
+            .no_proxy()
             .connect_timeout(connect)
             .timeout(request)
             .redirect(reqwest::redirect::Policy::limited(10))

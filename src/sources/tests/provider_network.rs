@@ -1,3 +1,6 @@
+#[path = "provider_network/publication.rs"]
+mod publication;
+
 use std::collections::BTreeMap;
 use std::sync::{
     Arc, Mutex,
@@ -7,8 +10,7 @@ use std::sync::{
 use super::super::{
     RequestBuilderSourceContextExt, SharedHttpClientKind, VariantArticleDeadline,
     build_http_client_with_config_and_manager, build_http_client_with_config_deadline,
-    build_uncached_http_client, finish_cached_http_client, provider_url_policy,
-    with_variant_article_deadline,
+    build_uncached_http_client, provider_url_policy, with_variant_article_deadline,
 };
 use crate::test_support::TempDirGuard;
 use axum::{
@@ -406,82 +408,7 @@ async fn accept_with_timeout(listener: &tokio::net::TcpListener) -> bool {
 
 #[tokio::test(start_paused = true)]
 async fn middleware_put_settles_after_publication_before_releasing_key_lock() {
-    let root = TempDirGuard::new("middleware-put-publication");
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let address = listener.local_addr().unwrap();
-    let origin = reqwest::Url::parse(&format!("http://{address}")).unwrap();
-    let policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
-        provider_url_policy::ProviderUrlConsumer::GithubRelease,
-        &origin,
-    )
-    .unwrap();
-    let armed = Arc::new(tokio::sync::Notify::new());
-    let release = Arc::new(tokio::sync::Notify::new());
-    let manager = crate::cache::SizeAwareCacheManager::new(
-        root.path().join("http"),
-        super::test_cache_config(root.path()),
-    )
-    .unwrap()
-    .with_safe_return_observer({
-        let (armed, release) = (Arc::clone(&armed), Arc::clone(&release));
-        move || {
-            let (armed, release) = (Arc::clone(&armed), Arc::clone(&release));
-            async move {
-                armed.notify_one();
-                release.notified().await
-            }
-        }
-    });
-    let client =
-        finish_cached_http_client(SharedHttpClientKind::Default, Some(&policy), manager).unwrap();
-    let server = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.unwrap();
-        let mut request = [0; 1024];
-        let _ = stream.read(&mut request).await.unwrap();
-        stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nCache-Control: public, max-age=60\r\nConnection: close\r\n\r\nok").await.unwrap();
-    });
-    let deadline = VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
-    let driving = Arc::new(AtomicBool::new(true));
-    let driver = tokio::spawn({
-        let driving = Arc::clone(&driving);
-        async move {
-            while driving.load(Ordering::SeqCst) {
-                tokio::task::yield_now().await
-            }
-        }
-    });
-    let request = with_variant_article_deadline(deadline.clone(), async {
-        client
-            .get(origin)
-            .send_with_source_context(crate::error::SourceContext::narrow(
-                crate::error::SourceProvider::OLS4,
-            ))
-            .await
-    });
-    tokio::pin!(request);
-    tokio::select! {
-        () = armed.notified() => {}
-        result = &mut request => panic!("settled before publication pause: {result:?}"),
-    }
-    driving.store(false, Ordering::SeqCst);
-    driver.await.unwrap();
-    tokio::time::advance(std::time::Duration::from_secs(11)).await;
-    assert!(deadline.is_exhausted());
-    assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
-            .unwrap()
-            .is_none()
-    );
-    assert!(deadline.run(std::future::pending::<()>()).await.is_err());
-    release.notify_one();
-    let result = request.await;
-    assert!(result.is_ok(), "post-arm request must settle: {result:?}");
-    assert!(
-        crate::cache::try_lock_cache_maintenance(root.path())
-            .unwrap()
-            .is_some()
-    );
-    server.await.unwrap();
+    publication::middleware_put_settles_after_publication_before_releasing_key_lock().await;
 }
 
 #[tokio::test(start_paused = true)]
@@ -589,42 +516,65 @@ async fn cached_test_client(
     let put_count = Arc::clone(&puts);
     let fault = Arc::clone(&armed);
     let delay = Arc::clone(&after_put_delay_ms);
+    let make_manager = |path, config| {
+        let (get_count, put_count, fault, delay) = (
+            Arc::clone(&get_count),
+            Arc::clone(&put_count),
+            Arc::clone(&fault),
+            Arc::clone(&delay),
+        );
+        let mut manager = crate::cache::SizeAwareCacheManager::new_with_cache_observers(
+            path,
+            config,
+            move |_, _| {
+                get_count.fetch_add(1, Ordering::SeqCst);
+            },
+            move |path, key| {
+                put_count.fetch_add(1, Ordering::SeqCst);
+                std::thread::sleep(std::time::Duration::from_millis(
+                    delay.load(Ordering::SeqCst),
+                ));
+                if fault.swap(false, Ordering::SeqCst) {
+                    assert!(cacache::metadata_sync(path, key).unwrap().is_some());
+                    cacache::remove_sync(path, key).unwrap();
+                }
+            },
+        );
+        if let Some((publication_armed, publication_release)) = safe_return_pause.clone() {
+            manager = manager.with_safe_return_observer(move || {
+                let publication_armed = Arc::clone(&publication_armed);
+                let publication_release = Arc::clone(&publication_release);
+                async move {
+                    publication_armed.notify_one();
+                    publication_release.notified().await;
+                }
+            });
+        }
+        Ok(manager)
+    };
     let client = build_http_client_with_config_and_manager(
         SharedHttpClientKind::Default,
         super::test_cache_config(root.path()),
         None,
-        move |path, config| {
-            let mut manager = crate::cache::SizeAwareCacheManager::new_with_cache_observers(
-                path,
-                config,
-                move |_, _| {
-                    get_count.fetch_add(1, Ordering::SeqCst);
-                },
-                move |path, key| {
-                    put_count.fetch_add(1, Ordering::SeqCst);
-                    std::thread::sleep(std::time::Duration::from_millis(
-                        delay.load(Ordering::SeqCst),
-                    ));
-                    if fault.swap(false, Ordering::SeqCst) {
-                        assert!(cacache::metadata_sync(path, key).unwrap().is_some());
-                        cacache::remove_sync(path, key).unwrap();
-                    }
-                },
-            );
-            if let Some((publication_armed, publication_release)) = safe_return_pause.clone() {
-                manager = manager.with_safe_return_observer(move || {
-                    let publication_armed = Arc::clone(&publication_armed);
-                    let publication_release = Arc::clone(&publication_release);
-                    async move {
-                        publication_armed.notify_one();
-                        publication_release.notified().await;
-                    }
-                });
-            }
-            Ok(manager)
-        },
+        &make_manager,
     )
     .unwrap();
+    let client = if safe_return_pause.is_some() {
+        let manager = make_manager(
+            root.path().join("http"),
+            super::test_cache_config(root.path()),
+        )
+        .unwrap();
+        crate::sources::finish_cached_http_client_with_limiter(
+            SharedHttpClientKind::Default,
+            None,
+            manager,
+            crate::sources::rate_limit::RateLimitMiddleware::isolated_for_test,
+        )
+        .unwrap()
+    } else {
+        client
+    };
     (
         client,
         format!("{base}/resource"),

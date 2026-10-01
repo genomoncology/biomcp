@@ -59,7 +59,8 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
     assert found == Counter(
         {
             "src/sources/fhir.rs": 1,
-            "src/sources/mod.rs": 3,
+            "src/sources/mod.rs": 2,
+            "src/sources/tests/body_failure.rs": 1,
             "src/sources/ca_bundle.rs": 3,
             "src/sources/ordinary_url_policy.rs": 3,
             "src/sources/clingen_cspec.rs": 1,

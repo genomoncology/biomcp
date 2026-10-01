@@ -1,3 +1,4 @@
+mod deadlines;
 mod parsing;
 
 use super::*;
@@ -24,7 +25,7 @@ struct ResponseSpec {
     status: StatusCode,
     content_type: &'static str,
     body: Vec<u8>,
-    delay: Duration,
+    blocked: bool,
 }
 
 impl ResponseSpec {
@@ -33,7 +34,7 @@ impl ResponseSpec {
             status: StatusCode::OK,
             content_type: "application/json",
             body: body.to_vec(),
-            delay: Duration::ZERO,
+            blocked: false,
         }
     }
 
@@ -42,12 +43,12 @@ impl ResponseSpec {
             status: StatusCode::OK,
             content_type: "text/csv",
             body: body.to_vec(),
-            delay: Duration::ZERO,
+            blocked: false,
         }
     }
 
-    fn delayed(mut self, delay: Duration) -> Self {
-        self.delay = delay;
+    fn blocked(mut self) -> Self {
+        self.blocked = true;
         self
     }
 
@@ -56,7 +57,7 @@ impl ResponseSpec {
             status: StatusCode::BAD_GATEWAY,
             content_type: "text/plain",
             body: body.to_vec(),
-            delay: Duration::ZERO,
+            blocked: false,
         }
     }
 }
@@ -66,12 +67,14 @@ struct FixtureState {
     responses: Arc<HashMap<String, ResponseSpec>>,
     requests: Arc<Mutex<Vec<(String, Instant)>>>,
     barrier: Option<Arc<Barrier>>,
+    blocked_started: Arc<tokio::sync::Notify>,
 }
 
 struct Fixture {
     base: String,
     requests: Arc<Mutex<Vec<(String, Instant)>>>,
     server: tokio::task::JoinHandle<()>,
+    blocked_started: Arc<tokio::sync::Notify>,
 }
 
 impl Fixture {
@@ -81,7 +84,9 @@ impl Fixture {
             .expect("bind ClinGen fixture");
         let address = listener.local_addr().expect("ClinGen fixture address");
         let requests = Arc::new(Mutex::new(Vec::new()));
+        let blocked_started = Arc::new(tokio::sync::Notify::new());
         let state = FixtureState {
+            blocked_started: Arc::clone(&blocked_started),
             responses: Arc::new(responses),
             requests: Arc::clone(&requests),
             barrier: synchronize_starts.then(|| Arc::new(Barrier::new(3))),
@@ -96,6 +101,7 @@ impl Fixture {
             base: format!("http://{address}"),
             requests,
             server,
+            blocked_started,
         }
     }
 
@@ -147,7 +153,10 @@ async fn handle(State(state): State<FixtureState>, uri: Uri) -> Response<Body> {
     if let Some(barrier) = state.barrier {
         barrier.wait().await;
     }
-    tokio::time::sleep(spec.delay).await; // watchdog: fixture serves on a programmed bounded delay
+    if spec.blocked {
+        state.blocked_started.notify_one();
+        std::future::pending::<()>().await;
+    }
     Response::builder()
         .status(spec.status)
         .header("content-type", spec.content_type)
@@ -214,22 +223,15 @@ async fn operations_start_concurrently_and_share_one_lookup() {
     assert!(started.elapsed() < Duration::from_millis(500));
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn dosage_timeout_preserves_completed_validity() {
     let mut responses = captured_responses();
     responses.insert(
         DOSAGE_PATH.to_string(),
-        responses[DOSAGE_PATH]
-            .clone()
-            .delayed(Duration::from_millis(200)),
+        responses[DOSAGE_PATH].clone().blocked(),
     );
     let fixture = Fixture::start(responses, false).await;
-    let started = Instant::now();
-    let context = fixture
-        .client()
-        .gene_context("TP53", Duration::from_millis(40))
-        .await
-        .expect("partial ClinGen context");
+    let context = fixture.timeout_context("TP53").await;
 
     assert_eq!(context.validity.len(), 1);
     assert_eq!(context.validity_status.status, ClinGenFamilyState::Data);
@@ -238,7 +240,6 @@ async fn dosage_timeout_preserves_completed_validity() {
         context.dosage_status.message.as_deref(),
         Some(DOSAGE_TIMEOUT_MESSAGE)
     );
-    assert!(started.elapsed() < Duration::from_millis(150));
     assert_exact_routes(&fixture.paths());
 }
 
@@ -325,28 +326,22 @@ async fn failed_lookup_preserves_symbol_data_but_does_not_confirm_zero_match() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn timed_out_lookup_preserves_symbol_data_but_marks_zero_match_timed_out() {
     let mut responses = captured_responses();
     responses.insert(
         LOOKUP_PATH.to_string(),
-        responses[LOOKUP_PATH]
-            .clone()
-            .delayed(Duration::from_millis(200)),
+        responses[LOOKUP_PATH].clone().blocked(),
     );
     let fixture = Fixture::start(responses, false).await;
-    let context = fixture
-        .client()
-        .gene_context("TP53", Duration::from_millis(40))
-        .await
-        .expect("symbol fallback context");
+    let context = fixture.timeout_context("TP53").await;
     assert_eq!(context.validity_status.status, ClinGenFamilyState::Data);
     assert_eq!(context.dosage_status.status, ClinGenFamilyState::Data);
 
     let responses = HashMap::from([
         (
             "/api/genes/look/NRAS".to_string(),
-            ResponseSpec::ok_json(b"[]").delayed(Duration::from_millis(200)),
+            ResponseSpec::ok_json(b"[]").blocked(),
         ),
         (
             VALIDITY_PATH.to_string(),
@@ -358,11 +353,7 @@ async fn timed_out_lookup_preserves_symbol_data_but_marks_zero_match_timed_out()
         ),
     ]);
     let fixture = Fixture::start(responses, false).await;
-    let context = fixture
-        .client()
-        .gene_context("NRAS", Duration::from_millis(40))
-        .await
-        .expect("inconclusive context");
+    let context = fixture.timeout_context("NRAS").await;
     assert_eq!(context.validity_status.status, ClinGenFamilyState::TimedOut);
     assert_eq!(context.validity_status.op, ClinGenOperation::GeneLookup);
     assert_eq!(

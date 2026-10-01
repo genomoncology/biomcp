@@ -317,6 +317,14 @@ impl RateLimitMiddleware {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn isolated_for_test() -> Self {
+        Self {
+            limiter: Arc::new(RateLimiter::from_env()),
+            provider_pool: false,
+        }
+    }
+
     pub(crate) fn provider_pool() -> Self {
         Self {
             limiter: global_limiter(),
@@ -399,7 +407,7 @@ mod tests {
         // Test-only loopback transport: keeping policy middleware out of this
         // fixture isolates the execution permit's downstream ownership. The
         // exact constructor is inventoried by the network-policy contract.
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder().no_proxy().build().unwrap();
         let execution = Arc::new(
             crate::entities::article::variant_search::VariantArticleExecutionContext::single(),
         );

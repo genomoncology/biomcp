@@ -416,11 +416,11 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2804,
+      "baseline_lines": 2790,
       "floor_lines": 1847,
       "authorized_increase": {
         "ticket": "biodata-0203",
-        "delta": 957,
+        "delta": 943,
         "reason": "The dedicated FHIR helper retains the shared TLS trust-failure strategy; main adds the plain-send trust-failure early return beside its error-chain extraction. Ticket 0203 review must accept the combined growth.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
@@ -462,17 +462,6 @@
         "delta": 44,
         "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
         "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
-      }
-    },
-    {
-      "path": "src/sources/tests/provider_network.rs",
-      "baseline_lines": 1006,
-      "floor_lines": 994,
-      "authorized_increase": {
-        "ticket": "1221+1261",
-        "delta": 12,
-        "reason": "The cache-mode table takes the shared CacheMode type (ticket 1261).",
-        "removal_condition": "Return to a single fetch helper when the FDA orphan cache and client fixtures are consolidated."
       }
     },
     {
