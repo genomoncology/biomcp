@@ -302,3 +302,5 @@ async fn adopted_alias_cache_and_downstream_table() {
 }
 
 mod surfaces;
+
+mod absence;
