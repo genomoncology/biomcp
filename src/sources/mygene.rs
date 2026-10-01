@@ -543,6 +543,26 @@ mod tests {
                 Some("7")
             );
             assert_eq!(hit.row().source().ordinal(), 0);
+            let aliases = ["B-RAF1", "B-raf", "BRAF-1", "BRAF1", "NS7", "RAFB1"];
+            assert_eq!(
+                hit.row().source().alias(),
+                &biodata::MyGeneField::Value(aliases.map(str::to_owned).to_vec())
+            );
+            assert_eq!(hit.aliases(), aliases);
+            let (gene, report) = crate::transform::gene::from_mygene_get(&hit);
+            assert_eq!(gene.aliases, ["B-RAF1", "BRAF1", "NS7", "RAFB1"]);
+            assert_eq!(
+                report
+                    .losses
+                    .iter()
+                    .filter(|(field, _)| *field == "alias")
+                    .copied()
+                    .collect::<Vec<_>>(),
+                [
+                    ("alias", "lowercase alias omitted from display"),
+                    ("alias", "number-suffix alias omitted from display"),
+                ]
+            );
             for (bytes, symbol, ncbi) in [
                 (fixture!("get_braf_20260811.json").as_slice(), "BRAF", "673"),
                 (
@@ -567,6 +587,22 @@ mod tests {
                 assert!(record.conversion.ensembl_display.is_some());
                 assert!(record.row().identity().qualified().is_none());
                 assert_eq!(record.row().source().ordinal(), 0);
+                if symbol == "FLT3" {
+                    assert_eq!(
+                        record.row().source().hgnc(),
+                        &biodata::MyGeneField::Value(vec!["3765".to_owned()])
+                    );
+                    assert_eq!(record.row().source().hgnc_was_number(), [false]);
+                    assert_eq!(record.code("HGNC"), Some("3765"));
+                    assert_eq!(record.hgnc_ids().unwrap(), ["HGNC:3765"]);
+                    assert_eq!(
+                        record.conversion.losses,
+                        [(
+                            "HGNC",
+                            "source lexical form changed or inconclusive for join"
+                        )]
+                    );
+                }
             }
         }
 
