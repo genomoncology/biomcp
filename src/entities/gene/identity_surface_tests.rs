@@ -36,6 +36,38 @@ async fn cli_raw_typed_gene_identity_table() {
         .map(PathBuf::from)
         .unwrap_or_else(|| root.join("target/debug/biomcp"));
     let harness = ContractHarness::new(binary, root);
+    let filtering = decode_search(br#"{"total":51,"hits":[
+        {"symbol":"OTHER","name":"First","entrezgene":1,"type_of_gene":"pseudo","genomic_pos":{"chr":"7","start":1,"end":9}},
+        {"symbol":"BRAF","name":"Second","entrezgene":673,"type_of_gene":"protein-coding","genomic_pos":{"chr":"7","start":10,"end":20}},
+        {"symbol":"LAST","name":"Third","entrezgene":3,"type_of_gene":"protein-coding","genomic_pos":{"chr":"8","start":10,"end":20}}
+    ]}"#).unwrap();
+    assert_eq!(filtering.total, 51);
+    assert_eq!(
+        filtering
+            .hits
+            .iter()
+            .map(|hit| hit.symbol().unwrap())
+            .collect::<Vec<_>>(),
+        ["OTHER", "BRAF", "LAST"]
+    );
+    let filtered = super::filtered_gene_results(
+        &filtering.hits,
+        Some("protein-coding"),
+        Some("7"),
+        Some(&("7".into(), 15, 25)),
+    );
+    assert_eq!(
+        filtered
+            .iter()
+            .map(|row| row.symbol.as_str())
+            .collect::<Vec<_>>(),
+        ["BRAF"]
+    );
+    assert_eq!(
+        filtered[0].genomic_coordinates.as_ref().unwrap().coordinate,
+        "7:10-20"
+    );
+    assert_eq!(filtering.total, 51);
     for case in controls::cases() {
         // Internal custody checks cover the same original page as all public routes.
         let parsed = biodata::parse_mygene_query(&case.bytes, biodata::MyGeneProfile::Get);
@@ -80,17 +112,32 @@ async fn cli_raw_typed_gene_identity_table() {
             let record = get.unwrap();
             use biodata::MyGeneField;
             match case.label {
-                "missing name" => assert!(matches!(record.row().source().name(), MyGeneField::Missing)),
+                "missing name" => {
+                    assert!(matches!(record.row().source().name(), MyGeneField::Missing))
+                }
                 "null name" => assert!(matches!(record.row().source().name(), MyGeneField::Null)),
                 "blank name" => assert!(matches!(record.row().source().name(), MyGeneField::Blank)),
-                "null id" => assert!(matches!(record.row().source().provider_id(), MyGeneField::Null)),
-                "HGNC equivalent" => assert_eq!(record.row().source().hgnc_was_number(), [false, false, true]),
+                "null id" => assert!(matches!(
+                    record.row().source().provider_id(),
+                    MyGeneField::Null
+                )),
+                "scalar alias" => {
+                    assert!(record.row().source().alias_was_scalar());
+                    assert_eq!(record.aliases(), ["SOURCEALIAS"]);
+                    assert_eq!(record.code("NCBI Gene"), Some("673"));
+                }
+                "HGNC equivalent" => assert_eq!(
+                    record.row().source().hgnc_was_number(),
+                    [false, false, true]
+                ),
                 _ => {}
             }
             if ["missing name", "null name", "blank name"].contains(&case.label) {
                 assert_eq!(crate::transform::gene::from_mygene_get(&record).0.name, "");
             }
-            if case.label == "null id" { assert_eq!(record.code("NCBI Gene"), None); }
+            if case.label == "null id" {
+                assert_eq!(record.code("NCBI Gene"), None);
+            }
             if case.label == "E10 heterogeneous" {
                 assert!(record.row().source().raw().contains("T1"));
                 assert!(record.row().source().raw().contains("P2"));

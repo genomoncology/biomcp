@@ -266,6 +266,15 @@ pub fn cases() -> Vec<Case> {
         });
     }
     cases.push(Case {
+        label: "scalar alias",
+        bytes:
+            br#"{ "total":1, "hits":[{"symbol":"BRAF","alias":"SOURCEALIAS","entrezgene":"673"}]}"#
+                .to_vec(),
+        get_error: None,
+        search_error: false,
+        display: None,
+    });
+    cases.push(Case {
         label: "limit",
         bytes: vec![b' '; 1_048_577],
         get_error: Some("Limit"),

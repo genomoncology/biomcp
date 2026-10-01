@@ -1139,7 +1139,13 @@ fn gene_identity_error_table() {
                     ("RUST_LOG", "off,reqwest_retry=error"),
                 ],
             );
-            assert!(result.stderr.is_empty(), "{}: {} {}", case.label, result.stdout, result.stderr);
+            assert!(
+                result.stderr.is_empty(),
+                "{}: {} {}",
+                case.label,
+                result.stdout,
+                result.stderr
+            );
             assert_json_error(
                 &result,
                 1,

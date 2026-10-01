@@ -543,6 +543,31 @@ mod tests {
                 Some("7")
             );
             assert_eq!(hit.row().source().ordinal(), 0);
+            for (bytes, symbol, ncbi) in [
+                (fixture!("get_braf_20260811.json").as_slice(), "BRAF", "673"),
+                (
+                    fixture!("get_brca1_20260811.json").as_slice(),
+                    "BRCA1",
+                    "672",
+                ),
+                (
+                    fixture!("get_egfr_20260811.json").as_slice(),
+                    "EGFR",
+                    "1956",
+                ),
+                (
+                    fixture!("get_flt3_20260918.json").as_slice(),
+                    "FLT3",
+                    "2322",
+                ),
+            ] {
+                let record = decode_get(bytes, symbol).unwrap();
+                assert_eq!(record.symbol(), Some(symbol));
+                assert_eq!(record.code("NCBI Gene"), Some(ncbi));
+                assert!(record.conversion.ensembl_display.is_some());
+                assert!(record.row().identity().qualified().is_none());
+                assert_eq!(record.row().source().ordinal(), 0);
+            }
         }
 
         #[test]

@@ -328,8 +328,14 @@ mod tests {
         assert_eq!(gene.entrez_id, "1956");
         assert_eq!(gene.uniprot_id.as_deref(), Some("P00533"));
         assert_eq!(gene.location.as_deref(), Some("7"));
-        assert_eq!(gene.genomic_coordinates.as_ref().unwrap().coordinate, "7:55086714-55275875 (strand: 1)");
-        assert_eq!(gene.genomic_coordinates.as_ref().unwrap().genome_build, "GRCh38");
+        assert_eq!(
+            gene.genomic_coordinates.as_ref().unwrap().coordinate,
+            "7:55086714-55275875 (strand: 1)"
+        );
+        assert_eq!(
+            gene.genomic_coordinates.as_ref().unwrap().genome_build,
+            "GRCh38"
+        );
         assert_eq!(gene.summary.as_deref(), Some("Receptor tyrosine kinase."));
         assert_eq!(gene.pathways.as_ref().unwrap()[0].id, "hsa04012");
     }
@@ -375,9 +381,21 @@ mod tests {
         assert!(resp.row().identity().qualified().is_none());
         assert_eq!(report.ensembl_display, gene.ensembl_id);
         assert_eq!(gene.symbol, "TP53");
-        assert_eq!(resp.aliases(), vec!["P53", "BCC7", "Trp53", "LFS1", "TP53-1", "FOUR", "FIVE", "SIX"]);
+        assert_eq!(
+            resp.aliases(),
+            vec![
+                "P53", "BCC7", "Trp53", "LFS1", "TP53-1", "FOUR", "FIVE", "SIX"
+            ]
+        );
         assert_eq!(gene.aliases, vec!["P53", "BCC7", "LFS1", "FOUR", "FIVE"]);
-        assert_eq!(report.losses.iter().filter(|(field, _)| *field == "alias").count(), 3);
+        assert_eq!(
+            report
+                .losses
+                .iter()
+                .filter(|(field, _)| *field == "alias")
+                .count(),
+            3
+        );
         assert_eq!(gene.uniprot_id.as_deref(), Some("P04637"));
     }
 }
