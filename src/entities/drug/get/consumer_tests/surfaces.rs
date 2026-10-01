@@ -121,6 +121,7 @@ async fn cli_and_raw_typed_mcp_drug_table() {
                             .with_arguments(input["arguments"].as_object().unwrap().clone()),
                     )
                     .await;
+                client.cancel().await.unwrap();
                 match result {
                     Ok(result) => {
                         let wanted = &expected["mcp_result"];
@@ -145,7 +146,6 @@ async fn cli_and_raw_typed_mcp_drug_table() {
                         );
                     }
                 }
-                client.cancel().await.unwrap();
                 fixture.assert_requests(&case["id"]);
             }
         })
