@@ -102,6 +102,15 @@ pub(super) fn build_trial_aliases(
     canonical_name: Option<&str>,
     candidates: &[TrialAlias],
 ) -> Vec<TrialAlias> {
+    build_trial_aliases_with_report(requested_name, canonical_name, candidates, |_, _, _, _| {})
+}
+
+fn build_trial_aliases_with_report(
+    requested_name: &str,
+    canonical_name: Option<&str>,
+    candidates: &[TrialAlias],
+    mut report: impl FnMut(usize, &'static str, &'static str, Option<String>),
+) -> Vec<TrialAlias> {
     let mut aliases = Vec::new();
     let mut seen = HashSet::new();
 
@@ -127,26 +136,61 @@ pub(super) fn build_trial_aliases(
     ] {
         let mut source_candidates = candidates
             .iter()
-            .filter(|candidate| candidate.source == source)
-            .filter(|candidate| {
-                source == TrialAliasSource::OpenFdaBrand
-                    || eligible_drugbank_trial_alias(candidate.label.trim())
+            .enumerate()
+            .filter(|(_, candidate)| candidate.source == source)
+            .filter(|(index, candidate)| {
+                let eligible = source == TrialAliasSource::OpenFdaBrand
+                    || eligible_drugbank_trial_alias(candidate.label.trim());
+                if !eligible {
+                    report(
+                        *index,
+                        "exclude",
+                        if has_free_base_descriptor(candidate.label.trim()) {
+                            "free-base descriptor"
+                        } else {
+                            "source alias fails simple-name or investigational-code eligibility"
+                        },
+                        None,
+                    );
+                }
+                eligible
             })
             .collect::<Vec<_>>();
-        source_candidates.sort_by(|left, right| {
+        source_candidates.sort_by(|(_, left), (_, right)| {
             left.label
                 .trim()
                 .to_ascii_lowercase()
                 .cmp(&right.label.trim().to_ascii_lowercase())
                 .then_with(|| left.label.trim().cmp(right.label.trim()))
         });
-        for candidate in source_candidates {
+        for (index, candidate) in source_candidates {
             if provider_aliases >= 3 {
-                break;
+                report(
+                    index,
+                    "omit_unvisited_alias_cap",
+                    "three newly inserted provider aliases reached before candidate deduplication",
+                    None,
+                );
+                continue;
             }
             let previous_len = aliases.len();
             push_trial_alias(&mut aliases, &mut seen, &candidate.label, candidate.source);
-            provider_aliases += usize::from(aliases.len() > previous_len);
+            let inserted = aliases.len() > previous_len;
+            report(
+                index,
+                if inserted {
+                    "select"
+                } else {
+                    "trim_and_deduplicate"
+                },
+                if inserted {
+                    "source-priority eligibility and lexical tie-break"
+                } else {
+                    "trimmed case-insensitive candidate already inserted"
+                },
+                inserted.then(|| candidate.label.trim().to_owned()),
+            );
+            provider_aliases += usize::from(inserted);
         }
     }
 
@@ -225,19 +269,31 @@ pub(super) async fn optional_lookup(
 pub(super) async fn resolve_trial_alias_resolution(
     name: &str,
 ) -> Result<TrialAliasResolution, BioMcpError> {
-    resolve_trial_alias_resolution_with_lookup(name, async {
-        resolve_drug_base(name.trim(), false, false)
-            .await
-            .map(|resolved| TrialAliasLookup {
+    resolve_trial_alias_resolution_with_custody(name, async {
+        let resolved = resolve_drug_base(name.trim(), false, false).await?;
+        Ok((
+            TrialAliasLookup {
                 canonical_name: resolved.drug.name,
                 candidates: resolved.trial_alias_candidates,
-            })
+            },
+            resolved.selected_hits,
+        ))
     })
     .await
 }
 pub(super) async fn resolve_trial_alias_resolution_with_lookup(
     name: &str,
     lookup: impl std::future::Future<Output = Result<TrialAliasLookup, BioMcpError>>,
+) -> Result<TrialAliasResolution, BioMcpError> {
+    resolve_trial_alias_resolution_with_custody(name, async {
+        lookup.await.map(|value| (value, Vec::new()))
+    })
+    .await
+}
+
+pub(super) async fn resolve_trial_alias_resolution_with_custody(
+    name: &str,
+    lookup: impl std::future::Future<Output = Result<(TrialAliasLookup, Vec<MyChemHit>), BioMcpError>>,
 ) -> Result<TrialAliasResolution, BioMcpError> {
     let requested_name = name.trim();
     if requested_name.is_empty() {
@@ -260,8 +316,44 @@ pub(super) async fn resolve_trial_alias_resolution_with_lookup(
         return Ok(resolution);
     }
 
-    let (resolution, cacheable) =
-        trial_alias_resolution_from_lookup_result(requested_name, lookup.await)?;
+    let (resolution, cacheable) = match lookup.await {
+        Ok((resolved, hits)) => {
+            let mut used = HashSet::new();
+            let origins = resolved.candidates.iter().map(|candidate| {
+                hits.iter().enumerate().find_map(|(hit_index, hit)| {
+                    hit.row.identity().claims().iter().enumerate().find_map(|(index, claim)| {
+                        let wanted = match candidate.source { TrialAliasSource::OpenFdaBrand => ("openfda", "brand_name"), TrialAliasSource::DrugBankSynonym => ("drugbank", "synonyms"), _ => return None };
+                        let same = (claim.origin().section(), claim.origin().field()) == wanted && matches!(claim.value(), biodata::DrugClaimValue::Term(term) if term.text() == candidate.label);
+                        (same && used.insert((hit_index, index))).then_some((hit_index, index))
+                    })
+                })
+            }).collect::<Vec<_>>();
+            let aliases = build_trial_aliases_with_report(
+                requested_name,
+                Some(&resolved.canonical_name),
+                &resolved.candidates,
+                |index, action, reason, target| {
+                    if let Some((hit_index, claim_index)) = origins[index] {
+                        hits[hit_index].record(
+                            Some(claim_index),
+                            "alias eligibility and insertion",
+                            action,
+                            reason,
+                            target,
+                        );
+                    }
+                },
+            );
+            (
+                TrialAliasResolution {
+                    canonical_name: resolved.canonical_name,
+                    aliases,
+                },
+                true,
+            )
+        }
+        Err(error) => trial_alias_resolution_from_lookup_result(requested_name, Err(error))?,
+    };
 
     if cacheable {
         let mut cache = crate::utils::sync::recover_poison(trial_alias_cache().lock());

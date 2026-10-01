@@ -51,6 +51,8 @@ impl Drop for TestEnv {
 
 pub(crate) enum TestHttpReply {
     Bytes(Vec<u8>),
+    /// Observe the release of the final response byte, before a client can finish parsing.
+    BytesWithRelease(Vec<u8>, Box<dyn FnOnce() + Send>),
 }
 
 pub(crate) struct TestHttpFixture {
@@ -76,8 +78,19 @@ impl TestHttpFixture {
                     let mut request = vec![0_u8; 16 * 1024];
                     let length = stream.read(&mut request).await.unwrap_or(0);
                     let request = String::from_utf8_lossy(&request[..length]);
-                    let TestHttpReply::Bytes(response) = handler(&request);
-                    let _ = stream.write_all(&response).await;
+                    match handler(&request) {
+                        TestHttpReply::Bytes(response) => {
+                            let _ = stream.write_all(&response).await;
+                        }
+                        TestHttpReply::BytesWithRelease(response, released) => {
+                            if let Some((last, first)) = response.split_last() {
+                                if stream.write_all(first).await.is_ok() {
+                                    released();
+                                    let _ = stream.write_all(&[*last]).await;
+                                }
+                            }
+                        }
+                    }
                 });
             }
         });

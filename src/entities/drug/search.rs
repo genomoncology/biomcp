@@ -145,7 +145,69 @@ fn ema_identity_from_mychem_hits(query: &str, hits: &[MyChemHit]) -> Option<EmaD
             );
         }
     }
-    Some(EmaDrugIdentity::for_search(query, terms))
+    let mut used = HashSet::new();
+    let origins = terms.iter().map(|(value, source)| {
+        hits.iter().enumerate().filter(|(_, hit)| hit_matches_ema_query(hit, &normalized_query)).find_map(|(hit_index, hit)| {
+            hit.row.identity().claims().iter().enumerate().find_map(|(index, claim)| {
+                let wanted = format!("{}.{}", claim.origin().section(), claim.origin().field());
+                let same = wanted == source.as_str() && matches!(claim.value(), biodata::DrugClaimValue::Term(term) if term.text().trim().trim_matches('.').split_whitespace().collect::<Vec<_>>().join(" ") == *value);
+                (same && used.insert((hit_index, index))).then_some((hit_index, index))
+            })
+        })
+    }).collect::<Vec<_>>();
+    for hit in hits {
+        if !hit_matches_ema_query(hit, &normalized_query) {
+            hit.record_claims(
+                "EMA identity",
+                "exclude_alias_row",
+                "no allowed source field exactly matches query",
+            );
+            continue;
+        }
+        for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+            if matches!(claim.value(), biodata::DrugClaimValue::Term(_))
+                && !used.contains(&(
+                    hits.iter()
+                        .position(|candidate| std::ptr::eq(candidate, hit))
+                        .unwrap_or(usize::MAX),
+                    index,
+                ))
+            {
+                hit.record(
+                    Some(index),
+                    "EMA identity",
+                    "exclude_ema_field",
+                    "source field excluded from EMA allowed identity fields",
+                    None,
+                );
+            }
+        }
+    }
+    Some(EmaDrugIdentity::for_search_with_report(
+        query,
+        terms,
+        |index, inserted, text| {
+            if let Some(Some((hit_index, claim_index))) =
+                index.checked_sub(1).and_then(|index| origins.get(index))
+            {
+                hits[*hit_index].record(
+                    Some(*claim_index),
+                    "EMA identity",
+                    if inserted { "select" } else { "deduplicate" },
+                    if inserted {
+                        "allowed source field contributes EMA identity"
+                    } else {
+                        "normalized identity term already inserted"
+                    },
+                    if inserted {
+                        text.map(str::to_owned)
+                    } else {
+                        None
+                    },
+                );
+            }
+        },
+    ))
 }
 
 fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {

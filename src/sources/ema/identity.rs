@@ -82,14 +82,37 @@ impl EmaDrugIdentity {
         terms: impl IntoIterator<Item = (String, EmaIdentitySource)>,
         clean: impl Fn(&str) -> Option<String>,
     ) -> Self {
+        Self::from_terms_with_report(terms, clean, |_, _, _| {})
+    }
+
+    pub(crate) fn for_search_with_report(
+        primary: &str,
+        terms: Vec<(String, EmaIdentitySource)>,
+        report: impl FnMut(usize, bool, Option<&str>),
+    ) -> Self {
+        Self::from_terms_with_report(
+            std::iter::once((primary.to_string(), EmaIdentitySource::Query)).chain(terms),
+            clean_search_identity_text,
+            report,
+        )
+    }
+
+    fn from_terms_with_report(
+        terms: impl IntoIterator<Item = (String, EmaIdentitySource)>,
+        clean: impl Fn(&str) -> Option<String>,
+        mut report: impl FnMut(usize, bool, Option<&str>),
+    ) -> Self {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
-        for (term, source) in terms {
+        for (index, (term, source)) in terms.into_iter().enumerate() {
             let Some(text) = clean(&term) else {
+                report(index, false, None);
                 continue;
             };
             let normalized = text.to_ascii_lowercase();
-            if seen.insert(normalized.clone()) {
+            let inserted = seen.insert(normalized.clone());
+            report(index, inserted, Some(&text));
+            if inserted {
                 out.push(EmaIdentityTerm {
                     text,
                     normalized,

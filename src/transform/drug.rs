@@ -302,6 +302,7 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
     let mut out: Vec<&MyChemHit> = hits
         .iter()
         .filter(|h| {
+            record_match_candidates(h);
             hit_all_names(h)
                 .iter()
                 .any(|n| name_matches_requested(n, &target))
@@ -385,6 +386,14 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         .unwrap_or_else(|| normalize_name(requested_name));
     if let Some(hit) = hits.iter().find(|hit| best_name_from_hit(hit).is_some()) {
         record_display(hit, &name, "get merge");
+    } else if let Some(hit) = hits.first() {
+        hit.record(
+            None,
+            "get merge",
+            "requested_name_fallback",
+            "no supplied name",
+            Some(name.clone()),
+        );
     }
     let mut drugbank_id: Option<String> = None;
     let mut chembl_id: Option<String> = None;
@@ -415,6 +424,26 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut approval_date: Option<String> = None;
 
     for (hit_index, hit) in hits.iter().enumerate() {
+        if Some(hit_index) != anchor_index {
+            for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+                if matches!(claim.value(), biodata::DrugClaimValue::Term(_)) {
+                    let synonym = claim.origin().section() == "drugbank"
+                        && claim.origin().field() == "synonyms";
+                    hit.record(
+                        Some(index),
+                        "get merge",
+                        if synonym { "exclude" } else { "omit_display" },
+                        if synonym {
+                            "combination hit is not the named anchor"
+                        } else {
+                            "anchor already selected"
+                        },
+                        None,
+                    );
+                }
+            }
+        }
+
         if let Some(chembl) = &hit.chembl {
             for index in 0..chembl.atc_classifications.clone().into_vec().len() {
                 hit.record_source(&format!("/chembl/atc_classifications/{index}"), "enrichment", "omit_get_atc", "ATC remains source-only; Get profile does not request it and no merged Drug field consumes it", None);

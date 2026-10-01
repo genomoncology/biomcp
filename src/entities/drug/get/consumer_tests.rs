@@ -14,6 +14,7 @@ pub(crate) struct CaseHttp {
     requests: Arc<Mutex<Vec<String>>>,
     expected: Vec<Value>,
     order: Option<Value>,
+    events: Arc<Mutex<Vec<(usize, &'static str)>>>,
 }
 impl CaseHttp {
     pub(crate) async fn new(case: &Value) -> Self {
@@ -50,6 +51,8 @@ impl CaseHttp {
         let consumed = Mutex::new(vec![false; responses.len()]);
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = requests.clone();
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let captured_events = events.clone();
         let fixture = TestHttpFixture::spawn(move |request| {
             let mut captured = captured.lock().unwrap();
             captured.push(request.to_owned());
@@ -57,6 +60,9 @@ impl CaseHttp {
             let index = plans.iter().enumerate().position(|(index, plan)| {
                 !consumed.get(index).copied().unwrap_or(true) && request_matches(request, plan)
             });
+            if let Some(index) = index {
+                captured_events.lock().unwrap().push((index, "request"));
+            }
             let Some(response) = index.and_then(|index| {
                 consumed[index] = true;
                 responses.get(index)
@@ -69,11 +75,21 @@ impl CaseHttp {
             };
             let bytes =
                 std::fs::read(root().join(response["body"]["path"].as_str().unwrap())).unwrap();
-            TestHttpReply::Bytes(test_http_response(
-                &format!("{} Fixture", response["status"]),
-                response["content_type"].as_str().unwrap(),
-                &bytes,
-            ))
+            let events = captured_events.clone();
+            let index = index.unwrap();
+            TestHttpReply::BytesWithRelease(
+                test_http_response(
+                    &format!("{} Fixture", response["status"]),
+                    response["content_type"].as_str().unwrap(),
+                    &bytes,
+                ),
+                Box::new(move || {
+                    events
+                        .lock()
+                        .unwrap()
+                        .push((index, "response_final_byte_release"))
+                }),
+            )
         })
         .await;
         Self {
@@ -81,6 +97,7 @@ impl CaseHttp {
             requests,
             expected,
             order: case.get("request_order_contract").cloned(),
+            events,
         }
     }
     pub(crate) fn environment(&self, env: &mut TestEnv, cache: &std::path::Path) {
@@ -139,6 +156,19 @@ impl CaseHttp {
                 assert!(
                     positions[before] < positions[after],
                     "{id}: causal edge {edge}"
+                );
+                let events = self.events.lock().unwrap();
+                let release = events
+                    .iter()
+                    .position(|event| *event == (before, "response_final_byte_release"))
+                    .unwrap();
+                let request = events
+                    .iter()
+                    .position(|event| *event == (after, "request"))
+                    .unwrap();
+                assert!(
+                    release < request,
+                    "{id}: complete prerequisite response before dependent request: {events:?}"
                 );
             }
             assert_eq!(

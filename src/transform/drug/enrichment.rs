@@ -334,3 +334,29 @@ pub(super) fn moa_class_occurrences(hit: &MyChemHit) -> Vec<(String, String)> {
         })
         .collect()
 }
+
+pub(super) fn record_match_candidates(hit: &MyChemHit) {
+    let mut fields = HashSet::new();
+    for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+        let biodata::DrugClaimValue::Term(term) = claim.value() else {
+            continue;
+        };
+        let field = (claim.origin().section(), claim.origin().field());
+        let selected = field == ("drugbank", "synonyms") || fields.insert(field);
+        hit.record(
+            Some(index),
+            "get name matching",
+            if selected {
+                "include_match_candidate"
+            } else {
+                "omit_match_candidate"
+            },
+            if selected {
+                "retained first accessor or DrugBank synonym participates in name matching"
+            } else {
+                "later accessor occurrence does not participate in name matching"
+            },
+            selected.then(|| normalize_name(term.text())),
+        );
+    }
+}
