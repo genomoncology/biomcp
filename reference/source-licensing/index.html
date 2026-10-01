@@ -3586,6 +3586,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#cell-model-passports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell Model Passports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#depmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DepMap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cellosaurus" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5349,6 +5371,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#cell-model-passports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cell Model Passports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#depmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DepMap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cellosaurus" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6267,6 +6311,24 @@ specific capture requires a separate source-by-source rights record.</p>
 <td><a href="https://www.cbioportal.org/">https://www.cbioportal.org/</a></td>
 </tr>
 <tr>
+<td>Cell Model Passports</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>Wellcome Sanger Institute portal data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line</td>
+<td>BioMCP shows the identifier through a Cellosaurus cross-reference only; users who follow it use the portal under its policy</td>
+<td><a href="https://cellmodelpassports.sanger.ac.uk/">https://cellmodelpassports.sanger.ac.uk/</a></td>
+</tr>
+<tr>
+<td>DepMap</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, some restricted datasets require a signed agreement)</td>
+<td>BioMCP shows the identifier through a Cellosaurus cross-reference only; no DepMap bytes enter BioMCP output beyond the identifier</td>
+<td><a href="https://depmap.org/portal/">https://depmap.org/portal/</a></td>
+</tr>
+<tr>
 <td>CDC CVX/MVX</td>
 <td>1</td>
 <td>direct_api</td>
@@ -7012,6 +7074,30 @@ Reviewed on: <code>2026-09-27</code></li>
 <li><code>AlphaFold DB</code> and <code>PDB</code> are indirect-only because BioMCP currently surfaces those structure IDs via <code>UniProt</code> cross-references rather than maintaining standalone source clients.</li>
 <li><code>COSMIC</code> is indirect-only provenance through <code>MyVariant.info</code>. Direct COSMIC integration is not part of BioMCP's supported source surface because the provider's licensing model creates unacceptable redistribution and deployment risk for an MIT-licensed open tool.</li>
 </ul>
+<h3 id="cell-model-passports">Cell Model Passports<a class="headerlink" href="#cell-model-passports" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get cell-line &lt;CVCL_xxxx&gt; xrefs</code> (identifier only, through Cellosaurus)</li>
+<li>Integration mode: <code>indirect_only</code> via Cellosaurus</li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: public portal</li>
+<li>License / terms summary: Wellcome Sanger Institute Cell Model Passports data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line</li>
+<li>Redistribution / reuse summary: BioMCP shows the identifier only; users who follow it to the portal use the portal under its policy</li>
+<li>Official terms URL: <a href="https://cellmodelpassports.sanger.ac.uk/">https://cellmodelpassports.sanger.ac.uk/</a></li>
+<li>Reviewed on: <code>2026-09-30</code></li>
+<li>Notes: Identifier-only entry (2026-09-30): BioMCP fetches no portal data.</li>
+</ul>
+<h3 id="depmap">DepMap<a class="headerlink" href="#depmap" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get cell-line &lt;CVCL_xxxx&gt; xrefs</code> (identifier only, through Cellosaurus)</li>
+<li>Integration mode: <code>indirect_only</code> via Cellosaurus</li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: public portal</li>
+<li>License / terms summary: Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, some restricted datasets require a signed agreement)</li>
+<li>Redistribution / reuse summary: BioMCP shows the identifier only; no DepMap bytes enter BioMCP output beyond the identifier</li>
+<li>Official terms URL: <a href="https://depmap.org/portal/">https://depmap.org/portal/</a></li>
+<li>Reviewed on: <code>2026-09-30</code></li>
+<li>Notes: Identifier-only entry (2026-09-30): the 2026-09-27 decision stands — restricted DepMap bytes are never rehosted in this public repository.</li>
+</ul>
 <h3 id="cellosaurus">Cellosaurus<a class="headerlink" href="#cellosaurus" title="Permanent link">&para;</a></h3>
 <ul>
 <li>BioMCP surfaces: <code>search cell-line &lt;name&gt;; get cell-line &lt;id&gt;; get cell-line &lt;id&gt; xrefs; get cell-line &lt;id&gt; variants</code></li>
@@ -7026,7 +7112,7 @@ Reviewed on: <code>2026-09-27</code></li>
 </ul>
 <h3 id="chembl">ChEMBL<a class="headerlink" href="#chembl" title="Permanent link">&para;</a></h3>
 <ul>
-<li>BioMCP surfaces: <code>get drug &lt;name&gt; targets; get drug &lt;name&gt; indications</code></li>
+<li>BioMCP surfaces: <code>get drug &lt;name&gt; targets; get drug &lt;name&gt; indications; get cell-line &lt;id&gt; chembl</code></li>
 <li>Integration mode: <code>direct_api</code></li>
 <li>BioMCP auth: <code>none</code></li>
 <li>Provider access / registration: open public API</li>
