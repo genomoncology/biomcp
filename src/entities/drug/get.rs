@@ -282,6 +282,9 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
         return SparseDrugDiscoverRescue::None;
     };
 
+    classify_sparse_drug_rescue(&result)
+}
+fn classify_sparse_drug_rescue(result: &crate::entities::discover::DiscoverResult) -> SparseDrugDiscoverRescue {
     let Some(top) = result.concepts.first() else {
         return SparseDrugDiscoverRescue::None;
     };
@@ -535,6 +538,16 @@ async fn optional_lookup(
 }
 
 async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResolution, BioMcpError> {
+    resolve_trial_alias_resolution_with_lookup(name, async {
+        resolve_drug_base(name.trim(), false, false).await.map(|resolved| TrialAliasLookup {
+            canonical_name: resolved.drug.name, candidates: resolved.trial_alias_candidates,
+        })
+    }).await
+}
+async fn resolve_trial_alias_resolution_with_lookup(
+    name: &str,
+    lookup: impl std::future::Future<Output = Result<TrialAliasLookup, BioMcpError>>,
+) -> Result<TrialAliasResolution, BioMcpError> {
     let requested_name = name.trim();
     if requested_name.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -556,14 +569,8 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
         return Ok(resolution);
     }
 
-    let lookup = resolve_drug_base(requested_name, false, false)
-        .await
-        .map(|resolved| TrialAliasLookup {
-            canonical_name: resolved.drug.name,
-            candidates: resolved.trial_alias_candidates,
-        });
     let (resolution, cacheable) =
-        trial_alias_resolution_from_lookup_result(requested_name, lookup)?;
+        trial_alias_resolution_from_lookup_result(requested_name, lookup.await)?;
 
     if cacheable {
         let mut cache = crate::utils::sync::recover_poison(trial_alias_cache().lock());
@@ -596,6 +603,12 @@ pub(super) async fn resolve_drug_base(
     name: &str,
     fetch_label_response: bool,
     label_required: bool,
+) -> Result<ResolvedDrugBase, BioMcpError> {
+    resolve_drug_base_with_discover(name, fetch_label_response, label_required, discover_sparse_drug_rescue(name)).await
+}
+async fn resolve_drug_base_with_discover(
+    name: &str, fetch_label_response: bool, label_required: bool,
+    discover: impl std::future::Future<Output = SparseDrugDiscoverRescue>,
 ) -> Result<ResolvedDrugBase, BioMcpError> {
     let name = name.trim();
     if name.is_empty() {
@@ -681,7 +694,7 @@ pub(super) async fn resolve_drug_base(
     }
 
     if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
-        match discover_sparse_drug_rescue(name).await {
+        match discover.await {
             SparseDrugDiscoverRescue::Canonical(candidate) => {
                 if let Some(fallback_resp) = optional_lookup(&candidate).await?
                     && !fallback_resp.hits.is_empty()
@@ -1125,3 +1138,6 @@ pub fn get(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod consumer_tests;
