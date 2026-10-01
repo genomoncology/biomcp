@@ -143,14 +143,11 @@ async fn resolve_accessions(names: &[String]) -> (Vec<Option<String>>, Vec<Strin
 async fn resolve_ensembl_id(symbol: &str) -> Result<(String, String), BioMcpError> {
     let hit = MyGeneClient::new()?.get(symbol, false).await?;
     let resolved = hit
-        .symbol
-        .clone()
-        .unwrap_or_else(|| symbol.trim().to_string());
+        .symbol()
+        .unwrap_or(symbol.trim()).to_owned();
     let ensembl_id = hit
-        .ensembl
-        .as_ref()
-        .and_then(|field| field.gene())
-        .map(String::to_string)
+        .conversion.ensembl_display
+        .clone()
         .ok_or_else(|| {
             BioMcpError::InvalidArgument(format!(
                 "`{resolved}` has no Ensembl gene ID, and HPA cell line expression is keyed by it"

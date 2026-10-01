@@ -22,6 +22,8 @@ class FocusedSelection:
 
 
 FORBIDDEN_FRAGMENTS = (
+    "::live::",
+    "live_cli_",
     "live_provider",
     "live-provider",
     "provider_smoke",
@@ -34,6 +36,11 @@ FORBIDDEN_FRAGMENTS = (
     "deployment",
     "release",
 )
+INTEGRATION_SELECTORS = {
+    "json_mode_gene_not_found_error_writes_json_stdout_and_exit_1",
+    "mygene_fixture_without_request_stops_on_drop",
+    "gene_identity_error_table",
+}
 CREDENTIAL_ASSERTION_SELECTORS = {
     "entities::trial::search::plan_tests::clients_execute_exact_biodata_pairs_and_only_nci_adds_a_credential",
     "sources::tests::request_plan_transport::biodata_nci_search_keeps_one_logical_value_and_adds_one_credential",
@@ -76,7 +83,7 @@ def load_selection(path: Path) -> FocusedSelection:
             raise SelectionError(f"forbidden focused selector: {selector}")
         if "credential" in lowered and selector not in CREDENTIAL_ASSERTION_SELECTORS:
             raise SelectionError(f"credential-bearing focused selector: {selector}")
-    if any("::" not in selector for selector in selection.rust):
+    if any("::" not in selector and selector not in INTEGRATION_SELECTORS for selector in selection.rust):
         raise SelectionError("Rust selectors must name one exact test")
     for selector in selection.python:
         path_part = selector.split("::", 1)[0]

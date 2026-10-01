@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, is_valid_gene_symbol, request_from_plan};
-use crate::utils::serde::StringOrVec;
+mod projection;
+pub use projection::{GeneConversionReport,MyGeneRecord, MyGeneSearchResponse};
+pub(crate) use projection::{decode_get, decode_search};
 
 const MYGENE_BASE: &str = "https://mygene.info/v3";
 const MYGENE_BASE_ENV: &str = "BIOMCP_MYGENE_BASE";
@@ -47,10 +49,10 @@ impl MyGeneClient {
         Ok(())
     }
 
-    async fn get_json<T: DeserializeOwned>(
+    async fn acquire_bytes(
         &self,
         req: reqwest_middleware::RequestBuilder,
-    ) -> Result<T, BioMcpError> {
+    ) -> Result<Vec<u8>, BioMcpError> {
         let resp = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::MYGENE,
@@ -63,12 +65,27 @@ impl MyGeneClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::MYGENE),
         )
         .await?;
+        let context = crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE);
+        if !status.is_success() {
+            return Err(BioMcpError::Api {
+                api: context.provider().label().into(),
+                message: format!("HTTP {status}: {}", crate::sources::body_excerpt(&bytes)),
+            }.with_source_context(context));
+        }
+        crate::sources::ensure_json_content_type(context, content_type.as_ref(), &bytes)?;
+        Ok(bytes.to_vec())
+    }
+
+    async fn get_json<T: DeserializeOwned>(
+        &self,
+        req: reqwest_middleware::RequestBuilder,
+    ) -> Result<T, BioMcpError> {
+        let bytes = self.acquire_bytes(req).await?;
         crate::sources::decode_json(
             crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
-            status,
-            content_type.as_ref(),
-            &bytes,
-            true,
+            reqwest::StatusCode::OK,
+            Some(&reqwest::header::HeaderValue::from_static("application/json")),
+            &bytes, true,
         )
     }
 
@@ -107,7 +124,7 @@ impl MyGeneClient {
     ) -> Result<MyGeneSearchResponse, BioMcpError> {
         let plan = Self::search_plan(query, limit, offset, chromosome)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        self.get_json(req).await
+        decode_search(&self.acquire_bytes(req).await?)
     }
 
     /// Build the outbound single-gene query request (pure — Tier-2 testable).
@@ -151,27 +168,17 @@ impl MyGeneClient {
         &self,
         symbol: &str,
         include_transcripts: bool,
-    ) -> Result<MyGeneGetResponse, BioMcpError> {
+    ) -> Result<MyGeneRecord, BioMcpError> {
         let symbol = symbol.trim();
         let plan = Self::get_plan(symbol, include_transcripts)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let query_resp: MyGeneGetQueryResponse = self.get_json(req).await?;
-
-        query_resp
-            .hits
-            .into_iter()
-            .next()
-            .ok_or_else(|| BioMcpError::NotFound {
-                entity: "gene".into(),
-                id: symbol.into(),
-                suggestion: format!("Try searching: biomcp search gene -q {symbol}"),
-            })
+        decode_get(&self.acquire_bytes(req).await?, symbol)
     }
 
     pub async fn resolve_uniprot_accession(&self, symbol: &str) -> Result<String, BioMcpError> {
         let symbol = symbol.trim();
         let hit = self.get(symbol, false).await?;
-        hit.uniprot
+        hit.enrichment.uniprot
             .as_ref()
             .and_then(extract_uniprot_accession)
             .ok_or_else(|| BioMcpError::NotFound {
@@ -290,114 +297,6 @@ pub(crate) fn extract_uniprot_accession(value: &serde_json::Value) -> Option<Str
     first_string_value(value)
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyGeneSearchResponse {
-    // dead-code reason: mygene::total preserves the provider shape used by source contract fixtures
-    #[allow(dead_code)]
-    pub total: usize,
-    pub hits: Vec<MyGeneHit>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyGeneGetQueryResponse {
-    // dead-code reason: mygene::total preserves the provider shape used by source contract fixtures
-    #[allow(dead_code)]
-    pub total: usize,
-    pub hits: Vec<MyGeneGetResponse>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyGeneHit {
-    pub symbol: Option<String>,
-    pub name: Option<String>,
-    pub entrezgene: Option<StringOrU64>,
-    #[serde(default)]
-    pub alias: StringOrVec,
-    pub type_of_gene: Option<String>,
-    pub genomic_pos: Option<GenomicPosField>,
-    #[serde(rename = "MIM")]
-    pub mim: Option<serde_json::Value>,
-    pub uniprot: Option<serde_json::Value>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyGeneGetResponse {
-    pub symbol: Option<String>,
-    pub name: Option<String>,
-    pub entrezgene: Option<StringOrU64>,
-    pub summary: Option<String>,
-    #[serde(default)]
-    pub alias: StringOrVec,
-    pub type_of_gene: Option<String>,
-    pub ensembl: Option<EnsemblField>,
-    pub genomic_pos: Option<GenomicPosField>,
-    #[serde(rename = "MIM")]
-    pub mim: Option<serde_json::Value>,
-    pub uniprot: Option<serde_json::Value>,
-    pub pathway: Option<serde_json::Value>,
-    #[serde(rename = "HGNC")]
-    pub hgnc: Option<serde_json::Value>,
-}
-
-impl MyGeneGetResponse {
-    /// Decode MyGene's documented HGNC annotation while tolerating its observed
-    /// identifier scalar/flat-array wire union. Any malformed or conflicting
-    /// supplied value makes identity inconclusive.
-    pub(crate) fn hgnc_ids(&self) -> Result<Vec<String>, ()> {
-        fn parse_one(value: &serde_json::Value) -> Result<String, ()> {
-            let digits = match value {
-                serde_json::Value::String(value) => {
-                    let value = value.trim();
-                    let value = if value
-                        .get(..5)
-                        .is_some_and(|prefix| prefix.eq_ignore_ascii_case("HGNC:"))
-                    {
-                        value.get(5..).ok_or(())?
-                    } else {
-                        value
-                    };
-                    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
-                        return Err(());
-                    }
-                    value
-                }
-                serde_json::Value::Number(value) if value.as_u64().is_some() => {
-                    return u32::try_from(value.as_u64().ok_or(())?)
-                        .ok()
-                        .filter(|value| *value > 0)
-                        .map(|value| format!("HGNC:{value}"))
-                        .ok_or(());
-                }
-                _ => return Err(()),
-            };
-            let value = digits
-                .parse::<u32>()
-                .ok()
-                .filter(|value| *value > 0)
-                .ok_or(())?;
-            Ok(format!("HGNC:{value}"))
-        }
-
-        let Some(value) = &self.hgnc else {
-            return Ok(Vec::new());
-        };
-        let values: Vec<&serde_json::Value> = match value {
-            serde_json::Value::Null => return Ok(Vec::new()),
-            serde_json::Value::Array(values) if values.is_empty() => return Ok(Vec::new()),
-            serde_json::Value::Array(values) => values.iter().collect(),
-            value => vec![value],
-        };
-        let mut result = Vec::new();
-        for value in values {
-            let normalized = parse_one(value)?;
-            if !result.contains(&normalized) {
-                result.push(normalized);
-            }
-        }
-        Ok(result)
-    }
-}
-
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct MyGeneBatchGeneHit {
     query: Option<StringOrU64>,
@@ -419,33 +318,6 @@ impl StringOrU64 {
             StringOrU64::String(s) => s.clone(),
             StringOrU64::Number(n) => n.to_string(),
         }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct EnsemblInfo {
-    pub gene: Option<String>,
-    pub protein: Option<Vec<String>>,
-    pub transcript: Option<Vec<String>>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum EnsemblField {
-    Single(EnsemblInfo),
-    Multiple(Vec<EnsemblInfo>),
-}
-
-impl EnsemblField {
-    fn first(&self) -> Option<&EnsemblInfo> {
-        match self {
-            EnsemblField::Single(v) => Some(v),
-            EnsemblField::Multiple(v) => v.first(),
-        }
-    }
-
-    pub fn gene(&self) -> Option<&String> {
-        self.first().and_then(|v| v.gene.as_ref())
     }
 }
 
@@ -623,8 +495,7 @@ mod tests {
 
         use crate::sources::decode_json;
         use crate::sources::mygene::{
-            MyGeneBatchGeneHit, MyGeneClient, MyGeneGetQueryResponse, MyGeneGetResponse,
-            MyGeneSearchResponse, extract_uniprot_accession,
+            MyGeneBatchGeneHit, MyGeneClient, decode_get, decode_search, extract_uniprot_accession,
         };
         use reqwest::StatusCode;
         use reqwest::header::HeaderValue;
@@ -645,44 +516,19 @@ mod tests {
 
         #[test]
         fn parses_search_response_from_real_fixture() {
-            let resp: MyGeneSearchResponse = decode_json(
-                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
-                StatusCode::OK,
-                Some(&json_ct()),
-                fixture!("search_egfr.json"),
-                true,
-            )
-            .unwrap();
+            let resp = decode_search(fixture!("search_braf_20260811.json")).unwrap();
             assert!(!resp.hits.is_empty());
-            assert!(resp.hits[0].symbol.is_some());
+            assert!(resp.hits[0].symbol().is_some());
+            assert_eq!(resp.page.digest(), resp.hits[0].page().digest());
         }
 
         #[test]
         fn parses_get_response_fields_from_real_fixture() {
-            let resp: MyGeneGetQueryResponse = decode_json(
-                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
-                StatusCode::OK,
-                Some(&json_ct()),
-                fixture!("get_braf.json"),
-                true,
-            )
-            .unwrap();
-            let hit = resp.hits.into_iter().next().expect("a hit");
-            assert_eq!(hit.symbol.as_deref(), Some("BRAF"));
-            assert_eq!(
-                hit.ensembl
-                    .as_ref()
-                    .and_then(|e| e.gene())
-                    .map(String::as_str),
-                Some("ENSG00000157764")
-            );
-            assert_eq!(
-                hit.genomic_pos
-                    .as_ref()
-                    .and_then(|g| g.chr())
-                    .map(String::as_str),
-                Some("7")
-            );
+            let hit = decode_get(fixture!("get_braf_20260811.json"), "BRAF").unwrap();
+            assert_eq!(hit.symbol(), Some("BRAF"));
+            assert_eq!(hit.conversion.ensembl_display.as_deref(), Some("ENSG00000157764"));
+            assert_eq!(hit.enrichment.genomic_pos.as_ref().and_then(|pos| pos.chr()).map(String::as_str), Some("7"));
+            assert_eq!(hit.row().source().ordinal(), 0);
         }
 
         #[test]
@@ -690,47 +536,28 @@ mod tests {
             for (wire, expected) in [
                 (serde_json::json!("008109"), vec!["HGNC:8109"]),
                 (serde_json::json!(8109), vec!["HGNC:8109"]),
-                (
-                    serde_json::json!(["hgnc:8109", 8109, "HGNC:00042"]),
-                    vec!["HGNC:8109", "HGNC:42"],
-                ),
+                (serde_json::json!(["hgnc:8109", 8109, "HGNC:00042"]), vec!["HGNC:8109", "HGNC:42"]),
             ] {
-                let mut hit: MyGeneGetResponse =
-                    serde_json::from_value(serde_json::json!({})).unwrap();
-                hit.hgnc = Some(wire);
+                let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]})).unwrap();
+                let hit = decode_get(&bytes, "BRAF").unwrap();
                 assert_eq!(hit.hgnc_ids().unwrap(), expected);
+                assert!(hit.row().identity().qualified().is_none());
             }
-
-            for wire in [
-                serde_json::json!(0),
-                serde_json::json!(-1),
-                serde_json::json!(1.5),
-                serde_json::json!([8109, false]),
-                serde_json::json!([[8109]]),
-            ] {
-                let mut hit: MyGeneGetResponse =
-                    serde_json::from_value(serde_json::json!({})).unwrap();
-                hit.hgnc = Some(wire);
-                assert!(hit.hgnc_ids().is_err(), "wire should be inconclusive");
+            for wire in [serde_json::json!(0), serde_json::json!(-1), serde_json::json!(1.5), serde_json::json!([8109, false]), serde_json::json!([[8109]])] {
+                let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]})).unwrap();
+                assert!(decode_get(&bytes, "BRAF").is_err());
+            }
+            for wire in ["0", "4294967296", "invalid"] {
+                let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [{"symbol": "BRAF", "HGNC": wire}]})).unwrap();
+                assert!(decode_get(&bytes, "BRAF").unwrap().hgnc_ids().is_err());
             }
         }
 
         #[test]
         fn extract_uniprot_prefers_swiss_prot_from_real_fixture() {
-            let resp: MyGeneGetQueryResponse = decode_json(
-                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
-                StatusCode::OK,
-                Some(&json_ct()),
-                fixture!("get_braf.json"),
-                true,
-            )
-            .unwrap();
-            let hit = resp.hits.into_iter().next().expect("a hit");
-            let uniprot = hit.uniprot.as_ref().expect("real BRAF carries uniprot");
-            assert_eq!(
-                extract_uniprot_accession(uniprot).as_deref(),
-                Some("P15056")
-            );
+            let bytes = br#"{ "total":1,"hits":[{"symbol":"BRAF","uniprot":{"Swiss-Prot":"P15056","TrEMBL":"OTHER"}}]}"#;
+            let hit = decode_get(bytes, "BRAF").unwrap();
+            assert_eq!(extract_uniprot_accession(hit.enrichment.uniprot.as_ref().unwrap()).as_deref(), Some("P15056"));
         }
 
         #[test]
@@ -777,7 +604,7 @@ mod tests {
 
         #[test]
         fn decode_json_maps_http_error_status_with_excerpt() {
-            let err = decode_json::<MyGeneSearchResponse>(
+            let err = decode_json::<serde_json::Value>(
                 crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
                 StatusCode::INTERNAL_SERVER_ERROR,
                 None,
@@ -794,7 +621,7 @@ mod tests {
         #[test]
         fn decode_json_rejects_non_json_content_type() {
             let html = HeaderValue::from_static("text/html");
-            let err = decode_json::<MyGeneSearchResponse>(
+            let err = decode_json::<serde_json::Value>(
                 crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
                 StatusCode::OK,
                 Some(&html),

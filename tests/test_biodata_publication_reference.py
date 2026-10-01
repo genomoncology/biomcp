@@ -14,7 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 WEBSITE = ROOT / "website"
 GENERATOR = WEBSITE / "generate.py"
-EXPECTED_REVISION = "c9938b99bd091ab4bf6da8b909ed239826e5ab6d"
+EXPECTED_REVISION = "59fde6246c1a07ac115d6fc9f16471354a725bff"
 EXPECTED_BUNDLE_SHA256 = (
     "8edcaa628b092ff9120c9358d4c0bb1f6fac5dff4d5bf8926a40e0af9a5e3eb7"
 )

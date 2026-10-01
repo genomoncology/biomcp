@@ -32,7 +32,7 @@ use crate::sources::gnomad::{
 };
 use crate::sources::gtex::{GeneExpression, GtexClient};
 use crate::sources::hpa::{GeneHpa, HpaClient};
-use crate::sources::mygene::{MyGeneClient, MyGeneHit};
+use crate::sources::mygene::{MyGeneClient, MyGeneRecord};
 use crate::sources::nih_reporter::{NihReporterClient, NihReporterFundingSection};
 use crate::sources::opentargets::{
     OpenTargetsClient, OpenTargetsTargetClinicalContext, OpenTargetsTargetDruggabilityContext,
@@ -864,26 +864,23 @@ fn normalized_alias_key(value: &str) -> String {
     value.trim().to_ascii_uppercase()
 }
 
-fn matching_canonical_alias_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<String> {
+fn matching_canonical_alias_symbols(query: &str, hits: &[MyGeneRecord]) -> Vec<String> {
     let query = normalized_alias_key(query);
     let mut out = Vec::new();
     for hit in hits {
         let Some(symbol) = hit
-            .symbol
-            .as_deref()
+            .symbol()
             .map(str::trim)
             .filter(|value| !value.is_empty())
         else {
             continue;
         };
-        if hit.entrezgene.is_none() {
+        if hit.code("NCBI Gene").is_none() {
             continue;
         }
         let symbol_matches = normalized_alias_key(symbol) == query;
         let alias_matches = hit
-            .alias
-            .clone()
-            .into_vec()
+            .aliases()
             .iter()
             .any(|alias| normalized_alias_key(alias) == query);
         if (symbol_matches || alias_matches) && !out.iter().any(|existing| existing == symbol) {
@@ -899,19 +896,18 @@ pub(crate) struct CanonicalGeneAlias {
     pub(crate) entrez_id: String,
 }
 
-fn matching_canonical_aliases(query: &str, hits: &[MyGeneHit]) -> Vec<CanonicalGeneAlias> {
+fn matching_canonical_aliases(query: &str, hits: &[MyGeneRecord]) -> Vec<CanonicalGeneAlias> {
     let symbols = matching_canonical_alias_symbols(query, hits);
     symbols
         .into_iter()
         .filter_map(|symbol| {
             let hit = hits.iter().find(|hit| {
-                hit.symbol
-                    .as_deref()
+                hit.symbol()
                     .is_some_and(|value| value.eq_ignore_ascii_case(&symbol))
             })?;
             Some(CanonicalGeneAlias {
                 symbol,
-                entrez_id: hit.entrezgene.as_ref()?.as_string(),
+                entrez_id: hit.code("NCBI Gene")?.to_owned(),
             })
         })
         .collect()
@@ -2575,7 +2571,7 @@ pub async fn get_with_report(
         }
     };
     let hgnc = resp.hgnc_ids();
-    let mut gene = transform::gene::from_mygene_get(resp);
+    let (mut gene, _conversion_report) = transform::gene::from_mygene_get(&resp);
     let opentargets_id = preferred_opentargets_id(&gene, strategy).map(str::to_string);
 
     if use_parallel_top {
@@ -2945,20 +2941,20 @@ fn exact_search_needs_followup(total: usize, offset: usize) -> bool {
     total > MAX_SEARCH_LIMIT && offset > 0
 }
 fn gene_hit_matches_local_filters(
-    hit: &MyGeneHit,
+    hit: &MyGeneRecord,
     expected_gene_type: Option<&str>,
     expected_chr: Option<&str>,
     normalized_region: Option<&(String, i64, i64)>,
 ) -> bool {
     let type_ok = expected_gene_type.is_none_or(|expected| {
-        hit.type_of_gene
+        hit.enrichment.type_of_gene
             .as_deref()
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .is_some_and(|actual| actual.eq_ignore_ascii_case(expected))
     });
     let chr_ok = expected_chr.is_none_or(|expected| {
-        hit.genomic_pos
+        hit.enrichment.genomic_pos
             .as_ref()
             .and_then(|g| g.chr())
             .map(|v| v.trim_start_matches("chr").to_ascii_uppercase())
@@ -2966,7 +2962,7 @@ fn gene_hit_matches_local_filters(
             == Some(expected)
     });
     let region_ok = normalized_region.is_none_or(|(region_chr, start, end)| {
-        let Some(pos) = hit.genomic_pos.as_ref() else {
+        let Some(pos) = hit.enrichment.genomic_pos.as_ref() else {
             return false;
         };
         let Some(actual_chr) = pos.chr() else {
@@ -2984,7 +2980,7 @@ fn gene_hit_matches_local_filters(
     type_ok && chr_ok && region_ok
 }
 fn filtered_gene_results(
-    hits: &[MyGeneHit],
+    hits: &[MyGeneRecord],
     expected_gene_type: Option<&str>,
     expected_chr: Option<&str>,
     normalized_region: Option<&(String, i64, i64)>,
@@ -3372,20 +3368,13 @@ mod tests {
         assert_eq!(mygene_query_term("ERBB1"), "(symbol:ERBB1 OR alias:ERBB1)");
         assert_eq!(mygene_query_term("P53"), "(symbol:P53 OR alias:P53)");
     }
-    fn mygene_hit(symbol: &str, aliases: &[&str]) -> MyGeneHit {
-        MyGeneHit {
-            symbol: Some(symbol.to_string()),
-            name: Some(format!("{symbol} gene")),
-            entrezgene: Some(crate::sources::mygene::StringOrU64::Number(1)),
-            alias: crate::utils::serde::StringOrVec::Multiple(
-                aliases.iter().map(|alias| alias.to_string()).collect(),
-            ),
-            type_of_gene: Some("protein-coding".to_string()),
-            genomic_pos: None,
-            mim: None,
-            uniprot: None,
-        }
+    fn mygene_hit(symbol: &str, aliases: &[&str]) -> MyGeneRecord {
+        crate::sources::mygene::decode_search(&serde_json::to_vec(&serde_json::json!({
+            "total": 1, "hits": [{"symbol": symbol, "name": format!("{symbol} gene"),
+                "entrezgene": 1, "alias": aliases, "type_of_gene": "protein-coding"}]
+        })).unwrap()).unwrap().hits.remove(0)
     }
+
     #[test]
     fn canonical_alias_matches_cover_common_gene_aliases() {
         let hits = vec![
@@ -3869,3 +3858,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod identity_surface_tests;

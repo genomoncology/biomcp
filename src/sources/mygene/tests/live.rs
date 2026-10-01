@@ -16,8 +16,8 @@ fn client() -> MyGeneClient {
 #[ignore = "live network"]
 async fn live_get_braf_returns_symbol_and_ensembl() {
     let resp = client().get("BRAF", true).await.expect("live get BRAF");
-    assert_eq!(resp.symbol.as_deref(), Some("BRAF"));
-    assert!(resp.ensembl.and_then(|e| e.gene().cloned()).is_some());
+    assert_eq!(resp.symbol(), Some("BRAF"));
+    assert!(resp.conversion.ensembl_display.is_some());
 }
 
 #[tokio::test]

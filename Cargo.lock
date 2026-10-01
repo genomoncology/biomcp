@@ -293,8 +293,8 @@ dependencies = [
 
 [[package]]
 name = "biodata"
-version = "0.0.28"
-source = "git+https://github.com/genomoncology/biodata?rev=c9938b99bd091ab4bf6da8b909ed239826e5ab6d#c9938b99bd091ab4bf6da8b909ed239826e5ab6d"
+version = "0.0.36"
+source = "git+https://github.com/genomoncology/biodata?rev=59fde6246c1a07ac115d6fc9f16471354a725bff#59fde6246c1a07ac115d6fc9f16471354a725bff"
 dependencies = [
  "quick-xml",
  "serde",

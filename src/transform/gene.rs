@@ -1,6 +1,6 @@
 use crate::entities::gene::{GENE_OUTCOME_KEYS, Gene, GenePathway, GeneSearchResult};
 use crate::entities::section_outcome::SectionOutcomes;
-use crate::sources::mygene::{MyGeneGetResponse, MyGeneHit};
+use crate::sources::mygene::{MyGeneRecord};
 
 fn normalize_summary(summary: Option<String>) -> Option<String> {
     let summary = summary?;
@@ -133,9 +133,9 @@ fn extract_kegg_pathways(value: Option<&serde_json::Value>) -> Option<Vec<GenePa
 }
 
 fn format_genomic_coordinates(
-    resp: &MyGeneGetResponse,
+    resp: &MyGeneRecord,
 ) -> Option<crate::entities::GenomicCoordinate> {
-    let pos = resp.genomic_pos.as_ref()?;
+    let pos = resp.enrichment.genomic_pos.as_ref()?;
     let chr = pos.chr()?.trim();
     let start = pos.start()?;
     let end = pos.end()?;
@@ -151,29 +151,31 @@ fn format_genomic_coordinates(
     })
 }
 
-pub fn from_mygene_get(resp: MyGeneGetResponse) -> Gene {
+pub fn from_mygene_get(resp: &MyGeneRecord) -> (Gene, crate::sources::mygene::GeneConversionReport) {
     let genomic_coordinates = format_genomic_coordinates(&resp);
-    let omim_id = extract_omim_id(resp.mim.as_ref());
-    let uniprot_id = extract_uniprot_id(resp.uniprot.as_ref());
-    let pathways = extract_kegg_pathways(resp.pathway.as_ref());
-    let aliases = normalize_aliases(resp.alias.into_vec());
+    let omim_id = extract_omim_id(resp.enrichment.mim.as_ref());
+    let uniprot_id = extract_uniprot_id(resp.enrichment.uniprot.as_ref());
+    let pathways = extract_kegg_pathways(resp.enrichment.pathway.as_ref());
+    let source_aliases = resp.aliases();
+    let aliases = normalize_aliases(source_aliases.clone());
+    let mut report = resp.conversion.clone();
+    for alias in source_aliases.iter().filter(|alias| !aliases.contains(alias)) {
+        let reason = if alias.chars().any(|c| c.is_ascii_lowercase()) { "lowercase alias omitted from display" } else if alias.rsplit_once('-').is_some_and(|(_, tail)| !tail.is_empty() && tail.bytes().all(|b| b.is_ascii_digit())) { "number-suffix alias omitted from display" } else { "alias display capped at five" };
+        report.losses.push(("alias", reason));
+    }
 
-    Gene {
+    let gene = Gene {
         section_outcomes: SectionOutcomes::with_keys(GENE_OUTCOME_KEYS),
-        symbol: resp.symbol.unwrap_or_default(),
-        name: resp.name.unwrap_or_default(),
-        entrez_id: resp
-            .entrezgene
-            .as_ref()
-            .map(|n| n.as_string())
-            .unwrap_or_default(),
-        ensembl_id: resp.ensembl.as_ref().and_then(|e| e.gene()).cloned(),
-        location: resp.genomic_pos.as_ref().and_then(|g| g.chr()).cloned(),
+        symbol: resp.symbol().unwrap_or_default().to_owned(),
+        name: resp.name().unwrap_or_default().to_owned(),
+        entrez_id: resp.code("NCBI Gene").unwrap_or_default().to_owned(),
+        ensembl_id: resp.conversion.ensembl_display.clone(),
+        location: resp.enrichment.genomic_pos.as_ref().and_then(|g| g.chr()).cloned(),
         genomic_coordinates,
         omim_id,
         uniprot_id,
-        summary: normalize_summary(resp.summary),
-        gene_type: resp.type_of_gene,
+        summary: normalize_summary(resp.enrichment.summary.clone()),
+        gene_type: resp.enrichment.type_of_gene.clone(),
         aliases,
         clinical_diseases: Vec::new(),
         clinical_drugs: Vec::new(),
@@ -195,11 +197,12 @@ pub fn from_mygene_get(resp: MyGeneGetResponse) -> Gene {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
-    }
+    };
+    (gene, report)
 }
 
-pub fn from_mygene_hit(hit: &MyGeneHit) -> GeneSearchResult {
-    let genomic_coordinates = hit.genomic_pos.as_ref().and_then(|pos| {
+pub fn from_mygene_hit(hit: &MyGeneRecord) -> GeneSearchResult {
+    let genomic_coordinates = hit.enrichment.genomic_pos.as_ref().and_then(|pos| {
         let chr = pos.chr()?.trim();
         let start = pos.start()?;
         let end = pos.end()?;
@@ -215,23 +218,23 @@ pub fn from_mygene_hit(hit: &MyGeneHit) -> GeneSearchResult {
     });
 
     GeneSearchResult {
-        symbol: hit.symbol.clone().unwrap_or_default(),
-        name: hit.name.clone().unwrap_or_default(),
-        entrez_id: hit
-            .entrezgene
-            .as_ref()
-            .map(|n| n.as_string())
-            .unwrap_or_default(),
+        symbol: hit.symbol().unwrap_or_default().to_owned(),
+        name: hit.name().unwrap_or_default().to_owned(),
+        entrez_id: hit.code("NCBI Gene").unwrap_or_default().to_owned(),
         genomic_coordinates,
-        uniprot_id: extract_uniprot_id(hit.uniprot.as_ref()),
-        omim_id: extract_omim_id(hit.mim.as_ref()),
+        uniprot_id: extract_uniprot_id(hit.enrichment.uniprot.as_ref()),
+        omim_id: extract_omim_id(hit.enrichment.mim.as_ref()),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::serde::StringOrVec;
+    use crate::sources::mygene::decode_get;
+    fn projected(value: serde_json::Value) -> MyGeneRecord {
+        let symbol = value["symbol"].as_str().unwrap().to_owned();
+        decode_get(&serde_json::to_vec(&serde_json::json!({"total": 1, "hits": [value]})).unwrap(), &symbol).unwrap()
+    }
 
     #[test]
     fn normalize_summary_keeps_summary() {
@@ -269,16 +272,6 @@ mod tests {
     }
 
     #[test]
-    fn string_or_vec_into_vec() {
-        assert_eq!(StringOrVec::None.into_vec(), Vec::<String>::new());
-        assert_eq!(StringOrVec::Single("X".into()).into_vec(), vec!["X"]);
-        assert_eq!(
-            StringOrVec::Multiple(vec!["A".into(), "B".into()]).into_vec(),
-            vec!["A", "B"]
-        );
-    }
-
-    #[test]
     fn extract_kegg_pathways_handles_array() {
         let value = serde_json::json!({
             "kegg": [
@@ -294,7 +287,7 @@ mod tests {
 
     #[test]
     fn gene_sections_maps_egfr_fields() {
-        let resp: MyGeneGetResponse = serde_json::from_value(serde_json::json!({
+        let resp = projected(serde_json::json!({
             "symbol": "EGFR",
             "name": "epidermal growth factor receptor",
             "entrezgene": 1956,
@@ -305,10 +298,11 @@ mod tests {
             "MIM": "131550",
             "uniprot": {"Swiss-Prot": "P00533"},
             "pathway": {"kegg": [{"id": "hsa04012", "name": "ErbB signaling pathway"}]}
-        }))
-        .expect("valid MyGene response");
+        }));
 
-        let gene = from_mygene_get(resp);
+        let (gene, report) = from_mygene_get(&resp);
+        assert!(resp.row().identity().qualified().is_none());
+        assert_eq!(report.ensembl_display, gene.ensembl_id);
         assert_eq!(gene.symbol, "EGFR");
         assert_eq!(gene.entrez_id, "1956");
         assert_eq!(gene.uniprot_id.as_deref(), Some("P00533"));
@@ -317,7 +311,7 @@ mod tests {
 
     #[test]
     fn gene_sections_maps_brca1_fields() {
-        let resp: MyGeneGetResponse = serde_json::from_value(serde_json::json!({
+        let resp = projected(serde_json::json!({
             "symbol": "BRCA1",
             "name": "BRCA1 DNA repair associated",
             "entrezgene": 672,
@@ -327,10 +321,11 @@ mod tests {
             "genomic_pos": {"chr": "17", "start": 43044295, "end": 43125482, "strand": -1},
             "MIM": "113705",
             "uniprot": {"Swiss-Prot": "P38398"}
-        }))
-        .expect("valid MyGene response");
+        }));
 
-        let gene = from_mygene_get(resp);
+        let (gene, report) = from_mygene_get(&resp);
+        assert!(resp.row().identity().qualified().is_none());
+        assert_eq!(report.ensembl_display, gene.ensembl_id);
         assert_eq!(gene.symbol, "BRCA1");
         assert_eq!(gene.ensembl_id.as_deref(), Some("ENSG00000012048"));
         assert_eq!(gene.omim_id.as_deref(), Some("113705"));
@@ -339,7 +334,7 @@ mod tests {
 
     #[test]
     fn gene_sections_maps_tp53_fields() {
-        let resp: MyGeneGetResponse = serde_json::from_value(serde_json::json!({
+        let resp = projected(serde_json::json!({
             "symbol": "TP53",
             "name": "tumor protein p53",
             "entrezgene": 7157,
@@ -349,10 +344,11 @@ mod tests {
             "ensembl": {"gene": "ENSG00000141510"},
             "genomic_pos": {"chr": "17", "start": 7661779, "end": 7687550, "strand": -1},
             "uniprot": {"Swiss-Prot": "P04637"}
-        }))
-        .expect("valid MyGene response");
+        }));
 
-        let gene = from_mygene_get(resp);
+        let (gene, report) = from_mygene_get(&resp);
+        assert!(resp.row().identity().qualified().is_none());
+        assert_eq!(report.ensembl_display, gene.ensembl_id);
         assert_eq!(gene.symbol, "TP53");
         assert_eq!(gene.aliases, vec!["P53", "BCC7", "LFS1"]);
         assert_eq!(gene.uniprot_id.as_deref(), Some("P04637"));

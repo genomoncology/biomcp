@@ -68,7 +68,7 @@ def _load_mutation(tmp_path: Path, text: str) -> FocusedSelection:
 
 def test_manifest_is_the_only_focused_selection_source() -> None:
     selection = load_selection(MANIFEST)
-    assert len(selection.rust) == 119
+    assert len(selection.rust) == 175
     assert len(selection.python) == 15
     runner = RUNNER.read_text(encoding="utf-8")
     assert runner.count("biodata-1.0-focused.toml") == 1
@@ -176,6 +176,10 @@ def test_runner_uses_one_discovery_one_nextest_run_and_one_pytest(
     assert sum(command[:3] == ["cargo", "nextest", "run"] for command in commands) == 1
     assert sum("pytest" in command for command in commands) == 1
     rust_run = next(command for command in commands if command[:3] == ["cargo", "nextest", "run"])
+    for command in commands:
+        if command[:2] == ["cargo", "nextest"]:
+            assert "--lib" in command
+            assert command[command.index("--test") + 1] == "json_error_contract"
     assert rust_run.count("--filterset") == 1
     assert nextest_filter(selection) in rust_run
     pytest_run = next(command for command in commands if "pytest" in command)
@@ -230,3 +234,14 @@ def test_runner_contains_no_broad_or_external_command() -> None:
         "deploy",
     ):
         assert command not in runner
+
+
+def test_mixed_manifest_top_level_names_and_discovery_negatives(tmp_path: Path) -> None:
+    selection = _load_mutation(tmp_path, 'version = 1\n[selection]\nrust = ["module::bounded", "gene_identity_error_table"]\npython = ["tests/test_biodata_boundary.py"]\n')
+    validate_rust_discovery(selection, selection.rust)
+    for names in [("module::bounded",), (*selection.rust, "gene_identity_error_table")]:
+        with pytest.raises(SelectionError, match="match exactly once"):
+            validate_rust_discovery(selection, names)
+    for forbidden in ["arbitrary_top_level", "sources::mygene::tests::live::live_get", "live_cli_smoke_get_gene_braf_returns_gene_information", "provider_smoke", "credential"]:
+        with pytest.raises(SelectionError):
+            _load_mutation(tmp_path, 'version = 1\n[selection]\nrust = ["'+forbidden+'"]\npython = ["tests/test_biodata_boundary.py"]\n')

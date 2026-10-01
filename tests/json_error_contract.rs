@@ -261,7 +261,7 @@ fn serve_credential_redaction_request(
     });
     write!(
         stream,
-        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         body.len()
     )
     .map_err(|_| "write credential fixture response".to_string())?;
@@ -327,7 +327,9 @@ impl NoProviderContactFixture {
 }
 
 impl MyGeneFixture {
-    fn start() -> Self {
+    fn start() -> Self { Self::with_body(None) }
+
+    fn with_body(body: Option<Vec<u8>>) -> Self {
         let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind MyGene fixture");
         listener
             .set_nonblocking(true)
@@ -343,7 +345,7 @@ impl MyGeneFixture {
                 }
                 match listener.accept() {
                     Ok((stream, _)) => {
-                        let result = serve_mygene_request(stream);
+                        let result = serve_mygene_request(stream, body.as_deref());
                         let failed = result.is_err();
                         let _ = request_tx.send(result);
                         if failed {
@@ -385,7 +387,7 @@ impl Drop for MyGeneFixture {
     }
 }
 
-fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
+fn serve_mygene_request(mut stream: TcpStream, supplied: Option<&[u8]>) -> Result<String, String> {
     stream
         .set_read_timeout(Some(Duration::from_secs(2)))
         .map_err(|error| format!("set fixture read timeout: {error}"))?;
@@ -415,16 +417,17 @@ fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
         .to_owned();
 
     let body = if request_target.starts_with("/api/search?") {
-        r#"{"response":{"numFound":0,"start":0,"docs":[]}}"#
+        br#"{"response":{"numFound":0,"start":0,"docs":[]}}"#.as_slice()
     } else {
-        r#"{"total":0,"hits":[]}"#
+        supplied.unwrap_or(br#"{"total":0,"hits":[]}"#)
     };
     write!(
         stream,
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         body.len()
     )
     .map_err(|error| format!("write fixture response: {error}"))?;
+    stream.write_all(body).map_err(|error| format!("write fixture body: {error}"))?;
     stream
         .flush()
         .map_err(|error| format!("flush fixture response: {error}"))?;
@@ -1093,4 +1096,37 @@ fn human_mode_error_stays_plain_stderr() {
         serde_json::from_str::<serde_json::Value>(&result.stderr).is_err(),
         "human stderr should not become JSON"
     );
+}
+
+
+#[path = "support/gene_identity_cases.rs"]
+mod gene_identity_controls;
+
+#[test]
+fn gene_identity_error_table() {
+    for case in gene_identity_controls::cases() {
+        for (get, error) in [(true, case.get_error.is_some()), (false, case.search_error)] {
+            if !error { continue; }
+            let fixture = MyGeneFixture::with_body(Some(case.bytes.clone()));
+            let cache = tempfile::tempdir().unwrap();
+            let cache_path = cache.path().to_str().unwrap();
+            let args = if get { vec!["--json","--no-cache","get","gene","BRAF"] }
+                else { vec!["--json","--no-cache","search","gene","-q","BRAF","--type","pseudo"] };
+            let result = run_biomcp_with_env(&args, &[
+                ("BIOMCP_MYGENE_BASE", &fixture.base_url),
+                ("BIOMCP_OLS4_BASE", &fixture.base_url),
+                ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
+                ("BIOMCP_CACHE_DIR", cache_path),
+                ("RUST_LOG", "off"),
+            ]);
+            assert_json_error(&result, 1, if get && case.get_error == Some("not_found") { "not_found" } else { "api" });
+            assert!(!result.stdout.contains("SOURCE-ONLY-CANARY"), "{}", case.label);
+            assert!(fixture.received_request().starts_with("/query?"));
+            if get && case.get_error != Some("not_found") {
+                assert!(fixture.request_rx.try_recv().is_err(), "terminal failure retried alias: {}", case.label);
+            }
+            // Same table is included in library proof; display is irrelevant for errors.
+            let _ = case.display;
+        }
+    }
 }
