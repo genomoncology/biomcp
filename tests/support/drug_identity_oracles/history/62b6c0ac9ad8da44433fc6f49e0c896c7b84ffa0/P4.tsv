@@ -1,0 +1,25 @@
+case	requirement	alternative	boundary	object
+P4-01/nonmatching-invalid	P4-01	nonmatching-invalid	terminal original-byte rejection	P4.json#/0
+P4-01/blank-scalar	P4-01	blank-scalar	terminal original-byte rejection	P4.json#/1
+P4-01/mixed-blank-array	P4-01	mixed-blank-array	terminal original-byte rejection	P4.json#/2
+P4-01/wrong-admitted-type	P4-01	wrong-admitted-type	terminal original-byte rejection	P4.json#/3
+P4-02/duplicate	P4-02	duplicate	terminal original-byte rejection	P4.json#/4
+P4-02/malformed-envelope	P4-02	malformed-envelope	terminal original-byte rejection	P4.json#/5
+P4-02/byte-one-over	P4-02	byte-one-over	terminal original-byte rejection	P4.json#/6
+P4-03/malformed-source-only	P4-03	malformed-source-only	terminal original-byte rejection	P4.json#/7
+P4-02/byte-inclusive	P4-02	byte-inclusive	response resource boundary	P4.json#/8
+P4-04/fallback-search	P4-04	fallback-search	nested terminal source error	P4.json#/9
+P4-04/alternative-detail	P4-04	alternative-detail	nested terminal source error	P4.json#/10
+P4-05/label-detail	P4-05	label-detail	nested terminal source error	P4.json#/11
+P4-05/discover-detail	P4-05	discover-detail	resolve_drug_base with full DiscoverResult resolver-future seam	P4.json#/12
+P4-06/eu-identity-catch	P4-06	eu-identity-catch	regional identity caller	P4.json#/13
+P4-06/who-identity-catch	P4-06	who-identity-catch	regional identity caller	P4.json#/14
+P4-06/all-identity-catch	P4-06	all-identity-catch	regional identity caller	P4.json#/15
+P4-07/first	P4-07	first	alias resolution before CTGov	P4.json#/16
+P4-07/repeat	P4-07	repeat	alias resolution before CTGov	P4.json#/17
+P4-08/notfound	P4-08	notfound	pure trial_alias_resolution_from_lookup_result classification	P4.json#/18
+P4-08/connection	P4-08	connection	pure trial_alias_resolution_from_lookup_result classification	P4.json#/19
+P4-08/timeout	P4-08	timeout	pure trial_alias_resolution_from_lookup_result classification	P4.json#/20
+P4-08/generic-api	P4-08	generic-api	pure trial_alias_resolution_from_lookup_result classification	P4.json#/21
+P4-08/generic-unavailable	P4-08	generic-unavailable	pure trial_alias_resolution_from_lookup_result classification	P4.json#/22
+P4-09/all-failure-channels	P4-09	all-failure-channels	nested source rejection privacy	P4.json#/23

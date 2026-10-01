@@ -13,7 +13,7 @@ pub(crate) struct CaseHttp {
     fixture: TestHttpFixture,
     requests: Arc<Mutex<Vec<String>>>,
     expected: Vec<Value>,
-    order: Option<String>,
+    order: Option<Value>,
 }
 impl CaseHttp {
     pub(crate) async fn new(case: &Value) -> Self {
@@ -80,7 +80,7 @@ impl CaseHttp {
             fixture,
             requests,
             expected,
-            order: case["input"]["request_order"].as_str().map(str::to_owned),
+            order: case.get("request_order_contract").cloned(),
         }
     }
     pub(crate) fn environment(&self, env: &mut TestEnv, cache: &std::path::Path) {
@@ -126,24 +126,31 @@ impl CaseHttp {
                 index
             })
             .collect::<Vec<_>>();
-        match self.order.as_deref() {
-            Some(
-                "two independent item chains concurrently; each MyChem request precedes its own OpenFDA request; output remains input order",
-            ) => {
-                for chain in positions.chunks_exact(2) {
-                    assert!(chain[0] < chain[1], "{id}: item request dependency");
-                }
+        if let Some(contract) = &self.order {
+            let ids = contract["request_ids"].as_array().unwrap();
+            assert_eq!(
+                ids.len(),
+                positions.len(),
+                "{id}: complete request identities"
+            );
+            for edge in contract["before"].as_array().unwrap() {
+                let before = ids.iter().position(|value| value == &edge[0]).unwrap();
+                let after = ids.iter().position(|value| value == &edge[1]).unwrap();
+                assert!(
+                    positions[before] < positions[after],
+                    "{id}: causal edge {edge}"
+                );
             }
-            Some(
-                "MyChem first; CTGov worker plans in listed order, dispatched concurrently; network arrival order is not contractual",
-            ) => {
-                assert_eq!(positions[0], 0, "{id}: identity before fanout");
-            }
-            _ => assert_eq!(
+            assert_eq!(
+                contract["response_indices"],
+                json!((0..positions.len()).collect::<Vec<_>>())
+            );
+        } else {
+            assert_eq!(
                 positions,
                 (0..actual.len()).collect::<Vec<_>>(),
                 "{id}: sequential request order"
-            ),
+            );
         }
     }
 }

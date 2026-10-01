@@ -5053,13 +5053,25 @@
       "ranked_candidates": [
         {
           "result": {
+            "name": "sampledrug",
+            "drugbank_id": "DB-SYN1",
+            "drug_type": null,
+            "mechanism": null,
+            "target": null
+          },
+          "match_kind": "product_name",
+          "source_page": "rank-first",
+          "ordinal": 0
+        },
+        {
+          "result": {
             "name": "matchdrug",
             "drugbank_id": "DB-SYN4",
             "drug_type": null,
             "mechanism": null,
             "target": null
           },
-          "match_kind": "product_name",
+          "match_kind": "active_substance",
           "source_page": "rank-later",
           "ordinal": 0
         },
@@ -5077,18 +5089,6 @@
         },
         {
           "result": {
-            "name": "sampledrug",
-            "drugbank_id": "DB-SYN1",
-            "drug_type": null,
-            "mechanism": null,
-            "target": null
-          },
-          "match_kind": "broad_text",
-          "source_page": "rank-first",
-          "ordinal": 0
-        },
-        {
-          "result": {
             "name": "seconddrug",
             "drugbank_id": "DB-SYN2",
             "drug_type": null,
@@ -5102,316 +5102,34 @@
       ],
       "results": [
         {
-          "name": "aliasdrug",
-          "drugbank_id": null,
+          "name": "matchdrug",
+          "drugbank_id": "DB-SYN4",
           "drug_type": null,
           "mechanism": null,
           "target": null
         },
         {
-          "name": "sampledrug",
-          "drugbank_id": "DB-SYN1",
+          "name": "aliasdrug",
+          "drugbank_id": null,
           "drug_type": null,
           "mechanism": null,
           "target": null
         }
       ],
       "match_kinds": [
-        "alias",
-        "broad_text"
+        "active_substance",
+        "alias"
       ],
       "total": 4,
       "total_kind": "deduplicated_candidates",
       "conversion": [
         {
-          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
-          "ordinal": 0,
-          "claim_index": 0,
-          "origin": {
-            "section": "drugbank",
-            "field": "id",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "DB-SYN1",
-          "namespace": "DrugBank",
-          "source_term_type": null,
-          "action": "select_first_code",
-          "reason": "first DrugBank identifier in this projected search row",
-          "stage": "search projection",
-          "target": "DB-SYN1",
-          "target_field": "drugbank_id"
-        },
-        {
-          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
-          "ordinal": 0,
-          "claim_index": 1,
-          "origin": {
-            "section": "drugbank",
-            "field": "name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "SampleDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "name"
-          },
-          "action": "ascii_lowercase",
-          "reason": "selected display source; original lexical claim retained",
-          "stage": "search projection",
-          "target": "sampledrug",
-          "target_field": "name"
-        },
-        {
-          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
-          "ordinal": 1,
-          "claim_index": 0,
-          "origin": {
-            "section": "drugbank",
-            "field": "id",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "DB-SYN2",
-          "namespace": "DrugBank",
-          "source_term_type": null,
-          "action": "select_first_code",
-          "reason": "first DrugBank identifier in this projected search row",
-          "stage": "search projection",
-          "target": "DB-SYN2",
-          "target_field": "drugbank_id"
-        },
-        {
-          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
-          "ordinal": 1,
-          "claim_index": 1,
-          "origin": {
-            "section": "drugbank",
-            "field": "name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "SecondDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "name"
-          },
-          "action": "ascii_lowercase",
-          "reason": "selected display source; original lexical claim retained",
-          "stage": "search projection",
-          "target": "seconddrug",
-          "target_field": "name"
-        },
-        {
-          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
-          "ordinal": 2,
-          "claim_index": 0,
-          "origin": {
-            "section": "drugbank",
-            "field": "name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "AliasDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "name"
-          },
-          "action": "ascii_lowercase",
-          "reason": "selected display source; original lexical claim retained",
-          "stage": "search projection",
-          "target": "aliasdrug",
-          "target_field": "name"
-        },
-        {
-          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
-          "ordinal": 2,
-          "claim_index": 1,
-          "origin": {
-            "section": "drugbank",
-            "field": "synonyms",
-            "section_index": null,
-            "value_index": 0
-          },
-          "lexical_text": "MatchDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "synonyms"
-          },
-          "action": "select_alias_match",
-          "reason": "DrugBank synonym equals normalized query",
-          "stage": "ranked match classification",
-          "target": "alias"
-        },
-        {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
-          "ordinal": 0,
-          "claim_index": 0,
-          "origin": {
-            "section": "drugbank",
-            "field": "id",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "DB-SYN4",
-          "namespace": "DrugBank",
-          "source_term_type": null,
-          "action": "select_first_code",
-          "reason": "first DrugBank identifier in this projected search row",
-          "stage": "search projection",
-          "target": "DB-SYN4",
-          "target_field": "drugbank_id"
-        },
-        {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
-          "ordinal": 0,
-          "claim_index": 1,
-          "origin": {
-            "section": "drugbank",
-            "field": "name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "MatchDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "name"
-          },
-          "action": "ascii_lowercase",
-          "reason": "selected display source; original lexical claim retained",
-          "stage": "search projection",
-          "target": "matchdrug",
-          "target_field": "name"
-        },
-        {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
-          "ordinal": 0,
-          "claim_index": 1,
-          "origin": {
-            "section": "drugbank",
-            "field": "name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "MatchDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "name"
-          },
-          "action": "select_match_tier",
-          "reason": "DrugBank name equals normalized query",
-          "stage": "ranked match classification",
-          "target": "active_substance"
-        },
-        {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
-          "ordinal": 1,
-          "claim_index": 0,
-          "origin": {
-            "section": "drugbank",
-            "field": "id",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "DB-SYN9",
-          "namespace": "DrugBank",
-          "source_term_type": null,
-          "action": "select_first_code",
-          "reason": "first DrugBank identifier in this projected search row",
-          "stage": "search projection",
-          "target": "DB-SYN9",
-          "target_field": "drugbank_id"
-        },
-        {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
-          "ordinal": 1,
-          "claim_index": 1,
-          "origin": {
-            "section": "drugbank",
-            "field": "name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "SampleDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "name"
-          },
-          "action": "omit_display",
-          "reason": "OpenFDA brand supplies higher priority displayed name; source claim retained",
-          "stage": "search projection",
-          "target": null,
-          "target_field": "name"
-        },
-        {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
-          "ordinal": 1,
-          "claim_index": 2,
-          "origin": {
-            "section": "openfda",
-            "field": "brand_name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "MatchDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "brand_name"
-          },
-          "action": "ascii_lowercase",
-          "reason": "OpenFDA brand precedes DrugBank name for display; original lexical claim retained",
-          "stage": "search projection",
-          "target": "matchdrug",
-          "target_field": "name"
-        },
-        {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
-          "ordinal": 1,
-          "claim_index": 2,
-          "origin": {
-            "section": "openfda",
-            "field": "brand_name",
-            "section_index": null,
-            "value_index": null
-          },
-          "lexical_text": "MatchDrug",
-          "namespace": null,
-          "source_term_type": {
-            "namespace": "MyChem",
-            "label": "brand_name"
-          },
-          "action": "select_match_tier",
-          "reason": "OpenFDA brand equals normalized query and outranks active substance",
-          "stage": "ranked match classification",
-          "target": "product_name"
-        },
-        {
           "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
           "ordinal": 1,
           "action": "tier_upgrade_keep_first_row",
-          "reason": "later product-name match for the same normalized displayed name matchdrug",
-          "stage": "ranked deduplication",
-          "target": "product_name",
-          "deduplication_key": "matchdrug",
-          "prior_match_kind": "active_substance",
-          "retained_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
+          "reason": "later product-name match",
+          "retained_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
           "retained_ordinal": 0,
-          "retained_result": {
-            "name": "matchdrug",
-            "drugbank_id": "DB-SYN4",
-            "drug_type": null,
-            "mechanism": null,
-            "target": null
-          },
           "claim_occurrences": [
             {
               "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
@@ -5427,9 +5145,7 @@
               "namespace": "DrugBank",
               "source_term_type": null,
               "action": "tier_upgrade_keep_first_row",
-              "reason": "later duplicate shares displayed name matchdrug; first row retained",
-              "stage": "ranked deduplication",
-              "target": "matchdrug"
+              "reason": "later product-name match"
             },
             {
               "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
@@ -5448,9 +5164,7 @@
                 "label": "name"
               },
               "action": "tier_upgrade_keep_first_row",
-              "reason": "later duplicate shares displayed name matchdrug; first row retained",
-              "stage": "ranked deduplication",
-              "target": "matchdrug"
+              "reason": "later product-name match"
             },
             {
               "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
@@ -5469,21 +5183,18 @@
                 "label": "brand_name"
               },
               "action": "tier_upgrade_keep_first_row",
-              "reason": "later duplicate shares displayed name matchdrug; first row retained",
-              "stage": "ranked deduplication",
-              "target": "matchdrug"
+              "reason": "later product-name match"
             }
           ]
         },
         {
-          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
+          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
           "ordinal": 0,
           "action": "omit_page",
           "reason": "offset after complete ranking",
-          "stage": "ranked pagination",
           "claim_occurrences": [
             {
-              "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
+              "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
               "ordinal": 0,
               "claim_index": 0,
               "origin": {
@@ -5492,16 +5203,14 @@
                 "section_index": null,
                 "value_index": null
               },
-              "lexical_text": "DB-SYN4",
+              "lexical_text": "DB-SYN1",
               "namespace": "DrugBank",
               "source_term_type": null,
               "action": "omit_page",
-              "reason": "offset after complete ranking",
-              "stage": "ranked pagination",
-              "target": null
+              "reason": "offset after complete ranking"
             },
             {
-              "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
+              "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
               "ordinal": 0,
               "claim_index": 1,
               "origin": {
@@ -5510,16 +5219,14 @@
                 "section_index": null,
                 "value_index": null
               },
-              "lexical_text": "MatchDrug",
+              "lexical_text": "SampleDrug",
               "namespace": null,
               "source_term_type": {
                 "namespace": "MyChem",
                 "label": "name"
               },
               "action": "omit_page",
-              "reason": "offset after complete ranking",
-              "stage": "ranked pagination",
-              "target": null
+              "reason": "offset after complete ranking"
             }
           ]
         },
@@ -5528,7 +5235,6 @@
           "ordinal": 1,
           "action": "omit_page",
           "reason": "limit after complete ranking",
-          "stage": "ranked pagination",
           "claim_occurrences": [
             {
               "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
@@ -5544,9 +5250,7 @@
               "namespace": "DrugBank",
               "source_term_type": null,
               "action": "omit_page",
-              "reason": "limit after complete ranking",
-              "stage": "ranked pagination",
-              "target": null
+              "reason": "limit after complete ranking"
             },
             {
               "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
@@ -5565,11 +5269,86 @@
                 "label": "name"
               },
               "action": "omit_page",
-              "reason": "limit after complete ranking",
-              "stage": "ranked pagination",
-              "target": null
+              "reason": "limit after complete ranking"
             }
           ]
+        },
+        {
+          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
+          "ordinal": 0,
+          "claim_index": 0,
+          "origin": {
+            "section": "drugbank",
+            "field": "id",
+            "section_index": null,
+            "value_index": null
+          },
+          "lexical_text": "DB-SYN4",
+          "namespace": "DrugBank",
+          "source_term_type": null,
+          "action": "select_first_code",
+          "reason": "first DrugBank identifier in selected lookup",
+          "target": "DB-SYN4"
+        },
+        {
+          "response_digest": "sha256:abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
+          "ordinal": 0,
+          "claim_index": 1,
+          "origin": {
+            "section": "drugbank",
+            "field": "name",
+            "section_index": null,
+            "value_index": null
+          },
+          "lexical_text": "MatchDrug",
+          "namespace": null,
+          "source_term_type": {
+            "namespace": "MyChem",
+            "label": "name"
+          },
+          "action": "ascii_lowercase",
+          "reason": "selected display source; original lexical claim retained",
+          "target": "matchdrug"
+        },
+        {
+          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
+          "ordinal": 2,
+          "claim_index": 0,
+          "origin": {
+            "section": "drugbank",
+            "field": "name",
+            "section_index": null,
+            "value_index": null
+          },
+          "lexical_text": "AliasDrug",
+          "namespace": null,
+          "source_term_type": {
+            "namespace": "MyChem",
+            "label": "name"
+          },
+          "action": "ascii_lowercase",
+          "reason": "selected alias-row display",
+          "target": "aliasdrug"
+        },
+        {
+          "response_digest": "sha256:d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
+          "ordinal": 2,
+          "claim_index": 1,
+          "origin": {
+            "section": "drugbank",
+            "field": "synonyms",
+            "section_index": null,
+            "value_index": 0
+          },
+          "lexical_text": "MatchDrug",
+          "namespace": null,
+          "source_term_type": {
+            "namespace": "MyChem",
+            "label": "synonyms"
+          },
+          "action": "select_alias_match",
+          "reason": "DrugBank synonym equals normalized query; original label retained",
+          "target": "alias"
         }
       ]
     },
@@ -5631,14 +5410,7 @@
     "contracts": {
       "design": "../design.md",
       "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
-      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-      "independent_source_audit": {
-        "baseline": "efff26d838ddc6471cfd9c06956855fd6e50ca43",
-        "construction": "de5c009053d3f3586aabeba5b813e5e0bfa58a46",
-        "dependency": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-        "historical_oracle_commit": "62b6c0ac9ad8da44433fc6f49e0c896c7b84ffa0",
-        "authority": "proposal only; Root approval after fresh separate review"
-      }
+      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
     },
     "unchanged_assertions": [],
     "options": {

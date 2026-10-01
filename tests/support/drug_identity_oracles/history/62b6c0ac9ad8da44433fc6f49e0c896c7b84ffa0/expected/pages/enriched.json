@@ -1,0 +1,309 @@
+{
+  "profile": "Get",
+  "digest": "sha256:e0dabf2944a76dca9efb8f6b7d4ae3813bca369e3fed34d398295c62742f5195",
+  "total": 1,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:e0dabf2944a76dca9efb8f6b7d4ae3813bca369e3fed34d398295c62742f5195",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-SYN1",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "SampleDrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:e0dabf2944a76dca9efb8f6b7d4ae3813bca369e3fed34d398295c62742f5195",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-SYN1",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "SampleDrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"drugbank\":{\"id\":\"DB-SYN1\",\"name\":\"SampleDrug\",\"drug_interactions\":[{\"name\":\"Partner\",\"description\":\"Synthetic interaction text\"}]},\"chembl\":{\"molecule_type\":\"Small molecule\",\"drug_mechanisms\":[{\"action_type\":\"INHIBITOR\",\"target_name\":\"Target A\",\"mechanism_of_action\":\"Synthetic mechanism\"}],\"atc_classifications\":[\"A01\"]},\"gtopdb\":{\"interaction_targets\":[{\"symbol\":\"GENEA\"}]},\"ndc\":{\"pharm_classes\":[\"Synthetic kinase inhibitor [MoA]\"]},\"drugcentral\":{\"approval\":[{\"agency\":\"FDA\",\"date\":\"20200102\"}],\"drug_use\":{\"indication\":[{\"concept_name\":\"Synthetic indication\"}]}}}",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-SYN1\"",
+            "state": "values",
+            "values": [
+              "DB-SYN1"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"SampleDrug\"",
+            "state": "values",
+            "values": [
+              "SampleDrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {
+          "drugbank.drug_interactions": [
+            {
+              "name": "Partner",
+              "description": "Synthetic interaction text"
+            }
+          ],
+          "chembl.molecule_type": "Small molecule",
+          "chembl.drug_mechanisms": [
+            {
+              "action_type": "INHIBITOR",
+              "target_name": "Target A",
+              "mechanism_of_action": "Synthetic mechanism"
+            }
+          ],
+          "chembl.atc_classifications": [
+            "A01"
+          ],
+          "gtopdb.interaction_targets": [
+            {
+              "symbol": "GENEA"
+            }
+          ],
+          "ndc.pharm_classes": [
+            "Synthetic kinase inhibitor [MoA]"
+          ],
+          "drugcentral.approval": [
+            {
+              "agency": "FDA",
+              "date": "20200102"
+            }
+          ],
+          "drugcentral.drug_use": {
+            "indication": [
+              {
+                "concept_name": "Synthetic indication"
+              }
+            ]
+          }
+        }
+      },
+      "adapter_losses": [
+        {
+          "field": "drugbank.drug_interactions",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "chembl.molecule_type",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "chembl.drug_mechanisms",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "chembl.atc_classifications",
+          "disposition": "unsupported",
+          "reason": "field outside this request profile"
+        },
+        {
+          "field": "gtopdb.interaction_targets",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "ndc.pharm_classes",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "drugcentral.approval",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "drugcentral.drug_use",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        }
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

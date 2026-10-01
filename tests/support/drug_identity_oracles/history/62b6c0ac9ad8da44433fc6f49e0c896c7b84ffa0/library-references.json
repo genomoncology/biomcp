@@ -1,0 +1,474 @@
+[
+  {
+    "id": "L01",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "keeps_ordered_equal_claims_and_source_states",
+    "input_reference": {
+      "declaration": "keeps_ordered_equal_claims_and_source_states",
+      "line": 10
+    },
+    "assertions": [
+      {
+        "line": 16,
+        "end_line": 16,
+        "literal": "    assert_eq!(page.total(), 9);"
+      },
+      {
+        "line": 17,
+        "end_line": 17,
+        "literal": "    assert_eq!(page.rows().len(), 2);"
+      },
+      {
+        "line": 21,
+        "end_line": 21,
+        "literal": "    assert_eq!(first.identity().claims().len(), 7);"
+      },
+      {
+        "line": 22,
+        "end_line": 25,
+        "literal": "    assert_ne!(\n        first.identity().claims()[1].origin(),\n        first.identity().claims()[2].origin()\n    );"
+      },
+      {
+        "line": 26,
+        "end_line": 29,
+        "literal": "    assert_eq!(\n        first.identity().claims()[1].value(),\n        first.identity().claims()[2].value()\n    );"
+      },
+      {
+        "line": 30,
+        "end_line": 30,
+        "literal": "    assert_eq!(first.source().ordinal(), 0);"
+      },
+      {
+        "line": 34,
+        "end_line": 34,
+        "literal": "    assert!(second.identity().claims().is_empty());"
+      },
+      {
+        "line": 35,
+        "end_line": 35,
+        "literal": "    assert_eq!(second.source().fields()[0].state().as_str(), \"null\");"
+      },
+      {
+        "line": 39,
+        "end_line": 39,
+        "literal": "    assert!(Document::from_json(&encoded.replace(\"\\\"section_index\\\":null,\", \"\")).is_err());"
+      },
+      {
+        "line": 40,
+        "end_line": 40,
+        "literal": "    assert!(Document::from_json(&encoded.replacen(\"\\\"DrugBank\\\"\", \"\\\"ChEMBL\\\"\", 1)).is_err());"
+      },
+      {
+        "line": 41,
+        "end_line": 44,
+        "literal": "    assert_eq!(\n        Document::from_json(&encoded).unwrap(),\n        Document::DrugIdentity(first.identity().clone())\n    );"
+      }
+    ]
+  },
+  {
+    "id": "L02",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "rejects_bad_row_without_losing_page_total",
+    "input_reference": {
+      "declaration": "rejects_bad_row_without_losing_page_total",
+      "line": 48
+    },
+    "assertions": [
+      {
+        "line": 54,
+        "end_line": 54,
+        "literal": "    assert_eq!(page.total(), 2);"
+      },
+      {
+        "line": 55,
+        "end_line": 58,
+        "literal": "    assert!(matches!(\n        page.rows()[0],\n        MyChemRowDisposition::Rejected { ordinal: 0, .. }\n    ));"
+      },
+      {
+        "line": 59,
+        "end_line": 59,
+        "literal": "    assert!(matches!(page.rows()[1], MyChemRowDisposition::Projected(_)));"
+      },
+      {
+        "line": 60,
+        "end_line": 60,
+        "literal": "    assert!(page.require_complete().is_err());"
+      }
+    ]
+  },
+  {
+    "id": "L03",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "every_admitted_section_keeps_scalar_array_and_absence_shapes",
+    "input_reference": {
+      "declaration": "every_admitted_section_keeps_scalar_array_and_absence_shapes",
+      "line": 64
+    },
+    "assertions": [
+      {
+        "line": 70,
+        "end_line": 70,
+        "literal": "    assert_eq!(first.identity().claims().len(), 15);"
+      },
+      {
+        "line": 71,
+        "end_line": 74,
+        "literal": "    assert_eq!(\n        first.identity().claims()[0].origin().section_index(),\n        Some(0)\n    );"
+      },
+      {
+        "line": 75,
+        "end_line": 78,
+        "literal": "    assert_eq!(\n        first.identity().claims()[1].origin().section_index(),\n        Some(1)\n    );"
+      },
+      {
+        "line": 79,
+        "end_line": 87,
+        "literal": "    assert!(\n        first\n            .source()\n            .fields()\n            .iter()\n            .any(|field| field.section() == \"drugbank\"\n                && field.name() == \"synonyms\"\n                && !field.was_array())\n    );"
+      },
+      {
+        "line": 91,
+        "end_line": 91,
+        "literal": "    assert!(second.identity().claims().is_empty());"
+      },
+      {
+        "line": 92,
+        "end_line": 98,
+        "literal": "    assert!(\n        second\n            .source()\n            .fields()\n            .iter()\n            .any(|field| field.section() == \"ndc\" && field.state().as_str() == \"empty_array\")\n    );"
+      },
+      {
+        "line": 99,
+        "end_line": 105,
+        "literal": "    assert!(\n        second\n            .source()\n            .fields()\n            .iter()\n            .any(|field| field.section() == \"unii\" && field.state().as_str() == \"null\")\n    );"
+      },
+      {
+        "line": 106,
+        "end_line": 112,
+        "literal": "    assert!(\n        second\n            .source()\n            .fields()\n            .iter()\n            .any(|field| field.section() == \"drugbank\" && field.state().as_str() == \"missing\")\n    );"
+      }
+    ]
+  },
+  {
+    "id": "L04",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "exact_claim_limit_and_one_more",
+    "input_reference": {
+      "declaration": "exact_claim_limit_and_one_more",
+      "line": 116
+    },
+    "assertions": [
+      {
+        "line": 121,
+        "end_line": 121,
+        "literal": "        assert_eq!(result.is_ok(), valid, \"{count}\");"
+      },
+      {
+        "line": 123,
+        "end_line": 123,
+        "literal": "            assert_eq!(result.unwrap_err().kind(), MyChemErrorKind::Limit);"
+      }
+    ]
+  },
+  {
+    "id": "L05",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "later_response_limits_override_earlier_row_failure",
+    "input_reference": {
+      "declaration": "later_response_limits_override_earlier_row_failure",
+      "line": 129
+    },
+    "assertions": [
+      {
+        "line": 134,
+        "end_line": 139,
+        "literal": "    assert_eq!(\n        parse_mychem_identity(input.as_bytes(), MyChemProfile::Search)\n            .unwrap_err()\n            .kind(),\n        MyChemErrorKind::Limit\n    );"
+      },
+      {
+        "line": 144,
+        "end_line": 149,
+        "literal": "    assert_eq!(\n        parse_mychem_identity(input.as_bytes(), MyChemProfile::Search)\n            .unwrap_err()\n            .kind(),\n        MyChemErrorKind::Limit\n    );"
+      }
+    ]
+  },
+  {
+    "id": "L06",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "malformed_text_does_not_consume_projected_claim_budget",
+    "input_reference": {
+      "declaration": "malformed_text_does_not_consume_projected_claim_budget",
+      "line": 153
+    },
+    "assertions": [
+      {
+        "line": 159,
+        "end_line": 159,
+        "literal": "    assert_eq!(page.total(), 1);"
+      },
+      {
+        "line": 160,
+        "end_line": 163,
+        "literal": "    assert!(matches!(\n        page.rows()[0],\n        MyChemRowDisposition::Rejected { ordinal: 0, .. }\n    ));"
+      },
+      {
+        "line": 164,
+        "end_line": 164,
+        "literal": "    assert!(page.require_complete().is_err());"
+      },
+      {
+        "line": 171,
+        "end_line": 171,
+        "literal": "    assert_eq!(page.total(), 2);"
+      },
+      {
+        "line": 172,
+        "end_line": 175,
+        "literal": "    assert!(matches!(\n        page.rows()[0],\n        MyChemRowDisposition::Rejected { ordinal: 0, .. }\n    ));"
+      },
+      {
+        "line": 179,
+        "end_line": 179,
+        "literal": "    assert_eq!(second.identity().claims().len(), 1);"
+      }
+    ]
+  },
+  {
+    "id": "L07",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "known_omissions_keep_fixed_labels_and_request_profile",
+    "input_reference": {
+      "declaration": "known_omissions_keep_fixed_labels_and_request_profile",
+      "line": 183
+    },
+    "assertions": [
+      {
+        "line": 196,
+        "end_line": 196,
+        "literal": "        assert!(has(\"chembl.molecule_type\", \"omitted\"));"
+      },
+      {
+        "line": 197,
+        "end_line": 197,
+        "literal": "        assert!(has(\"ndc.pharm_classes\", \"omitted\"));"
+      },
+      {
+        "line": 198,
+        "end_line": 198,
+        "literal": "        assert!(has(\"unrecognized section\", \"unsupported\"));"
+      },
+      {
+        "line": 204,
+        "end_line": 204,
+        "literal": "        assert!(has(\"drugbank.drug_interactions\", get_only));"
+      },
+      {
+        "line": 205,
+        "end_line": 205,
+        "literal": "        assert!(has(\"drugcentral.drug_use\", get_only));"
+      },
+      {
+        "line": 211,
+        "end_line": 211,
+        "literal": "        assert!(has(\"chembl.atc_classifications\", search_only));"
+      },
+      {
+        "line": 212,
+        "end_line": 212,
+        "literal": "        assert!(!format!(\"{report:?}\").contains(\"PRIVATE_MARKER_7F3A\"));"
+      }
+    ]
+  },
+  {
+    "id": "L08",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "envelope_and_document_fail_closed",
+    "input_reference": {
+      "declaration": "envelope_and_document_fail_closed",
+      "line": 217
+    },
+    "assertions": [
+      {
+        "line": 222,
+        "end_line": 227,
+        "literal": "        assert_eq!(\n            parse_mychem_identity(input.as_bytes(), MyChemProfile::Get)\n                .unwrap_err()\n                .kind(),\n            MyChemErrorKind::Duplicate\n        );"
+      },
+      {
+        "line": 234,
+        "end_line": 239,
+        "literal": "        assert_eq!(\n            parse_mychem_identity(input.as_bytes(), MyChemProfile::Get)\n                .unwrap_err()\n                .kind(),\n            MyChemErrorKind::Structure\n        );"
+      },
+      {
+        "line": 242,
+        "end_line": 242,
+        "literal": "    assert!(Document::from_json(base).is_ok());"
+      },
+      {
+        "line": 243,
+        "end_line": 245,
+        "literal": "    assert!(\n        Document::from_json(&base.replace(\"\\\"claims\\\":[]\", \"\\\"claims\\\":[],\\\"claims\\\":[]\")).is_err()\n    );"
+      },
+      {
+        "line": 246,
+        "end_line": 248,
+        "literal": "    assert!(\n        Document::from_json(&base.replace(\"\\\"ordinal\\\":0\", \"\\\"ordinal\\\":0,\\\"new\\\":0\")).is_err()\n    );"
+      }
+    ]
+  },
+  {
+    "id": "L09",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "malformed_admitted_fields_reject_rows_without_exposing_text",
+    "input_reference": {
+      "declaration": "malformed_admitted_fields_reject_rows_without_exposing_text",
+      "line": 252
+    },
+    "assertions": [
+      {
+        "line": 270,
+        "end_line": 270,
+        "literal": "        assert_eq!(*ordinal, 0);"
+      },
+      {
+        "line": 271,
+        "end_line": 271,
+        "literal": "        assert_eq!(error.kind(), MyChemErrorKind::Field);"
+      },
+      {
+        "line": 272,
+        "end_line": 272,
+        "literal": "        assert!(report.iter().any(|entry| entry.disposition() == \"failed\"));"
+      },
+      {
+        "line": 273,
+        "end_line": 273,
+        "literal": "        assert!(matches!(page.rows()[1], MyChemRowDisposition::Projected(_)));"
+      },
+      {
+        "line": 274,
+        "end_line": 274,
+        "literal": "        assert!(page.require_complete().is_err());"
+      },
+      {
+        "line": 276,
+        "end_line": 276,
+        "literal": "        assert!(!public.contains(marker));"
+      }
+    ]
+  },
+  {
+    "id": "L10",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "resource_boundaries_hold_under_escaped_strings_and_nesting",
+    "input_reference": {
+      "declaration": "resource_boundaries_hold_under_escaped_strings_and_nesting",
+      "line": 281
+    },
+    "assertions": [
+      {
+        "line": 285,
+        "end_line": 285,
+        "literal": "    assert!(parse_mychem_identity(&exact_bytes, MyChemProfile::Search).is_ok());"
+      },
+      {
+        "line": 287,
+        "end_line": 292,
+        "literal": "    assert_eq!(\n        parse_mychem_identity(&exact_bytes, MyChemProfile::Search)\n            .unwrap_err()\n            .kind(),\n        MyChemErrorKind::Limit\n    );"
+      },
+      {
+        "line": 295,
+        "end_line": 301,
+        "literal": "    assert_eq!(\n        parse_mychem_identity(at_rows.as_bytes(), MyChemProfile::Search)\n            .unwrap()\n            .rows()\n            .len(),\n        1000\n    );"
+      },
+      {
+        "line": 303,
+        "end_line": 308,
+        "literal": "    assert_eq!(\n        parse_mychem_identity(over_rows.as_bytes(), MyChemProfile::Search)\n            .unwrap_err()\n            .kind(),\n        MyChemErrorKind::Limit\n    );"
+      },
+      {
+        "line": 313,
+        "end_line": 313,
+        "literal": "    assert!(parse_mychem_identity(exactly.as_bytes(), MyChemProfile::Search).is_ok());"
+      },
+      {
+        "line": 315,
+        "end_line": 320,
+        "literal": "    assert_eq!(\n        parse_mychem_identity(over.as_bytes(), MyChemProfile::Search)\n            .unwrap_err()\n            .kind(),\n        MyChemErrorKind::Limit\n    );"
+      },
+      {
+        "line": 324,
+        "end_line": 331,
+        "literal": "        assert_eq!(\n            result.unwrap_err().kind(),\n            if depth > 32 {\n                MyChemErrorKind::Limit\n            } else {\n                MyChemErrorKind::Structure\n            }\n        );"
+      },
+      {
+        "line": 337,
+        "end_line": 337,
+        "literal": "        assert_eq!(result.is_ok(), valid, \"{arrays} nested arrays\");"
+      },
+      {
+        "line": 344,
+        "end_line": 344,
+        "literal": "    assert_eq!(row.identity().claims().len(), 2);"
+      }
+    ]
+  },
+  {
+    "id": "L11",
+    "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "path": "tests/drug_identity.rs",
+    "declaration": "generated_limit_neighbors_keep_response_bounds",
+    "input_reference": {
+      "declaration": "generated_limit_neighbors_keep_response_bounds",
+      "line": 348
+    },
+    "assertions": [
+      {
+        "line": 356,
+        "end_line": 359,
+        "literal": "        assert!(\n            parse_mychem_identity(&bytes, MyChemProfile::Search).is_ok(),\n            \"byte seed {seed}\"\n        );"
+      },
+      {
+        "line": 361,
+        "end_line": 367,
+        "literal": "        assert_eq!(\n            parse_mychem_identity(&bytes, MyChemProfile::Search)\n                .unwrap_err()\n                .kind(),\n            MyChemErrorKind::Limit,\n            \"byte seed {seed}\"\n        );"
+      },
+      {
+        "line": 373,
+        "end_line": 377,
+        "literal": "            assert_eq!(\n                result.is_ok(),\n                expected,\n                \"depth seed {seed}, wrappers {wrappers}\"\n            );"
+      },
+      {
+        "line": 379,
+        "end_line": 379,
+        "literal": "                assert_eq!(result.unwrap_err().kind(), MyChemErrorKind::Limit);"
+      },
+      {
+        "line": 396,
+        "end_line": 400,
+        "literal": "            assert_eq!(\n                result.is_ok(),\n                extra == 0,\n                \"text seed {seed}, extra {extra}\"\n            );"
+      },
+      {
+        "line": 402,
+        "end_line": 402,
+        "literal": "                assert_eq!(result.unwrap_err().kind(), MyChemErrorKind::Limit);"
+      },
+      {
+        "line": 414,
+        "end_line": 418,
+        "literal": "            assert_eq!(\n                result.is_ok(),\n                extra == 0,\n                \"claim seed {seed}, extra {extra}\"\n            );"
+      },
+      {
+        "line": 420,
+        "end_line": 420,
+        "literal": "                assert_eq!(result.unwrap_err().kind(), MyChemErrorKind::Limit);"
+      }
+    ]
+  }
+]

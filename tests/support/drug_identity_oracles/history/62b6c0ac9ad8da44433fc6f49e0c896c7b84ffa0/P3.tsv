@@ -1,0 +1,13 @@
+case	requirement	alternative	boundary	object
+P3-01/repeated-equal-conflicting-two-rows	P3-01	repeated-equal-conflicting-two-rows	identity document	P3.json#/0
+P3-02/missing-null-empty-array	P3-02	missing-null-empty-array	companion	P3.json#/1
+P3-02/object-array-and-scalar-array	P3-02	object-array-and-scalar-array	companion	P3.json#/2
+P3-03/actual-normalization-dedupe-cap	P3-03	actual-normalization-dedupe-cap	conversion	P3.json#/3
+P3-03/first-code-conflict	P3-03	first-code-conflict	conversion	P3.json#/4
+P3-03/discard-search-row	P3-03	discard-search-row	conversion	P3.json#/5
+P3-03/fallback	P3-03	fallback	conversion	P3.json#/6
+P3-04/all-source-only-enrichment	P3-04	all-source-only-enrichment	source-only decoder and merge	P3.json#/7
+P3-01/repeated-equal-code-origins	P3-01	repeated-equal-code-origins	admitted original page then compatibility selection and pure product merge	P3.json#/8
+P3-04/invalid-identity-companion	P3-04	invalid-identity-companion	accepted identity then enrichment failure	P3.json#/9
+P3-02/retained-exhaustive-shapes	P3-02	retained-exhaustive-shapes	unchanged literal assertion	P3.json#/10
+P3-01/retained-strict-invalid-document	P3-01	retained-strict-invalid-document	unchanged literal assertion	P3.json#/11

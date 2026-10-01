@@ -1,0 +1,32 @@
+{
+  "META-01": {
+    "owner": "root coordinator and later independent builder",
+    "inspection_biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+    "inspection_library": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+    "design_accept": "07eaeae01cd8755b04d14f146f82456877cc4db8",
+    "approval_wip": "1073303",
+    "design_receipt": "/private/tmp/nucleus-biodata-0224-corrected-design-review-20261001.md",
+    "implementation_pair": null,
+    "Cargo_lock_revision": null,
+    "maintenance_incorporation": null,
+    "focused_manifest_digest": null,
+    "binary_digest": null,
+    "offline_terminal_receipt": null,
+    "hosted_receipt": null,
+    "acquisition": "not run",
+    "compile": "not run",
+    "prebuilt_execution": "not run",
+    "focused_gate": "not run",
+    "lint": "not run",
+    "spec": "not run",
+    "walls": "not measured"
+  },
+  "META-02": {
+    "owner": "root source-admission/release work",
+    "source_occurrence": "not established",
+    "provider_payload_admission": "none",
+    "rights_cleared_capture": "none",
+    "clinical_interpretation": "none",
+    "release_acceptance": "not claimed"
+  }
+}

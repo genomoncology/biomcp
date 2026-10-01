@@ -1,0 +1,30 @@
+case	requirement	alternative	boundary	object
+P1-01/get-profile	P1-01	get-profile	original-byte handoff	P1.json#/0
+P1-01/search-profile-size-offset	P1-01	search-profile-size-offset	original-byte handoff	P1.json#/1
+P1-02/empty	P1-02	empty	request planner	P1.json#/2
+P1-02/trimmed	P1-02	trimmed	request planner	P1.json#/3
+P1-02/query-1024	P1-02	query-1024	request planner	P1.json#/4
+P1-02/query-1025	P1-02	query-1025	request planner	P1.json#/5
+P1-02/limit-0	P1-02	limit-0	request planner	P1.json#/6
+P1-02/limit-1	P1-02	limit-1	request planner	P1.json#/7
+P1-02/limit-50	P1-02	limit-50	request planner	P1.json#/8
+P1-02/limit-51	P1-02	limit-51	request planner	P1.json#/9
+P1-02/window-inclusive	P1-02	window-inclusive	request planner	P1.json#/10
+P1-02/window-offset	P1-02	window-offset	request planner	P1.json#/11
+P1-02/window-over	P1-02	window-over	request planner	P1.json#/12
+P1-02/name-256	P1-02	name-256	complete base resolver at accepted name byte limit	P1.json#/13
+P1-02/name-257	P1-02	name-257	name validation	P1.json#/14
+P1-02/escaping	P1-02	escaping	unchanged literal assertion	P1.json#/15
+P1-04/ordered-escaped-bytes	P1-04	ordered-escaped-bytes	complete page	P1.json#/16
+P1-04/two-ordinals	P1-04	two-ordinals	complete page	P1.json#/17
+P1-05/u64-0	P1-05	u64-0	checked count	P1.json#/18
+P1-05/u64-18446744073709551615	P1-05	u64-18446744073709551615	checked count	P1.json#/19
+P1-05/u64-over-usize32	P1-05	u64-over-usize32	checked count	P1.json#/20
+P1-04/nonselected-invalid	P1-04	nonselected-invalid	terminal original-byte rejection	P1.json#/21
+P1-05/missing-total	P1-05	missing-total	terminal original-byte rejection	P1.json#/22
+P1-05/wrong-total	P1-05	wrong-total	terminal original-byte rejection	P1.json#/23
+P1-03/non-success	P1-03	non-success	transport before adapter	P1.json#/24
+P1-03/wrong-content-type	P1-03	wrong-content-type	transport before adapter	P1.json#/25
+P1-03/body-over-limit	P1-03	body-over-limit	existing read_limited_source_body_with_limit seam before adapter	P1.json#/26
+P1-03/valid	P1-03	valid	transport before adapter	P1.json#/27
+P1-02/empty-name	P1-02	empty-name	name validation	P1.json#/28

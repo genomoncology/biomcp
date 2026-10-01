@@ -1228,7 +1228,7 @@
         "content": [
           {
             "type": "text",
-            "ordered_content": "inputs/expected-mcp-get-card-only.md"
+            "ordered_content": "inputs/expected-mcp-get-text.md"
           }
         ],
         "structuredContent": null
@@ -1294,14 +1294,7 @@
     "contracts": {
       "design": "../design.md",
       "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
-      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-      "independent_source_audit": {
-        "baseline": "efff26d838ddc6471cfd9c06956855fd6e50ca43",
-        "construction": "de5c009053d3f3586aabeba5b813e5e0bfa58a46",
-        "dependency": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-        "historical_oracle_commit": "62b6c0ac9ad8da44433fc6f49e0c896c7b84ffa0",
-        "authority": "proposal only; Root approval after fresh separate review"
-      }
+      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
     },
     "unchanged_assertions": [],
     "options": {
@@ -1426,7 +1419,7 @@
       "schema_accepts": false,
       "mapper_error": {
         "code": -32602,
-        "message": "invalid typed search entity; valid entities: author, gene, disease, pgx, gwas, article, trial, variant, protein, patient",
+        "message": "invalid typed search entity; valid entities: author, gene, pgx, gwas, article, trial, variant, protein, patient",
         "data": null
       },
       "mcp_result": {
@@ -1434,7 +1427,7 @@
         "content": [
           {
             "type": "text",
-            "text": "invalid typed search entity; valid entities: author, gene, disease, pgx, gwas, article, trial, variant, protein, patient"
+            "text": "invalid typed search entity; valid entities: author, gene, pgx, gwas, article, trial, variant, protein, patient"
           }
         ],
         "structuredContent": null
@@ -1446,14 +1439,7 @@
     "contracts": {
       "design": "../design.md",
       "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
-      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-      "independent_source_audit": {
-        "baseline": "efff26d838ddc6471cfd9c06956855fd6e50ca43",
-        "construction": "de5c009053d3f3586aabeba5b813e5e0bfa58a46",
-        "dependency": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-        "historical_oracle_commit": "62b6c0ac9ad8da44433fc6f49e0c896c7b84ffa0",
-        "authority": "proposal only; Root approval after fresh separate review"
-      }
+      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
     },
     "unchanged_assertions": [],
     "options": {
@@ -2235,14 +2221,7 @@
     "contracts": {
       "design": "../design.md",
       "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
-      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-      "independent_source_audit": {
-        "baseline": "efff26d838ddc6471cfd9c06956855fd6e50ca43",
-        "construction": "de5c009053d3f3586aabeba5b813e5e0bfa58a46",
-        "dependency": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-        "historical_oracle_commit": "62b6c0ac9ad8da44433fc6f49e0c896c7b84ffa0",
-        "authority": "proposal only; Root approval after fresh separate review"
-      }
+      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
     },
     "unchanged_assertions": [],
     "options": {
@@ -2252,49 +2231,6 @@
       "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
       "request_defaults_reference": "requests.json",
       "semantic_expectation_source": "explicit authored constants, never implementation output"
-    },
-    "request_order_contract": {
-      "comparison": "exact bijection of full request plans to full response objects; then enforce causal edges",
-      "request_ids": [
-        "sample.mychem",
-        "sample.approvals",
-        "second.mychem",
-        "second.approvals"
-      ],
-      "response_indices": [
-        0,
-        1,
-        2,
-        3
-      ],
-      "before": [
-        [
-          "sample.mychem",
-          "sample.approvals"
-        ],
-        [
-          "second.mychem",
-          "second.approvals"
-        ]
-      ],
-      "edge_semantics": "predecessor response received, admitted and used before successor request is dispatched",
-      "independent_chains": [
-        [
-          "sample.mychem",
-          "sample.approvals"
-        ],
-        [
-          "second.mychem",
-          "second.approvals"
-        ]
-      ],
-      "output_order": [
-        "sampledrug",
-        "seconddrug"
-      ],
-      "allow_all_linear_extensions": true,
-      "extra_or_missing_or_duplicate_requests": "reject",
-      "reply_binding": "each request index binds its same-index complete response regardless of arrival"
     }
   },
   {
@@ -2787,14 +2723,7 @@
     "contracts": {
       "design": "../design.md",
       "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
-      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-      "independent_source_audit": {
-        "baseline": "efff26d838ddc6471cfd9c06956855fd6e50ca43",
-        "construction": "de5c009053d3f3586aabeba5b813e5e0bfa58a46",
-        "dependency": "59fde6246c1a07ac115d6fc9f16471354a725bff",
-        "historical_oracle_commit": "62b6c0ac9ad8da44433fc6f49e0c896c7b84ffa0",
-        "authority": "proposal only; Root approval after fresh separate review"
-      }
+      "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
     },
     "unchanged_assertions": [],
     "options": {
@@ -2804,67 +2733,6 @@
       "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
       "request_defaults_reference": "requests.json",
       "semantic_expectation_source": "explicit authored constants, never implementation output"
-    },
-    "request_order_contract": {
-      "comparison": "exact bijection of full request plans to full response objects; then enforce causal edges",
-      "request_ids": [
-        "mychem",
-        "ctgov.requested",
-        "ctgov.canonical",
-        "ctgov.alpha",
-        "ctgov.brand_two",
-        "ctgov.synonym"
-      ],
-      "response_indices": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5
-      ],
-      "before": [
-        [
-          "mychem",
-          "ctgov.requested"
-        ],
-        [
-          "mychem",
-          "ctgov.canonical"
-        ],
-        [
-          "mychem",
-          "ctgov.alpha"
-        ],
-        [
-          "mychem",
-          "ctgov.brand_two"
-        ],
-        [
-          "mychem",
-          "ctgov.synonym"
-        ]
-      ],
-      "edge_semantics": "MyChem response received and admitted and aliases resolved before any CTGov request",
-      "concurrent_group": [
-        "ctgov.requested",
-        "ctgov.canonical",
-        "ctgov.alpha",
-        "ctgov.brand_two",
-        "ctgov.synonym"
-      ],
-      "logical_worker_order": [
-        "REQ-100",
-        "canonicaldrug",
-        "ALPHA",
-        "BrandTwo",
-        "ABT-100"
-      ],
-      "network_arrival_order": "unconstrained within the CTGov group",
-      "allow_all_linear_extensions": true,
-      "extra_or_missing_or_duplicate_requests": "reject",
-      "reply_binding": "each request index binds its same-index complete response regardless of arrival",
-      "worker_pagination": "each worker continuation depends on its own previous response; retained join_all rounds preserve logical worker processing order"
     }
   },
   {

@@ -1,0 +1,230 @@
+{
+  "profile": "Get",
+  "digest": "sha256:0e3ed300e1401a3e27ec3e5739268a5c2c675d4661bd2c22360aca47e54059ff",
+  "total": 1,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:0e3ed300e1401a3e27ec3e5739268a5c2c675d4661bd2c22360aca47e54059ff",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-SYN1",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "SampleDrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:0e3ed300e1401a3e27ec3e5739268a5c2c675d4661bd2c22360aca47e54059ff",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-SYN1",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "SampleDrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"drugbank\":{\"id\":\"DB-SYN1\",\"name\":\"Sample\\u0044rug\"}}",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-SYN1\"",
+            "state": "values",
+            "values": [
+              "DB-SYN1"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"Sample\\u0044rug\"",
+            "state": "values",
+            "values": [
+              "SampleDrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        }
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

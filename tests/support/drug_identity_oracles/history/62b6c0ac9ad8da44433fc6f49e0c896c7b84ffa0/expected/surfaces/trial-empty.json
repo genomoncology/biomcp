@@ -1,0 +1,19 @@
+{
+  "pagination": {
+    "offset": 0,
+    "limit": 2,
+    "returned": 0,
+    "total": 0,
+    "total_precision": "exact",
+    "continuation_status": "terminal",
+    "next_page_token": null,
+    "has_more": false
+  },
+  "count": 0,
+  "results": [],
+  "_meta": {
+    "next_commands": [
+      "biomcp list trial"
+    ]
+  }
+}
