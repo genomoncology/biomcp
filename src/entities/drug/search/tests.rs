@@ -221,8 +221,19 @@ async fn unresolved_mychem_paths_each_request_once_and_preserve_positive_cvx_fal
     env.set("BIOMCP_EMA_DIR", ema_root.to_str().expect("EMA path"));
     env.set("BIOMCP_CVX_DIR", cvx_root.to_str().expect("CVX path"));
 
+    let rejected = search_name_query_with_region(
+        "gardasil",
+        10,
+        0,
+        DrugRegion::Eu,
+        WhoProductTypeFilter::Both,
+    )
+    .await
+    .expect_err("malformed identity must reject before CVX fallback");
+    assert_eq!(rejected.code(), "api");
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+
     for (query, expected_name, expected_source) in [
-        ("gardasil", "Silgard", "cvx_full_vaccine_name"),
         ("prevnar", "Prevenar 13", "cvx_full_vaccine_name"),
         ("fluzone", "Flucelvax Tetra", "cvx_short_description"),
         ("GARDASIL", "Silgard", "cvx_full_vaccine_name"),
