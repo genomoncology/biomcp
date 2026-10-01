@@ -133,6 +133,12 @@ fn unknown_disease_section_message(
 pub(crate) struct DiseaseGetContext {
     pub(crate) disease: Disease,
     pub(crate) used_requested_label: bool,
+    // dead-code reason: identity custody and loss stay beside assembly until public rendering
+    #[allow(dead_code)]
+    pub(crate) identity: biodata::MyDiseaseRow,
+    // dead-code reason: presentation losses are internal, not public response fields
+    #[allow(dead_code)]
+    pub(crate) conversion: crate::sources::mydisease::projection::DiseaseConversionReport,
 }
 
 pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMcpError> {
@@ -161,11 +167,13 @@ pub(crate) async fn get_with_context(
     match parse_disease_lookup_input(name_or_id) {
         DiseaseLookupInput::CanonicalOntologyId(id) => {
             let hit = client.get(&id).await?;
+            let identity = hit.row.clone();
+            let conversion = hit.conversion.clone();
             let mut disease = transform::disease::from_mydisease_hit(hit);
+            disease.parents = resolve_parent_names(&client, &disease.parents).await?;
             if let Err(err) = enrich_sparse_disease_identity(&mut disease).await {
                 warn!("OLS4 unavailable for sparse disease identity repair: {err}");
             }
-            disease.parents = resolve_parent_names(&client, &disease.parents).await?;
             if !parsed_sections.explicit {
                 enrich_base_context(&mut disease).await;
             }
@@ -173,6 +181,8 @@ pub(crate) async fn get_with_context(
             return Ok(DiseaseGetContext {
                 disease,
                 used_requested_label: false,
+                identity,
+                conversion,
             });
         }
         DiseaseLookupInput::CrosswalkId(kind, value) => {
@@ -185,11 +195,13 @@ pub(crate) async fn get_with_context(
                 suggestion: "Try biomcp discover \"<disease name>\" to resolve a supported disease identifier.".into(),
             })?;
             let hit = client.get(&best.id).await?;
+            let identity = hit.row.clone();
+            let conversion = hit.conversion.clone();
             let mut disease = transform::disease::from_mydisease_hit(hit);
+            disease.parents = resolve_parent_names(&client, &disease.parents).await?;
             if let Err(err) = enrich_sparse_disease_identity(&mut disease).await {
                 warn!("OLS4 unavailable for sparse disease identity repair: {err}");
             }
-            disease.parents = resolve_parent_names(&client, &disease.parents).await?;
             if !parsed_sections.explicit {
                 enrich_base_context(&mut disease).await;
             }
@@ -197,6 +209,8 @@ pub(crate) async fn get_with_context(
             return Ok(DiseaseGetContext {
                 disease,
                 used_requested_label: false,
+                identity,
+                conversion,
             });
         }
         DiseaseLookupInput::FreeText => {}
@@ -205,6 +219,8 @@ pub(crate) async fn get_with_context(
     let best = resolve_disease_hit_by_name(&client, name_or_id).await?;
 
     let hit = client.get(&best.id).await?;
+    let identity = hit.row.clone();
+    let mut conversion = hit.conversion.clone();
     let mut disease = transform::disease::from_mydisease_hit(hit);
     if let Err(err) = enrich_sparse_disease_identity(&mut disease).await {
         warn!("OLS4 unavailable for sparse disease identity repair: {err}");
@@ -213,6 +229,9 @@ pub(crate) async fn get_with_context(
         || disease.name.trim().eq_ignore_ascii_case(disease.id.trim());
     if used_requested_label {
         disease.name = name_or_id.to_string();
+        conversion
+            .losses
+            .push(("name", "requested-term display fallback; not a source name"));
     }
     disease.parents = resolve_parent_names(&client, &disease.parents).await?;
     if !parsed_sections.explicit {
@@ -222,6 +241,8 @@ pub(crate) async fn get_with_context(
     Ok(DiseaseGetContext {
         disease,
         used_requested_label,
+        identity,
+        conversion,
     })
 }
 

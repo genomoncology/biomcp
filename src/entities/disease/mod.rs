@@ -374,3 +374,6 @@ pub(crate) use self::search::validate_phenotype_search_window;
 pub use self::search::{
     PhenotypePagination, search_page, search_phenotype_page, search_query_summary,
 };
+
+#[cfg(test)]
+pub(crate) mod identity_surface_tests;

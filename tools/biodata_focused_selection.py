@@ -40,6 +40,7 @@ INTEGRATION_SELECTORS = {
     "json_mode_gene_not_found_error_writes_json_stdout_and_exit_1",
     "mygene_fixture_without_request_stops_on_drop",
     "gene_identity_error_table",
+    "disease_identity_error_table",
 }
 SCHEMA_ASSERTION_SELECTORS = {
     "mcp::shell::tests::typed_schemas_publish_flat_roots_and_reject_bad_input",

@@ -317,10 +317,13 @@ async fn fallback_search_page_swallows_discover_errors() {
         0,
         candidates,
         |_source_id| async {
-            Err(BioMcpError::Api {
-                api: "mydisease.info".into(),
-                message: "lookup failed".into(),
-            })
+            let error = reqwest::Client::new()
+                .get("http://127.0.0.1:0")
+                .send()
+                .await
+                .unwrap_err();
+            assert!(error.is_connect());
+            Err(BioMcpError::Http(error))
         },
     )
     .await

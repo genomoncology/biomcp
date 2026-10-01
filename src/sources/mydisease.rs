@@ -415,7 +415,7 @@ impl MyDiseaseClient {
     }
 }
 
-mod projection;
+pub(crate) mod projection;
 pub(crate) use projection::{MyDiseaseHit, MyDiseaseQueryResponse, optional_failure};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -14,13 +14,19 @@ pub struct MyDiseaseHit {
     pub disgenet: Option<serde_json::Value>,
     pub hpo: Option<MyDiseaseHpo>,
     pub row: MyDiseaseRow,
+    // dead-code reason: retained original response custody until product assembly
+    #[allow(dead_code)]
     pub page: Arc<MyDiseasePage>,
     // Presentation conversion is temporary until direct disease-document presentation.
     // Remove it before public release. Source-only enrichment has separate ownership.
+    // dead-code reason: internal conversion losses remain beside the source report
+    #[allow(dead_code)]
     pub conversion: DiseaseConversionReport,
 }
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct DiseaseConversionReport {
+    // dead-code reason: internal presentation losses do not change public response fields
+    #[allow(dead_code)]
     pub losses: Vec<(&'static str, &'static str)>,
 }
 #[derive(Debug)]
@@ -36,7 +42,7 @@ struct Enrichment {
     disgenet: Option<serde_json::Value>,
     hpo: Option<MyDiseaseHpo>,
 }
-pub(crate) fn failure(message: &'static str) -> BioMcpError {
+pub(crate) fn failure(message: impl Into<String>) -> BioMcpError {
     BioMcpError::Api {
         api: "MyDisease.info".into(),
         message: message.into(),
@@ -50,7 +56,7 @@ pub(crate) fn validate_transport(
 ) -> Result<(), BioMcpError> {
     let context = SourceContext::retry(SourceProvider::MYDISEASE);
     if !status.is_success() {
-        return Err(failure("MyDisease response HTTP status failed"));
+        return Err(failure(format!("HTTP {status}: MyDisease response failed")));
     }
     crate::sources::ensure_json_content_type(context, content_type, bytes)
 }

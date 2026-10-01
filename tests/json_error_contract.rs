@@ -1173,3 +1173,52 @@ fn gene_identity_error_table() {
         }
     }
 }
+
+#[path = "support/disease_identity_cases.rs"]
+mod disease_identity_controls;
+
+#[test]
+fn disease_identity_error_table() {
+    for case in disease_identity_controls::cases()
+        .into_iter()
+        .filter(|case| case.error)
+    {
+        for get in [true, false] {
+            let fixture = MyGeneFixture::with_body(Some(if get {
+                case.get.clone()
+            } else {
+                case.search.clone()
+            }));
+            let cache = tempfile::tempdir().unwrap();
+            let args = if get {
+                vec!["--json", "--no-cache", "get", "disease", "MONDO:1", "civic"]
+            } else {
+                vec!["--json", "--no-cache", "search", "disease", "-q", "MONDO:1"]
+            };
+            let result = run_biomcp_with_env(
+                &args,
+                &[
+                    ("BIOMCP_MYDISEASE_BASE", &fixture.base_url),
+                    ("BIOMCP_CIVIC_BASE", &fixture.base_url),
+                    ("BIOMCP_OLS4_BASE", &fixture.base_url),
+                    ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
+                    ("BIOMCP_CACHE_DIR", cache.path().to_str().unwrap()),
+                    ("RUST_LOG", "off,reqwest_retry=error"),
+                ],
+            );
+            assert_json_error(&result, 1, "api");
+            assert!(
+                !result.stdout.contains("SOURCE-ONLY-CANARY"),
+                "{}",
+                case.label
+            );
+            let request = fixture.received_request();
+            assert!(request.starts_with(if get { "/disease/" } else { "/query?" }));
+            assert!(
+                fixture.request_rx.try_recv().is_err(),
+                "terminal response rescued"
+            );
+            let _ = case.name;
+        }
+    }
+}

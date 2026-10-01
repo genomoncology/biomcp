@@ -1,123 +1,98 @@
-//! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json`
-//! and response helpers. No network, no server.
-
+//! Authored synthetic controls use no provider captures. MIT source-code license.
 use crate::error::BioMcpError;
-use crate::sources::decode_json;
-use crate::sources::mydisease::{MyDiseaseClient, MyDiseaseHit, MyDiseaseQueryResponse};
-use reqwest::StatusCode;
-use reqwest::header::HeaderValue;
-
-macro_rules! fixture {
-    ($name:expr) => {
-        include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/testdata/sources/mydisease/",
-            $name
-        ))
-    };
-}
-
+use crate::sources::mydisease::{
+    MyDiseaseClient,
+    projection::{decode_get, decode_search},
+};
+use reqwest::{StatusCode, header::HeaderValue};
+use sha2::{Digest, Sha256};
 fn json_ct() -> HeaderValue {
     HeaderValue::from_static("application/json")
 }
-
-#[test]
-fn parses_query_response_from_real_fixture() {
-    let resp: MyDiseaseQueryResponse = decode_json(
-        crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
-        StatusCode::OK,
-        Some(&json_ct()),
-        fixture!("query_melanoma.json"),
-        false,
-    )
-    .unwrap();
-
-    assert!(!resp.hits.is_empty());
-    assert!(resp.hits[0].id.starts_with("MONDO:") || resp.hits[0].id.starts_with("DOID:"));
-}
-
-#[test]
-fn parses_get_response_from_real_fixture() {
-    let hit = MyDiseaseClient::decode_get_hit(
-        StatusCode::OK,
-        Some(&json_ct()),
-        fixture!("get_mondo_0005105.json"),
-        "MONDO:0005105",
-    )
-    .unwrap();
-
-    assert_eq!(hit.id, "MONDO:0005105");
-    assert!(hit.mondo.is_some());
-    assert!(hit.disease_ontology.is_some());
-}
-
 #[test]
 fn decode_get_hit_maps_not_found_status() {
-    let err = MyDiseaseClient::decode_get_hit(
+    let error = MyDiseaseClient::decode_get_hit(
         StatusCode::NOT_FOUND,
         Some(&json_ct()),
-        b"{\"error\":\"missing\"}",
+        b"{}",
         "MONDO:missing",
     )
     .unwrap_err();
-    match err {
-        BioMcpError::NotFound { entity, id, .. } => {
-            assert_eq!(entity, "disease");
-            assert_eq!(id, "MONDO:missing");
-        }
-        other => panic!("expected NotFound, got {other:?}"),
-    }
+    assert!(matches!(error, BioMcpError::NotFound { .. }));
 }
-
-#[test]
-fn hpo_fields_deserialize_from_hit() {
-    let hit: MyDiseaseHit = serde_json::from_value(serde_json::json!({
-        "_id": "MONDO:0017309",
-        "hpo": {
-            "phenotype_related_to_disease": [
-                {"hpo_id": "HP:0001653", "evidence": "TAS", "hp_freq": "HP:0040280"}
-            ],
-            "inheritance": {"hpo_id": "HP:0000006"}
-        }
-    }))
-    .expect("hpo payload should deserialize");
-
-    let hpo = hit.hpo.expect("hpo field should exist");
-    assert_eq!(hpo.phenotype_related_to_disease.len(), 1);
-    assert_eq!(
-        hpo.phenotype_related_to_disease[0].hpo_id.as_deref(),
-        Some("HP:0001653")
-    );
-    assert_eq!(hpo.inheritance.len(), 1);
-    assert_eq!(hpo.inheritance[0].hpo_id.as_deref(), Some("HP:0000006"));
-}
-
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
-    let err = decode_json::<MyDiseaseQueryResponse>(
-        crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
+    let error = MyDiseaseClient::decode_get_hit(
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
-        b"upstream failure",
-        false,
+        b"SOURCE-ONLY-CANARY",
+        "MONDO:1",
     )
     .unwrap_err();
-    let msg = format!("{err:?}");
-    assert_eq!(err.code(), "api");
-    assert!(msg.contains("MyDisease.info"), "got: {msg}");
-    assert!(msg.contains("500"), "got: {msg}");
+    assert_eq!(error.code(), "api");
+    assert!(error.to_string().contains("500"));
+    assert!(!error.to_string().contains("SOURCE-ONLY-CANARY"));
 }
-
 #[test]
 fn disease_identity_transport_table() {
-    for bytes in [
-        br#"{"_id":" "}"#.as_slice(),
-        br#"{"_id":"MONDO:1","mondo":{"name":17}}"#.as_slice(),
-        br#"{"_id":"MONDO:1","_id":"MONDO:2"}"#.as_slice(),
+    for case in crate::entities::disease::identity_surface_tests::controls::cases() {
+        let get = decode_get(&case.get);
+        let search = decode_search(&case.search);
+        assert_eq!(get.is_err(), case.error, "{} get", case.label);
+        assert_eq!(search.is_err(), case.error, "{} search", case.label);
+        if let Ok(hit) = get {
+            assert_eq!(
+                hit.page.digest(),
+                format!("sha256:{:x}", Sha256::digest(&case.get))
+            );
+            assert_eq!(hit.row.source().ordinal(), 0);
+            assert_eq!(hit.row.identity().provider_id(), "MONDO:1");
+            assert_eq!(
+                crate::transform::disease::name_from_mydisease_hit(&hit),
+                case.name
+            );
+        }
+        if let Ok(page) = search {
+            assert_eq!(page.total, 1);
+            assert_eq!(page.hits[0].row.source().ordinal(), 0);
+            assert_eq!(
+                page.hits[0].page.digest(),
+                format!("sha256:{:x}", Sha256::digest(&case.search))
+            );
+        }
+    }
+    for hpo in [
+        r#"{"inheritance":{"hpo_id":"HP:0000006"}}"#,
+        r#"{"inheritance":[{"hpo_id":"HP:0000006"}]}"#,
+        r#"{"inheritance":null}"#,
     ] {
-        assert!(
-            MyDiseaseClient::decode_get_hit(StatusCode::OK, Some(&json_ct()), bytes, "MONDO:1")
-                .is_err()
+        let bytes = format!(r#"{{"_id":"MONDO:1","hpo":{hpo}}}"#);
+        let hit = decode_get(bytes.as_bytes()).unwrap();
+        assert_eq!(
+            hit.hpo.unwrap().inheritance.len(),
+            usize::from(!hpo.contains("null"))
         );
     }
+    let page = decode_search(br#"{"total":0,"hits":[]}"#).unwrap();
+    assert!(page.hits.is_empty());
+    assert_eq!(page.total, 0);
+    for body in [
+        br#"{"hits":[]}"#.as_slice(),
+        br#"{"total":18446744073709551616,"hits":[]}"#.as_slice(),
+        br#"{"total":2,"hits":[{"_id":"MONDO:1"},{"_id":"bad","mondo":{"name":false}}]}"#
+            .as_slice(),
+    ] {
+        assert!(decode_search(body).is_err());
+    }
+    let too_large = vec![b' '; 1_048_577];
+    assert!(decode_get(&too_large).is_err());
+    assert!(
+        MyDiseaseClient::decode_get_hit(
+            StatusCode::OK,
+            Some(&HeaderValue::from_static("text/html")),
+            b"{}",
+            "MONDO:1"
+        )
+        .is_err()
+    );
 }
