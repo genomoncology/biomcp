@@ -21,3 +21,7 @@ October1 correction: root added the missing selection-loader scope and mixed-tar
 ## Root implementation approval
 
 October1,2026. Root coordinator approves implementation within existing BioData0182 after fresh corrected DESIGN ACCEPT at10a8dc4d1a071ab1101bc5c0c384137665ad8b84. Use the accepted immutable59fde62 dependency and reviewed selector/source contracts. Compare current maintenance before implementation and review underADR0029. A fresh independent builder owns this lane, pushes each fix and returns exact code and focused offline evidence for fresh review. The accepted finite local-fixture build/test work is authorized; source/dependency preparation precedes isolated offline execution. Final composite proof, shared branch advancement, hosted verification, release and cleanup remain root-owned separate steps. No live providers, private sources or unrelated enrichment rewrite. Ian can overturn the routine source defaults or selector policy.
+
+## Implementation handoff
+
+October 1, 2026. Implementation and bounded offline authoring proof are complete on this ticket lane. [Implementation record](../records/2007-implement-mygene-consumer.md) names the exact code candidate, retained behavior, source custody, dependency closure, maintenance cutoff, failures, actual timings and finite post-review commands. Fresh independent CODE review is next. Root retains final composite proof, BioData gates, hosted-verifier metadata, shared advancement and completion under BioData 0182.
