@@ -34,7 +34,15 @@ async fn ranked_drug_paging_table() {
                 expected["results"]
             );
             assert_eq!(json!(page.total), expected["total"]);
-            assert_eq!(json!(page.match_kinds), expected["match_kinds"]);
+            assert_eq!(
+                json!(
+                    page.match_kinds
+                        .iter()
+                        .map(|kind| kind.as_str())
+                        .collect::<Vec<_>>()
+                ),
+                expected["match_kinds"]
+            );
         } else {
             let error = result.unwrap_err();
             assert_eq!(error.code(), expected["failure"]["code"]);
