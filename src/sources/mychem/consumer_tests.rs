@@ -51,8 +51,25 @@ pub(crate) fn assert_page(response: &MyChemQueryResponse, path: &str) {
             json!({"section":field.section(),"name":field.name(),"section_index":field.section_index(),
                 "was_array":field.was_array(),"raw":field.raw(),"state":field.state().as_str(),"values":values})
         }).collect::<Vec<_>>();
+        let raw: Value = serde_json::from_str(hit.row.source().raw()).unwrap();
+        let mut enrichment = serde_json::Map::new();
+        for (section, field) in [
+            ("drugbank", "drug_interactions"),
+            ("chembl", "molecule_type"),
+            ("chembl", "drug_mechanisms"),
+            ("chembl", "atc_classifications"),
+            ("gtopdb", "interaction_targets"),
+            ("ndc", "pharm_classes"),
+            ("drugcentral", "approval"),
+            ("drugcentral", "drug_use"),
+        ] {
+            if let Some(value) = raw.get(section).and_then(|value| value.get(field)) {
+                enrichment.insert(format!("{section}.{field}"), value.clone());
+            }
+        }
         assert_eq!(
-            json!({"ordinal":hit.row.source().ordinal(),"raw":hit.row.source().raw(),"fields":fields}),
+            json!({"ordinal":hit.row.source().ordinal(),"raw":hit.row.source().raw(),"fields":fields,
+            "source_only_enrichment":enrichment}),
             wanted["companion"]
         );
         let losses = hit.row.losses().iter().map(|loss| json!({"field":loss.field(),"disposition":loss.disposition(),"reason":loss.reason()})).collect::<Vec<_>>();
