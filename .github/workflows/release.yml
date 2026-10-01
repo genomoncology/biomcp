@@ -596,7 +596,12 @@ jobs:
       needs.build.result == 'skipped' && needs['wheel-smoke'].result == 'skipped'))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # The draft release is the artifact source: `gh release
+      # download` on a still-draft release needs write-level
+      # contents access, because GitHub lists drafts only to
+      # callers with push access (fifth go-request review found
+      # container-publish failing here under contents: read).
+      contents: write
       packages: write
     env:
       # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git

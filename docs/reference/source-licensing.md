@@ -41,8 +41,8 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | AlphaGenome | 2 | direct_api | required_env | custom provider terms; access is gated by Google/DeepMind service controls | do not assume open redistribution rights for returned prediction outputs | <https://deepmind.google/science/alphagenome/> |
 | Cancerhotspots.org | 3 | direct_api | none | public cancer hotspot recurrence resource with provider-specific reuse expectations | BioMCP queries recurrence counts live and does not redistribute a local cancerhotspots dataset | <https://www.cancerhotspots.org/> |
 | cBioPortal | 3 | direct_api | none | public API with study-specific downstream terms | reuse depends on the specific study or consortium behind each dataset | <https://www.cbioportal.org/> |
-| Cell Model Passports | 1 | indirect_only | not_applicable | Wellcome Sanger Institute portal data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line | BioMCP shows the identifier through a Cellosaurus cross-reference only; users who follow it use the portal under its policy | <https://cellmodelpassports.sanger.ac.uk/> |
-| DepMap | 1 | indirect_only | not_applicable | Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, some restricted datasets require a signed agreement) | BioMCP shows the identifier through a Cellosaurus cross-reference only; no DepMap bytes enter BioMCP output beyond the identifier | <https://depmap.org/portal/> |
+| Cell Model Passports | 1 | indirect_only | not_applicable | Sanger DepMap Data Usage Policy: a non-exclusive, non-transferable right to use the data files for internal proprietary research and education; resale of all or a significant part and commercial services excluded, commercial API/data use requires prior consent | BioMCP shows the identifier through a Cellosaurus cross-reference only; users who follow it use the portal under its policy | <https://depmap.sanger.ac.uk/documentation/data-usage-policy/> |
+| DepMap | 1 | indirect_only | not_applicable | DepMap's own guidance says DepMap-generated data are generally CC BY 4.0 while other hosted projects may use different licenses; each file's terms are checked per download, and a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed) | BioMCP shows the identifier through a Cellosaurus cross-reference only; no DepMap bytes enter BioMCP output beyond the identifier | <https://forum.depmap.org/t/license-for-data-found-in-the-depmap-portal/130> |
 | CDC CVX/MVX | 1 | direct_api | none | most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply | reuse is generally allowed with CDC attribution and non-endorsement language; avoid CDC logos and review exceptions before republishing | <https://www.cdc.gov/other/agencymaterials.html> |
 | CDC WONDER VAERS | 1 | direct_api | none | CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts | reuse is allowed for statistical reporting and analysis with source attribution, but do not try to identify individuals or publish identifying linkages | <https://wonder.cdc.gov/datause.html> |
 | Cellosaurus | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution and the requested citation; every BioMCP cell line output carries both | <https://www.cellosaurus.org/description.html> |
@@ -226,12 +226,12 @@ Reviewed on: `2026-09-27`
 - BioMCP surfaces: `get cell-line <CVCL_xxxx> xrefs` (identifier only, through Cellosaurus)
 - Integration mode: `indirect_only` via Cellosaurus
 - BioMCP auth: `not_applicable`
-- Provider access / registration: public portal
-- License / terms summary: Wellcome Sanger Institute Cell Model Passports data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line
+- Provider access / registration: public portal; non-commercial API access needs no registration
+- License / terms summary: Sanger DepMap Data Usage Policy — a non-exclusive, non-transferable right to use the data files for internal proprietary research and education; resale of all or a significant part and provision of commercial services are excluded; commercial API/data use requires prior consent
 - Redistribution / reuse summary: BioMCP shows the identifier only; users who follow it to the portal use the portal under its policy
-- Official terms URL: <https://cellmodelpassports.sanger.ac.uk/>
-- Reviewed on: `2026-09-30`
-- Notes: Identifier-only entry (2026-09-30): BioMCP fetches no portal data.
+- Official terms URL: <https://depmap.sanger.ac.uk/documentation/data-usage-policy/>
+- Reviewed on: `2026-10-01`
+- Notes: Identifier-only entry: BioMCP fetches no portal data.
 
 ### DepMap
 
@@ -239,11 +239,11 @@ Reviewed on: `2026-09-27`
 - Integration mode: `indirect_only` via Cellosaurus
 - BioMCP auth: `not_applicable`
 - Provider access / registration: public portal
-- License / terms summary: Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, some restricted datasets require a signed agreement)
+- License / terms summary: DepMap's own guidance — DepMap-generated data are generally CC BY 4.0, other hosted projects may use different licenses, and each file's Data Usage and Terms must be checked per download; a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed)
 - Redistribution / reuse summary: BioMCP shows the identifier only; no DepMap bytes enter BioMCP output beyond the identifier
-- Official terms URL: <https://depmap.org/portal/>
-- Reviewed on: `2026-09-30`
-- Notes: Identifier-only entry (2026-09-30): the 2026-09-27 decision stands — restricted DepMap bytes are never rehosted in this public repository.
+- Official terms URL: <https://forum.depmap.org/t/license-for-data-found-in-the-depmap-portal/130>
+- Reviewed on: `2026-10-01`
+- Notes: Identifier-only entry: the 2026-09-27 decision stands — restricted DepMap bytes are never rehosted in this public repository.
 
 ### Cellosaurus
 

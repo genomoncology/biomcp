@@ -448,6 +448,20 @@ def test_promise_shaped_accept_phrases_never_count(tmp_path: Path) -> None:
         "ACCEPT, to be confirmed",
         "ACCEPT 2026-09-30 but pending fixes",
         "ACCEPT dispatch abc will fix",
+        # Fifth go-request review: the reference must be a hex
+        # dispatch ID or a one/two-word reviewer name — promises and
+        # placeholders wrapped in the reference reject, and so does a
+        # missing space before the date.
+        "ACCEPT by Sol, but will fix later",
+        "ACCEPT 2026-09-30 by reviewer pending fixes",
+        # The review's exact phrase; assembled so the literal
+        # placeholder never appears contiguously in this file
+        # (the tracked-text TBD scan would flag it).
+        "ACCEPT (dispatch T" "BD after fixes)",
+        "ACCEPT dispatch -",
+        "ACCEPT2026-09-30",
+        "ACCEPT (dispatch via ticket 1269's review)",
+        "ACCEPT (dispatch folded-and-rereviewed-2026-09-28)",
     ]:
         root = _raise_repo(tmp_path / phrase.replace(" ", "_")[:30], phrase)
         result = _run(root)
@@ -456,7 +470,7 @@ def test_promise_shaped_accept_phrases_never_count(tmp_path: Path) -> None:
 
 
 def test_a_verdict_value_starting_with_accept_counts(tmp_path: Path) -> None:
-    root = _raise_repo(tmp_path, "ACCEPT 2026-09-30 by a fresh reviewer", pin=1)
+    root = _raise_repo(tmp_path, "ACCEPT 2026-09-30 by Sol", pin=1)
     # The raise is accepted, so the gate must pass.
     subprocess.run(["git", "add", "."], cwd=root, check=True)
     result = _run(root)

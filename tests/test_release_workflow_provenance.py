@@ -1397,7 +1397,11 @@ def test_every_job_calling_gh_names_its_repository() -> None:
     )
     for job_id, job in parsed["jobs"].items():
         calls_gh = any(
-            re.search(r"(?m)^\s*gh \w+", str(step.get("run", "")))
+            # 2026-10-01 fifth go-request review: gh also appears
+            # mid-line (if ! gh ..., $(gh ...), | gh, && gh), so
+            # match gh as its own word anywhere in the run text,
+            # not only at the start of a line.
+            re.search(r"(^|[^a-zA-Z0-9_.-])gh\s+[a-z]", str(step.get("run", "")), re.M)
             for step in job.get("steps", [])
         )
         if not calls_gh:
@@ -1461,3 +1465,50 @@ def test_the_latest_step_fails_when_gh_fails() -> None:
     assert "|| true" not in guarded, (
         "a silent fallback inside the guarded block defeats the guard"
     )
+
+
+def test_jobs_downloading_the_draft_release_can_write_contents() -> None:
+    """2026-10-01 fifth go-request review: container-publish ran
+    `gh release download` on the still-draft release with
+    contents: read. GitHub lists drafts only to callers with push
+    access, so the token saw "release not found" and the release
+    stopped before PyPI. Every job that downloads the release
+    before publish-release makes it public needs contents: write.
+    """
+    parsed = yaml.safe_load(
+        (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    )
+    checked = []
+    for job_id, job in parsed["jobs"].items():
+        downloads = any(
+            "gh release download" in str(step.get("run", ""))
+            for step in job.get("steps", [])
+        )
+        if not downloads:
+            continue
+        waits_for_public = "publish-release" in (job.get("needs") or [])
+        if waits_for_public:
+            # The release is public by then; read access is enough.
+            continue
+        checked.append(job_id)
+        assert job.get("permissions", {}).get("contents") == "write", (
+            f"{job_id} downloads the draft release but lacks contents: write; "
+            "GitHub hides drafts from read-only tokens"
+        )
+    assert "container-publish" in checked, (
+        "container-publish must stay covered by the draft-visibility check"
+    )
+
+
+def test_the_decision_case_accepts_exactly_zero_three_and_catchall() -> None:
+    """2026-10-01 fifth go-request review: widening the stay arm to
+    `3|*)` would make every script error read as a legitimate stay
+    and no test noticed. The case must keep three separate arms.
+    """
+    text = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    block = text[text.index('case "$decision" in') : text.index("esac", text.index('case "$decision" in'))]
+    arms = re.findall(r"(?m)^\s*([0-9]|\*|[0-9]\|\*)\)", block)
+    assert arms == ["0", "3", "*"], (
+        f"the decision case must have exactly 0), 3) and *), found {arms}"
+    )
+    assert '3|*)' not in block, "a widened stay arm would swallow script errors"

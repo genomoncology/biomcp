@@ -131,12 +131,12 @@
     "bioMcp_auth": "not_applicable",
     "env_var": null,
     "provider_access": "public portal; BioMCP shows Cell Model Passports identifiers resolved through Cellosaurus cross-references and fetches no portal data",
-    "license_summary": "Wellcome Sanger Institute Cell Model Passports data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line",
-    "redistribution_summary": "no portal bytes enter BioMCP output beyond the identifier itself; users who follow the identifier use the portal under its policy",
-    "terms_url": "https://cellmodelpassports.sanger.ac.uk/",
+    "license_summary": "Sanger DepMap Data Usage Policy: a non-exclusive, non-transferable right to use the data files for internal proprietary research and education; resale of all or a significant part and provision of commercial services are excluded, and commercial API/data use requires prior consent (non-commercial API access needs no registration)",
+    "redistribution_summary": "BioMCP shows the identifier through a Cellosaurus cross-reference only; users who follow it to the portal use the portal under its policy",
+    "terms_url": "https://depmap.sanger.ac.uk/documentation/data-usage-policy/",
     "key_url": null,
-    "reviewed_on": "2026-09-30",
-    "notes": "Identifier-only entry (2026-09-30 fourth go-request review): BioMCP shows the identifier through a Cellosaurus cross-reference only."
+    "reviewed_on": "2026-10-01",
+    "notes": "Identifier-only entry: BioMCP shows Cell Model Passports identifiers resolved through Cellosaurus cross-references and fetches no portal data."
   },
   {
     "id": "cellosaurus",
@@ -451,12 +451,12 @@
     "bioMcp_auth": "not_applicable",
     "env_var": null,
     "provider_access": "public portal; BioMCP shows DepMap identifiers resolved through Cellosaurus cross-references and fetches no DepMap data",
-    "license_summary": "Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, with some restricted datasets requiring a signed agreement); BioMCP ships and fetches none of it",
-    "redistribution_summary": "no DepMap bytes enter BioMCP output beyond the identifier itself; users who follow the identifier to the portal use it under the portal's terms",
-    "terms_url": "https://depmap.org/portal/",
+    "license_summary": "DepMap's own guidance says DepMap-generated data are generally CC BY 4.0 while other hosted projects may use different licenses; each file's Data Usage and Terms must be checked per download, and a 2026-07-28 staff update reports newly generated data carry restricted terms (research use free, commercial use separately licensed)",
+    "redistribution_summary": "BioMCP shows the identifier through a Cellosaurus cross-reference only; no DepMap bytes enter BioMCP output beyond the identifier",
+    "terms_url": "https://forum.depmap.org/t/license-for-data-found-in-the-depmap-portal/130",
     "key_url": null,
-    "reviewed_on": "2026-09-30",
-    "notes": "Identifier-only entry (2026-09-30 fourth go-request review): Ian's rule asks that every source's terms be stated even when BioMCP only shows its identifier through a Cellosaurus cross-reference. The 2026-09-27 DepMap decision (stays out; restricted bytes never rehosted in this public repository) is unchanged."
+    "reviewed_on": "2026-10-01",
+    "notes": "Identifier-only entry: BioMCP shows DepMap identifiers resolved through Cellosaurus cross-references and fetches no DepMap data. The 2026-09-27 decision stands: restricted DepMap bytes are never rehosted in this public repository."
   },
   {
     "id": "dgidb",

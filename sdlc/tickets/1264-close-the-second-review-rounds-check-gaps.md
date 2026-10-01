@@ -15,7 +15,7 @@ From sdlc/issues/2026-09-28-review-follow-ups-after-1255-through-1261.md (Checks
 
 - Design review: n/a (the review file named the structures)
 - Code review: REJECT once (the allowlist never scanned non-bullet lines; two normalizations invented verdicts; one truncated a recorded verification), folded and verified 2026-09-28
-- Code review (raise history): ACCEPT 2026-09-28 (dispatch via ticket 1269's review)
-- Raise history: the marker-ceiling raises made inside this ticket's gate cycles (global 25→42; gencc markers 6→9) are reconstructed in the ratchet inventory and accepted as accurate history. The raises landed with the work the verdict above verifies.
+- Code review (raise history): ACCEPT 2026-09-28
+- Raise history: no dispatch ID exists to cite — the acceptance was folded into ticket 1269's re-review and the dispatch was never recorded (fifth go-request review: fake dispatch-shaped references are banned). The marker-ceiling raises made inside this ticket's gate cycles (global 25→42; gencc markers 6→9) are reconstructed in the ratchet inventory and accepted as accurate history. The raises landed with the work the verdict above verifies.
 - Raise-history acceptance 2026-09-28: the marker-ceiling raises made inside this ticket's gate cycles (global 25→42; gencc markers 6→9) are reconstructed in the ratchet inventory and ACCEPTED by ticket 1269's review of 2026-09-28 as accurate history — the raises landed with the work this line verifies.
 - Verification: yellow gate at 4de8e686 — lint, test, spec, stress OK, zero failed lines; the ratchet and the five suites green locally and on the host

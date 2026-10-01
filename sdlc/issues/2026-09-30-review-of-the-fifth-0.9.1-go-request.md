@@ -50,3 +50,18 @@ Do not tag `09567779`. The container-publish job cannot download from the draft 
 - If `gh release edit --draft=false` fails after `latest` has moved, `latest` points at an image whose release is still a draft.
 - homebrew-tap exits 0 when `HOMEBREW_TAP_TOKEN` is not set. That skip is by design. The checklist's Homebrew check in section 4 catches it.
 - `gh release list` returns at most 30 releases by default (`release.yml:756`). This has no effect today.
+
+## Dispositions (recorded 2026-10-01, fifth round)
+
+- Blocker (container-publish contents): fixed — `contents: write` with the comment naming this review, and `test_jobs_downloading_the_draft_release_can_write_contents` fails any job that downloads the release before publish-release without write access (mutation-verified: reverting to read fails the test).
+- Rehearsal: prepared, not yet run — the private scratch repository genomoncology/biomcp-release-rehearsal carries merged main plus one commit pointing the image and TestPyPI at itself (the checklist item is in section 1); the tag is not pushed because the publish step needs TestPyPI trusted publishing registered for the scratch repository (Ian's action), and the go request is withheld until the run URL exists.
+- Raise-review grammar: fixed — the reference is now a hex dispatch ID or a one/two-word capitalized reviewer name; the five values from this review are tested rejections; tickets 1264 and 1269 cite no dispatch (none exists) and say so plainly on their own lines.
+- Exit-code case pin and the mid-line gh guard: fixed — `test_the_decision_case_accepts_exactly_zero_three_and_catchall` (widening `3)` to `3|*)` fails) and the guard now matches gh anywhere in a run line.
+- Record 1283: written with its run IDs, including both failing runs.
+- Fourth review file dispositions: added (above).
+- e84d83f6 and dda87d73: re-reviewed with this round's dispatch, named in ticket 1284.
+- Worked checklist: ticket 1284 carries the worked copy for 0.9.1 with evidence.
+- Changelog "RNA nTPM protein expression" and "bookkeeping pushes": reworded to the CLI help's own terms.
+- DepMap and Cell Model Passports: terms_url points at the providers' own terms/guidance pages, the summaries state only what those pages say, evidence rows added to the 2026-09-27 file (52 rows), and "fourth go-request review"/"Ian's rule" phrasings removed from sources.json.
+- sources.json move-mixing: the sort landed inside a content commit and stays as history; the convention going forward (moves out of content commits) is recorded in ticket 1284.
+- Lesser notes: (a) a failed `gh release edit` after `latest` moved is an accepted residual risk — the checklist's post-release verification catches it, and moving the publish first would reintroduce the public-before-Docker failure this round removed; (b) the Homebrew skip is by design and checklist section 4 catches it; (c) the 30-release page limit has no effect today (the repository has six releases) — noted, no change.

@@ -100,3 +100,17 @@ Ian cuts every release. Users install releases, not main. The release bar is the
 - [ ] Add an empty `## Unreleased` section to the changelog.
 - [ ] Review the committed `server.json` and submit to the MCP Registry and other directories separately. Record each acceptance.
 - [ ] Record any lesson from the release in this checklist or the runbook.
+
+## Dispositions (recorded 2026-10-01, fifth round)
+
+- Release blocker (create-draft, GH_REPO): fixed at b5a25a89 — GH_REPO on all seven gh-calling jobs, plus `test_every_job_calling_gh_names_its_repository`.
+- Tests and gates, gh-failure pin: fixed at b5a25a89 — `test_the_latest_step_fails_when_gh_fails`; the guard was widened at the fifth round to find gh mid-line (`if ! gh`, `$(gh …)`).
+- Tests and gates, stay exit code: fixed at b5a25a89 — exit 3 stay / 2 bad tag, `test_a_stay_is_exit_three_and_errors_are_distinct`; the case arms are pinned by the fifth round's `test_the_decision_case_accepts_exactly_zero_three_and_catchall`.
+- Tests and gates, raise-review grammar: fixed at b5a25a89 (whole-value fullmatch) and tightened at the fifth round (hex dispatch or one/two-word name; promise phrases reject); the nine older verdicts are named in ticket 1283.
+- Tests and gates, wheel test: confirmed at b5a25a89 — the module carries `needs_binary` and reads `BIOMCP_BIN`; the scratch-clone failure is designed behavior, recorded in ticket 1283.
+- Changelog 21/20/39: fixed at b5a25a89 and bc5a7882 (the expected-set correction).
+- ChEMBL surface: sources.json at b5a25a89; the page detail section at e84d83f6.
+- DepMap and Cell Model Passports entries: added at b5a25a89; terms corrected to the providers' own pages at the fifth round.
+- Records 1281/1276/1269/1282: fixed at b5a25a89.
+- The five post-ACCEPT commits: 9195b9cc, a741497d, 041e3d18, 77c2ae58 and fd55c4ad were covered by the third round's dispatch d008965b and the merge re-checks; e84d83f6 and dda87d73 were re-reviewed with the fifth round's dispatch (ticket 1284).
+- Checklist landing, AGENTS.md pointer, runbook step 8: fixed at b5a25a89; the duplicate Releases heading from that landing was folded at e84d83f6.

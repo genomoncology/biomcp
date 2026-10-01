@@ -1,0 +1,36 @@
+# 1284 — close the fifth go-request round
+
+Filed 2026-10-01 with `sdlc/records/1284-close-the-fifth-go-request-round.md`; closes `sdlc/issues/2026-09-30-review-of-the-fifth-0.9.1-go-request.md`, whose dispositions are appended to it.
+
+## What landed
+
+- The blocker: container-publish carries `contents: write` (drafts are visible only to write-capable tokens), and `test_jobs_downloading_the_draft_release_can_write_contents` fails any job that downloads the release before publish-release without write access. Mutation-verified: reverting to `contents: read` fails the test.
+- The exit-code case is pinned (`test_the_decision_case_accepts_exactly_zero_three_and_catchall`; widening `3)` to `3|*)` fails), and the gh guard finds gh mid-line (`if ! gh`, `$(gh …)`), verified on samples.
+- The raise-review grammar's reference is now a hex dispatch ID or a one/two-word capitalized reviewer name; the review's five values plus the two fake dispatch-shaped references are tested rejections. Tickets 1264 and 1269 cite no dispatch because none exists, and say so plainly.
+- Record 1283 written with all eight run IDs, both failures included. Dispositions appended to the fourth and fifth review files.
+- The changelog says "RNA levels (nTPM) for the gene across one cancer group of cell lines" (the CLI help's own words) and drops the internal phrasing ("bookkeeping" is gone; the sentence now says a push that skips the Rust jobs still runs the record tests).
+- DepMap and Cell Model Passports: terms_url points at DepMap's own licensing guidance thread and the Sanger DepMap Data Usage Policy; the summaries state only what those pages say; two evidence rows added to the 2026-09-27 evidence file (52 rows pinned); "fourth go-request review" and "Ian's rule" removed from sources.json.
+- The rehearsal item landed in checklist section 1, and the rehearsal itself runs on `genomoncology/biomcp-release-rehearsal` (private scratch copy; main carries this branch plus one commit pointing the image at the scratch repository and the publish step at TestPyPI).
+
+## Convention recorded
+
+sources.json entry moves (re-sorts) stay out of content commits; the 1283-round sort that mixed them is accepted history.
+
+## Worked release checklist for 0.9.1 (section 1)
+
+- [x] Dispositions: every finding in the fourth and fifth review files carries a disposition (this round's commits; the lesser notes are accepted with reasons).
+- [x] Ticket/record/review: tickets 1219-1284 have ticket files and records; review verdicts with dispatch references are in the tickets (1264 and 1269 honestly cite none); record 1283 names its runs.
+- [x] Fresh read-only review through the final tip: dispatch recorded below; commits e84d83f6 and dda87d73 (post-verdict commits from the last round) are in its evidence bundle explicitly.
+- [x] Claimed fixes fail when reverted: container-publish permissions, the case arms, and the grammar rejections were mutation-verified (commands and outputs in the review artifacts).
+- [x] New sources' terms stated: DepMap and Cell Model Passports carry terms in both registries with evidence rows.
+- [x] Changelog: 61 tickets covered on a scratch tag (`check-changelog-coverage.py --tag v0.9.1`); the six issues named.
+- [x] Version files: `check-version-sync.sh` and `check-release-versions.py --tag v0.9.1` pass.
+- [x] Branches: this round merges `--no-ff` after its green run; merged branches deleted; worktrees removed; 1.0 team branches untouched.
+- [x] Candidate main run green: recorded in the go request (eight jobs).
+- [x] Live docs serve the candidate commit: recorded in the go request.
+- [x] GH_REPO/checkout guard and draft-write guard: pinned by tests (above).
+- [ ] Rehearsal: the scratch repository `genomoncology/biomcp-release-rehearsal` is prepared (main at this branch plus the rehearsal commit); the tag fires when TestPyPI trusted publishing is registered for it (Ian's action), and the run URL lands here and in the go request.
+
+## Review
+
+- Code review: ACCEPT 2026-10-01 dispatch 16d922f8-6baa-4a4a-be90-959000d4580b (Claude vendor, read-only) — the blocker fix, the case pin, the mid-line gh guard, the grammar's five rejections, the records and dispositions, the changelog wording and the sources terms all verified; one P2 folded at this commit (the word "bookkeeping" still in the changelog line; now reworded away), and one note that the scratch repository's commit graph is external to the clone — the go request carries the run URL instead.

@@ -499,17 +499,21 @@ def test_the_evidence_table_keeps_one_row_per_line() -> None:
     # Exact coverage (second go-request review: a one-row collapse
     # passed the >= 49 floor). The pass documented 48 rows (45
     # verified, 2 changed, 1 restricted), so the table is exactly 50
-    # pipe lines, every row key is unique, and no row names a source
-    # the registry does not know (the registry has grown past the
-    # pass, so registry-to-row is not one-to-one).
+    # pipe lines plus the two 2026-10-01 follow-up rows for the
+    # identifier-only entries (depmap, cell-model-passports), every
+    # row key is unique, and no row names a source the registry does
+    # not know (the registry has grown past the pass, so
+    # registry-to-row is not one-to-one).
     def _normalize(value: str) -> str:
         return value.strip().lower().replace(" ", "-").replace(".", "")
 
     row_keys = {_normalize(row.split("|")[1]) for row in table_lines[2:]}
-    assert len(table_lines) == 50, (
-        f"the pass documented 48 rows plus header and separator; found {len(table_lines)}"
+    assert len(table_lines) == 52, (
+        f"the pass documented 48 rows plus header, separator and two follow-up rows; "
+        f"found {len(table_lines)}"
     )
-    assert len(row_keys) == 48, f"duplicate or missing row keys: {len(row_keys)}"
+    assert len(row_keys) == 50, f"duplicate or missing row keys: {len(row_keys)}"
+    assert {"depmap", "cell-model-passports"} <= row_keys, "the 2026-10-01 follow-up rows are missing"
     # Every row names a source the registry knows: strip punctuation
     # and spaces so "ClinicalTrials.gov", "g:Profiler" and
     # "Cancerhotspots.org" match their registry keys.

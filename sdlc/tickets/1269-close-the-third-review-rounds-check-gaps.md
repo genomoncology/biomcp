@@ -14,6 +14,6 @@ From sdlc/issues/2026-09-28-review-follow-ups-after-1263-and-1264.md (Checks sec
 ## Review
 
 - Design review: n/a (the review file names the structures)
-- Code review: ACCEPT 2026-09-28 (dispatch folded-and-rereviewed-2026-09-28)
-- History: an earlier rejection was folded and re-reviewed; the acceptance above activates the 1269-cited raise records (prior findings: folded-raise acceptance unenforced, the bullet_status term dropped, 1202's verdict invented). Verdicts must now match the whole-value grammar the fourth go-request round added (ACCEPT, optional date, optional dispatch reference, nothing more); nine older verdict lines (tickets 1164, 1242, 1243, 1246, 1250, 1254, 1255, 1265, 1266) no longer parse under it — no raise cites them, so they stand as history.
+- Code review: ACCEPT 2026-09-28
+- Dispatch history: none exists to cite — the acceptance came from a folded re-read whose dispatch was never recorded (fifth go-request review). An earlier rejection was folded and re-reviewed; the acceptance above activates the 1269-cited raise records (prior findings: folded-raise acceptance unenforced, the bullet_status term dropped, 1202's verdict invented). Verdicts must now match the whole-value grammar the fourth go-request round added (ACCEPT, optional date, optional dispatch reference, nothing more); nine older verdict lines (tickets 1164, 1242, 1243, 1246, 1250, 1254, 1255, 1265, 1266) no longer parse under it — no raise cites them, so they stand as history.
 - Verification: yellow gate at 346068be; merged in the 535747d9 chain

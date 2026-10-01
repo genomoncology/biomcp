@@ -16,8 +16,9 @@ Ian cuts every release. Users install releases, not main. The release bar is the
 - [ ] Every change landed through a `tickets/*` branch whose CI run finished green, merged with `git merge --no-ff`.
 - [ ] The candidate commit's main CI run finished with every job green. Tag pushes start no CI, so this run is the bar.
 - [ ] The live docs serve the candidate commit or a descendant.
-- [ ] Every `gh` call in `.github/workflows/release.yml` carries `GH_REPO: ${{ github.repository }}` (or a checkout), and every repository script runs after a checkout — `tests/test_release_workflow_provenance.py` enforces both.
+- [ ] Every `gh` call in `.github/workflows/release.yml` carries `GH_REPO: ${{ github.repository }}` (or a checkout), and every repository script runs after a checkout — `tests/test_release_workflow_provenance.py` enforces both. Every job that downloads the release while it is still a draft has `contents: write`.
 - [ ] Merged ticket branches, worktrees and local branches are removed. Branches owned by the 1.0 team are left alone. `workspace repos --dirty` is clean for this repository.
+- [ ] The tag push has been rehearsed on a scratch repository (a copy of this repository, private, with the release workflow's PyPI job pointed at TestPyPI and the image name pointed at the scratch repository). The rehearsal runs to the end — draft creation, draft download, container publish, the latest move, the public flip and the Homebrew skip — and the run URL goes in the go request. A failed rehearsal is fixed and repeated; the real tag never cuts first.
 
 ### 2. The go request
 

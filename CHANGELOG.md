@@ -4,6 +4,9 @@
 
 ### New features
 
+- Primary gene search and detail use shared BioData gene values while retaining
+  source assertions, conversion losses, ordering and terminal errors. Publisher
+  HGNC assertions remain unqualified. (2007)
 - Added `get patient <id>` with a `conditions` section. It reads one patient
   from the FHIR R4 server in `BIOMCP_FHIR_BASE`, validates the ID before any
   request, sends every request with no-store, and follows next links and
@@ -29,8 +32,8 @@
   matched lines and per-experiment metrics (AAC, IC50, EC50, Einf, HS, DSS1)
   filterable by cell line or dataset. (bccd2871)
 - Added `gene cell-lines <symbol> --group <cancer>` for Human Protein Atlas
-  expression across one cancer group of cell lines, paginated with the
-  per-line expression level and the HPA attribution. (6d8fd435)
+  RNA levels (nTPM) across one cancer group of cell lines, paginated with the
+  per-line RNA level and the HPA attribution. (6d8fd435)
 - Added `get cell-line <CVCL_xxxx> chembl` for the ChEMBL molecule record
   behind a Cellosaurus cross-reference. (fd6a100c)
 - Added `BIOMCP_CA_BUNDLE` for outbound TLS behind a private root: the bundle
@@ -137,11 +140,14 @@
   two-CPU set, a lint ratchets against new timed waits, and
   `BIOMCP_TEST_TIMEOUT_SCALE` stretches the watchdogs built through
   the test helpers at once for slow hosts. (1252)
-- Advanced the development package identity to Rust `0.9.1-dev.1` and Python
-  `0.9.1.dev1` after the public 0.9.0 release. Citation, MCP directory,
+- The dedicated development line uses Rust `1.0.0-dev.1` and Python
+  `1.0.0.dev1`. Citation, MCP directory,
   registry, and Homebrew metadata stay on the latest published release, v0.9.0.
 
-- Record maintenance documentation and test hygiene through ticket 1283. (1283)
+- CI decides the docs-only skip from files changed since the merge base with
+  main. A push that skips the Rust jobs still runs the record tests.
+  (1220, 1250, 1252, 1275, 1278)
+- Record maintenance documentation and test hygiene through ticket 1284. (1284)
 
 ## 0.9.0 — 2026-09-16
 

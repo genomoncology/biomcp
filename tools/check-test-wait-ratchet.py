@@ -306,12 +306,20 @@ def raise_is_accepted(root: Path, record: dict) -> tuple[bool, str]:
         # ACCEPT must be the verdict itself: the token starts the
         # value AND is not immediately an expectation ("ACCEPT
         # expected after fixes", "ACCEPT once fixes land").
-        # The whole value must match one grammar (fourth go-request
-        # review): ACCEPT, an optional date, an optional dispatch or
-        # reviewer reference, and nothing more. Trailing prose that
-        # promises work ("but pending fixes", "will fix") rejects.
+        # The whole value must match one grammar (fifth go-request
+        # review): ACCEPT, an optional date, and an optional
+        # reference that is either a hex dispatch ID or a reviewer
+        # name of one or two capitalized words — and nothing more.
+        # Trailing prose that promises work ("but will fix later",
+        # "pending fixes") or placeholder references ("dispatch
+        # TBD", "dispatch -") reject, and "by reviewer" must name
+        # a real reviewer, so lowercase placeholders reject too.
         if re.fullmatch(
-            r"ACCEPT\s*(?:\d{4}-\d{2}-\d{2})?\s*(?:\(dispatch [^)]+\)|dispatch [0-9a-f-]+|by [^;]+)?",
+            r"ACCEPT"
+            r"(?:\s+\d{4}-\d{2}-\d{2})?"
+            r"(?:\s*\(dispatch [0-9a-f]{8}(?:-[0-9a-f-]+)?\)"
+            r"|\s+dispatch [0-9a-f]{8}(?:-[0-9a-f-]+)*"
+            r"|\s+by [A-Z][\w.-]*(?:\s+[A-Z][\w.-]*)?)?",
             rest,
         ):
             return True, ""
