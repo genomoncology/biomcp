@@ -380,6 +380,12 @@ jobs:
 
           require_exit 0 search trial --condition diabetes --limit 1
           require_exit 0 search trial --criteria "anti-PD-1 therapy" --limit 3
+          # The DDInter bundle is a local dataset by design: a query
+          # on a cold cache tells the user to sync (2026-10-01
+          # rehearsal: without this line every wheel-smoke leg failed
+          # and the release would have stopped before PyPI — the
+          # release workflow had never run this step before).
+          require_exit 0 ddinter sync
           require_exit 0 drug interactions apixaban
           require_exit 0 drug trials imatinib
 

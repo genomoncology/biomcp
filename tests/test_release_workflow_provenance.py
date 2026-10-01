@@ -300,7 +300,7 @@ PINNED_STEPS: dict[tuple[str, str], str] = {
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
     ("wheel-smoke", "Install the wheel into a clean venv"): "362a4ba663ff744574ec1f229c6ecd32e1f0f308ae95f0000f79efbf089bf6f9",
     ("wheel-smoke", "Run the wheel inside the manylinux 2_28 container"): "d5495643fdb712f52fbaa636b5198909e890806d92a309d073dfc1bb328cffc4",
-    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "96dba5d5412bec4707cca8e1d3708dec865037c73de0dfeec532514a63d87364",
+    ("wheel-smoke", "Smoke the installed wheel on every shipped platform"): "3177e159d9592abf0e9635ff7afb9f31bcb9906a9b8308f838a993500a7e3c6e",
     ("docs-live", "Check out the gate helper"): "afce43fafcab696d9cef03f29b0c43b6c9849baf126b749e198bdb9d83555430",
     ("docs-live", "Resolve the tag commit"): "b52e25a4026bed9172a0eff4b90f6a706ec984875307d7e89f9d450878a96e44",
     ("docs-live", "Require the live documentation revision to equal or descend from the tag"): "d8e88f95d2e890e14d314242bcce698767ddd834b4ccbab56469d5fd684eb54d",
