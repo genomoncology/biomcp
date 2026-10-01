@@ -74,9 +74,10 @@ impl MyChemClient {
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_source_body(
+        let bytes = crate::sources::read_limited_source_body_with_limit(
             resp,
             crate::error::SourceContext::narrow(crate::error::SourceProvider::MYCHEM),
+            1_048_576,
         )
         .await?;
         projection::validate_transport(status, content_type.as_ref(), &bytes)?;

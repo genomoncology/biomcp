@@ -33,14 +33,21 @@ pub(crate) fn validate_transport(
     if !status.is_success() {
         return Err(failure("MyChem response status rejected"));
     }
-    // The common validator may retain source text in its typed error. Replace
-    // that error with a fixed diagnostic before it can enter any failure channel.
-    crate::sources::ensure_json_content_type(
-        SourceContext::retry(SourceProvider::MYCHEM),
-        content_type,
-        bytes,
-    )
-    .map_err(|_| failure("MyChem response content type rejected"))
+    if bytes.len() > 1_048_576 {
+        return Err(failure("MyChem response body limit rejected"));
+    }
+    let media = content_type
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .map(str::trim);
+    if media.is_some_and(|value| {
+        !(value.eq_ignore_ascii_case("application/json")
+            || value.eq_ignore_ascii_case("text/json")
+            || value.to_ascii_lowercase().ends_with("+json"))
+    }) {
+        return Err(failure("MyChem response content type rejected"));
+    }
+    Ok(())
 }
 
 fn values(row: &MyChemRow, section: &str, field: &str, index: Option<usize>) -> Vec<String> {

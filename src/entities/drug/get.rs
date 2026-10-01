@@ -495,9 +495,9 @@ fn trial_alias_candidates_from_hits(hits: &[&MyChemHit]) -> Vec<TrialAlias> {
 fn trial_alias_resolution_from_lookup_result(
     requested_name: &str,
     result: Result<TrialAliasLookup, BioMcpError>,
-) -> (TrialAliasResolution, bool) {
+) -> Result<(TrialAliasResolution, bool), BioMcpError> {
     match result {
-        Ok(resolved) => (
+        Ok(resolved) => Ok((
             TrialAliasResolution {
                 canonical_name: resolved.canonical_name.clone(),
                 aliases: build_trial_aliases(
@@ -507,23 +507,10 @@ fn trial_alias_resolution_from_lookup_result(
                 ),
             },
             true,
-        ),
-        Err(BioMcpError::NotFound { .. }) => (
-            TrialAliasResolution {
-                canonical_name: requested_name.to_string(),
-                aliases: vec![TrialAlias {
-                    label: requested_name.to_string(),
-                    source: TrialAliasSource::Requested,
-                }],
-            },
-            true,
-        ),
-        Err(err) => {
-            warn!(
-                drug = %requested_name,
-                "Drug alias lookup unavailable for trial search: {err}"
-            );
-            (
+        )),
+        Err(error) if crate::sources::mychem::optional_failure(&error) => {
+            let cacheable = error.is_not_found();
+            Ok((
                 TrialAliasResolution {
                     canonical_name: requested_name.to_string(),
                     aliases: vec![TrialAlias {
@@ -531,9 +518,20 @@ fn trial_alias_resolution_from_lookup_result(
                         source: TrialAliasSource::Requested,
                     }],
                 },
-                false,
-            )
+                cacheable,
+            ))
         }
+        Err(error) => Err(error),
+    }
+}
+
+async fn optional_lookup(
+    name: &str,
+) -> Result<Option<crate::sources::mychem::MyChemQueryResponse>, BioMcpError> {
+    match direct_drug_lookup(name).await {
+        Ok(response) => Ok(Some(response)),
+        Err(error) if crate::sources::mychem::optional_failure(&error) => Ok(None),
+        Err(error) => Err(error),
     }
 }
 
@@ -565,7 +563,8 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
             canonical_name: resolved.drug.name,
             candidates: resolved.trial_alias_candidates,
         });
-    let (resolution, cacheable) = trial_alias_resolution_from_lookup_result(requested_name, lookup);
+    let (resolution, cacheable) =
+        trial_alias_resolution_from_lookup_result(requested_name, lookup)?;
 
     if cacheable {
         let mut cache = crate::utils::sync::recover_poison(trial_alias_cache().lock());
@@ -627,7 +626,14 @@ pub(super) async fn resolve_drug_base(
         };
         let fallback_name = search_page(&fallback_filters, 2, 0)
             .await
-            .ok()
+            .map(Some)
+            .or_else(|error| {
+                if crate::sources::mychem::optional_failure(&error) {
+                    Ok(None)
+                } else {
+                    Err(error)
+                }
+            })?
             .and_then(|page| {
                 if page.results.len() != 1 {
                     return None;
@@ -641,7 +647,7 @@ pub(super) async fn resolve_drug_base(
             });
 
         if let Some(candidate) = fallback_name {
-            if let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
+            if let Some(fallback_resp) = optional_lookup(&candidate).await?
                 && !fallback_resp.hits.is_empty()
             {
                 lookup_name = candidate;
@@ -666,7 +672,7 @@ pub(super) async fn resolve_drug_base(
                 .into_iter()
                 .next()
         && !candidate.name.eq_ignore_ascii_case(name)
-        && let Ok(fallback_resp) = direct_drug_lookup(&candidate.name).await
+        && let Some(fallback_resp) = optional_lookup(&candidate.name).await?
         && !fallback_resp.hits.is_empty()
     {
         lookup_name = candidate.name;
@@ -678,7 +684,7 @@ pub(super) async fn resolve_drug_base(
     if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
         match discover_sparse_drug_rescue(name).await {
             SparseDrugDiscoverRescue::Canonical(candidate) => {
-                if let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
+                if let Some(fallback_resp) = optional_lookup(&candidate).await?
                     && !fallback_resp.hits.is_empty()
                 {
                     lookup_name = candidate;

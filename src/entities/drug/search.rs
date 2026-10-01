@@ -585,18 +585,15 @@ pub(super) fn search_results_from_openfda_label_response(
 
 async fn try_resolve_drug_identity(
     name: &str,
-) -> Option<crate::sources::mychem::MyChemQueryResponse> {
+) -> Result<Option<crate::sources::mychem::MyChemQueryResponse>, BioMcpError> {
     let name = name.trim();
     if name.is_empty() {
-        return None;
+        return Ok(None);
     }
-
     match direct_drug_lookup(name).await {
-        Ok(resp) => Some(resp),
-        Err(err) => {
-            warn!(query = %name, "Drug identity resolution unavailable for EMA alias expansion: {err}");
-            None
-        }
+        Ok(response) => Ok(Some(response)),
+        Err(error) if crate::sources::mychem::optional_failure(&error) => Ok(None),
+        Err(error) => Err(error),
     }
 }
 
@@ -636,7 +633,7 @@ pub async fn search_name_query_with_region(
             crate::sources::who_pq::WhoProductTypeFilter::Vaccine
         );
     let resolved_response = if should_resolve_drug_identity(region, product_type) {
-        try_resolve_drug_identity(query).await
+        try_resolve_drug_identity(query).await?
     } else {
         None
     };
