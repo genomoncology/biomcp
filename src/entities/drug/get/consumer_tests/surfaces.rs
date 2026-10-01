@@ -109,7 +109,7 @@ async fn cli_and_raw_typed_mcp_drug_table() {
             let result = client
                 .peer()
                 .call_tool(
-                    CallToolRequestParams::new(input["tool"].as_str().unwrap())
+                    CallToolRequestParams::new(input["tool"].as_str().unwrap().to_owned())
                         .with_arguments(input["arguments"].as_object().unwrap().clone()),
                 )
                 .await;

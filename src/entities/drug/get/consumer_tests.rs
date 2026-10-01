@@ -3,7 +3,9 @@ use super::*;
 use crate::entities::article::test_support::{
     TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
 };
-use crate::sources::mychem::consumer_tests::{assert_page, asset, bytes, profile, root, table};
+use crate::sources::mychem::consumer_tests::{
+    assert_page, asset, bytes, product_value, profile, root, search_value, table,
+};
 use serde_json::{Value, json};
 use std::sync::{Arc, Mutex};
 
