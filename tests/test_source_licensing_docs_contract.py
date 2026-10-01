@@ -490,7 +490,7 @@ def test_the_evidence_table_keeps_one_row_per_line() -> None:
     """
     text = _read("docs/reference/source-licensing-evidence-2026-09-27.md")
     table_lines = [row for row in text.splitlines() if row.startswith("|")]
-    assert len(table_lines) == 50, (
+    assert len(table_lines) == 52, (
         f"the evidence table lost its rows: {len(table_lines)} pipe-prefixed lines"
     )
     assert all(row.count("|") >= 4 for row in table_lines), (
