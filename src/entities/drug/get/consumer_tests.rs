@@ -9,13 +9,13 @@ use crate::sources::mychem::consumer_tests::{
 use serde_json::{Value, json};
 use std::sync::{Arc, Mutex};
 
-struct CaseHttp {
+pub(crate) struct CaseHttp {
     fixture: TestHttpFixture,
     requests: Arc<Mutex<Vec<String>>>,
     expected: Vec<Value>,
 }
 impl CaseHttp {
-    async fn new(case: &Value) -> Self {
+    pub(crate) async fn new(case: &Value) -> Self {
         let responses = case["responses"]
             .as_array()
             .unwrap()
@@ -58,7 +58,7 @@ impl CaseHttp {
             expected,
         }
     }
-    fn environment(&self, env: &mut TestEnv, cache: &std::path::Path) {
+    pub(crate) fn environment(&self, env: &mut TestEnv, cache: &std::path::Path) {
         env.set("BIOMCP_MYCHEM_BASE", format!("{}/v1", self.fixture.base));
         for name in [
             "BIOMCP_OPENFDA_BASE",
@@ -73,7 +73,7 @@ impl CaseHttp {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &self.fixture.base);
         env.set("BIOMCP_CACHE_DIR", cache);
     }
-    fn assert_requests(&self, id: &Value) {
+    pub(crate) fn assert_requests(&self, id: &Value) {
         let actual = self.requests.lock().unwrap();
         assert_eq!(actual.len(), self.expected.len(), "{id}: {actual:?}");
         for (actual, expected) in actual.iter().zip(&self.expected) {

@@ -903,3 +903,6 @@ pub async fn search_page_with_region(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod consumer_tests;

@@ -1154,4 +1154,4 @@ pub fn get(
 mod tests;
 
 #[cfg(test)]
-mod consumer_tests;
+pub(super) mod consumer_tests;
