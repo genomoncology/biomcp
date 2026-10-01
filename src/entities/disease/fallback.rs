@@ -393,10 +393,11 @@ where
             lookups += 1;
             let Some(mut row) = (match resolve_source_id(source_id.clone()).await {
                 Ok(row) => row,
-                Err(err) => {
+                Err(err) if crate::sources::mydisease::optional_failure(&err) => {
                     warn!("Disease search fallback row resolution failed: {err}");
                     continue;
                 }
+                Err(err) => return Err(err),
             }) else {
                 continue;
             };
@@ -502,9 +503,10 @@ pub(super) async fn resolve_disease_hit_via_discover_fallback(
 
         match client.get(&row.id).await {
             Ok(hit) => return Ok(Some(hit)),
-            Err(err) => {
+            Err(err) if crate::sources::mydisease::optional_failure(&err) => {
                 warn!("Disease get fallback canonical fetch failed: {err}");
             }
+            Err(err) => return Err(err),
         }
     }
 

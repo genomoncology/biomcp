@@ -107,3 +107,17 @@ fn decode_json_maps_http_error_status_with_excerpt() {
     assert!(msg.contains("MyDisease.info"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }
+
+#[test]
+fn disease_identity_transport_table() {
+    for bytes in [
+        br#"{"_id":" "}"#.as_slice(),
+        br#"{"_id":"MONDO:1","mondo":{"name":17}}"#.as_slice(),
+        br#"{"_id":"MONDO:1","_id":"MONDO:2"}"#.as_slice(),
+    ] {
+        assert!(
+            MyDiseaseClient::decode_get_hit(StatusCode::OK, Some(&json_ct()), bytes, "MONDO:1")
+                .is_err()
+        );
+    }
+}

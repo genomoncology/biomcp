@@ -673,24 +673,38 @@ fn synonyms_preview(synonyms: &[String]) -> Option<String> {
     ))
 }
 
+pub(crate) fn identity_display(
+    row: &biodata::MyDiseaseRow,
+) -> (String, Vec<(&'static str, &'static str)>) {
+    let mut losses = Vec::new();
+    let selected = [
+        biodata::DiseaseNameSection::DiseaseOntology,
+        biodata::DiseaseNameSection::Mondo,
+    ]
+    .into_iter()
+    .find_map(|section| {
+        row.identity()
+            .names()
+            .iter()
+            .find(|claim| claim.section() == section && !claim.text().trim().is_empty())
+    });
+    let name = if let Some(claim) = selected {
+        if claim.text() != claim.text().trim() {
+            losses.push(("name", "trimmed only for display"));
+        }
+        if row.identity().names().len() > 1 {
+            losses.push(("name", "selected one of retained source assertions"));
+        }
+        claim.text().trim().to_owned()
+    } else {
+        losses.push(("name", "provider ID display fallback; not a source name"));
+        row.identity().provider_id().to_owned()
+    };
+    (name, losses)
+}
+
 pub fn name_from_mydisease_hit(hit: &MyDiseaseHit) -> String {
-    hit.disease_ontology
-        .as_ref()
-        .and_then(|v| v.get("name"))
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
-        .or_else(|| {
-            hit.mondo
-                .as_ref()
-                .and_then(|v| v.get("name"))
-                .and_then(|v| v.as_str())
-                .map(str::trim)
-                .filter(|s| !s.is_empty())
-                .map(|s| s.to_string())
-        })
-        .unwrap_or_else(|| hit.id.clone())
+    identity_display(&hit.row).0
 }
 
 pub fn from_mydisease_hit(hit: MyDiseaseHit) -> Disease {

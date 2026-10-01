@@ -165,7 +165,7 @@ pub(crate) async fn get_with_context(
             if let Err(err) = enrich_sparse_disease_identity(&mut disease).await {
                 warn!("OLS4 unavailable for sparse disease identity repair: {err}");
             }
-            disease.parents = resolve_parent_names(&client, &disease.parents).await;
+            disease.parents = resolve_parent_names(&client, &disease.parents).await?;
             if !parsed_sections.explicit {
                 enrich_base_context(&mut disease).await;
             }
@@ -189,7 +189,7 @@ pub(crate) async fn get_with_context(
             if let Err(err) = enrich_sparse_disease_identity(&mut disease).await {
                 warn!("OLS4 unavailable for sparse disease identity repair: {err}");
             }
-            disease.parents = resolve_parent_names(&client, &disease.parents).await;
+            disease.parents = resolve_parent_names(&client, &disease.parents).await?;
             if !parsed_sections.explicit {
                 enrich_base_context(&mut disease).await;
             }
@@ -214,7 +214,7 @@ pub(crate) async fn get_with_context(
     if used_requested_label {
         disease.name = name_or_id.to_string();
     }
-    disease.parents = resolve_parent_names(&client, &disease.parents).await;
+    disease.parents = resolve_parent_names(&client, &disease.parents).await?;
     if !parsed_sections.explicit {
         enrich_base_context(&mut disease).await;
     }
@@ -225,45 +225,48 @@ pub(crate) async fn get_with_context(
     })
 }
 
-async fn resolve_parent_label(client: &MyDiseaseClient, parent_id: &str) -> String {
+async fn resolve_parent_label(
+    client: &MyDiseaseClient,
+    parent_id: &str,
+) -> Result<String, BioMcpError> {
     let parent_id = parent_id.trim();
     if parent_id.is_empty() {
-        return String::new();
+        return Ok(String::new());
     }
-
-    if let Ok(hit) = client.get(parent_id).await {
-        let parent_name = transform::disease::name_from_mydisease_hit(&hit);
-        if !parent_name.eq_ignore_ascii_case(parent_id) {
-            return format!("{parent_name} ({parent_id})");
+    match client.get(parent_id).await {
+        Ok(hit) => {
+            let name = transform::disease::name_from_mydisease_hit(&hit);
+            if !name.eq_ignore_ascii_case(parent_id) {
+                return Ok(format!("{name} ({parent_id})"));
+            }
         }
+        Err(error) if crate::sources::mydisease::optional_failure(&error) => {}
+        Err(error) => return Err(error),
     }
-
-    if let Ok(resp) = client.query(parent_id, 1, 0, None, None, None, None).await
-        && let Some(hit) = resp.hits.first()
-    {
-        let parent_name = transform::disease::name_from_mydisease_hit(hit);
-        if !parent_name.eq_ignore_ascii_case(parent_id) {
-            return format!("{parent_name} ({parent_id})");
+    match client.query(parent_id, 1, 0, None, None, None, None).await {
+        Ok(response) => {
+            if let Some(hit) = response.hits.first() {
+                let name = transform::disease::name_from_mydisease_hit(hit);
+                if !name.eq_ignore_ascii_case(parent_id) {
+                    return Ok(format!("{name} ({parent_id})"));
+                }
+            }
         }
+        Err(error) if crate::sources::mydisease::optional_failure(&error) => {}
+        Err(error) => return Err(error),
     }
-
-    parent_id.to_string()
+    Ok(parent_id.to_owned())
 }
-
-async fn resolve_parent_names(client: &MyDiseaseClient, parents: &[String]) -> Vec<String> {
-    let mut lookups = Vec::new();
-    for parent in parents {
-        let parent_id = parent.trim();
-        if parent_id.is_empty() {
-            continue;
-        }
-        lookups.push(async move { resolve_parent_label(client, parent_id).await });
-    }
-    join_all(lookups)
-        .await
-        .into_iter()
-        .filter(|v| !v.is_empty())
-        .collect()
+async fn resolve_parent_names(
+    client: &MyDiseaseClient,
+    parents: &[String],
+) -> Result<Vec<String>, BioMcpError> {
+    let lookups = parents
+        .iter()
+        .map(|id| id.trim())
+        .filter(|id| !id.is_empty())
+        .map(|id| resolve_parent_label(client, id));
+    join_all(lookups).await.into_iter().collect()
 }
 
 #[cfg(test)]

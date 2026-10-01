@@ -20,12 +20,13 @@ async fn resolve_disease(
         Err(BioMcpError::NotFound { .. }) => Ok(Some(biodata::NciCtsV2DiseaseSelection::Keyword(
             condition.to_owned(),
         ))),
-        Err(error) => {
+        Err(error) if crate::sources::mydisease::optional_failure(&error) => {
             warn!(error=%error,"NCI disease grounding failed; using the keyword fallback");
             Ok(Some(biodata::NciCtsV2DiseaseSelection::Keyword(
                 condition.to_owned(),
             )))
         }
+        Err(error) => Err(error),
     }
 }
 fn from_hit(condition: &str, hit: MyDiseaseHit) -> biodata::NciCtsV2DiseaseSelection {

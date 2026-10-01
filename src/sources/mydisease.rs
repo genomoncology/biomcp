@@ -1,7 +1,6 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::error::BioMcpError;
@@ -85,10 +84,10 @@ impl MyDiseaseClient {
         })
     }
 
-    async fn get_json<T: DeserializeOwned>(
+    async fn get_search(
         &self,
         req: reqwest_middleware::RequestBuilder,
-    ) -> Result<T, BioMcpError> {
+    ) -> Result<MyDiseaseQueryResponse, BioMcpError> {
         let resp = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::MYDISEASE,
@@ -101,13 +100,8 @@ impl MyDiseaseClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::MYDISEASE),
         )
         .await?;
-        crate::sources::decode_json(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
-            status,
-            content_type.as_ref(),
-            &bytes,
-            false,
-        )
+        projection::validate_transport(status, content_type.as_ref(), &bytes)?;
+        projection::decode_search(&bytes)
     }
 
     // dead-code reason: mydisease::legacy_plan preserves the provider shape used by source contract fixtures
@@ -286,7 +280,7 @@ impl MyDiseaseClient {
     ) -> Result<MyDiseaseQueryResponse, BioMcpError> {
         let plan = Self::query_plan(q, size, offset, source, inheritance, phenotype, onset)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        self.get_json(req).await
+        self.get_search(req).await
     }
 
     pub(crate) fn lookup_disease_by_xref_plan(
@@ -350,7 +344,7 @@ impl MyDiseaseClient {
     ) -> Result<MyDiseaseQueryResponse, BioMcpError> {
         let plan = Self::lookup_disease_by_xref_plan(kind, value, size)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        self.get_json(req).await
+        self.get_search(req).await
     }
 
     pub(crate) fn get_plan(id: &str) -> Result<RequestPlan, BioMcpError> {
@@ -394,13 +388,8 @@ impl MyDiseaseClient {
                 suggestion: format!("Try searching: biomcp search disease -q \"{}\"", id.trim()),
             });
         }
-        crate::sources::decode_json(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
-            status,
-            content_type,
-            bytes,
-            false,
-        )
+        projection::validate_transport(status, content_type, bytes)?;
+        projection::decode_get(bytes)
     }
 
     pub async fn get(&self, id: &str) -> Result<MyDiseaseHit, BioMcpError> {
@@ -426,29 +415,8 @@ impl MyDiseaseClient {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct MyDiseaseQueryResponse {
-    // dead-code reason: mydisease::total preserves the provider shape used by source contract fixtures
-    #[allow(dead_code)]
-    pub total: usize,
-    pub hits: Vec<MyDiseaseHit>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct MyDiseaseHit {
-    #[serde(rename = "_id")]
-    pub id: String,
-    #[serde(default)]
-    pub mondo: Option<serde_json::Value>,
-    #[serde(default, rename = "disease_ontology")]
-    pub disease_ontology: Option<serde_json::Value>,
-    #[serde(default)]
-    pub umls: Option<serde_json::Value>,
-    #[serde(default)]
-    pub disgenet: Option<serde_json::Value>,
-    #[serde(default)]
-    pub hpo: Option<MyDiseaseHpo>,
-}
+mod projection;
+pub(crate) use projection::{MyDiseaseHit, MyDiseaseQueryResponse, optional_failure};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyDiseaseHpo {

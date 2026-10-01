@@ -74,14 +74,20 @@ fn provider_terms(hit: &MyDiseaseHit) -> (Vec<String>, Vec<String>, bool) {
     let mut names = Vec::new();
     let mut synonyms = Vec::new();
     let mut malformed_synonyms = false;
-    for object in [hit.disease_ontology.as_ref(), hit.mondo.as_ref()]
-        .into_iter()
-        .flatten()
-    {
-        if let Some(value) = object.get("name")
-            && let Some(value) = value.as_str().and_then(valid_provider_term)
+    for section in [
+        biodata::DiseaseNameSection::DiseaseOntology,
+        biodata::DiseaseNameSection::Mondo,
+    ] {
+        for claim in hit
+            .row
+            .identity()
+            .names()
+            .iter()
+            .filter(|claim| claim.section() == section)
         {
-            names.push(value);
+            if let Some(value) = valid_provider_term(claim.text()) {
+                names.push(value);
+            }
         }
     }
     for object in [hit.mondo.as_ref(), hit.disease_ontology.as_ref()]
