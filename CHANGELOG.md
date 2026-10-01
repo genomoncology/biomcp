@@ -141,6 +141,8 @@
   `0.9.1.dev1` after the public 0.9.0 release. Citation, MCP directory,
   registry, and Homebrew metadata stay on the latest published release, v0.9.0.
 
+- Record maintenance documentation and test hygiene through ticket 1283. (1283)
+
 ## 0.9.0 — 2026-09-16
 
 ### Breaking changes
