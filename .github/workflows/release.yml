@@ -773,17 +773,21 @@ jobs:
             fi
           done < "$RUNNER_TEMP/published-tags.txt"
           test -x scripts/should-move-latest.sh
-          if scripts/should-move-latest.sh "$TAG" "${PUBLISHED[@]}"; then
-            docker buildx imagetools create --tag "${IMAGE}:latest" "${IMAGE}:${VERSION}"
-            docker buildx imagetools inspect "${IMAGE}:latest"
-          else
-            decision_status=$?
-            if [ "$decision_status" -ne 3 ]; then
-              echo "latest helper failed with status $decision_status" >&2
-              exit "$decision_status"
-            fi
-            echo "$TAG does not sort newest; latest stays put."
-          fi
+          decision=0
+          scripts/should-move-latest.sh "$TAG" "${PUBLISHED[@]}" || decision=$?
+          case "$decision" in
+            0)
+              docker buildx imagetools create --tag "${IMAGE}:latest" "${IMAGE}:${VERSION}"
+              docker buildx imagetools inspect "${IMAGE}:latest"
+              ;;
+            3)
+              echo "$TAG does not sort newest; latest stays put."
+              ;;
+            *)
+              echo "latest helper failed with status $decision" >&2
+              exit "$decision"
+              ;;
+          esac
 
       - name: Publish the GitHub release after every publisher succeeds
         env:
