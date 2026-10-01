@@ -157,6 +157,11 @@ async fn rejected_identity_cli_and_mcp_channels_match_complete_private_error_obj
         .unwrap();
         client.cancel().await.unwrap();
         let wanted = &expected[key];
+        assert_eq!(result.content.len(), 1, "{}: {key}", case["id"]);
+        assert_eq!(
+            serde_json::to_value(&result.content[0]).unwrap()["type"],
+            "text"
+        );
         assert_eq!(result.is_error, wanted["isError"].as_bool());
         assert_eq!(first_text(&result.content), wanted["content"][0]["text"]);
         assert!(result.structured_content.is_none());

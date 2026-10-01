@@ -133,17 +133,21 @@ async fn cli_and_raw_typed_mcp_drug_table() {
                             case["id"]
                         );
                         assert!(result.structured_content.is_none());
+                        assert_eq!(result.content.len(), 1, "{}", case["id"]);
+                        assert_eq!(serde_json::to_value(&result.content[0]).unwrap()["type"], "text");
                         let text = first_text(&result.content);
                         content(text, &wanted["content"][0]);
                         let wire = serde_json::to_value(&result).unwrap();
                         assert!(wire.get("_meta").is_none());
                     }
                     Err(error) => {
-                        let message = expected["mapper_error"]["message"].as_str().unwrap();
-                        assert!(
-                            error.to_string().contains(message),
-                            "{}: {error}",
-                            case["id"]
+                        let rmcp::ServiceError::McpError(data) = error else {
+                            panic!("{}: expected protocol error, got {error:?}", case["id"]);
+                        };
+                        assert_eq!(
+                            serde_json::json!({"code": data.code.0, "message": data.message, "data": data.data}),
+                            expected["mapper_error"],
+                            "{}", case["id"]
                         );
                     }
                 }
