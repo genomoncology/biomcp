@@ -29,3 +29,7 @@ October 1, 2026. Implementation and bounded offline authoring proof are complete
 ## Root repair handoff
 
 October 1, 2026. Root coordinator authorized repairs after CODE findings at `803585617dca39a92f63aa3e63137b65c38adb44`. The [repair record](../records/2007-repair-gene-consumer-review.md) closes the credential fixture and capture/public assertion findings with five actual passing offline selections and explicit executable/source bindings. Fresh independent review of the pushed repair tip remains next. Root retains the final 175-selector composite and later adoption obligations. No Ian repair approval is claimed.
+
+## Final focused composite result
+
+October 1, 2026. Fresh corrected CODE ACCEPT covered exact `c75eb4fb9c3524606472d244ac755343315c8bb2`. Root authorized one finite final composite. The [final result](../records/2007-final-focused-composite-failure.md) records 175 Rust passes followed by UV cache permission failure before any Python collection. The composite stopped without a fix or retry. Final verification and adoption remain incomplete. Root owns a new authorization after reviewing the failure, plus the separate BioData gates and hosted obligations.
