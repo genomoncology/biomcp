@@ -102,6 +102,8 @@ published tag. Keep container publication in `.github/workflows/release.yml`;
 `spec/surface/docker-image.md` and `tests/test_release_workflow_provenance.py`
 enforce it.
 
+Every release works the checklist at `sdlc/release-checklist.md`, in order, with evidence for each item. Ian cuts every release; the release bar is the tagged commit's green run.
+
 ## Hygiene
 
 Do not commit secrets, PHI, absolute local paths, planning notes, or March

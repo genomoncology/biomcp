@@ -87,6 +87,8 @@ NESTED_DIRECT_SOURCES = {"ClinVar"}
 
 INDIRECT_ONLY_ROWS = {
     "AlphaFold DB": "UniProt",
+    "Cell Model Passports": "cellosaurus",
+    "DepMap": "cellosaurus",
     "Cancer Genome Interpreter": "MyVariant.info",
     "COSMIC": "MyVariant.info",
     "Disease Ontology": "MyDisease.info",

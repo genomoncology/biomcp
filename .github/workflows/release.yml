@@ -57,6 +57,10 @@ jobs:
     permissions:
       contents: write
     env:
+      # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
+      # directory it cannot discover the repository (the fourth
+      # go-request review reproduced create-draft failing here).
+      GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Create the draft release
@@ -92,6 +96,10 @@ jobs:
             artifact: biomcp-windows-x86_64.zip
     runs-on: ${{ matrix.os }}
     env:
+      # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
+      # directory it cannot discover the repository (the fourth
+      # go-request review reproduced create-draft failing here).
+      GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -262,6 +270,11 @@ jobs:
           path: target/wheels/*.whl
 
   wheel-smoke:
+    env:
+      # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
+      # directory it cannot discover the repository (the fourth
+      # go-request review reproduced create-draft failing here).
+      GH_REPO: ${{ github.repository }}
     needs: [pypi-build]
     if: github.event_name == 'push'
     strategy:
@@ -416,6 +429,10 @@ jobs:
     permissions:
       contents: read
     env:
+      # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
+      # directory it cannot discover the repository (the fourth
+      # go-request review reproduced create-draft failing here).
+      GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
       LIVE_REVISION_URL: https://biomcp.org/__biomcp_revision__/latest.txt
       RETRY_WINDOW_SECONDS: "600"
@@ -510,6 +527,10 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     env:
+      # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
+      # directory it cannot discover the repository (the fourth
+      # go-request review reproduced create-draft failing here).
+      GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -578,6 +599,10 @@ jobs:
       contents: read
       packages: write
     env:
+      # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
+      # directory it cannot discover the repository (the fourth
+      # go-request review reproduced create-draft failing here).
+      GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Check out the packaging ref
@@ -692,6 +717,10 @@ jobs:
       contents: write
       packages: write
     env:
+      # gh reads GH_REPO, not GITHUB_REPOSITORY; with no git
+      # directory it cannot discover the repository (the fourth
+      # go-request review reproduced create-draft failing here).
+      GH_REPO: ${{ github.repository }}
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       # The repository must be present before any step runs a
@@ -744,7 +773,7 @@ jobs:
             docker buildx imagetools inspect "${IMAGE}:latest"
           else
             decision_status=$?
-            if [ "$decision_status" -ne 1 ]; then
+            if [ "$decision_status" -ne 3 ]; then
               echo "latest helper failed with status $decision_status" >&2
               exit "$decision_status"
             fi

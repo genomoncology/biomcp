@@ -1386,6 +1386,37 @@ def test_rust_embed_carries_debug_embed_github_287() -> None:
     )
 
 
+def test_every_job_calling_gh_names_its_repository() -> None:
+    """2026-09-30 fourth go-request review: create-draft called gh
+    with no checkout and no GH_REPO, so gh could not discover the
+    repository and the release stopped at its second job. Any job
+    whose steps call gh must set GH_REPO or check out the repository.
+    """
+    parsed = yaml.safe_load(
+        (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    )
+    for job_id, job in parsed["jobs"].items():
+        calls_gh = any(
+            re.search(r"(?m)^\s*gh \w+", str(step.get("run", "")))
+            for step in job.get("steps", [])
+        )
+        if not calls_gh:
+            continue
+        has_repo = job.get("env", {}).get("GH_REPO") == "${{ github.repository }}" or any(
+            step.get("env", {}).get("GH_REPO")
+            for step in job.get("steps", [])
+            if isinstance(step.get("env"), dict)
+        )
+        has_checkout = any(
+            str(step.get("uses", "")).startswith("actions/checkout@")
+            for step in job.get("steps", [])
+        )
+        assert has_repo or has_checkout, (
+            f"{job_id} calls gh with neither GH_REPO nor a checkout; gh "
+            "cannot know the repository without a git directory"
+        )
+
+
 def test_every_job_running_a_repository_script_checks_out_first() -> None:
     """2026-09-30 third go-request review: publish-release ran
     scripts/should-move-latest.sh with no checkout step, so the script
@@ -1417,3 +1448,16 @@ def test_every_job_running_a_repository_script_checks_out_first() -> None:
                 assert checkout_at < index, (
                     f"{job_id}: the checkout must precede the step running repository code"
                 )
+
+
+def test_the_latest_step_fails_when_gh_fails() -> None:
+    """The guard at release.yml reads `if ! gh release list ... exit 1`;
+    restoring a silent `|| true` would read a failed query as an empty
+    list and move latest (fourth go-request review).
+    """
+    text = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    assert "if ! gh release list" in text, "the failure guard must exist"
+    guarded = text[text.index("if ! gh release list") : text.index("PUBLISHED=()")]
+    assert "|| true" not in guarded, (
+        "a silent fallback inside the guarded block defeats the guard"
+    )

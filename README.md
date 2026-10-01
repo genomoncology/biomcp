@@ -10,7 +10,7 @@ BioMCP retrieves data from upstream biomedical sources. Those sources' terms gov
 
 BioMCP is one CLI binary over a single command grammar that reaches 71 trusted
 biomedical sources directly (PubMed, ClinVar, ClinicalTrials.gov, OncoKB,
-Reactome, and more; eight further sources arrive inside another source's
+Reactome, and more; ten further sources arrive inside another source's
 answer). It is also an MCP (Model Context Protocol) server, so the same tools are
 available to AI agents such as Claude Code, Codex, and Claude Desktop.
 

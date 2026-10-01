@@ -41,6 +41,8 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | AlphaGenome | 2 | direct_api | required_env | custom provider terms; access is gated by Google/DeepMind service controls | do not assume open redistribution rights for returned prediction outputs | <https://deepmind.google/science/alphagenome/> |
 | Cancerhotspots.org | 3 | direct_api | none | public cancer hotspot recurrence resource with provider-specific reuse expectations | BioMCP queries recurrence counts live and does not redistribute a local cancerhotspots dataset | <https://www.cancerhotspots.org/> |
 | cBioPortal | 3 | direct_api | none | public API with study-specific downstream terms | reuse depends on the specific study or consortium behind each dataset | <https://www.cbioportal.org/> |
+| Cell Model Passports | 1 | indirect_only | not_applicable | Wellcome Sanger Institute portal data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line | BioMCP shows the identifier through a Cellosaurus cross-reference only; users who follow it use the portal under its policy | <https://cellmodelpassports.sanger.ac.uk/> |
+| DepMap | 1 | indirect_only | not_applicable | Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, some restricted datasets require a signed agreement) | BioMCP shows the identifier through a Cellosaurus cross-reference only; no DepMap bytes enter BioMCP output beyond the identifier | <https://depmap.org/portal/> |
 | CDC CVX/MVX | 1 | direct_api | none | most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply | reuse is generally allowed with CDC attribution and non-endorsement language; avoid CDC logos and review exceptions before republishing | <https://www.cdc.gov/other/agencymaterials.html> |
 | CDC WONDER VAERS | 1 | direct_api | none | CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts | reuse is allowed for statistical reporting and analysis with source attribution, but do not try to identify individuals or publish identifying linkages | <https://wonder.cdc.gov/datause.html> |
 | Cellosaurus | 1 | direct_api | none | CC BY 4.0 | reuse is allowed with attribution and the requested citation; every BioMCP cell line output carries both | <https://www.cellosaurus.org/description.html> |
@@ -219,6 +221,30 @@ Reviewed on: `2026-09-27`
 - `OpenFDA FAERS`, `OpenFDA label`, `OpenFDA shortage`, and `Drugs@FDA` are user-facing provenance labels that resolve back to the `OpenFDA` direct row plus the `Drugs@FDA` indirect row.
 - `AlphaFold DB` and `PDB` are indirect-only because BioMCP currently surfaces those structure IDs via `UniProt` cross-references rather than maintaining standalone source clients.
 - `COSMIC` is indirect-only provenance through `MyVariant.info`. Direct COSMIC integration is not part of BioMCP's supported source surface because the provider's licensing model creates unacceptable redistribution and deployment risk for an MIT-licensed open tool.
+### Cell Model Passports
+
+- BioMCP surfaces: `get cell-line <CVCL_xxxx> xrefs` (identifier only, through Cellosaurus)
+- Integration mode: `indirect_only` via Cellosaurus
+- BioMCP auth: `not_applicable`
+- Provider access / registration: public portal
+- License / terms summary: Wellcome Sanger Institute Cell Model Passports data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line
+- Redistribution / reuse summary: BioMCP shows the identifier only; users who follow it to the portal use the portal under its policy
+- Official terms URL: <https://cellmodelpassports.sanger.ac.uk/>
+- Reviewed on: `2026-09-30`
+- Notes: Identifier-only entry (2026-09-30): BioMCP fetches no portal data.
+
+### DepMap
+
+- BioMCP surfaces: `get cell-line <CVCL_xxxx> xrefs` (identifier only, through Cellosaurus)
+- Integration mode: `indirect_only` via Cellosaurus
+- BioMCP auth: `not_applicable`
+- Provider access / registration: public portal
+- License / terms summary: Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, some restricted datasets require a signed agreement)
+- Redistribution / reuse summary: BioMCP shows the identifier only; no DepMap bytes enter BioMCP output beyond the identifier
+- Official terms URL: <https://depmap.org/portal/>
+- Reviewed on: `2026-09-30`
+- Notes: Identifier-only entry (2026-09-30): the 2026-09-27 decision stands — restricted DepMap bytes are never rehosted in this public repository.
+
 ### Cellosaurus
 
 - BioMCP surfaces: `search cell-line <name>; get cell-line <id>; get cell-line <id> xrefs; get cell-line <id> variants`
@@ -233,7 +259,7 @@ Reviewed on: `2026-09-27`
 
 ### ChEMBL
 
-- BioMCP surfaces: `get drug <name> targets; get drug <name> indications`
+- BioMCP surfaces: `get drug <name> targets; get drug <name> indications; get cell-line <id> chembl`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API

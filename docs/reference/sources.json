@@ -120,6 +120,25 @@
     "notes": "BioMCP auto-downloads cvx.txt, TRADENAME.txt, and mvx.txt into BIOMCP_CVX_DIR or the default data directory on first use, refreshes stale files after 30 days, supports explicit refresh via biomcp cvx sync, augments EMA/default vaccine search plus explicit WHO vaccine name/brand search after MyChem misses, and does not use the CVX root for pure --region us searches or WHO finished-pharma/API lookups."
   },
   {
+    "id": "cell-model-passports",
+    "name": "Cell Model Passports",
+    "tier": 1,
+    "integration_mode": "indirect_only",
+    "via": "cellosaurus",
+    "bioMcp_surfaces": [
+      "get cell-line <CVCL_xxxx> xrefs (identifier only)"
+    ],
+    "bioMcp_auth": "not_applicable",
+    "env_var": null,
+    "provider_access": "public portal; BioMCP shows Cell Model Passports identifiers resolved through Cellosaurus cross-references and fetches no portal data",
+    "license_summary": "Wellcome Sanger Institute Cell Model Passports data are available for research use under the portal's data access policy, with model-specific third-party restrictions noted per line",
+    "redistribution_summary": "no portal bytes enter BioMCP output beyond the identifier itself; users who follow the identifier use the portal under its policy",
+    "terms_url": "https://cellmodelpassports.sanger.ac.uk/",
+    "key_url": null,
+    "reviewed_on": "2026-09-30",
+    "notes": "Identifier-only entry (2026-09-30 fourth go-request review): BioMCP shows the identifier through a Cellosaurus cross-reference only."
+  },
+  {
     "id": "cellosaurus",
     "name": "Cellosaurus",
     "tier": 1,
@@ -148,8 +167,9 @@
     "integration_mode": "direct_api",
     "via": null,
     "bioMcp_surfaces": [
-      "get drug <name> targets",
-      "get drug <name> indications"
+      "get cell-line <id> chembl",
+      "get drug <name> indications",
+      "get drug <name> targets"
     ],
     "bioMcp_auth": "none",
     "env_var": null,
@@ -418,6 +438,25 @@
     "key_url": null,
     "reviewed_on": "2026-04-25",
     "notes": "BioMCP requires all eight DDInter CSV files. Interaction reads use the installed bundle without maintenance and report fresh/stale state. biomcp ddinter sync explicitly downloads, validates, and publishes a complete replacement bundle; empty results remain scoped to the current DDInter bundle."
+  },
+  {
+    "id": "depmap",
+    "name": "DepMap",
+    "tier": 1,
+    "integration_mode": "indirect_only",
+    "via": "cellosaurus",
+    "bioMcp_surfaces": [
+      "get cell-line <CVCL_xxxx> xrefs (identifier only)"
+    ],
+    "bioMcp_auth": "not_applicable",
+    "env_var": null,
+    "provider_access": "public portal; BioMCP shows DepMap identifiers resolved through Cellosaurus cross-references and fetches no DepMap data",
+    "license_summary": "Broad Institute DepMap portal data carry their own terms (CC BY 4.0 for most datasets, with some restricted datasets requiring a signed agreement); BioMCP ships and fetches none of it",
+    "redistribution_summary": "no DepMap bytes enter BioMCP output beyond the identifier itself; users who follow the identifier to the portal use it under the portal's terms",
+    "terms_url": "https://depmap.org/portal/",
+    "key_url": null,
+    "reviewed_on": "2026-09-30",
+    "notes": "Identifier-only entry (2026-09-30 fourth go-request review): Ian's rule asks that every source's terms be stated even when BioMCP only shows its identifier through a Cellosaurus cross-reference. The 2026-09-27 DepMap decision (stays out; restricted bytes never rehosted in this public repository) is unchanged."
   },
   {
     "id": "dgidb",

@@ -5,7 +5,7 @@ Filed 2026-09-30 under Ian's branch direction (second go-request review): `ticke
 ## What is carried
 
 - The four branch-only records: 1202 (cell-line entity), 1205 (PharmacoDB drug-response sections), 1213 (HPA expression), 1214 (ChEMBL cell-line section). Each describes landed, gated work; main had no record for it.
-- ChEMBL's licensing citations into `docs/reference/sources.json` and the licensing page: the gitbook about page and the release LICENSE file that both carry the CC BY-SA 3.0 grant, and the history that the shipped attribution line has said CC BY-SA 3.0 since ticket 1214. Main's licence summary already named CC BY-SA 3.0 (2026-09-27 pass); what was missing is the citations and the ShareAlike-aware reuse summary.
+- ChEMBL's licensing citations into `docs/reference/sources.json` and the licensing page: the release LICENSE file's URL and the about page's quoted grant landed in the notes (the official terms_url still points at the ChEMBL landing page — the about-page URL was not carried as the terms field, corrected 2026-09-30), together with the history that the shipped attribution line has said CC BY-SA 3.0 since ticket 1214. Main's licence summary already named CC BY-SA 3.0 (2026-09-27 pass); what was missing is the citations and the ShareAlike-aware reuse summary.
 
 ## What is NOT carried (and why)
 

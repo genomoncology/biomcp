@@ -446,6 +446,8 @@ def test_promise_shaped_accept_phrases_never_count(tmp_path: Path) -> None:
         "ACCEPT (pending)",
         "ACCEPT; will fix later",
         "ACCEPT, to be confirmed",
+        "ACCEPT 2026-09-30 but pending fixes",
+        "ACCEPT dispatch abc will fix",
     ]:
         root = _raise_repo(tmp_path / phrase.replace(" ", "_")[:30], phrase)
         result = _run(root)

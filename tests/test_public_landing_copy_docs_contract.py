@@ -77,9 +77,9 @@ def test_readme_landing_copy_matches_public_contract() -> None:
     indirect = len(sources) - direct
     assert f"single command grammar that reaches {direct} trusted" in description
     # The README names the indirect count in words today; accept the
-    # word form for eight and the digit form otherwise, so a drift
-    # forces an intentional edit either way.
-    words = {8: "eight further"}
+    # word form for eight and ten and the digit form otherwise, so a
+    # drift forces an intentional edit either way.
+    words = {8: "eight further", 10: "ten further"}
     expected = words.get(indirect, f"{indirect} further")
     assert expected in description, f"indirect count {indirect} not stated: {expected!r}"
     assert "MCP (Model Context Protocol) server" in description

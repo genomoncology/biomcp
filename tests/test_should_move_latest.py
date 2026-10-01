@@ -31,6 +31,20 @@ def _decide(publishing: str, published: list[str]) -> tuple[bool, str]:
     return result.returncode == 0, (result.stderr or result.stdout).strip()
 
 
+def test_a_stay_is_exit_three_and_errors_are_distinct() -> None:
+    """Stay is its own exit code (fourth go-request review): the step
+    treats 3 as a legitimate skip and everything else as failure.
+    """
+    stay = subprocess.run(
+        ["bash", str(SCRIPT), "v0.8.9", "v0.9.0"], capture_output=True, text=True, check=False
+    )
+    assert stay.returncode == 3
+    error = subprocess.run(
+        ["bash", str(SCRIPT), "v0.9.1-rc1", "v0.9.0"], capture_output=True, text=True, check=False
+    )
+    assert error.returncode == 2
+
+
 def test_a_draft_newer_than_every_published_release_moves_latest() -> None:
     ok, _ = _decide("v0.9.1", ["v0.9.0", "v0.8.25", "v0.8.9"])
     assert ok
