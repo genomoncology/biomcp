@@ -48,7 +48,7 @@ fn assert_public(text: &str, error: bool, label: &str, get: bool, display: Optio
     } else {
         let actual = value["results"].as_array().expect("search results");
         assert_eq!(value["count"], rows.len(), "{label}");
-        assert_eq!(value["total"], rows.len(), "{label}");
+        assert_eq!(value["pagination"]["total"], rows.len(), "{label}");
         assert_eq!(actual.len(), rows.len(), "{label}");
         for (row, (symbol, name, entrez)) in actual.iter().zip(rows) {
             assert_eq!(row["symbol"], symbol, "{label}");
