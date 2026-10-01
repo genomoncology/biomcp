@@ -457,16 +457,11 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
-    # Main adds the supported cell-line, Cellosaurus, ChEMBL, HPA, and
-    # PharmacoDB modules, documentation, templates, and focused tests; the
-    # cli/trial/search_summary.rs module is the added member. The main merge
-    # for ticket 1234 adds the docs-live gate helper and its contract test
-    # (ticket 1226) and the CA-bundle helper and its TLS contract test
-    # (ticket 1221). Ticket 2002 adds the FHIR source, the patient entity,
-    # CLI, renderer, template, MCP gate, contract test, guide, and spec page
-    # (13 files). Main's later source, test, and release corrections bring
-    # the synchronized 1.0 package to 1,438 reviewed members; the 1278 CI and TLS additions bring it to 1,442.
-    assert len(paths) == 1446
+    # The synchronized package adds three inherited source-test modules:
+    # clingen/tests/deadlines.rs, tests/body_failure.rs, and
+    # tests/provider_network/publication.rs. The prior baseline has 1,446
+    # members; these additions preserve every prior package member.
+    assert len(paths) == 1449
     _validate_real_source_package(paths)
     assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
