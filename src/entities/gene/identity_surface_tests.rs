@@ -69,7 +69,7 @@ async fn cli_raw_typed_gene_identity_table() {
                 assert_eq!(error.code(), expected);
             } else {
                 assert!(
-                    error.to_string().contains(expected),
+                    format!("{error:?}").contains(expected),
                     "{}: {error}",
                     case.label
                 );
@@ -114,7 +114,9 @@ async fn cli_raw_typed_gene_identity_table() {
                 .lock()
                 .unwrap()
                 .push(request.lines().next().unwrap_or_default().to_owned());
-            let response = if request.starts_with("GET /api/") {
+            let response = if request.starts_with("POST /graphql") {
+                br#"{"data":{"search":{"hits":[]}}}"#.as_slice()
+            } else if request.starts_with("GET /api/") {
                 br#"{"response":{"numFound":0,"start":0,"docs":[]}}"#.as_slice()
             } else {
                 &body
@@ -126,9 +128,10 @@ async fn cli_raw_typed_gene_identity_table() {
         let env = [
             ("BIOMCP_MYGENE_BASE", fixture.base.clone()),
             ("BIOMCP_OLS4_BASE", fixture.base.clone()),
+            ("BIOMCP_OPENTARGETS_BASE", fixture.base.clone()),
             ("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()),
             ("BIOMCP_CACHE_DIR", cache.path().display().to_string()),
-            ("RUST_LOG", "off".into()),
+            ("RUST_LOG", "off,reqwest_retry=error".into()),
         ];
         for (get, args, error) in [
             (

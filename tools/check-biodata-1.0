@@ -14,6 +14,7 @@ from biodata_focused_selection import (
     nextest_filter,
     nextest_names,
     validate_rust_discovery,
+    validate_rust_execution,
 )
 
 
@@ -46,7 +47,7 @@ def _run(arguments: list[str], environment: dict[str, str]) -> subprocess.Comple
         env=environment,
         check=True,
         text=True,
-        capture_output=arguments[:3] == ["cargo", "nextest", "list"],
+        capture_output=arguments[:2] == ["cargo", "nextest"],
     )
 
 
@@ -86,7 +87,7 @@ def execute(environment: dict[str, str]) -> None:
         clean_environment,
     )
     validate_rust_discovery(selection, nextest_names(discovery.stdout))
-    _run(
+    execution = _run(
         [
             "cargo",
             "nextest",
@@ -99,9 +100,14 @@ def execute(environment: dict[str, str]) -> None:
             "json_error_contract",
             "--filterset",
             nextest_filter(selection),
+            "--message-format",
+            "libtest-json-plus",
         ],
-        clean_environment,
+        clean_environment | {"NEXTEST_EXPERIMENTAL_LIBTEST_JSON": "1"},
     )
+    sys.stdout.write(execution.stdout)
+    sys.stderr.write(execution.stderr)
+    validate_rust_execution(selection, execution.stdout)
     pytest_environment = clean_environment | {
         "BIOMCP_BIN": str(binary),
         "BIOMCP_FOCUSED_MANIFEST": str(MANIFEST),

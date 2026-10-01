@@ -26,6 +26,7 @@ from biodata_focused_selection import (  # noqa: E402
     nextest_filter,
     validate_python_collection,
     validate_rust_discovery,
+    validate_rust_execution,
 )
 
 
@@ -161,7 +162,9 @@ def test_runner_uses_one_discovery_one_nextest_run_and_one_pytest(
     ) -> subprocess.CompletedProcess[str]:
         calls.append((arguments, environment))
         stdout = discovery if arguments[:3] == ["cargo", "nextest", "list"] else ""
-        return subprocess.CompletedProcess(arguments, 0, stdout=stdout)
+        if arguments[:3] == ["cargo", "nextest", "run"]:
+            stdout = "\n".join(json.dumps({"type": "test", "event": "ok", "name": "binary$"+name}) for name in selection.rust)
+        return subprocess.CompletedProcess(arguments, 0, stdout=stdout, stderr="")
 
     with tempfile.TemporaryDirectory(dir=ROOT) as directory:
         binary = Path(directory) / "biomcp"
@@ -245,3 +248,13 @@ def test_mixed_manifest_top_level_names_and_discovery_negatives(tmp_path: Path) 
     for forbidden in ["arbitrary_top_level", "sources::mygene::tests::live::live_get", "live_cli_smoke_get_gene_braf_returns_gene_information", "provider_smoke", "credential"]:
         with pytest.raises(SelectionError):
             _load_mutation(tmp_path, 'version = 1\n[selection]\nrust = ["'+forbidden+'"]\npython = ["tests/test_biodata_boundary.py"]\n')
+
+
+def test_execution_requires_exact_successful_terminal_selections() -> None:
+    selection = FocusedSelection(("module::bounded", "gene_identity_error_table"), ("tests/test_biodata_boundary.py",))
+    passed = [{"type": "test", "event": "ok", "name": "binary$"+name} for name in selection.rust]
+    encode = lambda events: "\n".join(json.dumps(event) for event in events)
+    validate_rust_execution(selection, encode(passed))
+    for events in [passed[:1], passed+passed[:1], passed+[{"type":"test","event":"ok","name":"other"}], [passed[0], {"type":"test","event":"ignored","name":selection.rust[1]}]]:
+        with pytest.raises(SelectionError, match="each selected test exactly once"):
+            validate_rust_execution(selection, encode(events))

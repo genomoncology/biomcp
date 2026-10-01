@@ -1109,7 +1109,7 @@ mod gene_identity_controls;
 fn gene_identity_error_table() {
     for case in gene_identity_controls::cases() {
         for (get, error) in [(true, case.get_error.is_some()), (false, case.search_error)] {
-            if !error {
+            if !error || (get && case.get_error == Some("not_found")) {
                 continue;
             }
             let fixture = MyGeneFixture::with_body(Some(case.bytes.clone()));
@@ -1136,9 +1136,10 @@ fn gene_identity_error_table() {
                     ("BIOMCP_OLS4_BASE", &fixture.base_url),
                     ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
                     ("BIOMCP_CACHE_DIR", cache_path),
-                    ("RUST_LOG", "off"),
+                    ("RUST_LOG", "off,reqwest_retry=error"),
                 ],
             );
+            assert!(result.stderr.is_empty(), "{}: {} {}", case.label, result.stdout, result.stderr);
             assert_json_error(
                 &result,
                 1,

@@ -132,3 +132,18 @@ def validate_python_collection(selection: FocusedSelection, nodeids: tuple[str, 
 
 def nextest_filter(selection: FocusedSelection) -> str:
     return " | ".join(f"test(={name})" for name in selection.rust)
+
+
+def validate_rust_execution(selection: FocusedSelection, output: str) -> None:
+    """Reconcile successful terminal events against every exact selected name."""
+    try:
+        events = [json.loads(line) for line in output.splitlines() if line.strip()]
+        passed = tuple(
+            event["name"].rsplit("$", 1)[-1]
+            for event in events
+            if event.get("type") == "test" and event.get("event") == "ok"
+        )
+    except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as error:
+        raise SelectionError("nextest execution did not return expected terminal JSON events") from error
+    if Counter(passed) != Counter(selection.rust):
+        raise SelectionError("nextest successful execution must match each selected test exactly once")
