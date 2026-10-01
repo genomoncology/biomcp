@@ -294,3 +294,5 @@ async fn adopted_alias_cache_and_downstream_table() {
         assert_eq!(json!(aliases), case["expected"]["aliases"]);
     }
 }
+
+mod surfaces;
