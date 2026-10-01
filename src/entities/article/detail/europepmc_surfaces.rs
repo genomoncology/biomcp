@@ -103,7 +103,9 @@ async fn run_cli(
 fn json_output(output: &std::process::Output) -> Value {
     assert!(
         output.status.success(),
-        "{}",
+        "status={:?}; stdout={}; stderr={}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
     serde_json::from_slice(&output.stdout).expect("CLI JSON")
@@ -313,7 +315,9 @@ async fn guarded_legacy_detail_retains_long_abstract_and_license() {
     assert_eq!(article.europepmc_license.as_deref(), Some("CC BY"));
 }
 
+// Keep inherited child settings stable while source_env fixtures write them.
 #[tokio::test]
+#[serial_test::parallel(source_env)]
 async fn actual_cli_json_markdown_and_both_batches_preserve_europepmc_detail() {
     let fixture = fixture().await;
     let cache = tempfile::tempdir().expect("cache");

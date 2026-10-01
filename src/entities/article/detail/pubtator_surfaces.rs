@@ -99,7 +99,9 @@ async fn run_cli(
 fn json_output(output: &std::process::Output) -> Value {
     assert!(
         output.status.success(),
-        "{}",
+        "status={:?}; stdout={}; stderr={}",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
     serde_json::from_slice(&output.stdout).expect("CLI JSON")
@@ -124,7 +126,9 @@ fn assert_detail(value: &Value) {
     assert!(!value.to_string().contains("PMC-PASSAGE-ONLY"));
 }
 
+// Keep inherited child settings stable while source_env fixtures write them.
 #[tokio::test]
+#[serial_test::parallel(source_env)]
 async fn actual_cli_detail_and_ordered_batches_use_adopted_pubtator() {
     let fixture = fixture().await;
     let cache = tempfile::tempdir().expect("cache");
