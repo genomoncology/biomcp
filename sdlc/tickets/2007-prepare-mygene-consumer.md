@@ -1,12 +1,13 @@
 ---
 flow: build
+status: done
 priority: 10
 deps: [2001]
 ---
 
 # Prepare primary MyGene consumer adoption
 
-Status: design metadata prepared October 1, 2026; fresh independent design review pending. Owner: BioMCP migration coordinator. Preparation author: delegated Codex agent. The root coordinator assigned this bounded preparation while final maintenance hosted verification runs. Ticket 2007 records the BioMCP preparation lane. Existing BioData ticket 0182 remains the owning product scope.
+Status: done October1,2026. Primary gene get/search now use the shared library with retained CLI and raw/typed MCP behavior. Owning BioData0182 product authority and independently accepted exact-pair proof close this slice. The preparation history below remains historical. Root next drives disease adoption and current-main maintenance synchronization.
 
 Serve the accepted shared-source migration and usable gene lookup outcome. Use accepted BioData MyGene identity for primary get/search while retaining product acquisition, CLI/MCP envelopes, alias behavior, filtering, ordering, counts and source-only enrichment. Keep HGNC publisher authority distinct and preserve accepted strict Ensembl rejection with explicit compatibility loss.
 
@@ -33,3 +34,8 @@ October 1, 2026. Root coordinator authorized repairs after CODE findings at `803
 ## Final focused composite result
 
 October 1, 2026. Fresh corrected CODE ACCEPT covered exact `c75eb4fb9c3524606472d244ac755343315c8bb2`. Root authorized one finite final composite. The [final result](../records/2007-final-focused-composite-failure.md) records 175 Rust passes followed by UV cache permission failure before any Python collection. The composite stopped without a fix or retry. Final verification and adoption remain incomplete. Root owns a new authorization after reviewing the failure, plus the separate BioData gates and hosted obligations.
+
+
+## Completed product adoption
+
+Root closes this slice after hosted run36869027669 passed exact productf88fe3b0/dependency59fde624/verifierc2b4966. Independent final proof ACCEPT: /tmp/nucleus-biomcp-gene-hosted-final-proof-review-20261001.md. All175 selected Rust tests and160 Python tests passed; one expected isolation skip remains. Retain the earlier local composite failure and continuation as separate historical evidence. Final hosted offline step828seconds; public build reported244seconds, Rust execution130.411seconds, pytest95.08seconds and discovery compilation separately unmeasured. Nextest installation436seconds is setup. The owning BioData0182 completion record carries the complete exact-pair evidence. Live qualification, publisher/index authority and product release remain separate.

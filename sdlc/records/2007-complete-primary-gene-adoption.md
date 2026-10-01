@@ -1,0 +1,5 @@
+# Complete primary shared gene adoption
+
+October1,2026. Root accepts the gene migration after independent CODE, local selected proof and exact hosted proof. Product sourcef88fe3b0d40a3d3bd1de2a321398770d3954fc9f, BioData dependency59fde6246c1a07ac115d6fc9f16471354a725bff, verifierc2b4966437311de3210c128e551a4b0365eefa16. Run[36869027669](https://github.com/genomoncology/biodata/actions/runs/36869027669) passed175 Rust and160 Python cases with one expected isolation skip. Independent final proof: /tmp/nucleus-biomcp-gene-hosted-final-proof-review-20261001.md. Source, donor dispositions, compatibility and unqualified authority limits retain accepted2007 CODE and BioData0182 scope.
+
+This is record-only completion. It changes no library, product, selector, lock, workflow or runtime bytes. Root advances these reviewed records into the shared1.0 branch after metadata review. Current0.9 remains unchanged. Next: disease adoption, remaining entity slices and maintenance9e960→daaefa16 under the owning reviewed ticket. Release and live/index qualification remain outside this slice. No runtime replay or Ian action is needed.
