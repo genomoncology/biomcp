@@ -1,7 +1,6 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::error::BioMcpError;
@@ -63,10 +62,11 @@ impl MyChemClient {
         crate::utils::query::escape_lucene_value(value)
     }
 
-    async fn get_json<T: DeserializeOwned>(
+    async fn get_identity(
         &self,
         req: reqwest_middleware::RequestBuilder,
-    ) -> Result<T, BioMcpError> {
+        profile: biodata::MyChemProfile,
+    ) -> Result<MyChemQueryResponse, BioMcpError> {
         let resp = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::MYCHEM,
@@ -79,13 +79,8 @@ impl MyChemClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::MYCHEM),
         )
         .await?;
-        crate::sources::decode_json(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::MYCHEM),
-            status,
-            content_type.as_ref(),
-            &bytes,
-            true,
-        )
+        projection::validate_transport(status, content_type.as_ref(), &bytes)?;
+        projection::decode(&bytes, profile)
     }
 
     pub(crate) fn query_with_fields_plan(
@@ -126,17 +121,22 @@ impl MyChemClient {
     ) -> Result<MyChemQueryResponse, BioMcpError> {
         let plan = Self::query_with_fields_plan(q, limit, offset, fields)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        self.get_json(req).await
+        let profile = match fields {
+            MYCHEM_FIELDS_GET => biodata::MyChemProfile::Get,
+            MYCHEM_FIELDS_SEARCH => biodata::MyChemProfile::Search,
+            _ => return Err(projection::failure("MyChem request profile rejected")),
+        };
+        self.get_identity(req, profile).await
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct MyChemQueryResponse {
     pub total: usize,
     pub hits: Vec<MyChemHit>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MyChemHit {
     #[serde(default)]
     pub drugbank: Option<MyChemDrugBank>,
@@ -154,13 +154,19 @@ pub struct MyChemHit {
     pub chebi: Option<MyChemChebiField>,
     #[serde(default)]
     pub openfda: Option<MyChemOpenfda>,
+    #[serde(skip)]
+    pub row: biodata::MyChemRow,
+    #[serde(skip)]
+    pub page: std::sync::Arc<biodata::MyChemPage>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemDrugBank {
+    #[serde(skip_deserializing)]
     pub id: Option<String>,
+    #[serde(skip_deserializing)]
     pub name: Option<String>,
-    #[serde(default, deserialize_with = "de_vec_or_single")]
+    #[serde(skip_deserializing)]
     pub synonyms: Vec<String>,
     #[serde(default, deserialize_with = "de_json_vec_or_single")]
     pub drug_interactions: Vec<serde_json::Value>,
@@ -168,8 +174,10 @@ pub struct MyChemDrugBank {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemChembl {
+    #[serde(skip_deserializing)]
     pub molecule_chembl_id: Option<String>,
     pub molecule_type: Option<String>,
+    #[serde(skip_deserializing)]
     pub pref_name: Option<String>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
     pub drug_mechanisms: Vec<MyChemChemblDrugMechanism>,
@@ -211,13 +219,16 @@ pub struct MyChemDrugCentralApproval {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemOpenfda {
     #[serde(default)]
+    #[serde(skip_deserializing)]
     pub generic_name: StringOrVec,
     #[serde(default)]
+    #[serde(skip_deserializing)]
     pub brand_name: StringOrVec,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemGtoPdb {
+    #[serde(skip_deserializing)]
     pub name: Option<String>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
     pub interaction_targets: Vec<MyChemGtoPdbTarget>,
@@ -237,6 +248,7 @@ pub enum MyChemNdcField {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemNdc {
+    #[serde(skip_deserializing)]
     pub nonproprietaryname: Option<String>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
     pub pharm_classes: Vec<MyChemPharmClass>,
@@ -244,7 +256,9 @@ pub struct MyChemNdc {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemUnii {
+    #[serde(skip_deserializing)]
     pub unii: Option<String>,
+    #[serde(skip_deserializing)]
     pub display_name: Option<String>,
 }
 
@@ -273,6 +287,7 @@ impl MyChemUniiField {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemChebi {
+    #[serde(skip_deserializing)]
     pub name: Option<String>,
 }
 
@@ -314,6 +329,9 @@ impl MyChemPharmClass {
         }
     }
 }
+
+pub(crate) mod projection;
+pub(crate) use projection::optional_failure;
 
 #[cfg(test)]
 mod tests;
