@@ -284,7 +284,9 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
 
     classify_sparse_drug_rescue(&result)
 }
-fn classify_sparse_drug_rescue(result: &crate::entities::discover::DiscoverResult) -> SparseDrugDiscoverRescue {
+fn classify_sparse_drug_rescue(
+    result: &crate::entities::discover::DiscoverResult,
+) -> SparseDrugDiscoverRescue {
     let Some(top) = result.concepts.first() else {
         return SparseDrugDiscoverRescue::None;
     };
@@ -539,10 +541,14 @@ async fn optional_lookup(
 
 async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResolution, BioMcpError> {
     resolve_trial_alias_resolution_with_lookup(name, async {
-        resolve_drug_base(name.trim(), false, false).await.map(|resolved| TrialAliasLookup {
-            canonical_name: resolved.drug.name, candidates: resolved.trial_alias_candidates,
-        })
-    }).await
+        resolve_drug_base(name.trim(), false, false)
+            .await
+            .map(|resolved| TrialAliasLookup {
+                canonical_name: resolved.drug.name,
+                candidates: resolved.trial_alias_candidates,
+            })
+    })
+    .await
 }
 async fn resolve_trial_alias_resolution_with_lookup(
     name: &str,
@@ -604,10 +610,18 @@ pub(super) async fn resolve_drug_base(
     fetch_label_response: bool,
     label_required: bool,
 ) -> Result<ResolvedDrugBase, BioMcpError> {
-    resolve_drug_base_with_discover(name, fetch_label_response, label_required, discover_sparse_drug_rescue(name)).await
+    resolve_drug_base_with_discover(
+        name,
+        fetch_label_response,
+        label_required,
+        discover_sparse_drug_rescue(name),
+    )
+    .await
 }
 async fn resolve_drug_base_with_discover(
-    name: &str, fetch_label_response: bool, label_required: bool,
+    name: &str,
+    fetch_label_response: bool,
+    label_required: bool,
     discover: impl std::future::Future<Output = SparseDrugDiscoverRescue>,
 ) -> Result<ResolvedDrugBase, BioMcpError> {
     let name = name.trim();
