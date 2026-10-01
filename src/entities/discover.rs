@@ -83,11 +83,11 @@ pub(crate) struct DiscoverResult {
     #[serde(skip)]
     pub full: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, serde(deserialize_with = "absent_article_search"))]
     pub article_search: Option<DiscoverArticleSearch>,
 }
 
 /// The article keyword search `discover --search` runs when no concepts resolve.
-#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct DiscoverArticleSearch {
     pub command: String,
@@ -100,7 +100,6 @@ pub(crate) struct DiscoverArticleSearch {
 /// Render inputs for the discover article-search section. The command captures
 /// them because the article renderer needs the same context the
 /// `search article` command builds.
-#[cfg_attr(test, derive(Default))]
 #[derive(Debug, Clone)]
 pub(crate) struct DiscoverArticleSearchRender {
     pub query_summary: String,
@@ -4064,4 +4063,17 @@ mod tests {
         assert_eq!(preview.xrefs.returned, 5);
         assert!(preview.xrefs.has_more);
     }
+}
+
+#[cfg(test)]
+fn absent_article_search<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<DiscoverArticleSearch>, D::Error> {
+    let value: Option<serde_json::Value> = serde::Deserialize::deserialize(deserializer)?;
+    if value.is_some() {
+        return Err(serde::de::Error::custom(
+            "drug control has unexpected article search",
+        ));
+    }
+    Ok(None)
 }
