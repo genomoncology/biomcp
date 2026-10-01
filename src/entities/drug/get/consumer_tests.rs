@@ -41,6 +41,10 @@ impl CaseHttp {
                 }
             })
             .collect();
+        let expected: Vec<Value> = expected
+            .into_iter()
+            .filter(|request| request.get("method").is_some())
+            .collect();
         let plans = expected.clone();
         let consumed = Mutex::new(vec![false; responses.len()]);
         let requests = Arc::new(Mutex::new(Vec::new()));
@@ -250,7 +254,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                             id,
                         );
                     } else {
-                        let resolved = result.unwrap();
+                        let resolved = result.unwrap_or_else(|error| panic!("{id}: {error:?}"));
                         let wanted = expected
                             .get("product")
                             .unwrap_or(&expected["resolved_base"]["drug"]);
