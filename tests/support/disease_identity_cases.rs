@@ -24,6 +24,27 @@ pub fn cases() -> Vec<Case> {
     ].into_iter().map(|(label, raw, error, name)| Case {
         label, get: raw.as_bytes().to_vec(), search: format!(r#"{{"total":1,"hits":[{raw}]}}"#).into_bytes(), error, name,
     }).collect();
+    for (label, get, search) in [
+        ("invalid JSON", "{SOURCE-ONLY-CANARY", "{SOURCE-ONLY-CANARY"),
+        (
+            "missing total",
+            r#"{"_id":false}"#,
+            r#"{"hits":[],"canary":"SOURCE-ONLY-CANARY"}"#,
+        ),
+        (
+            "overflow total",
+            r#"{"_id":false}"#,
+            r#"{"total":18446744073709551616,"hits":[]}"#,
+        ),
+    ] {
+        cases.push(Case {
+            label,
+            get: get.as_bytes().to_vec(),
+            search: search.as_bytes().to_vec(),
+            error: true,
+            name: "",
+        });
+    }
     let mut too_large = br#"{"_id":"MONDO:1"}"#.to_vec();
     too_large.resize(1_048_577, b' ');
     cases.push(Case {

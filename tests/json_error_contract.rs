@@ -390,6 +390,11 @@ impl Drop for MyGeneFixture {
 }
 
 fn serve_mygene_request(mut stream: TcpStream, supplied: Option<&[u8]>) -> Result<String, String> {
+    // Accepted sockets inherit nonblocking mode on macOS. Bound blocking writes
+    // with the existing timeout so authored byte-limit fixtures reach the client.
+    stream
+        .set_nonblocking(false)
+        .map_err(|error| format!("set fixture blocking mode: {error}"))?;
     stream
         .set_read_timeout(Some(Duration::from_secs(2)))
         .map_err(|error| format!("set fixture read timeout: {error}"))?;
@@ -1206,13 +1211,20 @@ fn disease_identity_error_table() {
                     ("RUST_LOG", "off,reqwest_retry=error"),
                 ],
             );
+            let request = fixture.received_request();
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(&result.stdout).unwrap()["error"]["code"],
+                "api",
+                "{} get={get}: {}",
+                case.label,
+                result.stdout
+            );
             assert_json_error(&result, 1, "api");
             assert!(
                 !result.stdout.contains("SOURCE-ONLY-CANARY"),
                 "{}",
                 case.label
             );
-            let request = fixture.received_request();
             assert!(request.starts_with(if get { "/disease/" } else { "/query?" }));
             assert!(
                 fixture.request_rx.try_recv().is_err(),

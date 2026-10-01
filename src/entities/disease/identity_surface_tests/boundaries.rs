@@ -164,6 +164,7 @@ pub(super) async fn nested_refusal_table(harness: &ContractHarness) {
         }
     }
     fallback_refusal(harness).await;
+    continuity::optional_paths(harness).await;
 }
 
 async fn fallback_refusal(harness: &ContractHarness) {
@@ -267,9 +268,11 @@ async fn trial_grounding(harness: &ContractHarness) {
         "transport",
         "rejected",
         "nonmatching rejected",
+        "detail rejected",
     ] {
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = Arc::clone(&requests);
+        let detail_gets = Mutex::new(0);
         let fixture = TestHttpFixture::spawn(move |request| {
             captured.lock().unwrap().push(request.lines().next().unwrap().to_owned());
             let body = if request.starts_with("GET /query?") {
@@ -280,8 +283,13 @@ async fn trial_grounding(harness: &ContractHarness) {
                     "nonmatching rejected" => r#"{"total":2,"hits":[{"_id":"MONDO:1","mondo":{"name":"Synthetic tumor"}},{"_id":"MONDO:2","mondo":{"name":17}}]}"#,
                     _ => r#"{"total":0,"hits":[]}"#,
                 }
-            } else if request.starts_with("GET /api/search?") { r#"{"response":{"docs":[]}}"# }
-            else { r#"{"total":0,"trials":[]}"# };
+            } else if request.starts_with("GET /api/search?") { if mode == "detail rejected" { r#"{"response":{"docs":[{"iri":"https://example.invalid/MONDO_1","obo_id":"MONDO:1","ontology_prefix":"mondo","label":"Synthetic tumor","type":"class"}]}}"# } else { r#"{"response":{"docs":[]}}"# } }
+            else if mode == "detail rejected" && request.starts_with("GET /disease/") {
+                let mut count = detail_gets.lock().unwrap();
+                *count += 1;
+                if *count == 2 { r#"{"_id":"MONDO:1","mondo":{"name":false}}"# }
+                else { r#"{"_id":"MONDO:1","mondo":{"name":"Synthetic tumor"}}"# }
+            } else { r#"{"total":0,"trials":[]}"# };
             TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body.as_bytes()))
         }).await;
         let cache = tempfile::tempdir().unwrap();
@@ -352,6 +360,7 @@ async fn diagnostic_resolution(harness: &ContractHarness) {
         "query rejected",
         "nonmatching rejected",
         "detail rejected",
+        "transport",
     ] {
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = Arc::clone(&requests);
@@ -374,11 +383,14 @@ async fn diagnostic_resolution(harness: &ContractHarness) {
         let state = tempfile::tempdir().unwrap();
         let gtr = state.path().join("gtr");
         let who = state.path().join("who");
-        let error = mode.contains("rejected");
+        let error = mode.contains("rejected") || mode == "transport";
         if !error {
             seed_gtr(&gtr);
         }
         let mut env = environment(&fixture.base, state.path());
+        if mode == "transport" {
+            env[0].1 = "http://127.0.0.1:0".into();
+        }
         env.extend([
             ("BIOMCP_GTR_DIR", gtr.display().to_string()),
             ("BIOMCP_WHO_IVD_DIR", who.display().to_string()),
@@ -409,7 +421,9 @@ async fn diagnostic_resolution(harness: &ContractHarness) {
         let observed = requests.lock().unwrap().clone();
         assert_eq!(
             observed.len(),
-            if mode == "unique" || mode == "detail rejected" {
+            if mode == "transport" {
+                0
+            } else if mode == "unique" || mode == "detail rejected" {
                 2
             } else {
                 1
@@ -442,3 +456,5 @@ async fn diagnostic_resolution(harness: &ContractHarness) {
         }
     }
 }
+
+mod continuity;
