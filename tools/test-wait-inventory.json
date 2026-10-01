@@ -96,7 +96,7 @@
       "language": "rust"
     },
     "src/sources/orcid/tests.rs": {
-      "count": 2,
+      "count": 1,
       "language": "rust"
     },
     "src/sources/rate_limit.rs": {

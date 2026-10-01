@@ -394,18 +394,26 @@ mod closing {
         let (base, requests) = spawn_scripted_orcid(vec![(200, None, person_body()); 2]).await;
         let _env = OrcidEnv::new(&base);
         let client = OrcidClient::new().expect("client");
+        let previous_attempt = *last_attempt().lock().await;
+        assert!(!client.pace_attempt(Instant::now()).await);
+        assert_eq!(*last_attempt().lock().await, previous_attempt);
         client
             .person(VALID_ID, deadline(30))
             .await
             .expect("first call succeeds");
-        // The second logical call cannot admit a physical attempt before
-        // its absolute deadline: the one-second pacing gap is longer than
-        // the remaining budget, so the bounded error returns with no new
-        // GET.
+        // Freeze the clock after the actual first response, then test both a
+        // pacing budget and an expired budget after the pacing gap. Neither
+        // case may issue a second physical GET, regardless of response latency.
+        let first_attempt = *last_attempt().lock().await;
+        tokio::time::pause();
+        let pacing_deadline = first_attempt.unwrap() + Duration::from_millis(100);
+        assert!(!client.pace_attempt(pacing_deadline).await);
+        tokio::time::advance(ORCID_ATTEMPT_PACING).await;
+        assert!(!client.pace_attempt(pacing_deadline).await);
         let error = client
-            .person(VALID_ID, Instant::now() + Duration::from_millis(100))
+            .person(VALID_ID, pacing_deadline)
             .await
-            .expect_err("deadline");
+            .expect_err("expired deadline");
         assert_eq!(error.code(), "api");
         assert_eq!(requests.lock().unwrap().len(), 1);
     }

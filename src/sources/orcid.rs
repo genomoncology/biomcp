@@ -264,6 +264,9 @@ impl OrcidClient {
         loop {
             let wait = {
                 let mut guard = last_attempt().lock().await;
+                if Instant::now() >= deadline {
+                    return false;
+                }
                 match *guard {
                     None => {
                         *guard = Some(Instant::now());
