@@ -595,6 +595,7 @@ pub enum DrugSearchPageWithRegion {
     },
 }
 
+#[cfg_attr(test, derive(serde::Deserialize))]
 #[derive(Debug, Clone, Default)]
 pub struct DrugSearchFilters {
     pub query: Option<String>,

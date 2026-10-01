@@ -217,7 +217,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                         2,
                         0,
                         region,
-                        WhoProductTypeFilter::All,
+                        WhoProductTypeFilter::Any,
                     )
                     .await;
                     failure(
@@ -276,7 +276,16 @@ async fn adopted_alias_cache_and_downstream_table() {
     }) {
         let response =
             crate::sources::mychem::projection::decode(&bytes(&case), profile(&case)).unwrap();
-        let drug: Drug = serde_json::from_value(case["input"]["resolved"].clone()).unwrap();
+        let mut drug = crate::transform::drug::merge_mychem_hits(&[], "sampledrug");
+        drug.drugbank_id = case["input"]["resolved"]["drugbank_id"]
+            .as_str()
+            .map(str::to_owned);
+        drug.chembl_id = case["input"]["resolved"]["chembl_id"]
+            .as_str()
+            .map(str::to_owned);
+        drug.unii = case["input"]["resolved"]["unii"]
+            .as_str()
+            .map(str::to_owned);
         let aliases = orphan_aliases(
             case["input"]["requested_name"].as_str().unwrap(),
             &drug,

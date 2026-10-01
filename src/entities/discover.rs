@@ -100,6 +100,7 @@ pub(crate) struct DiscoverArticleSearch {
 /// Render inputs for the discover article-search section. The command captures
 /// them because the article renderer needs the same context the
 /// `search article` command builds.
+#[cfg_attr(test, derive(Default))]
 #[derive(Debug, Clone)]
 pub(crate) struct DiscoverArticleSearchRender {
     pub query_summary: String,
