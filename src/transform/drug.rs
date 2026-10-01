@@ -384,7 +384,11 @@ fn interactions_from_hit(hit: &MyChemHit) -> Vec<DrugInteraction> {
 }
 
 pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
-    let name = best_name_from_hit(hit)?;
+    let Some(name) = best_name_from_hit(hit) else {
+        hit.record_row("search projection", "discard", "row has no display name");
+        return None;
+    };
+    record_display(hit, &name, "search projection");
     let mechanisms = chembl_mechanisms_from_hit(hit);
     let mechanism = mechanisms
         .first()
@@ -399,6 +403,14 @@ pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
         .map(|v| v.trim().to_string())
         .filter(|v| !v.is_empty());
 
+    hit.record_field(
+        "drugbank",
+        "id",
+        "search projection",
+        "select_first_code",
+        "first DrugBank identifier",
+        drugbank_id.clone(),
+    );
     Some(DrugSearchResult {
         name,
         drugbank_id,
@@ -406,6 +418,50 @@ pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
         mechanism,
         target,
     })
+}
+
+fn record_display(hit: &MyChemHit, display: &str, stage: &'static str) {
+    let fields = [
+        ("ndc", "nonproprietaryname"),
+        ("openfda", "generic_name"),
+        ("openfda", "brand_name"),
+        ("drugbank", "name"),
+        ("chembl", "pref_name"),
+        ("gtopdb", "name"),
+        ("unii", "display_name"),
+        ("chebi", "name"),
+    ];
+    let claims = hit.row.identity().claims();
+    let selected = fields.into_iter().find_map(|(section, field)| {
+        claims
+            .iter()
+            .enumerate()
+            .find(|(_, claim)| {
+                claim.origin().section() == section && claim.origin().field() == field
+            })
+            .map(|(index, _)| index)
+    });
+    for (index, claim) in claims.iter().enumerate() {
+        if !matches!(claim.value(), biodata::DrugClaimValue::Term(_)) {
+            continue;
+        }
+        let winner = Some(index) == selected;
+        hit.record(
+            Some(index),
+            stage,
+            if winner {
+                "select_display"
+            } else {
+                "omit_display"
+            },
+            if winner {
+                "display precedence; trim, strip edge dots and ASCII lowercase"
+            } else {
+                "first accessor or higher priority source supplies display"
+            },
+            winner.then(|| display.to_owned()),
+        );
+    }
 }
 
 pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a MyChemHit> {
@@ -445,7 +501,48 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
         score
     });
 
+    for hit in hits {
+        hit.record_row(
+            "get selection",
+            if out.iter().any(|selected| std::ptr::eq(*selected, hit)) {
+                "select"
+            } else {
+                "omit"
+            },
+            "name matching, all-hit fallback and stable richness order",
+        );
+    }
     out
+}
+
+fn record_codes(hit: &MyChemHit, section: &str, field: &str, available: bool, stage: &'static str) {
+    let mut first = available;
+    for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+        if claim.origin().section() != section || claim.origin().field() != field {
+            continue;
+        }
+        let target = if let biodata::DrugClaimValue::Code(code) = claim.value() {
+            first.then(|| code.value().trim().to_owned())
+        } else {
+            None
+        };
+        hit.record(
+            Some(index),
+            stage,
+            if first {
+                "select_first_code"
+            } else {
+                "omit_code"
+            },
+            if first {
+                "first identifier; trim lexical code"
+            } else {
+                "first code already selected; occurrence retained"
+            },
+            target,
+        );
+        first = false;
+    }
 }
 
 pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
@@ -453,6 +550,9 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         .iter()
         .find_map(|hit| best_name_from_hit(hit))
         .unwrap_or_else(|| normalize_name(requested_name));
+    if let Some(hit) = hits.iter().find(|hit| best_name_from_hit(hit).is_some()) {
+        record_display(hit, &name, "get merge");
+    }
     let mut drugbank_id: Option<String> = None;
     let mut chembl_id: Option<String> = None;
     let mut unii: Option<String> = None;
@@ -488,6 +588,15 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
             name = n;
         }
 
+        record_codes(hit, "drugbank", "id", drugbank_id.is_none(), "get merge");
+        record_codes(
+            hit,
+            "chembl",
+            "molecule_chembl_id",
+            chembl_id.is_none(),
+            "get merge",
+        );
+        record_codes(hit, "unii", "unii", unii.is_none(), "get merge");
         if drugbank_id.is_none() {
             drugbank_id = hit
                 .drugbank
@@ -519,7 +628,19 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         if Some(hit_index) == anchor_index
             && let Some(drugbank) = hit.drugbank.as_ref()
         {
-            for synonym in &drugbank.synonyms {
+            for (synonym_index, synonym) in drugbank.synonyms.iter().enumerate() {
+                let claim_index = hit
+                    .row
+                    .identity()
+                    .claims()
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, claim)| {
+                        claim.origin().section() == "drugbank"
+                            && claim.origin().field() == "synonyms"
+                    })
+                    .nth(synonym_index)
+                    .map(|(index, _)| index);
                 let synonym = synonym.trim();
                 if synonym.is_empty() {
                     continue;
@@ -527,15 +648,51 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                 if synonym.eq_ignore_ascii_case(&name)
                     || synonym.eq_ignore_ascii_case(requested_name)
                 {
+                    hit.record(
+                        claim_index,
+                        "get merge synonyms",
+                        "omit",
+                        "equals requested or displayed name",
+                        None,
+                    );
                     continue;
                 }
                 let key = synonym.to_ascii_lowercase();
                 if !brand_names_seen.insert(key.clone()) {
+                    hit.record(
+                        claim_index,
+                        "get merge synonyms",
+                        "deduplicate",
+                        "case insensitive duplicate",
+                        None,
+                    );
                     continue;
                 }
                 // The full synonym list feeds DDInter identity matching
                 // (ticket 1241); the card keeps the three-brand cap, so
                 // the loop does not break here.
+                hit.record(
+                    claim_index,
+                    "DDInter synonyms",
+                    if ddinter_synonyms.len() < 32 {
+                        "select"
+                    } else {
+                        "cap"
+                    },
+                    "anchor-only 32-synonym policy",
+                    (ddinter_synonyms.len() < 32).then(|| synonym.to_owned()),
+                );
+                hit.record(
+                    claim_index,
+                    "card brands",
+                    if brand_names.len() < 3 {
+                        "select"
+                    } else {
+                        "cap"
+                    },
+                    "three-brand card policy",
+                    (brand_names.len() < 3).then(|| synonym.to_owned()),
+                );
                 if ddinter_synonyms.len() < 32 {
                     ddinter_synonyms.push(synonym.to_string());
                 }

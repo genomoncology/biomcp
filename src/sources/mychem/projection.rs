@@ -160,6 +160,7 @@ fn convert(row: &MyChemRow, page: Arc<MyChemPage>) -> Result<MyChemHit, BioMcpEr
         openfda: enrichment.openfda,
         row: row.clone(),
         page,
+        conversion: Default::default(),
     })
 }
 pub(crate) fn decode(

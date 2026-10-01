@@ -159,6 +159,8 @@ pub struct MyChemHit {
     pub row: biodata::MyChemRow,
     #[serde(skip)]
     pub page: std::sync::Arc<biodata::MyChemPage>,
+    #[serde(skip)]
+    pub conversion: std::sync::Arc<std::sync::Mutex<Vec<conversion::DrugConversion>>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -331,6 +333,7 @@ impl MyChemPharmClass {
     }
 }
 
+mod conversion;
 pub(crate) mod projection;
 pub(crate) use projection::optional_failure;
 

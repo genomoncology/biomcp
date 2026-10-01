@@ -4,7 +4,6 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 
 use regex::Regex;
-use tracing::debug as warn;
 
 use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
