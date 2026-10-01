@@ -221,7 +221,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                         let page = result.unwrap();
                         assert_eq!(
                             json!(page.results.iter().map(search_value).collect::<Vec<_>>()),
-                            expected.get("results").unwrap_or(&expected["rows"]),
+                            *expected.get("results").unwrap_or(&expected["rows"]),
                             "{id}"
                         );
                         assert_eq!(json!(page.total), expected["total"], "{id}");
