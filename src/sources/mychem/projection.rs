@@ -223,9 +223,7 @@ impl<'de> Deserialize<'de> for MyChemQueryResponse {
     }
 }
 
-pub(super) fn checked_total<T: TryFrom<u64> + TryInto<usize>>(
-    total: u64,
-) -> Result<T, BioMcpError> {
+pub(super) fn checked_total<T: TryFrom<u64>>(total: u64) -> Result<T, BioMcpError> {
     T::try_from(total).map_err(|_| BioMcpError::ProviderResponseLimit {
         source_name: "MyChem.info".into(),
         limit: if std::mem::size_of::<T>() == 4 {
