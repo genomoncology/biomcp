@@ -194,6 +194,14 @@ fn display_selection_and_product_table() {
                     case["id"]
                 );
             }
+            if let Some(wanted) = case["expected"].get("conversion") {
+                super::consumer_tests_conversion::assert_conversion(
+                    &response.hits.iter().collect::<Vec<_>>(),
+                    wanted,
+                    "get",
+                    &case["id"],
+                );
+            }
             // Product actions preserve exact source occurrence links and never erase custody.
             for hit in &response.hits {
                 for event in crate::utils::sync::recover_poison(hit.conversion.lock()).iter() {

@@ -287,7 +287,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                 "search_page" => {
                     let filters: DrugSearchFilters =
                         serde_json::from_value(input["filters"].clone()).unwrap();
-                    let result = search_page(
+                    let result = super::super::search::search_page_with_custody(
                         &filters,
                         input["limit"].as_u64().unwrap() as usize,
                         input["offset"].as_u64().unwrap() as usize,
@@ -296,7 +296,18 @@ async fn adopted_request_search_and_nested_failure_table() {
                     if !expected["failure"].is_null() {
                         failure(result.unwrap_err(), &expected["failure"], id);
                     } else {
-                        let page = result.unwrap();
+                        let (page, custody) = result.unwrap();
+                        if let Some(path) = expected["page"].as_str() {
+                            assert_page(&custody, path);
+                        }
+                        if let Some(wanted) = expected.get("conversion") {
+                            crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+                                &custody.hits.iter().collect::<Vec<_>>(),
+                                wanted,
+                                "search",
+                                id,
+                            );
+                        }
                         assert_eq!(
                             json!(page.results.iter().map(search_value).collect::<Vec<_>>()),
                             *expected.get("results").unwrap_or(&expected["rows"]),
@@ -384,7 +395,31 @@ async fn adopted_alias_cache_and_downstream_table() {
     fixture.environment(&mut env, cache.path());
     trial_alias_cache().lock().unwrap().clear();
     let requested = case["input"]["requested_name"].as_str().unwrap();
-    let resolution = resolve_trial_alias_resolution(requested).await.unwrap();
+    let captured = std::sync::Mutex::new(Vec::new());
+    let resolution = resolve_trial_alias_resolution_with_custody(requested, async {
+        let resolved = resolve_drug_base(requested, false, false).await?;
+        captured.lock().unwrap().extend(
+            resolved
+                .source_pages
+                .iter()
+                .flat_map(|page| page.hits.clone()),
+        );
+        Ok((
+            TrialAliasLookup {
+                canonical_name: resolved.drug.name,
+                candidates: resolved.trial_alias_candidates,
+            },
+            resolved.selected_hits,
+        ))
+    })
+    .await
+    .unwrap();
+    crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+        &captured.lock().unwrap().iter().collect::<Vec<_>>(),
+        &case["expected"]["conversion"],
+        "alias",
+        &case["id"],
+    );
     let actual = resolution
         .aliases
         .iter()

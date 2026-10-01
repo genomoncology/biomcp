@@ -215,6 +215,11 @@ pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
     };
     record_display(hit, &name, "search projection");
     if name.is_empty() {
+        hit.record_claims(
+            "search projection",
+            "discard",
+            "display normalizes to empty",
+        );
         hit.record_row(
             "search projection",
             "discard",
@@ -336,6 +341,9 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
     });
 
     for hit in hits {
+        if !out.iter().any(|selected| std::ptr::eq(*selected, hit)) {
+            hit.record_claims("get selection", "omit", "name selection excludes row");
+        }
         hit.record_row(
             "get selection",
             if out.iter().any(|selected| std::ptr::eq(*selected, hit)) {

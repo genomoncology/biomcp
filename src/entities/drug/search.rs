@@ -278,7 +278,7 @@ pub async fn search_page(
     Ok(search_page_with_custody(filters, limit, offset).await?.0)
 }
 
-async fn search_page_with_custody(
+pub(super) async fn search_page_with_custody(
     filters: &DrugSearchFilters,
     limit: usize,
     offset: usize,
@@ -333,6 +333,12 @@ async fn search_page_with_custody(
             .filter(|v| !v.is_empty())
         {
             if !hit_mentions_target(hit, requested_target) {
+                conversion::record_filter(hit, "discard_target_filter", None);
+                hit.record_row(
+                    "search filtering",
+                    "discard_target_filter",
+                    "requested target absent from retained source enrichment",
+                );
                 hit.record_claims(
                     "search filtering",
                     "omit_target_filter",
@@ -341,6 +347,7 @@ async fn search_page_with_custody(
                 continue;
             }
             // Display the matched target explicitly so multi-target drugs are not misleading.
+            conversion::record_filter(hit, "target_override", Some(requested_target));
             r.target = Some(requested_target.to_ascii_uppercase());
             hit.record_row(
                 "search filtering",
@@ -356,6 +363,12 @@ async fn search_page_with_custody(
             .filter(|v| !v.is_empty())
             && !hit_mentions_mechanism(hit, requested_mechanism)
         {
+            conversion::record_filter(hit, "discard_mechanism_filter", None);
+            hit.record_row(
+                "search filtering",
+                "discard_mechanism_filter",
+                "requested mechanism absent from retained source enrichment",
+            );
             hit.record_claims(
                 "search filtering",
                 "omit_mechanism_filter",
@@ -415,6 +428,7 @@ async fn search_page_with_custody(
     Ok((SearchPage::offset(out, Some(resp.total)), resp))
 }
 
+mod conversion;
 mod ranking;
 use ranking::search_ranked_name_us_page;
 #[cfg(test)]

@@ -260,6 +260,16 @@ pub(super) struct ResolvedDrugBase {
     pub(super) label_attempt_failed: bool,
     trial_alias_candidates: Vec<TrialAlias>,
     selected_hits: Vec<MyChemHit>,
+    source_pages: Vec<crate::sources::mychem::MyChemQueryResponse>,
+    fallbacks: Vec<DrugFallback>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct DrugFallback {
+    from: String,
+    to: String,
+    reason: &'static str,
+    candidate_origin: Option<(String, usize)>,
 }
 
 enum SparseDrugDiscoverRescue {
@@ -366,15 +376,35 @@ async fn resolve_drug_base_with_discover(
 
     let mut lookup_name = name.to_string();
     let mut resp = direct_drug_lookup(name).await?;
+    let mut source_pages = vec![resp.clone()];
+    let mut fallbacks = Vec::new();
 
     if resp.hits.is_empty() {
         let fallback_filters = DrugSearchFilters {
             query: Some(name.to_string()),
             ..Default::default()
         };
-        let fallback_name = search_page(&fallback_filters, 2, 0)
+        let mut candidate_origin = None;
+        let fallback_name = super::search::search_page_with_custody(&fallback_filters, 2, 0)
             .await
-            .map(Some)
+            .map(|(page, custody)| {
+                if page.results.len() == 1 {
+                    let candidate = &page.results[0].name;
+                    for hit in &custody.hits {
+                        let events = crate::utils::sync::recover_poison(hit.conversion.lock()).clone();
+                        if events.iter().any(|event| event.action == "select_display" && event.target.as_ref().and_then(serde_json::Value::as_str) == Some(candidate)) {
+                            candidate_origin = Some((hit.page.digest().into(), hit.row.source().ordinal()));
+                            for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+                                if matches!(claim.value(), biodata::DrugClaimValue::Code(_)) {
+                                    hit.record(Some(index), "get fallback", "omit_candidate_identifier", "search result establishes lookup label; final GET alone supplies product code", None);
+                                }
+                            }
+                        }
+                    }
+                }
+                source_pages.push(custody);
+                Some(page)
+            })
             .or_else(|error| {
                 if crate::sources::mychem::optional_failure(&error) {
                     Ok(None)
@@ -398,7 +428,14 @@ async fn resolve_drug_base_with_discover(
             if let Some(fallback_resp) = optional_lookup(&candidate).await?
                 && !fallback_resp.hits.is_empty()
             {
+                fallbacks.push(DrugFallback {
+                    from: lookup_name.clone(),
+                    to: candidate.clone(),
+                    reason: "one different nonblank search result",
+                    candidate_origin,
+                });
                 lookup_name = candidate;
+                source_pages.push(fallback_resp.clone());
                 resp = fallback_resp;
             } else {
                 return Err(original_not_found());
@@ -423,7 +460,21 @@ async fn resolve_drug_base_with_discover(
         && let Some(fallback_resp) = optional_lookup(&candidate.name).await?
         && !fallback_resp.hits.is_empty()
     {
+        for hit in &resp.hits {
+            hit.record_claims(
+                "get fallback",
+                "replace_lookup_display",
+                "accepted sparse initial name replaced by accepted final candidate",
+            );
+        }
+        fallbacks.push(DrugFallback {
+            from: drug.name.clone(),
+            to: candidate.name.clone(),
+            reason: "label canonical signal",
+            candidate_origin: None,
+        });
         lookup_name = candidate.name;
+        source_pages.push(fallback_resp.clone());
         resp = fallback_resp;
         selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
         drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
@@ -435,7 +486,21 @@ async fn resolve_drug_base_with_discover(
                 if let Some(fallback_resp) = optional_lookup(&candidate).await?
                     && !fallback_resp.hits.is_empty()
                 {
+                    for hit in &resp.hits {
+                        hit.record_claims(
+                            "get fallback",
+                            "replace_lookup_display",
+                            "accepted sparse initial name replaced by accepted final candidate",
+                        );
+                    }
+                    fallbacks.push(DrugFallback {
+                        from: drug.name.clone(),
+                        to: candidate.clone(),
+                        reason: "unique discover canonical",
+                        candidate_origin: None,
+                    });
                     lookup_name = candidate;
+                    source_pages.push(fallback_resp.clone());
                     resp = fallback_resp;
                     selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
                     drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
@@ -480,6 +545,8 @@ async fn resolve_drug_base_with_discover(
         label_attempt_failed,
         trial_alias_candidates,
         selected_hits: selected.into_iter().cloned().collect(),
+        source_pages,
+        fallbacks,
     })
 }
 

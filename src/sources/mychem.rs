@@ -152,7 +152,7 @@ impl MyChemClient {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MyChemQueryResponse {
     pub total: usize,
     pub hits: Vec<MyChemHit>,
@@ -363,3 +363,6 @@ mod tests;
 
 #[cfg(test)]
 pub(crate) mod consumer_tests;
+
+#[cfg(test)]
+pub(crate) mod consumer_tests_conversion;
