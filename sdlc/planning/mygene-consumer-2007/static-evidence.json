@@ -1,0 +1,87 @@
+{
+  "kind": "static source and existing receipt inspection; no runtime execution",
+  "biomcp_revision": "11904b5658d8208d4d6b8bb79a3bbf49a6954344",
+  "biodata_revision": "18eb6e9c5dbb1119a466b2e7300c727029c0294c",
+  "source_selector_table_sha256": "3033646f534472406045555e68a87d2540b76e5112f08ae0e58dae51114a7795",
+  "disposition": {
+    "offline_retained": 44,
+    "offline_rewritten": 10,
+    "offline_omitted": 1,
+    "live_outside_gate": 6
+  },
+  "current_declarations_resolved": 61,
+  "renames": {
+    "typed_schemas_are_entity_specific": "typed_branches_stay_entity_specific",
+    "typed_search_and_get_schemas_declare_object_roots_and_reject_bad_input": "typed_schemas_publish_flat_roots_and_reject_bad_input"
+  },
+  "captures": [
+    {
+      "path": "mygene/get_braf_20260811.json",
+      "sha256": "b7d0b5fbba54efe693d0e7c3e06792a7779b7a267c9c75bc3a69669eda5911ae",
+      "receipt_match": true,
+      "ensembl_shapes": [
+        {
+          "gene": "ENSG00000157764"
+        }
+      ],
+      "request": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+      "capture_transform_statement": "No fields removed; JSON whitespace was normalized after capture."
+    },
+    {
+      "path": "mygene/get_brca1_20260811.json",
+      "sha256": "08091b90748b54e2058cd6b092fff57cbf5bf02e1de264278e7888d5765c0812",
+      "receipt_match": true,
+      "ensembl_shapes": [
+        {
+          "gene": "ENSG00000012048"
+        }
+      ],
+      "request": "https://mygene.info/v3/query?q=symbol%3A%22BRCA1%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+      "capture_transform_statement": "No fields removed; JSON whitespace was normalized after capture."
+    },
+    {
+      "path": "mygene/get_egfr_20260811.json",
+      "sha256": "749dc54f58ac3a2ed73466823163368bb9edb1d9b2d82b5c0345a53e1ada0c41",
+      "receipt_match": true,
+      "ensembl_shapes": [
+        {
+          "gene": "ENSG00000146648"
+        }
+      ],
+      "request": "https://mygene.info/v3/query?q=symbol%3A%22EGFR%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+      "capture_transform_statement": "No fields removed; JSON whitespace was normalized after capture."
+    },
+    {
+      "path": "mygene/get_flt3_20260918.json",
+      "sha256": "4a02539067d9b4a5e77bed89fafde70286532a78ef42b49c640a4fc7f3e0b2ae",
+      "receipt_match": true,
+      "ensembl_shapes": [
+        {
+          "gene": "ENSG00000122025"
+        }
+      ],
+      "request": "https://mygene.info/v3/query?q=symbol%3A%22FLT3%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg%2CHGNC&size=1",
+      "capture_transform_statement": "No field was removed, no value was redacted, and the bytes are unmodified. MyGene.info publishes gene annotation and carries no personal data."
+    },
+    {
+      "path": "mygene/search_braf_20260811.json",
+      "sha256": "b180e713dffc626b3a6f7c501367e01ac150c854e017810ffe4870adf5f640d3",
+      "receipt_match": true,
+      "ensembl_shapes": [
+        "absent"
+      ],
+      "request": "https://mygene.info/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&species=human&fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&size=3&from=0",
+      "capture_transform_statement": "No fields removed; JSON whitespace was normalized after capture."
+    }
+  ],
+  "maintenance_hosted_baseline": {
+    "run": 36849645376,
+    "status": "COMPLETED SUCCESS",
+    "biomcp_revision": "11904b5658d8208d4d6b8bb79a3bbf49a6954344",
+    "biodata_revision": "c9938b99bd091ab4bf6da8b909ed239826e5ab6d",
+    "evidence": "root supplied verified completion during delegated preparation; no duplicate verification",
+    "url": "https://github.com/genomoncology/biodata/actions/runs/36849645376"
+  },
+  "accepted_adoption_pin": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+  "completion_receipt": "https://github.com/genomoncology/biodata/blob/59fde6246c1a07ac115d6fc9f16471354a725bff/sdlc/records/0203-hosted-verification-and-completion.md"
+}
