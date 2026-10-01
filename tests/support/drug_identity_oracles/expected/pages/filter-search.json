@@ -1,0 +1,755 @@
+{
+  "profile": "Search",
+  "digest": "sha256:2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+  "total": 3,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-FILTER1",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "FilterDrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-FILTER1",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "FilterDrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\n      \"drugbank\": {\n        \"id\": \"DB-FILTER1\",\n        \"name\": \"FilterDrug\"\n      },\n      \"chembl\": {\n        \"drug_mechanisms\": [\n          {\n            \"mechanism_of_action\": \"Synthetic inhibitor\"\n          }\n        ]\n      },\n      \"gtopdb\": {\n        \"interaction_targets\": [\n          {\n            \"symbol\": \" genea \"\n          },\n          {\n            \"symbol\": \" geneb \"\n          }\n        ]\n      }\n    }",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-FILTER1\"",
+            "state": "values",
+            "values": [
+              "DB-FILTER1"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"FilterDrug\"",
+            "state": "values",
+            "values": [
+              "FilterDrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {
+          "chembl.drug_mechanisms": [
+            {
+              "mechanism_of_action": "Synthetic inhibitor"
+            }
+          ],
+          "gtopdb.interaction_targets": [
+            {
+              "symbol": " genea "
+            },
+            {
+              "symbol": " geneb "
+            }
+          ]
+        }
+      },
+      "adapter_losses": [
+        {
+          "field": "chembl.drug_mechanisms",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "gtopdb.interaction_targets",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "profile",
+          "disposition": "preserved",
+          "reason": "search hit order and provider total retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        }
+      ]
+    },
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+        "ordinal": 1,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-FILTER2",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "WrongTarget",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+          "ordinal": 1,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-FILTER2",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "WrongTarget",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 1,
+        "raw": "{\n      \"drugbank\": {\n        \"id\": \"DB-FILTER2\",\n        \"name\": \"WrongTarget\"\n      },\n      \"chembl\": {\n        \"drug_mechanisms\": [\n          {\n            \"mechanism_of_action\": \"Synthetic inhibitor\"\n          }\n        ]\n      },\n      \"gtopdb\": {\n        \"interaction_targets\": [\n          {\n            \"symbol\": \"GENEC\"\n          }\n        ]\n      }\n    }",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-FILTER2\"",
+            "state": "values",
+            "values": [
+              "DB-FILTER2"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"WrongTarget\"",
+            "state": "values",
+            "values": [
+              "WrongTarget"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {
+          "chembl.drug_mechanisms": [
+            {
+              "mechanism_of_action": "Synthetic inhibitor"
+            }
+          ],
+          "gtopdb.interaction_targets": [
+            {
+              "symbol": "GENEC"
+            }
+          ]
+        }
+      },
+      "adapter_losses": [
+        {
+          "field": "chembl.drug_mechanisms",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "gtopdb.interaction_targets",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "profile",
+          "disposition": "preserved",
+          "reason": "search hit order and provider total retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        }
+      ]
+    },
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+        "ordinal": 2,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-FILTER3",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "WrongMechanism",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+          "ordinal": 2,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-FILTER3",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "WrongMechanism",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 2,
+        "raw": "{\n      \"drugbank\": {\n        \"id\": \"DB-FILTER3\",\n        \"name\": \"WrongMechanism\"\n      },\n      \"chembl\": {\n        \"drug_mechanisms\": [\n          {\n            \"mechanism_of_action\": \"Synthetic activator\"\n          }\n        ]\n      },\n      \"gtopdb\": {\n        \"interaction_targets\": [\n          {\n            \"symbol\": \"GENEB\"\n          }\n        ]\n      }\n    }",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-FILTER3\"",
+            "state": "values",
+            "values": [
+              "DB-FILTER3"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"WrongMechanism\"",
+            "state": "values",
+            "values": [
+              "WrongMechanism"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {
+          "chembl.drug_mechanisms": [
+            {
+              "mechanism_of_action": "Synthetic activator"
+            }
+          ],
+          "gtopdb.interaction_targets": [
+            {
+              "symbol": "GENEB"
+            }
+          ]
+        }
+      },
+      "adapter_losses": [
+        {
+          "field": "chembl.drug_mechanisms",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "gtopdb.interaction_targets",
+          "disposition": "omitted",
+          "reason": "requested field outside drug identity"
+        },
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "profile",
+          "disposition": "preserved",
+          "reason": "search hit order and provider total retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        }
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

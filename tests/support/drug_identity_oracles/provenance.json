@@ -1,0 +1,1825 @@
+{
+  "public_only": true,
+  "provider_occurrence": false,
+  "captured_payloads": false,
+  "private_evidence": false,
+  "source_blobs": [
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "Cargo.lock",
+      "sha256": "b585ee8371b81b74a1da3d5260a530366a8a8ca042fde75aa02b50a85b34d518",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "Cargo.toml",
+      "sha256": "3d18973302f1868e528c633c89220393f2b819651f91415347ad5f423398b317",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "spec/entity/drug-interactions.md",
+      "sha256": "06d9f78e292859461414fb194eabb03c7d90ae7d894e955004a4e9000d67248c",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "spec/entity/drug.md",
+      "sha256": "3a21ff1ccccffdae389b30806258911844bf46205c8297f7b27a04fea742224b",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/drug/alias_alignment_tests.rs",
+      "sha256": "9383327153979daacf9e05525d1255d65af4c4618e645de13f7edda1eeb29c06",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/drug/dispatch.rs",
+      "sha256": "1e8edab7c9cb1406c80108b6ba5d50adbb3c0b3be9d9b88310a059f476d99486",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/drug/mod.rs",
+      "sha256": "1149689ecb952160dc2c078de94d26a08ad287766343d4f78e64939d50d84970",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/drug/render.rs",
+      "sha256": "07f2f7cb9e708127e117eb38027ca9d08f57aa866cc4f9f9d5ff64e7579edb25",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/drug/tests.rs",
+      "sha256": "628224e3a6afc9912e73e0b31ca06c96399ac649ffe816210216b402be703afe",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/drug/workflow.rs",
+      "sha256": "a66694aa30b05f2f662bb136fa2974a976b6e75bc46f3a2416111e71c346f11d",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/list/catalog.rs",
+      "sha256": "fbea0ed39b42bc74635dccc69ec2714ce2b940bee9b9e0d948f6fee13d00a380",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/cell_lines.rs",
+      "sha256": "a63d32289c8d526f38c64aa11ebccef0d90136fe1175407b6b333cbf9de33439",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/cell_lines/tests.rs",
+      "sha256": "b9b07054e49db6ecd9b7a6be4102d7831ea505628166a58468a02e2eea592916",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/get.rs",
+      "sha256": "ad25c94c0446c3cfd23fbac8ef8437760f105919014ecc2e851b6e571be8664c",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/get/tests.rs",
+      "sha256": "5cc9a40a468c44fc264cca76d380fdfb904acc194b6e5ca9a0f500a831461d53",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/interactions.rs",
+      "sha256": "8012d15ed5a66cc3eeeb7b33df1b61131b9a6b609994629a99b44151d710660e",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/label.rs",
+      "sha256": "d167a3d9cd772a04ca20934087962e1a38db084344365e390a55bb037a304ece",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/label/tests.rs",
+      "sha256": "2000e00bd4184aebe56f90d769f241b18859843965b9ce8f877afed9ccbccd69",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/label/tests/extraction.rs",
+      "sha256": "8d7e8f33bf8688ceb8be05094d6ccd9f99ee2317bf77113ba0754907d013999f",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/label/tests/summary.rs",
+      "sha256": "74c1eab851ddb8552427876bde0ef8b8feca2f7a5596994681e14e1aafe1d880",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/metadata.rs",
+      "sha256": "b201e48baf8a5eeb54fe5457ed06505f8f7a9ce1f72980aa56ff02d32abe1560",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/metadata/tests.rs",
+      "sha256": "0c93c4f8d9f38e7f0d2f349769fcfe0ca1d1a8d051558ce0d725764bfe597e93",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/mod.rs",
+      "sha256": "e02e7f867e6da6477064647a7cfb4462a837343b0ae9ee0dd0f169c9ccb640c8",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/query.rs",
+      "sha256": "05fb7db8ca84e0693b58a73e95a956df957f262d357d4c432ca88f094a71c8e8",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/query/tests.rs",
+      "sha256": "4e7654e26ae0fcd745a244f3ad7154507484dedbc62ec951828e9614621a672f",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/search.rs",
+      "sha256": "d079f1cd956bf404490b1417bbf6426bffcaa9d5bc30a876e86f688f61f712be",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/search/tests.rs",
+      "sha256": "f2174b9af1c09f36700bbd19a17ec4fe27165f4577d3b3d20e9128143c0afd45",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/search/tests/fallback.rs",
+      "sha256": "ea17f6dea27fcfe9be905ca7a66de68c772b36a4fbf31bdb4a41594de4092a72",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/search/tests/mechanism.rs",
+      "sha256": "bdc0cd333bb6fb2e433bfb9fdc64adcfd28d01943ba9d02841681b01c66e0336",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/search/tests/who.rs",
+      "sha256": "ebdbfc65c50f628f738831c8980dcd306e33857be8dc0aa3cdd981a0a1c5d246",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/targets.rs",
+      "sha256": "7c8bbf37282cb978cca321a3c3fa4efa6393df0b137c1de78869adda7981cf7d",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/targets/tests.rs",
+      "sha256": "af4c95df524a0b9e26adadb528be5611deb27e700aa14f18a66b9699f84039e5",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/targets/tests/civic.rs",
+      "sha256": "6bc6eac2547151c584c06d68e4a19488893361b98230f193348922644fe3a200",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/targets/tests/family.rs",
+      "sha256": "68ba75dd961dcf07a54275ca2ef6e8d7d12a11fa50551d2886ec9c0e8fea5157",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/targets/tests/indications.rs",
+      "sha256": "753be169f43308cd20feed47618dd4edebf76d0467e3a083ab384e67e7830580",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/drug/test_support.rs",
+      "sha256": "988c555ce0098cc568178219cb8b48e26df9e66f1adaabcf24fb723656845fd9",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/trial/search/ctgov.rs",
+      "sha256": "85d14d46b62437ba1bae0b426c8119024e8d6caa09e4cdfafdabd85276526f7e",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/trial/search/ctgov/tests.rs",
+      "sha256": "0a71e371e481d07ca0e5660366b93096aff17399f39e3ff9436b2992bac8dce5",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/mcp/shell.rs",
+      "sha256": "979e91bee1c305e1f734cddd3a5165e4333e40602d8022ed545bea58222b7ae3",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/mcp/shell/typed_get.rs",
+      "sha256": "122db35b596fece6943f580dc4d0b99cf709adac3bd5cde8c57c77757941fb2a",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/mcp/shell/typed_get_tests.rs",
+      "sha256": "2a45577ef048b77f7bc7d52946a60b23e94923b85c44d028fa4db44967e195b2",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/markdown/drug/tests.rs",
+      "sha256": "4ce73628cb2c4313b5192fe94d4ec1087bd585be9c39b10af26a1a5b387f4eff",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/markdown/drug/tests/label_warnings.rs",
+      "sha256": "1d5b61a50f750ae71773226b2966a3699a50d265d0ef6630f3018a1f2440d9c3",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/mychem.rs",
+      "sha256": "b4f586d0425d4038011ea5181d1b7cc791b24d19eff976d74d741b61e89ab2dc",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/mychem/tests/construction.rs",
+      "sha256": "701ff7f04a3bc336321be960db45c032cf33cd5cf3931547b6609c8d821073b5",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/mychem/tests/live.rs",
+      "sha256": "fd7e0c3def6f5b80affc6891056d33d9be8ab0095b31678a0a7eec72ae209f6e",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/mychem/tests/mod.rs",
+      "sha256": "2db16c49067efac38790c7fb9b33cdb30fd59ab4d6103463fb92acb02bd09f2c",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/mychem/tests/parsing.rs",
+      "sha256": "3859854aa67b2afbee89cd8ac8dd57ebac5878e3ed39cce33b1e3ffb0dd0d718",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/transform/drug.rs",
+      "sha256": "9b8a2735c5965bea00fb6b23d00cee28a76d90f88392c15200b5a839383d6ed4",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "tests/test_mychem_empty_spec_fixture_contract.py",
+      "sha256": "6f4d3aa0716d07ea244dd3a5cc2765cccea0b659786ab77e59626a079e52a329",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "tests/unit/cli/drug_json.rs",
+      "sha256": "3f010539e43b13b72e8619a6f2952fdbb9493be46a498f3b07ff5299e70bb18c",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "tools/biodata-1.0-focused.toml",
+      "sha256": "6c77bc2847dc08c513bfeaec8688efddee80f54257a4a095f03631975251598e",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "tools/biodata_focused_pytest.py",
+      "sha256": "a5616c171f01d5ec93b7ce5e178bb6b6636cf2bb74be4e9516767831f1adb001",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "tools/biodata_focused_selection.py",
+      "sha256": "8ff8cb40c2a9b8435eb7380847c0e8f2babc8123d31508b73d7a7366dc814fce",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "tools/check-biodata-1.0",
+      "sha256": "8e8f4e7ff7b87fc0dbc5f7c3553a79b9f962f34279f01feab52790320b925deb",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static inspection and exact assertion locators; no provider fixture bytes read"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/core/capture.rs",
+      "sha256": "0cd0a1f03b36bb6e079af96a4d14f6ad8fbee596c878dab4bf4ad622622d8b91",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/core/concept_term.rs",
+      "sha256": "520fe06d49f1ae49dd3c4ede21839adf72bec0d28e2b22954bf914575893c58d",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/core/concept_code.rs",
+      "sha256": "80eb3b436a6c512b941887932d67afb0cf17a3a0f07fdff3ff064a13b2bd95ee",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/adapters/drug_identity/fields.rs",
+      "sha256": "b0b1ab8f300c59d4ded28184fc17ef00218571323e6af6d7dd8b10bc214206d3",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/adapters/drug_identity/mychem.rs",
+      "sha256": "f6b6f1dc48cac72ffddeb8a5462554bbca1b36a32cef7a7cbf6a91f73cade1d6",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/adapters/drug_identity/projection.rs",
+      "sha256": "84e9932364af22111c917be514ea87d3d5e2aa2ec29f09a93fec0ad5c63153d8",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/core/drug_identity.rs",
+      "sha256": "50a84de7ac8b979e4774d0260ab00efe787420a755b627770860366d0179d652",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/wire/drug_identity_document.rs",
+      "sha256": "993714c78e6cb91589162aaced9ab1bbadef94c55bb728e2b3876f165b4f743e",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "tests/drug_identity.rs",
+      "sha256": "e8e06a46c5df2170a0637ecda3ddb96d664c4044e6d9348f6acc63686f46000b",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biodata",
+      "commit": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+      "path": "src/adapters/clinical_trials_gov/clinical_trials_gov_api_v2_search_plan.rs",
+      "sha256": "5ace706671674b5551103a8cd87f52de4533e4b77f79889d133f67e124c7ea0d",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static contract and literal-assertion inspection only"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/civic.rs",
+      "sha256": "8e3690ddeea769b6fe1b627fa0acfd95aee334338930a0aebcca0bb4fd00bb46",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/openfda.rs",
+      "sha256": "7226bfa340c2a14620279ab37b3a8e7c948d2b921840548d43dddc257689c64b",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/sources/mod.rs",
+      "sha256": "40a4fe19ec8b7364a8503f1c26fc7e37811fccce7aae16b6b75cfa642c8f0c8a",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/system/batch.rs",
+      "sha256": "854733be03481ff2ebf0fc2e2028d80058ee24035db35cda3013365ed60988d1",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/system/dispatch.rs",
+      "sha256": "3ba474718bf71b51adbced1e1fe0660afadc60e3c3eb80018596241713f74dfa",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/outcome.rs",
+      "sha256": "fc14e63893956065434de3463c7cc24b50ae2d5d34945bb6cd437269b071e4cf",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/response_contract.rs",
+      "sha256": "b3a31bb2b55c8b57f3094950139c5d7aa2252f7fa8e0d8fc52be8fe479dcfc2b",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/shared/search_payloads.rs",
+      "sha256": "f62c29ee66eb9da033c6adaa833c2d8c66a528d4b12155ead73e4f4a0451c503",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/trial/dispatch.rs",
+      "sha256": "37ebebad703ea7df00ccbaede6c1e539fb752393bff3204e9f5d584165b6ebfd",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/cli/trial/zero_result.rs",
+      "sha256": "bf689fe4325684ea8dea2bc00a9919163a362eabc271acf7719e61c393784398",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/entities/trial/search/mod.rs",
+      "sha256": "887b2f692f64bb64723f06e12643a6f2504708f4810dbf661d4af2f173c339e9",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/markdown/sections.rs",
+      "sha256": "631539086f188f4cbd37866debff05f3a3eecb4a189b897f37bd80bbd19c5031",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/markdown/related.rs",
+      "sha256": "119637a865d08190f910919cf95c807efa22da885f0d6ad1981b73fa9ff9e816",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/markdown/evidence.rs",
+      "sha256": "632e1bf3918a21ce392cffd20fc7eae494b1b01fca191f36963bed41727dac3c",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/markdown/mod.rs",
+      "sha256": "8842beb7b34adce175617c8c5d7ece595b4b7b1a01c9cdfaf89b8ae9d3691734",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/markdown/drug_regulatory.rs",
+      "sha256": "ece840ede460d1c194334086aa861e3068e8c6f629856451bdcca6d665f73ef8",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/provenance.rs",
+      "sha256": "b6550a4495ff89e6d2b52df22d0f27b8305e70fa21094f06a82803fe30b62e80",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "src/render/json.rs",
+      "sha256": "7d6cc605f4b12484b7b650dc4dd9e3aee4ff9151043cb01672fc041f9033c90e",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "templates/drug.md.j2",
+      "sha256": "f6ebb0c00f19ab6ebb1a98e86c5b30399308cd10b51c29d5ef40e34ccc96e723",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "templates/drug_search.md.j2",
+      "sha256": "4d7c9d96f055f10fb7175273e3704090c5bcb9d8f8f359cb180fbb5fdd7b06f0",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    },
+    {
+      "repository": "https://github.com/genomoncology/biomcp",
+      "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+      "path": "skills/use-cases/pharmacogene-cumulative.ladder.json",
+      "sha256": "175f640ddcc6aab0e0e739693cb5642d2925d9d6fe3731b38ac50a327c21ee52",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "static request, section or surface contract inspection; no runtime or payload copy"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "P1.json",
+      "sha256": "0849b6779903c17709048eb3a2ee9d672bde85ee2749b95e44eac9215f5b4a57",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P1.tsv",
+      "sha256": "265dd61ce863bb03bf2587b82928e4e9d614e4e3a653a9a262e7a1a278dcd6b6",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P2.json",
+      "sha256": "79627c89ab7f1ae0f1d9f87b637922ccd7413630c3f632164ac1f6d6d287e8fd",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P2.tsv",
+      "sha256": "a234d26ef9d7cc5146c90bb9b04883589dab73b4a16152c49ef8c3285fc6a0c3",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P3.json",
+      "sha256": "cb0060303d97c1669053af2874b97dec6af2808e13acec13ae9befef5b158858",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P3.tsv",
+      "sha256": "80c2b8bca91245c94e3fc6bcd3e5a437706d5e1c4848e8ef45de5ed3a2035ff9",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P4.json",
+      "sha256": "60189a21afc82d41f4b796ac5998435bfea607033bf7a3bc64f95cbd8143b94e",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P4.tsv",
+      "sha256": "97be2f53f05cec361881334c7a9cf03c150b1645ec938ffd5bbe20e2fda579ea",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P5.json",
+      "sha256": "0cbf4d26168b6f20e599de2d778fc3338098ecf0886c0edd59a0041cbb613c44",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P5.tsv",
+      "sha256": "73b5334e7bd76810b62698129b8afb863eb11207c7a42fcfae193da69e136eda",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P6.json",
+      "sha256": "47811e486d07294c97a48dc63ea7b482038dc91299bacd1b1d082c06364908dd",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "P6.tsv",
+      "sha256": "533611279e23471d67fb748554a1c3a80e85cbab888d76ec0ae55c5e4f9ce1d4",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "README.md",
+      "sha256": "8244f7a654bf119ac25c6940aec609155efe020fc852cc1dcfa26ae5fb84c252",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "coverage.md",
+      "sha256": "fe543a9683457c1849e3bb3c91bcc765ed87b99907390d957b0f63ea31806377",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "donors.json",
+      "sha256": "b5b8f783a08f05f17a0f0d126387f4e4e39b9590be97ec08216dd26abc37b31b",
+      "origin": "exact pinned public assertion statements and declaration/input locators",
+      "license": "MIT",
+      "attribution": "BioMCP: Copyright (c) 2025 Ian Maurer; BioData: Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "exact source assertion excerpts and locators; no full modules or library corpus copied"
+    },
+    {
+      "path": "expected/batch-second.json",
+      "sha256": "d84802bf0a8055f94aec53278b257ac09d004fd5f24efad7e2e8e891eb5a882a",
+      "origin": "independent author correction from admitted public contracts and static review F1–F6, October 1, 2026",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/blank.json",
+      "sha256": "a59b2faaa3e04a35b7db87dbd08e08bbf12e6a3215056b52c2dfacdfb21a020f",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/byte-one-over.json",
+      "sha256": "b665858c76795d1c98eed9bc2483e98ab0f9fb7623423c820cf6ef1cc0ff227e",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/duplicate.json",
+      "sha256": "49c33cd5b6f1fd6a096ce61e88b60a0eb3e9349bef228c72608832f47d8e71bc",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/invalid-enrichment.json",
+      "sha256": "6184cb453c542174fb64b2ba8ecad4240ba47591eb5ad518c3ebcc0701fc1d44",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/malformed.json",
+      "sha256": "1f1d53d0f819e29721c02e723063187396229370680233d3201a76a69ca55c14",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/missing-total.json",
+      "sha256": "1f1d53d0f819e29721c02e723063187396229370680233d3201a76a69ca55c14",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/mixed-blank.json",
+      "sha256": "385d8294ea82c2cfc037a0242573a9d7275b0e2faf0fa9377e01db8d9b316ea9",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/mixed-rejected.json",
+      "sha256": "5eb120bd48b67845df62975767bfe7b576e53edf13e4848019e490b50c6396ef",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/wrong-total.json",
+      "sha256": "1f1d53d0f819e29721c02e723063187396229370680233d3201a76a69ca55c14",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/failures/wrong-type.json",
+      "sha256": "2573cd80f94fc5d8b889daf3cf67562778cf837ed63cd77b2a166e126b960fc7",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/aliases.json",
+      "sha256": "e9c9ce0360a3862d3c4ed6ee79f625a9051ff93cd3bdcee3ef874c2e8450d168",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/all.json",
+      "sha256": "47d2e9e128ce3a557e4909f6b9d0da45d05b435c5863c186a6d698ca802716a7",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/brand-selection.json",
+      "sha256": "69fbb2d5339d0837d04294faabe9c825cc18c37b6f73405ed8c68f04559aa7b2",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/brand.json",
+      "sha256": "3ceb01540b57050a8e8f5aae2c4cbd15bc9d6ee5136cde1b617bff8173e0abe0",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/chebi.json",
+      "sha256": "039378a2a80a0b734ce0e59c2b5ea87eb0b04d37bb3d6a7046c6c9237ea55d0a",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/chembl.json",
+      "sha256": "e53cd119f2b679089460efbc834cf6307e58ce0bf6df74d1888f625e6aeab83b",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/ddinter.json",
+      "sha256": "955f0551f0c81588d06bc9e8721115eb16432aa0e417e3a488c96d8e92370a21",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/dots.json",
+      "sha256": "e3bb881da62e5b2ee17cfcfc5bba0f056372233addb546bdc9703f5c839b6dd5",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/drugbank.json",
+      "sha256": "fc8ea3f941e909a428f48d11cb8c7d20925de5881e20213616c7e7891594fb27",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/empty.json",
+      "sha256": "0071bee7efe8a3ed38a5bb71767a63b2aa050e9add7ed4a89468136f15066be6",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/enriched.json",
+      "sha256": "fe2588ff5617250d9742fbe1c4bf5e962f6e336e5be761c5955792cb330afefd",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/escaped.json",
+      "sha256": "a90621c041573162c0477c3b78e3f45f14ba135b1d21750710cede787d2c7cd4",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/filter-search.json",
+      "sha256": "e2c92b6a2e3bec2e05ad08326c863cc29e97a061a5bbda2d64014962715fb89d",
+      "origin": "independent author correction from admitted public contracts and static review F1–F6, October 1, 2026",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/generic.json",
+      "sha256": "657fdad07f7de2785780ff8e8838fcd417ec929a6c949001bbb557aeefabe01d",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/gtopdb.json",
+      "sha256": "a2a6b8ae573d49a6ea87caa7b90d90983172ee091b8fe06b915d8c7d2cce2453",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/invalid-enrichment-identity.json",
+      "sha256": "dc9a771aaf935b2c3d47ac46cf432d668fc6f9e399ed5df3782663d1673c8e5b",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/nameless.json",
+      "sha256": "ff296df56a4a89a1cb24b34856b77b2bc27dcf830ea09243d35823fee31e8fa5",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/ndc.json",
+      "sha256": "0afa0d260c7407ebbd08d6ac15f958d072a10d2de3000d6d5b63c5f6a43f4ba8",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/normal.json",
+      "sha256": "c28c2060666a33aad42c25bdd01c48bcb144e3c9c5f84a8feecaf102c48d2bd9",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/rank-first.json",
+      "sha256": "cef2918a890217ebf0b180f5c82cb53513265c9eb8d96c9f23ac52498265627c",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/rank-later.json",
+      "sha256": "d587e648eb9c4fdd8ac289658a0ade7e3cbce0038815d92b9b925aac17f992f0",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/repeat-codes.json",
+      "sha256": "78c72098ca9826a4b2054ea92cb7fd578b2506b5b4dded261a13294b1d159e95",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/repeat-conflict.json",
+      "sha256": "c41b0884dcfa9e64cc9344a036584424581f22bcef87f3574988834b4cccbe5a",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/salt-selection.json",
+      "sha256": "843e655032793074d81571aac93cf4d104364c508b6e39963e8d8806fc0f9e57",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/search-omissions.json",
+      "sha256": "9d3c169695afa52504b388fcb8f9999b528d6b275eeb28d949d13d99883eb7ea",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/second-search.json",
+      "sha256": "f6c19db6d718bfc366fba8094cef484889e3da3ae86d0291e206b94910fd9abd",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/second.json",
+      "sha256": "c81bd8cb4db18b00148d97ab1b003424f4a25924dd249a25b270580d9e2a8936",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/states.json",
+      "sha256": "283c0165a1cac08b9d9369eb14121b74afda32d3ff8c0819ee5a19f98c98dcff",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/surface.json",
+      "sha256": "18fd6385be2d1fb9cb7cc1052be39c46dba062b2c0cf04a0039de337b0455146",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/total-0.json",
+      "sha256": "0071bee7efe8a3ed38a5bb71767a63b2aa050e9add7ed4a89468136f15066be6",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/total-18446744073709551615.json",
+      "sha256": "7a33b0d679403661f6f3492886646c0a9f70cce28d714a1fe826029c6042c4ea",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/two-search.json",
+      "sha256": "7f311ad623e7adc6c7ea82cab0a91cae64d226c90af07617d2bb19141181c1b5",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/pages/unii.json",
+      "sha256": "c0911383bc5591ffabd3ec3a182cfc4e8c06bc7ed73c5f2e3b23cc4bc5381c76",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/surfaces/batch.json",
+      "sha256": "32135e43a4114bdd157de9af9ea72015063d88f7e92fe2a5bb93458b3f17b8c0",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/surfaces/get-approvals.json",
+      "sha256": "7d9e9e7f0d9faeb48a06cf7f3f43251f6ed40b253b756790d97a044050313566",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/surfaces/get-default.json",
+      "sha256": "8514749c6a5349135d9fc8e2653b93c3e40e83f9c7f7399275f0e4d68396af21",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/surfaces/search-us.json",
+      "sha256": "918886f09d7916636e91e42d15384924b856d1bada268adea75f18c439cddd23",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/surfaces/trial-count.json",
+      "sha256": "1917bab4d7a73e3d5d20a147974f13da75248d61980634d830954c4e56c7fdce",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "expected/surfaces/trial-empty.json",
+      "sha256": "a6ef60fd9d536058171bb6366308720c8be1aa1ac50cb1d45d88e00297791e0a",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "helper-assertions.json",
+      "sha256": "10bd9422d6069a649cd29a02be798f7ece721a1853d5afed9d13ebe72fade46e",
+      "origin": "independent author correction from admitted public contracts and static review F1–F6, October 1, 2026",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "history/README.md",
+      "sha256": "adc1b28ed86653b8239e065d6e6343213e30b6c1d67312e7b82636cf7d3849c4",
+      "origin": "immutable rejected d3aa750 expectation history and exact Git locators; excluded from active proof",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static preservation of original authored objects; no expected policy generation"
+    },
+    {
+      "path": "history/d3aa750-root-findings-originals.json",
+      "sha256": "3760a9ac88098d94591b5000b6a40e02c05e5095ac5270a7a9c5a2878b7ab06c",
+      "origin": "immutable rejected d3aa750 expectation history and exact Git locators; excluded from active proof",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "static preservation of original authored objects; no expected policy generation"
+    },
+    {
+      "path": "inputs/aliases.json",
+      "sha256": "f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/all.json",
+      "sha256": "b36846d4243d512733befe61db24eb5adeeb7624b3e09da6cfee7ab29359accb",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/approvals-empty.json",
+      "sha256": "080d7e3cff8b45af43a753817f26a681914c4080760e73f652612cf1fed8ee3d",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/blank.json",
+      "sha256": "b324712076f6e0451c1af08815827f21971e9bd0323e977954b2ac2898e0de67",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/brand-selection.json",
+      "sha256": "77046b71ed000a66aca1abfd6338460bfc305ffeab551074840ddf6ba73d9175",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/brand.json",
+      "sha256": "fc6f2226862cadc7ea08559fb82d9e228b262dd11aca59902c9862f30b93f03c",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/byte-inclusive.json",
+      "sha256": "75afd2a61ba1d2c722f5da25783b5298961d640366032eac3ff8f77707d97451",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/byte-one-over.json",
+      "sha256": "8fb477913e90ee42cb0daa60407d7474447e58841de8963ad38a2f0eb60f00d4",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/chebi.json",
+      "sha256": "11f6666c69b22bfacebe5ff202764d30b304f14eeb64892b0035af423745e35b",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/chembl.json",
+      "sha256": "609577db4ec953450abcf19c9d84e96d820fc661f67c3d347e9b0c2235a2e67c",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/civic-empty.json",
+      "sha256": "7294c704f4469cbc7cd1a46e627c67728223a0667ff56576c87a46853c99c508",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/civic-request.graphql",
+      "sha256": "0d8eec2bd07f50d89d7a18b21becbcc12671353cdd59be2ee7d275926dfd2ba6",
+      "origin": "BioMCP 1dab73b270aeb082915f43bfb9186528516157b7:src/sources/civic.rs:CIVIC_CONTEXT_QUERY",
+      "license": "MIT",
+      "attribution": "Copyright (c) 2025 Ian Maurer",
+      "transformation": "unchanged public GraphQL request text extracted from static raw-string constant; UTF-8 and newlines preserved"
+    },
+    {
+      "path": "inputs/ctgov-empty.json",
+      "sha256": "effa1a84a504c5851bdcdc7f200ceb9cac20589bfbe06c10b3bfbf220c41cc08",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/ddinter.json",
+      "sha256": "bc8d2b92dd4bcd5be1e04448922c00ee736c077140020f19017b1f187a0729b2",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/discover-ambiguous.json",
+      "sha256": "fc3f9428c7cd48df0f657b9f458a7e1ab11803146d0ce6ba8ff70c1e2ef6e18c",
+      "origin": "independent author correction from admitted public contracts and static review F1–F6, October 1, 2026",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/discover-unique.json",
+      "sha256": "660e501a11d09d9b959870cdbf81bf2dae0a246b6a093fb86e8e6acd74b4c77a",
+      "origin": "independent author correction from admitted public contracts and static review F1–F6, October 1, 2026",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/dots.json",
+      "sha256": "9999232a8dc756de1632f050b80d1ff7a7a1a25ba16d2c49a6f8633e76515a37",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/drugbank.json",
+      "sha256": "01441acf4f1a8f63b20a928e59e5688388f2fd3f2ca8d0548f0a58810d8efe75",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/duplicate.json",
+      "sha256": "f59c9312be428b1c81dba0a7e5c5bc3a4009346a82bbb05550ec697c0896034a",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/empty.json",
+      "sha256": "e99a33d4bab9d36b5a99c1a804bd24ef959906eab97d3a87847d72741acf9262",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/enriched.json",
+      "sha256": "e0dabf2944a76dca9efb8f6b7d4ae3813bca369e3fed34d398295c62742f5195",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/escaped.json",
+      "sha256": "0e3ed300e1401a3e27ec3e5739268a5c2c675d4661bd2c22360aca47e54059ff",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/expected-get-approvals.md",
+      "sha256": "cffc364546880febc4d89cc6faa3eabb5643e22f8d3cfc8c10d6a513999fc9f4",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/expected-get-default.md",
+      "sha256": "0cc22ca4dff8d55c3bb6433fff41bb5235a21e0a96076f97e1c8aaf28cfffc49",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/expected-mcp-get-text.md",
+      "sha256": "dd3e3a5407bb8b03836fffd34ddb4a6f48da30b256d5ec41fface4140b3876c2",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/expected-search-us.md",
+      "sha256": "514cd3206f916a118326e3a7a086300089ae743e6c8ac2b0ee4cce95e8a09647",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/faers-empty.json",
+      "sha256": "69001fb8bc4f7066693aca1e71763367ca7ee347a918f2969e698b4d11ce8e55",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/filter-search.json",
+      "sha256": "2a48ac958f831d785eed5ac2085e0502223fc88fdff4dcf31fbbe2c1e271d2e4",
+      "origin": "independent author correction from admitted public contracts and static review F1–F6, October 1, 2026",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/generic.json",
+      "sha256": "b0d05f5833622577f83cf7911503b5b15a8f9202e20f1de07a86ae86273aa5ec",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/gtopdb.json",
+      "sha256": "3b02be30070d0954e49182374de3b36fe49f01cec85f3b8c2d700cdfb1673a26",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/invalid-enrichment-identity.json",
+      "sha256": "112b7d0919d34330ad4b93cce8b39fcdfbed74a9deaeb8d4ced798d663aa09c0",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/invalid-enrichment.json",
+      "sha256": "112b7d0919d34330ad4b93cce8b39fcdfbed74a9deaeb8d4ced798d663aa09c0",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/label-canonical.json",
+      "sha256": "d3a765fa007e73176455117a41e6816c48305fdd9be5a0d66c21c47f9a6efd39",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/label-empty.json",
+      "sha256": "418bb4534c2f73f24b6ec4977cd7cbb54c9f11e08927a4d52eef53403c937d5d",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/malformed.json",
+      "sha256": "59f4d6107e17539e3ffff17c3471d4976e342620e1af667728235bd1ee90bf27",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/missing-total.json",
+      "sha256": "723b75472cdd38d74a085a0d3839783a6009cf0b0ca8e7fbdbd6948c5aff0222",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/mixed-blank.json",
+      "sha256": "6ea0e6483a41d01f01b3d904954f25e5365329d8206be23b1f270d145c41ffe5",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/mixed-rejected.json",
+      "sha256": "649b89171ec468941ff8b0cf82e35056baa8b76664f32e4e3db88ca58069a565",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/nameless.json",
+      "sha256": "a4bfdf392a68eb8aed737494ded4721bab3e64850b431aaa86c4b805476c524f",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/ndc.json",
+      "sha256": "5cae9497da9d0f39a4c7bcb3695e969a0817fa51991d2aad1a8aea05e32b325f",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/normal.json",
+      "sha256": "fcb9e678c62ce71b7608c008183f60d9ae3662e00ce2dc7dab04d3a785e7d4ed",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/rank-first.json",
+      "sha256": "d12c2a0facdad899e7d7728a71abc3937742b07b990e30c4e945f6a019132397",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/rank-later.json",
+      "sha256": "abe86063481d699eff88baa50326493d13afd4f2afc6ec8b641ee97a3c0cf4de",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/rank-window-over.json",
+      "sha256": "71665bccd18c73763aa98ed832c2883120df1ad72462d8adee91de384b74d918",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/repeat-codes.json",
+      "sha256": "98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/repeat-conflict.json",
+      "sha256": "f64078f3487a4e76d1d549cfc145043d26921825ee45112f49f591d7874e9bdd",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/salt-selection.json",
+      "sha256": "48e357cfbcdfc8531e361ad49224ee6cd0d4b809e3d40e47f0928d8d5e2d5adc",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/search-omissions.json",
+      "sha256": "9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/second-search.json",
+      "sha256": "cb65425622b72b7dc199671c5fd9c78e8356a8a5531d4c39658075d338ec154c",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/second.json",
+      "sha256": "cb65425622b72b7dc199671c5fd9c78e8356a8a5531d4c39658075d338ec154c",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/states.json",
+      "sha256": "601bfc194ba1baf226742ae07fda6821933201d975419dd0fcf4ef2b5cf54b2a",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/surface.json",
+      "sha256": "b6dc7b263fb32248add56272a06f249fc28cb157e3cdebcd27110b27587eab03",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/total-0.json",
+      "sha256": "e99a33d4bab9d36b5a99c1a804bd24ef959906eab97d3a87847d72741acf9262",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/total-18446744073709551615.json",
+      "sha256": "a1613527fb228ef0c018c9f86ca294cfc57dd9917c41b5fa95d36c55d68a807f",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/transport-body.bin",
+      "sha256": "bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/two-search.json",
+      "sha256": "d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/unii.json",
+      "sha256": "769f2a5fec23adf580ee4d580d62da9c87de85aa7e7ab0c36ffc61000dfaedef",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/wrong-total.json",
+      "sha256": "c4b098c890ff7f113985dbd2f4f237bb368b0b882fb42d45f7067104b206c526",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "inputs/wrong-type.json",
+      "sha256": "0742235c0a89146c3c47cd072f0b6c8b81042a8e73768cfe414a2451311cf7c0",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "library-references.json",
+      "sha256": "e6fea1f9a5242f580ac6a55a6cd4619125bfbe144b9ec4893cf452b63cbe55e9",
+      "origin": "exact pinned public assertion statements and declaration/input locators",
+      "license": "MIT",
+      "attribution": "BioMCP: Copyright (c) 2025 Ian Maurer; BioData: Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "exact source assertion excerpts and locators; no full modules or library corpus copied"
+    },
+    {
+      "path": "metadata.json",
+      "sha256": "39c8c32dc1fe5955f30d22d10c9ab9bf65d390accefebd19d73661aef4402626",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    },
+    {
+      "path": "requests.json",
+      "sha256": "0f07b27321cfd0430e21616ead382944ae972854aef63656b6829dc06582dab1",
+      "origin": "independent authored generic public synthetic constants, October 1, 2026; accepted ticket/design plus pinned public contracts",
+      "license": "MIT",
+      "attribution": "BioData independent expected-case author; Copyright (c) 2026 GenomOncology, LLC",
+      "transformation": "explicit constants serialized as UTF-8 ordinary data; immutable byte hashes computed directly; no tested implementation supplied semantic expectations"
+    }
+  ],
+  "self_hash_rule": "provenance is hashed by sha256.json; manifest self-hash is recorded outside the corpus"
+}

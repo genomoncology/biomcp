@@ -1,0 +1,28 @@
+case	requirement	alternative	boundary	object
+P6-03/requested-distinct-canonical-three-provider	P6-03	requested-distinct-canonical-three-provider	cache-owning trial alias resolution wrapper	P6.json#/0
+P6-03/accepted-literal-five-alias	P6-03	accepted-literal-five-alias	unchanged literal assertion	P6.json#/1
+P6-03/eligible-simple-code-unicode-apostrophe	P6-03	eligible-simple-code-unicode-apostrophe	unchanged literal assertion	P6.json#/2
+P6-03/excluded-systematic-long-descriptor	P6-03	excluded-systematic-long-descriptor	unchanged literal assertion	P6.json#/3
+P6-03/canonical-requested-collision	P6-03	canonical-requested-collision	unchanged literal assertion	P6.json#/4
+P6-03/requested-only-absence	P6-03	requested-only-absence	cache-owning wrapper with true absence	P6.json#/5
+P6-04/normalized-key-refresh	P6-04	normalized-key-refresh	alias cache	P6.json#/6
+P6-04/transient-uncached	P6-04	transient-uncached	resolve_trial_alias_resolution cache-owning wrapper, two calls	P6.json#/7
+P6-04/terminal-uncached	P6-04	terminal-uncached	alias cache	P6.json#/8
+P6-01/anchor-card3-ddinter32-combination	P6-01	anchor-card3-ddinter32-combination	DDInter handoff	P6.json#/9
+P6-02/matching-conflicting	P6-02	matching-conflicting	unchanged literal assertion	P6.json#/10
+P6-02/anchorless	P6-02	anchorless	unchanged literal assertion	P6.json#/11
+P6-02/absent-id-neutral	P6-02	absent-id-neutral	unchanged literal assertion	P6.json#/12
+P6-02/later-unii-conflict	P6-02	later-unii-conflict	unchanged literal assertion	P6.json#/13
+P6-02/adopted-all-unii-conflict	P6-02	adopted-all-unii-conflict	orphan source admission	P6.json#/14
+P6-06/every-allowed-field	P6-06	every-allowed-field	unchanged literal assertion	P6.json#/15
+P6-06/excluded-nonexact-nohit	P6-06	excluded-nonexact-nohit	unchanged literal assertion	P6.json#/16
+P6-06/field-order-labels	P6-06	field-order-labels	unchanged literal assertion	P6.json#/17
+P6-06/adopted-source-exact	P6-06	adopted-source-exact	EMA identity	P6.json#/18
+P6-05/union-dedup-exact-total	P6-05	union-dedup-exact-total	unchanged literal assertion	P6.json#/19
+P6-05/continuation-unknown	P6-05	continuation-unknown	unchanged literal assertion	P6.json#/20
+P6-05/provenance	P6-05	provenance	unchanged literal assertion	P6.json#/21
+P6-07/adopted-civic-display	P6-07	adopted-civic-display	therapy request seam	P6.json#/22
+P6-07/protected-target-family-variant-indication	P6-07	protected-target-family-variant-indication	unchanged literal assertion	P6.json#/23
+P6-07/opt-in-pharmacodb	P6-07	opt-in-pharmacodb	unchanged literal assertion	P6.json#/24
+P6-05/adopted-empty-union-count	P6-05	adopted-empty-union-count	trial adopted alias consumer	P6.json#/25
+P6-05/opt-out	P6-05	opt-out	trial consumer	P6.json#/26

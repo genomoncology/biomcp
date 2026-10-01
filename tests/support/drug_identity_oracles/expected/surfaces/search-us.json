@@ -1,0 +1,31 @@
+{
+  "region": "us",
+  "regions": {
+    "us": {
+      "region": "us",
+      "pagination": {
+        "offset": 0,
+        "limit": 1,
+        "returned": 1,
+        "total": 2,
+        "has_more": true,
+        "next_page_token": null
+      },
+      "count": 1,
+      "results": [
+        {
+          "name": "sampledrug",
+          "drugbank_id": "DB-SYN1",
+          "match_kind": "active_substance"
+        }
+      ],
+      "continuation_command": "biomcp search drug --query sampledrug --region us --limit 1 --offset 1"
+    }
+  },
+  "_meta": {
+    "next_commands": [
+      "biomcp get drug sampledrug",
+      "biomcp list drug"
+    ]
+  }
+}

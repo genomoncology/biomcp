@@ -1,0 +1,56 @@
+{
+  "source": {
+    "kind": "Field",
+    "field": "drugbank.synonyms",
+    "rejected_ordinal": 0,
+    "display": "MyChem identity response failed: Field",
+    "require_complete": "Err",
+    "trusted_product_rows": null
+  },
+  "product": {
+    "variant_chain": [
+      "WithSourceContext",
+      "Api"
+    ],
+    "code": "api",
+    "context": {
+      "provider": "MyChem.info",
+      "recovery": "RetryRemoteSource"
+    },
+    "display": "API request to MyChem.info failed. Retry the remote source.",
+    "debug_forbidden": [
+      "QUERY_SENTINEL_0224",
+      "SOURCE_SENTINEL_0224"
+    ],
+    "trace_forbidden": [
+      "QUERY_SENTINEL_0224",
+      "SOURCE_SENTINEL_0224"
+    ],
+    "public_json": {
+      "error": {
+        "code": "api",
+        "message": "API request to MyChem.info failed.",
+        "source": "MyChem.info",
+        "recovery": "Retry the remote source."
+      },
+      "_meta": {
+        "not_found": false
+      }
+    },
+    "exit": 1,
+    "successful_result": null,
+    "forbidden_providers": [
+      "OpenFDA",
+      "discover",
+      "EMA",
+      "WHO",
+      "CVX",
+      "ClinicalTrials.gov",
+      "DDInter",
+      "CIViC",
+      "ChEMBL",
+      "Open Targets",
+      "PharmacoDB"
+    ]
+  }
+}

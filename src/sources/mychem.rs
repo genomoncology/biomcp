@@ -339,3 +339,6 @@ pub(crate) use projection::optional_failure;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(crate) mod consumer_tests;

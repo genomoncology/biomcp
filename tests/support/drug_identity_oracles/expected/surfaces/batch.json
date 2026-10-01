@@ -1,0 +1,179 @@
+{
+  "summary": {
+    "total": 2,
+    "succeeded": 2,
+    "failed": 0
+  },
+  "items": [
+    {
+      "input": "sampledrug",
+      "status": "ok",
+      "result": {
+        "section_outcomes": {
+          "approvals": {
+            "outcome": "empty",
+            "sources": [
+              "OpenFDA Drugs@FDA"
+            ]
+          },
+          "cell_lines": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "indications": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "interactions": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "safety": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "targets": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "name": "sampledrug",
+        "drugbank_id": "DB-SYN1",
+        "approvals": [],
+        "_meta": {
+          "evidence_urls": [
+            {
+              "label": "DrugBank",
+              "url": "https://go.drugbank.com/drugs/DB-SYN1"
+            }
+          ],
+          "next_commands": [
+            "biomcp get drug sampledrug label",
+            "biomcp get drug sampledrug regulatory --region us",
+            "biomcp get drug sampledrug safety --region us",
+            "biomcp get drug sampledrug all --region us",
+            "biomcp search article --drug sampledrug --type review --limit 5",
+            "biomcp drug trials sampledrug",
+            "biomcp drug adverse-events sampledrug",
+            "biomcp search pgx -d sampledrug"
+          ],
+          "section_sources": [
+            {
+              "key": "overview",
+              "label": "Overview",
+              "outcome": "data",
+              "sources": [
+                "MyChem.info"
+              ]
+            },
+            {
+              "key": "regulatory",
+              "label": "Regulatory",
+              "outcome": "data",
+              "sources": [
+                "OpenFDA Drugs@FDA"
+              ]
+            },
+            {
+              "key": "approvals",
+              "label": "Drugs@FDA Approvals",
+              "outcome": "empty",
+              "sources": [
+                "OpenFDA Drugs@FDA"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "seconddrug",
+      "status": "ok",
+      "result": {
+        "section_outcomes": {
+          "approvals": {
+            "outcome": "empty",
+            "sources": [
+              "OpenFDA Drugs@FDA"
+            ]
+          },
+          "cell_lines": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "indications": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "interactions": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "safety": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "targets": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "name": "seconddrug",
+        "drugbank_id": "DB-SYN2",
+        "approvals": [],
+        "_meta": {
+          "evidence_urls": [
+            {
+              "label": "DrugBank",
+              "url": "https://go.drugbank.com/drugs/DB-SYN2"
+            }
+          ],
+          "next_commands": [
+            "biomcp get drug seconddrug label",
+            "biomcp get drug seconddrug regulatory --region us",
+            "biomcp get drug seconddrug safety --region us",
+            "biomcp get drug seconddrug all --region us",
+            "biomcp search article --drug seconddrug --type review --limit 5",
+            "biomcp drug trials seconddrug",
+            "biomcp drug adverse-events seconddrug",
+            "biomcp search pgx -d seconddrug"
+          ],
+          "section_sources": [
+            {
+              "key": "overview",
+              "label": "Overview",
+              "outcome": "data",
+              "sources": [
+                "MyChem.info"
+              ]
+            },
+            {
+              "key": "regulatory",
+              "label": "Regulatory",
+              "outcome": "data",
+              "sources": [
+                "OpenFDA Drugs@FDA"
+              ]
+            },
+            {
+              "key": "approvals",
+              "label": "Drugs@FDA Approvals",
+              "outcome": "empty",
+              "sources": [
+                "OpenFDA Drugs@FDA"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

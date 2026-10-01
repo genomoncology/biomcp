@@ -1,0 +1,75 @@
+{
+  "section_outcomes": {
+    "approvals": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "cell_lines": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "civic": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "indications": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "interactions": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "safety": {
+      "outcome": "not_requested",
+      "sources": []
+    },
+    "targets": {
+      "outcome": "empty",
+      "sources": [
+        "Guide to PHARMACOLOGY"
+      ]
+    }
+  },
+  "name": "sampledrug",
+  "drugbank_id": "DB-SYN1",
+  "_meta": {
+    "evidence_urls": [
+      {
+        "label": "DrugBank",
+        "url": "https://go.drugbank.com/drugs/DB-SYN1"
+      }
+    ],
+    "next_commands": [
+      "biomcp get drug sampledrug approvals",
+      "biomcp get drug sampledrug label",
+      "biomcp get drug sampledrug regulatory --region us",
+      "biomcp get drug sampledrug all --region us",
+      "biomcp search article --drug sampledrug --type review --limit 5",
+      "biomcp drug trials sampledrug",
+      "biomcp drug adverse-events sampledrug",
+      "biomcp search pgx -d sampledrug"
+    ],
+    "section_sources": [
+      {
+        "key": "overview",
+        "label": "Overview",
+        "outcome": "data",
+        "sources": [
+          "MyChem.info"
+        ]
+      },
+      {
+        "key": "targets",
+        "label": "Targets",
+        "outcome": "empty",
+        "sources": [
+          "Guide to PHARMACOLOGY"
+        ]
+      }
+    ],
+    "workflow": "pharmacogene-cumulative",
+    "workflow_rationale": "Use the PGx search and detail surfaces before collecting literature for multi-gene drug-response evidence.",
+    "workflow_playbook": "biomcp skill pharmacogene-cumulative"
+  }
+}

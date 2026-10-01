@@ -1,0 +1,294 @@
+{
+  "profile": "Get",
+  "digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+  "total": 1,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "U-SYN1",
+            "namespace": "UNII",
+            "term_type": null,
+            "origin": {
+              "section": "unii",
+              "field": "unii",
+              "section_index": 0,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "code",
+            "text": "U-SYN1",
+            "namespace": "UNII",
+            "term_type": null,
+            "origin": {
+              "section": "unii",
+              "field": "unii",
+              "section_index": 1,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "code",
+            "text": "U-SYN2",
+            "namespace": "UNII",
+            "term_type": null,
+            "origin": {
+              "section": "unii",
+              "field": "unii",
+              "section_index": 2,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "U-SYN1",
+              "namespace": "UNII",
+              "term_type": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 0,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "code",
+              "text": "U-SYN1",
+              "namespace": "UNII",
+              "term_type": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 1,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "code",
+              "text": "U-SYN2",
+              "namespace": "UNII",
+              "term_type": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 2,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"unii\":[{\"unii\":\"U-SYN1\"},{\"unii\":\"U-SYN1\"},{\"unii\":\"U-SYN2\"}]}",
+        "fields": [
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": 0,
+            "was_array": false,
+            "raw": "\"U-SYN1\"",
+            "state": "values",
+            "values": [
+              "U-SYN1"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": 0,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": 1,
+            "was_array": false,
+            "raw": "\"U-SYN1\"",
+            "state": "values",
+            "values": [
+              "U-SYN1"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": 1,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": 2,
+            "was_array": false,
+            "raw": "\"U-SYN2\"",
+            "state": "values",
+            "values": [
+              "U-SYN2"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": 2,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "unii.unii",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.unii",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.unii",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

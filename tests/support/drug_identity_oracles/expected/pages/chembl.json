@@ -1,0 +1,198 @@
+{
+  "profile": "Get",
+  "digest": "sha256:609577db4ec953450abcf19c9d84e96d820fc661f67c3d347e9b0c2235a2e67c",
+  "total": 1,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:609577db4ec953450abcf19c9d84e96d820fc661f67c3d347e9b0c2235a2e67c",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "term",
+            "text": "ChemName",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "chembl",
+              "field": "pref_name",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:609577db4ec953450abcf19c9d84e96d820fc661f67c3d347e9b0c2235a2e67c",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "term",
+              "text": "ChemName",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "chembl",
+                "field": "pref_name",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"chembl\":{\"pref_name\":\"ChemName\"}}",
+        "fields": [
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"ChemName\"",
+            "state": "values",
+            "values": [
+              "ChemName"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "chembl.pref_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        {
+          "namespace": "MyChem",
+          "label": "pref_name",
+          "language": null
+        }
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

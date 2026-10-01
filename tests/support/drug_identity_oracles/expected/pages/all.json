@@ -1,0 +1,700 @@
+{
+  "profile": "Get",
+  "digest": "sha256:b36846d4243d512733befe61db24eb5adeeb7624b3e09da6cfee7ab29359accb",
+  "total": 1,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:b36846d4243d512733befe61db24eb5adeeb7624b3e09da6cfee7ab29359accb",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "term",
+            "text": "NdcFirst",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "ndc",
+              "field": "nonproprietaryname",
+              "section_index": 0,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "NdcLater",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "ndc",
+              "field": "nonproprietaryname",
+              "section_index": 1,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "GenericFirst",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "openfda",
+              "field": "generic_name",
+              "section_index": null,
+              "value_index": 0
+            }
+          },
+          {
+            "kind": "term",
+            "text": "GenericLater",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "openfda",
+              "field": "generic_name",
+              "section_index": null,
+              "value_index": 1
+            }
+          },
+          {
+            "kind": "term",
+            "text": "BrandFirst",
+            "namespace": null,
+            "term_type": "brand_name",
+            "origin": {
+              "section": "openfda",
+              "field": "brand_name",
+              "section_index": null,
+              "value_index": 0
+            }
+          },
+          {
+            "kind": "term",
+            "text": "BrandLater",
+            "namespace": null,
+            "term_type": "brand_name",
+            "origin": {
+              "section": "openfda",
+              "field": "brand_name",
+              "section_index": null,
+              "value_index": 1
+            }
+          },
+          {
+            "kind": "term",
+            "text": "BankName",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "ChemName",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "chembl",
+              "field": "pref_name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "GuideName",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "gtopdb",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "UniFirst",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "unii",
+              "field": "display_name",
+              "section_index": 0,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "UniLater",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "unii",
+              "field": "display_name",
+              "section_index": 1,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "ChebiFirst",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "chebi",
+              "field": "name",
+              "section_index": 0,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "ChebiLater",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "chebi",
+              "field": "name",
+              "section_index": 1,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:b36846d4243d512733befe61db24eb5adeeb7624b3e09da6cfee7ab29359accb",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "term",
+              "text": "NdcFirst",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "ndc",
+                "field": "nonproprietaryname",
+                "section_index": 0,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "NdcLater",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "ndc",
+                "field": "nonproprietaryname",
+                "section_index": 1,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "GenericFirst",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "openfda",
+                "field": "generic_name",
+                "section_index": null,
+                "value_index": 0
+              }
+            },
+            {
+              "kind": "term",
+              "text": "GenericLater",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "openfda",
+                "field": "generic_name",
+                "section_index": null,
+                "value_index": 1
+              }
+            },
+            {
+              "kind": "term",
+              "text": "BrandFirst",
+              "namespace": null,
+              "term_type": "brand_name",
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 0
+              }
+            },
+            {
+              "kind": "term",
+              "text": "BrandLater",
+              "namespace": null,
+              "term_type": "brand_name",
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 1
+              }
+            },
+            {
+              "kind": "term",
+              "text": "BankName",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "ChemName",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "chembl",
+                "field": "pref_name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "GuideName",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "gtopdb",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "UniFirst",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "unii",
+                "field": "display_name",
+                "section_index": 0,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "UniLater",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "unii",
+                "field": "display_name",
+                "section_index": 1,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "ChebiFirst",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "chebi",
+                "field": "name",
+                "section_index": 0,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "ChebiLater",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "chebi",
+                "field": "name",
+                "section_index": 1,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"ndc\":[{\"nonproprietaryname\":\"NdcFirst\"},{\"nonproprietaryname\":\"NdcLater\"}],\"openfda\":{\"generic_name\":[\"GenericFirst\",\"GenericLater\"],\"brand_name\":[\"BrandFirst\",\"BrandLater\"]},\"drugbank\":{\"name\":\"BankName\",\"synonyms\":\"Alias\"},\"chembl\":{\"pref_name\":\"ChemName\"},\"gtopdb\":{\"name\":\"GuideName\"},\"unii\":[{\"display_name\":\"UniFirst\"},{\"display_name\":\"UniLater\"}],\"chebi\":[{\"name\":\"ChebiFirst\"},{\"name\":\"ChebiLater\"}]}",
+        "fields": [
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": 0,
+            "was_array": false,
+            "raw": "\"NdcFirst\"",
+            "state": "values",
+            "values": [
+              "NdcFirst"
+            ]
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": 1,
+            "was_array": false,
+            "raw": "\"NdcLater\"",
+            "state": "values",
+            "values": [
+              "NdcLater"
+            ]
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[\"GenericFirst\",\"GenericLater\"]",
+            "state": "values",
+            "values": [
+              "GenericFirst",
+              "GenericLater"
+            ]
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[\"BrandFirst\",\"BrandLater\"]",
+            "state": "values",
+            "values": [
+              "BrandFirst",
+              "BrandLater"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"BankName\"",
+            "state": "values",
+            "values": [
+              "BankName"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"Alias\"",
+            "state": "values",
+            "values": [
+              "Alias"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"ChemName\"",
+            "state": "values",
+            "values": [
+              "ChemName"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"GuideName\"",
+            "state": "values",
+            "values": [
+              "GuideName"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": 0,
+            "was_array": false,
+            "raw": "\"UniFirst\"",
+            "state": "values",
+            "values": [
+              "UniFirst"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": 0,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": 1,
+            "was_array": false,
+            "raw": "\"UniLater\"",
+            "state": "values",
+            "values": [
+              "UniLater"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": 1,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": 0,
+            "was_array": false,
+            "raw": "\"ChebiFirst\"",
+            "state": "values",
+            "values": [
+              "ChebiFirst"
+            ]
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": 1,
+            "was_array": false,
+            "raw": "\"ChebiLater\"",
+            "state": "values",
+            "values": [
+              "ChebiLater"
+            ]
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "ndc.nonproprietaryname",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "ndc.nonproprietaryname",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.generic_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.generic_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.brand_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.brand_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "chembl.pref_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "gtopdb.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.display_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.display_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "chebi.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "chebi.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        {
+          "namespace": "MyChem",
+          "label": "nonproprietaryname",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "nonproprietaryname",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "generic_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "generic_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "brand_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "brand_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "pref_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "display_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "display_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        }
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

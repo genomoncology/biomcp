@@ -1,0 +1,809 @@
+{
+  "profile": "Get",
+  "digest": "sha256:f64078f3487a4e76d1d549cfc145043d26921825ee45112f49f591d7874e9bdd",
+  "total": 9,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:f64078f3487a4e76d1d549cfc145043d26921825ee45112f49f591d7874e9bdd",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-SYN1",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "sampledrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "same",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 0
+            }
+          },
+          {
+            "kind": "term",
+            "text": "same",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 1
+            }
+          },
+          {
+            "kind": "code",
+            "text": "U-SYN1",
+            "namespace": "UNII",
+            "term_type": null,
+            "origin": {
+              "section": "unii",
+              "field": "unii",
+              "section_index": 0,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Name A",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "unii",
+              "field": "display_name",
+              "section_index": 0,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "code",
+            "text": "U-SYN2",
+            "namespace": "UNII",
+            "term_type": null,
+            "origin": {
+              "section": "unii",
+              "field": "unii",
+              "section_index": 1,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Name B",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "unii",
+              "field": "display_name",
+              "section_index": 1,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "code",
+            "text": "CHEMBL-SYN1",
+            "namespace": "ChEMBL",
+            "term_type": null,
+            "origin": {
+              "section": "chembl",
+              "field": "molecule_chembl_id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Other",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "chembl",
+              "field": "pref_name",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:f64078f3487a4e76d1d549cfc145043d26921825ee45112f49f591d7874e9bdd",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-SYN1",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "sampledrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "same",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 0
+              }
+            },
+            {
+              "kind": "term",
+              "text": "same",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 1
+              }
+            },
+            {
+              "kind": "code",
+              "text": "U-SYN1",
+              "namespace": "UNII",
+              "term_type": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 0,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Name A",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "unii",
+                "field": "display_name",
+                "section_index": 0,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "code",
+              "text": "U-SYN2",
+              "namespace": "UNII",
+              "term_type": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 1,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Name B",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "unii",
+                "field": "display_name",
+                "section_index": 1,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "code",
+              "text": "CHEMBL-SYN1",
+              "namespace": "ChEMBL",
+              "term_type": null,
+              "origin": {
+                "section": "chembl",
+                "field": "molecule_chembl_id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Other",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "chembl",
+                "field": "pref_name",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"drugbank\":{\"id\":\"DB-SYN1\",\"name\":\"sampledrug\",\"synonyms\":[\"same\",\"same\"]},\"unii\":[{\"unii\":\"U-SYN1\",\"display_name\":\"Name A\"},{\"unii\":\"U-SYN2\",\"display_name\":\"Name B\"}],\"chembl\":{\"molecule_chembl_id\":\"CHEMBL-SYN1\",\"pref_name\":\"Other\"}}",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-SYN1\"",
+            "state": "values",
+            "values": [
+              "DB-SYN1"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"sampledrug\"",
+            "state": "values",
+            "values": [
+              "sampledrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[\"same\",\"same\"]",
+            "state": "values",
+            "values": [
+              "same",
+              "same"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": 0,
+            "was_array": false,
+            "raw": "\"U-SYN1\"",
+            "state": "values",
+            "values": [
+              "U-SYN1"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": 0,
+            "was_array": false,
+            "raw": "\"Name A\"",
+            "state": "values",
+            "values": [
+              "Name A"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": 1,
+            "was_array": false,
+            "raw": "\"U-SYN2\"",
+            "state": "values",
+            "values": [
+              "U-SYN2"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": 1,
+            "was_array": false,
+            "raw": "\"Name B\"",
+            "state": "values",
+            "values": [
+              "Name B"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"CHEMBL-SYN1\"",
+            "state": "values",
+            "values": [
+              "CHEMBL-SYN1"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"Other\"",
+            "state": "values",
+            "values": [
+              "Other"
+            ]
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.unii",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.display_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.unii",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.display_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "chembl.molecule_chembl_id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "chembl.pref_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "display_name",
+          "language": null
+        },
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "display_name",
+          "language": null
+        },
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "pref_name",
+          "language": null
+        }
+      ]
+    },
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:f64078f3487a4e76d1d549cfc145043d26921825ee45112f49f591d7874e9bdd",
+        "ordinal": 1,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-SYN9",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "sampledrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "code",
+            "text": "CHEMBL-SYN9",
+            "namespace": "ChEMBL",
+            "term_type": null,
+            "origin": {
+              "section": "chembl",
+              "field": "molecule_chembl_id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "code",
+            "text": "U-SYN9",
+            "namespace": "UNII",
+            "term_type": null,
+            "origin": {
+              "section": "unii",
+              "field": "unii",
+              "section_index": null,
+              "value_index": null
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:f64078f3487a4e76d1d549cfc145043d26921825ee45112f49f591d7874e9bdd",
+          "ordinal": 1,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-SYN9",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "sampledrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "code",
+              "text": "CHEMBL-SYN9",
+              "namespace": "ChEMBL",
+              "term_type": null,
+              "origin": {
+                "section": "chembl",
+                "field": "molecule_chembl_id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "code",
+              "text": "U-SYN9",
+              "namespace": "UNII",
+              "term_type": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": null,
+                "value_index": null
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 1,
+        "raw": "{\"drugbank\":{\"id\":\"DB-SYN9\",\"name\":\"sampledrug\"},\"chembl\":{\"molecule_chembl_id\":\"CHEMBL-SYN9\"},\"unii\":{\"unii\":\"U-SYN9\"}}",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-SYN9\"",
+            "state": "values",
+            "values": [
+              "DB-SYN9"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"sampledrug\"",
+            "state": "values",
+            "values": [
+              "sampledrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"CHEMBL-SYN9\"",
+            "state": "values",
+            "values": [
+              "CHEMBL-SYN9"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"U-SYN9\"",
+            "state": "values",
+            "values": [
+              "U-SYN9"
+            ]
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "chembl.molecule_chembl_id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "unii.unii",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        null,
+        null
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

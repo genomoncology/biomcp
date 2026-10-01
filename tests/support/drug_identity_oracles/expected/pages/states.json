@@ -1,0 +1,159 @@
+{
+  "profile": "Get",
+  "digest": "sha256:601bfc194ba1baf226742ae07fda6821933201d975419dd0fcf4ef2b5cf54b2a",
+  "total": 1,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:601bfc194ba1baf226742ae07fda6821933201d975419dd0fcf4ef2b5cf54b2a",
+        "ordinal": 0,
+        "claims": [],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:601bfc194ba1baf226742ae07fda6821933201d975419dd0fcf4ef2b5cf54b2a",
+          "ordinal": 0,
+          "claims": []
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"ndc\":[],\"unii\":null,\"openfda\":{\"generic_name\":null,\"brand_name\":[]},\"chebi\":{}}",
+        "fields": [
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": "[]",
+            "state": "empty_array",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": "null",
+            "state": "null",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "null",
+            "state": "null",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "null",
+            "state": "null",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[]",
+            "state": "empty_array",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": []
+    }
+  ],
+  "require_complete": "Ok"
+}

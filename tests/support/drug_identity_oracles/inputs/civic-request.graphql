@@ -1,0 +1,70 @@
+
+query CivicContext(
+  $molecularProfileName: String
+  $therapyName: String
+  $diseaseName: String
+  $first: Int!
+) {
+  evidenceItems(
+    molecularProfileName: $molecularProfileName
+    therapyName: $therapyName
+    diseaseName: $diseaseName
+    status: ACCEPTED
+    first: $first
+  ) {
+    totalCount
+    nodes {
+      id
+      name
+      status
+      evidenceType
+      evidenceLevel
+      significance
+      molecularProfile {
+        name
+      }
+      disease {
+        displayName
+      }
+      therapies {
+        name
+      }
+      source {
+        citation
+        sourceType
+        publicationYear
+      }
+    }
+  }
+  assertions(
+    molecularProfileName: $molecularProfileName
+    therapyName: $therapyName
+    diseaseName: $diseaseName
+    status: ACCEPTED
+    first: $first
+  ) {
+    totalCount
+    nodes {
+      id
+      name
+      status
+      assertionType
+      assertionDirection
+      ampLevel
+      significance
+      molecularProfile {
+        name
+      }
+      disease {
+        displayName
+      }
+      therapies {
+        name
+      }
+      summary
+      approvals {
+        totalCount
+      }
+    }
+  }
+}

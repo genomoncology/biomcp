@@ -1,0 +1,68 @@
+{
+  "total": 3,
+  "hits": [
+    {
+      "drugbank": {
+        "id": "DB-FILTER1",
+        "name": "FilterDrug"
+      },
+      "chembl": {
+        "drug_mechanisms": [
+          {
+            "mechanism_of_action": "Synthetic inhibitor"
+          }
+        ]
+      },
+      "gtopdb": {
+        "interaction_targets": [
+          {
+            "symbol": " genea "
+          },
+          {
+            "symbol": " geneb "
+          }
+        ]
+      }
+    },
+    {
+      "drugbank": {
+        "id": "DB-FILTER2",
+        "name": "WrongTarget"
+      },
+      "chembl": {
+        "drug_mechanisms": [
+          {
+            "mechanism_of_action": "Synthetic inhibitor"
+          }
+        ]
+      },
+      "gtopdb": {
+        "interaction_targets": [
+          {
+            "symbol": "GENEC"
+          }
+        ]
+      }
+    },
+    {
+      "drugbank": {
+        "id": "DB-FILTER3",
+        "name": "WrongMechanism"
+      },
+      "chembl": {
+        "drug_mechanisms": [
+          {
+            "mechanism_of_action": "Synthetic activator"
+          }
+        ]
+      },
+      "gtopdb": {
+        "interaction_targets": [
+          {
+            "symbol": "GENEB"
+          }
+        ]
+      }
+    }
+  ]
+}
