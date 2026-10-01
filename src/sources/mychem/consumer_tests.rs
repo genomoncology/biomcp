@@ -180,19 +180,14 @@ fn display_selection_and_product_table() {
                 .get("product")
                 .or_else(|| case["expected"].get("get_product"));
             if let Some(wanted) = wanted {
-                assert_eq!(
-                    serde_json::to_value(&product).unwrap(),
-                    *wanted,
-                    "{}",
-                    case["id"]
-                );
+                assert_eq!(product_value(&product), *wanted, "{}", case["id"]);
             }
             if let Some(wanted) = case["expected"].get("search_result") {
                 assert_eq!(
-                    serde_json::to_value(crate::transform::drug::from_mychem_search_hit(
-                        &response.hits[0]
-                    ))
-                    .unwrap(),
+                    crate::transform::drug::from_mychem_search_hit(&response.hits[0])
+                        .as_ref()
+                        .map(search_value)
+                        .unwrap_or(Value::Null),
                     *wanted,
                     "{}",
                     case["id"]
@@ -212,4 +207,54 @@ fn display_selection_and_product_table() {
             }
         }
     }
+}
+
+pub(crate) fn product_value(drug: &crate::entities::drug::Drug) -> Value {
+    json!({
+        "section_outcomes":drug.section_outcomes,
+        "name":drug.name,
+        "drugbank_id":drug.drugbank_id,
+        "chembl_id":drug.chembl_id,
+        "unii":drug.unii,
+        "drug_type":drug.drug_type,
+        "mechanism":drug.mechanism,
+        "mechanisms":drug.mechanisms,
+        "approval_date":drug.approval_date,
+        "approval_date_raw":drug.approval_date_raw,
+        "approval_date_display":drug.approval_date_display,
+        "approval_summary":drug.approval_summary,
+        "brand_names":drug.brand_names,
+        "route":drug.route,
+        "targets":drug.targets,
+        "variant_targets":drug.variant_targets,
+        "target_family":drug.target_family,
+        "target_family_name":drug.target_family_name,
+        "indications":drug.indications,
+        "interactions":drug.interactions,
+        "interaction_text":drug.interaction_text,
+        "interaction_pagination":drug.interaction_pagination,
+        "interaction_bundle_freshness":drug.interaction_bundle_freshness,
+        "interaction_coverage_status":drug.interaction_coverage_status,
+        "ddinter_synonyms":drug.ddinter_synonyms,
+        "pharm_classes":drug.pharm_classes,
+        "top_adverse_events":drug.top_adverse_events,
+        "faers_query":drug.faers_query,
+        "label":drug.label,
+        "label_set_id":drug.label_set_id,
+        "shortage":drug.shortage,
+        "approvals":drug.approvals,
+        "fda_orphan_designations":drug.fda_orphan_designations,
+        "us_safety_warnings":drug.us_safety_warnings,
+        "us_boxed_warning":drug.us_boxed_warning,
+        "ema_regulatory":drug.ema_regulatory,
+        "ema_safety":drug.ema_safety,
+        "ema_shortage":drug.ema_shortage,
+        "who_prequalification":drug.who_prequalification,
+        "civic":drug.civic,
+        "cell_lines":drug.cell_lines
+    })
+}
+
+pub(crate) fn search_value(row: &crate::entities::drug::DrugSearchResult) -> Value {
+    json!({"name":row.name,"drugbank_id":row.drugbank_id,"drug_type":row.drug_type,"mechanism":row.mechanism,"target":row.target})
 }

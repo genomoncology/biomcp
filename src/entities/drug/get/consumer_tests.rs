@@ -159,7 +159,11 @@ async fn adopted_request_search_and_nested_failure_table() {
                         failure(result.unwrap_err(), &expected["failure"], id);
                     } else {
                         let page = result.unwrap();
-                        assert_eq!(json!(page.results), expected["results"], "{id}");
+                        assert_eq!(
+                            json!(page.results.iter().map(search_value).collect::<Vec<_>>()),
+                            expected["results"],
+                            "{id}"
+                        );
                         assert_eq!(json!(page.total), expected["total"], "{id}");
                     }
                 }
@@ -191,7 +195,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                         let wanted = expected
                             .get("product")
                             .unwrap_or(&expected["resolved_base"]["drug"]);
-                        assert_eq!(json!(resolved.drug), *wanted, "{id}");
+                        assert_eq!(product_value(&resolved.drug), *wanted, "{id}");
                         assert_eq!(
                             json!(
                                 resolved
