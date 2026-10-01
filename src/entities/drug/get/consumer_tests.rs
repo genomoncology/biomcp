@@ -23,13 +23,39 @@ impl CaseHttp {
             .filter(|response| response.get("body").is_some())
             .cloned()
             .collect::<Vec<_>>();
+        let expected: Vec<Value> = case["requests_expected"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|request| {
+                if let Some(reference) = request.get("request_reference") {
+                    (1..=6)
+                        .flat_map(table)
+                        .find(|row| row["id"] == reference["case"])
+                        .unwrap()
+                        .pointer(reference["pointer"].as_str().unwrap())
+                        .unwrap()
+                        .clone()
+                } else {
+                    request.clone()
+                }
+            })
+            .collect();
+        let plans = expected.clone();
+        let consumed = Mutex::new(vec![false; responses.len()]);
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = requests.clone();
         let fixture = TestHttpFixture::spawn(move |request| {
             let mut captured = captured.lock().unwrap();
-            let index = captured.len();
             captured.push(request.lines().next().unwrap_or("").to_owned());
-            let Some(response) = responses.get(index) else {
+            let mut consumed = consumed.lock().unwrap();
+            let index = plans.iter().enumerate().position(|(index, plan)| {
+                !consumed.get(index).copied().unwrap_or(true) && request_matches(request, plan)
+            });
+            let Some(response) = index.and_then(|index| {
+                consumed[index] = true;
+                responses.get(index)
+            }) else {
                 return TestHttpReply::Bytes(test_http_response(
                     "400 Unexpected request",
                     "application/json",
@@ -45,13 +71,6 @@ impl CaseHttp {
             ))
         })
         .await;
-        let expected = case["requests_expected"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter(|request| request.get("method").is_some())
-            .cloned()
-            .collect();
         Self {
             fixture,
             requests,
@@ -103,6 +122,28 @@ impl CaseHttp {
             }
         }
     }
+}
+fn request_matches(request: &str, expected: &Value) -> bool {
+    let tokens = request
+        .lines()
+        .next()
+        .unwrap_or("")
+        .split_whitespace()
+        .collect::<Vec<_>>();
+    if tokens.len() < 2 || Some(tokens[0]) != expected["method"].as_str() {
+        return false;
+    }
+    let url = reqwest::Url::parse(&format!("http://fixture{}", tokens[1])).unwrap();
+    if Some(url.path()) != expected["path"].as_str() {
+        return false;
+    }
+    expected.get("query").is_none_or(|query| {
+        json!(
+            url.query_pairs()
+                .map(|(key, value)| (key.into_owned(), value.into_owned()))
+                .collect::<Vec<_>>()
+        ) == *query
+    })
 }
 fn failure(result: BioMcpError, wanted: &Value, id: &Value) {
     let wanted = if let Some(path) = wanted.as_str() {
@@ -180,7 +221,7 @@ async fn adopted_request_search_and_nested_failure_table() {
                         let page = result.unwrap();
                         assert_eq!(
                             json!(page.results.iter().map(search_value).collect::<Vec<_>>()),
-                            expected["results"],
+                            expected.get("results").unwrap_or(&expected["rows"]),
                             "{id}"
                         );
                         assert_eq!(json!(page.total), expected["total"], "{id}");
