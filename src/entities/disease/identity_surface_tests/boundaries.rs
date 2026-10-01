@@ -9,7 +9,8 @@ async fn command(
     error: bool,
 ) -> Value {
     let output = tokio::time::timeout(
-        std::time::Duration::from_secs(15),
+        // Two unavailable parent lookups retain the shipped retry policy.
+        crate::test_support::watchdog(45),
         tokio::process::Command::new(&harness.biomcp_bin)
             .args(args)
             .env_remove("UMLS_API_KEY")

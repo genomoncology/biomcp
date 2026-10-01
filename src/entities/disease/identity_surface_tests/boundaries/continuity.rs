@@ -159,7 +159,8 @@ async fn unavailable_service_paths(harness: &ContractHarness) {
         }).await;
         let cache = tempfile::tempdir().unwrap();
         let mut env = environment(&other.base, cache.path());
-        env[0].1 = base;
+        env[0].1 = base.clone();
+        env[4].1 = base;
         let value = command(
             harness,
             if accepted == 1 {
