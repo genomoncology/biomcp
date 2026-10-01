@@ -33,6 +33,11 @@ async fn detail_fixture(
             "protocolSection": {
                 "identificationModule": {"nctId": id, "briefTitle": "Fixture"},
                 "statusModule": {"overallStatus": "RECRUITING"},
+                "sponsorCollaboratorsModule": {
+                    "leadSponsor": {"name": "Example sponsor"}
+                },
+                "conditionsModule": {"conditions": ["Example condition"]},
+                "designModule": {"studyType": "INTERVENTIONAL"},
                 "eligibilityModule": module,
             }
         })
