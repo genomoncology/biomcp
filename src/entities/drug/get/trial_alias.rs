@@ -208,7 +208,7 @@ pub(super) fn trial_alias_resolution_from_lookup_result(
                 cacheable,
             ))
         }
-        Err(error) => Err(error),
+        Err(error) => Err(crate::sources::mychem::projection::terminal_failure(error)),
     }
 }
 
@@ -218,7 +218,7 @@ pub(super) async fn optional_lookup(
     match direct_drug_lookup(name).await {
         Ok(response) => Ok(Some(response)),
         Err(error) if crate::sources::mychem::optional_failure(&error) => Ok(None),
-        Err(error) => Err(error),
+        Err(error) => Err(crate::sources::mychem::projection::terminal_failure(error)),
     }
 }
 

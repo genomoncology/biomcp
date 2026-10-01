@@ -182,6 +182,24 @@ pub(crate) fn decode(
 pub(crate) fn optional_failure(error: &BioMcpError) -> bool {
     crate::sources::mydisease::optional_failure(error)
 }
+/// Preserve terminal classification without retaining source diagnostic text.
+pub(crate) fn terminal_failure(error: BioMcpError) -> BioMcpError {
+    match error {
+        BioMcpError::WithSourceContext { context, source } => {
+            terminal_failure(*source).with_source_context(context)
+        }
+        BioMcpError::Api { .. } => BioMcpError::Api {
+            api: "MyChem.info".into(),
+            message: "MyChem request rejected".into(),
+        },
+        BioMcpError::SourceUnavailable { .. } => BioMcpError::SourceUnavailable {
+            source_name: "MyChem.info".into(),
+            reason: "MyChem source unavailable".into(),
+            suggestion: "Review source configuration and retry.".into(),
+        },
+        other => other,
+    }
+}
 #[cfg(test)]
 impl<'de> Deserialize<'de> for MyChemHit {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {

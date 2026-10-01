@@ -49,12 +49,19 @@ async fn typed_absence_and_uncached_retry_table() {
             "generic-api" => BioMcpError::Api {
                 api: "MyChem.info".into(),
                 message: "SOURCE_SENTINEL_0224".into(),
-            },
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MYCHEM,
+            )),
             "generic-unavailable" => BioMcpError::SourceUnavailable {
                 source_name: "MyChem.info".into(),
                 reason: "SOURCE_SENTINEL_0224".into(),
                 suggestion: "Retry the remote source.".into(),
-            },
+            }
+            .with_source_context(crate::error::SourceContext::new(
+                crate::error::SourceProvider::MYCHEM,
+                crate::error::RecoveryAction::ReviewSourceConfiguration,
+            )),
             _ => panic!("unknown alternative"),
         };
         let result = trial_alias_resolution_from_lookup_result(name, Err(error));
