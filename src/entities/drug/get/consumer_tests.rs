@@ -894,6 +894,17 @@ fn assert_base_conversion(resolved: &ResolvedDrugBase, wanted: &Value, id: &Valu
         };
         assert_eq!(json!(term.text()), entry["lexical_text"]);
         assert_eq!(
+            entry["namespace"],
+            Value::Null,
+            "{id}: candidate term namespace"
+        );
+        let term_type = term.source_type().map(|source| json!({"namespace":source.namespace().as_str(),"label":source.label().as_str()}));
+        assert_eq!(
+            json!(term_type),
+            entry["source_term_type"],
+            "{id}: complete candidate term type"
+        );
+        assert_eq!(
             entry["lexical_text"], entry["target"],
             "{id}: extraction preserves original spelling"
         );
