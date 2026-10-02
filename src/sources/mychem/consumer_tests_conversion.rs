@@ -13,6 +13,30 @@ pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &
     for expected in wanted.as_array().unwrap() {
         if let Some(children) = expected.get("claim_occurrences") {
             assert_conversion(hits, children, boundary, id);
+            for child in children.as_array().unwrap() {
+                assert_eq!(
+                    child["response_digest"], expected["response_digest"],
+                    "{id}: grouped digest"
+                );
+                assert_eq!(
+                    child["ordinal"], expected["ordinal"],
+                    "{id}: grouped ordinal"
+                );
+                assert_eq!(child["action"], expected["action"], "{id}: grouped action");
+            }
+            if expected.get("retained_digest").is_some() {
+                assert!(
+                    events.iter().any(|event| custody(event, expected)
+                        && event.action == expected["action"]
+                        && event
+                            .target
+                            .as_ref()
+                            .is_some_and(|target| target["retained_digest"]
+                                == expected["retained_digest"]
+                                && target["retained_ordinal"] == expected["retained_ordinal"])),
+                    "{id}: duplicate retains wrong original row"
+                );
+            }
             continue;
         }
         let Some(action) = expected["action"].as_str() else {
@@ -53,7 +77,10 @@ pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &
                 ("card brands", "select"),
             ],
             "deduplicate" => &[("get merge synonyms", "deduplicate")],
-            "omit_display_candidate" => &[("", "omit_display")],
+            "omit_display_candidate" => &[
+                ("", "omit_display"),
+                ("get name matching", "include_match_candidate"),
+            ],
             _ => &[("", action)],
         };
         let compound = matches!(
@@ -68,7 +95,11 @@ pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &
                 matches.iter().copied().find(|event| {
                     (stage.is_empty() || event.stage == *stage)
                         && event.action == *action
-                        && target(event, expected)
+                        && if compound && matches!(*action, "cap" | "omit_display") {
+                            event.target.is_none()
+                        } else {
+                            target(event, expected)
+                        }
                 })
             })
             .collect::<Vec<_>>();

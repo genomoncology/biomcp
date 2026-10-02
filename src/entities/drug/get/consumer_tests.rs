@@ -96,7 +96,11 @@ impl CaseHttp {
             fixture,
             requests,
             expected,
-            order: case.get("request_order_contract").cloned(),
+            order: case.get("request_order_contract").cloned().or_else(|| {
+                if case["input"]["request_order"] == "MyChem first; CTGov worker plans in listed order, dispatched concurrently; network arrival order is not contractual" {
+                    Some(table(5).into_iter().find(|row| row["id"] == "P5-06/typed-adopted-alias-search").unwrap()["request_order_contract"].clone())
+                } else { None }
+            }),
             events,
         }
     }
@@ -112,6 +116,8 @@ impl CaseHttp {
         ] {
             env.set(name, &self.fixture.base);
         }
+        env.set("BIOMCP_CTGOV_BASE", format!("{}/api/v2", self.fixture.base));
+        env.set("BIOMCP_CIVIC_BASE", format!("{}/api", self.fixture.base));
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &self.fixture.base);
         env.set("BIOMCP_CACHE_DIR", cache);
         for key in [
@@ -447,6 +453,30 @@ async fn adopted_alias_cache_and_downstream_table() {
             .is_err()
     );
     assert!(trial_alias_cache().lock().unwrap().is_empty());
+    for case in table(6)
+        .into_iter()
+        .filter(|case| case["input"]["operation"] == "get_drug_with_sections")
+    {
+        let fixture = CaseHttp::new(&case).await;
+        let cache = tempfile::tempdir().unwrap();
+        fixture.environment(&mut env, cache.path());
+        let sections = case["input"]["sections"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_str().unwrap().to_owned())
+            .collect::<Vec<_>>();
+        let drug = get(case["input"]["name"].as_str().unwrap(), &sections, false)
+            .await
+            .unwrap();
+        assert_eq!(
+            product_value(&drug),
+            case["expected"]["product"],
+            "{}",
+            case["id"]
+        );
+        fixture.assert_requests(&case["id"]);
+    }
     for case in table(6).into_iter().filter(|case| {
         case["input"]["operation"] == "admitted_page_then_fda_orphan_alias_admission"
     }) {

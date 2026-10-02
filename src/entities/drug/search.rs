@@ -217,7 +217,7 @@ fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
         .as_ref()
         .is_some_and(|value| string_field_matches(&value.brand_name, &query))
     {
-        return DrugSearchMatchKind::ProductName;
+        return conversion::record_match_kind(hit, &query, DrugSearchMatchKind::ProductName);
     }
     let ndc_matches = hit.ndc.as_ref().is_some_and(|value| match value {
         MyChemNdcField::One(row) => row
@@ -246,14 +246,14 @@ fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
             .and_then(|value| value.pref_name.as_deref())
             .is_some_and(|value| normalized_name(value) == query);
     if active_matches {
-        DrugSearchMatchKind::ActiveSubstance
+        conversion::record_match_kind(hit, &query, DrugSearchMatchKind::ActiveSubstance)
     } else if hit.drugbank.as_ref().is_some_and(|value| {
         value
             .synonyms
             .iter()
             .any(|alias| normalized_name(alias) == query)
     }) {
-        DrugSearchMatchKind::Alias
+        conversion::record_match_kind(hit, &query, DrugSearchMatchKind::Alias)
     } else {
         DrugSearchMatchKind::BroadText
     }
@@ -341,7 +341,7 @@ pub(super) async fn search_page_with_custody(
                 );
                 hit.record_claims(
                     "search filtering",
-                    "omit_target_filter",
+                    "discard_target_filter",
                     "requested target absent from retained source enrichment",
                 );
                 continue;
@@ -371,7 +371,7 @@ pub(super) async fn search_page_with_custody(
             );
             hit.record_claims(
                 "search filtering",
-                "omit_mechanism_filter",
+                "discard_mechanism_filter",
                 "requested mechanism absent from retained source enrichment",
             );
             continue;
@@ -391,6 +391,11 @@ pub(super) async fn search_page_with_custody(
             continue;
         }
 
+        hit.record_claims(
+            "search selection",
+            "select",
+            "unique row within requested limit",
+        );
         hit.record_row(
             "search selection",
             "select",

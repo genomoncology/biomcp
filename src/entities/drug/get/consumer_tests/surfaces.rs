@@ -55,7 +55,7 @@ async fn cli_and_raw_typed_mcp_drug_table() {
         .unwrap_or_else(|| root_path.join("target/debug/biomcp"));
     let harness = ContractHarness::new(binary, root_path);
     let mut failures = Vec::new();
-    for case in table(5).into_iter().filter(|case| {
+    for case in [5, 6].into_iter().flat_map(table).filter(|case| {
         matches!(
             case["input"]["operation"].as_str(),
             Some("shipped_cli_dispatch" | "mcp_dispatch")

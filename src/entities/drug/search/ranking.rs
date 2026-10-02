@@ -64,11 +64,11 @@ pub(super) async fn search_ranked_name_us_page_with_custody(
             if let Some(index) = positions.get(&row.name).copied() {
                 if kind.rank() < candidates[index].1.rank() {
                     candidates[index].1 = kind;
-                    hit.record_claims(
-                        "search ranking",
-                        "tier_upgrade_keep_first_row",
-                        "later stronger match; original result row retained",
-                    );
+                    if let Some(retained) = origins.get(&row.name) {
+                        for claim_index in 0..hit.row.identity().claims().len() {
+                            hit.record_value(Some(claim_index), "search ranking", "tier_upgrade_keep_first_row", "later stronger match; original result row retained", Some(serde_json::json!({"retained_digest":retained.page.digest(),"retained_ordinal":retained.row.source().ordinal()})));
+                        }
+                    }
                 } else {
                     hit.record_claims(
                         "search ranking",

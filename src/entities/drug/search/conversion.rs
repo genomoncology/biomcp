@@ -56,3 +56,42 @@ pub(super) fn record_filter(hit: &MyChemHit, action: &'static str, target: Optio
         }
     }
 }
+
+pub(super) fn record_match_kind(
+    hit: &MyChemHit,
+    query: &str,
+    kind: DrugSearchMatchKind,
+) -> DrugSearchMatchKind {
+    for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+        let biodata::DrugClaimValue::Term(term) = claim.value() else {
+            continue;
+        };
+        let field = (claim.origin().section(), claim.origin().field());
+        let allowed = match kind {
+            DrugSearchMatchKind::ProductName => field == ("openfda", "brand_name"),
+            DrugSearchMatchKind::ActiveSubstance => matches!(
+                field,
+                ("ndc", "nonproprietaryname")
+                    | ("openfda", "generic_name")
+                    | ("drugbank", "name")
+                    | ("chembl", "pref_name")
+            ),
+            DrugSearchMatchKind::Alias => field == ("drugbank", "synonyms"),
+            _ => false,
+        };
+        if allowed && normalized_name(term.text()) == query {
+            hit.record(
+                Some(index),
+                "ranked match classification",
+                match kind {
+                    DrugSearchMatchKind::ProductName => "select_product_match",
+                    DrugSearchMatchKind::Alias => "select_alias_match",
+                    _ => "select_active_substance_match",
+                },
+                "retained source field equals normalized query at selected match tier",
+                Some(kind.as_str().into()),
+            );
+        }
+    }
+    kind
+}

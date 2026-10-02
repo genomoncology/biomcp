@@ -32,6 +32,18 @@ async fn ranked_drug_paging_table() {
         fixture.assert_requests(&case["id"]);
         if expected["failure"].is_null() {
             let (page, custody) = result.unwrap();
+            if let Some(wanted) = expected.get("conversion") {
+                crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+                    &custody
+                        .pages
+                        .iter()
+                        .flat_map(|page| page.hits.iter())
+                        .collect::<Vec<_>>(),
+                    wanted,
+                    "ranking",
+                    &case["id"],
+                );
+            }
             let paths = expected["pages"].as_array().unwrap();
             assert_eq!(custody.pages.len(), paths.len(), "{}", case["id"]);
             for (response, path) in custody.pages.iter().zip(paths) {

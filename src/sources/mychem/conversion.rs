@@ -50,6 +50,22 @@ impl MyChemHit {
         reason: &'static str,
         target: Option<String>,
     ) {
+        self.record_value(
+            claim_index,
+            stage,
+            action,
+            reason,
+            target.map(serde_json::Value::String),
+        );
+    }
+    pub(crate) fn record_value(
+        &self,
+        claim_index: Option<usize>,
+        stage: &'static str,
+        action: &'static str,
+        reason: &'static str,
+        target: Option<serde_json::Value>,
+    ) {
         let claim = claim_index.and_then(|index| self.row.identity().claims().get(index));
         let (lexical_text, namespace, source_term_type) = match claim.map(|claim| claim.value()) {
             Some(DrugClaimValue::Code(code)) => (
@@ -80,7 +96,7 @@ impl MyChemHit {
             stage,
             action,
             reason,
-            target: target.map(serde_json::Value::String),
+            target,
         });
     }
     pub(crate) fn record_field(
