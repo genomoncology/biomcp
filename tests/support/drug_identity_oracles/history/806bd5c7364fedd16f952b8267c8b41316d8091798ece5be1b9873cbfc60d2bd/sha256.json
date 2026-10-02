@@ -15,7 +15,7 @@
     {
       "path": "P2.json",
       "bytes": 218835,
-      "sha256": "98d6b09f0b93ecf08c97f79535ce361db7cb7970f4219c05a669a51f76dad519"
+      "sha256": "9607e1bb2f30414b548aa68742a60dddb0e320f5ecb9cb6aa39e4c54e7b384c4"
     },
     {
       "path": "P2.tsv",
@@ -993,16 +993,6 @@
       "sha256": "57970b03b4d286b0563f0211062c8ef52d312221b4b0d4bafec30f2c1ffcd996"
     },
     {
-      "path": "history/806bd5c7364fedd16f952b8267c8b41316d8091798ece5be1b9873cbfc60d2bd/P2.json",
-      "bytes": 218835,
-      "sha256": "9607e1bb2f30414b548aa68742a60dddb0e320f5ecb9cb6aa39e4c54e7b384c4"
-    },
-    {
-      "path": "history/806bd5c7364fedd16f952b8267c8b41316d8091798ece5be1b9873cbfc60d2bd/sha256.json",
-      "bytes": 48713,
-      "sha256": "806bd5c7364fedd16f952b8267c8b41316d8091798ece5be1b9873cbfc60d2bd"
-    },
-    {
       "path": "history/README.md",
       "bytes": 561,
       "sha256": "adc1b28ed86653b8239e065d6e6343213e30b6c1d67312e7b82636cf7d3849c4"
@@ -1311,11 +1301,6 @@
       "path": "inputs/wrong-type.json",
       "bytes": 59,
       "sha256": "0742235c0a89146c3c47cd072f0b6c8b81042a8e73768cfe414a2451311cf7c0"
-    },
-    {
-      "path": "label-custody-amendment.json",
-      "bytes": 1245,
-      "sha256": "a54af0527bbecbc5f462dc770db30e33bedbe8f1d9c6314613b4adab3d27cc3e"
     },
     {
       "path": "library-references.json",
