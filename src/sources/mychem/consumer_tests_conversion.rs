@@ -41,7 +41,7 @@ pub(crate) fn assert_conversion_with_signals(
             .filter(|(_, event)| {
                 custody(event, expected)
                     && event.stage == *stage
-                    && same_family(event.action, action)
+                    && same_family(stage, event.action, action)
             })
             .collect::<Vec<_>>();
         for event in events.iter().filter(|event| custody(event, expected)) {
@@ -560,7 +560,10 @@ fn bind(expected: &Value, boundary: &str, id: &Value, output: &mut Vec<Obligatio
             add(
                 "search filtering",
                 actual_action,
-                if expected.get("source_pointer").is_none() {
+                if expected
+                    .get("source_pointer")
+                    .is_none_or(|pointer| !pointer.is_string())
+                {
                     if action == "discard_target_filter" {
                         "requested target absent from retained source enrichment"
                     } else {
@@ -654,36 +657,53 @@ fn bind(expected: &Value, boundary: &str, id: &Value, output: &mut Vec<Obligatio
         ),
     }
 }
-fn same_family(left: &str, right: &str) -> bool {
-    left == right
-        || [
-            &["select_display", "omit_display"][..],
-            &["select_first_code", "omit_code"],
-            &["select", "cap"],
-            &["select", "omit"],
-            &["include_match_candidate", "omit_match_candidate"],
-            &[
-                "select_product_match",
-                "select_active_substance_match",
-                "select_alias_match",
-            ],
-            &["tier_upgrade_keep_first_row", "omit_duplicate"],
-            &[
-                "select",
-                "trim_and_deduplicate",
-                "omit_unvisited_alias_cap",
-                "exclude",
-            ],
-            &[
-                "select",
-                "deduplicate",
-                "exclude_ema_field",
-                "exclude_alias_row",
-            ],
-            &["select", "omit_limit"],
-        ]
-        .iter()
-        .any(|family| family.contains(&left) && family.contains(&right))
+fn same_family(stage: &str, left: &str, right: &str) -> bool {
+    // Projection normalizes the display before its separate empty-row refusal.
+    if stage == "search projection" {
+        return match right {
+            "select_display" | "omit_display" => !matches!(left, "select_first_code" | "discard"),
+            "select_first_code" => !matches!(left, "select_display" | "omit_display" | "discard"),
+            "discard" => !matches!(
+                left,
+                "select_display" | "omit_display" | "select_first_code"
+            ),
+            _ => true,
+        };
+    }
+    // Target override can precede a separate mechanism-filter rejection.
+    if stage == "search filtering"
+        && right == "discard_mechanism_filter"
+        && matches!(
+            left,
+            "match_and_uppercase_requested_target" | "omit_initial_target"
+        )
+    {
+        return false;
+    }
+    if stage == "search filtering"
+        && left == "discard_mechanism_filter"
+        && matches!(
+            right,
+            "match_and_uppercase_requested_target" | "omit_initial_target"
+        )
+    {
+        return false;
+    }
+    if stage == "search filtering"
+        && left == "select_target_override"
+        && right != "select_target_override"
+    {
+        return false;
+    }
+    // Name matching retains the accessor before its normalized participation.
+    if stage != "get name matching" {
+        return true;
+    }
+    if right == "select_match_candidate" {
+        !matches!(left, "include_match_candidate" | "omit_match_candidate")
+    } else {
+        left != "select_match_candidate"
+    }
 }
 fn custody_key(expected: &Value) -> Value {
     let mut key = serde_json::Map::new();

@@ -2,19 +2,21 @@
 use super::*;
 
 pub(super) fn record_filter(hit: &MyChemHit, action: &'static str, target: Option<&str>) {
-    if let Some(chembl) = &hit.chembl {
+    if action != "target_override"
+        && let Some(chembl) = &hit.chembl
+    {
         for index in 0..chembl.drug_mechanisms.len() {
             for field in ["mechanism_of_action", "action_type", "target_name"] {
                 hit.record_source(
                     &format!("/chembl/drug_mechanisms/{index}/{field}"),
                     "search filtering",
-                    if action == "target_override" {
+                    if action == "admit" {
                         "select_mechanism_and_admit"
                     } else {
                         action
                     },
                     "actual retained target and mechanism predicates govern result admission",
-                    if action == "target_override" {
+                    if action == "admit" {
                         chembl.drug_mechanisms[index]
                             .mechanism_of_action
                             .as_deref()
@@ -27,7 +29,9 @@ pub(super) fn record_filter(hit: &MyChemHit, action: &'static str, target: Optio
             }
         }
     }
-    if let Some(gtopdb) = &hit.gtopdb {
+    if action != "admit"
+        && let Some(gtopdb) = &hit.gtopdb
+    {
         for (index, row) in gtopdb.interaction_targets.iter().enumerate() {
             let matched = target.is_some_and(|target| {
                 row.symbol

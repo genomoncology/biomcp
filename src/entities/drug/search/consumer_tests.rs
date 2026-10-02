@@ -91,6 +91,17 @@ fn adopted_ema_source_admission_table() {
     }) {
         let response =
             crate::sources::mychem::projection::decode(&bytes(&case), profile(&case)).unwrap();
+        assert_page(&response, case["expected"]["page"].as_str().unwrap());
+        assert_eq!(
+            json!(
+                response
+                    .hits
+                    .iter()
+                    .map(|hit| hit.row.source().ordinal())
+                    .collect::<Vec<_>>()
+            ),
+            case["expected"]["admitted_ordinals"]
+        );
         let identity =
             ema_identity_from_mychem_hits(case["input"]["query"].as_str().unwrap(), &response.hits)
                 .unwrap();
@@ -105,6 +116,79 @@ fn adopted_ema_source_admission_table() {
             &case["expected"]["conversion"],
             "EMA",
             &case["id"],
+        );
+        let excluded = response
+            .hits
+            .iter()
+            .flat_map(|hit| {
+                hit.conversion
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .filter(|event| {
+                        event.stage == "EMA identity" && event.action == "exclude_ema_field"
+                    })
+                    .map(|event| event.claim_index.unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(json!(excluded), case["expected"]["excluded_claim_indices"]);
+        assert_conversion_rejects_corruption(
+            &response.hits,
+            &case["expected"]["conversion"],
+            &case["id"],
+        );
+    }
+}
+
+fn assert_conversion_rejects_corruption(
+    hits: &[MyChemHit],
+    wanted: &serde_json::Value,
+    id: &serde_json::Value,
+) {
+    for mutation in [
+        "missing",
+        "reason",
+        "stage",
+        "target",
+        "duplicate",
+        "extra_branch",
+    ] {
+        let changed = hits
+            .iter()
+            .cloned()
+            .map(|mut hit| {
+                let mut events = hit.conversion.lock().unwrap().clone();
+                match mutation {
+                    "missing" => {
+                        events.remove(0);
+                    }
+                    "reason" => events[0].reason = "wrong policy",
+                    "stage" => events[0].stage = "wrong boundary",
+                    "target" => events[0].target = Some(json!("wrong effect")),
+                    "duplicate" => events.push(events[0].clone()),
+                    "extra_branch" => {
+                        let mut event = events[0].clone();
+                        event.action = "wrong branch";
+                        events.push(event);
+                    }
+                    _ => unreachable!(),
+                }
+                hit.conversion = std::sync::Arc::new(std::sync::Mutex::new(events));
+                hit
+            })
+            .collect::<Vec<_>>();
+        let rejected = std::panic::catch_unwind(|| {
+            crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+                &changed.iter().collect::<Vec<_>>(),
+                wanted,
+                "EMA",
+                id,
+            )
+        });
+        assert!(
+            rejected.is_err(),
+            "{id}: conversion matcher accepted {mutation}"
         );
     }
 }

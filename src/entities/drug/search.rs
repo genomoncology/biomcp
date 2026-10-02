@@ -377,6 +377,14 @@ pub(super) async fn search_page_with_custody(
             continue;
         }
 
+        // Report admitted mechanism occurrences only after both predicates pass.
+        if filters
+            .target
+            .as_deref()
+            .is_some_and(|target| !target.trim().is_empty())
+        {
+            conversion::record_filter(hit, "admit", None);
+        }
         // Normalize and de-duplicate by name.
         r.name = r.name.trim().to_ascii_lowercase();
         if r.name.is_empty() {
