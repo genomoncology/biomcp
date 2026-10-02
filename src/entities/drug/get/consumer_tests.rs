@@ -466,7 +466,7 @@ async fn adopted_alias_cache_and_downstream_table() {
             .iter()
             .map(|value| value.as_str().unwrap().to_owned())
             .collect::<Vec<_>>();
-        let drug = get(case["input"]["name"].as_str().unwrap(), &sections, false)
+        let drug = get(case["input"]["name"].as_str().unwrap(), &sections)
             .await
             .unwrap();
         assert_eq!(
