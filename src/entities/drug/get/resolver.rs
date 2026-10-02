@@ -9,7 +9,6 @@ pub(in crate::entities::drug) struct ResolvedDrugBase {
     pub(in crate::entities::drug) selected_hits: Vec<MyChemHit>,
     pub(in crate::entities::drug) source_pages: Vec<crate::sources::mychem::MyChemQueryResponse>,
     pub(in crate::entities::drug) fallbacks: Vec<DrugFallback>,
-    pub(in crate::entities::drug) discovery: Vec<DrugDiscoveryContribution>,
     pub(in crate::entities::drug) label_signals:
         Vec<crate::sources::mychem::conversion::DrugConversion>,
 }
@@ -24,6 +23,11 @@ pub(in crate::entities::drug) struct DrugFallback {
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub(in crate::entities::drug) struct DrugDiscoveryContribution {
+    pub(in crate::entities::drug) response_digest: Option<String>,
+    pub(in crate::entities::drug) origin: crate::sources::mychem::conversion::ConversionOrigin,
+    pub(in crate::entities::drug) namespace: Option<String>,
+    pub(in crate::entities::drug) source_term_type:
+        crate::sources::mychem::conversion::ConversionTermType,
     pub(in crate::entities::drug) ordinal: usize,
     pub(in crate::entities::drug) source_pointer: String,
     pub(in crate::entities::drug) lexical_text: String,
@@ -43,7 +47,7 @@ enum SparseDrugDiscoverDecision {
 }
 pub(in crate::entities::drug) struct SparseDrugDiscoverRescue {
     decision: SparseDrugDiscoverDecision,
-    contributions: Vec<DrugDiscoveryContribution>,
+    pub(in crate::entities::drug) contributions: Vec<DrugDiscoveryContribution>,
 }
 impl SparseDrugDiscoverRescue {
     pub(in crate::entities::drug) fn none() -> Self {
@@ -100,6 +104,18 @@ pub(in crate::entities::drug) fn classify_sparse_drug_rescue(
             return SparseDrugDiscoverRescue {
                 decision: SparseDrugDiscoverDecision::Canonical(top.label.clone()),
                 contributions: vec![DrugDiscoveryContribution {
+                    response_digest: None,
+                    origin: crate::sources::mychem::conversion::ConversionOrigin {
+                        section: "concepts".into(),
+                        field: "label".into(),
+                        section_index: Some(0),
+                        value_index: None,
+                    },
+                    namespace: None,
+                    source_term_type: crate::sources::mychem::conversion::ConversionTermType {
+                        namespace: "Discover".into(),
+                        label: "label".into(),
+                    },
                     ordinal: 0,
                     source_pointer: "/concepts/0/label".into(),
                     lexical_text: top.label.clone(),
@@ -121,6 +137,18 @@ pub(in crate::entities::drug) fn classify_sparse_drug_rescue(
                 && concept.confidence == crate::entities::discover::DiscoverConfidence::CanonicalId
         })
         .map(|(ordinal, concept)| DrugDiscoveryContribution {
+            response_digest: None,
+            origin: crate::sources::mychem::conversion::ConversionOrigin {
+                section: "concepts".into(),
+                field: "label".into(),
+                section_index: Some(ordinal),
+                value_index: None,
+            },
+            namespace: None,
+            source_term_type: crate::sources::mychem::conversion::ConversionTermType {
+                namespace: "Discover".into(),
+                label: "label".into(),
+            },
             ordinal,
             source_pointer: format!("/concepts/{ordinal}/label"),
             lexical_text: concept.label.clone(),
@@ -339,7 +367,7 @@ pub(in crate::entities::drug) async fn resolve_drug_base_with_discover_report(
                     }
                     fallbacks.push(DrugFallback {
                         from: drug.name.clone(),
-                        to: candidate.clone(),
+                        to: normalized_discover_drug_label(&candidate),
                         reason: "unique discover canonical",
                         candidate_origin: None,
                     });
@@ -401,7 +429,6 @@ pub(in crate::entities::drug) async fn resolve_drug_base_with_discover_report(
         selected_hits: selected.into_iter().cloned().collect(),
         source_pages,
         fallbacks,
-        discovery: report.discovery.clone(),
         label_signals,
     })
 }

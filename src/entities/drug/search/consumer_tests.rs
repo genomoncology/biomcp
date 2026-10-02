@@ -100,5 +100,11 @@ fn adopted_ema_source_admission_table() {
             .map(|(text, source)| json!({"text":text,"source":source}))
             .collect::<Vec<_>>();
         assert_eq!(json!(actual), case["expected"]["terms"]);
+        crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+            &response.hits.iter().collect::<Vec<_>>(),
+            &case["expected"]["conversion"],
+            "EMA",
+            &case["id"],
+        );
     }
 }

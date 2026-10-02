@@ -22,7 +22,6 @@ use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
     populate_top_adverse_event_preview,
 };
-use super::search::search_results_from_openfda_label_response;
 use super::targets::{enrich_indications, enrich_targets};
 use super::{
     DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CELL_LINES, DRUG_SECTION_CIVIC,

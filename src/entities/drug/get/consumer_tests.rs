@@ -329,6 +329,9 @@ fn failure(result: BioMcpError, wanted: &Value, id: &Value) {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn adopted_request_search_and_nested_failure_table() {
+    use futures::FutureExt;
+    use std::panic::AssertUnwindSafe;
+    let mut failures = Vec::new();
     let _cache_mode = crate::sources::test_cache_mode::off();
     for number in [1, 2, 4] {
         for case in table(number) {
@@ -342,6 +345,7 @@ async fn adopted_request_search_and_nested_failure_table() {
             ) {
                 continue;
             }
+            let outcome = AssertUnwindSafe(async {
             let fixture = CaseHttp::new(&case).await;
             let cache = tempfile::tempdir().unwrap();
             let mut env = TestEnv::new();
@@ -411,7 +415,12 @@ async fn adopted_request_search_and_nested_failure_table() {
                         async {
                             if let Some(path) = injection.as_str() {
                                 let result = discover_input(path);
-                                classify_sparse_drug_rescue(&result)
+                                let mut rescue = classify_sparse_drug_rescue(&result);
+                                use sha2::Digest;
+                                let raw = std::fs::read(root().join(path)).unwrap();
+                                let digest = format!("sha256:{:x}", sha2::Sha256::digest(&raw));
+                                for contribution in &mut rescue.contributions { contribution.response_digest = Some(digest.clone()); }
+                                rescue
                             } else {
                                 SparseDrugDiscoverRescue::none()
                             }
@@ -519,6 +528,9 @@ async fn adopted_request_search_and_nested_failure_table() {
                         if let Some(path) = expected["page"].as_str() {
                             assert_page(resolved.source_pages.last().unwrap(), path);
                         }
+                        if let Some(wanted) = expected.get("resolved_base") {
+                            assert_eq!(resolved_value(&resolved), *wanted, "{id}: complete resolver");
+                        }
                         let wanted = expected
                             .get("product")
                             .unwrap_or(&expected["resolved_base"]["drug"]);
@@ -559,8 +571,16 @@ async fn adopted_request_search_and_nested_failure_table() {
                 }
             }
             fixture.assert_requests(id);
+            }).catch_unwind().await;
+            if outcome.is_err() {
+                failures.push(case["id"].clone());
+            }
         }
     }
+    assert!(
+        failures.is_empty(),
+        "adopted resolver alternatives failed: {failures:?}"
+    );
 }
 
 #[tokio::test]
@@ -577,6 +597,17 @@ async fn adopted_alias_cache_and_downstream_table() {
     let captured = std::sync::Mutex::new(Vec::new());
     let resolution = resolve_trial_alias_resolution_with_custody(requested, async {
         let resolved = resolve_drug_base(requested, false, false).await?;
+        assert_eq!(
+            resolved_value(&resolved),
+            case["expected"]["resolved_base"],
+            "{}: complete alias base",
+            case["id"]
+        );
+        assert_page(
+            &resolved.source_pages[0],
+            case["expected"]["page"].as_str().unwrap(),
+        );
+        assert_base_conversion(&resolved, &case["expected"]["base_conversion"], &case["id"]);
         captured.lock().unwrap().extend(
             resolved
                 .source_pages
@@ -609,10 +640,21 @@ async fn adopted_alias_cache_and_downstream_table() {
         resolution.canonical_name,
         case["expected"]["canonical_name"]
     );
-    assert_eq!(trial_alias_cache().lock().unwrap().len(), 1);
+    assert_eq!(cache_value(), case["cache_after"], "complete cold cache");
     fixture.assert_requests(&case["id"]);
     let repeated = resolve_trial_alias_resolution("req-100").await.unwrap();
-    assert_eq!(repeated.aliases[0].label, "req-100");
+    let mut warm = case["expected"]["resolution"].clone();
+    warm["aliases"][0]["label"] = json!("req-100");
+    assert_eq!(
+        resolution_value(&repeated),
+        warm,
+        "complete warm resolution"
+    );
+    assert_eq!(
+        cache_value(),
+        case["cache_after"],
+        "warm hit preserves stored value"
+    );
     fixture.assert_requests(&case["id"]);
     trial_alias_cache().lock().unwrap().clear();
     let rejection = crate::sources::mychem::projection::decode(
@@ -648,6 +690,17 @@ async fn adopted_alias_cache_and_downstream_table() {
             "{}",
             case["id"]
         );
+        crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+            &fixture
+                .admitted_hits
+                .lock()
+                .unwrap()
+                .iter()
+                .collect::<Vec<_>>(),
+            &case["expected"]["conversion"],
+            "get",
+            &case["id"],
+        );
         fixture.assert_requests(&case["id"]);
     }
     for case in table(6).into_iter().filter(|case| {
@@ -671,9 +724,28 @@ async fn adopted_alias_cache_and_downstream_table() {
             &response.hits,
         );
         assert_eq!(json!(aliases), case["expected"]["aliases"]);
+        crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+            &response.hits.iter().collect::<Vec<_>>(),
+            &case["expected"]["conversion"],
+            "orphan",
+            &case["id"],
+        );
+        let accepted = response
+            .hits
+            .iter()
+            .filter(|hit| {
+                hit.conversion.lock().unwrap().iter().any(|event| {
+                    event.stage == "orphan alias admission" && event.action == "select"
+                })
+            })
+            .map(|hit| hit.row.source().ordinal())
+            .collect::<Vec<_>>();
+        assert_eq!(json!(accepted), case["expected"]["accepted_ordinals"]);
     }
+    composed::assert_composed_effects().await;
 }
 
+mod composed;
 mod surfaces;
 
 mod absence;
@@ -742,4 +814,110 @@ fn discover_input(path: &str) -> crate::entities::discover::DiscoverResult {
         full: input["full"].as_bool().unwrap(),
         article_search: None,
     }
+}
+
+fn aliases_value(aliases: &[TrialAlias]) -> Value {
+    json!(
+        aliases
+            .iter()
+            .map(|alias| json!({"label":alias.label,"source":format!("{:?}",alias.source)}))
+            .collect::<Vec<_>>()
+    )
+}
+fn resolution_value(resolution: &TrialAliasResolution) -> Value {
+    json!({"canonical_name":resolution.canonical_name,"aliases":aliases_value(&resolution.aliases)})
+}
+fn cache_value() -> Value {
+    let cache = trial_alias_cache().lock().unwrap();
+    json!(
+        cache
+            .iter()
+            .map(|(key, value)| (key.clone(), resolution_value(value)))
+            .collect::<std::collections::BTreeMap<_, _>>()
+    )
+}
+fn resolved_value(resolved: &ResolvedDrugBase) -> Value {
+    json!({"drug":product_value(&resolved.drug),"label_response":resolved.label_response,"label_attempt_failed":resolved.label_attempt_failed,"trial_alias_candidates":aliases_value(&resolved.trial_alias_candidates),"selected_hits":resolved.selected_hits.iter().map(|hit| json!({"drugbank":hit.drugbank,"chembl":hit.chembl,"drugcentral":hit.drugcentral,"gtopdb":hit.gtopdb,"ndc":hit.ndc,"unii":hit.unii,"chebi":hit.chebi,"openfda":hit.openfda})).collect::<Vec<_>>()})
+}
+
+fn assert_base_conversion(resolved: &ResolvedDrugBase, wanted: &Value, id: &Value) {
+    let mut extraction_indexes = std::collections::BTreeSet::new();
+    for entry in wanted
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|entry| entry["action"] == "extract_candidate")
+    {
+        assert!(
+            crate::sources::mychem::consumer_tests_conversion::known(
+                entry["stage"].as_str().unwrap(),
+                "extract_candidate",
+                entry["reason"].as_str().unwrap()
+            ),
+            "{id}: extraction policy"
+        );
+        let index = entry["target_field"]
+            .as_str()
+            .unwrap()
+            .strip_prefix("resolved_base.trial_alias_candidates[")
+            .unwrap()
+            .strip_suffix(']')
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
+        assert!(
+            extraction_indexes.insert(index),
+            "{id}: extraction occurrence reused"
+        );
+        assert_eq!(
+            json!(resolved.trial_alias_candidates[index].label),
+            entry["target"],
+            "{id}: extracted target/order"
+        );
+        let hit = resolved
+            .selected_hits
+            .iter()
+            .find(|hit| {
+                hit.page.digest() == entry["response_digest"]
+                    && json!(hit.row.source().ordinal()) == entry["ordinal"]
+            })
+            .unwrap();
+        let claim = &hit.row.identity().claims()[entry["claim_index"].as_u64().unwrap() as usize];
+        assert_eq!(
+            json!(crate::sources::mychem::conversion::ConversionOrigin::from(
+                claim.origin()
+            )),
+            entry["origin"]
+        );
+        let biodata::DrugClaimValue::Term(term) = claim.value() else {
+            panic!("{id}: candidate must be term");
+        };
+        assert_eq!(json!(term.text()), entry["lexical_text"]);
+        assert_eq!(
+            entry["lexical_text"], entry["target"],
+            "{id}: extraction preserves original spelling"
+        );
+    }
+    assert_eq!(
+        extraction_indexes.len(),
+        resolved.trial_alias_candidates.len(),
+        "{id}: all candidate extractions"
+    );
+    let events = wanted
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|entry| entry["action"] != "extract_candidate")
+        .cloned()
+        .collect::<Vec<_>>();
+    crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+        &resolved
+            .source_pages
+            .iter()
+            .flat_map(|page| page.hits.iter())
+            .collect::<Vec<_>>(),
+        &json!(events),
+        "get",
+        id,
+    );
 }

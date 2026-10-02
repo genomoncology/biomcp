@@ -75,6 +75,7 @@ fn assert_mcp_envelope(result: &rmcp::model::CallToolResult, wanted: &Value) {
             let actual_json: Value = serde_json::from_str(text).unwrap();
             actual_item["text"] = json!(actual_json);
             wanted_item.as_object_mut().unwrap().remove("text_json");
+            wanted_item.as_object_mut().unwrap().remove("comparison");
             wanted_item["text"] = wanted_json;
         } else if let Some(path) = wanted_item.get("ordered_content").and_then(Value::as_str) {
             let text_wanted = std::fs::read_to_string(root().join(path)).unwrap();
@@ -84,6 +85,7 @@ fn assert_mcp_envelope(result: &rmcp::model::CallToolResult, wanted: &Value) {
                 .unwrap()
                 .remove("ordered_content");
             wanted_item["text"] = json!(text_wanted.split_whitespace().collect::<Vec<_>>());
+            wanted_item.as_object_mut().unwrap().remove("comparison");
         }
     }
     assert_eq!(actual, expected, "complete MCP envelope");

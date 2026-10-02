@@ -64,21 +64,15 @@ pub(super) fn orphan_aliases(requested_name: &str, drug: &Drug, hits: &[MyChemHi
                 || chembl_conflict
                 || unii_conflict
             {
-                for (index, claim) in hit.row.identity().claims().iter().enumerate() {
-                    if matches!(claim.value(), biodata::DrugClaimValue::Code(_)) {
-                        hit.record(
-                            Some(index),
-                            "orphan alias admission",
-                            "exclude_alias_row",
-                            if unii_conflict {
-                                "later UNII conflict despite earlier matching code"
-                            } else {
-                                "conflicting populated identifiers or no matching identifier"
-                            },
-                            None,
-                        );
-                    }
-                }
+                let reason = if db_conflict || chembl_conflict {
+                    "conflicting populated identifiers"
+                } else if unii_conflict {
+                    "later UNII conflict despite earlier matching code"
+                } else {
+                    "no matching populated identifier"
+                };
+                hit.record_claims("orphan alias admission", "exclude_alias_row", reason);
+                hit.record_row("orphan alias admission", "exclude_alias_row", reason);
                 continue;
             }
             hit.record_row(
