@@ -219,6 +219,7 @@ fn display_selection_and_product_table() {
 }
 
 pub(crate) fn product_value(drug: &crate::entities::drug::Drug) -> Value {
+    let civic = drug.civic.as_ref().map(|context| json!({"evidence_total_count":context.evidence_total_count,"assertion_total_count":context.assertion_total_count,"evidence_items":context.evidence_items,"assertions":context.assertions}));
     json!({
         "section_outcomes":drug.section_outcomes,
         "name":drug.name,
@@ -259,7 +260,7 @@ pub(crate) fn product_value(drug: &crate::entities::drug::Drug) -> Value {
         "ema_safety":drug.ema_safety,
         "ema_shortage":drug.ema_shortage,
         "who_prequalification":drug.who_prequalification,
-        "civic":drug.civic,
+        "civic":civic,
         "cell_lines":drug.cell_lines
     })
 }

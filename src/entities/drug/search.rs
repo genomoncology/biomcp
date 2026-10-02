@@ -383,6 +383,11 @@ pub(super) async fn search_page_with_custody(
             continue;
         }
         if !seen.insert(r.name.clone()) {
+            hit.record_row(
+                "search deduplication",
+                "omit_duplicate",
+                "first normalized display row retained",
+            );
             hit.record_claims(
                 "search deduplication",
                 "omit_duplicate",
@@ -404,6 +409,11 @@ pub(super) async fn search_page_with_custody(
         out.push(r);
         if out.len() >= limit {
             for omitted in &resp.hits[hit_index + 1..] {
+                omitted.record_row(
+                    "search selection",
+                    "omit_limit",
+                    "requested result limit reached before projection",
+                );
                 omitted.record_claims(
                     "search selection",
                     "omit_limit",

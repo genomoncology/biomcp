@@ -237,6 +237,44 @@ fn failure(result: BioMcpError, wanted: &Value, id: &Value) {
     };
     let wanted = wanted.get("product").unwrap_or(&wanted);
     assert_eq!(result.code(), wanted["code"].as_str().unwrap(), "{id}");
+    fn variants(error: &BioMcpError) -> Vec<&'static str> {
+        match error {
+            BioMcpError::WithSourceContext { source, .. } => {
+                let mut values = vec!["WithSourceContext"];
+                values.extend(variants(source));
+                values
+            }
+            BioMcpError::Api { .. } => vec!["Api"],
+            BioMcpError::ApiJson { .. } => vec!["ApiJson"],
+            BioMcpError::BodyLimit { .. } => vec!["BodyLimit"],
+            BioMcpError::InvalidArgument(_) => vec!["InvalidArgument"],
+            BioMcpError::SourceUnavailable { .. } => vec!["SourceUnavailable"],
+            BioMcpError::NotFound { .. } => vec!["NotFound"],
+            BioMcpError::ProviderResponseLimit { .. } => vec!["ProviderResponseLimit"],
+            _ => vec!["unexpected"],
+        }
+    }
+    if let Some(chain) = wanted.get("variant_chain") {
+        assert_eq!(json!(variants(&result)), *chain, "{id}");
+    }
+    if let Some(variant) = wanted.get("variant") {
+        assert_eq!(json!(variants(&result).last().unwrap()), *variant, "{id}");
+    }
+    if let Some(exit) = wanted["exit"].as_u64() {
+        assert_eq!(u64::from(result.exit_code()), exit, "{id}");
+    }
+    if let Some(public) = wanted.get("public_json") {
+        assert_eq!(
+            serde_json::from_str::<Value>(&crate::render::json::to_error_json(&result).unwrap())
+                .unwrap(),
+            *public,
+            "{id}"
+        );
+    }
+    if let Some(contains) = wanted["diagnostic_contains"].as_str() {
+        assert!(result.to_string().contains(contains), "{id}");
+    }
+
     if let Some(display) = wanted["display"].as_str() {
         assert_eq!(result.to_string(), display, "{id}");
     }

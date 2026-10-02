@@ -22,8 +22,10 @@ pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &
                     child["ordinal"], expected["ordinal"],
                     "{id}: grouped ordinal"
                 );
-                assert_eq!(child["action"], expected["action"], "{id}: grouped action");
             }
+            let mut row = expected.clone();
+            row.as_object_mut().unwrap().remove("claim_occurrences");
+            assert_conversion(hits, &json!([row]), boundary, id);
             if expected.get("retained_digest").is_some() {
                 assert!(
                     events.iter().any(|event| custody(event, expected)
@@ -51,11 +53,20 @@ pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &
             | "ascii_lowercase"
             | "trim_edge_dots_ascii_lowercase"
             | "normalize_to_empty" => &[("", "select_display")],
+            "select_match_tier" => &[
+                ("ranked match classification", "select_product_match"),
+                (
+                    "ranked match classification",
+                    "select_active_substance_match",
+                ),
+            ],
             "select_first_code" => &[("", "select_first_code")],
             "select_card_and_ddinter" | "select_card_and_ddinter_synonym" => {
                 &[("card brands", "select"), ("DDInter synonyms", "select")]
             }
-            "omit_card_keep_ddinter" => &[("card brands", "cap"), ("DDInter synonyms", "select")],
+            "omit_card_keep_ddinter" | "select_ddinter_omit_card" => {
+                &[("card brands", "cap"), ("DDInter synonyms", "select")]
+            }
             "cap" => &[("DDInter synonyms", "cap")],
             "discard_get_row" => &[("get selection", "omit")],
             "discard_search_row" => &[("search projection", "discard")],
@@ -88,6 +99,8 @@ pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &
             "select_card_and_ddinter"
                 | "select_card_and_ddinter_synonym"
                 | "omit_card_keep_ddinter"
+                | "select_ddinter_omit_card"
+                | "omit_display_candidate"
         );
         let selected = bindings
             .iter()
