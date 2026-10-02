@@ -1008,29 +1008,9 @@
       "sha256": "adc1b28ed86653b8239e065d6e6343213e30b6c1d67312e7b82636cf7d3849c4"
     },
     {
-      "path": "history/b29f4c5e528171b10f6d95331ae08091c80aa768a4a2ebc9c5340d543ea3063a/sha256.json",
-      "bytes": 49313,
-      "sha256": "b29f4c5e528171b10f6d95331ae08091c80aa768a4a2ebc9c5340d543ea3063a"
-    },
-    {
-      "path": "history/cases.tsv",
-      "bytes": 490,
-      "sha256": "9b4ae6801b0af63b4a3846b3a57858287d0c04384d214a7d56884579f7567049"
-    },
-    {
       "path": "history/d3aa750-root-findings-originals.json",
       "bytes": 45344,
       "sha256": "3760a9ac88098d94591b5000b6a40e02c05e5095ac5270a7a9c5a2878b7ab06c"
-    },
-    {
-      "path": "history/design.md",
-      "bytes": 478,
-      "sha256": "e2de28c7affd1829c17a9d67062ad8f6a80906f06919f5f6c23d76f28426a66b"
-    },
-    {
-      "path": "history/proof.md",
-      "bytes": 475,
-      "sha256": "f4ee35c0fbea04544d2e0b5bcb7cc2f71273bdf98634b1aa404575e6f5100083"
     },
     {
       "path": "inputs/aliases.json",
