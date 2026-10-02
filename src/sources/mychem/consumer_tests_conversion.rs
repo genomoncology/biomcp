@@ -6,10 +6,20 @@ use super::conversion::DrugConversion;
 use serde_json::{Value, json};
 
 pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &str, id: &Value) {
-    let events = hits
+    assert_conversion_with_signals(hits, &[], wanted, boundary, id)
+}
+pub(crate) fn assert_conversion_with_signals(
+    hits: &[&MyChemHit],
+    signals: &[DrugConversion],
+    wanted: &Value,
+    boundary: &str,
+    id: &Value,
+) {
+    let mut events = hits
         .iter()
         .flat_map(|hit| crate::utils::sync::recover_poison(hit.conversion.lock()).clone())
         .collect::<Vec<_>>();
+    events.extend_from_slice(signals);
     for expected in wanted.as_array().unwrap() {
         if let Some(children) = expected.get("claim_occurrences") {
             assert_conversion(hits, children, boundary, id);
@@ -137,7 +147,18 @@ fn target(event: &DrugConversion, expected: &Value) -> bool {
     expected.get("target").is_none_or(|value| {
         let target = event.target.as_ref().unwrap_or(&Value::Null);
         if event.action == "tier_upgrade_keep_first_row" && target.is_object() {
-            &target["name"] == value
+            if expected.get("retained_result").is_some() {
+                &target["match_kind"] == value
+                    && ["retained_result", "prior_match_kind", "deduplication_key"]
+                        .iter()
+                        .all(|key| {
+                            expected
+                                .get(*key)
+                                .is_none_or(|wanted| &target[*key] == wanted)
+                        })
+            } else {
+                &target["name"] == value
+            }
         } else {
             target == value
         }

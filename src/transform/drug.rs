@@ -716,7 +716,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         .or_else(|| approval_date_raw.clone());
     let approval_summary = approval_summary(approval_date_display.as_deref());
 
-    Drug {
+    let drug = Drug {
         section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
         name,
         drugbank_id,
@@ -758,7 +758,13 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         who_prequalification: None,
         civic: None,
         cell_lines: None,
-    }
+    };
+    #[cfg(test)]
+    crate::sources::mychem::test_observer::record(
+        &hits.iter().map(|hit| (*hit).clone()).collect::<Vec<_>>(),
+        "used:get",
+    );
+    drug
 }
 
 #[cfg(test)]

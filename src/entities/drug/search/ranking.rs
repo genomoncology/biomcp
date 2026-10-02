@@ -63,10 +63,11 @@ pub(super) async fn search_ranked_name_us_page_with_custody(
             let kind = mychem_match_kind(hit, query);
             if let Some(index) = positions.get(&row.name).copied() {
                 if kind.rank() < candidates[index].1.rank() {
+                    let prior = candidates[index].1;
                     candidates[index].1 = kind;
                     if let Some(retained) = origins.get(&row.name) {
                         for claim_index in 0..hit.row.identity().claims().len() {
-                            hit.record_value(Some(claim_index), "search ranking", "tier_upgrade_keep_first_row", "later stronger match; original result row retained", Some(serde_json::json!({"name":row.name,"retained_digest":retained.page.digest(),"retained_ordinal":retained.row.source().ordinal()})));
+                            hit.record_value(Some(claim_index), "search ranking", "tier_upgrade_keep_first_row", "later stronger match; original result row retained", Some(serde_json::json!({"name":row.name,"match_kind":kind.as_str(),"prior_match_kind":prior.as_str(),"deduplication_key":row.name,"retained_digest":retained.page.digest(),"retained_ordinal":retained.row.source().ordinal(),"retained_result":{"name":candidates[index].0.name,"drugbank_id":candidates[index].0.drugbank_id,"drug_type":candidates[index].0.drug_type,"mechanism":candidates[index].0.mechanism,"target":candidates[index].0.target}})));
                         }
                     }
                 } else {

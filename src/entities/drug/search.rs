@@ -575,68 +575,11 @@ pub(super) fn hit_mentions_mechanism(hit: &MyChemHit, mechanism: &str) -> bool {
     false
 }
 
-pub(super) fn search_results_from_openfda_label_response(
-    label_response: &serde_json::Value,
-    query: &str,
-    max_results: usize,
-) -> Vec<DrugSearchResult> {
-    let query = query.trim();
-    if query.is_empty() || max_results == 0 {
-        return Vec::new();
-    }
-
-    let Some(results) = label_response.get("results").and_then(|v| v.as_array()) else {
-        return Vec::new();
-    };
-
-    let mut exact_matches: Vec<DrugSearchResult> = Vec::new();
-    let mut others: Vec<DrugSearchResult> = Vec::new();
-    for result in results {
-        let brand_names = extract_openfda_values_from_result(result, "brand_name");
-        let generic_names = extract_openfda_values_from_result(result, "generic_name");
-        let Some(name) = generic_names
-            .first()
-            .cloned()
-            .or_else(|| brand_names.first().cloned())
-        else {
-            continue;
-        };
-        let name = name.trim().to_ascii_lowercase();
-        if name.is_empty() {
-            continue;
-        }
-
-        let row = DrugSearchResult {
-            name,
-            drugbank_id: None,
-            drug_type: None,
-            mechanism: None,
-            target: None,
-        };
-        let is_exact_brand_match = brand_names
-            .iter()
-            .map(|value| value.trim())
-            .any(|value| value.eq_ignore_ascii_case(query));
-        if is_exact_brand_match {
-            exact_matches.push(row);
-        } else {
-            others.push(row);
-        }
-    }
-
-    let mut out: Vec<DrugSearchResult> = Vec::new();
-    let mut seen: HashSet<String> = HashSet::new();
-    for row in exact_matches.into_iter().chain(others) {
-        if !seen.insert(row.name.clone()) {
-            continue;
-        }
-        out.push(row);
-        if out.len() >= max_results {
-            break;
-        }
-    }
-    out
-}
+mod label;
+pub(super) use label::{
+    search_results_from_openfda_label_response,
+    search_results_from_openfda_label_response_with_origin,
+};
 
 async fn try_resolve_drug_identity(
     name: &str,

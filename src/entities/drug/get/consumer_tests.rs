@@ -15,6 +15,8 @@ pub(crate) struct CaseHttp {
     expected: Vec<Value>,
     order: Option<Value>,
     events: Arc<Mutex<Vec<(usize, &'static str)>>>,
+    pub(crate) admitted_hits: Arc<Mutex<Vec<MyChemHit>>>,
+    _observer: crate::sources::mychem::test_observer::Guard,
 }
 impl CaseHttp {
     pub(crate) async fn new(case: &Value) -> Self {
@@ -53,6 +55,29 @@ impl CaseHttp {
         let captured = requests.clone();
         let events = Arc::new(Mutex::new(Vec::new()));
         let captured_events = events.clone();
+        let response_digests = responses
+            .iter()
+            .map(|response| response["body"]["digest"].as_str().unwrap().to_owned())
+            .collect::<Vec<_>>();
+        let observed_events = events.clone();
+        let admitted_hits = Arc::new(Mutex::new(Vec::new()));
+        let observed_hits = admitted_hits.clone();
+        let observer = crate::sources::mychem::test_observer::observe(move |hits, stage| {
+            let Some(hit) = hits.first() else {
+                return;
+            };
+            let mut events = observed_events.lock().unwrap();
+            let Some(index) = events.iter().rev().find_map(|(index, event)| {
+                (*event == "request" && response_digests[*index] == hit.page.digest())
+                    .then_some(*index)
+            }) else {
+                return;
+            };
+            if stage == "admitted" {
+                observed_hits.lock().unwrap().extend_from_slice(hits);
+            }
+            events.push((index, stage));
+        });
         let fixture = TestHttpFixture::spawn(move |request| {
             let mut captured = captured.lock().unwrap();
             captured.push(request.to_owned());
@@ -75,21 +100,11 @@ impl CaseHttp {
             };
             let bytes =
                 std::fs::read(root().join(response["body"]["path"].as_str().unwrap())).unwrap();
-            let events = captured_events.clone();
-            let index = index.unwrap();
-            TestHttpReply::BytesWithRelease(
-                test_http_response(
-                    &format!("{} Fixture", response["status"]),
-                    response["content_type"].as_str().unwrap(),
-                    &bytes,
-                ),
-                Box::new(move || {
-                    events
-                        .lock()
-                        .unwrap()
-                        .push((index, "response_final_byte_release"))
-                }),
-            )
+            TestHttpReply::Bytes(test_http_response(
+                &format!("{} Fixture", response["status"]),
+                response["content_type"].as_str().unwrap(),
+                &bytes,
+            ))
         })
         .await;
         Self {
@@ -102,6 +117,35 @@ impl CaseHttp {
                 } else { None }
             }),
             events,
+            admitted_hits,
+            _observer: observer,
+        }
+    }
+    pub(crate) fn assert_admitted_dependencies(&self, id: &Value, use_stage: &'static str) {
+        let contract = self.order.as_ref().unwrap();
+        let ids = contract["request_ids"].as_array().unwrap();
+        let events = self.events.lock().unwrap();
+        for edge in contract["before"].as_array().unwrap() {
+            let before = ids.iter().position(|value| value == &edge[0]).unwrap();
+            let after = ids.iter().position(|value| value == &edge[1]).unwrap();
+            let admitted = events
+                .iter()
+                .position(|event| *event == (before, "admitted"))
+                .unwrap_or_else(|| {
+                    panic!("{id}: no successfully admitted prerequisite: {events:?}")
+                });
+            let used = events
+                .iter()
+                .position(|event| *event == (before, use_stage))
+                .unwrap_or_else(|| panic!("{id}: prerequisite values not consumed: {events:?}"));
+            let dispatched = events
+                .iter()
+                .position(|event| *event == (after, "request"))
+                .unwrap();
+            assert!(
+                admitted < used && used < dispatched,
+                "{id}: receipt/admission/use before dependent dispatch: {events:?}"
+            );
         }
     }
     pub(crate) fn environment(&self, env: &mut TestEnv, cache: &std::path::Path) {
@@ -162,19 +206,6 @@ impl CaseHttp {
                 assert!(
                     positions[before] < positions[after],
                     "{id}: causal edge {edge}"
-                );
-                let events = self.events.lock().unwrap();
-                let release = events
-                    .iter()
-                    .position(|event| *event == (before, "response_final_byte_release"))
-                    .unwrap();
-                let request = events
-                    .iter()
-                    .position(|event| *event == (after, "request"))
-                    .unwrap();
-                assert!(
-                    release < request,
-                    "{id}: complete prerequisite response before dependent request: {events:?}"
                 );
             }
             assert_eq!(
@@ -372,7 +403,8 @@ async fn adopted_request_search_and_nested_failure_table() {
                 }
                 "resolve_drug_base" => {
                     let injection = &input["discover_resolver_injection"]["result"]["Ok"]["path"];
-                    let result = resolve_drug_base_with_discover(
+                    let mut report = DrugResolverReport::default();
+                    let result = resolve_drug_base_with_discover_report(
                         name,
                         input["fetch_label_response"].as_bool().unwrap_or(false),
                         input["label_required"].as_bool().unwrap_or(false),
@@ -381,11 +413,45 @@ async fn adopted_request_search_and_nested_failure_table() {
                                 let result = discover_input(path);
                                 classify_sparse_drug_rescue(&result)
                             } else {
-                                SparseDrugDiscoverRescue::None
+                                SparseDrugDiscoverRescue::none()
                             }
                         },
+                        &mut report,
                     )
                     .await;
+                    if let Some(wanted) = expected.get("conversion") {
+                        let discovery = wanted
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .filter(|entry| {
+                                entry.get("source_pointer").is_some_and(|pointer| {
+                                    pointer.as_str().unwrap_or("").starts_with("/concepts/")
+                                })
+                            })
+                            .cloned()
+                            .collect::<Vec<_>>();
+                        assert_eq!(
+                            json!(report.discovery),
+                            json!(discovery),
+                            "{id}: complete discovery contributions"
+                        );
+                        if !report.discarded_hits.is_empty() {
+                            let discarded = wanted
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .filter(|entry| entry["action"] == "discard_sparse_product")
+                                .cloned()
+                                .collect::<Vec<_>>();
+                            crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+                                &report.discarded_hits.iter().collect::<Vec<_>>(),
+                                &json!(discarded),
+                                "get",
+                                id,
+                            );
+                        }
+                    }
                     if !expected["failure"].is_null() {
                         failure(
                             result.err().expect("terminal failure"),
@@ -431,18 +497,28 @@ async fn adopted_request_search_and_nested_failure_table() {
                                 })
                                 .cloned()
                                 .collect::<Vec<_>>();
-                            crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+                            crate::sources::mychem::consumer_tests_conversion::assert_conversion_with_signals(
                                 &resolved
                                     .source_pages
                                     .iter()
                                     .flat_map(|page| page.hits.iter())
                                     .collect::<Vec<_>>(),
+                                &resolved.label_signals,
                                 &json!(claims),
                                 "get",
                                 id,
                             );
                         }
 
+                        if let Some(paths) = expected["prior_pages"].as_array() {
+                            assert!(resolved.source_pages.len() >= paths.len(), "{id}");
+                            for (page, path) in resolved.source_pages.iter().zip(paths) {
+                                assert_page(page, path.as_str().unwrap());
+                            }
+                        }
+                        if let Some(path) = expected["page"].as_str() {
+                            assert_page(resolved.source_pages.last().unwrap(), path);
+                        }
                         let wanted = expected
                             .get("product")
                             .unwrap_or(&expected["resolved_base"]["drug"]);

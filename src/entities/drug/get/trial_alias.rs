@@ -344,6 +344,8 @@ pub(super) async fn resolve_trial_alias_resolution_with_custody(
                     }
                 },
             );
+            #[cfg(test)]
+            crate::sources::mychem::test_observer::record(&hits, "used:aliases");
             (
                 TrialAliasResolution {
                     canonical_name: resolved.canonical_name,

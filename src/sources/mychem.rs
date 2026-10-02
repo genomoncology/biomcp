@@ -90,7 +90,10 @@ impl MyChemClient {
         )
         .await?;
         projection::validate_transport(status, content_type.as_ref(), &bytes)?;
-        projection::decode(&bytes, profile)
+        let response = projection::decode(&bytes, profile)?;
+        #[cfg(test)]
+        test_observer::record(&response.hits, "admitted");
+        Ok(response)
     }
 
     #[cfg(test)]
@@ -354,7 +357,7 @@ impl MyChemPharmClass {
     }
 }
 
-mod conversion;
+pub(crate) mod conversion;
 pub(crate) mod projection;
 pub(crate) use projection::optional_failure;
 
@@ -366,3 +369,6 @@ pub(crate) mod consumer_tests;
 
 #[cfg(test)]
 pub(crate) mod consumer_tests_conversion;
+
+#[cfg(test)]
+pub(crate) mod test_observer;

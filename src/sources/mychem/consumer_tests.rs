@@ -85,7 +85,16 @@ fn original_byte_identity_and_companion_table() {
             if let Some(path) = case["expected"]["failure"].as_str() {
                 let wanted = asset(path);
                 if let Some(kind) = wanted["source"]["kind"].as_str() {
-                    let parsed = biodata::parse_mychem_identity(&bytes(&case), profile(&case));
+                    let input = if case["input"]
+                        .get("page")
+                        .or_else(|| case["input"].get("body"))
+                        .is_some()
+                    {
+                        bytes(&case)
+                    } else {
+                        std::fs::read(root().join(case["responses"].as_array().unwrap().last().unwrap()["body"]["path"].as_str().unwrap())).unwrap()
+                    };
+                    let parsed = biodata::parse_mychem_identity(&input, profile(&case));
                     let error = match parsed {
                         Err(error) => error,
                         Ok(page) => page.require_complete().unwrap_err(),

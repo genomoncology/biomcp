@@ -1,6 +1,6 @@
 //! Execute frozen CLI and raw/typed MCP results against synthetic replies.
 use super::*;
-use biomcp_mcp_contract_client::{ContractHarness, first_text};
+use biomcp_mcp_contract_client::ContractHarness;
 use futures::FutureExt;
 use rmcp::model::CallToolRequestParams;
 use std::panic::AssertUnwindSafe;
@@ -46,6 +46,49 @@ fn content(actual: &str, wanted: &Value) {
         panic!("unhandled authored content: {wanted}");
     }
 }
+fn assert_mcp_envelope(result: &rmcp::model::CallToolResult, wanted: &Value) {
+    let mut actual = serde_json::to_value(result).unwrap();
+    let mut expected = wanted.clone();
+    for key in ["structuredContent", "_meta"] {
+        if expected.get(key).is_none_or(Value::is_null) {
+            assert!(
+                actual.get(key).is_none(),
+                "unexpected envelope field {key}: {actual}"
+            );
+            expected.as_object_mut().unwrap().remove(key);
+        }
+    }
+    assert_eq!(
+        actual["content"].as_array().unwrap().len(),
+        expected["content"].as_array().unwrap().len()
+    );
+    for (actual_item, wanted_item) in actual["content"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .zip(expected["content"].as_array_mut().unwrap())
+    {
+        let text = actual_item["text"].as_str().unwrap();
+        content(text, wanted_item);
+        if let Some(path) = wanted_item.get("text_json").and_then(Value::as_str) {
+            let wanted_json = asset(path);
+            let actual_json: Value = serde_json::from_str(text).unwrap();
+            actual_item["text"] = json!(actual_json);
+            wanted_item.as_object_mut().unwrap().remove("text_json");
+            wanted_item["text"] = wanted_json;
+        } else if let Some(path) = wanted_item.get("ordered_content").and_then(Value::as_str) {
+            let text_wanted = std::fs::read_to_string(root().join(path)).unwrap();
+            actual_item["text"] = json!(text.split_whitespace().collect::<Vec<_>>());
+            wanted_item
+                .as_object_mut()
+                .unwrap()
+                .remove("ordered_content");
+            wanted_item["text"] = json!(text_wanted.split_whitespace().collect::<Vec<_>>());
+        }
+    }
+    assert_eq!(actual, expected, "complete MCP envelope");
+}
+
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::parallel(source_env)]
 async fn cli_and_raw_typed_mcp_drug_table() {
@@ -126,19 +169,7 @@ async fn cli_and_raw_typed_mcp_drug_table() {
                 match result {
                     Ok(result) => {
                         let wanted = &expected["mcp_result"];
-                        assert_eq!(
-                            result.is_error,
-                            Some(wanted["isError"].as_bool().unwrap()),
-                            "{}",
-                            case["id"]
-                        );
-                        assert!(result.structured_content.is_none());
-                        assert_eq!(result.content.len(), 1, "{}", case["id"]);
-                        assert_eq!(serde_json::to_value(&result.content[0]).unwrap()["type"], "text");
-                        let text = first_text(&result.content);
-                        content(text, &wanted["content"][0]);
-                        let wire = serde_json::to_value(&result).unwrap();
-                        assert!(wire.get("_meta").is_none());
+                        assert_mcp_envelope(&result, wanted);
                     }
                     Err(error) => {
                         let rmcp::ServiceError::McpError(data) = error else {
