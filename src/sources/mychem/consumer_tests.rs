@@ -82,6 +82,26 @@ fn original_byte_identity_and_companion_table() {
     let mut witnessed = std::collections::HashSet::new();
     for number in 1..=6 {
         for case in table(number) {
+            if let Some(path) = case["expected"]["failure"].as_str() {
+                let wanted = asset(path);
+                if let Some(kind) = wanted["source"]["kind"].as_str() {
+                    let parsed = biodata::parse_mychem_identity(&bytes(&case), profile(&case));
+                    let error = match parsed {
+                        Err(error) => error,
+                        Ok(page) => page.require_complete().unwrap_err(),
+                    };
+                    assert_eq!(format!("{:?}", error.kind()), kind, "{}", case["id"]);
+                    if let Some(field) = wanted["source"]["field"].as_str() {
+                        assert_eq!(error.field(), field, "{}", case["id"]);
+                    }
+                    assert_eq!(
+                        error.to_string(),
+                        wanted["source"]["display"],
+                        "{}",
+                        case["id"]
+                    );
+                }
+            }
             let Some(path) = case["expected"]["page"].as_str() else {
                 continue;
             };

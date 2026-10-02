@@ -343,6 +343,15 @@ pub(super) fn record_match_candidates(hit: &MyChemHit) {
         };
         let field = (claim.origin().section(), claim.origin().field());
         let selected = field == ("drugbank", "synonyms") || fields.insert(field);
+        if selected {
+            hit.record(
+                Some(index),
+                "get name matching",
+                "select_match_candidate",
+                "retained first accessor or DrugBank synonym participates before normalization",
+                Some(term.text().trim().to_owned()),
+            );
+        }
         hit.record(
             Some(index),
             "get name matching",

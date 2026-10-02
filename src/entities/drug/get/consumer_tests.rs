@@ -254,6 +254,16 @@ fn failure(result: BioMcpError, wanted: &Value, id: &Value) {
             _ => vec!["unexpected"],
         }
     }
+    if let Some(wanted_context) = wanted.get("context") {
+        let BioMcpError::WithSourceContext { context, .. } = &result else {
+            panic!("{id}: missing source context");
+        };
+        assert_eq!(
+            json!({"provider":context.provider().label(),"recovery":format!("{:?}",context.recovery())}),
+            *wanted_context,
+            "{id}"
+        );
+    }
     if let Some(chain) = wanted.get("variant_chain") {
         assert_eq!(json!(variants(&result)), *chain, "{id}");
     }
@@ -384,6 +394,55 @@ async fn adopted_request_search_and_nested_failure_table() {
                         );
                     } else {
                         let resolved = result.unwrap_or_else(|error| panic!("{id}: {error:?}"));
+                        if let Some(wanted) = expected.get("conversion") {
+                            let fallback_entries = wanted
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .filter(|entry| entry["action"] == "fallback")
+                                .collect::<Vec<_>>();
+                            assert_eq!(
+                                resolved.fallbacks.len(),
+                                fallback_entries.len(),
+                                "{id}: all fallback decisions"
+                            );
+                            for (actual, wanted) in resolved.fallbacks.iter().zip(fallback_entries)
+                            {
+                                assert_eq!(actual.from, wanted["from"], "{id}");
+                                assert_eq!(actual.to, wanted["to"], "{id}");
+                                assert_eq!(actual.reason, wanted["reason"], "{id}");
+                                if let Some(origin) = wanted.get("candidate_origin") {
+                                    assert_eq!(json!(actual.candidate_origin.as_ref().map(|(digest, ordinal)| json!({"digest":digest,"ordinal":ordinal}))), *origin, "{id}");
+                                }
+                            }
+                            let claims = wanted
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .filter(|entry| {
+                                    entry["action"] != "fallback"
+                                        && entry.get("source_pointer").is_none_or(|pointer| {
+                                            !pointer
+                                                .as_str()
+                                                .unwrap_or("")
+                                                .starts_with("/concepts/")
+                                        })
+                                        && entry.get("response_digest").is_some()
+                                })
+                                .cloned()
+                                .collect::<Vec<_>>();
+                            crate::sources::mychem::consumer_tests_conversion::assert_conversion(
+                                &resolved
+                                    .source_pages
+                                    .iter()
+                                    .flat_map(|page| page.hits.iter())
+                                    .collect::<Vec<_>>(),
+                                &json!(claims),
+                                "get",
+                                id,
+                            );
+                        }
+
                         let wanted = expected
                             .get("product")
                             .unwrap_or(&expected["resolved_base"]["drug"]);

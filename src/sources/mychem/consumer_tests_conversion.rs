@@ -134,9 +134,14 @@ pub(crate) fn assert_conversion(hits: &[&MyChemHit], wanted: &Value, boundary: &
     }
 }
 fn target(event: &DrugConversion, expected: &Value) -> bool {
-    expected
-        .get("target")
-        .is_none_or(|value| event.target.as_ref().unwrap_or(&Value::Null) == value)
+    expected.get("target").is_none_or(|value| {
+        let target = event.target.as_ref().unwrap_or(&Value::Null);
+        if event.action == "tier_upgrade_keep_first_row" && target.is_object() {
+            &target["name"] == value
+        } else {
+            target == value
+        }
+    })
 }
 fn custody(event: &DrugConversion, expected: &Value) -> bool {
     let value = json!(event);
