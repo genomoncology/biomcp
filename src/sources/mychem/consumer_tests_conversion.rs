@@ -691,7 +691,7 @@ fn same_family(stage: &str, left: &str, right: &str) -> bool {
     }
     if stage == "search filtering"
         && left == "select_target_override"
-        && right != "select_target_override"
+        && right == "discard_mechanism_filter"
     {
         return false;
     }

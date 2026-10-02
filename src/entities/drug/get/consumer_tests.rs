@@ -8,6 +8,7 @@ use crate::sources::mychem::consumer_tests::{
 };
 use serde_json::{Value, json};
 use std::sync::{Arc, Mutex};
+mod filter_accounting;
 
 pub(crate) struct CaseHttp {
     fixture: TestHttpFixture,
@@ -396,6 +397,11 @@ async fn adopted_request_search_and_nested_failure_table() {
                                 "search",
                                 id,
                             );
+                            if id == "P2-04/adopted-target-mechanism-filter" {
+                                filter_accounting::assert_target_refusal_excludes_success(
+                                    &custody.hits, wanted, id,
+                                );
+                            }
                         }
                         assert_eq!(
                             json!(page.results.iter().map(search_value).collect::<Vec<_>>()),
