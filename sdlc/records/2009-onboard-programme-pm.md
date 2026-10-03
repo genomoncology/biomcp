@@ -4,7 +4,7 @@ Date: 2026-10-03.
 
 - Ticket: [2009](../tickets/2009-onboard-programme-pm.md).
 
-Administrative implementation is prepared on ticket 2009. Fresh root review and landing are pending. The source programme target is `efff26d838ddc6471cfd9c06956855fd6e50ca43`. This record claims no product verification or completion.
+Administrative implementation is prepared on ticket 2009. Documentation preparation preceded ticket/design review. Root assigns a fresh ticket/design reviewer for the 2009 contract and records the actual review sequence. Separate fresh code review follows. Neither review is accepted here. Landing remains pending. The source programme target is `efff26d838ddc6471cfd9c06956855fd6e50ca43`. This record claims no product verification or completion.
 
 ## Release observation
 

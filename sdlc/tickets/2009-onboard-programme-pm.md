@@ -16,7 +16,7 @@ PM reports the BioMCP 1.0 programme against `biodata/biomcp-1.0` with an explici
 
 ## Authority and review
 
-Ian authorized this onboarding scope on October 3, 2026. The PM owner signs this administrative ticket as programme onboarding owner. No delegate runs. Fresh root ticket and change review remain pending. No acceptance or landing is claimed. Ian can overturn the configuration defaults. Root can correct lane records after checking exact Git states.
+Ian authorized this onboarding scope on October 3, 2026. The PM owner signs this administrative ticket as programme onboarding owner. No delegate runs. Documentation was prepared before ticket/design review. Root now assigns a fresh ticket/design reviewer for the 2009 contract. Separate fresh code review follows that result. Neither review has been accepted or recorded by this onboarding owner. No acceptance or landing is claimed. Ian can overturn the configuration defaults. Root can correct lane records after checking exact Git states.
 
 ## Number check
 
