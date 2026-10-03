@@ -1,0 +1,31 @@
+{
+  "targetRef": "biodata/biomcp-1.0",
+  "recordNaming": "ticket",
+  "ticketStatusMappings": {
+    "done": "complete"
+  },
+  "evidenceFromTicketNumber": 2009,
+  "landedProofFromTicketNumber": 1,
+  "ownedElsewhere": [
+    "sdlc/tickets/1*.md",
+    "sdlc/records/1*.md"
+  ],
+  "mailroom": {
+    "repo": "sdlc",
+    "name": "biomcp"
+  },
+  "lanesTable": {
+    "file": "programme-pm-lanes.md",
+    "heading": "Lanes"
+  },
+  "lightGates": [
+    {
+      "name": "SDLC whitespace",
+      "command": "git diff --check"
+    },
+    {
+      "name": "Tracked text",
+      "command": "python3 tools/check-tracked-text ."
+    }
+  ]
+}
