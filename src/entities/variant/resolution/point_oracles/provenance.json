@@ -1,0 +1,70 @@
+{
+  "origin": {
+    "repository": "genomoncology/biodata",
+    "revision": "496fa04b1c06df575bb81a37717232d7e44ba375",
+    "path": "sdlc/planning/variant-protein-point-0663/cases.md",
+    "sha256": "29dafe51160c6bb00f13a4ce30169f6640dd32c7571bde300b4d3a5359366077"
+  },
+  "license": "MIT",
+  "attribution": "Independently authored accepted Root design literals for BioData 0663.",
+  "transformation": "Copy eleven fenced JSON literals and two complete text field lists unchanged with a final newline; transcribe the 27 small engineering rows as JSON. P24 remains a focused test recipe. No parser execution, observed output or provider payload generation supplies expectations.",
+  "support": "Expected objects and synthetic inputs are engineering test evidence. Only original admitted A01/A02 bytes under their exact recorded requests carry captured-source support. T01/T02/T05/T06 replays prove engineering handling only.",
+  "files": [
+    {
+      "path": "A01_HIT.json",
+      "sha256": "32a6ae600c5655cffccf7880cee8adf6e786b175c288679cf514783c66148b54"
+    },
+    {
+      "path": "A01_SEARCH_ROW.json",
+      "sha256": "623d408e4cce145d7d1a7fb805d4767b44e0d66aba32a187574252d7c778fa85"
+    },
+    {
+      "path": "A01_VARIANT.json",
+      "sha256": "4b76c19cd125adfa0a952447250ced6c4e848e8765b5b8de1b29d26f7ebc17a5"
+    },
+    {
+      "path": "A02_HIT.json",
+      "sha256": "a8f68dca9b823ac98561f9ba49bc2031b5fb6418a4c9a3b4ec21c878acb6b3b3"
+    },
+    {
+      "path": "A02_SEARCH_ROW.json",
+      "sha256": "fd01ae4b036a9ddb3645b53a4699fa953a7f9938fb799441d96ab6875d34e4f9"
+    },
+    {
+      "path": "A02_VARIANT.json",
+      "sha256": "76daa1c589f66fc5b462233aa4e930e723ac7e1852a54445a2a279d9c8907e5a"
+    },
+    {
+      "path": "GET_FIELDS.txt",
+      "sha256": "8b015daf08589b00dece653a279864f20400a1cae4f76b82b8f14dc5308728af"
+    },
+    {
+      "path": "POINT_ASSERTIONS.json",
+      "sha256": "d198f5ec1e4d8f5a599979731a58b0bf081d39322636df55135554e3d23dcf36"
+    },
+    {
+      "path": "SEARCH_FIELDS.txt",
+      "sha256": "2086fc8a9d753c21b10a30ce999272b3e265c7e8182af068f50f06602e889702"
+    },
+    {
+      "path": "SOURCE_IDENTITY.json",
+      "sha256": "cd1de784b2fa2e00936f961bf3f49c1e80f7b9aa298f4361e836820bade94e0e"
+    },
+    {
+      "path": "T01.json",
+      "sha256": "7bd60a19e7db58ef7573a362006c38c63083e1c2f0892fe4c6c77b2462336de2"
+    },
+    {
+      "path": "T02.json",
+      "sha256": "fe2d51620723c8874a8aa38f2b972f861233c6a4e36848ff40486e95bd0f0dd6"
+    },
+    {
+      "path": "T03.json",
+      "sha256": "01d1652c67f31abcf0cc15116f41184e14fa0c5e7fa4c9c6779ceb8af263d017"
+    },
+    {
+      "path": "engineering.json",
+      "sha256": "d549f0495e40dd049a3689b2faf6a328e9eb2edbc8f7bf1a91f308533d5f2885"
+    }
+  ]
+}
