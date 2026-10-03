@@ -1,0 +1,50 @@
+{
+  "query": "sampledrug",
+  "normalized_query": "sampledrug",
+  "concepts": [
+    {
+      "label": "SecondDrug",
+      "primary_id": "SYNTHETIC:DRUG2",
+      "primary_type": "Drug",
+      "synonyms": [
+        "sampledrug"
+      ],
+      "xrefs": [],
+      "sources": [],
+      "match_tier": "Exact",
+      "confidence": "CanonicalId"
+    }
+  ],
+  "plain_language": null,
+  "next_commands": [],
+  "notes": [],
+  "ambiguous": false,
+  "intent": "General",
+  "offset": 0,
+  "limit": 5,
+  "returned": 1,
+  "has_more": false,
+  "next_offset": null,
+  "budget_truncated": false,
+  "malformed_candidates": 0,
+  "continuation_command": null,
+  "preview_meta": [
+    {
+      "label_truncated": false,
+      "synonyms": {
+        "returned": 1,
+        "total": 1,
+        "has_more": false,
+        "omitted_oversized": 0
+      },
+      "xrefs": {
+        "returned": 0,
+        "total": 0,
+        "has_more": false,
+        "omitted_oversized": 0
+      }
+    }
+  ],
+  "full": false,
+  "article_search": null
+}

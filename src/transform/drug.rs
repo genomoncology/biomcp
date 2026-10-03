@@ -131,207 +131,8 @@ fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
     out
 }
 
-fn drug_type_from_hit(hit: &MyChemHit) -> Option<String> {
-    let v = hit
-        .chembl
-        .as_ref()
-        .and_then(|c| c.molecule_type.as_deref())
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .map(|v| v.to_ascii_lowercase());
-
-    match v.as_deref() {
-        Some("antibody") => Some("biologic".into()),
-        Some("small molecule") => Some("small-molecule".into()),
-        Some(other) => Some(other.to_string()),
-        None => None,
-    }
-}
-
-fn title_case_words(value: &str) -> String {
-    value
-        .split_whitespace()
-        .filter(|w| !w.is_empty())
-        .map(|w| {
-            let mut chars = w.chars();
-            let Some(first) = chars.next() else {
-                return String::new();
-            };
-            let first = first.to_uppercase().collect::<String>();
-            let rest = chars.as_str().to_ascii_lowercase();
-            format!("{first}{rest}")
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
-fn normalize_action_type(action: &str) -> String {
-    let v = action.trim().replace('_', " ");
-    if v.is_empty() {
-        return String::new();
-    }
-    if v.chars().any(|c| c.is_ascii_lowercase()) {
-        return v;
-    }
-    title_case_words(&v.to_ascii_lowercase())
-}
-
-fn chembl_mechanisms_from_hit(hit: &MyChemHit) -> Vec<String> {
-    let Some(chembl) = hit.chembl.as_ref() else {
-        return Vec::new();
-    };
-
-    let mut out: Vec<String> = Vec::new();
-    for mech in &chembl.drug_mechanisms {
-        if let Some(mechanism) = mech
-            .mechanism_of_action
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-            .map(str::to_string)
-        {
-            out.push(mechanism);
-            continue;
-        }
-
-        let action = mech
-            .action_type
-            .as_deref()
-            .map(normalize_action_type)
-            .map(|v| v.trim().to_string())
-            .filter(|v| !v.is_empty());
-        let target = mech
-            .target_name
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty());
-        if action.is_none() && target.is_none() {
-            continue;
-        }
-
-        let mechanism = match (action, target) {
-            (Some(a), Some(t)) => format!("{a} of {t}"),
-            (Some(a), None) => a,
-            (None, Some(t)) => t.to_string(),
-            (None, None) => continue,
-        };
-        out.push(mechanism);
-    }
-    out
-}
-
-fn fallback_mechanism_from_hit(hit: &MyChemHit) -> Option<String> {
-    let classes = moa_pharm_classes(hit);
-    classes
-        .iter()
-        .find(|class| {
-            let class = class.to_ascii_lowercase();
-            class.contains("kinase") || class.contains("braf") || class.contains("b-raf")
-        })
-        .cloned()
-        .or_else(|| {
-            classes.into_iter().find(|class| {
-                let class = class.to_ascii_lowercase();
-                !(class.contains("cytochrome p450")
-                    || class.contains("metabol")
-                    || class.contains("enzyme") && class.contains("induc"))
-            })
-        })
-}
-
-fn normalize_approval_date(value: &str) -> Option<String> {
-    let v = value.trim();
-    if v.is_empty() {
-        return None;
-    }
-    if v.len() == 10 {
-        // Only an ASCII YYYY-MM-DD shape is accepted, so later slicing by
-        // callers stays on character boundaries for any external value.
-        let bytes = v.as_bytes();
-        let valid = bytes[0..4].iter().all(|b| b.is_ascii_digit())
-            && bytes[4] == b'-'
-            && bytes[5..7].iter().all(|b| b.is_ascii_digit())
-            && bytes[7] == b'-'
-            && bytes[8..10].iter().all(|b| b.is_ascii_digit());
-        return valid.then(|| v.to_string());
-    }
-    if v.len() == 8 && v.chars().all(|c| c.is_ascii_digit()) {
-        return Some(format!("{}-{}-{}", &v[0..4], &v[4..6], &v[6..8]));
-    }
-    None
-}
-
-fn approval_date_display(raw: &str) -> Option<String> {
-    let normalized = normalize_approval_date(raw)?;
-    let year: i32 = normalized[0..4].parse().ok()?;
-    let month: u8 = normalized[5..7].parse().ok()?;
-    let day: u8 = normalized[8..10].parse().ok()?;
-    let month = Month::try_from(month).ok()?;
-    Some(format!("{month} {day}, {year}"))
-}
-
-fn approval_summary(display: Option<&str>) -> Option<String> {
-    display.map(|value| format!("FDA approved on {value}"))
-}
-
-fn approval_date_from_hit(hit: &MyChemHit) -> Option<String> {
-    let approvals = hit.drugcentral.as_ref().map(|d| &d.approval)?;
-    let mut fda_dates: Vec<String> = approvals
-        .iter()
-        .filter(|a| {
-            a.agency
-                .as_deref()
-                .map(str::trim)
-                .is_some_and(|v| v.eq_ignore_ascii_case("FDA"))
-        })
-        .filter_map(|a| a.date.as_deref())
-        .filter_map(normalize_approval_date)
-        .collect();
-
-    if !fda_dates.is_empty() {
-        fda_dates.sort();
-        return fda_dates.first().cloned();
-    }
-
-    let mut any_dates = approvals
-        .iter()
-        .filter_map(|a| a.date.as_deref())
-        .filter_map(normalize_approval_date)
-        .collect::<Vec<_>>();
-    any_dates.sort();
-    any_dates.first().cloned()
-}
-
-fn first_target_from_hit(hit: &MyChemHit) -> Option<String> {
-    if let Some(gtopdb) = hit.gtopdb.as_ref() {
-        for target in &gtopdb.interaction_targets {
-            let Some(symbol) = target
-                .symbol
-                .as_deref()
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-            else {
-                continue;
-            };
-            return Some(symbol.to_string());
-        }
-    }
-
-    let chembl = hit.chembl.as_ref()?;
-    for mechanism in &chembl.drug_mechanisms {
-        let Some(target) = mechanism
-            .target_name
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        else {
-            continue;
-        };
-        return Some(target.to_string());
-    }
-
-    None
-}
+mod enrichment;
+use enrichment::*;
 
 fn name_matches_requested(candidate: &str, requested: &str) -> bool {
     if candidate == requested {
@@ -357,7 +158,7 @@ fn interactions_from_hit(hit: &MyChemHit) -> Vec<DrugInteraction> {
     };
 
     let mut out: Vec<DrugInteraction> = Vec::new();
-    for row in &drugbank.drug_interactions {
+    for (index, row) in drugbank.drug_interactions.iter().enumerate() {
         let Some(obj) = row.as_object() else { continue };
         let drug = obj
             .get("name")
@@ -371,6 +172,30 @@ fn interactions_from_hit(hit: &MyChemHit) -> Vec<DrugInteraction> {
             .or_else(|| obj.get("interaction"))
             .or_else(|| obj.get("comment"))
             .and_then(json_first_string);
+        for (fields, action, reason, target) in [
+            (
+                &["name", "drug", "drug_name", "drugbank_name"][..],
+                "select_interaction_partner",
+                "name owns interaction partner under existing field precedence",
+                Some(drug.clone()),
+            ),
+            (
+                &["description", "interaction", "comment"][..],
+                "select_interaction_description",
+                "description owns interaction text",
+                description.clone(),
+            ),
+        ] {
+            if let Some(field) = fields.iter().find(|field| obj.contains_key(**field)) {
+                hit.record_source(
+                    &format!("/drugbank/drug_interactions/{index}/{field}"),
+                    "enrichment",
+                    action,
+                    reason,
+                    target,
+                );
+            }
+        }
         out.push(DrugInteraction {
             drug,
             ddinter_id: None,
@@ -384,7 +209,24 @@ fn interactions_from_hit(hit: &MyChemHit) -> Vec<DrugInteraction> {
 }
 
 pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
-    let name = best_name_from_hit(hit)?;
+    let Some(name) = best_name_from_hit(hit) else {
+        hit.record_row("search projection", "discard", "row has no display name");
+        return None;
+    };
+    record_display(hit, &name, "search projection");
+    if name.is_empty() {
+        hit.record_claims(
+            "search projection",
+            "discard",
+            "display normalizes to empty",
+        );
+        hit.record_row(
+            "search projection",
+            "discard",
+            "display normalizes to empty",
+        );
+        return None;
+    }
     let mechanisms = chembl_mechanisms_from_hit(hit);
     let mechanism = mechanisms
         .first()
@@ -399,6 +241,14 @@ pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
         .map(|v| v.trim().to_string())
         .filter(|v| !v.is_empty());
 
+    hit.record_field(
+        "drugbank",
+        "id",
+        "search projection",
+        "select_first_code",
+        "first DrugBank identifier",
+        drugbank_id.clone(),
+    );
     Some(DrugSearchResult {
         name,
         drugbank_id,
@@ -408,11 +258,56 @@ pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
     })
 }
 
+fn record_display(hit: &MyChemHit, display: &str, stage: &'static str) {
+    let fields = [
+        ("ndc", "nonproprietaryname"),
+        ("openfda", "generic_name"),
+        ("openfda", "brand_name"),
+        ("drugbank", "name"),
+        ("chembl", "pref_name"),
+        ("gtopdb", "name"),
+        ("unii", "display_name"),
+        ("chebi", "name"),
+    ];
+    let claims = hit.row.identity().claims();
+    let selected = fields.into_iter().find_map(|(section, field)| {
+        claims
+            .iter()
+            .enumerate()
+            .find(|(_, claim)| {
+                claim.origin().section() == section && claim.origin().field() == field
+            })
+            .map(|(index, _)| index)
+    });
+    for (index, claim) in claims.iter().enumerate() {
+        if !matches!(claim.value(), biodata::DrugClaimValue::Term(_)) {
+            continue;
+        }
+        let winner = Some(index) == selected;
+        hit.record(
+            Some(index),
+            stage,
+            if winner {
+                "select_display"
+            } else {
+                "omit_display"
+            },
+            if winner {
+                "display precedence; trim, strip edge dots and ASCII lowercase"
+            } else {
+                "first accessor or higher priority source supplies display"
+            },
+            winner.then(|| display.to_owned()),
+        );
+    }
+}
+
 pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a MyChemHit> {
     let target = normalize_name(name);
     let mut out: Vec<&MyChemHit> = hits
         .iter()
         .filter(|h| {
+            record_match_candidates(h);
             hit_all_names(h)
                 .iter()
                 .any(|n| name_matches_requested(n, &target))
@@ -445,7 +340,51 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
         score
     });
 
+    for hit in hits {
+        if !out.iter().any(|selected| std::ptr::eq(*selected, hit)) {
+            hit.record_claims("get selection", "omit", "name selection excludes row");
+        }
+        hit.record_row(
+            "get selection",
+            if out.iter().any(|selected| std::ptr::eq(*selected, hit)) {
+                "select"
+            } else {
+                "omit"
+            },
+            "name matching, all-hit fallback and stable richness order",
+        );
+    }
     out
+}
+
+fn record_codes(hit: &MyChemHit, section: &str, field: &str, available: bool, stage: &'static str) {
+    let mut first = available;
+    for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+        if claim.origin().section() != section || claim.origin().field() != field {
+            continue;
+        }
+        let target = if let biodata::DrugClaimValue::Code(code) = claim.value() {
+            first.then(|| code.value().trim().to_owned())
+        } else {
+            None
+        };
+        hit.record(
+            Some(index),
+            stage,
+            if first {
+                "select_first_code"
+            } else {
+                "omit_code"
+            },
+            if first {
+                "first identifier; trim lexical code"
+            } else {
+                "first code already selected; occurrence retained"
+            },
+            target,
+        );
+        first = false;
+    }
 }
 
 pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
@@ -453,6 +392,17 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         .iter()
         .find_map(|hit| best_name_from_hit(hit))
         .unwrap_or_else(|| normalize_name(requested_name));
+    if let Some(hit) = hits.iter().find(|hit| best_name_from_hit(hit).is_some()) {
+        record_display(hit, &name, "get merge");
+    } else if let Some(hit) = hits.first() {
+        hit.record(
+            None,
+            "get merge",
+            "requested_name_fallback",
+            "no supplied name",
+            Some(name.clone()),
+        );
+    }
     let mut drugbank_id: Option<String> = None;
     let mut chembl_id: Option<String> = None;
     let mut unii: Option<String> = None;
@@ -482,12 +432,46 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut approval_date: Option<String> = None;
 
     for (hit_index, hit) in hits.iter().enumerate() {
+        if Some(hit_index) != anchor_index {
+            for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+                if matches!(claim.value(), biodata::DrugClaimValue::Term(_)) {
+                    let synonym = claim.origin().section() == "drugbank"
+                        && claim.origin().field() == "synonyms";
+                    hit.record(
+                        Some(index),
+                        "get merge",
+                        if synonym { "exclude" } else { "omit_display" },
+                        if synonym {
+                            "combination hit is not the named anchor"
+                        } else {
+                            "anchor already selected"
+                        },
+                        None,
+                    );
+                }
+            }
+        }
+
+        if let Some(chembl) = &hit.chembl {
+            for index in 0..chembl.atc_classifications.clone().into_vec().len() {
+                hit.record_source(&format!("/chembl/atc_classifications/{index}"), "enrichment", "omit_get_atc", "ATC remains source-only; Get profile does not request it and no merged Drug field consumes it", None);
+            }
+        }
         if name.is_empty()
             && let Some(n) = best_name_from_hit(hit)
         {
             name = n;
         }
 
+        record_codes(hit, "drugbank", "id", drugbank_id.is_none(), "get merge");
+        record_codes(
+            hit,
+            "chembl",
+            "molecule_chembl_id",
+            chembl_id.is_none(),
+            "get merge",
+        );
+        record_codes(hit, "unii", "unii", unii.is_none(), "get merge");
         if drugbank_id.is_none() {
             drugbank_id = hit
                 .drugbank
@@ -519,7 +503,19 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         if Some(hit_index) == anchor_index
             && let Some(drugbank) = hit.drugbank.as_ref()
         {
-            for synonym in &drugbank.synonyms {
+            for (synonym_index, synonym) in drugbank.synonyms.iter().enumerate() {
+                let claim_index = hit
+                    .row
+                    .identity()
+                    .claims()
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, claim)| {
+                        claim.origin().section() == "drugbank"
+                            && claim.origin().field() == "synonyms"
+                    })
+                    .nth(synonym_index)
+                    .map(|(index, _)| index);
                 let synonym = synonym.trim();
                 if synonym.is_empty() {
                     continue;
@@ -527,15 +523,51 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                 if synonym.eq_ignore_ascii_case(&name)
                     || synonym.eq_ignore_ascii_case(requested_name)
                 {
+                    hit.record(
+                        claim_index,
+                        "get merge synonyms",
+                        "omit",
+                        "equals requested or displayed name",
+                        None,
+                    );
                     continue;
                 }
                 let key = synonym.to_ascii_lowercase();
                 if !brand_names_seen.insert(key.clone()) {
+                    hit.record(
+                        claim_index,
+                        "get merge synonyms",
+                        "deduplicate",
+                        "case insensitive duplicate",
+                        None,
+                    );
                     continue;
                 }
                 // The full synonym list feeds DDInter identity matching
                 // (ticket 1241); the card keeps the three-brand cap, so
                 // the loop does not break here.
+                hit.record(
+                    claim_index,
+                    "DDInter synonyms",
+                    if ddinter_synonyms.len() < 32 {
+                        "select"
+                    } else {
+                        "cap"
+                    },
+                    "anchor-only 32-synonym policy",
+                    (ddinter_synonyms.len() < 32).then(|| synonym.to_owned()),
+                );
+                hit.record(
+                    claim_index,
+                    "card brands",
+                    if brand_names.len() < 3 {
+                        "select"
+                    } else {
+                        "cap"
+                    },
+                    "three-brand card policy",
+                    (brand_names.len() < 3).then(|| synonym.to_owned()),
+                );
                 if ddinter_synonyms.len() < 32 {
                     ddinter_synonyms.push(synonym.to_string());
                 }
@@ -559,12 +591,28 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         }
 
         if let Some(gtopdb) = hit.gtopdb.as_ref() {
-            for t in &gtopdb.interaction_targets {
+            for (index, t) in gtopdb.interaction_targets.iter().enumerate() {
                 let Some(sym) = t.symbol.as_deref().map(str::trim).filter(|v| !v.is_empty()) else {
                     continue;
                 };
                 let sym = sym.to_string();
-                if targets_seen.insert(sym.clone()) {
+                let selected = targets_seen.insert(sym.clone());
+                hit.record_source(
+                    &format!("/gtopdb/interaction_targets/{index}/symbol"),
+                    "enrichment",
+                    if selected {
+                        "select_target"
+                    } else {
+                        "deduplicate_target"
+                    },
+                    if selected {
+                        "first unique trimmed GtoPdb symbol"
+                    } else {
+                        "duplicate trimmed GtoPdb symbol"
+                    },
+                    selected.then(|| sym.clone()),
+                );
+                if selected {
                     targets.push(sym);
                 }
             }
@@ -573,7 +621,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         if let Some(dc) = hit.drugcentral.as_ref()
             && let Some(use_) = dc.drug_use.as_ref()
         {
-            for ind in &use_.indication {
+            for (index, ind) in use_.indication.iter().enumerate() {
                 let Some(name) = ind
                     .concept_name
                     .as_deref()
@@ -583,15 +631,47 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
                     continue;
                 };
                 let key = name.to_ascii_lowercase();
-                if indications_seen.insert(key) {
+                let selected = indications_seen.insert(key);
+                hit.record_source(
+                    &format!("/drugcentral/drug_use/indication/{index}/concept_name"),
+                    "enrichment",
+                    if selected {
+                        "select_indication"
+                    } else {
+                        "deduplicate_indication"
+                    },
+                    if selected {
+                        "first unique trimmed indication name"
+                    } else {
+                        "duplicate case-insensitive indication"
+                    },
+                    selected.then(|| name.to_owned()),
+                );
+                if selected {
                     indications.push(name.to_string());
                 }
             }
         }
 
-        for cls in moa_pharm_classes(hit) {
+        for (pointer, cls) in enrichment::moa_class_occurrences(hit) {
             let key = cls.to_ascii_lowercase();
-            if classes_seen.insert(key) {
+            let selected = classes_seen.insert(key);
+            hit.record_source(
+                &pointer,
+                "enrichment",
+                if selected {
+                    "strip_moa_suffix"
+                } else {
+                    "deduplicate_class"
+                },
+                if selected {
+                    "pharmacologic class keeps text before [MoA]"
+                } else {
+                    "duplicate normalized pharmacologic class"
+                },
+                selected.then(|| cls.clone()),
+            );
+            if selected {
                 pharm_classes.push(cls);
             }
         }
@@ -636,7 +716,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         .or_else(|| approval_date_raw.clone());
     let approval_summary = approval_summary(approval_date_display.as_deref());
 
-    Drug {
+    let drug = Drug {
         section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
         name,
         drugbank_id,
@@ -678,385 +758,14 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         who_prequalification: None,
         civic: None,
         cell_lines: None,
-    }
+    };
+    #[cfg(test)]
+    crate::sources::mychem::test_observer::record(
+        &hits.iter().map(|hit| (*hit).clone()).collect::<Vec<_>>(),
+        "used:get",
+    );
+    drug
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn approval_date_rejects_multibyte_input_with_matching_byte_length() {
-        assert_eq!(normalize_approval_date("β23456789"), None);
-    }
-
-    #[test]
-    fn search_mechanism_ranking_prefers_kinase_moa_and_rejects_metabolism_only() {
-        let fixtures = [
-            serde_json::json!({
-                "_id": "dabrafenib",
-                "drugbank": {"name": "Dabrafenib"},
-                "ndc": {"pharm_classes": [
-                    "Cytochrome P450 2C9 Inducers [MoA]",
-                    "Protein Kinase Inhibitors [MoA]"
-                ]}
-            }),
-            serde_json::json!({
-                "_id": "vemurafenib",
-                "drugbank": {"name": "Vemurafenib"},
-                "ndc": {"pharm_classes": [
-                    "Inhibitor of Serine/threonine-protein kinase B-raf [MoA]"
-                ]}
-            }),
-            serde_json::json!({
-                "_id": "metabolism-only",
-                "drugbank": {"name": "Example drug"},
-                "ndc": {"pharm_classes": [
-                    "Cytochrome P450 2C9 Inducers [MoA]"
-                ]}
-            }),
-        ];
-
-        let mechanisms = fixtures
-            .into_iter()
-            .map(|fixture| {
-                let hit: MyChemHit = serde_json::from_value(fixture).expect("valid search hit");
-                from_mychem_search_hit(&hit).and_then(|row| row.mechanism)
-            })
-            .collect::<Vec<_>>();
-
-        assert_eq!(
-            mechanisms,
-            vec![
-                Some("Protein Kinase Inhibitors".to_string()),
-                Some("Inhibitor of Serine/threonine-protein kinase B-raf".to_string()),
-                None,
-            ]
-        );
-    }
-
-    #[test]
-    fn search_mechanism_prefers_chembl_over_ranked_moa_fallback() {
-        let hit: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "dabrafenib-with-chembl",
-            "drugbank": {"name": "Dabrafenib"},
-            "chembl": {"drug_mechanisms": [{
-                "mechanism_of_action": "BRAF inhibitor"
-            }]},
-            "ndc": {"pharm_classes": ["Protein Kinase Inhibitors [MoA]"]}
-        }))
-        .expect("valid search hit");
-
-        let row = from_mychem_search_hit(&hit).expect("named hit should render");
-        assert_eq!(row.mechanism.as_deref(), Some("BRAF inhibitor"));
-    }
-
-    #[test]
-    fn merge_mychem_hits_collects_deduped_mechanisms() {
-        let hit: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "1",
-            "_score": 1.0,
-            "chembl": {
-                "molecule_chembl_id": "CHEMBL1",
-                "molecule_type": "Small molecule",
-                "pref_name": "test",
-                "drug_mechanisms": [
-                    {"action_type": "INHIBITOR", "target_name": "BRAF"},
-                    {"action_type": "INHIBITOR", "target_name": "BRAF"},
-                    {"action_type": "AGONIST", "target_name": "TP53"},
-                    {"action_type": "ANTAGONIST", "target_name": "EGFR"},
-                    {"action_type": "BLOCKER", "target_name": "ALK"}
-                ]
-            }
-        }))
-        .expect("valid JSON");
-
-        let drug = merge_mychem_hits(&[&hit], "test");
-        assert_eq!(drug.mechanisms.len(), 3, "mechanisms should be limited");
-        assert_eq!(drug.mechanisms[0], "Inhibitor of BRAF");
-        assert_eq!(drug.mechanisms[1], "Agonist of TP53");
-        assert_eq!(drug.mechanisms[2], "Antagonist of EGFR");
-        assert_eq!(drug.mechanism.as_deref(), Some("Inhibitor of BRAF"));
-    }
-
-    #[test]
-    fn merge_mychem_hits_feeds_anchor_synonyms_past_the_brand_cap() {
-        // More than three DrugBank synonyms: the fourth still reaches
-        // ddinter_synonyms even though brand_names caps at three, and
-        // the interactions seam passes it on (ticket 1254).
-        let anchor: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "1",
-            "_score": 10.0,
-            "drugbank": {
-                "name": "Aspirin",
-                "id": "DB00945",
-                "synonyms": [
-                    "Bayer",
-                    "ECM",
-                    "2-Acetoxybenzoic acid",
-                    "acetylsalicylic acid",
-                    "Acenterine"
-                ]
-            }
-        }))
-        .expect("valid anchor hit");
-
-        let drug = merge_mychem_hits(&[&anchor], "aspirin");
-        assert!(
-            drug.ddinter_synonyms
-                .iter()
-                .any(|synonym| synonym.eq_ignore_ascii_case("acetylsalicylic acid"))
-        );
-        assert!(drug.brand_names.len() <= 3);
-
-        let identity =
-            crate::entities::drug::interactions::ddinter_identity_for_anchor("aspirin", &drug);
-        assert!(identity.terms().contains(
-            &crate::sources::ddinter::normalize_name_key("acetylsalicylic acid").expect("key")
-        ));
-    }
-
-    #[test]
-    fn merge_mychem_hits_does_not_pool_synonyms_across_hits() {
-        // A combination product's synonym must not widen the anchor's
-        // DDInter identity: pooled, "dipyridamole" would name a real
-        // interaction partner and the aggregation would skip that row
-        // because both sides match the anchor (ticket 1254).
-        let anchor: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "1",
-            "_score": 10.0,
-            "drugbank": {
-                "name": "Aspirin",
-                "synonyms": ["Bayer", "acetylsalicylic acid"]
-            }
-        }))
-        .expect("valid anchor hit");
-        let combination: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "2",
-            "_score": 5.0,
-            "drugbank": {
-                "name": "Aspirin/dipyridamole",
-                "synonyms": ["dipyridamole", "Aggrenox"]
-            }
-        }))
-        .expect("valid combination-product hit");
-
-        let drug = merge_mychem_hits(&[&anchor, &combination], "aspirin");
-        assert!(
-            drug.ddinter_synonyms
-                .iter()
-                .any(|synonym| synonym.eq_ignore_ascii_case("acetylsalicylic acid"))
-        );
-        assert!(
-            drug.ddinter_synonyms
-                .iter()
-                .all(|synonym| !synonym.eq_ignore_ascii_case("dipyridamole"))
-        );
-        assert!(
-            drug.brand_names
-                .iter()
-                .all(|synonym| !synonym.eq_ignore_ascii_case("dipyridamole"))
-        );
-
-        let identity =
-            crate::entities::drug::interactions::ddinter_identity_for_anchor("aspirin", &drug);
-        assert!(
-            !identity.terms().contains(
-                &crate::sources::ddinter::normalize_name_key("dipyridamole").expect("key")
-            )
-        );
-    }
-
-    #[test]
-    fn select_hits_for_name_matches_salt_forms() {
-        let base: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "1",
-            "_score": 1.0,
-            "drugbank": {"name": "Dabrafenib"}
-        }))
-        .expect("valid base hit");
-
-        let salt: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "2",
-            "_score": 1.0,
-            "chembl": {
-                "pref_name": "DABRAFENIB MESYLATE",
-                "molecule_chembl_id": "CHEMBL2105729",
-                "drug_mechanisms": [
-                    {"action_type": "INHIBITOR", "target_name": "BRAF"}
-                ]
-            }
-        }))
-        .expect("valid salt hit");
-
-        let hits = [base, salt];
-        let selected = select_hits_for_name(&hits, "dabrafenib");
-        assert_eq!(selected.len(), 2);
-    }
-
-    #[test]
-    fn merge_mychem_hits_collects_drug_interactions() {
-        let hit: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "1",
-            "_score": 1.0,
-            "drugbank": {
-                "id": "DB0001",
-                "name": "warfarin",
-                "drug_interactions": [
-                    {"name": "Aspirin", "description": "May increase bleeding risk."},
-                    {"name": "Clopidogrel", "description": "Monitor for bleeding."}
-                ]
-            }
-        }))
-        .expect("valid JSON");
-
-        assert_eq!(
-            hit.drugbank
-                .as_ref()
-                .map(|d| d.drug_interactions.len())
-                .unwrap_or_default(),
-            2
-        );
-        let drug = merge_mychem_hits(&[&hit], "warfarin");
-        assert_eq!(drug.interactions.len(), 2);
-        assert_eq!(drug.interactions[0].drug, "Aspirin");
-    }
-
-    #[test]
-    fn drug_sections_maps_osimertinib() {
-        let hit: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "DB09330",
-            "_score": 1.0,
-            "drugbank": {"id": "DB09330", "name": "osimertinib"},
-            "chembl": {
-                "molecule_chembl_id": "CHEMBL3353410",
-                "molecule_type": "Small molecule",
-                "pref_name": "OSIMERTINIB",
-                "drug_mechanisms": [
-                    {"action_type": "INHIBITOR", "target_name": "EGFR"}
-                ]
-            },
-            "gtopdb": {
-                "interaction_targets": [{"symbol": "EGFR"}]
-            },
-            "drugcentral": {
-                "approval": [{"agency": "FDA", "date": "20151113"}],
-                "drug_use": {"indication": [{"concept_name": "Non-small cell lung cancer"}]}
-            }
-        }))
-        .expect("valid osimertinib hit");
-
-        let drug = merge_mychem_hits(&[&hit], "osimertinib");
-        assert_eq!(drug.name, "osimertinib");
-        assert_eq!(drug.targets.first().map(String::as_str), Some("EGFR"));
-        assert_eq!(drug.drug_type.as_deref(), Some("small-molecule"));
-        assert_eq!(drug.approval_date.as_deref(), Some("2015-11-13"));
-        assert_eq!(drug.approval_date_raw.as_deref(), Some("2015-11-13"));
-        assert_eq!(
-            drug.approval_date_display.as_deref(),
-            Some("November 13, 2015")
-        );
-        assert_eq!(
-            drug.approval_summary.as_deref(),
-            Some("FDA approved on November 13, 2015")
-        );
-    }
-
-    #[test]
-    fn drug_sections_maps_imatinib() {
-        let hit: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "DB00619",
-            "_score": 1.0,
-            "drugbank": {"id": "DB00619", "name": "imatinib"},
-            "chembl": {
-                "molecule_chembl_id": "CHEMBL941",
-                "molecule_type": "Small molecule",
-                "pref_name": "IMATINIB",
-                "drug_mechanisms": [
-                    {"action_type": "INHIBITOR", "target_name": "ABL1"}
-                ]
-            },
-            "gtopdb": {
-                "interaction_targets": [{"symbol": "ABL1"}]
-            }
-        }))
-        .expect("valid imatinib hit");
-
-        let drug = merge_mychem_hits(&[&hit], "imatinib");
-        assert_eq!(drug.name, "imatinib");
-        assert_eq!(drug.targets.first().map(String::as_str), Some("ABL1"));
-        assert!(
-            drug.mechanism
-                .as_deref()
-                .is_some_and(|v| v.to_ascii_lowercase().contains("inhibitor"))
-        );
-    }
-
-    #[test]
-    fn from_mychem_search_hit_uses_openfda_names_when_other_sources_are_missing() {
-        let hit: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "openfda-only",
-            "_score": 42.0,
-            "openfda": {
-                "brand_name": "Keytruda",
-                "generic_name": "pembrolizumab"
-            }
-        }))
-        .expect("valid openfda-only hit");
-
-        let row = from_mychem_search_hit(&hit).expect("openfda names should produce a row");
-        assert_eq!(row.name, "pembrolizumab");
-    }
-
-    #[test]
-    fn approval_date_display_formats_month_name() {
-        assert_eq!(
-            approval_date_display("2014-09-04").as_deref(),
-            Some("September 4, 2014")
-        );
-        assert_eq!(
-            approval_date_display("20140904").as_deref(),
-            Some("September 4, 2014")
-        );
-    }
-
-    #[test]
-    fn select_hits_for_name_matches_openfda_brand_name() {
-        let keytruda: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "brand-hit",
-            "_score": 10.0,
-            "openfda": {
-                "brand_name": "Keytruda",
-                "generic_name": "pembrolizumab"
-            }
-        }))
-        .expect("valid brand hit");
-
-        let unrelated: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "other-hit",
-            "_score": 1.0,
-            "drugbank": {"name": "nivolumab"}
-        }))
-        .expect("valid unrelated hit");
-
-        let hits = [keytruda, unrelated];
-        let selected = select_hits_for_name(&hits, "keytruda");
-        assert_eq!(selected.len(), 1);
-    }
-
-    #[test]
-    fn merge_mychem_hits_prefers_canonical_name_from_brand_hit() {
-        let keytruda: MyChemHit = serde_json::from_value(serde_json::json!({
-            "_id": "brand-hit",
-            "_score": 10.0,
-            "openfda": {
-                "brand_name": "Keytruda",
-                "generic_name": "pembrolizumab"
-            }
-        }))
-        .expect("valid brand hit");
-
-        let drug = merge_mychem_hits(&[&keytruda], "keytruda");
-        assert_eq!(drug.name, "pembrolizumab");
-    }
-}
+mod tests;

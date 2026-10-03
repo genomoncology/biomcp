@@ -1,0 +1,1 @@
+{"total":9,"hits":[{"drugbank":{"id":"DB-SYN1","name":"sampledrug","synonyms":["same","same"]},"unii":[{"unii":"U-SYN1","display_name":"Name A"},{"unii":"U-SYN2","display_name":"Name B"}],"chembl":{"molecule_chembl_id":"CHEMBL-SYN1","pref_name":"Other"}},{"drugbank":{"id":"DB-SYN9","name":"sampledrug"},"chembl":{"molecule_chembl_id":"CHEMBL-SYN9"},"unii":{"unii":"U-SYN9"}}]}

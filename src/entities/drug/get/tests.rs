@@ -252,15 +252,14 @@ async fn cached_trial_alias_resolution_refreshes_worker_zero_label() {
 #[test]
 fn trial_alias_resolution_does_not_cache_transient_lookup_failure() {
     let requested = "review-transient-alias-drug";
-    let (fallback, fallback_cacheable) = trial_alias_resolution_from_lookup_result(
+    let failure = trial_alias_resolution_from_lookup_result(
         requested,
         Err(BioMcpError::Api {
             api: "mychem.info".into(),
             message: "HTTP 500".into(),
         }),
     );
-    assert_eq!(trial_alias_labels(&fallback.aliases), vec![requested]);
-    assert!(!fallback_cacheable);
+    assert!(failure.is_err(), "a generic API error is terminal");
 
     let (resolved, resolved_cacheable) = trial_alias_resolution_from_lookup_result(
         requested,
@@ -268,7 +267,8 @@ fn trial_alias_resolution_does_not_cache_transient_lookup_failure() {
             canonical_name: requested.into(),
             candidates: vec![trial_alias("RMC-6236", TrialAliasSource::DrugBankSynonym)],
         }),
-    );
+    )
+    .expect("accepted lookup");
     assert_eq!(
         trial_alias_labels(&resolved.aliases),
         vec![requested, "RMC-6236"]
@@ -285,7 +285,8 @@ fn trial_alias_resolution_keeps_generic_requests_canonical() {
             canonical_name: requested.into(),
             candidates: vec![trial_alias("Keytruda", TrialAliasSource::OpenFdaBrand)],
         }),
-    );
+    )
+    .expect("accepted lookup");
 
     assert_eq!(resolved.canonical_name, requested);
     assert_eq!(

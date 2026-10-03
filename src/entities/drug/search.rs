@@ -145,7 +145,69 @@ fn ema_identity_from_mychem_hits(query: &str, hits: &[MyChemHit]) -> Option<EmaD
             );
         }
     }
-    Some(EmaDrugIdentity::for_search(query, terms))
+    let mut used = HashSet::new();
+    let origins = terms.iter().map(|(value, source)| {
+        hits.iter().enumerate().filter(|(_, hit)| hit_matches_ema_query(hit, &normalized_query)).find_map(|(hit_index, hit)| {
+            hit.row.identity().claims().iter().enumerate().find_map(|(index, claim)| {
+                let wanted = format!("{}.{}", claim.origin().section(), claim.origin().field());
+                let same = wanted == source.as_str() && matches!(claim.value(), biodata::DrugClaimValue::Term(term) if term.text().trim().trim_matches('.').split_whitespace().collect::<Vec<_>>().join(" ") == *value);
+                (same && used.insert((hit_index, index))).then_some((hit_index, index))
+            })
+        })
+    }).collect::<Vec<_>>();
+    for hit in hits {
+        if !hit_matches_ema_query(hit, &normalized_query) {
+            hit.record_claims(
+                "EMA identity",
+                "exclude_alias_row",
+                "no allowed source field exactly matches query",
+            );
+            continue;
+        }
+        for (index, claim) in hit.row.identity().claims().iter().enumerate() {
+            if matches!(claim.value(), biodata::DrugClaimValue::Term(_))
+                && !used.contains(&(
+                    hits.iter()
+                        .position(|candidate| std::ptr::eq(candidate, hit))
+                        .unwrap_or(usize::MAX),
+                    index,
+                ))
+            {
+                hit.record(
+                    Some(index),
+                    "EMA identity",
+                    "exclude_ema_field",
+                    "source field excluded from EMA allowed identity fields",
+                    None,
+                );
+            }
+        }
+    }
+    Some(EmaDrugIdentity::for_search_with_report(
+        query,
+        terms,
+        |index, inserted, text| {
+            if let Some(Some((hit_index, claim_index))) =
+                index.checked_sub(1).and_then(|index| origins.get(index))
+            {
+                hits[*hit_index].record(
+                    Some(*claim_index),
+                    "EMA identity",
+                    if inserted { "select" } else { "deduplicate" },
+                    if inserted {
+                        "allowed source field contributes EMA identity"
+                    } else {
+                        "normalized identity term already inserted"
+                    },
+                    if inserted {
+                        text.map(str::to_owned)
+                    } else {
+                        None
+                    },
+                );
+            }
+        },
+    ))
 }
 
 fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
@@ -155,7 +217,7 @@ fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
         .as_ref()
         .is_some_and(|value| string_field_matches(&value.brand_name, &query))
     {
-        return DrugSearchMatchKind::ProductName;
+        return conversion::record_match_kind(hit, &query, DrugSearchMatchKind::ProductName);
     }
     let ndc_matches = hit.ndc.as_ref().is_some_and(|value| match value {
         MyChemNdcField::One(row) => row
@@ -184,14 +246,14 @@ fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
             .and_then(|value| value.pref_name.as_deref())
             .is_some_and(|value| normalized_name(value) == query);
     if active_matches {
-        DrugSearchMatchKind::ActiveSubstance
+        conversion::record_match_kind(hit, &query, DrugSearchMatchKind::ActiveSubstance)
     } else if hit.drugbank.as_ref().is_some_and(|value| {
         value
             .synonyms
             .iter()
             .any(|alias| normalized_name(alias) == query)
     }) {
-        DrugSearchMatchKind::Alias
+        conversion::record_match_kind(hit, &query, DrugSearchMatchKind::Alias)
     } else {
         DrugSearchMatchKind::BroadText
     }
@@ -213,6 +275,20 @@ pub async fn search_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<DrugSearchResult>, BioMcpError> {
+    Ok(search_page_with_custody(filters, limit, offset).await?.0)
+}
+
+pub(super) async fn search_page_with_custody(
+    filters: &DrugSearchFilters,
+    limit: usize,
+    offset: usize,
+) -> Result<
+    (
+        SearchPage<DrugSearchResult>,
+        crate::sources::mychem::MyChemQueryResponse,
+    ),
+    BioMcpError,
+> {
     const MAX_SEARCH_LIMIT: usize = 50;
     if limit == 0 || limit > MAX_SEARCH_LIMIT {
         return Err(BioMcpError::InvalidArgument(format!(
@@ -245,7 +321,7 @@ pub async fn search_page(
 
     let mut seen: HashSet<String> = HashSet::new();
     let mut out: Vec<DrugSearchResult> = Vec::new();
-    for hit in &resp.hits {
+    for (hit_index, hit) in resp.hits.iter().enumerate() {
         let Some(mut r) = transform::drug::from_mychem_search_hit(hit) else {
             continue;
         };
@@ -257,10 +333,27 @@ pub async fn search_page(
             .filter(|v| !v.is_empty())
         {
             if !hit_mentions_target(hit, requested_target) {
+                conversion::record_filter(hit, "discard_target_filter", None);
+                hit.record_row(
+                    "search filtering",
+                    "discard_target_filter",
+                    "requested target absent from retained source enrichment",
+                );
+                hit.record_claims(
+                    "search filtering",
+                    "discard_target_filter",
+                    "requested target absent from retained source enrichment",
+                );
                 continue;
             }
             // Display the matched target explicitly so multi-target drugs are not misleading.
+            conversion::record_filter(hit, "target_override", Some(requested_target));
             r.target = Some(requested_target.to_ascii_uppercase());
+            hit.record_row(
+                "search filtering",
+                "select_target_override",
+                "matched requested target displayed in uppercase",
+            );
         }
 
         if let Some(requested_mechanism) = filters
@@ -270,20 +363,71 @@ pub async fn search_page(
             .filter(|v| !v.is_empty())
             && !hit_mentions_mechanism(hit, requested_mechanism)
         {
+            conversion::record_filter(hit, "discard_mechanism_filter", None);
+            hit.record_row(
+                "search filtering",
+                "discard_mechanism_filter",
+                "requested mechanism absent from retained source enrichment",
+            );
+            hit.record_claims(
+                "search filtering",
+                "discard_mechanism_filter",
+                "requested mechanism absent from retained source enrichment",
+            );
             continue;
         }
 
+        // Report admitted mechanism occurrences only after both predicates pass.
+        if filters
+            .target
+            .as_deref()
+            .is_some_and(|target| !target.trim().is_empty())
+        {
+            conversion::record_filter(hit, "admit", None);
+        }
         // Normalize and de-duplicate by name.
         r.name = r.name.trim().to_ascii_lowercase();
         if r.name.is_empty() {
             continue;
         }
         if !seen.insert(r.name.clone()) {
+            hit.record_row(
+                "search deduplication",
+                "omit_duplicate",
+                "first normalized display row retained",
+            );
+            hit.record_claims(
+                "search deduplication",
+                "omit_duplicate",
+                "first normalized display row retained",
+            );
             continue;
         }
 
+        hit.record_claims(
+            "search selection",
+            "select",
+            "unique row within requested limit",
+        );
+        hit.record_row(
+            "search selection",
+            "select",
+            "unique row within requested limit",
+        );
         out.push(r);
         if out.len() >= limit {
+            for omitted in &resp.hits[hit_index + 1..] {
+                omitted.record_row(
+                    "search selection",
+                    "omit_limit",
+                    "requested result limit reached before projection",
+                );
+                omitted.record_claims(
+                    "search selection",
+                    "omit_limit",
+                    "requested result limit reached before projection",
+                );
+            }
             break;
         }
     }
@@ -300,99 +444,18 @@ pub async fn search_page(
         let rows = search_results_from_openfda_label_response(&label_response, query, limit);
         if !rows.is_empty() {
             let total = rows.len();
-            return Ok(SearchPage::offset(rows, Some(total)));
+            return Ok((SearchPage::offset(rows, Some(total)), resp));
         }
     }
 
-    Ok(SearchPage::offset(out, Some(resp.total)))
+    Ok((SearchPage::offset(out, Some(resp.total)), resp))
 }
 
-async fn search_ranked_name_us_page(
-    filters: &DrugSearchFilters,
-    query: &str,
-    limit: usize,
-    offset: usize,
-) -> Result<RankedDrugSearchPage<DrugSearchResult>, BioMcpError> {
-    const PAGE_SIZE: usize = 50;
-    crate::sources::validate_biothings_result_window("MyChem search", limit, offset)?;
-    let q = build_mychem_query(filters)?;
-    let client = crate::sources::mychem::MyChemClient::new()?;
-    let mut provider_offset = 0;
-    let mut candidates: Vec<(DrugSearchResult, DrugSearchMatchKind)> = Vec::new();
-    let mut positions: HashMap<String, usize> = HashMap::new();
-
-    loop {
-        let response = client
-            .query_with_fields(
-                &q,
-                PAGE_SIZE,
-                provider_offset,
-                crate::sources::mychem::MYCHEM_FIELDS_SEARCH,
-            )
-            .await?;
-        if response.total > crate::sources::BIOTHINGS_MAX_RESULT_WINDOW {
-            return Err(BioMcpError::InvalidArgument(format!(
-                "Drug search matched {} MyChem rows; narrow the query so complete ranking fits the 10,000-row provider window.",
-                response.total
-            )));
-        }
-        let returned = response.hits.len();
-        for hit in &response.hits {
-            let Some(mut row) = transform::drug::from_mychem_search_hit(hit) else {
-                continue;
-            };
-            row.name = normalized_name(&row.name);
-            if row.name.is_empty() {
-                continue;
-            }
-            let kind = mychem_match_kind(hit, query);
-            if let Some(index) = positions.get(&row.name).copied() {
-                if kind.rank() < candidates[index].1.rank() {
-                    candidates[index].1 = kind;
-                }
-            } else {
-                positions.insert(row.name.clone(), candidates.len());
-                candidates.push((row, kind));
-            }
-        }
-        provider_offset = provider_offset.saturating_add(returned);
-        if returned == 0 || provider_offset >= response.total {
-            break;
-        }
-    }
-
-    if candidates.is_empty() {
-        let page = search_page(filters, limit, offset).await?;
-        let query = normalized_name(query);
-        let kinds = page
-            .results
-            .iter()
-            .map(|row| {
-                if normalized_name(&row.name) == query {
-                    DrugSearchMatchKind::ProductName
-                } else {
-                    DrugSearchMatchKind::BroadText
-                }
-            })
-            .collect();
-        return Ok(RankedDrugSearchPage::offset(
-            page.results,
-            page.total,
-            kinds,
-        ));
-    }
-
-    rank_drug_candidates(&mut candidates);
-    let total = candidates.len();
-    let selected = candidates
-        .into_iter()
-        .skip(offset)
-        .take(limit)
-        .collect::<Vec<_>>();
-    let kinds = selected.iter().map(|(_, kind)| *kind).collect();
-    let results = selected.into_iter().map(|(row, _)| row).collect();
-    Ok(RankedDrugSearchPage::offset(results, Some(total), kinds))
-}
+mod conversion;
+mod ranking;
+use ranking::search_ranked_name_us_page;
+#[cfg(test)]
+use ranking::search_ranked_name_us_page_with_custody;
 
 pub(super) fn should_attempt_openfda_fallback(
     out: &[DrugSearchResult],
@@ -520,83 +583,23 @@ pub(super) fn hit_mentions_mechanism(hit: &MyChemHit, mechanism: &str) -> bool {
     false
 }
 
-pub(super) fn search_results_from_openfda_label_response(
-    label_response: &serde_json::Value,
-    query: &str,
-    max_results: usize,
-) -> Vec<DrugSearchResult> {
-    let query = query.trim();
-    if query.is_empty() || max_results == 0 {
-        return Vec::new();
-    }
-
-    let Some(results) = label_response.get("results").and_then(|v| v.as_array()) else {
-        return Vec::new();
-    };
-
-    let mut exact_matches: Vec<DrugSearchResult> = Vec::new();
-    let mut others: Vec<DrugSearchResult> = Vec::new();
-    for result in results {
-        let brand_names = extract_openfda_values_from_result(result, "brand_name");
-        let generic_names = extract_openfda_values_from_result(result, "generic_name");
-        let Some(name) = generic_names
-            .first()
-            .cloned()
-            .or_else(|| brand_names.first().cloned())
-        else {
-            continue;
-        };
-        let name = name.trim().to_ascii_lowercase();
-        if name.is_empty() {
-            continue;
-        }
-
-        let row = DrugSearchResult {
-            name,
-            drugbank_id: None,
-            drug_type: None,
-            mechanism: None,
-            target: None,
-        };
-        let is_exact_brand_match = brand_names
-            .iter()
-            .map(|value| value.trim())
-            .any(|value| value.eq_ignore_ascii_case(query));
-        if is_exact_brand_match {
-            exact_matches.push(row);
-        } else {
-            others.push(row);
-        }
-    }
-
-    let mut out: Vec<DrugSearchResult> = Vec::new();
-    let mut seen: HashSet<String> = HashSet::new();
-    for row in exact_matches.into_iter().chain(others) {
-        if !seen.insert(row.name.clone()) {
-            continue;
-        }
-        out.push(row);
-        if out.len() >= max_results {
-            break;
-        }
-    }
-    out
-}
+mod label;
+pub(super) use label::{
+    search_results_from_openfda_label_response,
+    search_results_from_openfda_label_response_with_origin,
+};
 
 async fn try_resolve_drug_identity(
     name: &str,
-) -> Option<crate::sources::mychem::MyChemQueryResponse> {
+) -> Result<Option<crate::sources::mychem::MyChemQueryResponse>, BioMcpError> {
     let name = name.trim();
     if name.is_empty() {
-        return None;
+        return Ok(None);
     }
-
     match direct_drug_lookup(name).await {
-        Ok(resp) => Some(resp),
-        Err(err) => {
-            warn!(query = %name, "Drug identity resolution unavailable for EMA alias expansion: {err}");
-            None
-        }
+        Ok(response) => Ok(Some(response)),
+        Err(error) if crate::sources::mychem::optional_failure(&error) => Ok(None),
+        Err(error) => Err(error),
     }
 }
 
@@ -636,7 +639,7 @@ pub async fn search_name_query_with_region(
             crate::sources::who_pq::WhoProductTypeFilter::Vaccine
         );
     let resolved_response = if should_resolve_drug_identity(region, product_type) {
-        try_resolve_drug_identity(query).await
+        try_resolve_drug_identity(query).await?
     } else {
         None
     };
@@ -906,3 +909,6 @@ pub async fn search_page_with_region(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod consumer_tests;

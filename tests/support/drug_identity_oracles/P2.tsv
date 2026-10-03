@@ -1,0 +1,36 @@
+case	requirement	alternative	boundary	object
+P2-01/display-ndc	P2-01	display-ndc	compatibility display	P2.json#/0
+P2-01/display-generic	P2-01	display-generic	compatibility display	P2.json#/1
+P2-01/display-brand	P2-01	display-brand	compatibility display	P2.json#/2
+P2-01/display-drugbank	P2-01	display-drugbank	compatibility display	P2.json#/3
+P2-01/display-chembl	P2-01	display-chembl	compatibility display	P2.json#/4
+P2-01/display-gtopdb	P2-01	display-gtopdb	compatibility display	P2.json#/5
+P2-01/display-unii	P2-01	display-unii	compatibility display	P2.json#/6
+P2-01/display-chebi	P2-01	display-chebi	compatibility display	P2.json#/7
+P2-01/all-eight-first-elements	P2-01	all-eight-first-elements	compatibility display	P2.json#/8
+P2-02/trim-dots-case	P2-02	trim-dots-case	product merge	P2.json#/9
+P2-02/dots-only	P2-02	dots-only	product normalization	P2.json#/10
+P2-02/nameless	P2-02	nameless	product merge	P2.json#/11
+P2-03/salt	P2-03	salt	unchanged literal assertion	P2.json#/12
+P2-03/brand	P2-03	brand	unchanged literal assertion	P2.json#/13
+P2-03/no-match-stable-tie-conflicting-ids	P2-03	no-match-stable-tie-conflicting-ids	selection merge	P2.json#/14
+P2-04/mechanism-target	P2-04	mechanism-target	unchanged literal assertion	P2.json#/15
+P2-04/duplicates-nameless-truncate-provider-total	P2-04	duplicates-nameless-truncate-provider-total	plain search	P2.json#/16
+P2-04/duplicates-and-nameless-before-limit	P2-04	duplicates-and-nameless-before-limit	plain search	P2.json#/17
+P2-06/empty-first-page-unstructured	P2-06	empty-first-page-unstructured	unchanged literal assertion	P2.json#/18
+P2-06/later-page	P2-06	later-page	unchanged literal assertion	P2.json#/19
+P2-06/structured	P2-06	structured	unchanged literal assertion	P2.json#/20
+P2-06/nonempty	P2-06	nonempty	unchanged literal assertion	P2.json#/21
+P2-06/local-fallback-total-and-order	P2-06	local-fallback-total-and-order	unchanged literal assertion	P2.json#/22
+P2-07/empty	P2-07	empty	empty direct bounded rescue	P2.json#/23
+P2-07/same	P2-07	same	empty direct bounded rescue	P2.json#/24
+P2-07/two	P2-07	two	empty direct bounded rescue	P2.json#/25
+P2-07/one-different	P2-07	one-different	empty direct bounded rescue	P2.json#/26
+P2-08/label-canonical	P2-08	label-canonical	sparse rescue	P2.json#/27
+P2-08/unique-discover	P2-08	unique-discover	resolve_drug_base with full DiscoverResult resolver-future seam	P2.json#/28
+P2-08/ambiguous-alias	P2-08	ambiguous-alias	resolve_drug_base with full DiscoverResult resolver-future seam	P2.json#/29
+P2-05/later-exact-duplicate-upgrade-pages-offset	P2-05	later-exact-duplicate-upgrade-pages-offset	full-window ranked search	P2.json#/30
+P2-05/window-total-over	P2-05	window-total-over	ranked window refusal	P2.json#/31
+P2-03/adopted-salt	P2-03	adopted-salt	get selection	P2.json#/32
+P2-03/adopted-brand	P2-03	adopted-brand	get selection	P2.json#/33
+P2-04/adopted-target-mechanism-filter	P2-04	adopted-target-mechanism-filter	adopted search_page source-sensitive filtering	P2.json#/34

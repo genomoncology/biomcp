@@ -1,0 +1,1644 @@
+{
+  "profile": "Get",
+  "digest": "sha256:bc8d2b92dd4bcd5be1e04448922c00ee736c077140020f19017b1f187a0729b2",
+  "total": 2,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:bc8d2b92dd4bcd5be1e04448922c00ee736c077140020f19017b1f187a0729b2",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-SYN1",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "SampleDrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias01",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 0
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias02",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 1
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias03",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 2
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias04",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 3
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias05",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 4
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias06",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 5
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias07",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 6
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias08",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 7
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias09",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 8
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias10",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 9
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias11",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 10
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias12",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 11
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias13",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 12
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias14",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 13
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias15",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 14
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias16",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 15
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias17",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 16
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias18",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 17
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias19",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 18
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias20",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 19
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias21",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 20
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias22",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 21
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias23",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 22
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias24",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 23
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias25",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 24
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias26",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 25
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias27",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 26
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias28",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 27
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias29",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 28
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias30",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 29
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias31",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 30
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias32",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 31
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Alias33",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 32
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:bc8d2b92dd4bcd5be1e04448922c00ee736c077140020f19017b1f187a0729b2",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-SYN1",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "SampleDrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias01",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 0
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias02",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 1
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias03",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 2
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias04",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 3
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias05",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 4
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias06",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 5
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias07",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 6
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias08",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 7
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias09",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 8
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias10",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 9
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias11",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 10
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias12",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 11
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias13",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 12
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias14",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 13
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias15",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 14
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias16",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 15
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias17",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 16
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias18",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 17
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias19",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 18
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias20",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 19
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias21",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 20
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias22",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 21
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias23",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 22
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias24",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 23
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias25",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 24
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias26",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 25
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias27",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 26
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias28",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 27
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias29",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 28
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias30",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 29
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias31",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 30
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias32",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 31
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Alias33",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 32
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"drugbank\":{\"id\":\"DB-SYN1\",\"name\":\"SampleDrug\",\"synonyms\":[\"Alias01\",\"Alias02\",\"Alias03\",\"Alias04\",\"Alias05\",\"Alias06\",\"Alias07\",\"Alias08\",\"Alias09\",\"Alias10\",\"Alias11\",\"Alias12\",\"Alias13\",\"Alias14\",\"Alias15\",\"Alias16\",\"Alias17\",\"Alias18\",\"Alias19\",\"Alias20\",\"Alias21\",\"Alias22\",\"Alias23\",\"Alias24\",\"Alias25\",\"Alias26\",\"Alias27\",\"Alias28\",\"Alias29\",\"Alias30\",\"Alias31\",\"Alias32\",\"Alias33\"]}}",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-SYN1\"",
+            "state": "values",
+            "values": [
+              "DB-SYN1"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"SampleDrug\"",
+            "state": "values",
+            "values": [
+              "SampleDrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[\"Alias01\",\"Alias02\",\"Alias03\",\"Alias04\",\"Alias05\",\"Alias06\",\"Alias07\",\"Alias08\",\"Alias09\",\"Alias10\",\"Alias11\",\"Alias12\",\"Alias13\",\"Alias14\",\"Alias15\",\"Alias16\",\"Alias17\",\"Alias18\",\"Alias19\",\"Alias20\",\"Alias21\",\"Alias22\",\"Alias23\",\"Alias24\",\"Alias25\",\"Alias26\",\"Alias27\",\"Alias28\",\"Alias29\",\"Alias30\",\"Alias31\",\"Alias32\",\"Alias33\"]",
+            "state": "values",
+            "values": [
+              "Alias01",
+              "Alias02",
+              "Alias03",
+              "Alias04",
+              "Alias05",
+              "Alias06",
+              "Alias07",
+              "Alias08",
+              "Alias09",
+              "Alias10",
+              "Alias11",
+              "Alias12",
+              "Alias13",
+              "Alias14",
+              "Alias15",
+              "Alias16",
+              "Alias17",
+              "Alias18",
+              "Alias19",
+              "Alias20",
+              "Alias21",
+              "Alias22",
+              "Alias23",
+              "Alias24",
+              "Alias25",
+              "Alias26",
+              "Alias27",
+              "Alias28",
+              "Alias29",
+              "Alias30",
+              "Alias31",
+              "Alias32",
+              "Alias33"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        }
+      ]
+    },
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:bc8d2b92dd4bcd5be1e04448922c00ee736c077140020f19017b1f187a0729b2",
+        "ordinal": 1,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-SYN2",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "SampleDrug and SecondDrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "SecondDrug",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 0
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:bc8d2b92dd4bcd5be1e04448922c00ee736c077140020f19017b1f187a0729b2",
+          "ordinal": 1,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-SYN2",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "SampleDrug and SecondDrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "SecondDrug",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 0
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 1,
+        "raw": "{\"drugbank\":{\"id\":\"DB-SYN2\",\"name\":\"SampleDrug and SecondDrug\",\"synonyms\":[\"SecondDrug\"]}}",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-SYN2\"",
+            "state": "values",
+            "values": [
+              "DB-SYN2"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"SampleDrug and SecondDrug\"",
+            "state": "values",
+            "values": [
+              "SampleDrug and SecondDrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[\"SecondDrug\"]",
+            "state": "values",
+            "values": [
+              "SecondDrug"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        }
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

@@ -287,6 +287,15 @@ impl OpenFdaClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<Option<T>, BioMcpError> {
+        Ok(self
+            .get_json_optional_with_bytes(req)
+            .await?
+            .map(|(value, _)| value))
+    }
+    async fn get_json_optional_with_bytes<T: DeserializeOwned>(
+        &self,
+        req: reqwest_middleware::RequestBuilder,
+    ) -> Result<Option<(T, Vec<u8>)>, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, self.api_key.is_some())
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::OPENFDA,
@@ -298,11 +307,13 @@ impl OpenFdaClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::OPENFDA),
         )
         .await?;
-        Self::decode_json_optional(status, &bytes).map_err(|error| {
-            error.with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::OPENFDA,
-            ))
-        })
+        Self::decode_json_optional(status, &bytes)
+            .map(|value| value.map(|value| (value, bytes.to_vec())))
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::OPENFDA,
+                ))
+            })
     }
 
     pub async fn faers_search(
@@ -366,6 +377,19 @@ impl OpenFdaClient {
         let plan = Self::label_search_plan(drug_name, self.api_key.as_deref())?;
         self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
             .await
+    }
+
+    pub(crate) async fn label_search_with_bytes(
+        &self,
+        drug_name: &str,
+    ) -> Result<Option<(serde_json::Value, Vec<u8>)>, BioMcpError> {
+        let plan = Self::label_search_plan(drug_name, self.api_key.as_deref())?;
+        self.get_json_optional_with_bytes(request_from_plan(
+            &self.client,
+            self.base.as_ref(),
+            &plan,
+        ))
+        .await
     }
 
     pub async fn drugsfda_search(

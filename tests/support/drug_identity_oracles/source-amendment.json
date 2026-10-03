@@ -1,0 +1,20 @@
+{
+  "status": "Root adopted after independent ORACLE CORRECTION DESIGN ACCEPT",
+  "original_commit": "62b6c0ac9ad8da44433fc6f49e0c896c7b84ffa0",
+  "original_manifest_sha256": "57970b03b4d286b0563f0211062c8ef52d312221b4b0d4bafec30f2c1ffcd996",
+  "baseline": "efff26d838ddc6471cfd9c06956855fd6e50ca43",
+  "construction_inspected": "de5c009053d3f3586aabeba5b813e5e0bfa58a46",
+  "dependency": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+  "source_audit_sha256": "69e0143c78e18a1009b21548daf5121612478ddc505920477241350d59df64b6",
+  "replacement_ids": [
+    "P2-05/later-exact-duplicate-upgrade-pages-offset",
+    "P5-05/search-drug",
+    "P5-04/raw-get-text",
+    "P5-02/batch-order",
+    "P5-06/typed-adopted-alias-search"
+  ],
+  "semantic_expectations": "complete reviewed source-authored Annex A and B; no runtime-derived constants",
+  "active_alternatives": 156,
+  "requirements": 42,
+  "donors": 206
+}

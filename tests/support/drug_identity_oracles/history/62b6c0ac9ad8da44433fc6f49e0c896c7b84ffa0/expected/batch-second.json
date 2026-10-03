@@ -1,0 +1,116 @@
+{
+  "page": "expected/pages/second.json",
+  "product": {
+    "section_outcomes": {
+      "approvals": {
+        "outcome": "empty",
+        "sources": [
+          "OpenFDA Drugs@FDA"
+        ]
+      },
+      "cell_lines": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "civic": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "indications": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "interactions": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "safety": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "targets": {
+        "outcome": "not_requested",
+        "sources": []
+      }
+    },
+    "name": "seconddrug",
+    "drugbank_id": "DB-SYN2",
+    "chembl_id": null,
+    "unii": null,
+    "drug_type": null,
+    "mechanism": null,
+    "mechanisms": [],
+    "approval_date": null,
+    "approval_date_raw": null,
+    "approval_date_display": null,
+    "approval_summary": null,
+    "brand_names": [],
+    "route": null,
+    "targets": [],
+    "variant_targets": [],
+    "target_family": null,
+    "target_family_name": null,
+    "indications": [],
+    "interactions": [],
+    "interaction_text": null,
+    "interaction_pagination": null,
+    "interaction_bundle_freshness": null,
+    "interaction_coverage_status": null,
+    "ddinter_synonyms": [],
+    "pharm_classes": [],
+    "top_adverse_events": [],
+    "faers_query": null,
+    "label": null,
+    "label_set_id": null,
+    "shortage": null,
+    "approvals": [],
+    "fda_orphan_designations": null,
+    "us_safety_warnings": null,
+    "us_boxed_warning": null,
+    "ema_regulatory": null,
+    "ema_safety": null,
+    "ema_shortage": null,
+    "who_prequalification": null,
+    "civic": null,
+    "cell_lines": null
+  },
+  "conversion": [
+    {
+      "response_digest": "sha256:cb65425622b72b7dc199671c5fd9c78e8356a8a5531d4c39658075d338ec154c",
+      "ordinal": 0,
+      "claim_index": 0,
+      "origin": {
+        "section": "drugbank",
+        "field": "id",
+        "section_index": null,
+        "value_index": null
+      },
+      "lexical_text": "DB-SYN2",
+      "namespace": "DrugBank",
+      "source_term_type": null,
+      "action": "select_first_code",
+      "reason": "first DrugBank identifier in selected lookup",
+      "target": "DB-SYN2"
+    },
+    {
+      "response_digest": "sha256:cb65425622b72b7dc199671c5fd9c78e8356a8a5531d4c39658075d338ec154c",
+      "ordinal": 0,
+      "claim_index": 1,
+      "origin": {
+        "section": "drugbank",
+        "field": "name",
+        "section_index": null,
+        "value_index": null
+      },
+      "lexical_text": "SecondDrug",
+      "namespace": null,
+      "source_term_type": {
+        "namespace": "MyChem",
+        "label": "name"
+      },
+      "action": "ascii_lowercase",
+      "reason": "selected display source; original lexical claim retained",
+      "target": "seconddrug"
+    }
+  ]
+}

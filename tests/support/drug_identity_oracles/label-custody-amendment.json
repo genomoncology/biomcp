@@ -1,0 +1,25 @@
+{
+  "status": "Root adopted independent label custody DESIGN ACCEPT on 2026-10-01",
+  "proposal_sha256": "1e7e8ecd64f4ad91a79ee9df90cc08f8afc7095b4b1373cff661191328a62c40",
+  "review_sha256": "cef60b5636c6d09e8ab398d31296ffd6644b7af22776863ae3ee5c553e626fef",
+  "product_review_pin": "34fdd2fb3318616cbf59b9ff9f43f54a32d55156",
+  "owning_review_pin": "8417ba1e77668fb192739e1fe19fccdb6031463a",
+  "baseline": "efff26d838ddc6471cfd9c06956855fd6e50ca43",
+  "dependency": "59fde6246c1a07ac115d6fc9f16471354a725bff",
+  "prior_manifest_sha256": "806bd5c7364fedd16f952b8267c8b41316d8091798ece5be1b9873cbfc60d2bd",
+  "prior_P2_sha256": "9607e1bb2f30414b548aa68742a60dddb0e320f5ecb9cb6aa39e4c54e7b384c4",
+  "case": "P2-08/label-canonical",
+  "sole_change": {
+    "pointer": "/expected/conversion/4/lexical_text",
+    "before": "seconddrug",
+    "after": "SecondDrug"
+  },
+  "source_body": "inputs/label-canonical.json",
+  "source_pointer": "/results/0/openfda/generic_name/0",
+  "source_body_sha256": "d3a765fa007e73176455117a41e6816c48305fdd9be5a0d66c21c47f9a6efd39",
+  "target_unchanged": "seconddrug",
+  "alternatives": 156,
+  "requirements": 42,
+  "donors": 206,
+  "acceptance_scope": "oracle amendment only; no CODE/proof/integration acceptance"
+}

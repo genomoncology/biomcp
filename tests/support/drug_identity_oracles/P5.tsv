@@ -1,0 +1,30 @@
+case	requirement	alternative	boundary	object
+P5-07/vaccine-bypass	P5-07	vaccine-bypass	unchanged literal assertion	P5.json#/0
+P5-07/unknown-total	P5-07	unknown-total	unchanged literal assertion	P5.json#/1
+P5-07/exhausted	P5-07	exhausted	unchanged literal assertion	P5.json#/2
+P5-07/api-filter	P5-07	api-filter	unchanged literal assertion	P5.json#/3
+P5-07/finished-filter	P5-07	finished-filter	unchanged literal assertion	P5.json#/4
+P5-01/explicit-approvals-json-markdown	P5-01	explicit-approvals-json-markdown	shipped CLI	P5.json#/5
+P5-01/default-targets	P5-01	default-targets	unchanged literal assertion	P5.json#/6
+P5-03/not-requested-all-explicit	P5-03	not-requested-all-explicit	unchanged literal assertion	P5.json#/7
+P5-03/empty-data-unavailable-approvals	P5-03	empty-data-unavailable-approvals	unchanged literal assertion	P5.json#/8
+P5-03/partial-interactions	P5-03	partial-interactions	unchanged literal assertion	P5.json#/9
+P5-03/required-label-zero-ddinter	P5-03	required-label-zero-ddinter	unchanged literal assertion	P5.json#/10
+P5-03/raw-region-restrictions	P5-03	raw-region-restrictions	unchanged literal assertion	P5.json#/11
+P5-04/raw-get-json	P5-04	raw-get-json	MCP dispatch	P5.json#/12
+P5-04/typed-get-json	P5-04	typed-get-json	MCP dispatch	P5.json#/13
+P5-04/raw-get-text	P5-04	raw-get-text	MCP dispatch	P5.json#/14
+P5-04/rejected-raw-and-typed	P5-04	rejected-raw-and-typed	MCP dispatch	P5.json#/15
+P5-05/get-region	P5-05	get-region	typed mapper refusal	P5.json#/16
+P5-05/search-drug	P5-05	search-drug	typed mapper refusal	P5.json#/17
+P5-02/search-order-count-pagination	P5-02	search-order-count-pagination	shipped CLI search	P5.json#/18
+P5-02/batch-order	P5-02	batch-order	shipped CLI batch	P5.json#/19
+P5-02/empty-region-buckets	P5-02	empty-region-buckets	unchanged literal assertion	P5.json#/20
+P5-02/regional-order-envelopes	P5-02	regional-order-envelopes	unchanged literal assertion	P5.json#/21
+P5-06/typed-adopted-alias-search	P5-06	typed-adopted-alias-search	trial adopted alias consumer	P5.json#/22
+P5-06/typed-opt-out-refusal	P5-06	typed-opt-out-refusal	typed trial input	P5.json#/23
+P5-06/raw-opt-out	P5-06	raw-opt-out	raw MCP trial consumer	P5.json#/24
+P5-01/default-json-markdown-adopted	P5-01	default-json-markdown-adopted	shipped CLI	P5.json#/25
+P5-02/search-markdown	P5-02	search-markdown	shipped CLI search	P5.json#/26
+P5-02/raw-mcp-search-json	P5-02	raw-mcp-search-json	actual raw MCP biomcp tool dispatch to shipped drug search	P5.json#/27
+P5-02/raw-mcp-search-markdown	P5-02	raw-mcp-search-markdown	actual raw MCP biomcp tool dispatch to shipped drug search	P5.json#/28

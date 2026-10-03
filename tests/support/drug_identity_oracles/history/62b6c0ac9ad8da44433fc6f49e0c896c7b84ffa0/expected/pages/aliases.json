@@ -1,0 +1,583 @@
+{
+  "profile": "Get",
+  "digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+  "total": 1,
+  "rows": [
+    {
+      "disposition": "Projected",
+      "identity": {
+        "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+        "ordinal": 0,
+        "claims": [
+          {
+            "kind": "code",
+            "text": "DB-SYN3",
+            "namespace": "DrugBank",
+            "term_type": null,
+            "origin": {
+              "section": "drugbank",
+              "field": "id",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "canonicaldrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "drugbank",
+              "field": "name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Zeta",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 0
+            }
+          },
+          {
+            "kind": "term",
+            "text": "req-100",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 1
+            }
+          },
+          {
+            "kind": "term",
+            "text": "Beta",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 2
+            }
+          },
+          {
+            "kind": "term",
+            "text": "canonicaldrug free base",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 3
+            }
+          },
+          {
+            "kind": "term",
+            "text": "one two three four five",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 4
+            }
+          },
+          {
+            "kind": "term",
+            "text": "ABT-100",
+            "namespace": null,
+            "term_type": "synonym",
+            "origin": {
+              "section": "drugbank",
+              "field": "synonyms",
+              "section_index": null,
+              "value_index": 5
+            }
+          },
+          {
+            "kind": "term",
+            "text": "canonicaldrug",
+            "namespace": null,
+            "term_type": "other",
+            "origin": {
+              "section": "openfda",
+              "field": "generic_name",
+              "section_index": null,
+              "value_index": null
+            }
+          },
+          {
+            "kind": "term",
+            "text": "BrandTwo",
+            "namespace": null,
+            "term_type": "brand_name",
+            "origin": {
+              "section": "openfda",
+              "field": "brand_name",
+              "section_index": null,
+              "value_index": 0
+            }
+          },
+          {
+            "kind": "term",
+            "text": " alpha ",
+            "namespace": null,
+            "term_type": "brand_name",
+            "origin": {
+              "section": "openfda",
+              "field": "brand_name",
+              "section_index": null,
+              "value_index": 1
+            }
+          },
+          {
+            "kind": "term",
+            "text": "ALPHA",
+            "namespace": null,
+            "term_type": "brand_name",
+            "origin": {
+              "section": "openfda",
+              "field": "brand_name",
+              "section_index": null,
+              "value_index": 2
+            }
+          }
+        ],
+        "preferred_name": null,
+        "qualified_nomenclature": null
+      },
+      "document": {
+        "type": "biodata/drug-identity",
+        "value": {
+          "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+          "ordinal": 0,
+          "claims": [
+            {
+              "kind": "code",
+              "text": "DB-SYN3",
+              "namespace": "DrugBank",
+              "term_type": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "canonicaldrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Zeta",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 0
+              }
+            },
+            {
+              "kind": "term",
+              "text": "req-100",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 1
+              }
+            },
+            {
+              "kind": "term",
+              "text": "Beta",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 2
+              }
+            },
+            {
+              "kind": "term",
+              "text": "canonicaldrug free base",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 3
+              }
+            },
+            {
+              "kind": "term",
+              "text": "one two three four five",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 4
+              }
+            },
+            {
+              "kind": "term",
+              "text": "ABT-100",
+              "namespace": null,
+              "term_type": "synonym",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 5
+              }
+            },
+            {
+              "kind": "term",
+              "text": "canonicaldrug",
+              "namespace": null,
+              "term_type": "other",
+              "origin": {
+                "section": "openfda",
+                "field": "generic_name",
+                "section_index": null,
+                "value_index": null
+              }
+            },
+            {
+              "kind": "term",
+              "text": "BrandTwo",
+              "namespace": null,
+              "term_type": "brand_name",
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 0
+              }
+            },
+            {
+              "kind": "term",
+              "text": " alpha ",
+              "namespace": null,
+              "term_type": "brand_name",
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 1
+              }
+            },
+            {
+              "kind": "term",
+              "text": "ALPHA",
+              "namespace": null,
+              "term_type": "brand_name",
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 2
+              }
+            }
+          ]
+        }
+      },
+      "companion": {
+        "ordinal": 0,
+        "raw": "{\"drugbank\":{\"id\":\"DB-SYN3\",\"name\":\"canonicaldrug\",\"synonyms\":[\"Zeta\",\"req-100\",\"Beta\",\"canonicaldrug free base\",\"one two three four five\",\"ABT-100\"]},\"openfda\":{\"generic_name\":\"canonicaldrug\",\"brand_name\":[\"BrandTwo\",\" alpha \",\"ALPHA\"]}}",
+        "fields": [
+          {
+            "section": "drugbank",
+            "name": "id",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"DB-SYN3\"",
+            "state": "values",
+            "values": [
+              "DB-SYN3"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"canonicaldrug\"",
+            "state": "values",
+            "values": [
+              "canonicaldrug"
+            ]
+          },
+          {
+            "section": "drugbank",
+            "name": "synonyms",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[\"Zeta\",\"req-100\",\"Beta\",\"canonicaldrug free base\",\"one two three four five\",\"ABT-100\"]",
+            "state": "values",
+            "values": [
+              "Zeta",
+              "req-100",
+              "Beta",
+              "canonicaldrug free base",
+              "one two three four five",
+              "ABT-100"
+            ]
+          },
+          {
+            "section": "openfda",
+            "name": "generic_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": "\"canonicaldrug\"",
+            "state": "values",
+            "values": [
+              "canonicaldrug"
+            ]
+          },
+          {
+            "section": "openfda",
+            "name": "brand_name",
+            "section_index": null,
+            "was_array": true,
+            "raw": "[\"BrandTwo\",\" alpha \",\"ALPHA\"]",
+            "state": "values",
+            "values": [
+              "BrandTwo",
+              " alpha ",
+              "ALPHA"
+            ]
+          },
+          {
+            "section": "chembl",
+            "name": "molecule_chembl_id",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chembl",
+            "name": "pref_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "unii",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "unii",
+            "name": "display_name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "ndc",
+            "name": "nonproprietaryname",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "gtopdb",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          },
+          {
+            "section": "chebi",
+            "name": "name",
+            "section_index": null,
+            "was_array": false,
+            "raw": null,
+            "state": "missing",
+            "values": []
+          }
+        ],
+        "source_only_enrichment": {}
+      },
+      "adapter_losses": [
+        {
+          "field": "drugbank.id",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "drugbank.synonyms",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.generic_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.brand_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.brand_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "openfda.brand_name",
+          "disposition": "preserved",
+          "reason": "source claim and occurrence origin retained"
+        },
+        {
+          "field": "display_name",
+          "disposition": "converted",
+          "reason": "product normalizes and selects one displayed name"
+        },
+        {
+          "field": "brand_name",
+          "disposition": "converted",
+          "reason": "product keeps at most three brands"
+        },
+        {
+          "field": "identifiers",
+          "disposition": "converted",
+          "reason": "product keeps first nonempty merged identifier"
+        }
+      ],
+      "term_source_types": [
+        null,
+        {
+          "namespace": "MyChem",
+          "label": "name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "synonyms",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "generic_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "brand_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "brand_name",
+          "language": null
+        },
+        {
+          "namespace": "MyChem",
+          "label": "brand_name",
+          "language": null
+        }
+      ]
+    }
+  ],
+  "require_complete": "Ok"
+}

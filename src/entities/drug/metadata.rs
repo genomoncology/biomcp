@@ -64,8 +64,22 @@ pub(super) fn orphan_aliases(requested_name: &str, drug: &Drug, hits: &[MyChemHi
                 || chembl_conflict
                 || unii_conflict
             {
+                let reason = if db_conflict || chembl_conflict {
+                    "conflicting populated identifiers"
+                } else if unii_conflict {
+                    "later UNII conflict despite earlier matching code"
+                } else {
+                    "no matching populated identifier"
+                };
+                hit.record_claims("orphan alias admission", "exclude_alias_row", reason);
+                hit.record_row("orphan alias admission", "exclude_alias_row", reason);
                 continue;
             }
+            hit.record_row(
+                "orphan alias admission",
+                "select",
+                "matching populated identifier and no conflicting populated identifier",
+            );
             if let Some(value) = hit.unii.as_ref().and_then(|value| value.display_name()) {
                 values.push(value.into());
             }

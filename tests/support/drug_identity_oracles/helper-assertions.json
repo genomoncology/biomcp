@@ -1,0 +1,71 @@
+[
+  {
+    "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+    "path": "src/entities/drug/get/tests.rs",
+    "declaration": "assert_interaction_outcome",
+    "input_reference": {
+      "path": "src/entities/drug/get/tests.rs",
+      "declaration": "assert_interaction_outcome",
+      "line": 442
+    },
+    "declaration_body": {
+      "body_start_line": 442,
+      "body_end_line": 455,
+      "body_sha256": "c85c43507ac550c4d976eb9bd49681551ea19a86107cb5a5675cb6d4d32bbb0b"
+    },
+    "assertions": [
+      {
+        "line": 447,
+        "end_line": 447,
+        "literal": "    assert_eq!(outcome.outcome(), state);",
+        "sha256": "4bf6d096c449d5729a937898a27f3975c9b6d98a06e4f552182a8539678b555b",
+        "assertion": "assert_eq"
+      },
+      {
+        "line": 448,
+        "end_line": 454,
+        "literal": "    assert_eq!(\n        outcome.sources(),\n        sources\n            .iter()\n            .map(|value| value.to_string())\n            .collect::<Vec<_>>()\n    );",
+        "sha256": "47095513c3d7c4486e050c2cf2670833c9173cc631fe98c60475a464d1f838cb",
+        "assertion": "assert_eq"
+      }
+    ]
+  },
+  {
+    "commit": "1dab73b270aeb082915f43bfb9186528516157b7",
+    "path": "src/entities/drug/get/tests.rs",
+    "declaration": "assert_approval_outcome",
+    "input_reference": {
+      "path": "src/entities/drug/get/tests.rs",
+      "declaration": "assert_approval_outcome",
+      "line": 633
+    },
+    "declaration_body": {
+      "body_start_line": 636,
+      "body_end_line": 649,
+      "body_sha256": "b08fc72aa38bf83de17549727712276219ebeb204796421b571bfe42f5b9c749"
+    },
+    "assertions": [
+      {
+        "line": 643,
+        "end_line": 643,
+        "literal": "    assert_eq!(outcome.outcome(), expected);",
+        "sha256": "d18a115335c7dce66fc1fad0b56c29716290eea650ec322a3c14afb274f5479f",
+        "assertion": "assert_eq"
+      },
+      {
+        "line": 645,
+        "end_line": 645,
+        "literal": "        assert!(outcome.sources().is_empty());",
+        "sha256": "2876906ae9dd8d5f7b3491ab8ed150f07e16c0d14abad511b145a727da731654",
+        "assertion": "assert"
+      },
+      {
+        "line": 647,
+        "end_line": 647,
+        "literal": "        assert_eq!(outcome.sources(), &[\"OpenFDA Drugs@FDA\".to_string()]);",
+        "sha256": "18d3591d79b3a76c45ef26c6ff88b415029c9efc448ea969bd5f92029c1cd697",
+        "assertion": "assert_eq"
+      }
+    ]
+  }
+]

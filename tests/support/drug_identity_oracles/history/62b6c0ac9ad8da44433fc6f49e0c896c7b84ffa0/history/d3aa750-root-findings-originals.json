@@ -1,0 +1,1235 @@
+{
+  "status": "rejected original expectations; history only; excluded from active case tables",
+  "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+  "review_receipt": "/private/tmp/nucleus-biodata-0224-consumer-oracle-review-20261001.md",
+  "manifest_sha256": "7274ebbc51b5db20d7a32a4955df152a41bd4d6cc4e7a6ee7213098fa7e67c47",
+  "cases": [
+    {
+      "case": "P1-02/name-256",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P1.json",
+      "pointer": "/13",
+      "source_blob_sha256": "d2247bbb625dda0b79cb3c2a5155df256010cd56e4fcd0e6620b6967c25c41f0",
+      "original_case": {
+        "id": "P1-02/name-256",
+        "requirement": "P1-02",
+        "alternative": "name-256",
+        "boundary": "name validation",
+        "input": {
+          "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+          "operation": "resolve_drug_base",
+          "fetch_label_response": false,
+          "label_required": false,
+          "profile": "Get"
+        },
+        "responses": [],
+        "cache_before": {},
+        "expected": {
+          "valid": true,
+          "failure": null
+        },
+        "requests_expected": [],
+        "cache_after": {},
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [],
+        "options": {
+          "http_cache": "disabled by case-local NoStore fixture",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
+          "request_defaults_reference": "requests.json",
+          "semantic_expectation_source": "explicit authored constants, never implementation output"
+        }
+      }
+    },
+    {
+      "case": "P2-04/duplicates-nameless-truncate-provider-total",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P2.json",
+      "pointer": "/16",
+      "source_blob_sha256": "7e3097f29358907d572155f8451ee0176a87a743f3156c3c811600f0d98a1151",
+      "original_case": {
+        "id": "P2-04/duplicates-nameless-truncate-provider-total",
+        "requirement": "P2-04",
+        "alternative": "duplicates-nameless-truncate-provider-total",
+        "boundary": "plain search",
+        "input": {
+          "page": {
+            "path": "inputs/search-omissions.json",
+            "sha256": "9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+            "digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+            "bytes": 175
+          },
+          "query": "sampledrug",
+          "limit": 1,
+          "offset": 1,
+          "operation": "search_page",
+          "filters": {
+            "query": "sampledrug",
+            "target": null,
+            "indication": null,
+            "mechanism": null,
+            "drug_type": null,
+            "atc": null,
+            "pharm_class": null,
+            "interactions": null
+          },
+          "profile": "Search"
+        },
+        "responses": [
+          {
+            "status": 200,
+            "content_type": "application/json",
+            "body": {
+              "path": "inputs/search-omissions.json",
+              "sha256": "9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+              "digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+              "bytes": 175
+            }
+          }
+        ],
+        "cache_before": {},
+        "expected": {
+          "page": "expected/pages/search-omissions.json",
+          "results": [
+            {
+              "name": "sampledrug",
+              "drugbank_id": "DB-SYN1",
+              "drug_type": null,
+              "mechanism": null,
+              "target": null
+            }
+          ],
+          "total": 101,
+          "total_kind": "provider",
+          "conversion": [
+            {
+              "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+              "ordinal": 0,
+              "action": "select",
+              "reason": "provider order",
+              "claim_occurrences": [
+                {
+                  "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+                  "ordinal": 0,
+                  "claim_index": 0,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "id",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "DB-SYN1",
+                  "namespace": "DrugBank",
+                  "source_term_type": null,
+                  "action": "select",
+                  "reason": "provider order"
+                },
+                {
+                  "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+                  "ordinal": 0,
+                  "claim_index": 1,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "name",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "SampleDrug",
+                  "namespace": null,
+                  "source_term_type": {
+                    "namespace": "MyChem",
+                    "label": "name"
+                  },
+                  "action": "select",
+                  "reason": "provider order"
+                }
+              ]
+            },
+            {
+              "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+              "ordinal": 1,
+              "action": "deduplicate",
+              "reason": "normalized name",
+              "claim_occurrences": [
+                {
+                  "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+                  "ordinal": 1,
+                  "claim_index": 0,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "id",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "DB-SYN1",
+                  "namespace": "DrugBank",
+                  "source_term_type": null,
+                  "action": "deduplicate",
+                  "reason": "normalized name"
+                },
+                {
+                  "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+                  "ordinal": 1,
+                  "claim_index": 1,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "name",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "SampleDrug",
+                  "namespace": null,
+                  "source_term_type": {
+                    "namespace": "MyChem",
+                    "label": "name"
+                  },
+                  "action": "deduplicate",
+                  "reason": "normalized name"
+                }
+              ]
+            },
+            {
+              "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+              "ordinal": 2,
+              "action": "discard",
+              "reason": "nameless",
+              "claim_occurrences": []
+            },
+            {
+              "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+              "ordinal": 3,
+              "action": "truncate",
+              "reason": "requested limit",
+              "claim_occurrences": [
+                {
+                  "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+                  "ordinal": 3,
+                  "claim_index": 0,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "id",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "DB-SYN2",
+                  "namespace": "DrugBank",
+                  "source_term_type": null,
+                  "action": "truncate",
+                  "reason": "requested limit"
+                },
+                {
+                  "response_digest": "sha256:9281b33caad8ad767fd6717c365a827891cd6223897bf2833121321a8e236be1",
+                  "ordinal": 3,
+                  "claim_index": 1,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "name",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "SecondDrug",
+                  "namespace": null,
+                  "source_term_type": {
+                    "namespace": "MyChem",
+                    "label": "name"
+                  },
+                  "action": "truncate",
+                  "reason": "requested limit"
+                }
+              ]
+            }
+          ]
+        },
+        "requests_expected": [
+          {
+            "provider": "MyChem.info",
+            "method": "GET",
+            "path": "/v1/query",
+            "plan_path": "query",
+            "profile": "Search",
+            "query": [
+              [
+                "q",
+                "sampledrug"
+              ],
+              [
+                "size",
+                "2"
+              ],
+              [
+                "from",
+                "1"
+              ],
+              [
+                "fields",
+                "drugbank.id,drugbank.name,drugbank.synonyms,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,chembl.atc_classifications,gtopdb.name,gtopdb.interaction_targets.symbol,unii.unii,unii.display_name,ndc.nonproprietaryname,ndc.pharm_classes,chebi.name,openfda.generic_name,openfda.brand_name"
+              ]
+            ],
+            "window": 10000
+          }
+        ],
+        "cache_after": {},
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [],
+        "options": {
+          "http_cache": "disabled by case-local NoStore fixture",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
+          "request_defaults_reference": "requests.json",
+          "semantic_expectation_source": "explicit authored constants, never implementation output"
+        }
+      }
+    },
+    {
+      "case": "P3-03/discard-search-row",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P3.json",
+      "pointer": "/5",
+      "source_blob_sha256": "c9c61d330cd6558e51806258182484bfe018cedac20b3e34e20fe4e5473e1c23",
+      "original_case": {
+        "id": "P3-03/discard-search-row",
+        "requirement": "P3-03",
+        "alternative": "discard-search-row",
+        "boundary": "conversion",
+        "input": {
+          "case": "P2-04/duplicates-nameless-truncate-provider-total",
+          "invocation_reference": {
+            "case": "P2-04/duplicates-nameless-truncate-provider-total",
+            "component": "input"
+          }
+        },
+        "responses": [],
+        "cache_before": {},
+        "expected": {
+          "exact_case_reference": "P2-04/duplicates-nameless-truncate-provider-total"
+        },
+        "requests_expected": [],
+        "cache_after": {},
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [],
+        "options": {
+          "http_cache": "disabled",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "isolated case-local map"
+        }
+      }
+    },
+    {
+      "case": "P3-01/repeated-equal-code-origins",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P3.json",
+      "pointer": "/8",
+      "source_blob_sha256": "c9c61d330cd6558e51806258182484bfe018cedac20b3e34e20fe4e5473e1c23",
+      "original_case": {
+        "id": "P3-01/repeated-equal-code-origins",
+        "requirement": "P3-01",
+        "alternative": "repeated-equal-code-origins",
+        "boundary": "identity document",
+        "input": {
+          "page": {
+            "path": "inputs/repeat-codes.json",
+            "sha256": "98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+            "digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+            "bytes": 85
+          },
+          "profile": "Get",
+          "operation": "parse_mychem_identity_then_require_complete",
+          "selected_ordinals": [
+            0
+          ]
+        },
+        "responses": [],
+        "cache_before": {},
+        "expected": {
+          "page": "expected/pages/repeat-codes.json",
+          "product": {
+            "section_outcomes": {
+              "approvals": {
+                "outcome": "not_requested",
+                "sources": []
+              },
+              "cell_lines": {
+                "outcome": "not_requested",
+                "sources": []
+              },
+              "civic": {
+                "outcome": "not_requested",
+                "sources": []
+              },
+              "indications": {
+                "outcome": "not_requested",
+                "sources": []
+              },
+              "interactions": {
+                "outcome": "not_requested",
+                "sources": []
+              },
+              "safety": {
+                "outcome": "not_requested",
+                "sources": []
+              },
+              "targets": {
+                "outcome": "not_requested",
+                "sources": []
+              }
+            },
+            "name": "requestedname",
+            "drugbank_id": null,
+            "chembl_id": null,
+            "unii": "U-SYN1",
+            "drug_type": null,
+            "mechanism": null,
+            "mechanisms": [],
+            "approval_date": null,
+            "approval_date_raw": null,
+            "approval_date_display": null,
+            "approval_summary": null,
+            "brand_names": [],
+            "route": null,
+            "targets": [],
+            "variant_targets": [],
+            "target_family": null,
+            "target_family_name": null,
+            "indications": [],
+            "interactions": [],
+            "interaction_text": null,
+            "interaction_pagination": null,
+            "interaction_bundle_freshness": null,
+            "interaction_coverage_status": null,
+            "ddinter_synonyms": [],
+            "pharm_classes": [],
+            "top_adverse_events": [],
+            "faers_query": null,
+            "label": null,
+            "label_set_id": null,
+            "shortage": null,
+            "approvals": null,
+            "fda_orphan_designations": null,
+            "us_safety_warnings": null,
+            "us_boxed_warning": null,
+            "ema_regulatory": null,
+            "ema_safety": null,
+            "ema_shortage": null,
+            "who_prequalification": null,
+            "civic": null,
+            "cell_lines": null
+          },
+          "conversion": [
+            {
+              "response_digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+              "ordinal": 0,
+              "claim_index": 0,
+              "action": "select",
+              "reason": "first code",
+              "target": "U-SYN1",
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 0,
+                "value_index": null
+              },
+              "lexical_text": "U-SYN1",
+              "namespace": "UNII",
+              "source_term_type": null
+            },
+            {
+              "response_digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+              "ordinal": 0,
+              "claim_index": 1,
+              "action": "omit_code",
+              "reason": "first code already selected; equal value separate occurrence",
+              "target": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 1,
+                "value_index": null
+              },
+              "lexical_text": "U-SYN1",
+              "namespace": "UNII",
+              "source_term_type": null
+            },
+            {
+              "response_digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+              "ordinal": 0,
+              "claim_index": 2,
+              "action": "omit_code",
+              "reason": "first code already selected; conflict retained",
+              "target": null,
+              "origin": {
+                "section": "unii",
+                "field": "unii",
+                "section_index": 2,
+                "value_index": null
+              },
+              "lexical_text": "U-SYN2",
+              "namespace": "UNII",
+              "source_term_type": null
+            },
+            {
+              "response_digest": "sha256:98cf5279bad50d3916437a2128b9701a1a9e69101141812946dfbbb9d905fc8c",
+              "ordinal": 0,
+              "origin": null,
+              "action": "requested_name_fallback",
+              "target": "requestedname",
+              "reason": "no source name"
+            }
+          ]
+        },
+        "requests_expected": [],
+        "cache_after": {},
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [],
+        "options": {
+          "http_cache": "disabled by case-local NoStore fixture",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
+          "request_defaults_reference": "requests.json",
+          "semantic_expectation_source": "explicit authored constants, never implementation output"
+        }
+      }
+    },
+    {
+      "case": "P3-04/invalid-identity-companion",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P3.json",
+      "pointer": "/9",
+      "source_blob_sha256": "c9c61d330cd6558e51806258182484bfe018cedac20b3e34e20fe4e5473e1c23",
+      "original_case": {
+        "id": "P3-04/invalid-identity-companion",
+        "requirement": "P3-04",
+        "alternative": "invalid-identity-companion",
+        "boundary": "accepted identity then enrichment failure",
+        "input": {
+          "page": {
+            "path": "inputs/invalid-enrichment-identity.json",
+            "sha256": "112b7d0919d34330ad4b93cce8b39fcdfbed74a9deaeb8d4ced798d663aa09c0",
+            "digest": "sha256:112b7d0919d34330ad4b93cce8b39fcdfbed74a9deaeb8d4ced798d663aa09c0",
+            "bytes": 101
+          },
+          "operation": "parse_mychem_identity_then_require_complete",
+          "profile": "Get",
+          "selected_ordinals": [
+            0
+          ]
+        },
+        "responses": [],
+        "cache_before": {},
+        "expected": {
+          "page": "expected/pages/invalid-enrichment-identity.json",
+          "failure": "expected/failures/invalid-enrichment.json",
+          "enrichment_result": null
+        },
+        "requests_expected": [],
+        "cache_after": {},
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [],
+        "options": {
+          "http_cache": "disabled by case-local NoStore fixture",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
+          "request_defaults_reference": "requests.json",
+          "semantic_expectation_source": "explicit authored constants, never implementation output"
+        }
+      }
+    },
+    {
+      "case": "P5-02/search-order-count-pagination",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P5.json",
+      "pointer": "/18",
+      "source_blob_sha256": "7a3f76632fc4b89d21e25f1fd9483ba1354ca3a34a5b43e2436df09d9b40166e",
+      "original_case": {
+        "id": "P5-02/search-order-count-pagination",
+        "requirement": "P5-02",
+        "alternative": "search-order-count-pagination",
+        "boundary": "shipped CLI search",
+        "input": {
+          "argv": [
+            "biomcp",
+            "--json",
+            "search",
+            "drug",
+            "--query",
+            "sampledrug",
+            "--region",
+            "us",
+            "--limit",
+            "1",
+            "--offset",
+            "0"
+          ],
+          "operation": "shipped_cli_dispatch",
+          "global_json": true,
+          "credentials": "none"
+        },
+        "responses": [
+          {
+            "status": 200,
+            "content_type": "application/json",
+            "body": {
+              "path": "inputs/two-search.json",
+              "sha256": "d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+              "digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+              "bytes": 129
+            }
+          }
+        ],
+        "cache_before": {},
+        "expected": {
+          "page": "expected/pages/two-search.json",
+          "cli": {
+            "exit": 0,
+            "stdout_json": "expected/surfaces/search-us.json",
+            "stderr": ""
+          },
+          "conversion": [
+            {
+              "response_digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+              "ordinal": 0,
+              "action": "select",
+              "reason": "active-substance tier before broad text",
+              "claim_occurrences": [
+                {
+                  "response_digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+                  "ordinal": 0,
+                  "claim_index": 0,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "id",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "DB-SYN1",
+                  "namespace": "DrugBank",
+                  "source_term_type": null,
+                  "action": "select",
+                  "reason": "active-substance tier before broad text"
+                },
+                {
+                  "response_digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+                  "ordinal": 0,
+                  "claim_index": 1,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "name",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "SampleDrug",
+                  "namespace": null,
+                  "source_term_type": {
+                    "namespace": "MyChem",
+                    "label": "name"
+                  },
+                  "action": "select",
+                  "reason": "active-substance tier before broad text"
+                }
+              ]
+            },
+            {
+              "response_digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+              "ordinal": 1,
+              "action": "omit_page",
+              "reason": "limit after complete ranking",
+              "claim_occurrences": [
+                {
+                  "response_digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+                  "ordinal": 1,
+                  "claim_index": 0,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "id",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "DB-SYN2",
+                  "namespace": "DrugBank",
+                  "source_term_type": null,
+                  "action": "omit_page",
+                  "reason": "limit after complete ranking"
+                },
+                {
+                  "response_digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+                  "ordinal": 1,
+                  "claim_index": 1,
+                  "origin": {
+                    "section": "drugbank",
+                    "field": "name",
+                    "section_index": null,
+                    "value_index": null
+                  },
+                  "lexical_text": "SecondDrug",
+                  "namespace": null,
+                  "source_term_type": {
+                    "namespace": "MyChem",
+                    "label": "name"
+                  },
+                  "action": "omit_page",
+                  "reason": "limit after complete ranking"
+                }
+              ]
+            }
+          ]
+        },
+        "requests_expected": [
+          {
+            "provider": "MyChem.info",
+            "method": "GET",
+            "path": "/v1/query",
+            "plan_path": "query",
+            "profile": "Search",
+            "query": [
+              [
+                "q",
+                "sampledrug"
+              ],
+              [
+                "size",
+                "50"
+              ],
+              [
+                "from",
+                "0"
+              ],
+              [
+                "fields",
+                "drugbank.id,drugbank.name,drugbank.synonyms,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,chembl.atc_classifications,gtopdb.name,gtopdb.interaction_targets.symbol,unii.unii,unii.display_name,ndc.nonproprietaryname,ndc.pharm_classes,chebi.name,openfda.generic_name,openfda.brand_name"
+              ]
+            ],
+            "window": 10000
+          }
+        ],
+        "cache_after": {},
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [],
+        "options": {
+          "http_cache": "disabled by case-local NoStore fixture",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
+          "request_defaults_reference": "requests.json",
+          "semantic_expectation_source": "explicit authored constants, never implementation output"
+        }
+      }
+    },
+    {
+      "case": "P5-02/search-markdown",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P5.json",
+      "pointer": "/26",
+      "source_blob_sha256": "7a3f76632fc4b89d21e25f1fd9483ba1354ca3a34a5b43e2436df09d9b40166e",
+      "original_case": {
+        "id": "P5-02/search-markdown",
+        "requirement": "P5-02",
+        "alternative": "search-markdown",
+        "boundary": "shipped CLI search",
+        "input": {
+          "argv": [
+            "biomcp",
+            "search",
+            "drug",
+            "--query",
+            "sampledrug",
+            "--region",
+            "us",
+            "--limit",
+            "1",
+            "--offset",
+            "0"
+          ],
+          "operation": "shipped_cli_dispatch",
+          "global_json": false,
+          "credentials": "none"
+        },
+        "responses": [
+          {
+            "status": 200,
+            "content_type": "application/json",
+            "body": {
+              "path": "inputs/two-search.json",
+              "sha256": "d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+              "digest": "sha256:d02316afb3c52bc1ea6f435db1bdd14e1564c31365affbac5be459a87aa23612",
+              "bytes": 129
+            }
+          }
+        ],
+        "cache_before": {},
+        "expected": {
+          "page": "expected/pages/two-search.json",
+          "cli": {
+            "exit": 0,
+            "ordered_content": "inputs/expected-search-us.md",
+            "stderr": ""
+          },
+          "results": [
+            {
+              "name": "sampledrug",
+              "drugbank_id": "DB-SYN1",
+              "drug_type": null,
+              "mechanism": null,
+              "target": null
+            }
+          ],
+          "total": 2,
+          "offset": 0,
+          "limit": 1,
+          "has_more": true
+        },
+        "requests_expected": [
+          {
+            "provider": "MyChem.info",
+            "method": "GET",
+            "path": "/v1/query",
+            "plan_path": "query",
+            "profile": "Search",
+            "query": [
+              [
+                "q",
+                "sampledrug"
+              ],
+              [
+                "size",
+                "50"
+              ],
+              [
+                "from",
+                "0"
+              ],
+              [
+                "fields",
+                "drugbank.id,drugbank.name,drugbank.synonyms,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,chembl.atc_classifications,gtopdb.name,gtopdb.interaction_targets.symbol,unii.unii,unii.display_name,ndc.nonproprietaryname,ndc.pharm_classes,chebi.name,openfda.generic_name,openfda.brand_name"
+              ]
+            ],
+            "window": 10000
+          }
+        ],
+        "cache_after": {},
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [],
+        "options": {
+          "http_cache": "disabled by case-local NoStore fixture",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
+          "request_defaults_reference": "requests.json",
+          "semantic_expectation_source": "explicit authored constants, never implementation output"
+        }
+      }
+    },
+    {
+      "case": "P6-03/requested-distinct-canonical-three-provider",
+      "commit": "d3aa750581216e7280d8281d5e29d6c111aa19e6",
+      "path": "sdlc/planning/drug-consumer-0224/oracles/P6.json",
+      "pointer": "/0",
+      "source_blob_sha256": "11d422af5579c9b751e661f56b54c2948ad6f28ce575627f69e5541358c883c5",
+      "original_case": {
+        "id": "P6-03/requested-distinct-canonical-three-provider",
+        "requirement": "P6-03",
+        "alternative": "requested-distinct-canonical-three-provider",
+        "boundary": "trial alias extraction",
+        "input": {
+          "page": {
+            "path": "inputs/aliases.json",
+            "sha256": "f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+            "digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+            "bytes": 259
+          },
+          "requested_name": "REQ-100",
+          "operation": "admitted_page_then_build_trial_aliases",
+          "profile": "Get",
+          "selected_ordinals": [
+            0
+          ]
+        },
+        "responses": [
+          {
+            "status": 200,
+            "content_type": "application/json",
+            "body": {
+              "path": "inputs/aliases.json",
+              "sha256": "f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "bytes": 259
+            }
+          }
+        ],
+        "cache_before": {},
+        "expected": {
+          "page": "expected/pages/aliases.json",
+          "canonical_name": "canonicaldrug",
+          "aliases": [
+            {
+              "label": "REQ-100",
+              "source": "Requested"
+            },
+            {
+              "label": "canonicaldrug",
+              "source": "Canonical"
+            },
+            {
+              "label": "ALPHA",
+              "source": "OpenFdaBrand"
+            },
+            {
+              "label": "BrandTwo",
+              "source": "OpenFdaBrand"
+            },
+            {
+              "label": "ABT-100",
+              "source": "DrugBankSynonym"
+            }
+          ],
+          "new_provider_alias_count": 3,
+          "total_alias_count": 5,
+          "selected_ordinals": [
+            0
+          ],
+          "conversion": [
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 0,
+              "action": "select",
+              "reason": "first identifier",
+              "target": "DB-SYN3",
+              "origin": {
+                "section": "drugbank",
+                "field": "id",
+                "section_index": null,
+                "value_index": null
+              },
+              "lexical_text": "DB-SYN3",
+              "namespace": "DrugBank",
+              "source_term_type": null
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 1,
+              "action": "omit_display",
+              "reason": "OpenFDA generic has precedence",
+              "target": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "name",
+                "section_index": null,
+                "value_index": null
+              },
+              "lexical_text": "canonicaldrug",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "name"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 2,
+              "action": "cap",
+              "reason": "three new provider aliases",
+              "target": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 0
+              },
+              "lexical_text": "Zeta",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "synonyms"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 3,
+              "action": "deduplicate",
+              "reason": "requested alias already inserted",
+              "target": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 1
+              },
+              "lexical_text": "req-100",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "synonyms"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 4,
+              "action": "cap",
+              "reason": "three new provider aliases",
+              "target": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 2
+              },
+              "lexical_text": "Beta",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "synonyms"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 5,
+              "action": "exclude",
+              "reason": "free-base descriptor",
+              "target": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 3
+              },
+              "lexical_text": "canonicaldrug free base",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "synonyms"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 6,
+              "action": "exclude",
+              "reason": "more than four words",
+              "target": null,
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 4
+              },
+              "lexical_text": "one two three four five",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "synonyms"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 7,
+              "action": "select",
+              "reason": "eligible investigational code",
+              "target": "ABT-100",
+              "origin": {
+                "section": "drugbank",
+                "field": "synonyms",
+                "section_index": null,
+                "value_index": 5
+              },
+              "lexical_text": "ABT-100",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "synonyms"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 8,
+              "action": "select",
+              "reason": "canonical display",
+              "target": "canonicaldrug",
+              "origin": {
+                "section": "openfda",
+                "field": "generic_name",
+                "section_index": null,
+                "value_index": null
+              },
+              "lexical_text": "canonicaldrug",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "generic_name"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 9,
+              "action": "select",
+              "reason": "OpenFDA brand priority",
+              "target": "BrandTwo",
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 0
+              },
+              "lexical_text": "BrandTwo",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "brand_name"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 10,
+              "action": "trim_and_deduplicate",
+              "reason": "lexical tie-break selects ALPHA",
+              "target": null,
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 1
+              },
+              "lexical_text": " alpha ",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "brand_name"
+              }
+            },
+            {
+              "response_digest": "sha256:f5599d90f7f21b5a6c9075a2f60f664728d7d001f52486f367f5c6124f113528",
+              "ordinal": 0,
+              "claim_index": 11,
+              "action": "select",
+              "reason": "OpenFDA brand priority and lexical tie-break",
+              "target": "ALPHA",
+              "origin": {
+                "section": "openfda",
+                "field": "brand_name",
+                "section_index": null,
+                "value_index": 2
+              },
+              "lexical_text": "ALPHA",
+              "namespace": null,
+              "source_term_type": {
+                "namespace": "MyChem",
+                "label": "brand_name"
+              }
+            }
+          ]
+        },
+        "requests_expected": [
+          {
+            "provider": "MyChem.info",
+            "method": "GET",
+            "path": "/v1/query",
+            "plan_path": "query",
+            "profile": "Get",
+            "query": [
+              [
+                "q",
+                "REQ-100"
+              ],
+              [
+                "size",
+                "25"
+              ],
+              [
+                "from",
+                "0"
+              ],
+              [
+                "fields",
+                "drugbank.id,drugbank.name,drugbank.synonyms,drugbank.drug_interactions,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,gtopdb.name,gtopdb.interaction_targets.symbol,drugcentral.drug_use.indication.concept_name,drugcentral.approval.agency,drugcentral.approval.date,ndc.nonproprietaryname,ndc.pharm_classes,unii.unii,unii.display_name,chebi.name,openfda.generic_name,openfda.brand_name"
+              ]
+            ],
+            "window": 10000
+          }
+        ],
+        "cache_after": {
+          "req-100": {
+            "canonical_name": "canonicaldrug",
+            "aliases": [
+              {
+                "label": "REQ-100",
+                "source": "Requested"
+              },
+              {
+                "label": "canonicaldrug",
+                "source": "Canonical"
+              },
+              {
+                "label": "ALPHA",
+                "source": "OpenFdaBrand"
+              },
+              {
+                "label": "BrandTwo",
+                "source": "OpenFdaBrand"
+              },
+              {
+                "label": "ABT-100",
+                "source": "DrugBankSynonym"
+              }
+            ]
+          }
+        },
+        "contracts": {
+          "design": "../design.md",
+          "biomcp": "1dab73b270aeb082915f43bfb9186528516157b7",
+          "biodata": "59fde6246c1a07ac115d6fc9f16471354a725bff"
+        },
+        "unchanged_assertions": [
+          "D050"
+        ],
+        "options": {
+          "http_cache": "disabled by case-local NoStore fixture",
+          "credentials": "none",
+          "provider_access": "synthetic replies only",
+          "alias_cache_scope": "one explicitly isolated map per case; sequence cases retain it across calls",
+          "request_defaults_reference": "requests.json",
+          "semantic_expectation_source": "explicit authored constants, never implementation output"
+        }
+      }
+    }
+  ]
+}

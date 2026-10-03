@@ -1,0 +1,81 @@
+{
+  "source": {
+    "identity_status": "accepted",
+    "claims": [
+      {
+        "kind": "code",
+        "text": "DB-SYN1",
+        "namespace": "DrugBank",
+        "term_type": null,
+        "origin": {
+          "section": "drugbank",
+          "field": "id",
+          "section_index": null,
+          "value_index": null
+        }
+      },
+      {
+        "kind": "term",
+        "text": "SampleDrug",
+        "namespace": null,
+        "term_type": "other",
+        "origin": {
+          "section": "drugbank",
+          "field": "name",
+          "section_index": null,
+          "value_index": null
+        }
+      }
+    ],
+    "digest": "sha256:112b7d0919d34330ad4b93cce8b39fcdfbed74a9deaeb8d4ced798d663aa09c0",
+    "ordinal": 0,
+    "enrichment_failure": "chembl.drug_mechanisms must be object or array",
+    "trusted_product_rows": null
+  },
+  "product": {
+    "variant_chain": [
+      "WithSourceContext",
+      "ApiJson"
+    ],
+    "code": "api_json",
+    "context": {
+      "provider": "MyChem.info",
+      "recovery": "RetryRemoteSource"
+    },
+    "display": "API response from MyChem.info could not be decoded. Retry the remote source.",
+    "debug_forbidden": [
+      "QUERY_SENTINEL_0224",
+      "SOURCE_SENTINEL_0224"
+    ],
+    "trace_forbidden": [
+      "QUERY_SENTINEL_0224",
+      "SOURCE_SENTINEL_0224"
+    ],
+    "public_json": {
+      "error": {
+        "code": "api_json",
+        "message": "API response from MyChem.info could not be decoded.",
+        "source": "MyChem.info",
+        "recovery": "Retry the remote source."
+      },
+      "_meta": {
+        "not_found": false
+      }
+    },
+    "exit": 1,
+    "successful_result": null,
+    "forbidden_providers": [
+      "OpenFDA",
+      "discover",
+      "EMA",
+      "WHO",
+      "CVX",
+      "ClinicalTrials.gov",
+      "DDInter",
+      "CIViC",
+      "ChEMBL",
+      "Open Targets",
+      "PharmacoDB"
+    ]
+  }
+}
