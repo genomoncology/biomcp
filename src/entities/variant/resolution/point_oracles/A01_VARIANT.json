@@ -1,0 +1,17 @@
+{
+  "section_outcomes": {
+    "cancerhotspots":{"outcome":"not_requested","sources":[]},
+    "cbioportal":{"outcome":"not_requested","sources":[]},
+    "civic":{"outcome":"not_requested","sources":[]},
+    "clinvar":{"outcome":"not_requested","sources":[]},
+    "gwas":{"outcome":"not_requested","sources":[]},
+    "population":{"outcome":"not_requested","sources":[]},
+    "predict":{"outcome":"not_requested","sources":[]}
+  },
+  "gene":"BRAF", "id":"chr7:g.140453136A>T", "consequence":"missense_variant",
+  "expanded_predictions":[
+    {"tool":"REVEL","score":0.931},
+    {"tool":"BayesDel add-AF","score":0.399079},
+    {"tool":"BayesDel no-AF","score":0.335473}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "section_outcomes": {
+    "cancerhotspots":{"outcome":"not_requested","sources":[]},
+    "cbioportal":{"outcome":"not_requested","sources":[]},
+    "civic":{"outcome":"not_requested","sources":[]},
+    "clinvar":{"outcome":"not_requested","sources":[]},
+    "gwas":{"outcome":"not_requested","sources":[]},
+    "population":{"outcome":"not_requested","sources":[]},
+    "predict":{"outcome":"not_requested","sources":[]}
+  },
+  "gene":"BRAF", "id":"chr7:g.140453136A>T", "genome_build":"GRCh37",
+  "genome_build_provenance":"MyVariant.info provider default", "consequence":"missense_variant",
+  "_meta": {
+    "evidence_urls":[],
+    "next_commands":["biomcp get gene BRAF","biomcp search drug --target BRAF","biomcp variant trials \"chr7:g.140453136A>T\"","biomcp variant articles \"chr7:g.140453136A>T\""],
+    "section_sources":[{"key":"identity","label":"Identity","outcome":"data","sources":["MyVariant.info","ClinVar"]}]
+  }
+}

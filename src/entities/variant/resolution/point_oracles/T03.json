@@ -1,0 +1,1 @@
+{"error":{"code":"not_found","message":"BioMCP could not map 'p.Val600Glu' to an exact variant without gene context."},"_meta":{"not_found":true,"alias_resolution":{"kind":"protein_change_only","requested_entity":"variant","query":"p.Val600Glu","change":"V600E"},"next_commands":["biomcp search variant --hgvsp V600E --limit 10","biomcp discover p.Val600Glu"]}}

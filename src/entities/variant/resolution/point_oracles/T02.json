@@ -1,0 +1,8 @@
+{
+  "pagination":{"offset":0,"limit":5,"returned":1,"total":1,"has_more":false,"next_page_token":null},
+  "count":1,
+  "results":[{"id":"chr7:g.140453136A>T","genome_build":"GRCh37","genome_build_provenance":"MyVariant.info provider default","gene":"BRAF","clinvar_stars":null,"revel":0.931,"gerp":null}],
+  "_meta":{"next_commands":["biomcp get variant \"chr7:g.140453136A>T\"","biomcp get gene BRAF","biomcp list variant"]},
+  "filter_evaluation":{"gene":"evaluated","hgvsp":"evaluated"},
+  "diagnostics":[]
+}

@@ -20,6 +20,21 @@ use super::{
 };
 
 #[test]
+fn accepted_point_typed_arguments_keep_complete_contract() {
+    assert_eq!(get_args(TypedGet(json!({"entity":"variant","id":"BRAF p.Val600Glu","json":true}))).unwrap(), ["biomcp","get","variant","BRAF p.Val600Glu","--json"]);
+    assert_eq!(search_args(TypedSearch(json!({"entity":"variant","gene":"BRAF","hgvsp":"p.Val600Glu","limit":5,"json":true}))).unwrap(), ["biomcp","search","variant","--gene","BRAF","--hgvsp","p.Val600Glu","--limit","5","--json"]);
+    for (input, message) in [
+        (json!({"entity":"variant","id":"BRAF p.Val600Glu","json":true,"unexpected":true}), "unknown variant get field: unexpected"),
+        (json!({"entity":"variant","id":"V".repeat(513),"json":true}), "id must contain 1-512 characters"),
+    ] {
+        let error = get_args(TypedGet(input)).unwrap_err();
+        assert_eq!(error.code, rmcp::model::ErrorCode::INVALID_PARAMS);
+        assert_eq!(error.message, message);
+        assert!(error.data.is_none());
+    }
+}
+
+#[test]
 fn typed_article_prose_keyword_json_adds_only_the_output_flag() {
     let input = json!({
         "entity":"article",

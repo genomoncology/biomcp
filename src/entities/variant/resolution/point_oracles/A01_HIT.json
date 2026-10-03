@@ -1,0 +1,20 @@
+{
+  "_id": "chr7:g.140453136A>T",
+  "cadd": {"phred": null, "consequence": "NON_SYNONYMOUS"},
+  "clinvar": null,
+  "dbnsfp": {
+    "genename": ["BRAF", "BRAF", "BRAF", "BRAF"],
+    "hgvsp": ["p.Val640Glu", "p.Val600Glu", "p.Val207Glu", "p.V600E"],
+    "hgvsc": null, "sift": null, "polyphen2": null,
+    "revel": {"score": 0.931, "rankscore": null},
+    "alphamissense": null, "clinpred": null, "metarnn": null,
+    "bayesdel": {
+      "add_af": {"score": 0.399079, "pred": null, "rankscore": null},
+      "no_af": {"score": 0.335473, "pred": null, "rankscore": null}
+    },
+    "phylop": null, "phastcons": null, "gerp++": null
+  },
+  "dbsnp": null, "gnomad_exome": null, "gnomad": null,
+  "exac": null, "exac_nontcga": null, "cosmic": null,
+  "cgi": null, "civic": null, "snpeff": null
+}

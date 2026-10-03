@@ -1,0 +1,164 @@
+[
+  {
+    "id": "P01",
+    "source": "V600E",
+    "alias": "V600E",
+    "route_assertion": "shared; Val/600/Glu; no accession"
+  },
+  {
+    "id": "P02",
+    "source": "p.Val600Glu",
+    "alias": "V600E",
+    "route_assertion": "shared; same payload asP01, distinct retained source"
+  },
+  {
+    "id": "P03",
+    "source": "NP_004324.2:p.Val600Glu",
+    "alias": "V600E",
+    "route_assertion": "shared; retain exact accessionNP_004324.2"
+  },
+  {
+    "id": "P04",
+    "source": "p.val600glu",
+    "alias": "V600E",
+    "route_assertion": "transformed; candidatep.Val600Glu; original lowercase is not asserted as parsed HGVS"
+  },
+  {
+    "id": "P05",
+    "source": "P.V600E",
+    "alias": "V600E",
+    "route_assertion": "transformed prefix; retain original uppercaseP"
+  },
+  {
+    "id": "P06",
+    "source": "  p.V600E  ",
+    "alias": "V600E",
+    "route_assertion": "product trims only outer whitespace; retain all original bytes"
+  },
+  {
+    "id": "P07",
+    "source": "V00600E",
+    "alias": "V00600E",
+    "route_assertion": "shared; decimal00600 remains written; no numerical alias collapse"
+  },
+  {
+    "id": "P08",
+    "source": "V4294967296E",
+    "alias": "V4294967296E",
+    "route_assertion": "shared; no u32 narrowing or coordinate inference"
+  },
+  {
+    "id": "P09",
+    "source": "L39*",
+    "alias": "L39*",
+    "route_assertion": "shared; Leu/39/Ter"
+  },
+  {
+    "id": "P10",
+    "source": "p.Leu39Ter",
+    "alias": "L39*",
+    "route_assertion": "shared; preserve Ter in source and* in legacy projection"
+  },
+  {
+    "id": "P11",
+    "source": "NP_000001.1:p.Leu39Stop",
+    "alias": "L39*",
+    "route_assertion": "transformedStop\u2192Ter; original accession and Stop retained"
+  },
+  {
+    "id": "P12",
+    "source": "V600X",
+    "alias": "V600*",
+    "route_assertion": "transformed legacy alternateX\u2192Ter; originalX acquires no shared residue meaning"
+  },
+  {
+    "id": "P13",
+    "source": "V600V",
+    "alias": "V600V",
+    "route_assertion": "compatibility; shared equal-substitution Invalid cannot change retained product acceptance"
+  },
+  {
+    "id": "P14",
+    "source": "V0E",
+    "alias": "V0E",
+    "route_assertion": "compatibility; zero remains product syntax only"
+  },
+  {
+    "id": "P15",
+    "source": "M1V",
+    "alias": "M1V",
+    "route_assertion": "compatibility; shared initiation-change Unsupported"
+  },
+  {
+    "id": "P16",
+    "source": "*39E",
+    "alias": "*39E",
+    "route_assertion": "compatibility; shared termination-reference Unsupported"
+  },
+  {
+    "id": "P17",
+    "source": "p.V600=",
+    "alias": null,
+    "route_assertion": "refused; a shared NoChange result must not widen this consumer"
+  },
+  {
+    "id": "P18",
+    "source": "p.(Val600Glu)",
+    "alias": null,
+    "route_assertion": "refused; predicted syntax must not become an unpredicted point alias"
+  },
+  {
+    "id": "P19",
+    "source": "B600E",
+    "alias": null,
+    "route_assertion": "refused by this helper; shared Asx is outside retained finite residue map"
+  },
+  {
+    "id": "P20",
+    "source": "V600Eextra",
+    "alias": null,
+    "route_assertion": "refused; no trailing-byte acceptance"
+  },
+  {
+    "id": "P21",
+    "source": "p.?",
+    "alias": null,
+    "route_assertion": "refused; no guessed alias or provider request"
+  },
+  {
+    "id": "P22",
+    "source": "V600del",
+    "alias": null,
+    "route_assertion": "refused by point normalizer; existing complex comparison remains separately retained"
+  },
+  {
+    "id": "P23",
+    "source": "",
+    "alias": null,
+    "route_assertion": "refused; no shared payload"
+  },
+  {
+    "id": "P25",
+    "source": "V 600E",
+    "alias": "V600E",
+    "route_assertion": "transformed; `legacy_residue_token_trim`; candidate `p.V600E`; original token whitespace retained"
+  },
+  {
+    "id": "P26",
+    "source": "V600 E",
+    "alias": "V600E",
+    "route_assertion": "transformed; `legacy_residue_token_trim`; candidate `p.V600E`; original token whitespace retained"
+  },
+  {
+    "id": "P27",
+    "source": ":p.V600E",
+    "alias": "V600E",
+    "route_assertion": "transformed; `legacy_empty_reference_prefix`; candidate `p.V600E`; no checked reference"
+  },
+  {
+    "id": "P28",
+    "source": "bad ref:p.Val600Glu",
+    "alias": "V600E",
+    "route_assertion": "transformed; `legacy_unchecked_reference_prefix`; candidate `p.Val600Glu`; opaque prefix retained separately; no checked reference"
+  }
+]

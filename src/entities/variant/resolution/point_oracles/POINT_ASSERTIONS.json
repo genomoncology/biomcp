@@ -1,0 +1,6 @@
+[
+  {"source":"p.Val640Glu","reference":null,"prediction":false,"reference_residue":"Val","position":"640","edit":{"Substitution":"Glu"},"alias":"V640E"},
+  {"source":"p.Val600Glu","reference":null,"prediction":false,"reference_residue":"Val","position":"600","edit":{"Substitution":"Glu"},"alias":"V600E"},
+  {"source":"p.Val207Glu","reference":null,"prediction":false,"reference_residue":"Val","position":"207","edit":{"Substitution":"Glu"},"alias":"V207E"},
+  {"source":"p.V600E","reference":null,"prediction":false,"reference_residue":"Val","position":"600","edit":{"Substitution":"Glu"},"alias":"V600E"}
+]
