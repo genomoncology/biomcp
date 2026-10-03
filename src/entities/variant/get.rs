@@ -24,10 +24,10 @@ use super::gwas::mark_gwas_unavailable;
 use super::resolution::hgvs_coords_re;
 use super::resolution::parse_variant_id;
 use super::{
-    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, ResolvedPopulationCoordinate,
-    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
-    VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
-    classify_variant_input, gnomad_variant_slug, normalize_variant,
+    ClinvarRecord, GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus,
+    ResolvedPopulationCoordinate, TreatmentImplication, Variant, VariantCivicSection,
+    VariantIdFormat, VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
+    VariantOncoKbResult, classify_variant_input, gnomad_variant_slug, normalize_variant,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -951,6 +951,42 @@ pub(super) fn strip_clinvar_details(variant: &mut Variant) {
     variant.clinvar_review_status = None;
     variant.clinvar_review_stars = None;
     variant.clinvar = None;
+}
+
+/// Move the headline significance to the direct record-level germline
+/// classification when the NCBI ClinVar VCV record carries one. Without a
+/// record-level classification the derived value stays labeled as derived.
+pub(super) fn apply_record_level_headline(variant: &mut Variant, record: &ClinvarRecord) {
+    let derived = variant.significance.clone();
+    let record_level = record.germline_classification.as_ref().and_then(|row| {
+        row.classification
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|classification| (classification.to_string(), row))
+    });
+    let Some((classification, row)) = record_level else {
+        if derived.is_some() {
+            variant.significance_note = Some(
+                "NCBI ClinVar's record has no record-level germline classification; the headline significance remains the most severe RCV classification derived from MyVariant.info's cached ClinVar copy.".into(),
+            );
+        }
+        return;
+    };
+    variant.significance = Some(classification.clone());
+    variant.significance_source = Some(record.source.clone());
+    variant.significance_evaluated = row.evaluation_date.clone();
+    variant.clinvar_review_status = row.review_status.clone();
+    variant.clinvar_review_stars = row
+        .review_status
+        .as_deref()
+        .and_then(crate::transform::variant::clinvar_review_stars);
+    variant.significance_note = match derived.as_deref() {
+        Some(value) if value != classification => Some(format!(
+            "NCBI ClinVar's record-level germline classification ({classification}) disagrees with the most severe RCV classification in MyVariant.info's cached ClinVar copy ({value})."
+        )),
+        _ => None,
+    };
 }
 
 fn strip_civic_live_details(variant: &mut Variant) {

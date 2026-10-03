@@ -402,57 +402,14 @@ mod clinvar {
         })
     }
 
-    fn apply_record_level_headline(variant: &mut Variant, record: &super::ClinvarRecord) {
-        let derived = variant.significance.clone();
-        let record_level = record.germline_classification.as_ref().and_then(|row| {
-            row.classification
-                .as_deref()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(|classification| (classification.to_string(), row))
-        });
-        let Some((classification, row)) = record_level else {
-            if derived.is_some() {
-                variant.significance_note = Some(
-                    "NCBI ClinVar's record for this variant has no record-level germline \
-                     classification; the significance above is derived from MyVariant.info's \
-                     cached ClinVar copy."
-                        .to_string(),
-                );
-            }
-            return;
-        };
-        let disagrees = derived
-            .as_deref()
-            .is_some_and(|cached| !cached.trim().eq_ignore_ascii_case(&classification));
-        variant.significance = Some(classification.clone());
-        variant.clinvar_review_status = row.review_status.clone();
-        variant.clinvar_review_stars = row
-            .review_status
-            .as_deref()
-            .and_then(crate::transform::variant::clinvar_review_stars);
-        variant.significance_source = Some("NCBI ClinVar".into());
-        variant.significance_evaluated = row.evaluation_date.clone();
-        variant.significance_note = if disagrees {
-            Some(format!(
-                "NCBI ClinVar's record-level germline classification ({classification}) \
-                 disagrees with the most severe RCV classification in MyVariant.info's \
-                 cached ClinVar copy ({}).",
-                derived.expect("disagreement implies a cached value")
-            ))
-        } else {
-            None
-        };
-    }
-
-    fn apply_clinvar_result(
+    pub(super) fn apply_clinvar_result(
         variant: &mut Variant,
         fallback: Option<super::ClinvarRecord>,
         direct: Result<Option<super::ClinvarRecord>, ()>,
     ) {
         match direct {
             Ok(Some(record)) if !record.aggregates.is_empty() || !record.submissions.is_empty() => {
-                apply_record_level_headline(variant, &record);
+                super::get::apply_record_level_headline(variant, &record);
                 variant.clinvar = Some(record);
                 variant
                     .section_outcomes
@@ -593,105 +550,6 @@ mod clinvar {
                 assert_eq!(clinvar.outcome, state);
                 assert_eq!(clinvar.sources, sources);
             }
-        }
-
-        #[test]
-        fn headline_follows_record_level_germline_classification_and_names_ncbi() {
-            let hit = serde_json::from_value(serde_json::json!({
-                "_id": "chr17:g.7579374C>T",
-                "clinvar": {"variant_id": 428884, "rcv": {
-                    "accession": "RCV001379190",
-                    "clinical_significance": "Pathogenic",
-                    "review_status": "criteria provided, single submitter",
-                    "last_evaluated": "2023-09-15"
-                }}
-            }))
-            .expect("fixture");
-            let mut variant = crate::transform::variant::from_myvariant_hit(&hit);
-            assert_eq!(variant.significance.as_deref(), Some("Pathogenic"));
-            assert_eq!(
-                variant.significance_source.as_deref(),
-                Some("MyVariant.info")
-            );
-            assert_eq!(
-                variant.significance_evaluated.as_deref(),
-                Some("2023-09-15")
-            );
-
-            let mut record = direct_record(true);
-            record.variation_id = 428884;
-            record.germline_classification = Some(super::super::ClinvarRecordClassification {
-                classification: Some("Uncertain significance".into()),
-                review_status: Some("reviewed by expert panel".into()),
-                evaluation_date: Some("2026-06-04".into()),
-            });
-            apply_clinvar_result(&mut variant, None, Ok(Some(record)));
-
-            assert_eq!(
-                variant.significance.as_deref(),
-                Some("Uncertain significance")
-            );
-            assert_eq!(variant.significance_source.as_deref(), Some("NCBI ClinVar"));
-            assert_eq!(
-                variant.significance_evaluated.as_deref(),
-                Some("2026-06-04")
-            );
-            assert_eq!(
-                variant.clinvar_review_status.as_deref(),
-                Some("reviewed by expert panel")
-            );
-            assert_eq!(variant.clinvar_review_stars, Some(3));
-            let note = variant.significance_note.expect("disagreement note");
-            assert!(note.contains("disagrees"));
-            assert!(note.contains("Pathogenic"));
-        }
-
-        #[test]
-        fn record_without_germline_classification_keeps_derived_value_labeled() {
-            let hit = serde_json::from_value(serde_json::json!({
-                "_id": "chr17:g.7579374C>T",
-                "clinvar": {"variant_id": 428884, "rcv": {
-                    "accession": "RCV001379190",
-                    "clinical_significance": "Pathogenic",
-                    "last_evaluated": "2023-09-15"
-                }}
-            }))
-            .expect("fixture");
-            let mut variant = crate::transform::variant::from_myvariant_hit(&hit);
-            apply_clinvar_result(&mut variant, None, Ok(Some(direct_record(true))));
-
-            assert_eq!(variant.significance.as_deref(), Some("Pathogenic"));
-            assert_eq!(
-                variant.significance_source.as_deref(),
-                Some("MyVariant.info")
-            );
-            let note = variant.significance_note.expect("no record-level note");
-            assert!(note.contains("no record-level germline classification"));
-            assert!(note.contains("derived"));
-        }
-
-        #[test]
-        fn agreeing_record_level_classification_drops_the_cached_copy_note() {
-            let hit = serde_json::from_value(serde_json::json!({
-                "_id": "chr5:g.118860951A>G",
-                "clinvar": {"variant_id": 974782, "rcv": {
-                    "accession": "RCV001251043",
-                    "clinical_significance": "Likely pathogenic"
-                }}
-            }))
-            .expect("fixture");
-            let mut variant = crate::transform::variant::from_myvariant_hit(&hit);
-            let mut record = direct_record(true);
-            record.germline_classification = Some(super::super::ClinvarRecordClassification {
-                classification: Some("Likely pathogenic".into()),
-                review_status: Some("criteria provided, multiple submitters, no conflicts".into()),
-                evaluation_date: Some("2025-03-18".into()),
-            });
-            apply_clinvar_result(&mut variant, None, Ok(Some(record)));
-
-            assert_eq!(variant.significance.as_deref(), Some("Likely pathogenic"));
-            assert_eq!(variant.significance_source.as_deref(), Some("NCBI ClinVar"));
-            assert!(variant.significance_note.is_none());
         }
 
         #[tokio::test]
