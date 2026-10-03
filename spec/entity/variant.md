@@ -610,11 +610,16 @@ biomcp --json --no-cache get variant 'TP53 G105S' clinvar \
 ```
 
 ```bash
-biomcp --no-cache get variant 'TP53 G105S' all \
-  | grep -E '^Significance:|Record-level germline' \
-  | mustmatch like 'Significance: Uncertain significance — NCBI ClinVar (evaluated 2026-06-04)
-...
-- Record-level germline classification: Uncertain significance; reviewed by expert panel; evaluated 2026-06-04'
+biomcp --no-cache get variant 'TP53 G105S' \
+  | grep -A1 '^Significance:' \
+  | mustmatch like 'Significance: Pathogenic — MyVariant.info (evaluated 2023-09-15)
+Most severe RCV classification in MyVariant.info'"'"'s cached ClinVar copy; run `biomcp get variant "chr17:g.7579374C>T" clinvar` for the current NCBI ClinVar record-level classification.'
+```
+
+```bash
+biomcp --no-cache get variant 'TP53 G105S' clinvar \
+  | grep 'Record-level germline' \
+  | mustmatch like '- Record-level germline classification: Uncertain significance; reviewed by expert panel; evaluated 2026-06-04'
 ```
 
 ## Population Frequency
