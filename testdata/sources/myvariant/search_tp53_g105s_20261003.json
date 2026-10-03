@@ -1,0 +1,388 @@
+{
+  "took": 6,
+  "total": 1,
+  "max_score": 25.855946,
+  "hits": [
+    {
+      "_id": "chr17:g.7579374C>T",
+      "_score": 25.855946,
+      "cadd": {
+        "_license": "http://bit.ly/2TIuab9",
+        "consequence": "NON_SYNONYMOUS",
+        "phred": 25.6
+      },
+      "clinvar": {
+        "_license": "http://bit.ly/2SQdcI0",
+        "gene": {
+          "symbol": "TP53"
+        },
+        "rcv": [
+          {
+            "accession": "RCV000492331",
+            "clinical_significance": "Likely pathogenic",
+            "conditions": {
+              "identifiers": {
+                "medgen": "C0027672",
+                "mesh": "D009386",
+                "mondo": "MONDO:0015356"
+              },
+              "name": "Hereditary cancer-predisposing syndrome",
+              "synonyms": [
+                "Neoplastic Syndromes, Hereditary",
+                "Tumor predisposition",
+                "Cancer predisposition",
+                "Hereditary neoplastic syndrome",
+                "Hereditary Cancer Syndrome"
+              ]
+            },
+            "last_evaluated": "2022-06-18",
+            "number_submitters": 2,
+            "preferred_name": "NM_000546.6(TP53):c.313G>A (p.Gly105Ser)",
+            "review_status": "criteria provided, multiple submitters, no conflicts"
+          },
+          {
+            "accession": "RCV001379190",
+            "clinical_significance": "Pathogenic",
+            "conditions": {
+              "identifiers": {
+                "medgen": "C0085390",
+                "mondo": "MONDO:0018875",
+                "omim": "PS151623"
+              },
+              "name": "Li-Fraumeni syndrome (LFS)",
+              "synonyms": [
+                "Sarcoma family syndrome of Li and Fraumeni"
+              ]
+            },
+            "last_evaluated": "2023-09-15",
+            "number_submitters": 1,
+            "preferred_name": "NM_000546.6(TP53):c.313G>A (p.Gly105Ser)",
+            "review_status": "criteria provided, single submitter"
+          },
+          {
+            "accession": "RCV002289669",
+            "clinical_significance": "Likely pathogenic",
+            "conditions": {
+              "identifiers": {
+                "gene": "553989",
+                "medgen": "C1835398",
+                "omim": "151623",
+                "orphanet": "524"
+              },
+              "name": "Li-Fraumeni syndrome 1 (LFS)"
+            },
+            "last_evaluated": "2022-06-18",
+            "number_submitters": 1,
+            "preferred_name": "NM_000546.6(TP53):c.313G>A (p.Gly105Ser)",
+            "review_status": "criteria provided, single submitter"
+          },
+          {
+            "accession": "RCV004003474",
+            "clinical_significance": "Likely pathogenic",
+            "conditions": {
+              "identifiers": {
+                "human_phenotype_ontology": "HP:0006759",
+                "medgen": "C0206686",
+                "mesh": "D018268",
+                "mondo": "MONDO:0006639"
+              },
+              "name": "Adrenal cortex carcinoma",
+              "synonyms": [
+                "Adrenocortical carcinoma"
+              ]
+            },
+            "number_submitters": 1,
+            "preferred_name": "NM_000546.6(TP53):c.313G>A (p.Gly105Ser)",
+            "review_status": "no assertion criteria provided"
+          }
+        ],
+        "variant_id": 428884
+      },
+      "cosmic": {
+        "_license": "http://bit.ly/2VMkY7R",
+        "cosmic_id": "COSM78687",
+        "mut_freq": 0.03,
+        "mut_nt": "G>A",
+        "tumor_site": "ovary"
+      },
+      "dbnsfp": {
+        "_license": "http://bit.ly/2VLnQBz",
+        "alphamissense": {
+          "pred": [
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "P",
+            "A"
+          ],
+          "rankscore": 0.88259,
+          "score": [
+            0.9412,
+            0.9437,
+            0.9566,
+            0.9616,
+            0.9489,
+            0.947,
+            0.946,
+            0.9562,
+            0.8506,
+            0.8437,
+            0.911,
+            0.5721,
+            0.4872
+          ]
+        },
+        "bayesdel": {
+          "add_af": {
+            "pred": "D",
+            "score": 0.541976
+          },
+          "no_af": {
+            "pred": "D",
+            "score": 0.540735
+          }
+        },
+        "clinpred": {
+          "pred": "D",
+          "score": 0.996524512767792
+        },
+        "genename": [
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53",
+          "TP53"
+        ],
+        "hgvsc": [
+          "c.313G>A",
+          "c.196G>A"
+        ],
+        "hgvsp": [
+          "p.G105S",
+          "p.Gly66Ser",
+          "p.Gly105Ser",
+          "p.G66S"
+        ],
+        "metarnn": {
+          "pred": [
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          "score": [
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487,
+            0.99125487
+          ]
+        },
+        "phastcons": {
+          "100way_vertebrate": {
+            "rankscore": 0.71638
+          },
+          "470way_mammalian": {
+            "rankscore": 0.68203
+          }
+        },
+        "phylop": {
+          "100way_vertebrate": {
+            "rankscore": 0.73001
+          },
+          "470way_mammalian": {
+            "rankscore": 0.65097
+          }
+        },
+        "polyphen2": {
+          "hdiv": {
+            "pred": [
+              "D",
+              "P",
+              "D",
+              "D",
+              "D",
+              "P",
+              "P"
+            ]
+          }
+        },
+        "revel": {
+          "rankscore": 0.96576,
+          "score": [
+            0.883,
+            0.883,
+            0.883,
+            0.883,
+            0.883,
+            0.883,
+            0.883,
+            0.883
+          ]
+        },
+        "sift": {
+          "pred": [
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D",
+            "D"
+          ],
+          "score": [
+            0.007,
+            0.006,
+            0.007,
+            0.006,
+            0.007,
+            0.007,
+            0.012,
+            0.014
+          ]
+        }
+      },
+      "dbsnp": {
+        "_license": "http://bit.ly/2AqoLOc",
+        "rsid": "rs1060501195"
+      },
+      "snpeff": {
+        "_license": "http://bit.ly/2suyRKt",
+        "ann": [
+          {
+            "feature_id": "NM_000546.5",
+            "genename": "TP53",
+            "hgvs_c": "c.313G>A",
+            "hgvs_p": "p.Gly105Ser"
+          },
+          {
+            "feature_id": "NM_001126112.2",
+            "genename": "TP53",
+            "hgvs_c": "c.313G>A",
+            "hgvs_p": "p.Gly105Ser"
+          },
+          {
+            "feature_id": "NM_001126113.2",
+            "genename": "TP53",
+            "hgvs_c": "c.313G>A",
+            "hgvs_p": "p.Gly105Ser"
+          },
+          {
+            "feature_id": "NM_001126114.2",
+            "genename": "TP53",
+            "hgvs_c": "c.313G>A",
+            "hgvs_p": "p.Gly105Ser"
+          },
+          {
+            "feature_id": "NM_001126118.1",
+            "genename": "TP53",
+            "hgvs_c": "c.196G>A",
+            "hgvs_p": "p.Gly66Ser"
+          },
+          {
+            "feature_id": "NM_001276695.1",
+            "genename": "TP53",
+            "hgvs_c": "c.196G>A",
+            "hgvs_p": "p.Gly66Ser"
+          },
+          {
+            "feature_id": "NM_001276696.1",
+            "genename": "TP53",
+            "hgvs_c": "c.196G>A",
+            "hgvs_p": "p.Gly66Ser"
+          },
+          {
+            "feature_id": "NM_001276760.1",
+            "genename": "TP53",
+            "hgvs_c": "c.196G>A",
+            "hgvs_p": "p.Gly66Ser"
+          },
+          {
+            "feature_id": "NM_001276761.1",
+            "genename": "TP53",
+            "hgvs_c": "c.196G>A",
+            "hgvs_p": "p.Gly66Ser"
+          },
+          {
+            "feature_id": "NM_001126113.2",
+            "genename": "TP53",
+            "hgvs_c": "c.313G>A"
+          },
+          {
+            "feature_id": "NM_001126115.1",
+            "genename": "TP53",
+            "hgvs_c": "c.-841G>A"
+          },
+          {
+            "feature_id": "NM_001126116.1",
+            "genename": "TP53",
+            "hgvs_c": "c.-841G>A"
+          },
+          {
+            "feature_id": "NM_001126117.1",
+            "genename": "TP53",
+            "hgvs_c": "c.-841G>A"
+          },
+          {
+            "feature_id": "NM_001276697.1",
+            "genename": "TP53",
+            "hgvs_c": "c.-922G>A"
+          },
+          {
+            "feature_id": "NM_001276698.1",
+            "genename": "TP53",
+            "hgvs_c": "c.-922G>A"
+          },
+          {
+            "feature_id": "NM_001276699.1",
+            "genename": "TP53",
+            "hgvs_c": "c.-922G>A"
+          }
+        ]
+      }
+    }
+  ]
+}

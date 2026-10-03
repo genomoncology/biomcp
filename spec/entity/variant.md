@@ -581,6 +581,42 @@ through to free-text or disease-style fallback behavior.
 ClinVar remains an opt-in deepen path. The section should keep the human heading
 and a compact JSON disease anchor without bloating the default card.
 
+### Headline significance names its source
+
+The default card labels the headline significance as derived: the source, the
+cached-copy basis, the newest evaluation date in that copy, and the `clinvar`
+section command all travel with the value. The recorded TP53 c.313G>A
+(VariationID 428884) MyVariant response picks "Pathogenic" from its cached RCV
+list.
+
+```bash
+biomcp --json --no-cache get variant 'TP53 G105S' \
+  | jq '{significance, significance_source, significance_evaluated, derived_note: (.significance_note | test("cached ClinVar copy")), names_clinvar_command: (.significance_note | test("clinvar")), clinvar_absent: (has("clinvar") | not)}' \
+  | mustmatch like '{"significance":"Pathogenic","significance_source":"MyVariant.info","significance_evaluated":"2023-09-15","derived_note":true,"names_clinvar_command":true,"clinvar_absent":true}'
+```
+
+### Record-level classification wins when ClinVar answers
+
+When the `clinvar` section answers from NCBI ClinVar, the headline follows the
+record-level germline classification and names its source. The recorded NCBI
+record for VariationID 428884 reports Uncertain significance where the cached
+copy reported Pathogenic, so the card states the disagreement and the section
+prints the record-level row with its review status and date.
+
+```bash
+biomcp --json --no-cache get variant 'TP53 G105S' clinvar \
+  | jq '{significance, significance_source, significance_evaluated, review: .clinvar_review_status, stars: .clinvar_review_stars, record_level: .clinvar.germline_classification, disagreement_stated: (.significance_note | test("disagrees")), cached_value_named: (.significance_note | test("Pathogenic"))}' \
+  | mustmatch like '{"significance":"Uncertain significance","significance_source":"NCBI ClinVar","significance_evaluated":"2026-06-04","review":"reviewed by expert panel","stars":3,"record_level":{"classification":"Uncertain significance","review_status":"reviewed by expert panel","evaluation_date":"2026-06-04"},"disagreement_stated":true,"cached_value_named":true}'
+```
+
+```bash
+biomcp --no-cache get variant 'TP53 G105S' all \
+  | grep -E '^Significance:|Record-level germline' \
+  | mustmatch like 'Significance: Uncertain significance — NCBI ClinVar (evaluated 2026-06-04)
+...
+- Record-level germline classification: Uncertain significance; reviewed by expert panel; evaluated 2026-06-04'
+```
+
 ## Population Frequency
 
 Population frequency also stays opt-in. The markdown and JSON views should keep
