@@ -1,6 +1,6 @@
 # Programme PM working lanes
 
-Observed October 3, 2026 against `efff26d8`. Bare worktree names resolve through Git registration and avoid machine paths. Root owns product assignments and lifecycle. Retained branches remain visible even when their slice declares done. Git changes determine the path envelopes for existing branches; these observations grant no new work. The onboarding claim is its five named administrative files. Overlaps describe retained branch history and require root interpretation before another assignment.
+Observed October 3, 2026 against `efff26d8`. Bare worktree names resolve through Git registration and avoid machine paths. Root owns product assignments and lifecycle. Retained branches remain visible even when their slice declares done. Git changes determine the path envelopes for existing branches; these observations grant no new work. The onboarding claim is its six named administrative files. Overlaps describe retained branch history and require root interpretation before another assignment.
 
 ## Lanes
 
@@ -11,4 +11,4 @@ Observed October 3, 2026 against `efff26d8`. Bare worktree names resolve through
 | maintenance-sync | `biomcp-2008` | free | Retained programme maintenance reconciliation branch; ticket file absent |
 | disease | `biomcp-biodata-0221` | free | Root-owned migration branch |
 | drug | `biomcp-biodata-0224` | `src/**` `tests/**` `tools/**` | Root-owned migration branch |
-| pm-onboarding | `biomcp-2009` | `sdlc/pm.json` `sdlc/README.md` `sdlc/planning/programme-pm-lanes.md` `sdlc/tickets/2009-onboard-programme-pm.md` `sdlc/records/2009-onboard-programme-pm.md` | Administrative ticket 2009; fresh root review pending |
+| pm-onboarding | `biomcp-2009` | `sdlc/pm.json` `sdlc/README.md` `sdlc/planning/programme-pm-lanes.md` `sdlc/tickets/2009-onboard-programme-pm.md` `sdlc/records/2009-onboard-programme-pm.md` `sdlc/planning/checks.md` | Administrative ticket 2009; fresh root review pending |

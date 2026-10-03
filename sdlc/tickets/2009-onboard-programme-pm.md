@@ -10,7 +10,7 @@ PM reports the BioMCP 1.0 programme against `biodata/biomcp-1.0` with an explici
 
 - Starts from: clean programme commit `efff26d838ddc6471cfd9c06956855fd6e50ca43`; existing migration tickets 2001 through 2007 and their records. Ticket 2008 exists as a retained branch without a ticket file. Prior migration proof stays in those records. No new experiment is needed for this administrative setup.
 - Keeps: product code, maintenance main, inherited ticket statuses, migration proof requirements and root authority over landing and external feedback.
-- Changes: `sdlc/pm.json`, an SDLC index, a programme lane table, this administrative ticket and its onboarding record.
+- Changes: `sdlc/pm.json`, an SDLC index, a programme lane table, this administrative ticket, its onboarding record and the actual PM verification receipt.
 - Proof: run status, next, daily, item and lanes in human and JSON formats; compare migration states and lane observations with actual files and Git. Run lightweight whitespace and tracked-text checks. Record mismatches. Push with `[skip ci]` and retain the branch for fresh root review.
 - Defers: legacy ticket conversion, historical status repair, migration product work, hosted verification, broad gates and landing. Root owns SDLC feedback issue writes.
 
