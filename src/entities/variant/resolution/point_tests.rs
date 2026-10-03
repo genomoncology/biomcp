@@ -422,13 +422,33 @@ fn checked_refusals_and_internal_debug_are_terminal_and_private() {
         ("B600E", Compatibility::DirectRegex),
         ("V600X", Compatibility::DirectRegex),
         ("V600V", Compatibility::EqualSubstitution),
+        ("V٦٠٠E", Compatibility::DirectRegex),
+        ("V6٠0E", Compatibility::DirectRegex),
     ] {
         let assertion = point_assertion(source, Some("BRAF"), true);
         assert_eq!(assertion.gene, Some("BRAF"));
         assert_eq!(assertion.source, source);
         assert_eq!(assertion.alias().as_deref(), Some(source));
         assert!(matches!(assertion.route, PointRoute::Compatibility(actual, _) if actual == class));
+        assert_eq!(
+            classify_variant_input(&format!("BRAF {source}")),
+            VariantInputKind::Exact(VariantIdFormat::GeneProteinChange {
+                gene: "BRAF".to_owned(),
+                change: source.to_owned(),
+            })
+        );
     }
+    for source in ["V٦٠٠E", "V6٠0E", "V²E"] {
+        assert_eq!(normalize_protein_change(source), None);
+        assert!(matches!(
+            point_assertion(source, None, false).route,
+            PointRoute::Refused
+        ));
+    }
+    assert_eq!(
+        classify_variant_input("BRAF V²E"),
+        VariantInputKind::Unsupported
+    );
     let ordinary = point_assertion("V600E", Some("BRAF"), true);
     assert_eq!(ordinary.gene, Some("BRAF"));
     assert!(matches!(ordinary.route, PointRoute::Checked(_)));

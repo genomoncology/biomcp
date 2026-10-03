@@ -92,7 +92,7 @@ impl PointAssertion<'_> {
 fn tokens_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"^([A-Za-z*]+)(\s*)([0-9]+)(\s*)([A-Za-z*]+)$")
+        Regex::new(r"^([A-Za-z*]+)(\s*)(\d+)(\s*)([A-Za-z*]+)$")
             .expect("valid point preparation regex")
     })
 }
@@ -183,6 +183,15 @@ pub(super) fn point_assertion<'a>(
             .all(|b| b.is_ascii_uppercase() || b == b'*')
         && tokens[2].is_empty()
         && tokens[4].is_empty();
+    // The retained direct gene regex accepts Unicode decimal digits verbatim.
+    // Those spellings have no shared point syntax and cannot enter the checked route.
+    if !tokens[3].is_ascii() {
+        if direct_regex {
+            assertion.route =
+                PointRoute::Compatibility(Compatibility::DirectRegex, body.to_owned());
+        }
+        return assertion;
+    }
     let (Some(from), Some(to)) = (residue(&tokens[1]), residue(&tokens[5])) else {
         if direct_regex {
             assertion.route =
