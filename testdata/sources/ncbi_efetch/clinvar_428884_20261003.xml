@@ -1,0 +1,947 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+                        
+<ClinVarResult-Set><VariationArchive VariationID="428884" VariationName="NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser)" VariationType="single nucleotide variant" Accession="VCV000428884" Version="20" RecordType="classified" NumberOfSubmissions="8" NumberOfSubmitters="7" DateLastUpdated="2026-09-27" DateCreated="2017-07-01" MostRecentSubmission="2026-09-27">
+  <RecordStatus>current</RecordStatus>
+  <Species>Homo sapiens</Species>
+  <ClassifiedRecord>
+    <SimpleAllele AlleleID="420671" VariationID="428884">
+      <GeneList>
+        <Gene Symbol="TP53" FullName="tumor protein p53" GeneID="7157" HGNC_ID="HGNC:11998" Source="submitted" RelationshipType="within single gene">
+          <Location>
+            <CytogeneticLocation>17p13.1</CytogeneticLocation>
+            <SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668421" stop="7687490" display_start="7668421" display_stop="7687490" Strand="-"/>
+            <SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" Strand="-"/>
+          </Location>
+          <OMIM>191170</OMIM>
+          <Haploinsufficiency last_evaluated="2021-11-10" ClinGen="https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53">Sufficient evidence for dosage pathogenicity</Haploinsufficiency>
+          <Triplosensitivity last_evaluated="2021-11-10" ClinGen="https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53">No evidence available</Triplosensitivity>
+          <Property>gene_acmg_incidental_2013</Property>
+          <Property>gene_acmg_incidental_2016</Property>
+          <Property>gene_acmg_incidental_2021</Property>
+          <Property>gene_acmg_incidental_2022</Property>
+        </Gene>
+      </GeneList>
+      <Name>NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser)</Name>
+      <CanonicalSPDI>NC_000017.11:7676055:C:T</CanonicalSPDI>
+      <VariantType>single nucleotide variant</VariantType>
+      <Location>
+        <CytogeneticLocation>17p13.1</CytogeneticLocation>
+        <SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" forDisplay="true" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7676056" stop="7676056" display_start="7676056" display_stop="7676056" variantLength="1" positionVCF="7676056" referenceAlleleVCF="C" alternateAlleleVCF="T"/>
+        <SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7579374" stop="7579374" display_start="7579374" display_stop="7579374" variantLength="1" positionVCF="7579374" referenceAlleleVCF="C" alternateAlleleVCF="T"/>
+      </Location>
+      <OtherNameList>
+        <Name>NM_000546.6(TP53):c.313G&gt;A</Name>
+        <Name>p.Gly105Ser</Name>
+      </OtherNameList>
+      <ProteinChange>G105S</ProteinChange>
+      <ProteinChange>G66S</ProteinChange>
+      <HGVSlist>
+        <HGVS Type="genomic">
+          <NucleotideExpression sequenceAccessionVersion="LRG_321" sequenceAccession="LRG_321">
+            <Expression>LRG_321:g.16495G&gt;A</Expression>
+          </NucleotideExpression>
+        </HGVS>
+        <HGVS Assembly="GRCh38" Type="genomic, top-level">
+          <NucleotideExpression sequenceAccessionVersion="NC_000017.11" sequenceAccession="NC_000017" sequenceVersion="11" change="g.7676056C&gt;T" Assembly="GRCh38">
+            <Expression>NC_000017.11:g.7676056C&gt;T</Expression>
+          </NucleotideExpression>
+        </HGVS>
+        <HGVS Type="genomic">
+          <NucleotideExpression sequenceAccessionVersion="NG_017013.2" sequenceAccession="NG_017013" sequenceVersion="2" change="g.16495G&gt;A">
+            <Expression>NG_017013.2:g.16495G&gt;A</Expression>
+          </NucleotideExpression>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_000546.6" sequenceAccession="NM_000546" sequenceVersion="6" change="c.313G&gt;A" MANESelect="true">
+            <Expression>NM_000546.6:c.313G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_000537.3" sequenceAccession="NP_000537" sequenceVersion="3" change="p.Gly105Ser" singleLetterProteinChange="G105S">
+            <Expression>NP_000537.3:p.Gly105Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001126112.3" sequenceAccession="NM_001126112" sequenceVersion="3" change="c.313G&gt;A">
+            <Expression>NM_001126112.3:c.313G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001119584.1" sequenceAccession="NP_001119584" sequenceVersion="1" change="p.Gly105Ser" singleLetterProteinChange="G105S">
+            <Expression>NP_001119584.1:p.Gly105Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001126113.3" sequenceAccession="NM_001126113" sequenceVersion="3" change="c.313G&gt;A">
+            <Expression>NM_001126113.3:c.313G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001119585.1" sequenceAccession="NP_001119585" sequenceVersion="1" change="p.Gly105Ser" singleLetterProteinChange="G105S">
+            <Expression>NP_001119585.1:p.Gly105Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001126114.3" sequenceAccession="NM_001126114" sequenceVersion="3" change="c.313G&gt;A">
+            <Expression>NM_001126114.3:c.313G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001119586.1" sequenceAccession="NP_001119586" sequenceVersion="1" change="p.Gly105Ser" singleLetterProteinChange="G105S">
+            <Expression>NP_001119586.1:p.Gly105Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001126118.2" sequenceAccession="NM_001126118" sequenceVersion="2" change="c.196G&gt;A">
+            <Expression>NM_001126118.2:c.196G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001119590.1" sequenceAccession="NP_001119590" sequenceVersion="1" change="p.Gly66Ser" singleLetterProteinChange="G66S">
+            <Expression>NP_001119590.1:p.Gly66Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001276695.3" sequenceAccession="NM_001276695" sequenceVersion="3" change="c.196G&gt;A">
+            <Expression>NM_001276695.3:c.196G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001263624.1" sequenceAccession="NP_001263624" sequenceVersion="1" change="p.Gly66Ser" singleLetterProteinChange="G66S">
+            <Expression>NP_001263624.1:p.Gly66Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001276696.3" sequenceAccession="NM_001276696" sequenceVersion="3" change="c.196G&gt;A">
+            <Expression>NM_001276696.3:c.196G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001263625.1" sequenceAccession="NP_001263625" sequenceVersion="1" change="p.Gly66Ser" singleLetterProteinChange="G66S">
+            <Expression>NP_001263625.1:p.Gly66Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001276760.3" sequenceAccession="NM_001276760" sequenceVersion="3" change="c.196G&gt;A">
+            <Expression>NM_001276760.3:c.196G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001263689.1" sequenceAccession="NP_001263689" sequenceVersion="1" change="p.Gly66Ser" singleLetterProteinChange="G66S">
+            <Expression>NP_001263689.1:p.Gly66Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001276761.3" sequenceAccession="NM_001276761" sequenceVersion="3" change="c.196G&gt;A">
+            <Expression>NM_001276761.3:c.196G&gt;A</Expression>
+          </NucleotideExpression>
+          <ProteinExpression sequenceAccessionVersion="NP_001263690.1" sequenceAccession="NP_001263690" sequenceVersion="1" change="p.Gly66Ser" singleLetterProteinChange="G66S">
+            <Expression>NP_001263690.1:p.Gly66Ser</Expression>
+          </ProteinExpression>
+          <MolecularConsequence ID="SO:0001583" Type="missense variant" DB="SO"/>
+        </HGVS>
+        <HGVS Type="coding">
+          <NucleotideExpression sequenceAccessionVersion="NM_001276760.2" sequenceAccession="NM_001276760" sequenceVersion="2" change="c.196G&gt;A">
+            <Expression>NM_001276760.2:c.196G&gt;A</Expression>
+          </NucleotideExpression>
+        </HGVS>
+        <HGVS Assembly="GRCh37" Type="genomic, top-level">
+          <NucleotideExpression sequenceAccessionVersion="NC_000017.10" sequenceAccession="NC_000017" sequenceVersion="10" change="g.7579374C&gt;T" Assembly="GRCh37">
+            <Expression>NC_000017.10:g.7579374C&gt;T</Expression>
+          </NucleotideExpression>
+        </HGVS>
+      </HGVSlist>
+      <XRefList>
+        <XRef ID="CA397844735" DB="ClinGen"/>
+        <XRef Type="rs" ID="1060501195" DB="dbSNP"/>
+      </XRefList>
+    </SimpleAllele>
+    <RCVList>
+      <RCVAccession Title="NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser) AND Hereditary cancer-predisposing syndrome" Accession="RCV000492331" Version="3">
+        <ClassifiedConditionList TraitSetID="13598">
+          <ClassifiedCondition DB="MedGen" ID="C0027672">Hereditary cancer-predisposing syndrome</ClassifiedCondition>
+        </ClassifiedConditionList>
+        <RCVClassifications>
+          <GermlineClassification>
+            <ReviewStatus>criteria provided, multiple submitters, no conflicts</ReviewStatus>
+            <Description DateLastEvaluated="2022-06-18" SubmissionCount="2">Likely pathogenic</Description>
+          </GermlineClassification>
+        </RCVClassifications>
+      </RCVAccession>
+      <RCVAccession Title="NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser) AND Li-Fraumeni syndrome" Accession="RCV001379190" Version="11">
+        <ClassifiedConditionList TraitSetID="2589">
+          <ClassifiedCondition DB="MedGen" ID="C0085390">Li-Fraumeni syndrome</ClassifiedCondition>
+        </ClassifiedConditionList>
+        <RCVClassifications>
+          <GermlineClassification>
+            <ReviewStatus>reviewed by expert panel</ReviewStatus>
+            <Description DateLastEvaluated="2026-06-04" SubmissionCount="2">Uncertain significance</Description>
+          </GermlineClassification>
+        </RCVClassifications>
+      </RCVAccession>
+      <RCVAccession Title="NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser) AND Li-Fraumeni syndrome 1" Accession="RCV002289669" Version="2">
+        <ClassifiedConditionList TraitSetID="3343">
+          <ClassifiedCondition DB="MedGen" ID="C1835398">Li-Fraumeni syndrome 1</ClassifiedCondition>
+        </ClassifiedConditionList>
+        <RCVClassifications>
+          <GermlineClassification>
+            <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+            <Description DateLastEvaluated="2022-06-18" SubmissionCount="1">Likely pathogenic</Description>
+          </GermlineClassification>
+        </RCVClassifications>
+      </RCVAccession>
+      <RCVAccession Title="NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser) AND Adrenal cortex carcinoma" Accession="RCV004003474" Version="1">
+        <ClassifiedConditionList TraitSetID="35132">
+          <ClassifiedCondition DB="MedGen" ID="C0206686">Adrenal cortex carcinoma</ClassifiedCondition>
+        </ClassifiedConditionList>
+        <RCVClassifications>
+          <GermlineClassification>
+            <ReviewStatus>no assertion criteria provided</ReviewStatus>
+            <Description SubmissionCount="1">Likely pathogenic</Description>
+          </GermlineClassification>
+        </RCVClassifications>
+      </RCVAccession>
+      <RCVAccession Title="NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser) AND Adrenocortical carcinoma, hereditary" Accession="RCV005860088" Version="1">
+        <ClassifiedConditionList TraitSetID="6418">
+          <ClassifiedCondition DB="MedGen" ID="C1859972">Adrenocortical carcinoma, hereditary</ClassifiedCondition>
+        </ClassifiedConditionList>
+        <RCVClassifications>
+          <GermlineClassification>
+            <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+            <Description DateLastEvaluated="2025-09-10" SubmissionCount="1">Pathogenic</Description>
+          </GermlineClassification>
+        </RCVClassifications>
+      </RCVAccession>
+      <RCVAccession Title="NM_000546.6(TP53):c.313G&gt;A (p.Gly105Ser) AND TP53-related disorder" Accession="RCV006886940" Version="1">
+        <ClassifiedConditionList TraitSetID="89267">
+          <ClassifiedCondition>TP53-related disorder</ClassifiedCondition>
+        </ClassifiedConditionList>
+        <RCVClassifications>
+          <GermlineClassification>
+            <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+            <Description DateLastEvaluated="2023-01-11" SubmissionCount="1">Likely pathogenic</Description>
+          </GermlineClassification>
+        </RCVClassifications>
+      </RCVAccession>
+    </RCVList>
+    <Classifications>
+      <GermlineClassification DateLastEvaluated="2026-06-04" NumberOfSubmissions="8" NumberOfSubmitters="7" DateCreated="2017-07-01" MostRecentSubmission="2026-09-27">
+        <ReviewStatus>reviewed by expert panel</ReviewStatus>
+        <Description>Uncertain significance</Description>
+        <Explanation DataSource="ClinVar" Type="public">Uncertain significance (1)</Explanation>
+        <Citation Type="general">
+          <ID Source="PubMed">12826609</ID>
+        </Citation>
+        <Citation Type="general">
+          <ID Source="PubMed">15381368</ID>
+        </Citation>
+        <Citation Type="general">
+          <ID Source="PubMed">29979965</ID>
+        </Citation>
+        <Citation Type="general">
+          <ID Source="PubMed">30224644</ID>
+        </Citation>
+        <Citation Type="general">
+          <ID Source="PubMed">30840781</ID>
+        </Citation>
+        <Citation Type="general">
+          <URL>https://erepo.clinicalgenome.org/evrepo/ui/interpretation/612662ac-ca3d-41e8-9432-5693b87bebc6</URL>
+        </Citation>
+        <DescriptionHistory Dated="2026-09-25">
+          <Description>Pathogenic/Likely pathogenic</Description>
+        </DescriptionHistory>
+        <DescriptionHistory Dated="2023-02-02">
+          <Description>Likely pathogenic</Description>
+        </DescriptionHistory>
+        <ConditionList>
+          <TraitSet ID="13598" Type="Disease" ContributesToAggregateClassification="false">
+            <Trait ID="18746" Type="Disease">
+              <Name>
+                <ElementValue Type="Alternate">Hereditary Cancer Syndrome</ElementValue>
+              </Name>
+              <Name>
+                <ElementValue Type="Alternate">Tumor predisposition</ElementValue>
+              </Name>
+              <Name>
+                <ElementValue Type="Alternate">Hereditary neoplastic syndrome</ElementValue>
+                <XRef ID="MONDO:0015356" DB="MONDO"/>
+              </Name>
+              <Name>
+                <ElementValue Type="Alternate">Neoplastic Syndromes, Hereditary</ElementValue>
+                <XRef ID="D009386" DB="MeSH"/>
+              </Name>
+              <Name>
+                <ElementValue Type="Preferred">Hereditary cancer-predisposing syndrome</ElementValue>
+                <XRef ID="699346009" DB="SNOMED CT"/>
+              </Name>
+              <AttributeSet>
+                <Attribute Type="keyword">Neoplasm</Attribute>
+              </AttributeSet>
+              <AttributeSet>
+                <Attribute Type="GARD id" integerValue="19921"/>
+                <XRef ID="19921" DB="Office of Rare Diseases"/>
+              </AttributeSet>
+              <AttributeSet>
+                <Attribute Type="keyword">Hereditary cancer syndrome</Attribute>
+              </AttributeSet>
+              <Citation Type="general" Abbrev="IARC, 2008">
+                <ID Source="pmc">3075918</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACMG/NSGC, 2015">
+                <ID Source="PubMed">25394175</ID>
+              </Citation>
+              <XRef ID="140162" DB="Orphanet"/>
+              <XRef ID="C0027672" DB="MedGen"/>
+              <XRef ID="D009386" DB="MeSH"/>
+              <XRef ID="MONDO:0015356" DB="MONDO"/>
+            </Trait>
+          </TraitSet>
+          <TraitSet ID="89267" Type="Disease" ContributesToAggregateClassification="false">
+            <Trait ID="72229" Type="Disease">
+              <Name>
+                <ElementValue Type="Preferred">TP53-related disorder</ElementValue>
+              </Name>
+              <Name>
+                <ElementValue Type="Alternate">TP53-related condition</ElementValue>
+              </Name>
+            </Trait>
+          </TraitSet>
+          <TraitSet ID="35132" Type="Disease" ContributesToAggregateClassification="false">
+            <Trait ID="37005" Type="Disease">
+              <Name>
+                <ElementValue Type="Alternate">Adrenocortical carcinoma</ElementValue>
+                <XRef ID="HP:0006744" DB="Human Phenotype Ontology"/>
+              </Name>
+              <Name>
+                <ElementValue Type="Preferred">Adrenal cortex carcinoma</ElementValue>
+                <XRef ID="MONDO:0006639" DB="MONDO"/>
+              </Name>
+              <Symbol>
+                <ElementValue Type="Alternate">ACC</ElementValue>
+              </Symbol>
+              <AttributeSet>
+                <Attribute Type="GARD id" integerValue="558"/>
+                <XRef ID="558" DB="Office of Rare Diseases"/>
+              </AttributeSet>
+              <XRef ID="1501" DB="Orphanet"/>
+              <XRef ID="C0206686" DB="MedGen"/>
+              <XRef ID="D018268" DB="MeSH"/>
+              <XRef ID="MONDO:0006639" DB="MONDO"/>
+              <XRef Type="primary" ID="HP:0006744" DB="Human Phenotype Ontology"/>
+              <XRef Type="secondary" ID="HP:0002889" DB="Human Phenotype Ontology"/>
+              <XRef Type="secondary" ID="HP:0006759" DB="Human Phenotype Ontology"/>
+            </Trait>
+          </TraitSet>
+          <TraitSet ID="6418" Type="Disease" ContributesToAggregateClassification="false">
+            <Trait ID="187" Type="Disease">
+              <Name>
+                <ElementValue Type="Preferred">Adrenocortical carcinoma, hereditary</ElementValue>
+                <XRef ID="MONDO:0008734" DB="MONDO"/>
+              </Name>
+              <Symbol>
+                <ElementValue Type="Preferred">ADCC</ElementValue>
+                <XRef Type="MIM" ID="202300" DB="OMIM"/>
+              </Symbol>
+              <AttributeSet>
+                <Attribute Type="keyword">Neoplasm</Attribute>
+              </AttributeSet>
+              <AttributeSet>
+                <Attribute Type="keyword">Hereditary cancer syndrome</Attribute>
+              </AttributeSet>
+              <AttributeSet>
+                <Attribute Type="GARD id" integerValue="15132"/>
+                <XRef ID="15132" DB="Office of Rare Diseases"/>
+              </AttributeSet>
+              <XRef ID="1501" DB="Orphanet"/>
+              <XRef ID="C1859972" DB="MedGen"/>
+              <XRef ID="MONDO:0008734" DB="MONDO"/>
+              <XRef Type="MIM" ID="202300" DB="OMIM"/>
+            </Trait>
+          </TraitSet>
+          <TraitSet ID="3343" Type="Disease" ContributesToAggregateClassification="false">
+            <Trait ID="5406" Type="Disease">
+              <Name>
+                <ElementValue Type="Preferred">Li-Fraumeni syndrome 1</ElementValue>
+                <XRef ID="C538639" DB="MeSH"/>
+              </Name>
+              <Symbol>
+                <ElementValue Type="Preferred">LFS</ElementValue>
+                <XRef Type="MIM" ID="151623" DB="OMIM"/>
+              </Symbol>
+              <Symbol>
+                <ElementValue Type="Alternate">LFS1</ElementValue>
+              </Symbol>
+              <AttributeSet>
+                <Attribute Type="public definition">Li-Fraumeni syndrome (LFS) is a cancer predisposition syndrome associated with high risks for a broad spectrum of cancers including early-onset cancers. Five cancer types account for the majority of LFS tumors: adrenocortical carcinomas, breast cancer, central nervous system tumors, osteosarcomas, and soft-tissue sarcomas. Other cancers associated with LFS include leukemia, colorectal cancer, stomach cancer, lung cancer, melanoma, pediatric head and neck cancers, pancreatic cancer, and prostate cancer. Cancer survivors are at increased risk for developing additional primary cancers and treatment-related secondary cancers. The lifetime risks of cancer for women and men with classic LFS are 90% and 70%, respectively, and 50% of cancers occur prior to age 40 years.</Attribute>
+                <XRef ID="NBK1311" DB="GeneReviews"/>
+              </AttributeSet>
+              <Citation Type="review" Abbrev="GeneReviews">
+                <ID Source="PubMed">20301488</ID>
+                <ID Source="BookShelf">NBK1311</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACS, 2007">
+                <ID Source="PubMed">17392385</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASCO, 2010">
+                <ID Source="PubMed">20065170</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASCO, 2003">
+                <ID Source="PubMed">12692171</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASCO, 2009">
+                <ID Source="pmc">2668639</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASHG/ACMG, 1995">
+                <ID Source="pmc">1801355</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="NSGC, 2004">
+                <ID Source="PubMed">15604628</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACMG, 2013">
+                <ID Source="PubMed">23788249</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASCO, 2014">
+                <ID Source="PubMed">24493721</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACMG/NSGC, 2015">
+                <ID Source="PubMed">25394175</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACMG, 2015">
+                <ID Source="PubMed">25356965</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACMG, 2016">
+                <ID Source="PubMed">27854360</ID>
+                <ID Source="DOI">10.1038/gim.2016.190</ID>
+              </Citation>
+              <Citation Type="Suggested Reading" Abbrev="NCI PDQ, Cancer Genetics Counseling">
+                <ID Source="PubMed">26389258</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACMG SF v3.0, 2021">
+                <ID Source="PubMed">34012068</ID>
+                <ID Source="DOI">10.1038/s41436-021-01172-3</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACMG SF v3.1, 2022">
+                <ID Source="PubMed">35802134</ID>
+                <ID Source="DOI">10.1016/j.gim.2022.04.006</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASCO, 2015">
+                <ID Source="PubMed">26324357</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASHG/ACMG, 2015">
+                <ID Source="PubMed">26140447</ID>
+                <ID Source="pmc">4570999</ID>
+              </Citation>
+              <Citation Type="practice guideline" Abbrev="NICE, 2023">
+                <URL>https://www.nice.org.uk/guidance/cg164</URL>
+                <CitationText>UK NICE Clinical Guideline CG164, Familial breast cancer: classification, care and managing breast cancer and related risks in people with a family history of breast cancer, 2023</CitationText>
+              </Citation>
+              <XRef ID="524" DB="Orphanet"/>
+              <XRef ID="553989" DB="Gene"/>
+              <XRef ID="C1835398" DB="MedGen"/>
+              <XRef Type="MIM" ID="151623" DB="OMIM"/>
+            </Trait>
+          </TraitSet>
+          <TraitSet ID="2589" Type="Disease" ContributesToAggregateClassification="true">
+            <Trait ID="10539" Type="Disease">
+              <Name>
+                <ElementValue Type="Preferred">Li-Fraumeni syndrome</ElementValue>
+                <XRef ID="MONDO:0018875" DB="MONDO"/>
+                <XRef Type="Phenotypic series" ID="PS151623" DB="OMIM"/>
+                <XRef ID="428850001" DB="SNOMED CT"/>
+              </Name>
+              <Name>
+                <ElementValue Type="Alternate">Sarcoma family syndrome of Li and Fraumeni</ElementValue>
+              </Name>
+              <Symbol>
+                <ElementValue Type="Preferred">LFS</ElementValue>
+              </Symbol>
+              <AttributeSet>
+                <Attribute Type="public definition">Li-Fraumeni syndrome (LFS) is a cancer predisposition syndrome associated with high risks for a broad spectrum of cancers including early-onset cancers. Five cancer types account for the majority of LFS tumors: adrenocortical carcinomas, breast cancer, central nervous system tumors, osteosarcomas, and soft-tissue sarcomas. Other cancers associated with LFS include leukemia, colorectal cancer, stomach cancer, lung cancer, melanoma, pediatric head and neck cancers, pancreatic cancer, and prostate cancer. Cancer survivors are at increased risk for developing additional primary cancers and treatment-related secondary cancers. The lifetime risks of cancer for women and men with classic LFS are 90% and 70%, respectively, and 50% of cancers occur prior to age 40 years.</Attribute>
+                <XRef ID="NBK1311" DB="GeneReviews"/>
+              </AttributeSet>
+              <AttributeSet>
+                <Attribute Type="GARD id" integerValue="6902"/>
+                <XRef ID="6902" DB="Office of Rare Diseases"/>
+              </AttributeSet>
+              <Citation Type="review" Abbrev="GeneReviews">
+                <ID Source="PubMed">20301488</ID>
+                <ID Source="BookShelf">NBK1311</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ACS, 2007">
+                <ID Source="PubMed">17392385</ID>
+              </Citation>
+              <Citation Type="general" Abbrev="ASCO, 2014">
+                <ID Source="PubMed">24493721</ID>
+              </Citation>
+              <Citation Type="Suggested Reading" Abbrev="NCI PDQ, Breast and Gynecologic Cancers">
+                <ID Source="PubMed">26389210</ID>
+              </Citation>
+              <Citation Type="Suggested Reading" Abbrev="NCI PDQ, Cancer Genetics Counseling">
+                <ID Source="PubMed">26389258</ID>
+              </Citation>
+              <Citation Type="practice guideline" Abbrev="NICE, 2023">
+                <URL>https://www.nice.org.uk/guidance/cg164</URL>
+                <CitationText>UK NICE Clinical Guideline CG164, Familial breast cancer: classification, care and managing breast cancer and related risks in people with a family history of breast cancer, 2023</CitationText>
+              </Citation>
+              <XRef ID="524" DB="Orphanet"/>
+              <XRef ID="C0085390" DB="MedGen"/>
+              <XRef ID="MONDO:0018875" DB="MONDO"/>
+              <XRef Type="Phenotypic series" ID="PS151623" DB="OMIM"/>
+            </Trait>
+          </TraitSet>
+        </ConditionList>
+      </GermlineClassification>
+    </Classifications>
+    <ClinicalAssertionList>
+      <ClinicalAssertion ID="1132147" SubmissionDate="2020-11-30" ContributesToAggregateClassification="false" DateLastUpdated="2017-07-01" DateCreated="2017-07-01">
+        <ClinVarSubmissionID localKey="a94059" localKeyIsSubmitted="1" submittedAssembly="GRCh37"/>
+        <ClinVarAccession Accession="SCV000581123" DateUpdated="2017-07-01" DateCreated="2017-07-01" Type="SCV" Version="4" SubmitterName="Ambry Genetics" OrgID="61756" OrganizationCategory="laboratory" OrgAbbreviation="Ambry"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification DateLastEvaluated="2016-03-17">
+          <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+          <GermlineClassification>Likely pathogenic</GermlineClassification>
+          <Citation>
+            <ID Source="PubMed">15381368</ID>
+          </Citation>
+          <Comment>&lt;span style="font-size:12px"&gt;The p.G105S variant (also known as c.313G&gt;A), located in coding exon 3 of the TP53 gene, results from a G to A substitution at nucleotide position 313. The glycine at codon 105 is replaced by serine, an amino acid with similar properties.&lt;span style="font-family:arial,sans-serif"&gt;This alteration is located in the functionally critical DNA binding domain and has shown a loss of transactivation activity in yeast based functional studies (Kato S et al. &lt;span style="font-family:arial,sans-serif"&gt;Proc&lt;span style="font-family:arial,sans-serif"&gt; &lt;span style="font-family:arial,sans-serif"&gt;Natl&lt;span style="font-family:arial,sans-serif"&gt; &lt;span style="font-family:arial,sans-serif"&gt;Acad&lt;span style="font-family:arial,sans-serif"&gt; &lt;span style="font-family:arial,sans-serif"&gt;Sci USA&lt;span style="font-family:arial,sans-serif"&gt;. 2003 Jul 8;100(14):8424-9). Although this specific alteration has not been reported in the literature, another alteration at this position (p.G105C) was reported in a family with classic Li-Fraumeni Syndrome, where the proband had three primary breast cancers by the age of 31, and a family history of early onset breast cancer and brain tumors (Bendig I et al., &lt;span style="font-family:arial,sans-serif"&gt;Cancer Genet. &lt;span style="font-family:arial,sans-serif"&gt;Cytogenet&lt;span style="font-family:arial,sans-serif"&gt;.&lt;span style="font-family:arial,sans-serif"&gt; &lt;span style="font-family:arial,sans-serif"&gt;2004 Oct; 154(1):22-6). Based on internal structural analysis, this variant is anticipated to result in a significant decrease in structural stability (Cho Y et al., &lt;span style="font-family:arial,sans-serif"&gt;Science 1994 Jul; 265(5170):346-55). This variant was not reported in population based cohorts in the following databases: Database of Single Nucleotide Polymorphisms (dbSNP), NHLBI Exome Sequencing Project (ESP), and 1000 Genomes Project. In the ESP, this variant was not observed in 6503 samples (13006 alleles) with coverage at this position. This amino acid position is highly conserved in available vertebrate species. In addition, this alteration is predicted to be probably damaging and deleterious by PolyPhen and SIFT &lt;span style="font-family:arial,sans-serif"&gt;in silico&lt;span style="font-family:arial,sans-serif"&gt; analyses, respectively. Based on the majority of available evidence to date, this variant is likely to be pathogenic.</Comment>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <AttributeSet>
+          <Attribute Type="AssertionMethod">Ambry Autosomal Dominant and X-Linked criteria (10/2015)</Attribute>
+          <Citation>
+            <URL>https://submit.ncbi.nlm.nih.gov/ft/byid/zfkfvckw/mid-7377_ambry_classification_scheme_oct_2015.pdf</URL>
+          </Citation>
+        </AttributeSet>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>germline</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>unknown</AffectedStatus>
+              <NumberTested>1</NumberTested>
+            </Sample>
+            <Method>
+              <MethodType>clinical testing</MethodType>
+            </Method>
+            <ObservedData>
+              <Attribute Type="VariantAlleles" integerValue="1"/>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <GeneList>
+            <Gene Symbol="TP53"/>
+          </GeneList>
+          <VariantType>Variation</VariantType>
+          <AttributeSet>
+            <Attribute Type="HGVS">NM_000546.4:c.313G&gt;A</Attribute>
+          </AttributeSet>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <Name>
+              <ElementValue Type="Preferred">Hereditary cancer-predisposing syndrome</ElementValue>
+            </Name>
+            <XRef DB="MedGen" ID="C0027672" Type="CUI"/>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>NonExomeUpdate_081220AmbryReport</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+      <ClinicalAssertion ID="5044363" SubmissionDate="2022-10-06" ContributesToAggregateClassification="false" DateLastUpdated="2022-10-15" DateCreated="2022-10-15">
+        <ClinVarSubmissionID localKey="NM_000546.6:c.313G&gt;A|Hereditary cancer-predisposing syndrome" submittedAssembly="GRCh37"/>
+        <ClinVarAccession Accession="SCV002582410" DateUpdated="2022-10-15" DateCreated="2022-10-15" Type="SCV" Version="1" SubmitterName="Genome-Nilou Lab" OrgID="507598" OrganizationCategory="laboratory" OrgAbbreviation="Genome Nilou"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification DateLastEvaluated="2022-06-18">
+          <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+          <GermlineClassification>Likely pathogenic</GermlineClassification>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <AttributeSet>
+          <Attribute Type="AssertionMethod">ACMG Guidelines, 2015</Attribute>
+          <Citation>
+            <ID Source="PubMed">25741868</ID>
+          </Citation>
+        </AttributeSet>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>germline</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>no</AffectedStatus>
+            </Sample>
+            <Method>
+              <MethodType>clinical testing</MethodType>
+            </Method>
+            <ObservedData>
+              <Attribute Type="Description">not provided</Attribute>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <GeneList>
+            <Gene Symbol="TP53"/>
+          </GeneList>
+          <VariantType>Variation</VariantType>
+          <AttributeSet>
+            <Attribute Type="HGVS">NM_000546.6:c.313G&gt;A</Attribute>
+          </AttributeSet>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <Name>
+              <ElementValue Type="Preferred">Hereditary cancer-predisposing syndrome</ElementValue>
+            </Name>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>SUB12130325</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+      <ClinicalAssertion ID="5044925" SubmissionDate="2022-10-06" ContributesToAggregateClassification="false" DateLastUpdated="2022-10-15" DateCreated="2022-10-15">
+        <ClinVarSubmissionID localKey="NM_000546.6:c.313G&gt;A|OMIM:151623" submittedAssembly="GRCh37"/>
+        <ClinVarAccession Accession="SCV002583072" DateUpdated="2022-10-15" DateCreated="2022-10-15" Type="SCV" Version="1" SubmitterName="Genome-Nilou Lab" OrgID="507598" OrganizationCategory="laboratory" OrgAbbreviation="Genome Nilou"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification DateLastEvaluated="2022-06-18">
+          <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+          <GermlineClassification>Likely pathogenic</GermlineClassification>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <AttributeSet>
+          <Attribute Type="AssertionMethod">ACMG Guidelines, 2015</Attribute>
+          <Citation>
+            <ID Source="PubMed">25741868</ID>
+          </Citation>
+        </AttributeSet>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>germline</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>no</AffectedStatus>
+            </Sample>
+            <Method>
+              <MethodType>clinical testing</MethodType>
+            </Method>
+            <ObservedData>
+              <Attribute Type="Description">not provided</Attribute>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <GeneList>
+            <Gene Symbol="TP53"/>
+          </GeneList>
+          <VariantType>Variation</VariantType>
+          <AttributeSet>
+            <Attribute Type="HGVS">NM_000546.6:c.313G&gt;A</Attribute>
+          </AttributeSet>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <XRef DB="OMIM" ID="151623" Type="MIM"/>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>SUB12130325</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+      <ClinicalAssertion ID="7570768" SubmissionDate="2023-10-17" ContributesToAggregateClassification="false" DateLastUpdated="2024-04-20" DateCreated="2024-04-20">
+        <ClinVarSubmissionID localKey=":Chr.17_7579374_7579374_C_T|Adrenocortical carcinoma" submittedAssembly="GRCh37"/>
+        <ClinVarAccession Accession="SCV004046833" DateUpdated="2024-04-20" DateCreated="2024-04-20" Type="SCV" Version="1" SubmitterName="Key Laboratory of Carcinogenesis and Cancer Invasion, Central South University" OrgID="509306" OrganizationCategory="laboratory"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification>
+          <ReviewStatus>no assertion criteria provided</ReviewStatus>
+          <GermlineClassification>Likely pathogenic</GermlineClassification>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>somatic</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>no</AffectedStatus>
+            </Sample>
+            <Method>
+              <MethodType>clinical testing</MethodType>
+            </Method>
+            <ObservedData>
+              <Attribute Type="Description">not provided</Attribute>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <GeneList>
+            <Gene Symbol="TP53"/>
+          </GeneList>
+          <VariantType>Variation</VariantType>
+          <Location>
+            <SequenceLocation Assembly="GRCh37" Chr="17" alternateAllele="T" referenceAllele="C" start="7579374" stop="7579374" variantLength="1"/>
+          </Location>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <Name>
+              <ElementValue Type="Preferred">Adrenocortical carcinoma</ElementValue>
+            </Name>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>SUB13905878</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+      <ClinicalAssertion ID="12613798" SubmissionDate="2025-09-10" ContributesToAggregateClassification="false" DateLastUpdated="2025-10-12" DateCreated="2025-10-12">
+        <ClinVarSubmissionID localKey="NM_001276760.2:c.196G&gt;A|OMIM:202300" submittedAssembly="GRCh37"/>
+        <ClinVarAccession Accession="SCV006551819" DateUpdated="2025-10-12" DateCreated="2025-10-12" Type="SCV" Version="1" SubmitterName="Genomic Medicine Center of Excellence, King Faisal Specialist Hospital and Research Centre" OrgID="500184" OrganizationCategory="laboratory" OrgAbbreviation="DGU-KFSHRC"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification DateLastEvaluated="2025-09-10">
+          <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+          <GermlineClassification>Pathogenic</GermlineClassification>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <AttributeSet>
+          <Attribute Type="AssertionMethod">ACMG Guidelines, 2015</Attribute>
+          <Citation>
+            <ID Source="PubMed">25741868</ID>
+          </Citation>
+        </AttributeSet>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>germline</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>unknown</AffectedStatus>
+            </Sample>
+            <Method>
+              <MethodType>clinical testing</MethodType>
+            </Method>
+            <ObservedData>
+              <Attribute Type="Description">not provided</Attribute>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <VariantType>Variation</VariantType>
+          <AttributeSet>
+            <Attribute Type="HGVS">NM_001276760.2:c.196G&gt;A</Attribute>
+          </AttributeSet>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <XRef DB="OMIM" ID="202300" Type="MIM"/>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>SUB15620184</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+      <ClinicalAssertion ID="3102536" SubmissionDate="2026-02-05" ContributesToAggregateClassification="false" DateLastUpdated="2026-02-15" DateCreated="2021-05-10">
+        <ClinVarSubmissionID localKey="10886882|MedGen:C0085390" submittedAssembly="GRCh37"/>
+        <ClinVarAccession Accession="SCV001576941" DateUpdated="2026-02-15" DateCreated="2021-05-10" Type="SCV" Version="6" SubmitterName="Labcorp Genetics (formerly Invitae), Labcorp" OrgID="500031" OrganizationCategory="laboratory"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification DateLastEvaluated="2023-09-15">
+          <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+          <GermlineClassification>Pathogenic</GermlineClassification>
+          <Citation>
+            <ID Source="PubMed">12826609</ID>
+          </Citation>
+          <Citation>
+            <ID Source="PubMed">12826609</ID>
+          </Citation>
+          <Citation>
+            <ID Source="PubMed">29979965</ID>
+          </Citation>
+          <Citation>
+            <ID Source="PubMed">30224644</ID>
+          </Citation>
+          <Citation>
+            <ID Source="PubMed">30840781</ID>
+          </Citation>
+          <Citation>
+            <ID Source="PubMed">12826609</ID>
+          </Citation>
+          <Citation>
+            <ID Source="PubMed">29979965</ID>
+          </Citation>
+          <Citation>
+            <ID Source="PubMed">30224644</ID>
+          </Citation>
+          <Comment Type="public">This sequence change replaces glycine, which is neutral and non-polar, with serine, which is neutral and polar, at codon 105 of the TP53 protein (p.Gly105Ser). This missense change has been observed in individuals with clinical features of Li-Fraumeni syndrome (Invitae; external communications). This variant is not present in population databases (gnomAD no frequency). For these reasons, this variant has been classified as Pathogenic. This variant disrupts the p.Gly105 amino acid residue in TP53. Other variant(s) that disrupt this residue have been determined to be pathogenic (PMID: 12826609; Invitae). This suggests that this residue is clinically significant, and that variants that disrupt this residue are likely to be disease-causing. Experimental studies are conflicting or provide insufficient evidence to determine the effect of this variant on TP53 function (PMID: 12826609, 29979965, 30224644, 30840781). Advanced modeling performed at Invitae incorporating data from internal and/or published experimental studies (PMID: 12826609, 29979965, 30224644) indicates that this missense variant is expected to disrupt TP53 function. ClinVar contains an entry for this variant (Variation ID: 428884).</Comment>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <AttributeSet>
+          <Attribute Type="AssertionMethod">Invitae Variant Classification Sherloc (09022015)</Attribute>
+          <Citation>
+            <ID Source="PubMed">28492532</ID>
+          </Citation>
+        </AttributeSet>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>germline</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>unknown</AffectedStatus>
+            </Sample>
+            <Method>
+              <MethodType>clinical testing</MethodType>
+            </Method>
+            <ObservedData>
+              <Attribute Type="Description">not provided</Attribute>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <GeneList>
+            <Gene Symbol="TP53"/>
+          </GeneList>
+          <VariantType>Variation</VariantType>
+          <AttributeSet>
+            <Attribute Type="HGVS">NC_000017.10:g.7579374C&gt;T</Attribute>
+          </AttributeSet>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <XRef DB="MedGen" ID="C0085390" Type="CUI"/>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>SUB11431369</SubmissionName>
+          <SubmissionName>SUB12506961</SubmissionName>
+          <SubmissionName>SUB14200269</SubmissionName>
+          <SubmissionName>SUB15072707</SubmissionName>
+          <SubmissionName>SUB15987645</SubmissionName>
+          <SubmissionName>SUB8755776</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+      <ClinicalAssertion ID="14811190" SubmissionDate="2026-08-20" ContributesToAggregateClassification="false" DateLastUpdated="2026-09-22" DateCreated="2026-09-22">
+        <ClinVarSubmissionID localKey=":Chr.17_7579374_C_T|TP53-related disorders" submittedAssembly="GRCh37"/>
+        <ClinVarAccession Accession="SCV007833800" DateUpdated="2026-09-22" DateCreated="2026-09-22" Type="SCV" Version="1" SubmitterName="Blueprint Genetics" OrgID="500188" OrganizationCategory="laboratory"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification DateLastEvaluated="2023-01-11">
+          <ReviewStatus>criteria provided, single submitter</ReviewStatus>
+          <GermlineClassification>Likely pathogenic</GermlineClassification>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <AttributeSet>
+          <Attribute Type="AssertionMethod">ACMG Guidelines, 2015</Attribute>
+          <Citation>
+            <ID Source="PubMed">25741868</ID>
+          </Citation>
+        </AttributeSet>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>germline</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>yes</AffectedStatus>
+            </Sample>
+            <Method>
+              <MethodType>clinical testing</MethodType>
+              <MethodAttribute>
+                <Attribute Type="TestName">TP53 single gene test</Attribute>
+              </MethodAttribute>
+            </Method>
+            <ObservedData>
+              <Attribute Type="VariantAlleles" integerValue="1"/>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <VariantType>Variation</VariantType>
+          <Location>
+            <SequenceLocation Assembly="GRCh37" Chr="17" alternateAllele="T" referenceAllele="C" start="7579374" stop="7579374" variantLength="1"/>
+          </Location>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <Name>
+              <ElementValue Type="Preferred">TP53-related disorders</ElementValue>
+            </Name>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>SUB16423224</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+      <ClinicalAssertion FDARecognizedDatabase="true" ID="15177817" SubmissionDate="2026-09-22" ContributesToAggregateClassification="true" DateLastUpdated="2026-09-27" DateCreated="2026-09-27">
+        <ClinVarSubmissionID localKey="612662ac-ca3d-41e8-9432-5693b87bebc6" localKeyIsSubmitted="1" submittedAssembly="GRCh38"/>
+        <ClinVarAccession Accession="SCV007984519" DateUpdated="2026-09-27" DateCreated="2026-09-27" Type="SCV" Version="1" SubmitterName="ClinGen TP53 Variant Curation Expert Panel, ClinGen" OrgID="507142" OrganizationCategory="consortium"/>
+        <RecordStatus>current</RecordStatus>
+        <Classification DateLastEvaluated="2026-06-04">
+          <ReviewStatus>reviewed by expert panel</ReviewStatus>
+          <GermlineClassification>Uncertain Significance</GermlineClassification>
+          <Citation>
+            <URL>https://erepo.clinicalgenome.org/evrepo/ui/interpretation/612662ac-ca3d-41e8-9432-5693b87bebc6</URL>
+          </Citation>
+          <Comment Type="public">The NM_000546.6: c.313G&gt;A variant in TP53 is a missense variant predicted to cause substitution of glycine by serine at amino acid 105 (p.Gly105Ser). This variant has been reported in 1 family meeting Classic criteria. Based on this evidence, this variant scores 1 point meeting the TP53 VCEP phenotype scoring criteria of 1-1.5 points. (PS4_Supporting; PMID:36604421 (this case not counted towards PS4 points), Internal lab contributors).At least one individual with this variant was found to have a variant allele fraction of 5-35%, which is a significant predictor of variant pathogenicity (PP4, PMID: 34906512, Internal lab contributors). This variant is absent from gnomAD v4.1.0 (PM2_Supporting). In vitro assays performed in yeast and/or human cell lines showed conflicting results with respect to transactivation, growth suppression activity, and/or tetramer formation (PS3/BS3 not met; PMIDs: 12826609, 39774325, 29979965, 30224644). Computational predictor scores (BayesDel = 0.540735; Align GVGD = Class 55) are above recommended thresholds (BayesDel &gt; 0.16 and an Align GVGD Class of &gt; 15), evidence that correlates with impact to TP53 via protein change (PP3). This variant has 2 somatic occurrences for the same amino acid change in cancerhotspots.org (v2) sufficient to be defined as a mutational hotspot by the Clingen TP53 VCEP (2-9 somatic occurrences, PMID: 30311369) (PM1_Supporting). In summary, this variant meets the criteria to be classified as uncertain significance for Li Fraumeni syndrome based on the ACMG/AMP criteria applied, as specified by the ClinGen TP53 VCEP: PS4_Supporting, PP4, PM2_Supporting, PP3, PM1_Supporting. (Bayesian Points: 5; VCEP specifications version 2.4)</Comment>
+        </Classification>
+        <Assertion>variation to disease</Assertion>
+        <AttributeSet>
+          <Attribute Type="ModeOfInheritance">Autosomal dominant inheritance</Attribute>
+        </AttributeSet>
+        <AttributeSet>
+          <Attribute Type="AssertionMethod">ClinGen TP53 ACMG Specifications TP53 V2.4.0</Attribute>
+          <Citation>
+            <URL>https://submit.ncbi.nlm.nih.gov/api/2.0/files/cwd93eml/clingen_tp53_acmg_specifications_tp53_v2.4.0.pdf/?format=attachment</URL>
+          </Citation>
+        </AttributeSet>
+        <ObservedInList>
+          <ObservedIn>
+            <Sample>
+              <Origin>germline</Origin>
+              <Species TaxonomyId="9606">human</Species>
+              <AffectedStatus>unknown</AffectedStatus>
+            </Sample>
+            <Method>
+              <MethodType>curation</MethodType>
+            </Method>
+            <ObservedData>
+              <Attribute Type="Description">not provided</Attribute>
+            </ObservedData>
+          </ObservedIn>
+        </ObservedInList>
+        <SimpleAllele>
+          <GeneList>
+            <Gene Symbol="TP53"/>
+          </GeneList>
+          <VariantType>Variation</VariantType>
+          <OtherNameList>
+            <Name>NM_000546.6(TP53):c.313G&gt;A</Name>
+            <Name>p.Gly105Ser</Name>
+          </OtherNameList>
+          <AttributeSet>
+            <Attribute Type="HGVS">NC_000017.11:g.7676056C&gt;T</Attribute>
+          </AttributeSet>
+        </SimpleAllele>
+        <TraitSet Type="Disease">
+          <Trait Type="Disease">
+            <XRef DB="MONDO" ID="MONDO:0018875"/>
+          </Trait>
+        </TraitSet>
+        <SubmissionNameList>
+          <SubmissionName>SUB16504686</SubmissionName>
+        </SubmissionNameList>
+      </ClinicalAssertion>
+    </ClinicalAssertionList>
+    <TraitMappingList>
+      <TraitMapping ClinicalAssertionID="1132147" TraitType="Disease" MappingType="Name" MappingValue="Hereditary cancer-predisposing syndrome" MappingRef="Preferred">
+        <MedGen CUI="C0027672" Name="Hereditary cancer-predisposing syndrome"/>
+      </TraitMapping>
+      <TraitMapping ClinicalAssertionID="5044363" TraitType="Disease" MappingType="Name" MappingValue="Hereditary cancer-predisposing syndrome" MappingRef="Preferred">
+        <MedGen CUI="C0027672" Name="Hereditary cancer-predisposing syndrome"/>
+      </TraitMapping>
+      <TraitMapping ClinicalAssertionID="5044925" TraitType="Disease" MappingType="XRef" MappingValue="151623" MappingRef="OMIM">
+        <MedGen CUI="C1835398" Name="Li-Fraumeni syndrome 1"/>
+      </TraitMapping>
+      <TraitMapping ClinicalAssertionID="7570768" TraitType="Disease" MappingType="Name" MappingValue="Adrenocortical carcinoma" MappingRef="Preferred">
+        <MedGen CUI="C0206686" Name="Adrenal cortex carcinoma"/>
+      </TraitMapping>
+      <TraitMapping ClinicalAssertionID="12613798" TraitType="Disease" MappingType="XRef" MappingValue="202300" MappingRef="OMIM">
+        <MedGen CUI="C1859972" Name="Adrenocortical carcinoma, hereditary"/>
+      </TraitMapping>
+      <TraitMapping ClinicalAssertionID="3102536" TraitType="Disease" MappingType="XRef" MappingValue="C0085390" MappingRef="MedGen">
+        <MedGen CUI="C0085390" Name="Li-Fraumeni syndrome"/>
+      </TraitMapping>
+      <TraitMapping ClinicalAssertionID="14811190" TraitType="Disease" MappingType="Name" MappingValue="TP53-related disorders" MappingRef="Preferred">
+        <MedGen CUI="None" Name="TP53-related disorder"/>
+      </TraitMapping>
+      <TraitMapping ClinicalAssertionID="15177817" TraitType="Disease" MappingType="XRef" MappingValue="MONDO:0018875" MappingRef="MONDO">
+        <MedGen CUI="C0085390" Name="Li-Fraumeni syndrome"/>
+      </TraitMapping>
+    </TraitMappingList>
+  </ClassifiedRecord>
+</VariationArchive>
+</ClinVarResult-Set>
