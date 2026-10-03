@@ -13,6 +13,8 @@ use super::{
     VariantShorthand, transcript_coding_hgvs_re,
 };
 
+mod point_alias;
+
 fn rsid_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"(?i)^(rs\d+)$").expect("valid regex"))
@@ -334,9 +336,13 @@ pub fn classify_variant_input(input: &str) -> VariantInputKind {
         return VariantInputKind::TranscriptCodingHgvs(input.to_string());
     }
     if let Some(caps) = gene_protein_re().captures(input) {
+        let Some(change) = point_alias::point_assertion(&caps[2], Some(&caps[1]), true).alias()
+        else {
+            return VariantInputKind::Unsupported;
+        };
         return VariantInputKind::Exact(VariantIdFormat::GeneProteinChange {
             gene: caps[1].to_string(),
-            change: caps[2].to_string(),
+            change,
         });
     }
     if let Some(exact) = parse_exact_gene_protein_change(input) {
@@ -468,33 +474,6 @@ pub(crate) fn gnomad_variant_slug(id: &str) -> Option<String> {
     ))
 }
 
-fn amino_acid_one_letter(token: &str) -> Option<char> {
-    match token.trim().to_ascii_uppercase().as_str() {
-        "A" | "ALA" => Some('A'),
-        "R" | "ARG" => Some('R'),
-        "N" | "ASN" => Some('N'),
-        "D" | "ASP" => Some('D'),
-        "C" | "CYS" => Some('C'),
-        "Q" | "GLN" => Some('Q'),
-        "E" | "GLU" => Some('E'),
-        "G" | "GLY" => Some('G'),
-        "H" | "HIS" => Some('H'),
-        "I" | "ILE" => Some('I'),
-        "L" | "LEU" => Some('L'),
-        "K" | "LYS" => Some('K'),
-        "M" | "MET" => Some('M'),
-        "F" | "PHE" => Some('F'),
-        "P" | "PRO" => Some('P'),
-        "S" | "SER" => Some('S'),
-        "T" | "THR" => Some('T'),
-        "W" | "TRP" => Some('W'),
-        "Y" | "TYR" => Some('Y'),
-        "V" | "VAL" => Some('V'),
-        "*" | "TER" | "STOP" | "X" => Some('*'),
-        _ => None,
-    }
-}
-
 pub(crate) fn protein_change_segment(value: &str) -> &str {
     let trimmed = value.trim();
     trimmed
@@ -512,43 +491,20 @@ fn protein_alias_body(value: &str) -> &str {
 }
 
 pub(crate) fn protein_changes_equivalent(left: &str, right: &str) -> bool {
+    let left_point = point_alias::point_assertion(left, None, false);
+    let right_point = point_alias::point_assertion(right, None, false);
+    // Retained identical complex-body comparison claims no shared point payload.
     if protein_alias_body(left).eq_ignore_ascii_case(protein_alias_body(right)) {
         return true;
     }
-    match (
-        normalize_protein_change(left),
-        normalize_protein_change(right),
-    ) {
+    match (left_point.alias(), right_point.alias()) {
         (Some(left), Some(right)) => left == right,
         _ => false,
     }
 }
 
 pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
-    let trimmed = protein_alias_body(value);
-    if trimmed.is_empty() {
-        return None;
-    }
-
-    let bytes = trimmed.as_bytes();
-    let start_digits = bytes.iter().position(|b| b.is_ascii_digit())?;
-    let end_digits = bytes[start_digits..]
-        .iter()
-        .position(|b| !b.is_ascii_digit())
-        .map(|idx| start_digits + idx)
-        .unwrap_or(bytes.len());
-    if start_digits == 0 || end_digits <= start_digits || end_digits >= bytes.len() {
-        return None;
-    }
-
-    let from = amino_acid_one_letter(&trimmed[..start_digits])?;
-    let pos = trimmed[start_digits..end_digits].trim();
-    let to = amino_acid_one_letter(&trimmed[end_digits..])?;
-    if pos.is_empty() {
-        return None;
-    }
-
-    Some(format!("{from}{pos}{to}"))
+    point_alias::point_assertion(value, None, false).alias()
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]

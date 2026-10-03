@@ -14,7 +14,7 @@ from pathlib import Path
 import tomllib
 
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "59fde6246c1a07ac115d6fc9f16471354a725bff"
+REVISION = "496fa04b1c06df575bb81a37717232d7e44ba375"
 VERSION = "0.0.36"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
@@ -352,6 +352,36 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
             require(
                 marker not in source,
                 f"{relative} retains retired eligibility codec marker {marker}",
+                failures,
+            )
+
+    point_owner = Path("src/entities/variant/resolution/point_alias.rs")
+    point_markers = (
+        "parse_hgvs_protein_point_21_1_4", "HgvsProteinPointEnvelope",
+        "ParsedHgvsProteinPoint", "HgvsProteinPointDisposition",
+        "HgvsProteinPointEdit", "HgvsProteinStyle", "HgvsProteinResidue", "HgvsProteinPointError",
+    )
+    for relative, source in sources:
+        for marker in point_markers:
+            require(
+                marker not in source or relative == point_owner,
+                f"{relative} uses checked point marker {marker} outside its private owner",
+                failures,
+            )
+        require(
+            "fn amino_acid_one_letter" not in source,
+            f"{relative} restores the retired ordinary-point residue owner",
+            failures,
+        )
+        if relative == Path("src/entities/variant/resolution.rs"):
+            normalizer = re.search(
+                r"fn normalize_protein_change\([^)]*\)[^{]*\{([^}]+)\}", source
+            )
+            require(
+                normalizer is not None
+                and normalizer.group(1).strip()
+                == "point_alias::point_assertion(value, None, false).alias()",
+                "ordinary-point normalization must delegate exclusively to the private checked owner",
                 failures,
             )
 

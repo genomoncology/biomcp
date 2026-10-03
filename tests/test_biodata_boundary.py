@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "59fde6246c1a07ac115d6fc9f16471354a725bff"
+REVISION = "496fa04b1c06df575bb81a37717232d7e44ba375"
 
 
 def _write(path: Path, content: str) -> None:
@@ -376,4 +376,42 @@ def test_biodata_boundary_rejects_a_bidirectional_trial_codec(tmp_path: Path) ->
         "fn decode(value: &[u8]) { TrialEligibilityWire::from_json_bytes(value); }",
     )
     subprocess.run(["git", "add", "src/codec.rs"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+def test_biodata_boundary_accepts_the_named_private_point_owner(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / "src/entities/variant/resolution/point_alias.rs",
+           "use biodata::{HgvsProteinPointEnvelope, parse_hgvs_protein_point_21_1_4};\n")
+    _write(tmp_path / "src/entities/variant/resolution.rs",
+           "fn normalize_protein_change(value: &str) -> Option<String> { point_alias::point_assertion(value, None, false).alias() }\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 0
+
+
+@pytest.mark.parametrize("path", ["src/entities/variant/other.rs", "src/sources/myvariant.rs"])
+def test_biodata_boundary_rejects_checked_points_outside_the_named_owner(tmp_path: Path, path: str) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / path, "use biodata::parse_hgvs_protein_point_21_1_4;\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+@pytest.mark.parametrize("body", [
+    'legacy_point(value)',
+    'point_alias::point_assertion(value, None, false).alias().or_else(|| legacy_point(value))',
+])
+def test_biodata_boundary_rejects_an_ordinary_point_fallback(tmp_path: Path, body: str) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / "src/entities/variant/resolution.rs",
+           f"fn normalize_protein_change(value: &str) -> Option<String> {{ {body} }}\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1
+
+
+def test_biodata_boundary_rejects_the_retired_point_residue_owner(tmp_path: Path) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / "src/entities/variant/resolution/point_alias.rs",
+           "fn amino_acid_one_letter(token: &str) -> Option<char> { None }\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
     assert _run(tmp_path).returncode == 1
