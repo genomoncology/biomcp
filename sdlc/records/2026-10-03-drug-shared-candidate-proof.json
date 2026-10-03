@@ -447,5 +447,9 @@
     "tests/test_docs_changelog_refresh.py",
     "tests/test_release_workflow_provenance.py"
   ],
-  "maintenance_incorporated": false
+  "maintenance_incorporated": false,
+  "return_record_paths": [
+    "sdlc/records/2026-10-03-drug-shared-candidate.md",
+    "sdlc/records/2026-10-03-drug-shared-candidate-proof.json"
+  ]
 }
