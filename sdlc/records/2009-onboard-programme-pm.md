@@ -1,4 +1,4 @@
-# 2009: Programme PM onboarding
+# Ticket 2009: Programme PM onboarding
 
 Date: 2026-10-03.
 
@@ -20,7 +20,7 @@ Initial normal PM reads covered all requested commands in human and JSON formats
 
 ## Measured PM coverage
 
-Measurements at administrative commit `1e89a7e53fc27a9cea9878bfa662f5256f51d0cf` used actual normal PM commands. Both human and JSON formats ran for status, next, daily, lanes and item references 2001 through 2009. The 26 invocations agreed on exits and represented states. JSON parsed successfully. Raw outputs stay local and unpushed.
+Measurements at administrative commit `1e89a7e53fc27a9cea9878bfa662f5256f51d0cf` used actual normal PM commands. Both human and JSON formats ran for status, next, daily, lanes and item references 2001 through 2009. The 26 invocations agreed on exits and represented states. JSON parsed successfully. Raw outputs stay local and unpushed. Final item verification exposed that the new numeric-only record title also failed PM linkage. The onboarding record now names Ticket 2009 explicitly so the active administrative item exposes it. This bounded correction leaves historical record titles untouched.
 
 | View | Exit in both formats | Findings in JSON | Observed state |
 | --- | --- | --- | --- |
