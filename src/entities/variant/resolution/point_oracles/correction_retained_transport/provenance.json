@@ -1,0 +1,41 @@
+{
+  "source_repository": "biodata",
+  "source_revision": "c2ebf3eab11b8eab48816feb40f76b564189a680",
+  "approval_revision": "903b0644afee6375e85ca082ade00831c3b11243",
+  "origin": "Independently authored retained-transport overlay for T02/T06 only. Engineering replay of unchanged admitted A01 bytes.",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "T02.input.json",
+      "sha256": "479f7de3493dd6d73ccfb30f8b73a1cc290f74705f2461d388a16c82783cdbf8"
+    },
+    {
+      "path": "T02.output.json",
+      "sha256": "f31dfb8279f242f8bc672ed0bec2306f8c25fb301659aecac38c1ff364bb56fb"
+    },
+    {
+      "path": "T02.process.json",
+      "sha256": "cce6f6e6b13c4be0680c13480a97b08a67677639ef3acb136dc119f4311d30bb"
+    },
+    {
+      "path": "T02.request.json",
+      "sha256": "0de6aad2c89eb73b1debc2f53fe96fe91c44101d2e3cb1559fa71c11185d31f1"
+    },
+    {
+      "path": "T06.argv.json",
+      "sha256": "5c811a662aca06fd071ae8d025b475342b1516c19162c88972a351e04b37795c"
+    },
+    {
+      "path": "T06.input.json",
+      "sha256": "6ba8d590fb4dbfcbf9ecf18fd94fd7b4f39556a038dccdb216d38209f9792849"
+    },
+    {
+      "path": "T06.output.json",
+      "sha256": "90ce189a053987c52a6bb0f2205dd7bcc8b14536a617d18336fb3b5be402df3c"
+    },
+    {
+      "path": "T06.request.json",
+      "sha256": "0de6aad2c89eb73b1debc2f53fe96fe91c44101d2e3cb1559fa71c11185d31f1"
+    }
+  ]
+}

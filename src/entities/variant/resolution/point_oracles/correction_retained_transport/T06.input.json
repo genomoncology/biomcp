@@ -1,0 +1,10 @@
+{
+  "tool": "search",
+  "arguments": {
+    "entity": "variant",
+    "gene": "BRAF",
+    "hgvsp": "p.Val600Glu",
+    "limit": 5,
+    "json": true
+  }
+}

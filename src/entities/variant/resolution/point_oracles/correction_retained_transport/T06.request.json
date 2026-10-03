@@ -1,0 +1,26 @@
+[
+  {
+    "method": "GET",
+    "base": "https://myvariant.info/v1",
+    "path": "/query",
+    "ordered_decoded_query_pairs": [
+      [
+        "q",
+        "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\""
+      ],
+      [
+        "size",
+        "50"
+      ],
+      [
+        "from",
+        "0"
+      ],
+      [
+        "fields",
+        "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+      ]
+    ],
+    "body": null
+  }
+]

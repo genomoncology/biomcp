@@ -7,7 +7,7 @@ use rmcp::model::{CallToolRequestParams, CallToolResult};
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex};
 
-fn request_list(requests: &Arc<Mutex<Vec<String>>>, fields: &str, query: &str) {
+fn request_list(requests: &Arc<Mutex<Vec<String>>>, fields: &str, query: &str, size: &str) {
     let requests = requests.lock().unwrap().clone();
     assert_eq!(requests.len(), 1, "complete outbound list: {requests:?}");
     let request = &requests[0];
@@ -27,7 +27,7 @@ fn request_list(requests: &Arc<Mutex<Vec<String>>>, fields: &str, query: &str) {
         url.query_pairs().into_owned().collect::<Vec<_>>(),
         vec![
             ("q".into(), query.into()),
-            ("size".into(), "5".into()),
+            ("size".into(), size.into()),
             ("from".into(), "0".into()),
             ("fields".into(), literal.trim_end().into())
         ]
@@ -37,6 +37,14 @@ fn request_list(requests: &Arc<Mutex<Vec<String>>>, fields: &str, query: &str) {
         "",
         "request body must be absent"
     );
+}
+
+fn transport_oracle(case: &str) -> Value {
+    if case == "T02" {
+        oracle("correction_retained_transport/T02.output.json")
+    } else {
+        oracle(&format!("{case}.json"))
+    }
 }
 
 fn wrapper(result: &CallToolResult, payload: Value, error: bool) {
@@ -85,13 +93,14 @@ async fn accepted_point_cli_and_mcp_transport_table() {
         ("RUST_LOG", "off,reqwest_retry=error".into()),
     ];
     let mut failures = Vec::new();
-    for (case, args, code, fields, query) in [
+    for (case, args, code, fields, query, size) in [
         (
             "T01",
             vec!["get", "variant", "BRAF p.Val600Glu", "--json"],
             0,
             "GET_FIELDS.txt",
             "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
+            "5",
         ),
         (
             "T02",
@@ -105,12 +114,14 @@ async fn accepted_point_cli_and_mcp_transport_table() {
             ],
             0,
             "SEARCH_FIELDS.txt",
-            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.Val600Glu\"",
+            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
+            "50",
         ),
         (
             "T03",
             vec!["get", "variant", "p.Val600Glu", "--json"],
             1,
+            "",
             "",
             "",
         ),
@@ -133,7 +144,7 @@ async fn accepted_point_cli_and_mcp_transport_table() {
             let output_matches = std::panic::catch_unwind(|| {
                 assert_eq!(
                     serde_json::from_slice::<Value>(&output.stdout).unwrap(),
-                    oracle(&format!("{case}.json"))
+                    transport_oracle(case)
                 );
             })
             .is_ok();
@@ -141,7 +152,7 @@ async fn accepted_point_cli_and_mcp_transport_table() {
                 if fields.is_empty() {
                     assert!(requests.lock().unwrap().is_empty());
                 } else {
-                    request_list(&requests, fields, query);
+                    request_list(&requests, fields, query, size);
                 }
             })
             .is_ok();
@@ -158,20 +169,22 @@ async fn accepted_point_cli_and_mcp_transport_table() {
     }
     // T04 calls the private dispatch in cli::variant::tests.
     let client = harness.spawn_stdio_client(&env).await.unwrap();
-    for (tool, arguments, case, fields, query) in [
+    for (tool, arguments, case, fields, query, size) in [
         (
             "get",
             json!({"entity":"variant","id":"BRAF p.Val600Glu","json":true}),
             "T01",
             "GET_FIELDS.txt",
             "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
+            "5",
         ),
         (
             "search",
             json!({"entity":"variant","gene":"BRAF","hgvsp":"p.Val600Glu","limit":5,"json":true}),
             "T02",
             "SEARCH_FIELDS.txt",
-            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.Val600Glu\"",
+            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
+            "50",
         ),
     ] {
         requests.lock().unwrap().clear();
@@ -185,11 +198,23 @@ async fn accepted_point_cli_and_mcp_transport_table() {
                 .await
                 .unwrap();
             let output_matches = std::panic::catch_unwind(|| {
-                wrapper(&result, oracle(&format!("{case}.json")), false);
+                if tool == "search" {
+                    let mut expected = oracle("correction_retained_transport/T06.output.json");
+                    let payload: Value =
+                        serde_json::from_str(expected["content"][0]["text"].as_str().unwrap())
+                            .unwrap();
+                    expected["content"][0]["text"] = payload.clone();
+                    let mut actual = serde_json::to_value(&result).unwrap();
+                    actual["content"][0]["text"] =
+                        serde_json::from_str::<Value>(first_text(&result.content)).unwrap();
+                    assert_eq!(actual, expected);
+                } else {
+                    wrapper(&result, transport_oracle(case), false);
+                }
             })
             .is_ok();
             let requests_match = std::panic::catch_unwind(|| {
-                request_list(&requests, fields, query);
+                request_list(&requests, fields, query, size);
             })
             .is_ok();
             assert!(

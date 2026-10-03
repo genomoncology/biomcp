@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "biomcp",
+    "search",
+    "variant",
+    "BRAF p.Val600Glu",
+    "--limit",
+    "5",
+    "--json"
+  ]
+}

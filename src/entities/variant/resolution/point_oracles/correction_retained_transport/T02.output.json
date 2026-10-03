@@ -1,0 +1,71 @@
+{
+  "_meta": {
+    "next_commands": [
+      "biomcp get variant \"chr7:g.140453136A>T\"",
+      "biomcp get gene BRAF",
+      "biomcp list variant"
+    ]
+  },
+  "count": 1,
+  "diagnostics": [],
+  "filter_evaluation": {
+    "gene": "evaluated",
+    "hgvsp": "evaluated"
+  },
+  "pagination": {
+    "has_more": false,
+    "limit": 5,
+    "next_page_token": null,
+    "offset": 0,
+    "returned": 1,
+    "total": 1
+  },
+  "requested_variant": {
+    "gene": "BRAF",
+    "protein_change": "p.Val600Glu"
+  },
+  "resolution": {
+    "exhaustive": true,
+    "normalized_aliases": {
+      "coding_changes": [],
+      "genomic_ids": [],
+      "protein_changes": [
+        "V600E"
+      ],
+      "rsids": []
+    },
+    "status": "resolved"
+  },
+  "results": [
+    {
+      "clinvar_stars": null,
+      "gene": "BRAF",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gerp": null,
+      "id": "chr7:g.140453136A>T",
+      "matched_alias": "p.Val600Glu",
+      "revel": 0.931,
+      "source_identity": {
+        "coding_changes": [],
+        "genes": [
+          "BRAF",
+          "BRAF",
+          "BRAF",
+          "BRAF"
+        ],
+        "genome_build": "GRCh37",
+        "genomic_id": "chr7:g.140453136A>T",
+        "protein_changes": [
+          "p.Val640Glu",
+          "p.Val600Glu",
+          "p.Val207Glu",
+          "p.V600E"
+        ],
+        "rsids": []
+      },
+      "transcript_annotations": [],
+      "transcript_annotations_complete": true
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+[
+  "biomcp",
+  "search",
+  "variant",
+  "--gene",
+  "BRAF",
+  "--hgvsp",
+  "p.Val600Glu",
+  "--limit",
+  "5",
+  "--json"
+]
