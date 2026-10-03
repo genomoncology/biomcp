@@ -1,6 +1,8 @@
 # 2009: Onboard programme PM
 
-Status: IN PROGRESS.
+Status: complete.
+Landed: 12a299a64620adbaff2019dbd8c55ecbdf0e0595
+Review: accept.
 
 ## Outcome
 
@@ -20,8 +22,12 @@ Ian authorized this onboarding scope on October 3, 2026. The PM owner signs this
 
 ## Number check
 
-2009 has no matching ticket or record across 100 local and tracking refs and no matching remote branch or reservation. The existing maximum migration ticket branch is 2008. PM allocation was inspected but not run: local main `7099f2534d36bfb114c90b5e4262a877aabd4586` differs from remote main `26e6a507d6ba93b551152e69ff3faed0518b36cb`, and its allocator requires them to match. Ian permitted a checked unique number. This branch starts directly from the programme ref. No reservation or maintenance update is claimed.
+2009 has no matching ticket or record across 100 local and tracking refs and no matching remote branch or reservation. The existing maximum migration ticket branch is 2008. PM allocation was inspected but not run: local main `7099f2534d36bfb114c90b5e4262a877aabd4586` differs from remote main `26e6a507d6ba93b551152e69ff3faed0518b36cb`, and its allocator requires them to match. The coordinator selected this checked unique number under the authorized onboarding outcome. This branch starts directly from the programme ref. No reservation or maintenance update is claimed.
 
 ## Onboarding record
 
 [Measured onboarding record](../records/2009-onboard-programme-pm.md).
+
+## Completed administrative outcome
+
+Fresh design review accepted ticket blob `3d21f846955ec294147aefd74826508bcee08cd1` at `35405383`. The coordinator adopted that bounded contract after the prepared documentation. A separate fresh code reviewer accepted `12a299a64620adbaff2019dbd8c55ecbdf0e0595`; root fast-forwarded and pushed the programme branch. This closes administrative onboarding only. Historical migration and maintenance uncertainties remain unchanged.
