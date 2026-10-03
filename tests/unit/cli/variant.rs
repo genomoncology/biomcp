@@ -13,22 +13,45 @@ use crate::entities::variant as entity;
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn accepted_point_conflict_refuses_before_transport() {
-    use crate::entities::article::test_support::{TestEnv, TestHttpFixture, TestHttpReply, test_http_response};
-    use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
     let count = Arc::new(AtomicUsize::new(0));
     let observed = Arc::clone(&count);
     let fixture = TestHttpFixture::spawn(move |_| {
         observed.fetch_add(1, Ordering::SeqCst);
         TestHttpReply::Bytes(test_http_response("200 OK", "application/json", b"{}"))
-    }).await;
+    })
+    .await;
     let mut env = TestEnv::new();
     env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
-    let cli = Cli::try_parse_from(["biomcp","search","variant","BRAF V600E","--gene","EGFR","--json"]).unwrap();
-    let Commands::Search {entity: crate::cli::SearchEntity::Variant(args)} = cli.command else { panic!("variant search"); };
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "search",
+        "variant",
+        "BRAF V600E",
+        "--gene",
+        "EGFR",
+        "--json",
+    ])
+    .unwrap();
+    let Commands::Search {
+        entity: crate::cli::SearchEntity::Variant(args),
+    } = cli.command
+    else {
+        panic!("variant search");
+    };
     let error = super::handle_search(args, true, true).await.unwrap_err();
-    assert!(matches!(error.downcast_ref::<crate::error::BioMcpError>(), Some(crate::error::BioMcpError::InvalidArgument(message)) if message == "Positional \"GENE CHANGE\" conflicts with --gene"));
+    assert!(
+        matches!(error.downcast_ref::<crate::error::BioMcpError>(), Some(crate::error::BioMcpError::InvalidArgument(message)) if message == "Positional \"GENE CHANGE\" conflicts with --gene")
+    );
     assert_eq!(count.load(Ordering::SeqCst), 0);
 }
+
 #[test]
 fn search_variant_help_distinguishes_exact_identity_from_broad_discovery() {
     let help = Cli::try_parse_from(["biomcp", "search", "variant", "--help"])
