@@ -49,6 +49,13 @@ fn assert_error(error: &BioMcpError, expected: &Value) {
     };
     assert_eq!(message, expected["message"].as_str().unwrap());
     assert_eq!(expected["type"], "BioMcpError::InvalidArgument");
+    if expected.get("public_cli_json").is_some() {
+        let mut public =
+            serde_json::from_str::<Value>(&crate::render::json::to_error_json(error).unwrap())
+                .unwrap();
+        public["results"] = json!([]);
+        assert_eq!(public, expected["public_cli_json"]);
+    }
 }
 fn args(v: &Value) -> VariantSearchArgs {
     VariantSearchArgs {

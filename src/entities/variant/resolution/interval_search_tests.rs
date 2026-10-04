@@ -36,12 +36,20 @@ fn expanded(value: &Value) -> Value {
 fn span(s: HgvsSpan) -> Value {
     json!([s.start(), s.end()])
 }
+// Pinned producer declaration order; Debug intentionally hides residue values.
+fn residue(r: biodata::HgvsProteinResidue) -> &'static str {
+    const NAMES: [&str; 25] = [
+        "Ala", "Arg", "Asn", "Asp", "Cys", "Gln", "Glu", "Gly", "His", "Ile", "Leu", "Lys", "Met",
+        "Phe", "Pro", "Ser", "Thr", "Trp", "Tyr", "Val", "Asx", "Glx", "Sec", "Xaa", "Ter",
+    ];
+    NAMES[r as usize]
+}
 fn coordinate(c: &HgvsProteinCoordinate) -> Value {
     let narrowed = match c.position_u32() {
         Ok(value) => json!({"value":value,"error":null}),
         Err(_) => json!({"value":null,"error":"out_of_range"}),
     };
-    json!({"residue":format!("{:?}",c.residue()),"position":c.position(),
+    json!({"residue":residue(c.residue()),"position":c.position(),
         "position_u32":narrowed,"residue_span":span(c.residue_span()),
         "position_span":span(c.position_span())})
 }
@@ -61,7 +69,7 @@ fn parsed(p: &ParsedHgvsProteinInterval) -> Value {
     };
     json!({"reference":p.reference(),"reference_unavailable":p.reference_unavailable(),
         "predicted":p.is_predicted(),"location":{"kind":kind,"start":coordinate(start),"end":end.map(coordinate)},
-        "edit":{"kind":edit,"inserted":inserted.map(|a|a.iter().map(|r|format!("{r:?}")).collect::<Vec<_>>())},
+        "edit":{"kind":edit,"inserted":inserted.map(|a|a.iter().map(|r|residue(*r)).collect::<Vec<_>>())},
         "spans":{"whole":span(p.span()),"reference":p.reference_span().map(span),
             "location":span(p.location_span()),"marker":span(p.marker_span()),
             "sequence":p.sequence_span().map(span),"inserted_residues":p.residue_spans().iter().copied().map(span).collect::<Vec<_>>()}})
