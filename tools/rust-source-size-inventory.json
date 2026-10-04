@@ -15,12 +15,12 @@
     },
     {
       "path": "src/cache/migration.rs",
-      "baseline_lines": 1096,
+      "baseline_lines": 1117,
       "floor_lines": 927,
       "authorized_increase": {
         "ticket": "biodata-0203",
-        "delta": 169,
-        "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests.",
+        "delta": 190,
+        "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests. Root adopts the independently reviewed 21 test-only contention-witness lines under parent authorization.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
@@ -50,6 +50,17 @@
         "delta": 339,
         "reason": "JATS-linked captions need candidate transport and field-wise asset merging beside the existing resolver.",
         "removal_condition": "Extract linked candidate and asset merge handling when the article asset resolver is decomposed."
+      }
+    },
+    {
+      "path": "src/entities/article/backends.rs",
+      "baseline_lines": 1032,
+      "floor_lines": 975,
+      "authorized_increase": {
+        "ticket": "qf-maintenance-20261003",
+        "delta": 57,
+        "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions.",
+        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
       }
     },
     {
@@ -84,6 +95,17 @@
         "delta": 92,
         "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract. Maintenance reconciliation adds 21 total lines for the article search diagnostics record.",
         "removal_condition": "Extract article graph result types when the article graph contract is next decomposed."
+      }
+    },
+    {
+      "path": "src/entities/article/search.rs",
+      "baseline_lines": 1009,
+      "floor_lines": 969,
+      "authorized_increase": {
+        "ticket": "qf-maintenance-20261003",
+        "delta": 40,
+        "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions.",
+        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
       }
     },
     {

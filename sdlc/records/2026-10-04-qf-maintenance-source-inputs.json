@@ -1168,24 +1168,24 @@
     {
       "path": "tools/rust-source-size-inventory.json",
       "status": "M",
-      "added_lines": 46,
-      "removed_lines": 24,
+      "added_lines": 71,
+      "removed_lines": 27,
       "base": {
         "bytes": 21143,
         "sha256": "a5e1fdf99eca0fb89394133cbbeb1b92fae85872e8a942ee1d3554a97a70c699"
       },
       "candidate": {
-        "bytes": 23266,
-        "sha256": "83ddeed0411719cc6e4dadbf7ca47a35ffe34fa945c6836784abe20366cb099c"
+        "bytes": 24691,
+        "sha256": "1a953fd6243ab79180cdae0b21adc0d7869de36673d223cda1226958d62faf52"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "08829fc41c8abde0eec3add06365a3c503224b8a"
+      "candidate_git_blob": "7dfb9875a2a98b69fb91b0948f528b478768d2c5"
     }
   ],
   "effective_input_count_excluding_amendment_metadata": 57,
   "effective_source_rust_path_count": 25,
-  "effective_added_lines_excluding_amendment_metadata": 3697,
-  "effective_removed_lines_excluding_amendment_metadata": 393,
+  "effective_added_lines_excluding_amendment_metadata": 3722,
+  "effective_removed_lines_excluding_amendment_metadata": 396,
   "final_expected_tracked_paths": 3991,
   "final_expected_src_rust_paths": 803,
   "amendment_metadata_paths": [
@@ -1196,13 +1196,13 @@
     "threshold": 1000,
     "development_objects": 49,
     "donor_objects": 51,
-    "candidate_objects": 51,
+    "candidate_objects": 53,
     "unchanged_development_objects": 43,
     "reconciled_development_objects": 6,
     "new_objects": 2,
     "file": {
-      "bytes": 23266,
-      "sha256": "83ddeed0411719cc6e4dadbf7ca47a35ffe34fa945c6836784abe20366cb099c"
+      "bytes": 24691,
+      "sha256": "1a953fd6243ab79180cdae0b21adc0d7869de36673d223cda1226958d62faf52"
     },
     "all_candidate_overthreshold_objects": [
       {
@@ -1256,7 +1256,7 @@
           "bytes": 41166,
           "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
         },
-        "disposition": "Source changed by test-only contention observer; accepted inventory entry retained; exact ceiling proposal pending independent review",
+        "disposition": "Parent Root adopts independently reviewed exact proposal under this writer authorization; actual audit remains pending",
         "development_entry": {
           "path": "src/cache/migration.rs",
           "baseline_lines": 1096,
@@ -1281,12 +1281,12 @@
         },
         "candidate_entry": {
           "path": "src/cache/migration.rs",
-          "baseline_lines": 1096,
+          "baseline_lines": 1117,
           "floor_lines": 927,
           "authorized_increase": {
             "ticket": "biodata-0203",
-            "delta": 169,
-            "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests.",
+            "delta": 190,
+            "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests. Root adopts the independently reviewed 21 test-only contention-witness lines under parent authorization.",
             "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
           }
         }
@@ -1402,6 +1402,29 @@
             "delta": 339,
             "reason": "JATS-linked captions need candidate transport and field-wise asset merging beside the existing resolver.",
             "removal_condition": "Extract linked candidate and asset merge handling when the article asset resolver is decomposed."
+          }
+        }
+      },
+      {
+        "path": "src/entities/article/backends.rs",
+        "source": {
+          "bytes": 37500,
+          "sha256": "f75425a666aa2cfad8106f750c6c0abaf93ad3c13f77eed3aecdde2ecb35612e"
+        },
+        "nonblank_lines": 978,
+        "total_lines": 1032,
+        "disposition": "Parent Root adopts independently reviewed exact proposal under this writer authorization; actual audit remains pending",
+        "development_entry": null,
+        "donor_entry": null,
+        "candidate_entry": {
+          "path": "src/entities/article/backends.rs",
+          "baseline_lines": 1032,
+          "floor_lines": 975,
+          "authorized_increase": {
+            "ticket": "qf-maintenance-20261003",
+            "delta": 57,
+            "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions.",
+            "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
           }
         }
       },
@@ -1544,6 +1567,29 @@
             "delta": 92,
             "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract. Maintenance reconciliation adds 21 total lines for the article search diagnostics record.",
             "removal_condition": "Extract article graph result types when the article graph contract is next decomposed."
+          }
+        }
+      },
+      {
+        "path": "src/entities/article/search.rs",
+        "source": {
+          "bytes": 36500,
+          "sha256": "a8fd2ca5702befec84007dd2d7a3fd972d5da6fe5000a03574c251a8e6f90778"
+        },
+        "nonblank_lines": 966,
+        "total_lines": 1009,
+        "disposition": "Parent Root adopts independently reviewed exact proposal under this writer authorization; actual audit remains pending",
+        "development_entry": null,
+        "donor_entry": null,
+        "candidate_entry": {
+          "path": "src/entities/article/search.rs",
+          "baseline_lines": 1009,
+          "floor_lines": 969,
+          "authorized_increase": {
+            "ticket": "qf-maintenance-20261003",
+            "delta": 40,
+            "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions.",
+            "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
           }
         }
       },
@@ -3243,7 +3289,7 @@
         },
         "nonblank_lines": 978,
         "total_lines": 1032,
-        "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
+        "status": "Parent Root authorized adoption of independently reviewed exact proposal; applied by preparation writer; actual audit pending",
         "owner": "Root migration coordinator",
         "current_threshold": 1000,
         "proposed_exact_baseline_lines": 1032,
@@ -3260,7 +3306,7 @@
         },
         "nonblank_lines": 966,
         "total_lines": 1009,
-        "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
+        "status": "Parent Root authorized adoption of independently reviewed exact proposal; applied by preparation writer; actual audit pending",
         "owner": "Root migration coordinator",
         "current_threshold": 1000,
         "proposed_exact_baseline_lines": 1009,
@@ -3277,7 +3323,7 @@
         },
         "nonblank_lines": 1031,
         "total_lines": 1117,
-        "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
+        "status": "Parent Root authorized adoption of independently reviewed exact proposal; applied by preparation writer; actual audit pending",
         "owner": "Root migration coordinator",
         "current_threshold": 1000,
         "current_accepted_baseline_lines": 1096,
@@ -3321,7 +3367,2078 @@
         },
         "entry_diff": null
       }
-    ]
+    ],
+    "historical_pre_adoption_51_reconciliation": {
+      "candidate_objects": 51,
+      "file": {
+        "bytes": 23266,
+        "sha256": "83ddeed0411719cc6e4dadbf7ca47a35ffe34fa945c6836784abe20366cb099c"
+      },
+      "all_candidate_overthreshold_objects": [
+        {
+          "path": "src/cache/manager.rs",
+          "nonblank_lines": 1030,
+          "total_lines": 1115,
+          "source": {
+            "bytes": 40568,
+            "sha256": "7736754ef567a599eaa523ca72d2da78f46747a734db8548f98f89e47ea7e892"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/cache/manager.rs",
+            "baseline_lines": 1115,
+            "floor_lines": 985,
+            "authorized_increase": {
+              "ticket": "1242",
+              "delta": 130,
+              "reason": "Batch 2: stale-serve marker helpers, the cache note consumer, the honest top-gene source label, and the required new struct field.",
+              "removal_condition": "Shrink when the stale label moves into per-source status plumbing and the test field inserts fold into shared fixtures."
+            }
+          },
+          "donor_entry": {
+            "path": "src/cache/manager.rs",
+            "baseline_lines": 1115,
+            "floor_lines": 985,
+            "authorized_increase": {
+              "ticket": "1242",
+              "delta": 130,
+              "reason": "Batch 2: stale-serve marker helpers, the cache note consumer, the honest top-gene source label, and the required new struct field.",
+              "removal_condition": "Shrink when the stale label moves into per-source status plumbing and the test field inserts fold into shared fixtures."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/cache/manager.rs",
+            "baseline_lines": 1115,
+            "floor_lines": 985,
+            "authorized_increase": {
+              "ticket": "1242",
+              "delta": 130,
+              "reason": "Batch 2: stale-serve marker helpers, the cache note consumer, the honest top-gene source label, and the required new struct field.",
+              "removal_condition": "Shrink when the stale label moves into per-source status plumbing and the test field inserts fold into shared fixtures."
+            }
+          }
+        },
+        {
+          "path": "src/cache/migration.rs",
+          "nonblank_lines": 1031,
+          "total_lines": 1117,
+          "source": {
+            "bytes": 41166,
+            "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
+          },
+          "disposition": "Source changed by test-only contention observer; accepted inventory entry retained; exact ceiling proposal pending independent review",
+          "development_entry": {
+            "path": "src/cache/migration.rs",
+            "baseline_lines": 1096,
+            "floor_lines": 927,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 169,
+              "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          },
+          "donor_entry": {
+            "path": "src/cache/migration.rs",
+            "baseline_lines": 1088,
+            "floor_lines": 927,
+            "authorized_increase": {
+              "ticket": "1244",
+              "delta": 161,
+              "reason": "The deadline-settle test asserts a post-yield flag instead of vacuous disk checks.",
+              "removal_condition": "Shrink when the migration test module is next reorganized."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/cache/migration.rs",
+            "baseline_lines": 1096,
+            "floor_lines": 927,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 169,
+              "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          }
+        },
+        {
+          "path": "src/cache/provider_capture.rs",
+          "nonblank_lines": 1409,
+          "total_lines": 1508,
+          "source": {
+            "bytes": 54477,
+            "sha256": "002c18a912ced1c578b2fdc67ed8a51ba6ecb19ed84495791ce9543aa9274c9c"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/cache/provider_capture.rs",
+            "baseline_lines": 1508,
+            "floor_lines": 1507,
+            "authorized_increase": {
+              "ticket": "1246",
+              "delta": 1,
+              "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+              "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
+            }
+          },
+          "donor_entry": {
+            "path": "src/cache/provider_capture.rs",
+            "baseline_lines": 1508,
+            "floor_lines": 1507,
+            "authorized_increase": {
+              "ticket": "1246",
+              "delta": 1,
+              "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+              "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/cache/provider_capture.rs",
+            "baseline_lines": 1508,
+            "floor_lines": 1507,
+            "authorized_increase": {
+              "ticket": "1246",
+              "delta": 1,
+              "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+              "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
+            }
+          }
+        },
+        {
+          "path": "src/entities/adverse_event.rs",
+          "nonblank_lines": 2356,
+          "total_lines": 2566,
+          "source": {
+            "bytes": 85294,
+            "sha256": "43828fb454463cfbc514ead760160cf8260952a7597f339555fc91219af10632"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/adverse_event.rs",
+            "baseline_lines": 2566,
+            "floor_lines": 2566,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/entities/adverse_event.rs",
+            "baseline_lines": 2663,
+            "floor_lines": 2663,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/entities/adverse_event.rs",
+            "baseline_lines": 2566,
+            "floor_lines": 2566,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/entities/article/assets.rs",
+          "nonblank_lines": 2749,
+          "total_lines": 2909,
+          "source": {
+            "bytes": 104341,
+            "sha256": "a5b2c0842dbacc994e807c508698a8fa0eedc353001a66b49206531740185450"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/article/assets.rs",
+            "baseline_lines": 2909,
+            "floor_lines": 2570,
+            "authorized_increase": {
+              "ticket": "1044",
+              "delta": 339,
+              "reason": "JATS-linked captions need candidate transport and field-wise asset merging beside the existing resolver.",
+              "removal_condition": "Extract linked candidate and asset merge handling when the article asset resolver is decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/article/assets.rs",
+            "baseline_lines": 2909,
+            "floor_lines": 2570,
+            "authorized_increase": {
+              "ticket": "1044",
+              "delta": 339,
+              "reason": "JATS-linked captions need candidate transport and field-wise asset merging beside the existing resolver.",
+              "removal_condition": "Extract linked candidate and asset merge handling when the article asset resolver is decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/article/assets.rs",
+            "baseline_lines": 2909,
+            "floor_lines": 2570,
+            "authorized_increase": {
+              "ticket": "1044",
+              "delta": 339,
+              "reason": "JATS-linked captions need candidate transport and field-wise asset merging beside the existing resolver.",
+              "removal_condition": "Extract linked candidate and asset merge handling when the article asset resolver is decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/entities/article/fulltext.rs",
+          "nonblank_lines": 1619,
+          "total_lines": 1727,
+          "source": {
+            "bytes": 64749,
+            "sha256": "c121b964adb7eb76d9c94a53e184f452752a4d9957cfaed0de16b9a5fd46549c"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/article/fulltext.rs",
+            "baseline_lines": 1727,
+            "floor_lines": 1727,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/entities/article/fulltext.rs",
+            "baseline_lines": 1727,
+            "floor_lines": 1727,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/entities/article/fulltext.rs",
+            "baseline_lines": 1727,
+            "floor_lines": 1727,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/entities/article/graph/tests.rs",
+          "nonblank_lines": 1711,
+          "total_lines": 1802,
+          "source": {
+            "bytes": 61172,
+            "sha256": "42ca18feb7392246086c2c33fb0d69f23046a868cf68c6a2ee8db1c5acaf0975"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/article/graph/tests.rs",
+            "baseline_lines": 1802,
+            "floor_lines": 998,
+            "authorized_increase": {
+              "ticket": "1200, biodata-0152",
+              "delta": 804,
+              "reason": "Ticket 1200's OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases (734 lines) beside the existing citation-evidence composition tests; BioData ticket 0152 later adds the retained Europe PMC PMCID first-row seed proof (70 lines).",
+              "removal_condition": "Move the OpenCitations confirmation-phase tests and the retained Europe PMC PMCID first-row seed proof to dedicated citation test submodules when the article test modules are next reorganized."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/article/graph/tests.rs",
+            "baseline_lines": 1733,
+            "floor_lines": 998,
+            "authorized_increase": {
+              "ticket": "1246",
+              "delta": 735,
+              "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+              "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/article/graph/tests.rs",
+            "baseline_lines": 1802,
+            "floor_lines": 998,
+            "authorized_increase": {
+              "ticket": "1200, biodata-0152",
+              "delta": 804,
+              "reason": "Ticket 1200's OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases (734 lines) beside the existing citation-evidence composition tests; BioData ticket 0152 later adds the retained Europe PMC PMCID first-row seed proof (70 lines).",
+              "removal_condition": "Move the OpenCitations confirmation-phase tests and the retained Europe PMC PMCID first-row seed proof to dedicated citation test submodules when the article test modules are next reorganized."
+            }
+          }
+        },
+        {
+          "path": "src/entities/article/identity_verification.rs",
+          "nonblank_lines": 1333,
+          "total_lines": 1398,
+          "source": {
+            "bytes": 53954,
+            "sha256": "f1cc5a605becac65124e1397c6299bd9e9ef3042ea3d2a90e87ad93c26843f52"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/article/identity_verification.rs",
+            "baseline_lines": 1398,
+            "floor_lines": 1398,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/entities/article/identity_verification.rs",
+            "baseline_lines": 1398,
+            "floor_lines": 1398,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/entities/article/identity_verification.rs",
+            "baseline_lines": 1398,
+            "floor_lines": 1398,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/entities/article/mod.rs",
+          "nonblank_lines": 1287,
+          "total_lines": 1406,
+          "source": {
+            "bytes": 48024,
+            "sha256": "f85263d729cd49eb1cb770958d021a60cbd81914d536f16ae1fa2a6ad597c4d3"
+          },
+          "disposition": "reconciled",
+          "development_entry": {
+            "path": "src/entities/article/mod.rs",
+            "baseline_lines": 1385,
+            "floor_lines": 1314,
+            "authorized_increase": {
+              "ticket": "1144",
+              "delta": 71,
+              "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract.",
+              "removal_condition": "Extract article graph result types when the article graph contract is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/article/mod.rs",
+            "baseline_lines": 1406,
+            "floor_lines": 1314,
+            "authorized_increase": {
+              "ticket": "1144, 1293",
+              "delta": 92,
+              "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract without adding a package file beyond the fixed 1300-file boundary; ticket 1293 adds the article search diagnostics record beside the search page contract it describes.",
+              "removal_condition": "Extract article graph result types when a package-neutral module split can preserve the exact 1300-file source package boundary."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/article/mod.rs",
+            "baseline_lines": 1406,
+            "floor_lines": 1314,
+            "authorized_increase": {
+              "ticket": "1144, 1293",
+              "delta": 92,
+              "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract. Maintenance reconciliation adds 21 total lines for the article search diagnostics record.",
+              "removal_condition": "Extract article graph result types when the article graph contract is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/entities/article/variant_search.rs",
+          "nonblank_lines": 5858,
+          "total_lines": 6116,
+          "source": {
+            "bytes": 227047,
+            "sha256": "4485173aced544d40b651b78e25e26f2157b66348b4cbb3577790202507a3b0d"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/article/variant_search.rs",
+            "baseline_lines": 6116,
+            "floor_lines": 4828,
+            "authorized_increase": {
+              "ticket": "1150",
+              "delta": 1288,
+              "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
+              "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/article/variant_search.rs",
+            "baseline_lines": 6116,
+            "floor_lines": 4828,
+            "authorized_increase": {
+              "ticket": "1150",
+              "delta": 1288,
+              "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
+              "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/article/variant_search.rs",
+            "baseline_lines": 6116,
+            "floor_lines": 4828,
+            "authorized_increase": {
+              "ticket": "1150",
+              "delta": 1288,
+              "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
+              "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/entities/author/papers.rs",
+          "nonblank_lines": 1525,
+          "total_lines": 1597,
+          "source": {
+            "bytes": 61151,
+            "sha256": "420353a2df6cb10c29ee341f7fc17635d2b7f55cf79ae744c8936bfa190f6b5f"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/author/papers.rs",
+            "baseline_lines": 1597,
+            "floor_lines": 931,
+            "authorized_increase": {
+              "ticket": "1142",
+              "delta": 666,
+              "reason": "The claimed-works algorithm and its proofs live together in the author papers module: group mapping, representative selection, identifier canonicalization, stable deduplication, local slicing, the author-owned compact paper type with its ORCID-only fields, and the transport, bounds, dedupe, pagination, and excluded-identifier suites that prove them, including the review-remediation tests.",
+              "removal_condition": "Extract the ORCID claimed-works mapping into its own module when the author papers surface is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/author/papers.rs",
+            "baseline_lines": 1597,
+            "floor_lines": 931,
+            "authorized_increase": {
+              "ticket": "1142",
+              "delta": 666,
+              "reason": "The claimed-works algorithm and its proofs live together in the author papers module: group mapping, representative selection, identifier canonicalization, stable deduplication, local slicing, the author-owned compact paper type with its ORCID-only fields, and the transport, bounds, dedupe, pagination, and excluded-identifier suites that prove them, including the review-remediation tests.",
+              "removal_condition": "Extract the ORCID claimed-works mapping into its own module when the author papers surface is next decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/author/papers.rs",
+            "baseline_lines": 1597,
+            "floor_lines": 931,
+            "authorized_increase": {
+              "ticket": "1142",
+              "delta": 666,
+              "reason": "The claimed-works algorithm and its proofs live together in the author papers module: group mapping, representative selection, identifier canonicalization, stable deduplication, local slicing, the author-owned compact paper type with its ORCID-only fields, and the transport, bounds, dedupe, pagination, and excluded-identifier suites that prove them, including the review-remediation tests.",
+              "removal_condition": "Extract the ORCID claimed-works mapping into its own module when the author papers surface is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/entities/discover.rs",
+          "nonblank_lines": 3756,
+          "total_lines": 4053,
+          "source": {
+            "bytes": 132284,
+            "sha256": "ba48d031d8f1a542855afc1ff23863b166b6f5f328ece3252a68983de4c80d62"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/discover.rs",
+            "baseline_lines": 4053,
+            "floor_lines": 3694,
+            "authorized_increase": {
+              "ticket": "1243",
+              "delta": 359,
+              "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
+              "removal_condition": "None; the boxing is the point."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/discover.rs",
+            "baseline_lines": 4053,
+            "floor_lines": 3694,
+            "authorized_increase": {
+              "ticket": "1243",
+              "delta": 359,
+              "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
+              "removal_condition": "None; the boxing is the point."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/discover.rs",
+            "baseline_lines": 4053,
+            "floor_lines": 3694,
+            "authorized_increase": {
+              "ticket": "1243",
+              "delta": 359,
+              "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
+              "removal_condition": "None; the boxing is the point."
+            }
+          }
+        },
+        {
+          "path": "src/entities/gene.rs",
+          "nonblank_lines": 3725,
+          "total_lines": 3871,
+          "source": {
+            "bytes": 132284,
+            "sha256": "fbd716c1a6ee5841b29a2131bc4ed5a45216827eef2a7bc4c0d15f13b993a4ed"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/gene.rs",
+            "baseline_lines": 3871,
+            "floor_lines": 3812,
+            "authorized_increase": {
+              "ticket": "1263",
+              "delta": 59,
+              "reason": "The stale-serve spawn-inheritance seam (ClinGen prefetch) and its tests in sources; the prefetch re-scope comment in gene.",
+              "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/gene.rs",
+            "baseline_lines": 3871,
+            "floor_lines": 3812,
+            "authorized_increase": {
+              "ticket": "1263",
+              "delta": 59,
+              "reason": "The stale-serve spawn-inheritance seam (ClinGen prefetch) and its tests in sources; the prefetch re-scope comment in gene.",
+              "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/gene.rs",
+            "baseline_lines": 3871,
+            "floor_lines": 3812,
+            "authorized_increase": {
+              "ticket": "1263",
+              "delta": 59,
+              "reason": "The stale-serve spawn-inheritance seam (ClinGen prefetch) and its tests in sources; the prefetch re-scope comment in gene.",
+              "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+            }
+          }
+        },
+        {
+          "path": "src/entities/gene/cspec.rs",
+          "nonblank_lines": 1060,
+          "total_lines": 1105,
+          "source": {
+            "bytes": 40712,
+            "sha256": "5add5928c6c2952cd1482ba571ac81c8fdfba00062217d77ea2cee91e5f74095"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/gene/cspec.rs",
+            "baseline_lines": 1105,
+            "floor_lines": 1068,
+            "authorized_increase": {
+              "ticket": "1033",
+              "delta": 37,
+              "reason": "Short-version selection tests and exact-IRI duplicate validation preserve manifest identity guarantees.",
+              "removal_condition": "Remove when CSpec selection tests move out of this source module."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/gene/cspec.rs",
+            "baseline_lines": 1105,
+            "floor_lines": 1068,
+            "authorized_increase": {
+              "ticket": "1033",
+              "delta": 37,
+              "reason": "Short-version selection tests and exact-IRI duplicate validation preserve manifest identity guarantees.",
+              "removal_condition": "Remove when CSpec selection tests move out of this source module."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/gene/cspec.rs",
+            "baseline_lines": 1105,
+            "floor_lines": 1068,
+            "authorized_increase": {
+              "ticket": "1033",
+              "delta": 37,
+              "reason": "Short-version selection tests and exact-IRI duplicate validation preserve manifest identity guarantees.",
+              "removal_condition": "Remove when CSpec selection tests move out of this source module."
+            }
+          }
+        },
+        {
+          "path": "src/entities/gene/gencc/tests.rs",
+          "nonblank_lines": 981,
+          "total_lines": 1019,
+          "source": {
+            "bytes": 38412,
+            "sha256": "1e17afeae511a687ebef40a1c720ab4e413b3778cc5670b65126738117a091ce"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/gene/gencc/tests.rs",
+            "floor_lines": 976,
+            "baseline_lines": 1019,
+            "authorized_increase": {
+              "ticket": "1252",
+              "delta": 43,
+              "reason": "the lease handshake conversion and the end-of-input orphan proof",
+              "removal_condition": "Move the helper out or shrink when the size budget tightens."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/gene/gencc/tests.rs",
+            "floor_lines": 976,
+            "baseline_lines": 1019,
+            "authorized_increase": {
+              "ticket": "1252",
+              "delta": 43,
+              "reason": "the lease handshake conversion and the end-of-input orphan proof",
+              "removal_condition": "Move the helper out or shrink when the size budget tightens."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/gene/gencc/tests.rs",
+            "floor_lines": 976,
+            "baseline_lines": 1019,
+            "authorized_increase": {
+              "ticket": "1252",
+              "delta": 43,
+              "reason": "the lease handshake conversion and the end-of-input orphan proof",
+              "removal_condition": "Move the helper out or shrink when the size budget tightens."
+            }
+          }
+        },
+        {
+          "path": "src/entities/pathway.rs",
+          "nonblank_lines": 1197,
+          "total_lines": 1314,
+          "source": {
+            "bytes": 44609,
+            "sha256": "b2062ce9fef898263a6a70539c6a506fefd3d0ef2af9e16510ae3616c82d7416"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/pathway.rs",
+            "baseline_lines": 1314,
+            "floor_lines": 1314,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/entities/pathway.rs",
+            "baseline_lines": 1314,
+            "floor_lines": 1314,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/entities/pathway.rs",
+            "baseline_lines": 1314,
+            "floor_lines": 1314,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/entities/pgx.rs",
+          "nonblank_lines": 1056,
+          "total_lines": 1139,
+          "source": {
+            "bytes": 36311,
+            "sha256": "823fc0228366d84b916655bd21056c176d0c043eca13147a5abe249c5daaf5cf"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/pgx.rs",
+            "baseline_lines": 1139,
+            "floor_lines": 1139,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/entities/pgx.rs",
+            "baseline_lines": 1139,
+            "floor_lines": 1139,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/entities/pgx.rs",
+            "baseline_lines": 1139,
+            "floor_lines": 1139,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/entities/study.rs",
+          "nonblank_lines": 1612,
+          "total_lines": 1774,
+          "source": {
+            "bytes": 61709,
+            "sha256": "c17ee074d94273fece2f1814dac6762794bf2ecfbf3d42f19b2f6b897d77197a"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/study.rs",
+            "baseline_lines": 1774,
+            "floor_lines": 1774,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/entities/study.rs",
+            "baseline_lines": 1774,
+            "floor_lines": 1774,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/entities/study.rs",
+            "baseline_lines": 1774,
+            "floor_lines": 1774,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/entities/trial/search/ctgov.rs",
+          "nonblank_lines": 987,
+          "total_lines": 1065,
+          "source": {
+            "bytes": 37402,
+            "sha256": "85d14d46b62437ba1bae0b426c8119024e8d6caa09e4cdfafdabd85276526f7e"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/trial/search/ctgov.rs",
+            "baseline_lines": 1065,
+            "floor_lines": 995,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 70,
+              "reason": "The BioData plan-bound CTGov path carries main detail-failure notes, age-before-detail filtering, and incomplete coverage for an unusable alias cursor.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/trial/search/ctgov.rs",
+            "baseline_lines": 1066,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1242",
+              "delta": 66,
+              "reason": "Batch 1 fixes: plain-word partial note, age filter before detail verification, and the keep-path tests.",
+              "removal_condition": "Shrink when the partial-count telemetry moves behind a shared report type."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/trial/search/ctgov.rs",
+            "baseline_lines": 1065,
+            "floor_lines": 995,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 70,
+              "reason": "The BioData plan-bound CTGov path carries main detail-failure notes, age-before-detail filtering, and incomplete coverage for an unusable alias cursor.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          }
+        },
+        {
+          "path": "src/entities/trial/search/ctgov/tests.rs",
+          "nonblank_lines": 1127,
+          "total_lines": 1203,
+          "source": {
+            "bytes": 41389,
+            "sha256": "0a71e371e481d07ca0e5660366b93096aff17399f39e3ff9436b2992bac8dce5"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/trial/search/ctgov/tests.rs",
+            "baseline_lines": 1203,
+            "floor_lines": 975,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 228,
+              "reason": "The BioData cursor and total proof retains provider-byte fixtures, adapted main detail-failure behavior, and the blank-cursor alias-union count regression.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/trial/search/ctgov/tests.rs",
+            "baseline_lines": 1123,
+            "floor_lines": 975,
+            "authorized_increase": {
+              "ticket": "1242",
+              "delta": 148,
+              "reason": "Batch 1 fixes: plain-word partial note, age filter before detail verification, and the keep-path tests.",
+              "removal_condition": "Shrink when the partial-count telemetry moves behind a shared report type."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/trial/search/ctgov/tests.rs",
+            "baseline_lines": 1203,
+            "floor_lines": 975,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 228,
+              "reason": "The BioData cursor and total proof retains provider-byte fixtures, adapted main detail-failure behavior, and the blank-cursor alias-union count regression.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          }
+        },
+        {
+          "path": "src/entities/variant/erepo.rs",
+          "nonblank_lines": 978,
+          "total_lines": 1026,
+          "source": {
+            "bytes": 35263,
+            "sha256": "18db1b5999d614f7d8a497c8320a03961d57856460c631994b49b7ec4610c26b"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/variant/erepo.rs",
+            "baseline_lines": 1026,
+            "floor_lines": 1026,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/entities/variant/erepo.rs",
+            "baseline_lines": 1026,
+            "floor_lines": 1026,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/entities/variant/erepo.rs",
+            "baseline_lines": 1026,
+            "floor_lines": 1026,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/entities/variant/get.rs",
+          "nonblank_lines": 1233,
+          "total_lines": 1307,
+          "source": {
+            "bytes": 46765,
+            "sha256": "e9face3a0208f3941efdb86b3026ddaf2bec4a9f520defb14f3762908b3f4b70"
+          },
+          "disposition": "reconciled",
+          "development_entry": {
+            "path": "src/entities/variant/get.rs",
+            "baseline_lines": 1268,
+            "floor_lines": 1128,
+            "authorized_increase": {
+              "ticket": "1022, 1035, 1086, 1154, biodata-0672, biodata-0679",
+              "delta": 140,
+              "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, and direct ClinVar section dispatch. Root migration coordinator retains that inherited 127-line allowance and owns the additional observed 13 total lines from accepted 0672's pure preparation seam and test visibility, with the retained accessor correction at net zero. Ticket 0679 records the exact cumulative disposition.",
+              "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed. Retire the added preparation allowance during that decomposition. Remove the inventory entry when the file reaches at most 1000 total lines."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/variant/get.rs",
+            "baseline_lines": 1294,
+            "floor_lines": 1128,
+            "authorized_increase": {
+              "ticket": "1022, 1035, 1086, 1154, 1290",
+              "delta": 166,
+              "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper.",
+              "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/variant/get.rs",
+            "baseline_lines": 1307,
+            "floor_lines": 1128,
+            "authorized_increase": {
+              "ticket": "1022, 1035, 1086, 1154, biodata-0672, biodata-0679, 1290",
+              "delta": 179,
+              "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, and direct ClinVar section dispatch. Root migration coordinator retains that inherited 127-line allowance and owns the additional observed 13 total lines from accepted 0672's pure preparation seam and test visibility, with the retained accessor correction at net zero. Ticket 0679 records the exact cumulative disposition. Maintenance reconciliation adds 39 total lines for record-level ClinVar headline application.",
+              "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed. Retire the added preparation allowance during that decomposition. Remove the inventory entry when the file reaches at most 1000 total lines."
+            }
+          }
+        },
+        {
+          "path": "src/entities/variant/get/tests.rs",
+          "nonblank_lines": 943,
+          "total_lines": 1019,
+          "source": {
+            "bytes": 38517,
+            "sha256": "85737a77f33458e9f3fd5886da4d06fe39dfc34953bf908905f3a0b0e658b9b3"
+          },
+          "disposition": "added",
+          "development_entry": null,
+          "donor_entry": null,
+          "candidate_entry": {
+            "path": "src/entities/variant/get/tests.rs",
+            "baseline_lines": 1019,
+            "floor_lines": 911,
+            "authorized_increase": {
+              "ticket": "1290, qf-maintenance-20261003",
+              "delta": 108,
+              "reason": "Root maintenance source-preparation authority owns the 108 added total lines above the accepted development baseline. Retain the accepted genomic prediction preparation assertions and all incoming record-level ClinVar headline disagreement, missing-classification and agreement assertions.",
+              "removal_condition": "Split the getter tests when the variant workflow is next decomposed, retaining both genomic and ClinVar headline proofs. Remove this entry when the file reaches at most 1000 total lines."
+            }
+          }
+        },
+        {
+          "path": "src/entities/variant/mod.rs",
+          "nonblank_lines": 930,
+          "total_lines": 1003,
+          "source": {
+            "bytes": 37270,
+            "sha256": "53ea3a407c8ae1b5077d4a13d1ca3dfb5a17cd359ecc7998d211af9f15dcf143"
+          },
+          "disposition": "added",
+          "development_entry": null,
+          "donor_entry": null,
+          "candidate_entry": {
+            "path": "src/entities/variant/mod.rs",
+            "baseline_lines": 1003,
+            "floor_lines": 978,
+            "authorized_increase": {
+              "ticket": "1290, qf-maintenance-20261003",
+              "delta": 25,
+              "reason": "Root maintenance source-preparation authority owns the 25 added total lines above the accepted development baseline. Retain migrated interval query identity and direct ClinVar behavior while adding significance provenance fields and record-level germline classification.",
+              "removal_condition": "Extract variant result and ClinVar record types when the variant workflow is next decomposed. Remove this entry when the file reaches at most 1000 total lines."
+            }
+          }
+        },
+        {
+          "path": "src/entities/variant/resolution.rs",
+          "nonblank_lines": 1149,
+          "total_lines": 1224,
+          "source": {
+            "bytes": 44702,
+            "sha256": "98cf7b7051c712c88aa9c131dca197ec07caca6c5c98931863aa3c193c5895a6"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/variant/resolution.rs",
+            "baseline_lines": 1224,
+            "floor_lines": 1220,
+            "authorized_increase": {
+              "ticket": "biodata-0676, biodata-0679",
+              "delta": 4,
+              "reason": "Root migration coordinator owns this exact budget. Accepted 0676 adds five total lines and removes one for private interval module wiring and predicate visibility. Ticket 0679 admits only the observed four-line growth above the corrected 1220-line floor.",
+              "removal_condition": "Remove this allowance when variant identity resolution is decomposed. Remove the inventory entry when the file reaches at most 1000 total lines."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/variant/resolution.rs",
+            "baseline_lines": 1316,
+            "floor_lines": 1291,
+            "authorized_increase": {
+              "ticket": "1056, 1155",
+              "delta": 25,
+              "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable, and one shared protein equivalence helper prevents exact admission and transcript-role drift.",
+              "removal_condition": "Remove this allowance when variant identity resolution is decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/variant/resolution.rs",
+            "baseline_lines": 1224,
+            "floor_lines": 1220,
+            "authorized_increase": {
+              "ticket": "biodata-0676, biodata-0679",
+              "delta": 4,
+              "reason": "Root migration coordinator owns this exact budget. Accepted 0676 adds five total lines and removes one for private interval module wiring and predicate visibility. Ticket 0679 admits only the observed four-line growth above the corrected 1220-line floor.",
+              "removal_condition": "Remove this allowance when variant identity resolution is decomposed. Remove the inventory entry when the file reaches at most 1000 total lines."
+            }
+          }
+        },
+        {
+          "path": "src/entities/variant/search/mod.rs",
+          "nonblank_lines": 1069,
+          "total_lines": 1113,
+          "source": {
+            "bytes": 35342,
+            "sha256": "a873265c6d2225c71a80edb1f3b68aa3bdb7cc9ef3fc481b9432fa908433c70f"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/entities/variant/search/mod.rs",
+            "baseline_lines": 1113,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1155, 1150",
+              "delta": 113,
+              "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner.",
+              "removal_condition": "Split exact-search result projection when the variant search workflow is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/entities/variant/search/mod.rs",
+            "baseline_lines": 1113,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1155, 1150",
+              "delta": 113,
+              "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner without adding a package file beyond the fixed 1300-file boundary.",
+              "removal_condition": "Split exact-search result projection when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/entities/variant/search/mod.rs",
+            "baseline_lines": 1113,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1155, 1150",
+              "delta": 113,
+              "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner.",
+              "removal_condition": "Split exact-search result projection when the variant search workflow is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/error.rs",
+          "nonblank_lines": 1188,
+          "total_lines": 1246,
+          "source": {
+            "bytes": 49128,
+            "sha256": "a3087b250f450cdeb01f1c1278bed1dbb2ebedbd0cd0e0321cb8344cac19ea6d"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/error.rs",
+            "baseline_lines": 1246,
+            "floor_lines": 1109,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 137,
+              "reason": "The FHIR error projection on the dedicated branch combines with main source and output error corrections.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          },
+          "donor_entry": {
+            "path": "src/error.rs",
+            "baseline_lines": 1256,
+            "floor_lines": 1122,
+            "authorized_increase": {
+              "ticket": "1256",
+              "delta": 134,
+              "reason": "The DDInter HTML-download projection arm and its test.",
+              "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/error.rs",
+            "baseline_lines": 1246,
+            "floor_lines": 1109,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 137,
+              "reason": "The FHIR error projection on the dedicated branch combines with main source and output error corrections.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          }
+        },
+        {
+          "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+          "nonblank_lines": 1486,
+          "total_lines": 1486,
+          "source": {
+            "bytes": 60704,
+            "sha256": "192a4dcd016e93a156544008f10443ea42851d40051c535b1c24b798d2c3cab0"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+            "baseline_lines": 1486,
+            "floor_lines": 1486,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+            "baseline_lines": 1486,
+            "floor_lines": 1486,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+            "baseline_lines": 1486,
+            "floor_lines": 1486,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/mcp/shell.rs",
+          "nonblank_lines": 2443,
+          "total_lines": 2575,
+          "source": {
+            "bytes": 96404,
+            "sha256": "8dae208bd132676a55eea83e8eeb7f16ceabb0e703004a7574ff409af4dac362"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/mcp/shell.rs",
+            "baseline_lines": 2575,
+            "floor_lines": 1956,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 619,
+              "reason": "The dedicated patient gate and typed branches combine with the main flat typed MCP schema and argument-failure correction.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          },
+          "donor_entry": {
+            "path": "src/mcp/shell.rs",
+            "baseline_lines": 2708,
+            "floor_lines": 1956,
+            "authorized_increase": {
+              "ticket": "1258",
+              "delta": 752,
+              "reason": "One-sided-constraint clash rule in merge_property, the constraint keyword table, the get-sections uniqueItems resolution pins, and should-panic tests for the clash.",
+              "removal_condition": "Shrink when the should-panic clash tests fold into a shared schema merge test module."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/mcp/shell.rs",
+            "baseline_lines": 2575,
+            "floor_lines": 1956,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 619,
+              "reason": "The dedicated patient gate and typed branches combine with the main flat typed MCP schema and argument-failure correction.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          }
+        },
+        {
+          "path": "src/mcp/shell/typed_get_tests.rs",
+          "nonblank_lines": 1562,
+          "total_lines": 1631,
+          "source": {
+            "bytes": 61551,
+            "sha256": "c5bf1f2d30c4f44e4d3918f28ba0494ab12b04af55ee2040f42e26aad894d89c"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/mcp/shell/typed_get_tests.rs",
+            "baseline_lines": 1631,
+            "floor_lines": 1558,
+            "authorized_increase": {
+              "ticket": "biodata-0203, biodata-0664, biodata-0679",
+              "delta": 73,
+              "reason": "The normal main-to-1.0 merge preserves both independently reviewed behavior paths at this source boundary. Root migration coordinator retains that inherited 29-line allowance and owns the additional 44 total lines from accepted 0664's complete typed argument and invalid-parameter assertions: 15 scaffold lines and 29 net formatting lines. Ticket 0679 records the exact cumulative disposition.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs. Remove the inventory entry when the file reaches at most 1000 total lines."
+            }
+          },
+          "donor_entry": null,
+          "candidate_entry": {
+            "path": "src/mcp/shell/typed_get_tests.rs",
+            "baseline_lines": 1631,
+            "floor_lines": 1558,
+            "authorized_increase": {
+              "ticket": "biodata-0203, biodata-0664, biodata-0679",
+              "delta": 73,
+              "reason": "The normal main-to-1.0 merge preserves both independently reviewed behavior paths at this source boundary. Root migration coordinator retains that inherited 29-line allowance and owns the additional 44 total lines from accepted 0664's complete typed argument and invalid-parameter assertions: 15 scaffold lines and 29 net formatting lines. Ticket 0679 records the exact cumulative disposition.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs. Remove the inventory entry when the file reaches at most 1000 total lines."
+            }
+          }
+        },
+        {
+          "path": "src/render/chart.rs",
+          "nonblank_lines": 1952,
+          "total_lines": 2068,
+          "source": {
+            "bytes": 71520,
+            "sha256": "712c947cd90cee98f2762fe4f9c583a705d9206afdbb683dda1135d4c3107722"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/render/chart.rs",
+            "baseline_lines": 2068,
+            "floor_lines": 2068,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/render/chart.rs",
+            "baseline_lines": 2068,
+            "floor_lines": 2068,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/render/chart.rs",
+            "baseline_lines": 2068,
+            "floor_lines": 2068,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/render/json.rs",
+          "nonblank_lines": 1502,
+          "total_lines": 1590,
+          "source": {
+            "bytes": 56938,
+            "sha256": "7d6cc605f4b12484b7b650dc4dd9e3aee4ff9151043cb01672fc041f9033c90e"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/render/json.rs",
+            "baseline_lines": 1590,
+            "floor_lines": 1561,
+            "authorized_increase": {
+              "ticket": "1241",
+              "delta": 29,
+              "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+              "removal_condition": "Shrink when the drug card model is next refactored."
+            }
+          },
+          "donor_entry": {
+            "path": "src/render/json.rs",
+            "baseline_lines": 1590,
+            "floor_lines": 1561,
+            "authorized_increase": {
+              "ticket": "1241",
+              "delta": 29,
+              "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+              "removal_condition": "Shrink when the drug card model is next refactored."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/render/json.rs",
+            "baseline_lines": 1590,
+            "floor_lines": 1561,
+            "authorized_increase": {
+              "ticket": "1241",
+              "delta": 29,
+              "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
+              "removal_condition": "Shrink when the drug card model is next refactored."
+            }
+          }
+        },
+        {
+          "path": "src/render/markdown/article/tests.rs",
+          "nonblank_lines": 1209,
+          "total_lines": 1262,
+          "source": {
+            "bytes": 48254,
+            "sha256": "72e8a2608295ee2ecd1b8906f395ed6a4799ad28311f10e9dd4226921c5e362b"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/render/markdown/article/tests.rs",
+            "baseline_lines": 1262,
+            "floor_lines": 1207,
+            "authorized_increase": {
+              "ticket": "1144, 1201",
+              "delta": 55,
+              "reason": "Pin the graph pagination footer and shared continuation command beside the existing article Markdown renderer coverage; ticket 1201 adds the header parameter to every article render context literal.",
+              "removal_condition": "Extract graph renderer tests when the article Markdown renderer tests are next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/render/markdown/article/tests.rs",
+            "baseline_lines": 1262,
+            "floor_lines": 1207,
+            "authorized_increase": {
+              "ticket": "1144, 1201",
+              "delta": 55,
+              "reason": "Pin the graph pagination footer and shared continuation command on the existing article Markdown renderer test without adding a package file beyond the fixed 1300-file boundary; ticket 1201 adds the header parameter to every article render context literal.",
+              "removal_condition": "Extract graph renderer tests when a package-neutral module split can preserve the exact 1300-file source package boundary."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/render/markdown/article/tests.rs",
+            "baseline_lines": 1262,
+            "floor_lines": 1207,
+            "authorized_increase": {
+              "ticket": "1144, 1201",
+              "delta": 55,
+              "reason": "Pin the graph pagination footer and shared continuation command beside the existing article Markdown renderer coverage; ticket 1201 adds the header parameter to every article render context literal.",
+              "removal_condition": "Extract graph renderer tests when the article Markdown renderer tests are next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/render/markdown/drug/tests.rs",
+          "nonblank_lines": 959,
+          "total_lines": 1004,
+          "source": {
+            "bytes": 36364,
+            "sha256": "4ce73628cb2c4313b5192fe94d4ec1087bd585be9c39b10af26a1a5b387f4eff"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/render/markdown/drug/tests.rs",
+            "floor_lines": 954,
+            "baseline_lines": 1004,
+            "authorized_increase": {
+              "ticket": "1254",
+              "delta": 50,
+              "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it.",
+              "removal_condition": "Shrink when the card fixtures share a builder."
+            }
+          },
+          "donor_entry": {
+            "path": "src/render/markdown/drug/tests.rs",
+            "floor_lines": 954,
+            "baseline_lines": 1004,
+            "authorized_increase": {
+              "ticket": "1254",
+              "delta": 50,
+              "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it.",
+              "removal_condition": "Shrink when the card fixtures share a builder."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/render/markdown/drug/tests.rs",
+            "floor_lines": 954,
+            "baseline_lines": 1004,
+            "authorized_increase": {
+              "ticket": "1254",
+              "delta": 50,
+              "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it.",
+              "removal_condition": "Shrink when the card fixtures share a builder."
+            }
+          }
+        },
+        {
+          "path": "src/render/markdown/related.rs",
+          "nonblank_lines": 976,
+          "total_lines": 1081,
+          "source": {
+            "bytes": 35396,
+            "sha256": "119637a865d08190f910919cf95c807efa22da885f0d6ad1981b73fa9ff9e816"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/render/markdown/related.rs",
+            "baseline_lines": 1081,
+            "floor_lines": 1064,
+            "authorized_increase": {
+              "ticket": "1202",
+              "delta": 17,
+              "reason": "Keep cell-line next commands beside the other entity related-command builders.",
+              "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/render/markdown/related.rs",
+            "baseline_lines": 1140,
+            "floor_lines": 1123,
+            "authorized_increase": {
+              "ticket": "1202",
+              "delta": 17,
+              "reason": "Cell-line next commands beside the other entity related-command builders (ticket 1202, +17).",
+              "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/render/markdown/related.rs",
+            "baseline_lines": 1081,
+            "floor_lines": 1064,
+            "authorized_increase": {
+              "ticket": "1202",
+              "delta": 17,
+              "reason": "Keep cell-line next commands beside the other entity related-command builders.",
+              "removal_condition": "Fold per-entity next-command builders into a shared table when the related renderer is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/render/markdown/variant/tests.rs",
+          "nonblank_lines": 1048,
+          "total_lines": 1106,
+          "source": {
+            "bytes": 43982,
+            "sha256": "ab803f70c965b43e6a99f45a1a7952af87e89fc63cd88c6e784bc7cf7a9e57c8"
+          },
+          "disposition": "reconciled",
+          "development_entry": {
+            "path": "src/render/markdown/variant/tests.rs",
+            "baseline_lines": 1098,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1155",
+              "delta": 98,
+              "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract.",
+              "removal_condition": "Split variant-search renderer tests when the variant Markdown renderer tests are next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/render/markdown/variant/tests.rs",
+            "baseline_lines": 1106,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1155, 1290",
+              "delta": 106,
+              "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, hostile inline-sanitization regressions, and significance provenance render contexts beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
+              "removal_condition": "Split variant-search renderer tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/render/markdown/variant/tests.rs",
+            "baseline_lines": 1106,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1155, 1290",
+              "delta": 106,
+              "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract. Maintenance reconciliation adds 8 total lines for significance provenance render contexts.",
+              "removal_condition": "Split variant-search renderer tests when the variant Markdown renderer tests are next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/render/provenance.rs",
+          "nonblank_lines": 1810,
+          "total_lines": 1866,
+          "source": {
+            "bytes": 64379,
+            "sha256": "a83efb6278419d3062b51bf9a00ca3392c338ba4882367fcc8b70d5f876cceb3"
+          },
+          "disposition": "reconciled",
+          "development_entry": {
+            "path": "src/render/provenance.rs",
+            "baseline_lines": 1863,
+            "floor_lines": 1745,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 118,
+              "reason": "The dedicated patient and publication provenance paths combine with main disease and drug source-state corrections.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          },
+          "donor_entry": {
+            "path": "src/render/provenance.rs",
+            "baseline_lines": 1919,
+            "floor_lines": 1847,
+            "authorized_increase": {
+              "ticket": "1256, 1290",
+              "delta": 72,
+              "reason": "The DisGeNET seed contribution to the associated-genes provenance row and the significance provenance fields on test literal construction.",
+              "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/render/provenance.rs",
+            "baseline_lines": 1866,
+            "floor_lines": 1745,
+            "authorized_increase": {
+              "ticket": "biodata-0203, 1290",
+              "delta": 121,
+              "reason": "The dedicated patient and publication provenance paths combine with main disease and drug source-state corrections. Maintenance reconciliation adds 3 total lines for significance provenance fields in the retained variant test literal.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          }
+        },
+        {
+          "path": "src/sources/cbioportal_study.rs",
+          "nonblank_lines": 2880,
+          "total_lines": 3195,
+          "source": {
+            "bytes": 109596,
+            "sha256": "7e9283bea3318aa741ed770fc53d89bf12b56391cba0a127ce96f6e6d01c136c"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/cbioportal_study.rs",
+            "baseline_lines": 3195,
+            "floor_lines": 3195,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/sources/cbioportal_study.rs",
+            "baseline_lines": 3195,
+            "floor_lines": 3195,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/sources/cbioportal_study.rs",
+            "baseline_lines": 3195,
+            "floor_lines": 3195,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/sources/ema.rs",
+          "nonblank_lines": 904,
+          "total_lines": 1003,
+          "source": {
+            "bytes": 33419,
+            "sha256": "555a5a9ad26f1efc2f5dbd481c39d506438937159aeee3dfa83d7608835aae50"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/ema.rs",
+            "baseline_lines": 1003,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1196",
+              "delta": 3,
+              "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so EMA sync reports a real changed value.",
+              "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/ema.rs",
+            "baseline_lines": 1003,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1196",
+              "delta": 3,
+              "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so EMA sync reports a real changed value.",
+              "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/ema.rs",
+            "baseline_lines": 1003,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1196",
+              "delta": 3,
+              "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so EMA sync reports a real changed value.",
+              "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/sources/fda_orphan.rs",
+          "nonblank_lines": 944,
+          "total_lines": 1006,
+          "source": {
+            "bytes": 33339,
+            "sha256": "2639d531cc48bbd3d63e1f2222a0498002ddbc6207ac56bdf1adcad3a44cfea1"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/fda_orphan.rs",
+            "baseline_lines": 1006,
+            "floor_lines": 999,
+            "authorized_increase": {
+              "ticket": "1221+1261",
+              "delta": 7,
+              "reason": "The cache-mode read routes through the shared once-read reader so all cache-mode readers agree on when a change takes effect (ticket 1261).",
+              "removal_condition": "Fold the two fixed-route clients into the shared bounded client builder when the FDA orphan lane is decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/fda_orphan.rs",
+            "baseline_lines": 1006,
+            "floor_lines": 999,
+            "authorized_increase": {
+              "ticket": "1221+1261",
+              "delta": 7,
+              "reason": "The cache-mode read routes through the shared once-read reader so all cache-mode readers agree on when a change takes effect (ticket 1261).",
+              "removal_condition": "Fold the two fixed-route clients into the shared bounded client builder when the FDA orphan lane is decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/fda_orphan.rs",
+            "baseline_lines": 1006,
+            "floor_lines": 999,
+            "authorized_increase": {
+              "ticket": "1221+1261",
+              "delta": 7,
+              "reason": "The cache-mode read routes through the shared once-read reader so all cache-mode readers agree on when a change takes effect (ticket 1261).",
+              "removal_condition": "Fold the two fixed-route clients into the shared bounded client builder when the FDA orphan lane is decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/sources/gencc.rs",
+          "nonblank_lines": 956,
+          "total_lines": 1016,
+          "source": {
+            "bytes": 38589,
+            "sha256": "8838137a888e5cd833f2e8310131e70023afe40826aa955bb8f6ef1a0d9b51a9"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/gencc.rs",
+            "floor_lines": 1000,
+            "baseline_lines": 1016,
+            "authorized_increase": {
+              "ticket": "1252",
+              "delta": 16,
+              "reason": "The 2026-09-28 wait-ratchet markers moved onto their compare lines (fmt split several one-line polls); count follows the split.",
+              "removal_condition": "Move the helper out or shrink when the size budget tightens."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/gencc.rs",
+            "floor_lines": 1000,
+            "baseline_lines": 1016,
+            "authorized_increase": {
+              "ticket": "1252",
+              "delta": 16,
+              "reason": "The 2026-09-28 wait-ratchet markers moved onto their compare lines (fmt split several one-line polls); count follows the split.",
+              "removal_condition": "Move the helper out or shrink when the size budget tightens."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/gencc.rs",
+            "floor_lines": 1000,
+            "baseline_lines": 1016,
+            "authorized_increase": {
+              "ticket": "1252",
+              "delta": 16,
+              "reason": "The 2026-09-28 wait-ratchet markers moved onto their compare lines (fmt split several one-line polls); count follows the split.",
+              "removal_condition": "Move the helper out or shrink when the size budget tightens."
+            }
+          }
+        },
+        {
+          "path": "src/sources/gencc/store.rs",
+          "nonblank_lines": 1196,
+          "total_lines": 1208,
+          "source": {
+            "bytes": 59538,
+            "sha256": "6238aeb61e09a70f2558e0e8e52b4ce2af66b213a6cb6da4960866ac023fcdbb"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/gencc/store.rs",
+            "baseline_lines": 1208,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1257",
+              "delta": 208,
+              "reason": "The wrong-owner (EACCES stand-in) and not-a-directory cleanup tests the 2026-09-26 review named as dropped.",
+              "removal_condition": "Shrink if the cleanup tests fold into a shared gencc store fixture module."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/gencc/store.rs",
+            "baseline_lines": 1208,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1257",
+              "delta": 208,
+              "reason": "The wrong-owner (EACCES stand-in) and not-a-directory cleanup tests the 2026-09-26 review named as dropped.",
+              "removal_condition": "Shrink if the cleanup tests fold into a shared gencc store fixture module."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/gencc/store.rs",
+            "baseline_lines": 1208,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1257",
+              "delta": 208,
+              "reason": "The wrong-owner (EACCES stand-in) and not-a-directory cleanup tests the 2026-09-26 review named as dropped.",
+              "removal_condition": "Shrink if the cleanup tests fold into a shared gencc store fixture module."
+            }
+          }
+        },
+        {
+          "path": "src/sources/gencc/tests.rs",
+          "nonblank_lines": 1184,
+          "total_lines": 1189,
+          "source": {
+            "bytes": 45337,
+            "sha256": "76cfd74d5768d600bcfcb1bd19378c14846406a4ebfbb5213c49f99f3e065733"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/gencc/tests.rs",
+            "baseline_lines": 1189,
+            "floor_lines": 982,
+            "authorized_increase": {
+              "ticket": "1254",
+              "delta": 207,
+              "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+              "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/gencc/tests.rs",
+            "baseline_lines": 1189,
+            "floor_lines": 982,
+            "authorized_increase": {
+              "ticket": "1254",
+              "delta": 207,
+              "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+              "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/gencc/tests.rs",
+            "baseline_lines": 1189,
+            "floor_lines": 982,
+            "authorized_increase": {
+              "ticket": "1254",
+              "delta": 207,
+              "reason": "Ticket 1254: the DDInter/GenCC review follow-ups (tests and classification).",
+              "removal_condition": "Fold the new tests into shared fixtures when the modules next shrink."
+            }
+          }
+        },
+        {
+          "path": "src/sources/mod.rs",
+          "nonblank_lines": 2574,
+          "total_lines": 2790,
+          "source": {
+            "bytes": 97047,
+            "sha256": "40a4fe19ec8b7364a8503f1c26fc7e37811fccce7aae16b6b75cfa642c8f0c8a"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/mod.rs",
+            "baseline_lines": 2790,
+            "floor_lines": 1847,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 943,
+              "reason": "The dedicated FHIR helper retains the shared TLS trust-failure strategy; main adds the plain-send trust-failure early return beside its error-chain extraction. Ticket 0203 review must accept the combined growth.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/mod.rs",
+            "baseline_lines": 2796,
+            "floor_lines": 1847,
+            "authorized_increase": {
+              "ticket": "1268",
+              "delta": 949,
+              "reason": "Ticket 1268: the no-trust-failure retry strategy (a RetryableStrategy wrapper walking the error chain for certificate-trust markers), plus the 2026-09-29 follow-up: the chain walk extracted into error_chain_carries with the strategy's unit tests in their own file (src/sources/trust_failure_tests.rs) so only the delegation and the module declaration live here. The 2026-09-29 second review round added the trust-failure stop to the plain-send retry loop (Enrichr, UniProt) beside the existing strategy.",
+              "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/mod.rs",
+            "baseline_lines": 2790,
+            "floor_lines": 1847,
+            "authorized_increase": {
+              "ticket": "biodata-0203",
+              "delta": 943,
+              "reason": "The dedicated FHIR helper retains the shared TLS trust-failure strategy; main adds the plain-send trust-failure early return beside its error-chain extraction. Ticket 0203 review must accept the combined growth.",
+              "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+            }
+          }
+        },
+        {
+          "path": "src/sources/myvariant.rs",
+          "nonblank_lines": 1313,
+          "total_lines": 1469,
+          "source": {
+            "bytes": 47923,
+            "sha256": "98d2fd61f9cd4016e629b2fe2561b3af048d8736e651df8f4939caee4fbd3389"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/myvariant.rs",
+            "baseline_lines": 1469,
+            "floor_lines": 1033,
+            "authorized_increase": {
+              "ticket": "1091, 1154, 1155, 1150",
+              "delta": 436,
+              "reason": "Keep trusted MyGene alias probes, ClinVar fallback freshness, bounded SnpEff decoding, and deadline-aware construction beside the MyVariant request workflow.",
+              "removal_condition": "Split MyVariant request planning and SnpEff decoding when the provider is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/myvariant.rs",
+            "baseline_lines": 1469,
+            "floor_lines": 1033,
+            "authorized_increase": {
+              "ticket": "1091, 1154, 1155, 1150",
+              "delta": 436,
+              "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, stream-isolate bounded SnpEff annotations, and expose deadline-aware construction without adding a package file beyond the fixed 1300-file boundary.",
+              "removal_condition": "Split MyVariant request planning and SnpEff decoding when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/myvariant.rs",
+            "baseline_lines": 1469,
+            "floor_lines": 1033,
+            "authorized_increase": {
+              "ticket": "1091, 1154, 1155, 1150",
+              "delta": 436,
+              "reason": "Keep trusted MyGene alias probes, ClinVar fallback freshness, bounded SnpEff decoding, and deadline-aware construction beside the MyVariant request workflow.",
+              "removal_condition": "Split MyVariant request planning and SnpEff decoding when the provider is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/sources/ncbi_efetch.rs",
+          "nonblank_lines": 1192,
+          "total_lines": 1281,
+          "source": {
+            "bytes": 55604,
+            "sha256": "f5fb9a738829977711d04ef00295cd1bd6077e11e58b8c7e56394fb44bdc8b63"
+          },
+          "disposition": "reconciled",
+          "development_entry": {
+            "path": "src/sources/ncbi_efetch.rs",
+            "baseline_lines": 1217,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1154",
+              "delta": 217,
+              "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client.",
+              "removal_condition": "Split the ClinVar transport, parser, and tests when the NCBI EFetch client is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/ncbi_efetch.rs",
+            "baseline_lines": 1281,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1154, 1290",
+              "delta": 281,
+              "reason": "Keep direct ClinVar transport, bounded typed parsing, record-level germline classification decoding, and adversarial allocation tests beside the existing NCBI EFetch client without adding a package file beyond the fixed 1300-file boundary.",
+              "removal_condition": "Split the ClinVar transport, parser, and tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/ncbi_efetch.rs",
+            "baseline_lines": 1281,
+            "floor_lines": 1000,
+            "authorized_increase": {
+              "ticket": "1154, 1290",
+              "delta": 281,
+              "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client. Maintenance reconciliation adds 64 total lines for bounded record-level germline classification decoding and its assertions.",
+              "removal_condition": "Split the ClinVar transport, parser, and tests when the NCBI EFetch client is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/sources/opentargets.rs",
+          "nonblank_lines": 1878,
+          "total_lines": 2088,
+          "source": {
+            "bytes": 65713,
+            "sha256": "25c3fb2d4ee54ff130ae5736feb49dd1bd5c0ef182605d51e85ad0f7bff66e90"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/opentargets.rs",
+            "baseline_lines": 2088,
+            "floor_lines": 2088,
+            "authorized_increase": null
+          },
+          "donor_entry": {
+            "path": "src/sources/opentargets.rs",
+            "baseline_lines": 2088,
+            "floor_lines": 2088,
+            "authorized_increase": null
+          },
+          "candidate_entry": {
+            "path": "src/sources/opentargets.rs",
+            "baseline_lines": 2088,
+            "floor_lines": 2088,
+            "authorized_increase": null
+          }
+        },
+        {
+          "path": "src/sources/semantic_scholar.rs",
+          "nonblank_lines": 932,
+          "total_lines": 1003,
+          "source": {
+            "bytes": 36230,
+            "sha256": "2b654bdf972ce922ebd48aa0242fbdc01e61b504583230f3cd256cb953bc2215"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/semantic_scholar.rs",
+            "baseline_lines": 1003,
+            "floor_lines": 959,
+            "authorized_increase": {
+              "ticket": "1143",
+              "delta": 44,
+              "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
+              "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/semantic_scholar.rs",
+            "baseline_lines": 1003,
+            "floor_lines": 959,
+            "authorized_increase": {
+              "ticket": "1143",
+              "delta": 44,
+              "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
+              "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/semantic_scholar.rs",
+            "baseline_lines": 1003,
+            "floor_lines": 959,
+            "authorized_increase": {
+              "ticket": "1143",
+              "delta": 44,
+              "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
+              "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/sources/who_pq.rs",
+          "nonblank_lines": 1024,
+          "total_lines": 1123,
+          "source": {
+            "bytes": 36766,
+            "sha256": "1a2faccb92969dc2070a271793cdd2352ad9dc33cf78f48c0f47250a518b2c74"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/sources/who_pq.rs",
+            "baseline_lines": 1123,
+            "floor_lines": 1117,
+            "authorized_increase": {
+              "ticket": "1196",
+              "delta": 6,
+              "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value.",
+              "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+            }
+          },
+          "donor_entry": {
+            "path": "src/sources/who_pq.rs",
+            "baseline_lines": 1123,
+            "floor_lines": 1117,
+            "authorized_increase": {
+              "ticket": "1196",
+              "delta": 6,
+              "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value.",
+              "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/sources/who_pq.rs",
+            "baseline_lines": 1123,
+            "floor_lines": 1117,
+            "authorized_increase": {
+              "ticket": "1196",
+              "delta": 6,
+              "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value.",
+              "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+            }
+          }
+        },
+        {
+          "path": "src/transform/disease.rs",
+          "nonblank_lines": 1019,
+          "total_lines": 1108,
+          "source": {
+            "bytes": 34997,
+            "sha256": "3a782e9d2c47097d8d714045c51834b5715f45941e69d151b1ad4917db1f5aea"
+          },
+          "disposition": "unchanged",
+          "development_entry": {
+            "path": "src/transform/disease.rs",
+            "baseline_lines": 1108,
+            "floor_lines": 1050,
+            "authorized_increase": {
+              "ticket": "1256",
+              "delta": 58,
+              "reason": "The seeded gene-association helper and its tests.",
+              "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+            }
+          },
+          "donor_entry": {
+            "path": "src/transform/disease.rs",
+            "baseline_lines": 1121,
+            "floor_lines": 1050,
+            "authorized_increase": {
+              "ticket": "1256",
+              "delta": 71,
+              "reason": "The seeded gene-association helper and its tests.",
+              "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/transform/disease.rs",
+            "baseline_lines": 1108,
+            "floor_lines": 1050,
+            "authorized_increase": {
+              "ticket": "1256",
+              "delta": 58,
+              "reason": "The seeded gene-association helper and its tests.",
+              "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+            }
+          }
+        },
+        {
+          "path": "src/transform/variant.rs",
+          "nonblank_lines": 1308,
+          "total_lines": 1424,
+          "source": {
+            "bytes": 45702,
+            "sha256": "6b37ca0bee0424596f23899991c79651c7c5a798d565b6af70afd747efb8312b"
+          },
+          "disposition": "reconciled",
+          "development_entry": {
+            "path": "src/transform/variant.rs",
+            "baseline_lines": 1385,
+            "floor_lines": 1335,
+            "authorized_increase": {
+              "ticket": "1154, 1155",
+              "delta": 50,
+              "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner.",
+              "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
+            }
+          },
+          "donor_entry": {
+            "path": "src/transform/variant.rs",
+            "baseline_lines": 1424,
+            "floor_lines": 1335,
+            "authorized_increase": {
+              "ticket": "1154, 1155, 1290",
+              "delta": 89,
+              "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner.",
+              "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
+            }
+          },
+          "candidate_entry": {
+            "path": "src/transform/variant.rs",
+            "baseline_lines": 1424,
+            "floor_lines": 1335,
+            "authorized_increase": {
+              "ticket": "1154, 1155, 1290",
+              "delta": 89,
+              "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner. Maintenance reconciliation adds 39 total lines for derived significance source and date labeling.",
+              "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
+            }
+          }
+        }
+      ],
+      "ceiling_proposals_pending_fresh_review": [
+        {
+          "path": "src/entities/article/backends.rs",
+          "source": {
+            "bytes": 37500,
+            "sha256": "f75425a666aa2cfad8106f750c6c0abaf93ad3c13f77eed3aecdde2ecb35612e"
+          },
+          "nonblank_lines": 978,
+          "total_lines": 1032,
+          "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
+          "owner": "Root migration coordinator",
+          "current_threshold": 1000,
+          "proposed_exact_baseline_lines": 1032,
+          "floor_lines": 975,
+          "reason": "Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. No current allowance is raised.",
+          "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs.",
+          "independent_review_verdict": "ACCEPT exact proposal; original allowance remains unchanged; no green audit established"
+        },
+        {
+          "path": "src/entities/article/search.rs",
+          "source": {
+            "bytes": 36500,
+            "sha256": "a8fd2ca5702befec84007dd2d7a3fd972d5da6fe5000a03574c251a8e6f90778"
+          },
+          "nonblank_lines": 966,
+          "total_lines": 1009,
+          "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
+          "owner": "Root migration coordinator",
+          "current_threshold": 1000,
+          "proposed_exact_baseline_lines": 1009,
+          "floor_lines": 969,
+          "reason": "Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. No current allowance is raised.",
+          "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs.",
+          "independent_review_verdict": "ACCEPT exact proposal; original allowance remains unchanged; no green audit established"
+        },
+        {
+          "path": "src/cache/migration.rs",
+          "source": {
+            "bytes": 41166,
+            "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
+          },
+          "nonblank_lines": 1031,
+          "total_lines": 1117,
+          "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
+          "owner": "Root migration coordinator",
+          "current_threshold": 1000,
+          "current_accepted_baseline_lines": 1096,
+          "proposed_exact_baseline_lines": 1117,
+          "floor_lines": 927,
+          "retained_owner": "biodata-0203",
+          "reason": "Test-only task-local cache-root observer witnesses an actual unsuccessful exclusive epoch-lock attempt before the constructor regression advances its controlled clock. Current allowance remains unchanged.",
+          "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs.",
+          "independent_review_verdict": "ACCEPT exact proposal; original allowance remains unchanged; no green audit established"
+        }
+      ],
+      "existing_51_entry_diffs_from_720": []
+    },
+    "root_adoption": {
+      "authority": "Explicit parent Root instruction in this writer session",
+      "builder_acceptance": false,
+      "fresh_forward_amendment_review": "pending",
+      "only_exact_ceilings": [
+        {
+          "path": "src/entities/article/backends.rs",
+          "baseline_lines": 1032,
+          "floor_lines": 975
+        },
+        {
+          "path": "src/entities/article/search.rs",
+          "baseline_lines": 1009,
+          "floor_lines": 969
+        },
+        {
+          "path": "src/cache/migration.rs",
+          "baseline_lines": 1117,
+          "floor_lines": 927
+        }
+      ],
+      "retained_original_entry_count": 51,
+      "current_entry_count": 53,
+      "unchanged_other_entries": 50,
+      "threshold": 1000,
+      "audit_executed": false
+    },
+    "original_retained_owner_count": 51
   },
   "nine_source_baselines": [
     {
@@ -3940,28 +6057,32 @@
   ],
   "maintenance_currency_observation": {
     "date": "2026-10-04",
-    "before_review_of_source_head": "07909e05bac5cde879d8c0650f86580017a856d6",
-    "source_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
+    "actor": "Command preparation writer under parent authorization",
     "fetch_command": "git fetch origin main",
     "fetch_exit": 0,
-    "fetched_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+    "fetched_main": "a877443f32c2bd013680866dbc0562d35f1a0541",
     "remote_confirmation_command": "git ls-remote origin refs/heads/main",
-    "confirmed_remote_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
-    "additional_interval_commit_count": 0,
-    "additional_interval_path_count": 0,
-    "additional_interval_added_lines": 0,
-    "additional_interval_removed_lines": 0,
+    "remote_confirmation_exit": 0,
+    "confirmed_remote_main": "a877443f32c2bd013680866dbc0562d35f1a0541",
     "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
-    "disposition": "Empty additional interval; no additional behavior to classify.",
-    "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency.",
-    "observation_context": "2026-10-04 Root repeated ADR0029-required fetch immediately before corrected-source re-review; fetch and immediate ls-remote exit0, both exact d8; empty additional interval."
+    "additional_interval_commit_count": 1,
+    "additional_interval_path_count": 2,
+    "additional_interval_added_lines": 109,
+    "additional_interval_removed_lines": 0,
+    "paths": [
+      "sdlc/issues/2026-10-04-article-client-construction-can-outlive-invocation-deadline.md",
+      "sdlc/issues/2026-10-04-article-pagination-deadline-discards-completed-rows.md"
+    ],
+    "disposition": "Issue records only; product source, dependencies and harness unaffected; do not merge into bounded d8c6 batch",
+    "next_obligation": "Parent Root owns next normal merge and refresh before later code review; current observation grants no continuing currency"
   },
   "source_preparation_review": {
     "reviewed_head": "07909e05bac5cde879d8c0650f86580017a856d6",
     "reviewed_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
     "verdict": "ACCEPT SOURCE only",
     "date": "2026-10-04",
-    "limits": "Final custody metadata does not alter reviewed source. No build/runtime/provider/Docker/CI/release/audit/footprint proof, no 0681 or shared integration acceptance."
+    "limits": "Final custody metadata does not alter reviewed source. No build/runtime/provider/Docker/CI/release/audit/footprint proof, no 0681 or shared integration acceptance.",
+    "reviewer_session": "01a10802-a1d6-7090-a60c-70ee2e58cb7d"
   },
   "root_remediation_history": [
     {
@@ -4042,14 +6163,15 @@
     "exact_diagnostic": "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml:2: trailing whitespace.\n+                        \n",
     "owner": "Root migration coordinator",
     "reason": "retain byte-faithful public capture/receipt",
-    "acceptance": "Independent review REQUIRED; never accepted by builder or Root self-acceptance",
+    "acceptance": "Parent Root adopts ONLY independently reviewed exact diagnostic exit2 preservation; builder does not self-accept; forward amendment review pending",
     "original_exit": 2,
     "original_evidence_preserved": true,
     "other_checks_and_failures_waived": false,
     "removal_condition": "Exact raw capture retired/replaced by a newly independently qualified receipt OR checker understands raw data. ANY path, byte, hash, size, line or new-diagnostic change invalidates the exception.",
-    "independent_review_verdict": "ACCEPT exact proposal at04262459; retained at07909e05. Original diff-check exit2 remains; no checker change or general waiver."
+    "independent_review_verdict": "ACCEPT exact proposal at04262459; retained at07909e05. Original diff-check exit2 remains; no checker change or general waiver.",
+    "root_adoption": true
   },
-  "current_source_status": "Independent SOURCE ACCEPT at07909e05; custody-only final amendment; runtime/compiler/audit/footprint/0681 acceptance unproven. Three exact ceiling proposals independently reviewed, no allowance raises.",
+  "current_source_status": "Reported SOURCE ACCEPT at07909e05 and METADATA ACCEPT at9cb8ffdd remain historical scopes. Parent-authorized inventory/attribution forward amendment and whole COMMAND packet pending fresh review. PREPARATION only; no runtime.",
   "maintenance_currency_observation_history": [
     {
       "date": "2026-10-04",
@@ -4066,7 +6188,8 @@
       "additional_interval_removed_lines": 0,
       "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
       "disposition": "Empty additional interval; no additional behavior to classify.",
-      "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency."
+      "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency.",
+      "actor": "Source builder internal coordinator under parent authorization"
     },
     {
       "date": "2026-10-04",
@@ -4084,22 +6207,45 @@
       "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
       "disposition": "Empty additional interval; no additional behavior to classify.",
       "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency.",
-      "observation_context": "2026-10-04 Root pre-remediation-code-review fetch and immediate ls-remote confirmation; both exit 0"
+      "observation_context": "2026-10-04 Builder internal coordinator pre-remediation-code-review fetch and immediate ls-remote confirmation; both exit 0",
+      "actor": "Source builder internal coordinator under parent authorization"
+    },
+    {
+      "date": "2026-10-04",
+      "before_review_of_source_head": "07909e05bac5cde879d8c0650f86580017a856d6",
+      "source_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
+      "fetch_command": "git fetch origin main",
+      "fetch_exit": 0,
+      "fetched_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "remote_confirmation_command": "git ls-remote origin refs/heads/main",
+      "confirmed_remote_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "additional_interval_commit_count": 0,
+      "additional_interval_path_count": 0,
+      "additional_interval_added_lines": 0,
+      "additional_interval_removed_lines": 0,
+      "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "disposition": "Empty additional interval; no additional behavior to classify.",
+      "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency.",
+      "observation_context": "2026-10-04 Builder internal coordinator repeated ADR0029-required fetch immediately before corrected-source re-review; fetch and immediate ls-remote exit0, both exact d8; empty additional interval.",
+      "actor": "Source builder internal coordinator under parent authorization"
     }
   ],
   "maintenance_duplicate_issue_disposition": {
     "donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+    "actor": "Parent Root; actual result reported in this writer session",
     "issue_text_count": 76,
-    "duplicate_constructor_issue": null,
-    "duplicate_pagination_issue": null,
-    "related_records": [
-      "sdlc/tickets/1293-bound-article-search-time-and-report-partial-sources.md",
-      "sdlc/issues/2026-09-12-gencc-store-deadline-expires-under-load-on-slower-machines.md",
-      "sdlc/issues/2026-09-23-source-failures-render-as-empty-or-complete-results.md"
-    ],
-    "verification": "Pi read all donor issue texts; Root verified pinned issue count, targeted Git searches, related source shapes and dispositions. Related records cover other subsystems or broader resolved work, not these open defects.",
-    "filing": "Two generic issue TEXT drafts remain private; Root owns separate main filing. No main mutation or queue management.",
-    "draft_correction": "Root removed unsupported Semantic Scholar page-2 claim and replaced timing-threshold proposals with signals and controlled clock."
+    "method": "Git list original issues and targeted git grep epoch.*lock|constructor.*deadline|page.?2|pagination|completed.page against exact d8c6 issue texts",
+    "grep_original_exit": 1,
+    "result": "No identified duplicate in this bounded targeted search; no claim every issue text was fully read",
+    "path_receipt": "/tmp/biomcp-maintenance-issue-paths-root-20261004.txt",
+    "match_receipt": "/tmp/biomcp-maintenance-issue-matches-root-20261004.txt",
+    "issue_only_push": {
+      "sha": "a877443f32c2bd013680866dbc0562d35f1a0541",
+      "route": "SSH main push",
+      "reported_exit": 0,
+      "source_change": false
+    },
+    "raw_Pi_evidence": "Historical source builder job was improper and remains retained; not parent Root own work"
   },
   "historical_selector_proposal_limits_042": "31 literal product Rust names: retain the prior 28 and add exactly three new deadline regression selectors. Add only three named Python contracts and three named Rust integration layout selectors. Retain both public spec pages, unchanged actual rust_source_size audit and footprint measurement obligations. Proposals only: no build, collection, fixture, audit, measurement or runtime execution. The 0681 CASE fixed 35-selector/gold contract is not replaced.",
   "independent_remediation_reviews": [
@@ -4116,7 +6262,9 @@
       "raw_whitespace_proposal_verdict": "ACCEPT exact diagnostic-only proposal; original exit2 and invalidation/removal conditions preserved",
       "backends_ceiling_proposal_verdict": "ACCEPT exact1032/floor975 proposal; no allowance changed",
       "search_ceiling_proposal_verdict": "ACCEPT exact1009/floor969 proposal; no allowance changed",
-      "correction": "63eca443 corrects contention witness; current metadata corrects selector description. Re-review required."
+      "correction": "63eca443 corrects contention witness; current metadata corrects selector description. Re-review required.",
+      "reviewer_session": "01a10802-a1d6-7090-a60c-70ee2e58cb7d",
+      "receipt_basis": "Source author clarification relayed by parent Root"
     },
     {
       "reviewed_head": "07909e05bac5cde879d8c0650f86580017a856d6",
@@ -4129,7 +6277,9 @@
       ],
       "migration_ceiling_proposal_verdict": "ACCEPT exact1117 against unchanged1096 accepted baseline/floor927;21 test-only witness lines; original owner/removal preserved",
       "retained_proposal_verdicts": "Earlier exact rawXML/backends/search proposal ACCEPT verdicts still apply; no checker or inventory allowance changes",
-      "execution": "No prohibited execution; compilation/runtime/footprint/0681 acceptance unproven"
+      "execution": "No prohibited execution; compilation/runtime/footprint/0681 acceptance unproven",
+      "reviewer_session": "01a10802-a1d6-7090-a60c-70ee2e58cb7d",
+      "receipt_basis": "Source author clarification relayed by parent Root"
     }
   ],
   "source_preparation_review_history": [
@@ -4179,14 +6329,102 @@
     "light_checks": "Forward whitespace clean; all five tracked-text scans pass; complete c428-relative diff-check preserves exit2 solely exactXML line2.",
     "full_c428_delta": {
       "path_count": 59,
-      "added_lines": 8221,
-      "removed_lines": 393
+      "added_lines": 10502,
+      "removed_lines": 396
     },
     "full_720_forward_delta": {
-      "path_count": 9,
-      "added_lines": 988,
-      "removed_lines": 231
+      "path_count": 10,
+      "added_lines": 3288,
+      "removed_lines": 253
     },
-    "git_custody": "Normal forward [skip ci] commits and normal ticket-branch pushes; no rebase/force/no-verify/main writes/deletion."
-  }
+    "git_custody": "Normal forward [skip ci] commits and normal ticket-branch pushes; no rebase/force/no-verify/main writes/deletion.",
+    "current_inventory_count": 53,
+    "forward_adoption_review": "Pending fresh SOL review; this writer grants no ACCEPT",
+    "current_source_input_seal_sha256": "d47c92e12a720a75861385605a44be162cdc90ec523a5e369b7a663b98ea15ac",
+    "forward_9cb_delta": {
+      "path_count": 3,
+      "added_lines": 2336,
+      "removed_lines": 58
+    }
+  },
+  "attribution_correction": {
+    "date": "2026-10-04",
+    "authority": "Parent Root clarification in this writer session",
+    "historical_wording": "Root fetched/verified/corrected in prior builder records denoted the builder internal coordinator, not parent Root",
+    "correct_actor": "Source builder under parent authorization",
+    "process_violation": "Source builder started a new Pi duplicate-search job despite the Nucleus no-Pi instruction; raw evidence retained; not parent Root work",
+    "going_forward": "SOL only; no Pi or external providers",
+    "production_acceptance": "Reported independent SOURCE acceptance remains scoped to 07909e05; process correction grants no additional acceptance"
+  },
+  "maintenance_duplicate_issue_disposition_history": [
+    {
+      "donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "issue_text_count": 76,
+      "duplicate_constructor_issue": null,
+      "duplicate_pagination_issue": null,
+      "related_records": [
+        "sdlc/tickets/1293-bound-article-search-time-and-report-partial-sources.md",
+        "sdlc/issues/2026-09-12-gencc-store-deadline-expires-under-load-on-slower-machines.md",
+        "sdlc/issues/2026-09-23-source-failures-render-as-empty-or-complete-results.md"
+      ],
+      "verification": "Pi read all donor issue texts; Root verified pinned issue count, targeted Git searches, related source shapes and dispositions. Related records cover other subsystems or broader resolved work, not these open defects.",
+      "filing": "Two generic issue TEXT drafts remain private; Root owns separate main filing. No main mutation or queue management.",
+      "draft_correction": "Root removed unsupported Semantic Scholar page-2 claim and replaced timing-threshold proposals with signals and controlled clock."
+    }
+  ],
+  "reported_metadata_review": {
+    "reviewed_head": "9cb8ffdda8933d053e998d670c341ae333771b9b",
+    "reviewer_session": "01a10802-a1d6-7090-a60c-70ee2e58cb7d",
+    "verdict": "ACCEPT METADATA only",
+    "receipt_basis": "Source author clarification relayed by parent Root",
+    "forward_amendment_acceptance": false
+  },
+  "command_preparation": {
+    "private_namespace": "experiments/705-biomcp-maintenance-command-preparation",
+    "status": "PREPARATION only; pending fresh forward amendment and whole COMMAND review",
+    "product_selectors": 33,
+    "python_support_selectors": 3,
+    "integration_support_selectors": 3,
+    "public_spec_pages": 2,
+    "source_size_audit": "Required unchanged rust_source_size audit; not executed",
+    "footprint": "Required existing five-case contract measurement; no optimization or execution",
+    "new_tools_or_global_PATH_changes": false,
+    "future_execution_authority": null,
+    "source_input_seal_sha256": "d47c92e12a720a75861385605a44be162cdc90ec523a5e369b7a663b98ea15ac",
+    "private_build_collection_command_count": 9,
+    "private_deferred_execution_command_count": 43,
+    "remaining_blockers": [
+      "Fresh SOL forward inventory/attribution amendment and whole COMMAND acceptance",
+      "Rebind admitted existing M5/Linux capture executor and review its exact command/environment/clock bindings; no replacement backend assumed",
+      "Separate authorization to allocate owned source/cache/target copies and perform existing image/tool qualification and build/collection",
+      "Bind actual artifacts/depfiles/dependencies/collection to source/package; fresh expanded COMMAND acceptance and separate execution GO",
+      "Actual audit, footprint and offline test acceptance; 0681 SOURCE amendment and shared integration remain parent-owned holds"
+    ]
+  },
+  "final_custody_history": [
+    {
+      "reviewed_source_head": "07909e05bac5cde879d8c0650f86580017a856d6",
+      "reviewed_source_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
+      "effective_input_count": 57,
+      "changed_src_rust_path_count": 25,
+      "nine_baseline_count": 9,
+      "retained_inventory_count": 51,
+      "actual_overthreshold_count": 53,
+      "product_selectors": 33,
+      "support_selectors": 6,
+      "public_spec_pages": 2,
+      "light_checks": "Forward whitespace clean; all five tracked-text scans pass; complete c428-relative diff-check preserves exit2 solely exactXML line2.",
+      "full_c428_delta": {
+        "path_count": 59,
+        "added_lines": 8221,
+        "removed_lines": 393
+      },
+      "full_720_forward_delta": {
+        "path_count": 9,
+        "added_lines": 988,
+        "removed_lines": 231
+      },
+      "git_custody": "Normal forward [skip ci] commits and normal ticket-branch pushes; no rebase/force/no-verify/main writes/deletion."
+    }
+  ]
 }
