@@ -16,6 +16,10 @@ use super::{
 mod coding_alias;
 pub(super) mod genomic_assertion;
 mod interval_comparison;
+mod interval_search;
+pub(crate) use interval_search::{
+    IntervalSearchAssertion, IntervalSearchDisposition, protein_interval_search,
+};
 mod point_alias;
 pub(super) use coding_alias::coding_changes_equivalent;
 use coding_alias::coding_key;
@@ -281,7 +285,7 @@ fn parse_gene_residue_alias(query: &str) -> Option<(String, VariantProteinAlias)
     ))
 }
 
-fn is_exact_gene_token(token: &str) -> bool {
+pub(crate) fn is_exact_gene_token(token: &str) -> bool {
     let mut chars = token.chars();
     matches!(chars.next(), Some(first) if first.is_ascii_uppercase())
         && chars.clone().next().is_some()
