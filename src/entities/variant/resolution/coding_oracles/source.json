@@ -1,0 +1,256 @@
+{
+  "S01": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.19C>T",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.19C>T",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.19C>T"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "A01"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.19C>T",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.19C>T"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.19C>T",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.19C>T",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    }
+  },
+  "S02": {
+    "kind": "synthetic engineering",
+    "input": {
+      "_id": "chr1:g.19C>T",
+      "dbnsfp": {
+        "genename": [
+          "GENE"
+        ],
+        "hgvsc": [
+          "NM_012345.7:c.19C>T",
+          "c.19C>T",
+          "c.(19C>T)",
+          "c.0019C>T",
+          "c.19C>T"
+        ]
+      },
+      "snpeff": {
+        "ann": [
+          {
+            "feature_id": "NM_012345.7",
+            "genename": "GENE",
+            "hgvs_c": "c.19C>T",
+            "hgvs_p": null
+          }
+        ]
+      }
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "NM_012345.7:c.19C>T",
+        "c.19C>T",
+        "c.(19C>T)",
+        "c.0019C>T",
+        "c.19C>T"
+      ],
+      "rsids": []
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Multiple",
+      "hgvsc_variant": "StringOrVec::Multiple",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_comparison": {
+      "Compatible": {
+        "matched_alias": "c.19C>T"
+      }
+    },
+    "expected_normalized_key": "CHR1:G.19C>T|GRCH37|GENE||C.(19C>T),C.0019C>T,C.19C>T|",
+    "expected_alias_routes": [
+      "checked",
+      "checked",
+      "checked",
+      "checked",
+      "checked"
+    ],
+    "expected_decoded": {
+      "_id": "chr1:g.19C>T",
+      "cadd": null,
+      "clinvar": null,
+      "dbnsfp": {
+        "genename": [
+          "GENE"
+        ],
+        "hgvsp": null,
+        "hgvsc": [
+          "NM_012345.7:c.19C>T",
+          "c.19C>T",
+          "c.(19C>T)",
+          "c.0019C>T",
+          "c.19C>T"
+        ],
+        "sift": null,
+        "polyphen2": null,
+        "revel": null,
+        "alphamissense": null,
+        "clinpred": null,
+        "metarnn": null,
+        "bayesdel": null,
+        "phylop": null,
+        "phastcons": null,
+        "gerp++": null
+      },
+      "dbsnp": null,
+      "gnomad_exome": null,
+      "gnomad": null,
+      "exac": null,
+      "exac_nontcga": null,
+      "cosmic": null,
+      "cgi": null,
+      "civic": null,
+      "snpeff": {
+        "ann": [
+          {
+            "feature_id": "NM_012345.7",
+            "genename": "GENE",
+            "hgvs_c": "c.19C>T",
+            "hgvs_p": null
+          }
+        ]
+      }
+    }
+  },
+  "S03": {
+    "kind": "existing admitted captured query; decoder only",
+    "input_file": "testdata/sources/myvariant/search_braf_v600e_20260806.json",
+    "expected_oracle_root": "src/entities/variant/resolution/point_oracles",
+    "expected_hit_file": "A01_HIT.json",
+    "expected_identity_file": "SOURCE_IDENTITY.json",
+    "expected_projection_file": "A01_SEARCH_ROW.json",
+    "expected_coding_aliases": [],
+    "expected_coding_shape": "StringOrVec::None"
+  },
+  "S04": {
+    "kind": "existing admitted captured get; decoder only",
+    "input_file": "testdata/sources/myvariant/get_braf_v600e_20260805.json",
+    "expected_oracle_root": "src/entities/variant/resolution/point_oracles",
+    "expected_hit_file": "A02_HIT.json",
+    "expected_identity_file": "SOURCE_IDENTITY.json",
+    "expected_projection_file": "A02_SEARCH_ROW.json",
+    "expected_coding_aliases": [],
+    "expected_coding_shape": "StringOrVec::None"
+  }
+}

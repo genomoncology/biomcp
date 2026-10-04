@@ -6,6 +6,9 @@ use crate::entities::variant::{GenomeBuild, resolved_default_assembly};
 #[path = "point_tests.rs"]
 mod point;
 
+#[path = "coding_tests.rs"]
+mod coding;
+
 #[test]
 fn versioned_refseq_rows_normalize_to_their_chromosome_and_build() {
     for (accession, chromosome, genome_build) in REFSEQ_GENOMIC_BUILDS {

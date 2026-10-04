@@ -1,0 +1,785 @@
+{
+  "status": "Authored literals derived from committed source; not runtime output",
+  "cases": [
+    {
+      "id": "T01",
+      "channel": "cli",
+      "input": {
+        "argv": [
+          "search",
+          "variant",
+          "GENE c.19C>T",
+          "--limit",
+          "5",
+          "--json"
+        ]
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsc": "c.19C>T"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": null
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.19C>T\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsc": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "coding_change": "c.19C>T"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [
+              "c.19C>T"
+            ],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [],
+              "coding_changes": [
+                "c.19C>T"
+              ],
+              "rsids": []
+            },
+            "matched_alias": "c.19C>T",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": null,
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": 0,
+      "expected_stderr": "",
+      "expected_mcp": null
+    },
+    {
+      "id": "T02",
+      "channel": "mcp",
+      "input": {
+        "tool": "search",
+        "arguments": {
+          "entity": "variant",
+          "query": "GENE c.19C>T",
+          "limit": 5,
+          "json": true
+        }
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsc": "c.19C>T"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": null
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.19C>T\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsc": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "coding_change": "c.19C>T"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [
+              "c.19C>T"
+            ],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [],
+              "coding_changes": [
+                "c.19C>T"
+              ],
+              "rsids": []
+            },
+            "matched_alias": "c.19C>T",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": null,
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": null,
+      "expected_stderr": null,
+      "expected_mcp": {
+        "content": [
+          {
+            "type": "text",
+            "decoded_json": {
+              "_meta": {
+                "next_commands": [
+                  "biomcp get variant \"chr1:g.19C>T\"",
+                  "biomcp get gene GENE",
+                  "biomcp list variant"
+                ]
+              },
+              "count": 1,
+              "diagnostics": [],
+              "filter_evaluation": {
+                "gene": "evaluated",
+                "hgvsc": "evaluated"
+              },
+              "pagination": {
+                "has_more": false,
+                "limit": 5,
+                "next_page_token": null,
+                "offset": 0,
+                "returned": 1,
+                "total": 1
+              },
+              "requested_variant": {
+                "gene": "GENE",
+                "coding_change": "c.19C>T"
+              },
+              "resolution": {
+                "exhaustive": true,
+                "normalized_aliases": {
+                  "coding_changes": [
+                    "c.19C>T"
+                  ],
+                  "genomic_ids": [],
+                  "protein_changes": [],
+                  "rsids": []
+                },
+                "status": "resolved"
+              },
+              "results": [
+                {
+                  "id": "chr1:g.19C>T",
+                  "genome_build": "GRCh37",
+                  "genome_build_provenance": "MyVariant.info provider default",
+                  "gene": "GENE",
+                  "hgvs_c": "c.19C>T",
+                  "transcript": "NM_012345.7",
+                  "clinvar_stars": null,
+                  "revel": null,
+                  "gerp": null,
+                  "source_identity": {
+                    "genomic_id": "chr1:g.19C>T",
+                    "genome_build": "GRCh37",
+                    "genes": [
+                      "GENE"
+                    ],
+                    "protein_changes": [],
+                    "coding_changes": [
+                      "c.19C>T"
+                    ],
+                    "rsids": []
+                  },
+                  "matched_alias": "c.19C>T",
+                  "transcript_annotations_complete": true,
+                  "transcript_annotations": [
+                    {
+                      "source": "myvariant.info/snpeff.ann",
+                      "gene": "GENE",
+                      "transcript": "NM_012345.7",
+                      "hgvs_c": "c.19C>T",
+                      "hgvs_p": null,
+                      "roles": [
+                        "displayed",
+                        "matched"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "isError": false
+      }
+    },
+    {
+      "id": "T03",
+      "channel": "cli",
+      "input": {
+        "argv": [
+          "search",
+          "variant",
+          "GENE c.(19C>T)",
+          "--limit",
+          "5",
+          "--json"
+        ]
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsc": "c.(19C>T)"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(19C>T)",
+                "hgvs_p": null
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.\\(19C>T\\)\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsc": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "coding_change": "c.(19C>T)"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [
+              "c.(19C>T)"
+            ],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_c": "c.(19C>T)",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [],
+              "coding_changes": [
+                "c.(19C>T)"
+              ],
+              "rsids": []
+            },
+            "matched_alias": "c.(19C>T)",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.(19C>T)",
+                "hgvs_p": null,
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": 0,
+      "expected_stderr": "",
+      "expected_mcp": null
+    },
+    {
+      "id": "T04",
+      "channel": "mcp",
+      "input": {
+        "tool": "search",
+        "arguments": {
+          "entity": "variant",
+          "query": "GENE c.(19C>T)",
+          "limit": 5,
+          "json": true
+        }
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsc": "c.(19C>T)"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(19C>T)",
+                "hgvs_p": null
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.\\(19C>T\\)\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsc": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "coding_change": "c.(19C>T)"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [
+              "c.(19C>T)"
+            ],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_c": "c.(19C>T)",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [],
+              "coding_changes": [
+                "c.(19C>T)"
+              ],
+              "rsids": []
+            },
+            "matched_alias": "c.(19C>T)",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.(19C>T)",
+                "hgvs_p": null,
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": null,
+      "expected_stderr": null,
+      "expected_mcp": {
+        "content": [
+          {
+            "type": "text",
+            "decoded_json": {
+              "_meta": {
+                "next_commands": [
+                  "biomcp get variant \"chr1:g.19C>T\"",
+                  "biomcp get gene GENE",
+                  "biomcp list variant"
+                ]
+              },
+              "count": 1,
+              "diagnostics": [],
+              "filter_evaluation": {
+                "gene": "evaluated",
+                "hgvsc": "evaluated"
+              },
+              "pagination": {
+                "has_more": false,
+                "limit": 5,
+                "next_page_token": null,
+                "offset": 0,
+                "returned": 1,
+                "total": 1
+              },
+              "requested_variant": {
+                "gene": "GENE",
+                "coding_change": "c.(19C>T)"
+              },
+              "resolution": {
+                "exhaustive": true,
+                "normalized_aliases": {
+                  "coding_changes": [
+                    "c.(19C>T)"
+                  ],
+                  "genomic_ids": [],
+                  "protein_changes": [],
+                  "rsids": []
+                },
+                "status": "resolved"
+              },
+              "results": [
+                {
+                  "id": "chr1:g.19C>T",
+                  "genome_build": "GRCh37",
+                  "genome_build_provenance": "MyVariant.info provider default",
+                  "gene": "GENE",
+                  "hgvs_c": "c.(19C>T)",
+                  "transcript": "NM_012345.7",
+                  "clinvar_stars": null,
+                  "revel": null,
+                  "gerp": null,
+                  "source_identity": {
+                    "genomic_id": "chr1:g.19C>T",
+                    "genome_build": "GRCh37",
+                    "genes": [
+                      "GENE"
+                    ],
+                    "protein_changes": [],
+                    "coding_changes": [
+                      "c.(19C>T)"
+                    ],
+                    "rsids": []
+                  },
+                  "matched_alias": "c.(19C>T)",
+                  "transcript_annotations_complete": true,
+                  "transcript_annotations": [
+                    {
+                      "source": "myvariant.info/snpeff.ann",
+                      "gene": "GENE",
+                      "transcript": "NM_012345.7",
+                      "hgvs_c": "c.(19C>T)",
+                      "hgvs_p": null,
+                      "roles": [
+                        "displayed",
+                        "matched"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "isError": false
+      }
+    },
+    {
+      "id": "T05",
+      "channel": "cli",
+      "input": {
+        "argv": [
+          "search",
+          "variant",
+          "GENE c.19C>T",
+          "--gene",
+          "OTHER",
+          "--json"
+        ]
+      },
+      "expected_requests": [],
+      "expected_payload": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "Invalid argument: Positional \"GENE c.HGVS\" conflicts with --gene"
+        },
+        "_meta": {
+          "not_found": false
+        },
+        "results": []
+      },
+      "expected_exit": 2,
+      "expected_stderr": ""
+    },
+    {
+      "id": "T06",
+      "channel": "mcp",
+      "input": {
+        "tool": "search",
+        "arguments": {
+          "entity": "variant",
+          "gene": "BRAF",
+          "hgvsp": "p.Val600Glu",
+          "limit": 5,
+          "json": true
+        }
+      },
+      "stub_response_file": "testdata/sources/myvariant/search_braf_v600e_20260806.json",
+      "expected_full_wrapper_file": "src/entities/variant/resolution/point_oracles/correction_retained_transport/T06.output.json",
+      "expected_request_file": "src/entities/variant/resolution/point_oracles/correction_retained_transport/T06.request.json",
+      "expected_request_translation": "Replace only the fixture-local authority; assert original decoded path, ordered query and absent body",
+      "evidence_kind": "engineering replay; not captured current-request support"
+    }
+  ]
+}
