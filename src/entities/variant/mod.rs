@@ -12,6 +12,10 @@ mod get;
 mod gwas;
 mod normalization;
 mod resolution;
+pub(crate) use resolution::{
+    IntervalSearchAssertion, IntervalSearchDisposition, is_exact_gene_token,
+    protein_interval_search,
+};
 mod search;
 mod structure;
 #[cfg(test)]
