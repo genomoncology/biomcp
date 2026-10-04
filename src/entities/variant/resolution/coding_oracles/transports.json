@@ -408,7 +408,7 @@
           "query_pairs": [
             [
               "q",
-              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.(19C>T)\""
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.\\(19C>T\\)\""
             ],
             [
               "size",
@@ -548,7 +548,7 @@
           "query_pairs": [
             [
               "q",
-              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.(19C>T)\""
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsc:\"c.\\(19C>T\\)\""
             ],
             [
               "size",
