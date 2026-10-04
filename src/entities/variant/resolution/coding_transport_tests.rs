@@ -57,7 +57,8 @@ pub(super) async fn search_row(response: Value, request: Value) -> Value {
 async fn coding_cli_and_mcp_table() {
     let rows = oracle("transports");
     assert_eq!(rows["cases"].as_array().unwrap().len(), 6);
-    let interval: Value = serde_json::from_str(include_str!("interval_search_oracles.json")).unwrap();
+    let interval: Value =
+        serde_json::from_str(include_str!("interval_search_oracles.json")).unwrap();
     let original = rows["cases"].as_array().unwrap();
     let added = interval["transport_cases"].as_array().unwrap();
     assert_eq!(added.len(), 8);
