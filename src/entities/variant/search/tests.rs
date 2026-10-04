@@ -2,6 +2,14 @@
 
 use super::super::{VariantProteinAlias, VariantSearchFilters, VariantSearchResult};
 use super::*;
+#[test]
+fn interval_annotation_comparison_table() {
+    super::super::resolution::tests::interval::annotation_table(
+        annotation_matches_request,
+        |request, hit, seen, retained| retain_compatible_hits(request, [hit], seen, retained),
+        finalize_exact_page,
+    );
+}
 
 #[test]
 fn search_query_summary_includes_hgvsc_and_rsid() {

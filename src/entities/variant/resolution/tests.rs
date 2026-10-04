@@ -5,6 +5,11 @@ use crate::entities::variant::{GenomeBuild, resolved_default_assembly};
 
 #[path = "point_tests.rs"]
 mod point;
+#[path = "interval_tests.rs"]
+pub(crate) mod interval;
+
+#[path = "interval_search_tests.rs"]
+mod interval_search;
 
 #[path = "coding_tests.rs"]
 mod coding;
@@ -538,3 +543,6 @@ fn identity_comparison_is_indeterminate_for_missing_or_unlinked_annotation_evide
         }
     );
 }
+
+#[path = "genomic_tests.rs"]
+mod genomic;

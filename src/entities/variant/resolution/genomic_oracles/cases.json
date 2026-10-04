@@ -1,0 +1,1722 @@
+{
+  "status": "Independently authored DESIGN literals; no runtime or provider claim",
+  "tuple_rule": "Every output tuple is literal and complete. Null means no extracted components. Chromosome/structured extraction retains its captured position_lexeme and single-base reference. Source extraction independently retains its ASCII-digit-scanned partial reference. Prediction matches raw variant.id. Source requires a remaining :g. delimiter after one optional build removal; passing bare syntax grants no source components.",
+  "extractions": [
+    {
+      "id": "G01",
+      "input": "chr7:g.140453136A>T",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 140453136,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "140453136",
+      "checked_prediction": false,
+      "checked_spans": {
+        "whole": [
+          0,
+          19
+        ],
+        "reference": [
+          0,
+          4
+        ],
+        "location": [
+          7,
+          16
+        ]
+      },
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "140453136",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "140453136",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr7",
+        "position_lexeme": "140453136",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 1
+    },
+    {
+      "id": "G02",
+      "input": " chr7:g.001A>T ",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "001",
+      "checked_prediction": false,
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "001",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "001",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": null,
+      "prediction_expected": {
+        "status": "inapplicable",
+        "section": "predict",
+        "message": "Genomic coordinates are required for prediction."
+      },
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G03",
+      "input": "NC_000011.10:g.108248927T>G",
+      "route": "checked",
+      "chromosome_extracts": false,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "NC_000011.10",
+        "position": 108248927,
+        "reference": "T",
+        "alternate": "G"
+      },
+      "checked_digits": "108248927",
+      "checked_prediction": false,
+      "chromosome_components": null,
+      "structured_components": {
+        "accession": "NC_000011.10",
+        "position_lexeme": "108248927",
+        "reference": "T",
+        "alternate": "G"
+      },
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G04",
+      "input": "GRCh38:chr7:g.1A>T",
+      "route": "checked",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": "GRCh38",
+        "accession": "chr7",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "1",
+      "checked_prediction": false,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G05",
+      "input": "grch37:chr7:g.1A>T",
+      "route": "checked",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": "grch37",
+        "accession": "chr7",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "1",
+      "checked_prediction": false,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G06",
+      "input": "chrM:g.1A>T",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chrM",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "1",
+      "checked_prediction": false,
+      "chromosome_components": {
+        "accession": "chrM",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chrM",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chrM",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 1
+    },
+    {
+      "id": "G07",
+      "input": "chr0:g.1A>T",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr0",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "1",
+      "checked_prediction": false,
+      "chromosome_components": {
+        "accession": "chr0",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr0",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr0",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 1
+    },
+    {
+      "id": "G08",
+      "input": "chrXYM:g.1A>T",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chrXYM",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "1",
+      "checked_prediction": false,
+      "chromosome_components": {
+        "accession": "chrXYM",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chrXYM",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chrXYM",
+        "position_lexeme": "1",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 1
+    },
+    {
+      "id": "G09",
+      "input": "chr7:g.0A>T",
+      "route": "zero_compatibility",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 0,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "0",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "0",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr7",
+        "position_lexeme": "0",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G10",
+      "input": "chr7:g.000A>T",
+      "route": "zero_compatibility",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 0,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "000",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "000",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr7",
+        "position_lexeme": "000",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G11",
+      "input": "chr7:g.18446744073709551615A>T",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 18446744073709551615,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "18446744073709551615",
+      "checked_prediction": false,
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "18446744073709551615",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "18446744073709551615",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr7",
+        "position_lexeme": "18446744073709551615",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 1
+    },
+    {
+      "id": "G12",
+      "input": "chr7:g.18446744073709551616A>T",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": null,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "18446744073709551616",
+      "checked_prediction": false,
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "18446744073709551616",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "18446744073709551616",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr7",
+        "position_lexeme": "18446744073709551616",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 1
+    },
+    {
+      "id": "G13",
+      "input": "chr7:g.9223372036854775808A>T",
+      "route": "checked",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 9223372036854775808,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "9223372036854775808",
+      "checked_prediction": false,
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "9223372036854775808",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "9223372036854775808",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr7",
+        "position_lexeme": "9223372036854775808",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 1
+    },
+    {
+      "id": "G14",
+      "input": "chr7:g.\u0661A>T",
+      "route": "decimal_compatibility",
+      "chromosome_extracts": true,
+      "structured_extracts": true,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": null,
+        "reference": "\u0661A",
+        "alternate": "T"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": {
+        "accession": "chr7",
+        "position_lexeme": "\u0661",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "structured_components": {
+        "accession": "chr7",
+        "position_lexeme": "\u0661",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_components": {
+        "accession": "chr7",
+        "position_lexeme": "\u0661",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G15",
+      "input": "chr7:g.1a>t",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 1,
+        "reference": "a",
+        "alternate": "t"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G16",
+      "input": "chr7:G.1A>T",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": null,
+        "position": null,
+        "reference": null,
+        "alternate": null
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G17",
+      "input": "chr7:g.1del",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G18",
+      "input": "chr7:g.1A>Tjunk",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 1,
+        "reference": "A",
+        "alternate": "Tjunk"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G19",
+      "input": "bad ref:g.1A>T",
+      "route": "reference_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "bad ref",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G20",
+      "input": ":g.1A>T",
+      "route": "reference_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G21",
+      "input": "bad:ref:g.1A>T",
+      "route": "reference_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "bad:ref",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G22",
+      "input": "chr7:g.(1A>T)",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": null,
+        "reference": "(1A",
+        "alternate": "T)"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G23",
+      "input": "chr7:g.1A>",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "chr7",
+        "position": 1,
+        "reference": "A",
+        "alternate": null
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G24",
+      "input": "GRCh38:broken",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": "GRCh38",
+        "accession": null,
+        "position": null,
+        "reference": null,
+        "alternate": null
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G25",
+      "input": "opaque:g.1A>A",
+      "route": "checked",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "opaque",
+        "position": 1,
+        "reference": "A",
+        "alternate": "A"
+      },
+      "checked_digits": "1",
+      "checked_prediction": false,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G26",
+      "input": "bad\u007fref:g.1A>T",
+      "route": "reference_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "bad\u007fref",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G27",
+      "input": "NC_000011:g.1A>T",
+      "route": "checked",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": "NC_000011",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "checked_digits": "1",
+      "checked_prediction": false,
+      "chromosome_components": null,
+      "structured_components": null,
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G28",
+      "input": "g.1A>T",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": null,
+        "accession": null,
+        "position": null,
+        "reference": null,
+        "alternate": null
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "source_parser_calls": 0,
+      "syntax_only_observation": {
+        "candidate": "g.1A>T",
+        "producer_disposition": "Parsed",
+        "code": "hgvs_parsed",
+        "consumer_admission": false
+      },
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    },
+    {
+      "id": "G29",
+      "input": "GRCh38:g.1A>T",
+      "route": "body_compatibility",
+      "chromosome_extracts": false,
+      "structured_extracts": false,
+      "source_components": {
+        "build": "GRCh38",
+        "accession": null,
+        "position": null,
+        "reference": null,
+        "alternate": null
+      },
+      "checked_digits": null,
+      "checked_prediction": null,
+      "chromosome_components": null,
+      "structured_components": null,
+      "source_parser_calls": 0,
+      "syntax_only_observation": {
+        "candidate": "g.1A>T",
+        "producer_disposition": "Parsed",
+        "code": "hgvs_parsed",
+        "consumer_admission": false
+      },
+      "prediction_components": null,
+      "prediction_parser_calls": 0
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "C01",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr7:g.1A>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "GRCh38:chr7:g.1A>T"
+      }
+    },
+    {
+      "id": "C02",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr7:g.001A>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "GRCh38:chr7:g.001A>T"
+      }
+    },
+    {
+      "id": "C03",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh37:chr7:g.1A>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "genome_build"
+      }
+    },
+    {
+      "id": "C04",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr8:g.1A>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "genomic_accession"
+      }
+    },
+    {
+      "id": "C05",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr7:g.2A>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "position"
+      }
+    },
+    {
+      "id": "C06",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr7:g.1C>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "reference"
+      }
+    },
+    {
+      "id": "C07",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr7:g.1A>G",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "alternate"
+      }
+    },
+    {
+      "id": "C08",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr7:g.A>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Indeterminate",
+        "field": "position"
+      }
+    },
+    {
+      "id": "C09",
+      "requested": {
+        "gene": null,
+        "protein_change": null,
+        "coding_change": null,
+        "transcript": null,
+        "genomic_accession": "chr7",
+        "genome_build": "GRCh38",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T",
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "GRCh38:chr7:g.18446744073709551616A>T",
+        "genome_build": "GRCh38",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Indeterminate",
+        "field": "position"
+      }
+    }
+  ],
+  "consumer_boundaries": [
+    {
+      "id": "B01",
+      "consumer": "requested_identity",
+      "input": " chr7:g.001A>T ",
+      "expected": {
+        "result": "Ok",
+        "identity": {
+          "gene": null,
+          "protein_change": null,
+          "coding_change": null,
+          "transcript": null,
+          "genomic_accession": "chr7",
+          "genome_build": null,
+          "position": 1,
+          "reference": "A",
+          "alternate": "T",
+          "rsid": null
+        },
+        "normalized_aliases": {
+          "protein_changes": [],
+          "coding_changes": [],
+          "genomic_ids": [
+            "chr7:g.1A>T"
+          ],
+          "rsids": []
+        },
+        "human_label": "chr7:g.1A>T"
+      },
+      "entrypoint": "RequestedVariantIdentity::from_variant_input",
+      "helper_observation": {
+        "source": " chr7:g.001A>T ",
+        "candidate": "chr7:g.001A>T",
+        "candidate_offset_bytes": 1,
+        "position_lexeme": "001",
+        "source_is_identity_field": false
+      }
+    },
+    {
+      "id": "B02",
+      "consumer": "structured_article",
+      "input": {
+        "request_id": null,
+        "gene": null,
+        "protein": null,
+        "coding": null,
+        "transcript": null,
+        "genomic": " NC_000011.10:g.108248927T>G ",
+        "accession": null,
+        "build": " GRCh38 ",
+        "position": null,
+        "ref": null,
+        "alt": null,
+        "rsid": null
+      },
+      "expected": {
+        "result": "Ok",
+        "identity": {
+          "gene": null,
+          "protein_change": null,
+          "coding_change": null,
+          "transcript": null,
+          "genomic_accession": "NC_000011.10",
+          "genome_build": "GRCh38",
+          "position": 108248927,
+          "reference": "T",
+          "alternate": "G",
+          "rsid": null
+        },
+        "normalized_aliases": {
+          "protein_changes": [],
+          "coding_changes": [],
+          "genomic_ids": [
+            "NC_000011.10:g.108248927T>G"
+          ],
+          "rsids": []
+        },
+        "human_label": "NC_000011.10:g.108248927T>G",
+        "display_input": "NC_000011.10:g.108248927T>G",
+        "is_authoritative_refseq": true
+      },
+      "entrypoint": "VariantArticleRequest::validate_identity",
+      "helper_observation": {
+        "source": " NC_000011.10:g.108248927T>G ",
+        "candidate": "NC_000011.10:g.108248927T>G",
+        "candidate_offset_bytes": 1,
+        "source_is_identity_field": false
+      },
+      "validation_cases": [
+        {
+          "id": "V01",
+          "entrypoint": "VariantArticleRequest::validate_identity",
+          "input": {
+            "request_id": null,
+            "gene": null,
+            "protein": null,
+            "coding": null,
+            "transcript": null,
+            "genomic": "chr7:g.18446744073709551616A>T",
+            "accession": null,
+            "build": null,
+            "position": null,
+            "ref": null,
+            "alt": null,
+            "rsid": null
+          },
+          "expected": {
+            "result": "Err",
+            "variant": "InvalidArgument",
+            "message": "genomic identity requires a complete genomic HGVS or accession, position, ref, and alt",
+            "display": "Invalid argument: genomic identity requires a complete genomic HGVS or accession, position, ref, and alt",
+            "code": "invalid_argument",
+            "exit_code": 2,
+            "identity": null,
+            "normalized_aliases": null
+          }
+        },
+        {
+          "id": "V02",
+          "entrypoint": "VariantArticleRequest::validate_identity",
+          "input": {
+            "request_id": null,
+            "gene": null,
+            "protein": null,
+            "coding": null,
+            "transcript": null,
+            "genomic": "chr7:g.0A>T",
+            "accession": null,
+            "build": null,
+            "position": null,
+            "ref": null,
+            "alt": null,
+            "rsid": null
+          },
+          "expected": {
+            "result": "Err",
+            "variant": "InvalidArgument",
+            "message": "variant article item genomic identity must use chr or versioned RefSeq coordinates, a positive position, and A/C/G/T ref and alt bases",
+            "display": "Invalid argument: variant article item genomic identity must use chr or versioned RefSeq coordinates, a positive position, and A/C/G/T ref and alt bases",
+            "code": "invalid_argument",
+            "exit_code": 2,
+            "identity": null,
+            "normalized_aliases": null
+          }
+        },
+        {
+          "id": "V03",
+          "entrypoint": "VariantArticleRequest::validate_identity",
+          "input": {
+            "request_id": null,
+            "gene": null,
+            "protein": null,
+            "coding": null,
+            "transcript": null,
+            "genomic": "chr7:g.000A>T",
+            "accession": null,
+            "build": null,
+            "position": null,
+            "ref": null,
+            "alt": null,
+            "rsid": null
+          },
+          "expected": {
+            "result": "Err",
+            "variant": "InvalidArgument",
+            "message": "variant article item genomic identity must use chr or versioned RefSeq coordinates, a positive position, and A/C/G/T ref and alt bases",
+            "display": "Invalid argument: variant article item genomic identity must use chr or versioned RefSeq coordinates, a positive position, and A/C/G/T ref and alt bases",
+            "code": "invalid_argument",
+            "exit_code": 2,
+            "identity": null,
+            "normalized_aliases": null
+          }
+        },
+        {
+          "id": "V04",
+          "entrypoint": "VariantArticleRequest::validate_identity",
+          "input": {
+            "request_id": null,
+            "gene": null,
+            "protein": null,
+            "coding": null,
+            "transcript": null,
+            "genomic": "NC_000011.10:g.108248927T>G",
+            "accession": null,
+            "build": null,
+            "position": 108248927,
+            "ref": null,
+            "alt": null,
+            "rsid": null
+          },
+          "expected": {
+            "result": "Err",
+            "variant": "InvalidArgument",
+            "message": "variant article item cannot combine genomic with accession, position, ref, or alt",
+            "display": "Invalid argument: variant article item cannot combine genomic with accession, position, ref, or alt",
+            "code": "invalid_argument",
+            "exit_code": 2,
+            "identity": null,
+            "normalized_aliases": null
+          }
+        },
+        {
+          "id": "V05",
+          "entrypoint": "VariantArticleRequest::validate_identity",
+          "input": {
+            "request_id": null,
+            "gene": null,
+            "protein": null,
+            "coding": null,
+            "transcript": null,
+            "genomic": "NC_000011.10:g.108248927T>G",
+            "accession": null,
+            "build": null,
+            "position": null,
+            "ref": null,
+            "alt": null,
+            "rsid": null
+          },
+          "expected": {
+            "result": "Err",
+            "variant": "InvalidArgument",
+            "message": "variant article item versioned RefSeq identity requires an explicit GRCh37 or GRCh38 build",
+            "display": "Invalid argument: variant article item versioned RefSeq identity requires an explicit GRCh37 or GRCh38 build",
+            "code": "invalid_argument",
+            "exit_code": 2,
+            "identity": null,
+            "normalized_aliases": null
+          }
+        },
+        {
+          "id": "V06",
+          "entrypoint": "VariantArticleRequest::validate_identity",
+          "input": {
+            "request_id": null,
+            "gene": null,
+            "protein": null,
+            "coding": null,
+            "transcript": null,
+            "genomic": null,
+            "accession": "chr7",
+            "build": null,
+            "position": 1,
+            "ref": "A",
+            "alt": null,
+            "rsid": null
+          },
+          "expected": {
+            "result": "Err",
+            "variant": "InvalidArgument",
+            "message": "genomic identity requires a complete genomic HGVS or accession, position, ref, and alt",
+            "display": "Invalid argument: genomic identity requires a complete genomic HGVS or accession, position, ref, and alt",
+            "code": "invalid_argument",
+            "exit_code": 2,
+            "identity": null,
+            "normalized_aliases": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "B03",
+      "consumer": "source_comparison",
+      "expected_case_ids": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C05",
+        "C06",
+        "C07",
+        "C08",
+        "C09"
+      ]
+    },
+    {
+      "id": "B04",
+      "consumer": "population_slug",
+      "cases": [
+        {
+          "input": "chr7:g.001A>T",
+          "expected": "7-001-A-T"
+        },
+        {
+          "input": "NC_000011.10:g.1A>T",
+          "expected": null
+        },
+        {
+          "input": "chr7:g.1del",
+          "expected": null
+        },
+        {
+          "input": "chrM:g.1A>T",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "B05",
+      "consumer": "prediction_input",
+      "cases": [
+        {
+          "input": "chr7:g.001A>T",
+          "expected": {
+            "chromosome": "chr7",
+            "position_i64": 1,
+            "reference": "A",
+            "alternate": "T"
+          }
+        },
+        {
+          "input": "chr7:g.9223372036854775808A>T",
+          "expected_error": "Invalid HGVS position for prediction"
+        },
+        {
+          "input": "chr7:g.1del",
+          "expected_inapplicable": "Genomic coordinates are required for prediction."
+        },
+        {
+          "input": " chr7:g.001A>T",
+          "expected_components": null,
+          "expected_inapplicable": "Genomic coordinates are required for prediction.",
+          "section": "predict",
+          "client_constructions": 0,
+          "provider_calls": 0
+        },
+        {
+          "input": "chr7:g.001A>T ",
+          "expected_components": null,
+          "expected_inapplicable": "Genomic coordinates are required for prediction.",
+          "section": "predict",
+          "client_constructions": 0,
+          "provider_calls": 0
+        },
+        {
+          "input": " chr7:g.001A>T ",
+          "expected_components": null,
+          "expected_inapplicable": "Genomic coordinates are required for prediction.",
+          "section": "predict",
+          "client_constructions": 0,
+          "provider_calls": 0
+        }
+      ],
+      "execution_boundary": "pure preparation only; no client or service; optional caller compilation remains required",
+      "entrypoint": "add_prediction raw variant.id extraction and i64 preparation seam",
+      "preparation": "No trim or normalization before anchored chromosome extraction"
+    }
+  ],
+  "resource_recipes": [
+    {
+      "id": "R01",
+      "candidate_bytes": 1048576,
+      "recipe": "chr7:g. + ASCII zeros + 1A>T, with zero count chosen for exactly candidate_bytes",
+      "expected_route": "checked",
+      "expected_position_u64": 1
+    },
+    {
+      "id": "R02",
+      "candidate_bytes": 1048577,
+      "recipe": "same as R01",
+      "expected_route": "resource_compatibility",
+      "expected_position_u64": 1,
+      "parser_calls": 0
+    },
+    {
+      "id": "R03",
+      "reference_bytes": 4096,
+      "recipe": "opaque reference made of x repeated reference_bytes, followed by :g.1A>T",
+      "expected_route": "checked"
+    },
+    {
+      "id": "R04",
+      "reference_bytes": 4097,
+      "recipe": "same as R03",
+      "expected_route": "resource_compatibility",
+      "parser_calls": 0
+    }
+  ],
+  "retained_transport_reference": "../coding-substitution-alias-0668/transports.json",
+  "retained_transport_cases": 6,
+  "resource_case_scope": "internal helper engineering only; no public admission change",
+  "assertion_cases": [
+    {
+      "id": "A01",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": "opaque:g.1A>T",
+      "producer_disposition": "Parsed",
+      "expected": {
+        "route": "checked",
+        "diagnostic": null,
+        "components": {
+          "accession": "opaque",
+          "position_lexeme": "1",
+          "reference": "A",
+          "alternate": "T"
+        },
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 13,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": false,
+          "diagnostic": null
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque",
+          "opaque:g.1A>T"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1
+    },
+    {
+      "id": "A02",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": "opaque:g.1A>",
+      "producer_disposition": "Invalid",
+      "expected": {
+        "route": "checked",
+        "diagnostic": "hgvs_invalid",
+        "components": null,
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 12,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": null,
+          "diagnostic": "hgvs_invalid"
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque",
+          "opaque:g.1A>"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1
+    },
+    {
+      "id": "A03",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": "opaque:g.1A[2]",
+      "producer_disposition": "Unsupported",
+      "expected": {
+        "route": "checked",
+        "diagnostic": "hgvs_unsupported_repeat",
+        "components": null,
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 14,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": null,
+          "diagnostic": "hgvs_unsupported_repeat"
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque",
+          "opaque:g.1A[2]"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1
+    },
+    {
+      "id": "A04",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": null,
+      "producer_disposition": "ResourceLimitExceeded",
+      "expected": {
+        "route": "checked",
+        "diagnostic": "hgvs_input_limit",
+        "components": null,
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 1048577,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": null,
+          "diagnostic": "hgvs_input_limit"
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1,
+      "input_recipe": {
+        "candidate_bytes": 1048577,
+        "recipe": "opaque:g. + ASCII zeros + 1A>T; zeros chosen for exact byte count"
+      }
+    },
+    {
+      "id": "A05",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": "opaque:c.1A>T",
+      "producer_disposition": "Parsed",
+      "expected": {
+        "route": "checked",
+        "diagnostic": "genomic_substitution_unrepresentable",
+        "components": null,
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 13,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": false,
+          "diagnostic": "genomic_substitution_unrepresentable"
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque",
+          "opaque:c.1A>T"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1
+    },
+    {
+      "id": "A06",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": "opaque:g.1_2del",
+      "producer_disposition": "Parsed",
+      "expected": {
+        "route": "checked",
+        "diagnostic": "genomic_substitution_unrepresentable",
+        "components": null,
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 15,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": false,
+          "diagnostic": "genomic_substitution_unrepresentable"
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque",
+          "opaque:g.1_2del"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1
+    },
+    {
+      "id": "A07",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": "opaque:c.(1A>T)",
+      "producer_disposition": "Parsed",
+      "expected": {
+        "route": "checked",
+        "diagnostic": "genomic_substitution_unrepresentable",
+        "components": null,
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 15,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": true,
+          "diagnostic": "genomic_substitution_unrepresentable"
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque",
+          "opaque:c.(1A>T)"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1
+    }
+  ],
+  "assertion_case_boundary": "Only the A01-A07 table passes actual public producer envelopes to the private adaptation seam to prove terminal handling. G/R rows exercise normal preselection. This supplies no public envelope injection API and no checked-route fallback. Assertion components in A01 are the internal typed component view; caller admission masks remain separate.",
+  "retained_transport_execution_owner": "entities::variant::resolution::tests::coding::transport::coding_cli_and_mcp_table",
+  "transport_execution_rule": "Inherited coding transport table executes all six scenarios exactly once. Genomic tables reference those complete receipts and add no transport execution or registration.",
+  "caller_preparation_by_boundary": {
+    "requested_populate_genomic": "trim outer whitespace",
+    "structured_populate_genomic": "trim outer whitespace",
+    "source_components": "trim outer whitespace; remove one leading GRCh37/GRCh38 build; require remaining :g. separator",
+    "prediction_input": "raw variant.id; no trimming"
+  }
+}

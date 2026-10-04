@@ -1,0 +1,6537 @@
+{
+  "adapter_cases": [
+    {
+      "id": "IS01",
+      "input": "p.A11del",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/0/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.A11del",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "c8bd4415abe61707f0f3c48bb86e2dec01f03c48af1b2f9138da4ce5821630f8"
+    },
+    {
+      "id": "IS02",
+      "input": "p.Ala11del",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/1/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.Ala11del",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "3bb4397016c1003f5fb3d16264e92812f2fd18d698f767772423f6a608f67d25"
+    },
+    {
+      "id": "IS03",
+      "input": "p.A11dup",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/2/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.A11dup",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "e2bf231f018b1fe9a70eb36d02bb3e99ad15890eafee05b20366d05390bc724b"
+    },
+    {
+      "id": "IS04",
+      "input": "p.Ala11dup",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/3/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.Ala11dup",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "d4864d7a4f657a260f080e2880e48a0856764e6cc88cbb43fbfed3862d0dba84"
+    },
+    {
+      "id": "IS05",
+      "input": "p.A11_G12insAS",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/4/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.A11_G12insAS",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "df7161e916610a66c96b7c0e156fb6446504d8fd567dc104cbca93e837ebc86b"
+    },
+    {
+      "id": "IS06",
+      "input": "p.Ala11_Gly12insAlaSer",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/5/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.Ala11_Gly12insAlaSer",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "7df78241baf294d5a8ca736b29592708b1823bb8db728db883030773be211ba0"
+    },
+    {
+      "id": "IS07",
+      "input": "p.A11_G14delinsAS",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/6/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.A11_G14delinsAS",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "b24054c4d589b9df16ec613a96cce0e62339a1e20bf5d2f27b4a41b9f19f99c8"
+    },
+    {
+      "id": "IS08",
+      "input": "p.Ala11_Gly14delinsAlaSer",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/7/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.Ala11_Gly14delinsAlaSer",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "bb70282710d7837b01170190e2672fe7db737f28505f31ef105914da09fa37fa"
+    },
+    {
+      "id": "IS09",
+      "input": "p.Met0001_U0002del",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/214/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.Met0001_U0002del",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "1446b628a8db69481a7e926bad5dd5ce7fd2c2c2319ba9fce6213fff0202f00b"
+    },
+    {
+      "id": "IS10",
+      "input": "p.Met0001_U0002delinsBGlxXaa",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/216/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.Met0001_U0002delinsBGlxXaa",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "ce79e02e2667bcdf34439eaf2980a2d6292c7532268dbbcd4eaef208c7a1217c"
+    },
+    {
+      "id": "IS11",
+      "input": "p.Ala4294967295_Gly4294967296insAlaSer",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/221/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.Ala4294967295_Gly4294967296insAlaSer",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "98160e1d0ff1284fff553a6ee626a8499956eb7149b09384e96407712e5b024a"
+    },
+    {
+      "id": "IS12",
+      "input": "p.A11_G12insV*",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/223/expected/render/one_letter/reparsed"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.A11_G12insV*",
+      "reason": "Use admitted OneLetter reparse to expose written final * without adding syntax.",
+      "sha256": "7952773fbc176b35eff7af765d232d9e7fd2dfe69d0177723ea4ea5f16b0bbd9"
+    },
+    {
+      "id": "IS13",
+      "input": "p.(W11del)",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/190/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": "p.(W11del)",
+      "reason": "Reuse complete admitted object, every getter and span; no new grammar oracle.",
+      "sha256": "0958cdd8795c3946af5e41893df3d9872f21301cec44e8ae4735d693529e306a"
+    },
+    {
+      "id": "IS14",
+      "input": "NP_000001.1:p.A11del",
+      "preparation": "None",
+      "selected": true,
+      "adapter_disposition": "ReferenceRefused",
+      "code": "protein_interval_search_reference",
+      "producer_calls": 0,
+      "envelope": null,
+      "query_spelling": null,
+      "source_span": [
+        0,
+        20
+      ],
+      "inherited": "0673 Q12 left",
+      "reason": "Never discard an accession to turn a qualified assertion into a gene-bound search.",
+      "sha256": "1e4443dcbc1fff840eba5259a0b83fe8a25335173244bf586c276204a7ca1423"
+    },
+    {
+      "id": "IS15",
+      "input": "p.X11del",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Unsupported",
+      "code": "hgvs_protein_interval_unsupported_legacy_x",
+      "producer_calls": 1,
+      "envelope": {
+        "source": "p.X11del",
+        "syntax_version": "21.1.4",
+        "input_bytes": 8,
+        "reference_bytes": null,
+        "disposition": "Unsupported",
+        "code": "hgvs_protein_interval_unsupported_legacy_x",
+        "diagnostic_span": [
+          0,
+          8
+        ],
+        "parsed": null
+      },
+      "query_spelling": null,
+      "source_span": [
+        0,
+        8
+      ],
+      "inherited": "U001",
+      "reason": "Preserve admitted terminal producer refusal.",
+      "sha256": "1a5f6ef79c513d1ff9bf7846600a651ceed41207c82476c5d971e97310cc6ead"
+    },
+    {
+      "id": "IS16",
+      "input": "p.A11_G13insS",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Invalid",
+      "code": "hgvs_protein_interval_invalid",
+      "producer_calls": 1,
+      "envelope": {
+        "source": "p.A11_G13insS",
+        "syntax_version": "21.1.4",
+        "input_bytes": 13,
+        "reference_bytes": null,
+        "disposition": "Invalid",
+        "code": "hgvs_protein_interval_invalid",
+        "diagnostic_span": [
+          0,
+          13
+        ],
+        "parsed": null
+      },
+      "query_spelling": null,
+      "source_span": [
+        0,
+        13
+      ],
+      "inherited": "0673 Q23 left",
+      "reason": "Preserve admitted terminal producer refusal.",
+      "sha256": "656e7f784b123635324e7b5a8ee112ac99e28fdbab8d59cb0a9bec2455ad8fb5"
+    },
+    {
+      "id": "IS17",
+      "input": "p.A11del!",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Invalid",
+      "code": "hgvs_protein_interval_invalid",
+      "producer_calls": 1,
+      "envelope": {
+        "source": "p.A11del!",
+        "syntax_version": "21.1.4",
+        "input_bytes": 9,
+        "reference_bytes": null,
+        "disposition": "Invalid",
+        "code": "hgvs_protein_interval_invalid",
+        "diagnostic_span": [
+          0,
+          9
+        ],
+        "parsed": null
+      },
+      "query_spelling": null,
+      "source_span": [
+        0,
+        9
+      ],
+      "inherited": "0673 Q29 left",
+      "reason": "Preserve admitted terminal producer refusal.",
+      "sha256": "df9d624992d0915969e44b69da9a9cd04b40631696a8b9a272511f4238db7771"
+    },
+    {
+      "id": "IS18",
+      "input": "p.A11delinsG",
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Invalid",
+      "code": "hgvs_protein_interval_invalid",
+      "producer_calls": 1,
+      "envelope": {
+        "source": "p.A11delinsG",
+        "syntax_version": "21.1.4",
+        "input_bytes": 12,
+        "reference_bytes": null,
+        "disposition": "Invalid",
+        "code": "hgvs_protein_interval_invalid",
+        "diagnostic_span": [
+          0,
+          12
+        ],
+        "parsed": null
+      },
+      "query_spelling": null,
+      "source_span": [
+        0,
+        12
+      ],
+      "inherited": "0673 Q27 left",
+      "reason": "Preserve admitted terminal producer refusal.",
+      "sha256": "0a1d64f641ece8dbf2de83f8a5639d9158b2093fe5dc56dc4db8a4e6a1cf3ed9"
+    },
+    {
+      "id": "IS19",
+      "input": {
+        "concat": [
+          "p.",
+          {
+            "concat": [
+              {
+                "concat": [
+                  "Ala",
+                  {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048567
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "del"
+        ]
+      },
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "code": "hgvs_protein_interval_parsed",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/330/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": {
+        "concat": [
+          "p.",
+          {
+            "concat": [
+              {
+                "concat": [
+                  "Ala",
+                  {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048567
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "del"
+        ]
+      },
+      "reason": "Preflight original and prepared byte lengths; do not invoke selected-style rendering or u32 narrowing.",
+      "sha256": "8583ac1ce457743a294c991832e3acf0ef620f3e3b8581341b10524f15b37101"
+    },
+    {
+      "id": "IS20",
+      "input": {
+        "concat": [
+          "p.A",
+          {
+            "repeat": "1",
+            "count": 1048571
+          },
+          "del"
+        ]
+      },
+      "preparation": "None",
+      "selected": true,
+      "adapter_disposition": "ResourceLimitExceeded",
+      "code": "hgvs_input_limit",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/334/expected"
+      },
+      "producer_calls": 0,
+      "query_spelling": null,
+      "reason": "Preflight original and prepared byte lengths; do not invoke selected-style rendering or u32 narrowing.",
+      "sha256": "1b9262fdf81ef9bee64c22e557b2d7e381143d8c1791645a26045104cde5e858",
+      "nearest_cap_witnesses": [
+        {
+          "input": {
+            "concat": [
+              {
+                "repeat": " ",
+                "count": 1048568
+              },
+              "p.A11del",
+              " "
+            ]
+          },
+          "source_bytes": 1048577,
+          "trimmed": "p.A11del",
+          "prepared_bytes": 8,
+          "preparation": "None",
+          "adapter_disposition": "ResourceLimitExceeded",
+          "code": "hgvs_input_limit",
+          "diagnostic_span": [
+            0,
+            1048577
+          ],
+          "candidate": null,
+          "envelope": null,
+          "query_spelling": null,
+          "producer_calls": 0,
+          "reason": "Original byte cap precedes outer trimming and every candidate allocation."
+        },
+        {
+          "input": {
+            "concat": [
+              "A",
+              {
+                "repeat": "1",
+                "count": 1048571
+              },
+              "del"
+            ]
+          },
+          "source_bytes": 1048575,
+          "trim_offset": 0,
+          "prepared_bytes": 1048577,
+          "preparation": "BarePrefix",
+          "adapter_disposition": "ResourceLimitExceeded",
+          "code": "hgvs_input_limit",
+          "diagnostic_span": null,
+          "candidate": null,
+          "envelope": null,
+          "query_spelling": null,
+          "producer_calls": 0,
+          "reason": "A bounded original can expand past the cap when the synthetic prefix is added; refuse before allocating it."
+        }
+      ]
+    },
+    {
+      "id": "IS21",
+      "input": {
+        "concat": [
+          "p.",
+          {
+            "concat": [
+              {
+                "concat": [
+                  "A",
+                  {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048569
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "del"
+        ]
+      },
+      "preparation": "Identity",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "code": "hgvs_protein_interval_parsed",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/331/expected"
+      },
+      "producer_calls": 1,
+      "query_spelling": {
+        "concat": [
+          "p.",
+          {
+            "concat": [
+              {
+                "concat": [
+                  "A",
+                  {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048569
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "del"
+        ]
+      },
+      "reason": "Preflight original and prepared byte lengths; do not invoke selected-style rendering or u32 narrowing.",
+      "sha256": "82a918e23b8c4ca8ebc5b503d153e9c4e21bce4317b80340ddb15190b4a72f31"
+    },
+    {
+      "id": "IS22",
+      "input": " p.A11del ",
+      "preparation": "Trim",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_calls": 1,
+      "candidate": "p.A11del",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/0/expected"
+      },
+      "trim_offset": 1,
+      "query_spelling": "p.A11del",
+      "source_body_span": [
+        3,
+        9
+      ],
+      "source_location_span": [
+        3,
+        6
+      ],
+      "source_marker_span": [
+        6,
+        9
+      ],
+      "source_whole_candidate_span": [
+        1,
+        9
+      ],
+      "reason": "Retain untrimmed source separately from parser candidate and map body spans back after outer trim.",
+      "sha256": "4e14f8f19ab4b392f895512f60818406a0f8a4e2ac2d1e8457b8b59f1d6bcf86"
+    },
+    {
+      "id": "IS23",
+      "input": "P.A11del",
+      "preparation": "UppercasePrefix",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_calls": 1,
+      "candidate": "p.A11del",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/0/expected"
+      },
+      "trim_offset": 0,
+      "query_spelling": "P.A11del",
+      "source_body_span": [
+        2,
+        8
+      ],
+      "source_location_span": [
+        2,
+        5
+      ],
+      "source_marker_span": [
+        5,
+        8
+      ],
+      "source_whole_candidate_span": [
+        0,
+        8
+      ],
+      "reason": "Replace one uppercase prefix for parsing only; preserve written uppercase prefix in requested identity.",
+      "sha256": "4c74e94df528d4c77810c2fa213c1b20657e0628920315872ce652d4bf677711"
+    },
+    {
+      "id": "IS24",
+      "input": "A11del",
+      "preparation": "BarePrefix",
+      "selected": true,
+      "adapter_disposition": "Checked",
+      "producer_calls": 1,
+      "candidate": "p.A11del",
+      "producer_object": {
+        "revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+        "path": "tests/fixtures/hgvs-protein-interval/cases.json",
+        "json_pointer": "/semantic_cases/0/expected"
+      },
+      "trim_offset": 0,
+      "query_spelling": "A11del",
+      "source_body_span": [
+        0,
+        6
+      ],
+      "source_location_span": [
+        0,
+        3
+      ],
+      "source_marker_span": [
+        3,
+        6
+      ],
+      "source_whole_candidate_span": null,
+      "reason": "Insert one synthetic prefix for parsing only; never claim synthetic prefix bytes came from source.",
+      "sha256": "d0f15ad95cbe43ecda3a39fba0aaa359819e3cd1677c05134a66ff86809834ce"
+    }
+  ],
+  "routing_cases": [
+    {
+      "id": "IR01",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11del"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.A11del",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.A11del",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS01",
+      "transport_during_resolution": 0,
+      "sha256": "c9f4b65637a10514fdb1e1d498cd0e58bb10cade0938888392c25e6c5c94b4e1"
+    },
+    {
+      "id": "IR02",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.Ala11del"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.Ala11del",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.Ala11del",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS02",
+      "transport_during_resolution": 0,
+      "sha256": "f0e59efc2a1915db6f5bee13d48a53d9dd0c27ae6b7855e91c83079929131fc4"
+    },
+    {
+      "id": "IR03",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11dup"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.A11dup",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.A11dup",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS03",
+      "transport_during_resolution": 0,
+      "sha256": "d4886913daca193470b4bbbf3fdaf4027c58ec64a60ff56018e81a65f55b376c"
+    },
+    {
+      "id": "IR04",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.Ala11dup"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.Ala11dup",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.Ala11dup",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS04",
+      "transport_during_resolution": 0,
+      "sha256": "a98552a502f58b0184051a97fa5dc566f8708bfe4de9dc8667863b6b0be14d03"
+    },
+    {
+      "id": "IR05",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11_G12insAS"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.A11_G12insAS",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.A11_G12insAS",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS05",
+      "transport_during_resolution": 0,
+      "sha256": "4adb613afd6d25cdbf7cd33fde36dffbe0d8ab86867fcdd5f05add231c762076"
+    },
+    {
+      "id": "IR06",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.Ala11_Gly12insAlaSer"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.Ala11_Gly12insAlaSer",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.Ala11_Gly12insAlaSer",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS06",
+      "transport_during_resolution": 0,
+      "sha256": "73d7b95c4046cf5432dbbc0b8ea36af36e60544f38c7c6e3fc1b4bbf52a258bb"
+    },
+    {
+      "id": "IR07",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11_G14delinsAS"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.A11_G14delinsAS",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.A11_G14delinsAS",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS07",
+      "transport_during_resolution": 0,
+      "sha256": "4d7ebb0b80576d8ff26e2f18b821c2ba80ff6dbe412d826f7ba886173022f9b0"
+    },
+    {
+      "id": "IR08",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.Ala11_Gly14delinsAlaSer"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.Ala11_Gly14delinsAlaSer",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.Ala11_Gly14delinsAlaSer",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked positional pair",
+      "adapter_row": "IS08",
+      "transport_during_resolution": 0,
+      "sha256": "7848a82b275fb649ef1bfa0aa47c5c0489a254a67c08413200552f56446d0cf8"
+    },
+    {
+      "id": "IR09",
+      "input": {
+        "gene_flag": "GENE",
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "p.A11_G12insV*"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.A11_G12insV*",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.A11_G12insV*",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked change plus gene flag; final * preserved",
+      "adapter_row": "IS12",
+      "transport_during_resolution": 0,
+      "sha256": "b774f19158a51af42d4c13f97f9ea73b62b4ab17609564cf3ba69b9c49ea848b"
+    },
+    {
+      "id": "IR10",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "p.A11del"
+        ]
+      },
+      "expected": {
+        "variant": "Guidance",
+        "guidance": {
+          "query": "p.A11del",
+          "kind": {
+            "ProteinChangeOnly": {
+              "change": "p.A11del"
+            }
+          },
+          "next_commands": [
+            "biomcp search variant --hgvsp 'p.A11del' --limit 10",
+            "biomcp discover 'p.A11del'"
+          ]
+        },
+        "native_guidance_json": {
+          "error": {
+            "code": "not_found",
+            "message": "BioMCP could not map 'p.A11del' to an exact variant without gene context."
+          },
+          "_meta": {
+            "not_found": true,
+            "alias_resolution": {
+              "kind": "protein_change_only",
+              "requested_entity": "variant",
+              "query": "p.A11del",
+              "change": "p.A11del"
+            },
+            "next_commands": [
+              "biomcp search variant --hgvsp 'p.A11del' --limit 10",
+              "biomcp discover 'p.A11del'"
+            ]
+          }
+        },
+        "public_cli_json": {
+          "error": {
+            "code": "not_found",
+            "message": "BioMCP could not map 'p.A11del' to an exact variant without gene context."
+          },
+          "_meta": {
+            "not_found": true,
+            "alias_resolution": {
+              "kind": "protein_change_only",
+              "requested_entity": "variant",
+              "query": "p.A11del",
+              "change": "p.A11del"
+            },
+            "next_commands": [
+              "biomcp search variant --hgvsp 'p.A11del' --limit 10",
+              "biomcp discover 'p.A11del'"
+            ]
+          },
+          "results": []
+        },
+        "public_cli_exit": 1,
+        "public_cli_stderr": ""
+      },
+      "route": "checked standalone guidance",
+      "adapter_row": "IS01",
+      "transport_during_resolution": 0,
+      "sha256": "1f46096aea0240384f2ce519e191986462c497216c82b69fd4844f9727766270"
+    },
+    {
+      "id": "IR11",
+      "input": {
+        "gene_flag": "OTHER",
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11del"
+        ]
+      },
+      "expected": {
+        "variant": "Error",
+        "type": "BioMcpError::InvalidArgument",
+        "message": "Positional \"GENE CHANGE\" conflicts with --gene",
+        "public_cli_json": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "Invalid argument: Positional \"GENE CHANGE\" conflicts with --gene"
+          },
+          "_meta": {
+            "not_found": false
+          },
+          "results": []
+        },
+        "public_cli_exit": 2,
+        "public_cli_stderr": ""
+      },
+      "route": "terminal conflict",
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "sha256": "330743e7732e7b68c9a9c67b5e881fb8f914cd38dd9f0cb0634e05fda884964c"
+    },
+    {
+      "id": "IR12",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": "p.V600E",
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11del"
+        ]
+      },
+      "expected": {
+        "variant": "Error",
+        "type": "BioMcpError::InvalidArgument",
+        "message": "Positional \"GENE CHANGE\" conflicts with --hgvsp",
+        "public_cli_json": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "Invalid argument: Positional \"GENE CHANGE\" conflicts with --hgvsp"
+          },
+          "_meta": {
+            "not_found": false
+          },
+          "results": []
+        },
+        "public_cli_exit": 2,
+        "public_cli_stderr": ""
+      },
+      "route": "terminal conflict",
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "sha256": "263da4de83e92771a8e1e50f8143ab8de04bf5d53a838c7f2e0af9484b6857b2"
+    },
+    {
+      "id": "IR13",
+      "input": {
+        "gene_flag": "GENE",
+        "hgvsp_flag": "p.V600E",
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "p.A11del"
+        ]
+      },
+      "expected": {
+        "variant": "Error",
+        "type": "BioMcpError::InvalidArgument",
+        "message": "Positional protein change conflicts with --hgvsp",
+        "public_cli_json": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "Invalid argument: Positional protein change conflicts with --hgvsp"
+          },
+          "_meta": {
+            "not_found": false
+          },
+          "results": []
+        },
+        "public_cli_exit": 2,
+        "public_cli_stderr": ""
+      },
+      "route": "terminal conflict",
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "sha256": "9c01479f954f8e8c74f80fa19760a3b637b820644517447f1d28866b0dc455e8"
+    },
+    {
+      "id": "IR14",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11_G13insS"
+        ]
+      },
+      "expected": {
+        "variant": "Error",
+        "type": "BioMcpError::InvalidArgument",
+        "message": "Positional protein interval cannot be searched",
+        "public_cli_json": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "Invalid argument: Positional protein interval cannot be searched"
+          },
+          "_meta": {
+            "not_found": false
+          },
+          "results": []
+        },
+        "public_cli_exit": 2,
+        "public_cli_stderr": ""
+      },
+      "route": "terminal selected Invalid",
+      "producer_calls": 1,
+      "transport_during_resolution": 0,
+      "sha256": "0f277a1b355624073fcbf018798e8de4f52328d8f02fbe19e67a88627a0e6c50"
+    },
+    {
+      "id": "IR15",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "gene p.A11del"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": null,
+          "hgvsp": null,
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": "gene p.A11del",
+          "requested_identity": null
+        }
+      },
+      "route": "retained condition fallback; no new interval selection",
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "sha256": "7f5313b9c6e0d810f87a387263a6fa9aa9275c474ba4051bef1a7d58aeb754af"
+    },
+    {
+      "id": "IR16",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE p.A11del extra"
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": null,
+          "hgvsp": null,
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": "GENE p.A11del extra",
+          "requested_identity": null
+        }
+      },
+      "route": "retained condition fallback; no new interval selection",
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "sha256": "110050140bf7405ae4e412cf705e83685bf4b886906342d84d92daf83eb9e1ef"
+    },
+    {
+      "id": "IR17",
+      "input": {
+        "gene_flag": "GENE",
+        "hgvsp_flag": "p.A11_G12insV*",
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": []
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "A11_G12insVX",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.A11_G12insV*",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "retained flag-only standard constructor; * to X",
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "sha256": "36bc69cd71db5455ffdf78fa710938c2ce3e041467f62d4e7834ea07917a9db1"
+    },
+    {
+      "id": "IR18",
+      "input": {
+        "entrypoint": "parse_variant_id",
+        "id": "p.A11del"
+      },
+      "expected": {
+        "variant": "Error",
+        "type": "BioMcpError::InvalidArgument",
+        "message": "Unrecognized variant format: 'p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu",
+        "public_cli_json": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "Invalid argument: Unrecognized variant format: 'p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+          },
+          "_meta": {
+            "not_found": false
+          },
+          "results": []
+        },
+        "public_cli_exit": 2,
+        "public_cli_stderr": ""
+      },
+      "route": "retained exact-get refusal, no guidance addition",
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "sha256": "3091583a392adbc9a07f6d5ae592f9d1fd53c736a7f0e0825dc2df29854b1f31"
+    },
+    {
+      "id": "IR19",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "p.A11_G12insV*"
+        ]
+      },
+      "expected": {
+        "variant": "Guidance",
+        "guidance": {
+          "query": "p.A11_G12insV*",
+          "kind": {
+            "ProteinChangeOnly": {
+              "change": "p.A11_G12insV*"
+            }
+          },
+          "next_commands": [
+            "biomcp search variant --help"
+          ]
+        },
+        "native_guidance_json": {
+          "error": {
+            "code": "not_found",
+            "message": "BioMCP could not map 'p.A11_G12insV*' to an exact variant without gene context."
+          },
+          "_meta": {
+            "not_found": true,
+            "alias_resolution": {
+              "kind": "protein_change_only",
+              "requested_entity": "variant",
+              "query": "p.A11_G12insV*",
+              "change": "p.A11_G12insV*"
+            },
+            "next_commands": [
+              "biomcp search variant --help"
+            ]
+          }
+        },
+        "public_cli_json": {
+          "error": {
+            "code": "not_found",
+            "message": "BioMCP could not map 'p.A11_G12insV*' to an exact variant without gene context."
+          },
+          "_meta": {
+            "not_found": true,
+            "alias_resolution": {
+              "kind": "protein_change_only",
+              "requested_entity": "variant",
+              "query": "p.A11_G12insV*",
+              "change": "p.A11_G12insV*"
+            },
+            "next_commands": [
+              "biomcp search variant --help"
+            ]
+          },
+          "results": []
+        },
+        "public_cli_exit": 1,
+        "public_cli_stderr": ""
+      },
+      "route": "checked final-* standalone guidance; only safe search help is emitted",
+      "adapter_row": "IS12",
+      "transport_during_resolution": 0,
+      "sha256": "64ad94f41e9c7cea6be7fd597fd2e9b8b8999d8d4639dd558e02e28227960cf1",
+      "expected_requests": [],
+      "bounded_search_seam": {
+        "entrypoint": "cli::variant::handle_search_bounded",
+        "args": {
+          "gene": null,
+          "hgvsp": null,
+          "significance": null,
+          "max_frequency": null,
+          "min_cadd": null,
+          "consequence": null,
+          "review_status": null,
+          "population": null,
+          "revel_min": null,
+          "gerp_min": null,
+          "tumor_site": null,
+          "condition": null,
+          "impact": null,
+          "has": null,
+          "missing": null,
+          "therapy": null,
+          "positional_query": [
+            "p.A11_G12insV*"
+          ],
+          "lof": false,
+          "limit": 5,
+          "offset": 0
+        },
+        "json": true,
+        "alias_suggestions_as_json": false,
+        "expected_result": {
+          "kind": "Ok",
+          "exit_code": 1,
+          "decoded_stdout": {
+            "error": {
+              "code": "not_found",
+              "message": "BioMCP could not map 'p.A11_G12insV*' to an exact variant without gene context."
+            },
+            "_meta": {
+              "not_found": true,
+              "alias_resolution": {
+                "kind": "protein_change_only",
+                "requested_entity": "variant",
+                "query": "p.A11_G12insV*",
+                "change": "p.A11_G12insV*"
+              },
+              "next_commands": [
+                "biomcp search variant --help"
+              ]
+            }
+          },
+          "stderr": null
+        },
+        "expected_requests": []
+      },
+      "reason": "F1: the retained flag normalizer changes final * to X. Do not emit a command that forwards this assertion through that path or an unproved discover path; ask no inferred gene, emit no placeholder command."
+    },
+    {
+      "id": "IR20",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE",
+          " p.A11del "
+        ]
+      },
+      "expected": {
+        "variant": "Standard",
+        "query": {
+          "gene": "GENE",
+          "hgvsp": "p.A11del",
+          "hgvsc": null,
+          "rsid": null,
+          "protein_alias": null,
+          "consequence": null,
+          "condition": null,
+          "requested_identity": {
+            "gene": "GENE",
+            "protein_change": "p.A11del",
+            "coding_change": null,
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          }
+        }
+      },
+      "route": "checked separate GENE/CHANGE operands with outer whitespace retained before trim/join",
+      "adapter_row": "IS22",
+      "transport_during_resolution": 0,
+      "sha256": "8e3e5a2b3ad00df98d971a62d4a67a291c521ad0fca96f8548a7a6a6e8b16964",
+      "reason": "F2: explicit split operands success control, preserving original CHANGE as the contract input; returned plan equals the quoted-pair control. No injected observer is proposed. IR21/IR22 make resolver pre-trim order observable through the bounded terminal result and request ledger; IS22 separately retains complete source/span mapping.",
+      "original_change_operand": {
+        "source": " p.A11del ",
+        "source_bytes": 10,
+        "trimmed": "p.A11del",
+        "trim_offset": 1,
+        "preparation": "Trim",
+        "candidate": "p.A11del",
+        "candidate_bytes": 8,
+        "adapter_disposition": "Checked",
+        "producer_calls": 1,
+        "query_spelling": "p.A11del",
+        "source_body_span": [
+          3,
+          9
+        ],
+        "source_location_span": [
+          3,
+          6
+        ],
+        "source_marker_span": [
+          6,
+          9
+        ],
+        "source_whole_candidate_span": [
+          1,
+          9
+        ]
+      }
+    },
+    {
+      "id": "IR21",
+      "input": {
+        "gene_flag": null,
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          "GENE",
+          {
+            "concat": [
+              {
+                "repeat": " ",
+                "count": 1048568
+              },
+              "p.A11del",
+              " "
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "variant": "Error",
+        "type": "BioMcpError::InvalidArgument",
+        "message": "Positional protein interval cannot be searched",
+        "public_cli_json": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "Invalid argument: Positional protein interval cannot be searched"
+          },
+          "_meta": {
+            "not_found": false
+          },
+          "results": []
+        },
+        "public_cli_exit": 2,
+        "public_cli_stderr": ""
+      },
+      "route": "terminal original-byte resource refusal before positional trim/join; split GENE/CHANGE",
+      "adapter_row": "IS20/nearest_cap_witnesses/0",
+      "expected_adapter_observation": {
+        "source_recipe": {
+          "concat": [
+            {
+              "repeat": " ",
+              "count": 1048568
+            },
+            "p.A11del",
+            " "
+          ]
+        },
+        "source_bytes": 1048577,
+        "trimmed": "p.A11del",
+        "preparation": "None",
+        "candidate_bytes": null,
+        "adapter_disposition": "ResourceLimitExceeded",
+        "code": "hgvs_input_limit",
+        "diagnostic_span": [
+          0,
+          1048577
+        ],
+        "candidate": null,
+        "envelope": null,
+        "query_spelling": null,
+        "producer_calls": 0,
+        "counterfactual_prepared_bytes": 8
+      },
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "expected_requests": [],
+      "bounded_search_seam": {
+        "entrypoint": "cli::variant::handle_search_bounded",
+        "args": {
+          "gene": null,
+          "hgvsp": null,
+          "significance": null,
+          "max_frequency": null,
+          "min_cadd": null,
+          "consequence": null,
+          "review_status": null,
+          "population": null,
+          "revel_min": null,
+          "gerp_min": null,
+          "tumor_site": null,
+          "condition": null,
+          "impact": null,
+          "has": null,
+          "missing": null,
+          "therapy": null,
+          "positional_query": [
+            "GENE",
+            {
+              "concat": [
+                {
+                  "repeat": " ",
+                  "count": 1048568
+                },
+                "p.A11del",
+                " "
+              ]
+            }
+          ],
+          "lof": false,
+          "limit": 5,
+          "offset": 0
+        },
+        "json": true,
+        "alias_suggestions_as_json": false,
+        "expected_result": {
+          "kind": "Err",
+          "type": "BioMcpError::InvalidArgument",
+          "message": "Positional protein interval cannot be searched"
+        },
+        "expected_requests": []
+      },
+      "reason": "F2: expand the exact IS20 whitespace recipe as one argument at the borrowed bounded search seam, without CLI/OS argument-size or command-line quoting limits. Trimming first reduces it to eight valid bytes and would search; the required typed terminal refusal and empty request ledger must fail that mutant.",
+      "sha256": "b2655641747a095068b79b29b3aa85eec2bdac1c25e37498007c52acc8843f63"
+    },
+    {
+      "id": "IR22",
+      "input": {
+        "gene_flag": "GENE",
+        "hgvsp_flag": null,
+        "consequence_flag": null,
+        "condition_flag": null,
+        "positional_tokens": [
+          {
+            "concat": [
+              {
+                "repeat": " ",
+                "count": 1048568
+              },
+              "p.A11del",
+              " "
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "variant": "Error",
+        "type": "BioMcpError::InvalidArgument",
+        "message": "Positional protein interval cannot be searched",
+        "public_cli_json": {
+          "error": {
+            "code": "invalid_argument",
+            "message": "Invalid argument: Positional protein interval cannot be searched"
+          },
+          "_meta": {
+            "not_found": false
+          },
+          "results": []
+        },
+        "public_cli_exit": 2,
+        "public_cli_stderr": ""
+      },
+      "route": "terminal original-byte resource refusal before positional trim/join; single CHANGE plus --gene",
+      "adapter_row": "IS20/nearest_cap_witnesses/0",
+      "expected_adapter_observation": {
+        "source_recipe": {
+          "concat": [
+            {
+              "repeat": " ",
+              "count": 1048568
+            },
+            "p.A11del",
+            " "
+          ]
+        },
+        "source_bytes": 1048577,
+        "trimmed": "p.A11del",
+        "preparation": "None",
+        "candidate_bytes": null,
+        "adapter_disposition": "ResourceLimitExceeded",
+        "code": "hgvs_input_limit",
+        "diagnostic_span": [
+          0,
+          1048577
+        ],
+        "candidate": null,
+        "envelope": null,
+        "query_spelling": null,
+        "producer_calls": 0,
+        "counterfactual_prepared_bytes": 8
+      },
+      "producer_calls": 0,
+      "transport_during_resolution": 0,
+      "expected_requests": [],
+      "bounded_search_seam": {
+        "entrypoint": "cli::variant::handle_search_bounded",
+        "args": {
+          "gene": "GENE",
+          "hgvsp": null,
+          "significance": null,
+          "max_frequency": null,
+          "min_cadd": null,
+          "consequence": null,
+          "review_status": null,
+          "population": null,
+          "revel_min": null,
+          "gerp_min": null,
+          "tumor_site": null,
+          "condition": null,
+          "impact": null,
+          "has": null,
+          "missing": null,
+          "therapy": null,
+          "positional_query": [
+            {
+              "concat": [
+                {
+                  "repeat": " ",
+                  "count": 1048568
+                },
+                "p.A11del",
+                " "
+              ]
+            }
+          ],
+          "lof": false,
+          "limit": 5,
+          "offset": 0
+        },
+        "json": true,
+        "alias_suggestions_as_json": false,
+        "expected_result": {
+          "kind": "Err",
+          "type": "BioMcpError::InvalidArgument",
+          "message": "Positional protein interval cannot be searched"
+        },
+        "expected_requests": []
+      },
+      "reason": "F2: expand the exact IS20 whitespace recipe as one argument at the borrowed bounded search seam, without CLI/OS argument-size or command-line quoting limits. Trimming first reduces it to eight valid bytes and would search; the required typed terminal refusal and empty request ledger must fail that mutant.",
+      "sha256": "f882abc80f1b0307d9d346297f9704b5b3290e2c23907a7137ed1ec33ad67a3a"
+    }
+  ],
+  "transport_cases": [
+    {
+      "id": "IT01",
+      "channel": "cli",
+      "input": {
+        "argv": [
+          "search",
+          "variant",
+          "GENE p.A11del",
+          "--limit",
+          "5",
+          "--json"
+        ]
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11del"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11del"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11del\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11del"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11del",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11del"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11del",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11del",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": 0,
+      "expected_stderr": "",
+      "expected_mcp": null,
+      "sha256": "6248d87cb34e3fb14e7e255cc71cb62265abaa7be1431ffb1e7fded7cf9eea9c"
+    },
+    {
+      "id": "IT02",
+      "channel": "mcp",
+      "input": {
+        "tool": "search",
+        "arguments": {
+          "entity": "variant",
+          "query": "GENE p.A11del",
+          "limit": 5,
+          "json": true
+        }
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11del"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11del"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11del\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11del"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11del",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11del"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11del",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11del",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": null,
+      "expected_stderr": null,
+      "expected_mcp": {
+        "content": [
+          {
+            "type": "text",
+            "decoded_json": {
+              "_meta": {
+                "next_commands": [
+                  "biomcp get variant \"chr1:g.19C>T\"",
+                  "biomcp get gene GENE",
+                  "biomcp list variant"
+                ]
+              },
+              "count": 1,
+              "diagnostics": [],
+              "filter_evaluation": {
+                "gene": "evaluated",
+                "hgvsp": "evaluated"
+              },
+              "pagination": {
+                "has_more": false,
+                "limit": 5,
+                "next_page_token": null,
+                "offset": 0,
+                "returned": 1,
+                "total": 1
+              },
+              "requested_variant": {
+                "gene": "GENE",
+                "protein_change": "p.A11del"
+              },
+              "resolution": {
+                "exhaustive": true,
+                "normalized_aliases": {
+                  "coding_changes": [],
+                  "genomic_ids": [],
+                  "protein_changes": [],
+                  "rsids": []
+                },
+                "status": "resolved"
+              },
+              "results": [
+                {
+                  "id": "chr1:g.19C>T",
+                  "genome_build": "GRCh37",
+                  "genome_build_provenance": "MyVariant.info provider default",
+                  "gene": "GENE",
+                  "hgvs_p": "NP_1:p.Ala11del",
+                  "hgvs_c": "c.19C>T",
+                  "transcript": "NM_012345.7",
+                  "clinvar_stars": null,
+                  "revel": null,
+                  "gerp": null,
+                  "source_identity": {
+                    "genomic_id": "chr1:g.19C>T",
+                    "genome_build": "GRCh37",
+                    "genes": [
+                      "GENE"
+                    ],
+                    "protein_changes": [
+                      "NP_1:p.Ala11del"
+                    ],
+                    "coding_changes": [],
+                    "rsids": []
+                  },
+                  "matched_alias": "NP_1:p.Ala11del",
+                  "transcript_annotations_complete": true,
+                  "transcript_annotations": [
+                    {
+                      "source": "myvariant.info/snpeff.ann",
+                      "gene": "GENE",
+                      "transcript": "NM_012345.7",
+                      "hgvs_c": "c.19C>T",
+                      "hgvs_p": "NP_1:p.Ala11del",
+                      "roles": [
+                        "displayed",
+                        "matched"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "isError": false
+      },
+      "sha256": "1b92da96cc807ea3ef2f60eca3b5f8d575c5e23686fe6026822b5dd2c053a955"
+    },
+    {
+      "id": "IT03",
+      "channel": "cli",
+      "input": {
+        "argv": [
+          "search",
+          "variant",
+          "GENE p.A11dup",
+          "--limit",
+          "5",
+          "--json"
+        ]
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11dup"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11dup"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11dup\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11dup"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11dup",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11dup"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11dup",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11dup",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": 0,
+      "expected_stderr": "",
+      "expected_mcp": null,
+      "sha256": "3ba46bd7fe3fab7d5823746bf90c0143f4ec87a997ab0bc4b15d1af2974ab402"
+    },
+    {
+      "id": "IT04",
+      "channel": "mcp",
+      "input": {
+        "tool": "search",
+        "arguments": {
+          "entity": "variant",
+          "query": "GENE p.A11dup",
+          "limit": 5,
+          "json": true
+        }
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11dup"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11dup"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11dup\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11dup"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11dup",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11dup"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11dup",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11dup",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": null,
+      "expected_stderr": null,
+      "expected_mcp": {
+        "content": [
+          {
+            "type": "text",
+            "decoded_json": {
+              "_meta": {
+                "next_commands": [
+                  "biomcp get variant \"chr1:g.19C>T\"",
+                  "biomcp get gene GENE",
+                  "biomcp list variant"
+                ]
+              },
+              "count": 1,
+              "diagnostics": [],
+              "filter_evaluation": {
+                "gene": "evaluated",
+                "hgvsp": "evaluated"
+              },
+              "pagination": {
+                "has_more": false,
+                "limit": 5,
+                "next_page_token": null,
+                "offset": 0,
+                "returned": 1,
+                "total": 1
+              },
+              "requested_variant": {
+                "gene": "GENE",
+                "protein_change": "p.A11dup"
+              },
+              "resolution": {
+                "exhaustive": true,
+                "normalized_aliases": {
+                  "coding_changes": [],
+                  "genomic_ids": [],
+                  "protein_changes": [],
+                  "rsids": []
+                },
+                "status": "resolved"
+              },
+              "results": [
+                {
+                  "id": "chr1:g.19C>T",
+                  "genome_build": "GRCh37",
+                  "genome_build_provenance": "MyVariant.info provider default",
+                  "gene": "GENE",
+                  "hgvs_p": "NP_1:p.Ala11dup",
+                  "hgvs_c": "c.19C>T",
+                  "transcript": "NM_012345.7",
+                  "clinvar_stars": null,
+                  "revel": null,
+                  "gerp": null,
+                  "source_identity": {
+                    "genomic_id": "chr1:g.19C>T",
+                    "genome_build": "GRCh37",
+                    "genes": [
+                      "GENE"
+                    ],
+                    "protein_changes": [
+                      "NP_1:p.Ala11dup"
+                    ],
+                    "coding_changes": [],
+                    "rsids": []
+                  },
+                  "matched_alias": "NP_1:p.Ala11dup",
+                  "transcript_annotations_complete": true,
+                  "transcript_annotations": [
+                    {
+                      "source": "myvariant.info/snpeff.ann",
+                      "gene": "GENE",
+                      "transcript": "NM_012345.7",
+                      "hgvs_c": "c.19C>T",
+                      "hgvs_p": "NP_1:p.Ala11dup",
+                      "roles": [
+                        "displayed",
+                        "matched"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "isError": false
+      },
+      "sha256": "fa312871265f1e735ac97bcce451244303ba834c4d62919aed295ec2b5edc423"
+    },
+    {
+      "id": "IT05",
+      "channel": "cli",
+      "input": {
+        "argv": [
+          "search",
+          "variant",
+          "GENE p.A11_G12insV*",
+          "--limit",
+          "5",
+          "--json"
+        ]
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11_Gly12insValTer"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly12insValTer"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11_G12insV\\*\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11_G12insV*"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11_Gly12insValTer",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11_Gly12insValTer"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11_Gly12insValTer",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly12insValTer",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": 0,
+      "expected_stderr": "",
+      "expected_mcp": null,
+      "sha256": "7f8e109d6e01e92b6e3ff95559f7bd384a42b8260ad2aaec57447a935c81d045"
+    },
+    {
+      "id": "IT06",
+      "channel": "mcp",
+      "input": {
+        "tool": "search",
+        "arguments": {
+          "entity": "variant",
+          "query": "GENE p.A11_G12insV*",
+          "limit": 5,
+          "json": true
+        }
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11_Gly12insValTer"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly12insValTer"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11_G12insV\\*\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11_G12insV*"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11_Gly12insValTer",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11_Gly12insValTer"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11_Gly12insValTer",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly12insValTer",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": null,
+      "expected_stderr": null,
+      "expected_mcp": {
+        "content": [
+          {
+            "type": "text",
+            "decoded_json": {
+              "_meta": {
+                "next_commands": [
+                  "biomcp get variant \"chr1:g.19C>T\"",
+                  "biomcp get gene GENE",
+                  "biomcp list variant"
+                ]
+              },
+              "count": 1,
+              "diagnostics": [],
+              "filter_evaluation": {
+                "gene": "evaluated",
+                "hgvsp": "evaluated"
+              },
+              "pagination": {
+                "has_more": false,
+                "limit": 5,
+                "next_page_token": null,
+                "offset": 0,
+                "returned": 1,
+                "total": 1
+              },
+              "requested_variant": {
+                "gene": "GENE",
+                "protein_change": "p.A11_G12insV*"
+              },
+              "resolution": {
+                "exhaustive": true,
+                "normalized_aliases": {
+                  "coding_changes": [],
+                  "genomic_ids": [],
+                  "protein_changes": [],
+                  "rsids": []
+                },
+                "status": "resolved"
+              },
+              "results": [
+                {
+                  "id": "chr1:g.19C>T",
+                  "genome_build": "GRCh37",
+                  "genome_build_provenance": "MyVariant.info provider default",
+                  "gene": "GENE",
+                  "hgvs_p": "NP_1:p.Ala11_Gly12insValTer",
+                  "hgvs_c": "c.19C>T",
+                  "transcript": "NM_012345.7",
+                  "clinvar_stars": null,
+                  "revel": null,
+                  "gerp": null,
+                  "source_identity": {
+                    "genomic_id": "chr1:g.19C>T",
+                    "genome_build": "GRCh37",
+                    "genes": [
+                      "GENE"
+                    ],
+                    "protein_changes": [
+                      "NP_1:p.Ala11_Gly12insValTer"
+                    ],
+                    "coding_changes": [],
+                    "rsids": []
+                  },
+                  "matched_alias": "NP_1:p.Ala11_Gly12insValTer",
+                  "transcript_annotations_complete": true,
+                  "transcript_annotations": [
+                    {
+                      "source": "myvariant.info/snpeff.ann",
+                      "gene": "GENE",
+                      "transcript": "NM_012345.7",
+                      "hgvs_c": "c.19C>T",
+                      "hgvs_p": "NP_1:p.Ala11_Gly12insValTer",
+                      "roles": [
+                        "displayed",
+                        "matched"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "isError": false
+      },
+      "sha256": "714991eab10763eaa283ad3683397c2b51e49c63ab21ca3fd35a57d7757b2596"
+    },
+    {
+      "id": "IT07",
+      "channel": "cli",
+      "input": {
+        "argv": [
+          "search",
+          "variant",
+          "GENE p.A11_G14delinsAS",
+          "--limit",
+          "5",
+          "--json"
+        ]
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11_Gly14delinsAlaSer"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11_G14delinsAS\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11_G14delinsAS"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11_Gly14delinsAlaSer"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11_Gly14delinsAlaSer",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": 0,
+      "expected_stderr": "",
+      "expected_mcp": null,
+      "sha256": "ac5aaa0e7d9a2139ed5b32707014d5729f1fb7b4e2cf7fc825078da011c7e3ab"
+    },
+    {
+      "id": "IT08",
+      "channel": "mcp",
+      "input": {
+        "tool": "search",
+        "arguments": {
+          "entity": "variant",
+          "query": "GENE p.A11_G14delinsAS",
+          "limit": 5,
+          "json": true
+        }
+      },
+      "stub_response": {
+        "total": 1,
+        "hits": [
+          {
+            "_id": "chr1:g.19C>T",
+            "dbnsfp": {
+              "genename": "GENE",
+              "hgvsp": "NP_1:p.Ala11_Gly14delinsAlaSer"
+            },
+            "snpeff": {
+              "ann": {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer"
+              }
+            }
+          }
+        ]
+      },
+      "expected_requests": [
+        {
+          "method": "GET",
+          "path": "/query",
+          "query_pairs": [
+            [
+              "q",
+              "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11_G14delinsAS\""
+            ],
+            [
+              "size",
+              "50"
+            ],
+            [
+              "from",
+              "0"
+            ],
+            [
+              "fields",
+              "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "expected_payload": {
+        "_meta": {
+          "next_commands": [
+            "biomcp get variant \"chr1:g.19C>T\"",
+            "biomcp get gene GENE",
+            "biomcp list variant"
+          ]
+        },
+        "count": 1,
+        "diagnostics": [],
+        "filter_evaluation": {
+          "gene": "evaluated",
+          "hgvsp": "evaluated"
+        },
+        "pagination": {
+          "has_more": false,
+          "limit": 5,
+          "next_page_token": null,
+          "offset": 0,
+          "returned": 1,
+          "total": 1
+        },
+        "requested_variant": {
+          "gene": "GENE",
+          "protein_change": "p.A11_G14delinsAS"
+        },
+        "resolution": {
+          "exhaustive": true,
+          "normalized_aliases": {
+            "coding_changes": [],
+            "genomic_ids": [],
+            "protein_changes": [],
+            "rsids": []
+          },
+          "status": "resolved"
+        },
+        "results": [
+          {
+            "id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genome_build_provenance": "MyVariant.info provider default",
+            "gene": "GENE",
+            "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer",
+            "hgvs_c": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "clinvar_stars": null,
+            "revel": null,
+            "gerp": null,
+            "source_identity": {
+              "genomic_id": "chr1:g.19C>T",
+              "genome_build": "GRCh37",
+              "genes": [
+                "GENE"
+              ],
+              "protein_changes": [
+                "NP_1:p.Ala11_Gly14delinsAlaSer"
+              ],
+              "coding_changes": [],
+              "rsids": []
+            },
+            "matched_alias": "NP_1:p.Ala11_Gly14delinsAlaSer",
+            "transcript_annotations_complete": true,
+            "transcript_annotations": [
+              {
+                "source": "myvariant.info/snpeff.ann",
+                "gene": "GENE",
+                "transcript": "NM_012345.7",
+                "hgvs_c": "c.19C>T",
+                "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer",
+                "roles": [
+                  "displayed",
+                  "matched"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected_exit": null,
+      "expected_stderr": null,
+      "expected_mcp": {
+        "content": [
+          {
+            "type": "text",
+            "decoded_json": {
+              "_meta": {
+                "next_commands": [
+                  "biomcp get variant \"chr1:g.19C>T\"",
+                  "biomcp get gene GENE",
+                  "biomcp list variant"
+                ]
+              },
+              "count": 1,
+              "diagnostics": [],
+              "filter_evaluation": {
+                "gene": "evaluated",
+                "hgvsp": "evaluated"
+              },
+              "pagination": {
+                "has_more": false,
+                "limit": 5,
+                "next_page_token": null,
+                "offset": 0,
+                "returned": 1,
+                "total": 1
+              },
+              "requested_variant": {
+                "gene": "GENE",
+                "protein_change": "p.A11_G14delinsAS"
+              },
+              "resolution": {
+                "exhaustive": true,
+                "normalized_aliases": {
+                  "coding_changes": [],
+                  "genomic_ids": [],
+                  "protein_changes": [],
+                  "rsids": []
+                },
+                "status": "resolved"
+              },
+              "results": [
+                {
+                  "id": "chr1:g.19C>T",
+                  "genome_build": "GRCh37",
+                  "genome_build_provenance": "MyVariant.info provider default",
+                  "gene": "GENE",
+                  "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer",
+                  "hgvs_c": "c.19C>T",
+                  "transcript": "NM_012345.7",
+                  "clinvar_stars": null,
+                  "revel": null,
+                  "gerp": null,
+                  "source_identity": {
+                    "genomic_id": "chr1:g.19C>T",
+                    "genome_build": "GRCh37",
+                    "genes": [
+                      "GENE"
+                    ],
+                    "protein_changes": [
+                      "NP_1:p.Ala11_Gly14delinsAlaSer"
+                    ],
+                    "coding_changes": [],
+                    "rsids": []
+                  },
+                  "matched_alias": "NP_1:p.Ala11_Gly14delinsAlaSer",
+                  "transcript_annotations_complete": true,
+                  "transcript_annotations": [
+                    {
+                      "source": "myvariant.info/snpeff.ann",
+                      "gene": "GENE",
+                      "transcript": "NM_012345.7",
+                      "hgvs_c": "c.19C>T",
+                      "hgvs_p": "NP_1:p.Ala11_Gly14delinsAlaSer",
+                      "roles": [
+                        "displayed",
+                        "matched"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "isError": false
+      },
+      "sha256": "882a77f12229b43fd0838dd26f57bcae8e0cd226b6a169689607f5cbd91fd3cd"
+    }
+  ],
+  "producer_objects": {
+    "/semantic_cases/0/expected": {
+      "source": "p.A11del",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 8,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Point",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              3
+            ],
+            "position_span": [
+              3,
+              5
+            ]
+          },
+          "end": null
+        },
+        "edit": {
+          "kind": "deletion",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            8
+          ],
+          "reference": null,
+          "location": [
+            2,
+            5
+          ],
+          "marker": [
+            5,
+            8
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11del",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11del",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 8,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  8
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  5
+                ],
+                "marker": [
+                  5,
+                  8
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11del",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11del",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 10,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  10
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  7
+                ],
+                "marker": [
+                  7,
+                  10
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/1/expected": {
+      "source": "p.Ala11del",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 10,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Point",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              7
+            ]
+          },
+          "end": null
+        },
+        "edit": {
+          "kind": "deletion",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            10
+          ],
+          "reference": null,
+          "location": [
+            2,
+            7
+          ],
+          "marker": [
+            7,
+            10
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11del",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11del",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 8,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  8
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  5
+                ],
+                "marker": [
+                  5,
+                  8
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11del",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11del",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 10,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  10
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  7
+                ],
+                "marker": [
+                  7,
+                  10
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/2/expected": {
+      "source": "p.A11dup",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 8,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Point",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              3
+            ],
+            "position_span": [
+              3,
+              5
+            ]
+          },
+          "end": null
+        },
+        "edit": {
+          "kind": "duplication",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            8
+          ],
+          "reference": null,
+          "location": [
+            2,
+            5
+          ],
+          "marker": [
+            5,
+            8
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11dup",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11dup",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 8,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "duplication",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  8
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  5
+                ],
+                "marker": [
+                  5,
+                  8
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11dup",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11dup",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 10,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "duplication",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  10
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  7
+                ],
+                "marker": [
+                  7,
+                  10
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/3/expected": {
+      "source": "p.Ala11dup",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 10,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Point",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              7
+            ]
+          },
+          "end": null
+        },
+        "edit": {
+          "kind": "duplication",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            10
+          ],
+          "reference": null,
+          "location": [
+            2,
+            7
+          ],
+          "marker": [
+            7,
+            10
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11dup",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11dup",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 8,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "duplication",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  8
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  5
+                ],
+                "marker": [
+                  5,
+                  8
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11dup",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11dup",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 10,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "duplication",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  10
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  7
+                ],
+                "marker": [
+                  7,
+                  10
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/4/expected": {
+      "source": "p.A11_G12insAS",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 14,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "InsertionFlanks",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              3
+            ],
+            "position_span": [
+              3,
+              5
+            ]
+          },
+          "end": {
+            "residue": "Gly",
+            "position": "12",
+            "position_u32": {
+              "value": 12,
+              "error": null
+            },
+            "residue_span": [
+              6,
+              7
+            ],
+            "position_span": [
+              7,
+              9
+            ]
+          }
+        },
+        "edit": {
+          "kind": "insertion",
+          "inserted": [
+            "Ala",
+            "Ser"
+          ]
+        },
+        "spans": {
+          "whole": [
+            0,
+            14
+          ],
+          "reference": null,
+          "location": [
+            2,
+            9
+          ],
+          "marker": [
+            9,
+            12
+          ],
+          "sequence": [
+            12,
+            14
+          ],
+          "inserted_residues": [
+            [
+              12,
+              13
+            ],
+            [
+              13,
+              14
+            ]
+          ]
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11_G12insAS",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11_G12insAS",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 14,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "InsertionFlanks",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "12",
+                  "position_u32": {
+                    "value": 12,
+                    "error": null
+                  },
+                  "residue_span": [
+                    6,
+                    7
+                  ],
+                  "position_span": [
+                    7,
+                    9
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "insertion",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  14
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  9
+                ],
+                "marker": [
+                  9,
+                  12
+                ],
+                "sequence": [
+                  12,
+                  14
+                ],
+                "inserted_residues": [
+                  [
+                    12,
+                    13
+                  ],
+                  [
+                    13,
+                    14
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11_Gly12insAlaSer",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11_Gly12insAlaSer",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 22,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "InsertionFlanks",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "12",
+                  "position_u32": {
+                    "value": 12,
+                    "error": null
+                  },
+                  "residue_span": [
+                    8,
+                    11
+                  ],
+                  "position_span": [
+                    11,
+                    13
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "insertion",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  22
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  13
+                ],
+                "marker": [
+                  13,
+                  16
+                ],
+                "sequence": [
+                  16,
+                  22
+                ],
+                "inserted_residues": [
+                  [
+                    16,
+                    19
+                  ],
+                  [
+                    19,
+                    22
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/5/expected": {
+      "source": "p.Ala11_Gly12insAlaSer",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 22,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "InsertionFlanks",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              7
+            ]
+          },
+          "end": {
+            "residue": "Gly",
+            "position": "12",
+            "position_u32": {
+              "value": 12,
+              "error": null
+            },
+            "residue_span": [
+              8,
+              11
+            ],
+            "position_span": [
+              11,
+              13
+            ]
+          }
+        },
+        "edit": {
+          "kind": "insertion",
+          "inserted": [
+            "Ala",
+            "Ser"
+          ]
+        },
+        "spans": {
+          "whole": [
+            0,
+            22
+          ],
+          "reference": null,
+          "location": [
+            2,
+            13
+          ],
+          "marker": [
+            13,
+            16
+          ],
+          "sequence": [
+            16,
+            22
+          ],
+          "inserted_residues": [
+            [
+              16,
+              19
+            ],
+            [
+              19,
+              22
+            ]
+          ]
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11_G12insAS",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11_G12insAS",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 14,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "InsertionFlanks",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "12",
+                  "position_u32": {
+                    "value": 12,
+                    "error": null
+                  },
+                  "residue_span": [
+                    6,
+                    7
+                  ],
+                  "position_span": [
+                    7,
+                    9
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "insertion",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  14
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  9
+                ],
+                "marker": [
+                  9,
+                  12
+                ],
+                "sequence": [
+                  12,
+                  14
+                ],
+                "inserted_residues": [
+                  [
+                    12,
+                    13
+                  ],
+                  [
+                    13,
+                    14
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11_Gly12insAlaSer",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11_Gly12insAlaSer",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 22,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "InsertionFlanks",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "12",
+                  "position_u32": {
+                    "value": 12,
+                    "error": null
+                  },
+                  "residue_span": [
+                    8,
+                    11
+                  ],
+                  "position_span": [
+                    11,
+                    13
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "insertion",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  22
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  13
+                ],
+                "marker": [
+                  13,
+                  16
+                ],
+                "sequence": [
+                  16,
+                  22
+                ],
+                "inserted_residues": [
+                  [
+                    16,
+                    19
+                  ],
+                  [
+                    19,
+                    22
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/6/expected": {
+      "source": "p.A11_G14delinsAS",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 17,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Range",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              3
+            ],
+            "position_span": [
+              3,
+              5
+            ]
+          },
+          "end": {
+            "residue": "Gly",
+            "position": "14",
+            "position_u32": {
+              "value": 14,
+              "error": null
+            },
+            "residue_span": [
+              6,
+              7
+            ],
+            "position_span": [
+              7,
+              9
+            ]
+          }
+        },
+        "edit": {
+          "kind": "delins",
+          "inserted": [
+            "Ala",
+            "Ser"
+          ]
+        },
+        "spans": {
+          "whole": [
+            0,
+            17
+          ],
+          "reference": null,
+          "location": [
+            2,
+            9
+          ],
+          "marker": [
+            9,
+            15
+          ],
+          "sequence": [
+            15,
+            17
+          ],
+          "inserted_residues": [
+            [
+              15,
+              16
+            ],
+            [
+              16,
+              17
+            ]
+          ]
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11_G14delinsAS",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11_G14delinsAS",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 17,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "14",
+                  "position_u32": {
+                    "value": 14,
+                    "error": null
+                  },
+                  "residue_span": [
+                    6,
+                    7
+                  ],
+                  "position_span": [
+                    7,
+                    9
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "delins",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  17
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  9
+                ],
+                "marker": [
+                  9,
+                  15
+                ],
+                "sequence": [
+                  15,
+                  17
+                ],
+                "inserted_residues": [
+                  [
+                    15,
+                    16
+                  ],
+                  [
+                    16,
+                    17
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11_Gly14delinsAlaSer",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11_Gly14delinsAlaSer",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 25,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "14",
+                  "position_u32": {
+                    "value": 14,
+                    "error": null
+                  },
+                  "residue_span": [
+                    8,
+                    11
+                  ],
+                  "position_span": [
+                    11,
+                    13
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "delins",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  25
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  13
+                ],
+                "marker": [
+                  13,
+                  19
+                ],
+                "sequence": [
+                  19,
+                  25
+                ],
+                "inserted_residues": [
+                  [
+                    19,
+                    22
+                  ],
+                  [
+                    22,
+                    25
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/7/expected": {
+      "source": "p.Ala11_Gly14delinsAlaSer",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 25,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Range",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              7
+            ]
+          },
+          "end": {
+            "residue": "Gly",
+            "position": "14",
+            "position_u32": {
+              "value": 14,
+              "error": null
+            },
+            "residue_span": [
+              8,
+              11
+            ],
+            "position_span": [
+              11,
+              13
+            ]
+          }
+        },
+        "edit": {
+          "kind": "delins",
+          "inserted": [
+            "Ala",
+            "Ser"
+          ]
+        },
+        "spans": {
+          "whole": [
+            0,
+            25
+          ],
+          "reference": null,
+          "location": [
+            2,
+            13
+          ],
+          "marker": [
+            13,
+            19
+          ],
+          "sequence": [
+            19,
+            25
+          ],
+          "inserted_residues": [
+            [
+              19,
+              22
+            ],
+            [
+              22,
+              25
+            ]
+          ]
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A11_G14delinsAS",
+          "error": null,
+          "reparsed": {
+            "source": "p.A11_G14delinsAS",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 17,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    5
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "14",
+                  "position_u32": {
+                    "value": 14,
+                    "error": null
+                  },
+                  "residue_span": [
+                    6,
+                    7
+                  ],
+                  "position_span": [
+                    7,
+                    9
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "delins",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  17
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  9
+                ],
+                "marker": [
+                  9,
+                  15
+                ],
+                "sequence": [
+                  15,
+                  17
+                ],
+                "inserted_residues": [
+                  [
+                    15,
+                    16
+                  ],
+                  [
+                    16,
+                    17
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala11_Gly14delinsAlaSer",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala11_Gly14delinsAlaSer",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 25,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Ala",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    7
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "14",
+                  "position_u32": {
+                    "value": 14,
+                    "error": null
+                  },
+                  "residue_span": [
+                    8,
+                    11
+                  ],
+                  "position_span": [
+                    11,
+                    13
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "delins",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  25
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  13
+                ],
+                "marker": [
+                  13,
+                  19
+                ],
+                "sequence": [
+                  19,
+                  25
+                ],
+                "inserted_residues": [
+                  [
+                    19,
+                    22
+                  ],
+                  [
+                    22,
+                    25
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/214/expected": {
+      "source": "p.Met0001_U0002del",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 18,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Range",
+          "start": {
+            "residue": "Met",
+            "position": "0001",
+            "position_u32": {
+              "value": 1,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              9
+            ]
+          },
+          "end": {
+            "residue": "Sec",
+            "position": "0002",
+            "position_u32": {
+              "value": 2,
+              "error": null
+            },
+            "residue_span": [
+              10,
+              11
+            ],
+            "position_span": [
+              11,
+              15
+            ]
+          }
+        },
+        "edit": {
+          "kind": "deletion",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            18
+          ],
+          "reference": null,
+          "location": [
+            2,
+            15
+          ],
+          "marker": [
+            15,
+            18
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.M0001_U0002del",
+          "error": null,
+          "reparsed": {
+            "source": "p.M0001_U0002del",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 16,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Met",
+                  "position": "0001",
+                  "position_u32": {
+                    "value": 1,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    7
+                  ]
+                },
+                "end": {
+                  "residue": "Sec",
+                  "position": "0002",
+                  "position_u32": {
+                    "value": 2,
+                    "error": null
+                  },
+                  "residue_span": [
+                    8,
+                    9
+                  ],
+                  "position_span": [
+                    9,
+                    13
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  16
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  13
+                ],
+                "marker": [
+                  13,
+                  16
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Met0001_Sec0002del",
+          "error": null,
+          "reparsed": {
+            "source": "p.Met0001_Sec0002del",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 20,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Met",
+                  "position": "0001",
+                  "position_u32": {
+                    "value": 1,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    9
+                  ]
+                },
+                "end": {
+                  "residue": "Sec",
+                  "position": "0002",
+                  "position_u32": {
+                    "value": 2,
+                    "error": null
+                  },
+                  "residue_span": [
+                    10,
+                    13
+                  ],
+                  "position_span": [
+                    13,
+                    17
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  20
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  17
+                ],
+                "marker": [
+                  17,
+                  20
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/216/expected": {
+      "source": "p.Met0001_U0002delinsBGlxXaa",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 28,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Range",
+          "start": {
+            "residue": "Met",
+            "position": "0001",
+            "position_u32": {
+              "value": 1,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              9
+            ]
+          },
+          "end": {
+            "residue": "Sec",
+            "position": "0002",
+            "position_u32": {
+              "value": 2,
+              "error": null
+            },
+            "residue_span": [
+              10,
+              11
+            ],
+            "position_span": [
+              11,
+              15
+            ]
+          }
+        },
+        "edit": {
+          "kind": "delins",
+          "inserted": [
+            "Asx",
+            "Glx",
+            "Xaa"
+          ]
+        },
+        "spans": {
+          "whole": [
+            0,
+            28
+          ],
+          "reference": null,
+          "location": [
+            2,
+            15
+          ],
+          "marker": [
+            15,
+            21
+          ],
+          "sequence": [
+            21,
+            28
+          ],
+          "inserted_residues": [
+            [
+              21,
+              22
+            ],
+            [
+              22,
+              25
+            ],
+            [
+              25,
+              28
+            ]
+          ]
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.M0001_U0002delinsBZXaa",
+          "error": null,
+          "reparsed": {
+            "source": "p.M0001_U0002delinsBZXaa",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 24,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Met",
+                  "position": "0001",
+                  "position_u32": {
+                    "value": 1,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    7
+                  ]
+                },
+                "end": {
+                  "residue": "Sec",
+                  "position": "0002",
+                  "position_u32": {
+                    "value": 2,
+                    "error": null
+                  },
+                  "residue_span": [
+                    8,
+                    9
+                  ],
+                  "position_span": [
+                    9,
+                    13
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "delins",
+                "inserted": [
+                  "Asx",
+                  "Glx",
+                  "Xaa"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  24
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  13
+                ],
+                "marker": [
+                  13,
+                  19
+                ],
+                "sequence": [
+                  19,
+                  24
+                ],
+                "inserted_residues": [
+                  [
+                    19,
+                    20
+                  ],
+                  [
+                    20,
+                    21
+                  ],
+                  [
+                    21,
+                    24
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Met0001_Sec0002delinsAsxGlxXaa",
+          "error": null,
+          "reparsed": {
+            "source": "p.Met0001_Sec0002delinsAsxGlxXaa",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 32,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Range",
+                "start": {
+                  "residue": "Met",
+                  "position": "0001",
+                  "position_u32": {
+                    "value": 1,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    9
+                  ]
+                },
+                "end": {
+                  "residue": "Sec",
+                  "position": "0002",
+                  "position_u32": {
+                    "value": 2,
+                    "error": null
+                  },
+                  "residue_span": [
+                    10,
+                    13
+                  ],
+                  "position_span": [
+                    13,
+                    17
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "delins",
+                "inserted": [
+                  "Asx",
+                  "Glx",
+                  "Xaa"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  32
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  17
+                ],
+                "marker": [
+                  17,
+                  23
+                ],
+                "sequence": [
+                  23,
+                  32
+                ],
+                "inserted_residues": [
+                  [
+                    23,
+                    26
+                  ],
+                  [
+                    26,
+                    29
+                  ],
+                  [
+                    29,
+                    32
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/221/expected": {
+      "source": "p.Ala4294967295_Gly4294967296insAlaSer",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 38,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "InsertionFlanks",
+          "start": {
+            "residue": "Ala",
+            "position": "4294967295",
+            "position_u32": {
+              "value": 4294967295,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              15
+            ]
+          },
+          "end": {
+            "residue": "Gly",
+            "position": "4294967296",
+            "position_u32": {
+              "value": null,
+              "error": "out_of_range"
+            },
+            "residue_span": [
+              16,
+              19
+            ],
+            "position_span": [
+              19,
+              29
+            ]
+          }
+        },
+        "edit": {
+          "kind": "insertion",
+          "inserted": [
+            "Ala",
+            "Ser"
+          ]
+        },
+        "spans": {
+          "whole": [
+            0,
+            38
+          ],
+          "reference": null,
+          "location": [
+            2,
+            29
+          ],
+          "marker": [
+            29,
+            32
+          ],
+          "sequence": [
+            32,
+            38
+          ],
+          "inserted_residues": [
+            [
+              32,
+              35
+            ],
+            [
+              35,
+              38
+            ]
+          ]
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.A4294967295_G4294967296insAS",
+          "error": null,
+          "reparsed": {
+            "source": "p.A4294967295_G4294967296insAS",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 30,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "InsertionFlanks",
+                "start": {
+                  "residue": "Ala",
+                  "position": "4294967295",
+                  "position_u32": {
+                    "value": 4294967295,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    13
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "4294967296",
+                  "position_u32": {
+                    "value": null,
+                    "error": "out_of_range"
+                  },
+                  "residue_span": [
+                    14,
+                    15
+                  ],
+                  "position_span": [
+                    15,
+                    25
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "insertion",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  30
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  25
+                ],
+                "marker": [
+                  25,
+                  28
+                ],
+                "sequence": [
+                  28,
+                  30
+                ],
+                "inserted_residues": [
+                  [
+                    28,
+                    29
+                  ],
+                  [
+                    29,
+                    30
+                  ]
+                ]
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.Ala4294967295_Gly4294967296insAlaSer",
+          "error": null,
+          "reparsed": {
+            "source": "p.Ala4294967295_Gly4294967296insAlaSer",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 38,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "InsertionFlanks",
+                "start": {
+                  "residue": "Ala",
+                  "position": "4294967295",
+                  "position_u32": {
+                    "value": 4294967295,
+                    "error": null
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    15
+                  ]
+                },
+                "end": {
+                  "residue": "Gly",
+                  "position": "4294967296",
+                  "position_u32": {
+                    "value": null,
+                    "error": "out_of_range"
+                  },
+                  "residue_span": [
+                    16,
+                    19
+                  ],
+                  "position_span": [
+                    19,
+                    29
+                  ]
+                }
+              },
+              "edit": {
+                "kind": "insertion",
+                "inserted": [
+                  "Ala",
+                  "Ser"
+                ]
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  38
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  29
+                ],
+                "marker": [
+                  29,
+                  32
+                ],
+                "sequence": [
+                  32,
+                  38
+                ],
+                "inserted_residues": [
+                  [
+                    32,
+                    35
+                  ],
+                  [
+                    35,
+                    38
+                  ]
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/223/expected/render/one_letter/reparsed": {
+      "source": "p.A11_G12insV*",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 14,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "InsertionFlanks",
+          "start": {
+            "residue": "Ala",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              2,
+              3
+            ],
+            "position_span": [
+              3,
+              5
+            ]
+          },
+          "end": {
+            "residue": "Gly",
+            "position": "12",
+            "position_u32": {
+              "value": 12,
+              "error": null
+            },
+            "residue_span": [
+              6,
+              7
+            ],
+            "position_span": [
+              7,
+              9
+            ]
+          }
+        },
+        "edit": {
+          "kind": "insertion",
+          "inserted": [
+            "Val",
+            "Ter"
+          ]
+        },
+        "spans": {
+          "whole": [
+            0,
+            14
+          ],
+          "reference": null,
+          "location": [
+            2,
+            9
+          ],
+          "marker": [
+            9,
+            12
+          ],
+          "sequence": [
+            12,
+            14
+          ],
+          "inserted_residues": [
+            [
+              12,
+              13
+            ],
+            [
+              13,
+              14
+            ]
+          ]
+        }
+      }
+    },
+    "/semantic_cases/190/expected": {
+      "source": "p.(W11del)",
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 10,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": true,
+        "location": {
+          "kind": "Point",
+          "start": {
+            "residue": "Trp",
+            "position": "11",
+            "position_u32": {
+              "value": 11,
+              "error": null
+            },
+            "residue_span": [
+              3,
+              4
+            ],
+            "position_span": [
+              4,
+              6
+            ]
+          },
+          "end": null
+        },
+        "edit": {
+          "kind": "deletion",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            10
+          ],
+          "reference": null,
+          "location": [
+            3,
+            6
+          ],
+          "marker": [
+            6,
+            9
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": "p.(W11del)",
+          "error": null,
+          "reparsed": {
+            "source": "p.(W11del)",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 10,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": true,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Trp",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    3,
+                    4
+                  ],
+                  "position_span": [
+                    4,
+                    6
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  10
+                ],
+                "reference": null,
+                "location": [
+                  3,
+                  6
+                ],
+                "marker": [
+                  6,
+                  9
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": "p.(Trp11del)",
+          "error": null,
+          "reparsed": {
+            "source": "p.(Trp11del)",
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 12,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": true,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Trp",
+                  "position": "11",
+                  "position_u32": {
+                    "value": 11,
+                    "error": null
+                  },
+                  "residue_span": [
+                    3,
+                    6
+                  ],
+                  "position_span": [
+                    6,
+                    8
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  12
+                ],
+                "reference": null,
+                "location": [
+                  3,
+                  8
+                ],
+                "marker": [
+                  8,
+                  11
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/330/expected": {
+      "source": {
+        "concat": [
+          "p.",
+          {
+            "concat": [
+              {
+                "concat": [
+                  "Ala",
+                  {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048567
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "del"
+        ]
+      },
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 1048576,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Point",
+          "start": {
+            "residue": "Ala",
+            "position": {
+              "concat": [
+                "1",
+                {
+                  "repeat": "0",
+                  "count": 1048567
+                }
+              ]
+            },
+            "position_u32": {
+              "value": null,
+              "error": "out_of_range"
+            },
+            "residue_span": [
+              2,
+              5
+            ],
+            "position_span": [
+              5,
+              1048573
+            ]
+          },
+          "end": null
+        },
+        "edit": {
+          "kind": "deletion",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            1048576
+          ],
+          "reference": null,
+          "location": [
+            2,
+            1048573
+          ],
+          "marker": [
+            1048573,
+            1048576
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": {
+            "concat": [
+              "p.",
+              {
+                "concat": [
+                  {
+                    "concat": [
+                      "A",
+                      {
+                        "concat": [
+                          "1",
+                          {
+                            "repeat": "0",
+                            "count": 1048567
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "del"
+            ]
+          },
+          "error": null,
+          "reparsed": {
+            "source": {
+              "concat": [
+                "p.",
+                {
+                  "concat": [
+                    {
+                      "concat": [
+                        "A",
+                        {
+                          "concat": [
+                            "1",
+                            {
+                              "repeat": "0",
+                              "count": 1048567
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "del"
+              ]
+            },
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 1048574,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048567
+                      }
+                    ]
+                  },
+                  "position_u32": {
+                    "value": null,
+                    "error": "out_of_range"
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    1048571
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  1048574
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  1048571
+                ],
+                "marker": [
+                  1048571,
+                  1048574
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": {
+            "concat": [
+              "p.",
+              {
+                "concat": [
+                  {
+                    "concat": [
+                      "Ala",
+                      {
+                        "concat": [
+                          "1",
+                          {
+                            "repeat": "0",
+                            "count": 1048567
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "del"
+            ]
+          },
+          "error": null,
+          "reparsed": {
+            "source": {
+              "concat": [
+                "p.",
+                {
+                  "concat": [
+                    {
+                      "concat": [
+                        "Ala",
+                        {
+                          "concat": [
+                            "1",
+                            {
+                              "repeat": "0",
+                              "count": 1048567
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "del"
+              ]
+            },
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 1048576,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048567
+                      }
+                    ]
+                  },
+                  "position_u32": {
+                    "value": null,
+                    "error": "out_of_range"
+                  },
+                  "residue_span": [
+                    2,
+                    5
+                  ],
+                  "position_span": [
+                    5,
+                    1048573
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  1048576
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  1048573
+                ],
+                "marker": [
+                  1048573,
+                  1048576
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/semantic_cases/334/expected": {
+      "source": {
+        "concat": [
+          "p.A",
+          {
+            "repeat": "1",
+            "count": 1048571
+          },
+          "del"
+        ]
+      },
+      "disposition": "ResourceLimitExceeded",
+      "code": "hgvs_input_limit",
+      "input_bytes": 1048577,
+      "reference_bytes": null,
+      "diagnostic_span": [
+        0,
+        1048577
+      ],
+      "parsed": null,
+      "render": null
+    },
+    "/semantic_cases/331/expected": {
+      "source": {
+        "concat": [
+          "p.",
+          {
+            "concat": [
+              {
+                "concat": [
+                  "A",
+                  {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048569
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "del"
+        ]
+      },
+      "disposition": "Parsed",
+      "code": "hgvs_protein_interval_parsed",
+      "input_bytes": 1048576,
+      "reference_bytes": null,
+      "diagnostic_span": null,
+      "parsed": {
+        "reference": null,
+        "reference_unavailable": true,
+        "predicted": false,
+        "location": {
+          "kind": "Point",
+          "start": {
+            "residue": "Ala",
+            "position": {
+              "concat": [
+                "1",
+                {
+                  "repeat": "0",
+                  "count": 1048569
+                }
+              ]
+            },
+            "position_u32": {
+              "value": null,
+              "error": "out_of_range"
+            },
+            "residue_span": [
+              2,
+              3
+            ],
+            "position_span": [
+              3,
+              1048573
+            ]
+          },
+          "end": null
+        },
+        "edit": {
+          "kind": "deletion",
+          "inserted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            1048576
+          ],
+          "reference": null,
+          "location": [
+            2,
+            1048573
+          ],
+          "marker": [
+            1048573,
+            1048576
+          ],
+          "sequence": null,
+          "inserted_residues": []
+        }
+      },
+      "render": {
+        "one_letter": {
+          "output": {
+            "concat": [
+              "p.",
+              {
+                "concat": [
+                  {
+                    "concat": [
+                      "A",
+                      {
+                        "concat": [
+                          "1",
+                          {
+                            "repeat": "0",
+                            "count": 1048569
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "del"
+            ]
+          },
+          "error": null,
+          "reparsed": {
+            "source": {
+              "concat": [
+                "p.",
+                {
+                  "concat": [
+                    {
+                      "concat": [
+                        "A",
+                        {
+                          "concat": [
+                            "1",
+                            {
+                              "repeat": "0",
+                              "count": 1048569
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "del"
+              ]
+            },
+            "disposition": "Parsed",
+            "code": "hgvs_protein_interval_parsed",
+            "input_bytes": 1048576,
+            "reference_bytes": null,
+            "diagnostic_span": null,
+            "parsed": {
+              "reference": null,
+              "reference_unavailable": true,
+              "predicted": false,
+              "location": {
+                "kind": "Point",
+                "start": {
+                  "residue": "Ala",
+                  "position": {
+                    "concat": [
+                      "1",
+                      {
+                        "repeat": "0",
+                        "count": 1048569
+                      }
+                    ]
+                  },
+                  "position_u32": {
+                    "value": null,
+                    "error": "out_of_range"
+                  },
+                  "residue_span": [
+                    2,
+                    3
+                  ],
+                  "position_span": [
+                    3,
+                    1048573
+                  ]
+                },
+                "end": null
+              },
+              "edit": {
+                "kind": "deletion",
+                "inserted": null
+              },
+              "spans": {
+                "whole": [
+                  0,
+                  1048576
+                ],
+                "reference": null,
+                "location": [
+                  2,
+                  1048573
+                ],
+                "marker": [
+                  1048573,
+                  1048576
+                ],
+                "sequence": null,
+                "inserted_residues": []
+              }
+            }
+          }
+        },
+        "three_letter": {
+          "output": null,
+          "error": {
+            "code": "hgvs_input_limit",
+            "span": null,
+            "candidate_bytes": 1048578,
+            "reference_bytes": null
+          },
+          "reparsed": null
+        }
+      }
+    }
+  },
+  "provenance": {
+    "license": "MIT",
+    "attribution": "BioData contributors",
+    "origin": "Independently authored synthetic engineering specifications; literal transcription of accepted 0675 evidence and immutable producer expectations.",
+    "producer_revision": "ad6219d2e61ed208a8bf6ac4caca1131c4a4e200",
+    "evidence_sha256": "e9b925e5890349b41ea20c53844c64413288a186c0930b072ce20faa9c32eb9c"
+  }
+}
