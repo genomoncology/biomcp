@@ -30,7 +30,7 @@ Legacy Name: BRAF V600E
 cDNA: c.620T>A
 Consequence: missense_variant
 COSMIC: COSM476
-Significance: Pathogenic
+Significance: Pathogenic — MyVariant.info cached copy, most severe RCV classification (evaluated 2023-09-15). Run `biomcp get variant "BRAF V600E" clinvar` for ClinVar's current record-level classification.
 Source: MyVariant.info / ClinVar
 ## Population (gnomAD via MyVariant.info)
 gnomAD AF: 0.000004 (< 0.01%)
