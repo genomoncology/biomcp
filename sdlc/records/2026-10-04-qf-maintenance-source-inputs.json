@@ -3619,7 +3619,7 @@
     "spec/entity/article.md",
     "spec/entity/variant.md"
   ],
-  "selector_proposal_limits": "31 literal product Rust names: retain the prior 28 and add exactly three new deadline regression selectors. Add only three named Python contracts and three named Rust integration layout selectors. Retain both public spec pages, unchanged actual rust_source_size audit and footprint measurement obligations. Proposals only: no build, collection, fixture, audit, measurement or runtime execution. The 0681 CASE fixed 35-selector/gold contract is not replaced.",
+  "selector_proposal_limits": "33 literal product Rust names: retain the prior 31 and add exactly two remediation deadline regression selectors. Retain the six named support selectors (three Python contracts and three Rust integration layout selectors) and both public spec pages. Preserve actual rust_source_size audit and existing footprint measurement obligations. Proposals only: no build, collection, fixture, audit, measurement or runtime execution. The 0681 CASE fixed 35-selector/gold contract is not replaced.",
   "public_wording_forward_correction": {
     "base": "cc26694a9cae8536f8c545075418870165809de3",
     "paths": [
@@ -4102,5 +4102,23 @@
     "verification": "Pi read all donor issue texts; Root verified pinned issue count, targeted Git searches, related source shapes and dispositions. Related records cover other subsystems or broader resolved work, not these open defects.",
     "filing": "Two generic issue TEXT drafts remain private; Root owns separate main filing. No main mutation or queue management.",
     "draft_correction": "Root removed unsupported Semantic Scholar page-2 claim and replaced timing-threshold proposals with signals and controlled clock."
-  }
+  },
+  "historical_selector_proposal_limits_042": "31 literal product Rust names: retain the prior 28 and add exactly three new deadline regression selectors. Add only three named Python contracts and three named Rust integration layout selectors. Retain both public spec pages, unchanged actual rust_source_size audit and footprint measurement obligations. Proposals only: no build, collection, fixture, audit, measurement or runtime execution. The 0681 CASE fixed 35-selector/gold contract is not replaced.",
+  "independent_remediation_reviews": [
+    {
+      "reviewed_head": "0426245938f2fcab8e18462e37cbad482ef1d876",
+      "reviewed_tree": "b561638b44fcbdd10c0a1e8fb99372d04228c4f1",
+      "reviewer": "fresh independent SOL High; read-only whole SOURCE review",
+      "verdict": "FINDINGS",
+      "findings": [
+        "P2 constructor task-entry signal does not witness actual lock contention",
+        "P3 current selector-limit prose says31 while proposal contains33"
+      ],
+      "production_source_disposition": "Intended constructor and pagination corrections supported by source; no runtime qualification",
+      "raw_whitespace_proposal_verdict": "ACCEPT exact diagnostic-only proposal; original exit2 and invalidation/removal conditions preserved",
+      "backends_ceiling_proposal_verdict": "ACCEPT exact1032/floor975 proposal; no allowance changed",
+      "search_ceiling_proposal_verdict": "ACCEPT exact1009/floor969 proposal; no allowance changed",
+      "correction": "63eca443 corrects contention witness; current metadata corrects selector description. Re-review required."
+    }
+  ]
 }
