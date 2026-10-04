@@ -517,6 +517,65 @@ async fn contended_cache_constructor_deadline_and_success_preserve_search_and_en
 #[serial_test::serial(source_env)]
 #[tokio::test(start_paused = true)]
 async fn pagination_deadline_retains_completed_rows_and_rejects_zero_answers() {
+    struct PaginationCase {
+        source: ArticleSource,
+        mode: u8,
+        hold: Arc<Mutex<mpsc::Receiver<()>>>,
+        held: Arc<tokio::sync::Notify>,
+        requests: Vec<String>,
+    }
+
+    // The global limiter retains its first exact unpaced origin. Keep that
+    // origin and its owned cache alive while the handler switches cases.
+    let (running, driver) = clock_driver();
+    let active = Arc::new(Mutex::new(None::<PaginationCase>));
+    let observed = Arc::clone(&active);
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let mut active = observed.lock().unwrap();
+        let case = active.as_mut().expect("pagination case is configured");
+        let target = request.split_whitespace().nth(1).unwrap();
+        case.requests.push(target.to_string());
+        let reply = if case.mode == 0 {
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json",
+                match case.source {
+                    ArticleSource::PubTator => br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25,"facets":{}}"#,
+                    ArticleSource::EuropePmc => br#"{"hitCount":0,"resultList":{"result":[]}}"#,
+                    ArticleSource::PubMed => br#"{"esearchresult":{"count":"0","idlist":[]}}"#,
+                    _ => unreachable!(),
+                }))
+        } else {
+            let summary = target.contains("esummary.fcgi");
+            let first = target.contains("page=1") || target.contains("retstart=0");
+            if !summary && (case.mode != 2 || !first) {
+                case.held.notify_one();
+                return TestHttpReply::Hold(Arc::clone(&case.hold));
+            }
+            match fixture_reply(request, None) {
+                TestHttpReply::Bytes(bytes) if !summary => {
+                    // Replace the small fixture's total, retaining its literal row.
+                    let response = String::from_utf8(bytes).unwrap();
+                    let (_, body) = response.split_once("\r\n\r\n").unwrap();
+                    let body = body.replace("\"count\":1", "\"count\":100")
+                        .replace("\"hitCount\":1", "\"hitCount\":100")
+                        .replace("\"count\":\"1\"", "\"count\":\"100\"");
+                    TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body.as_bytes()))
+                }
+                reply => reply,
+            }
+        };
+        match reply {
+            TestHttpReply::Bytes(bytes) => {
+                // The same URLs serve different controls in this owned cache.
+                let response = String::from_utf8(bytes).unwrap()
+                    .replacen("\r\n", "\r\nCache-Control: no-store\r\n", 1);
+                TestHttpReply::Bytes(response.into_bytes())
+            }
+            reply => reply,
+        }
+    }).await;
+    let cache = TempDirGuard::new("article-pagination-deadline");
+    let _env = deadline_env(&fixture, cache.path(), "60000");
+
     for (filter, source, pmid, title, total) in [
         (ArticleSourceFilter::PubTator, ArticleSource::PubTator, "41800001", "deadline fixture PubTator row", 100),
         (ArticleSourceFilter::EuropePmc, ArticleSource::EuropePmc, "41800004", "deadline fixture Europe PMC row", 100),
@@ -525,50 +584,18 @@ async fn pagination_deadline_retains_completed_rows_and_rejects_zero_answers() {
         // Successful empty, held first page, completed first/held second page.
         for mode in [0, 1, 2] {
             let first_page = mode == 2;
-            let (running, driver) = clock_driver();
             let (_release, receiver) = mpsc::channel();
             let hold = Arc::new(Mutex::new(receiver));
             let held = Arc::new(tokio::sync::Notify::new());
-            let signal = Arc::clone(&held);
-            let requests = Arc::new(Mutex::new(Vec::new()));
-            let observed = Arc::clone(&requests);
-            let fixture = TestHttpFixture::spawn(move |request| {
-                let target = request.split_whitespace().nth(1).unwrap();
-                observed.lock().unwrap().push(target.to_string());
-                if mode == 0 {
-                    return TestHttpReply::Bytes(test_http_response("200 OK", "application/json",
-                        match source {
-                            ArticleSource::PubTator => br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25,"facets":{}}"#,
-                            ArticleSource::EuropePmc => br#"{"hitCount":0,"resultList":{"result":[]}}"#,
-                            ArticleSource::PubMed => br#"{"esearchresult":{"count":"0","idlist":[]}}"#,
-                            _ => unreachable!(),
-                        }));
-                }
-                let summary = target.contains("esummary.fcgi");
-                let first = target.contains("page=1") || target.contains("retstart=0");
-                if !summary && (!first_page || !first) {
-                    signal.notify_one();
-                    return TestHttpReply::Hold(Arc::clone(&hold));
-                }
-                let reply = fixture_reply(request, None);
-                match reply {
-                    TestHttpReply::Bytes(bytes) if !summary => {
-                        // Replace the small fixture's total, retaining its literal row.
-                        let response = String::from_utf8(bytes).unwrap();
-                        let (_, body) = response.split_once("\r\n\r\n").unwrap();
-                        let body = body.replace("\"count\":1", "\"count\":100")
-                            .replace("\"hitCount\":1", "\"hitCount\":100")
-                            .replace("\"count\":\"1\"", "\"count\":\"100\"");
-                        TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body.as_bytes()))
-                    }
-                    reply => reply,
-                }
-            }).await;
-            let cache = TempDirGuard::new("article-pagination-deadline");
-            let _env = deadline_env(&fixture, cache.path(), "60000");
-            let task = tokio::spawn(async move { search_page(&deadline_filters(), 5, 0, filter).await });
+            *active.lock().unwrap() = Some(PaginationCase {
+                source, mode, hold, held: Arc::clone(&held), requests: Vec::new(),
+            });
+            let mut task = tokio::spawn(async move { search_page(&deadline_filters(), 5, 0, filter).await });
             if mode != 0 {
-                held.notified().await;
+                tokio::select! {
+                    () = held.notified() => {}
+                    result = &mut task => panic!("{source:?} mode {mode} settled before the held request: {result:?}"),
+                }
                 tokio::time::advance(Duration::from_secs(61)).await;
             }
             let result = task.await.unwrap();
@@ -591,13 +618,14 @@ async fn pagination_deadline_retains_completed_rows_and_rejects_zero_answers() {
                 assert!(matches!(result, Err(BioMcpError::SourceUnavailable { source_name, reason, .. })
                     if source_name == "article search" && reason.contains("deadline")));
             }
-            let requests = requests.lock().unwrap();
+            let active = active.lock().unwrap();
+            let requests = &active.as_ref().unwrap().requests;
             assert_eq!(requests.len(), if first_page { if source == ArticleSource::PubMed { 3 } else { 2 } } else { 1 });
             assert!(requests.last().unwrap().contains(if source == ArticleSource::PubMed {
                 if first_page { "retstart=1" } else { "retstart=0" }
             } else if first_page { "page=2" } else { "page=1" }));
-            running.store(false, std::sync::atomic::Ordering::SeqCst);
-            driver.await.unwrap();
         }
     }
+    running.store(false, std::sync::atomic::Ordering::SeqCst);
+    driver.await.unwrap();
 }
