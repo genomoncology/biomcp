@@ -1,5 +1,6 @@
 //! Borrow original operands before the retained positional trim/join preparation.
 use super::{ResolvedVariantQuery, VariantSearchPlan};
+use crate::cli::normalize_cli_query;
 use crate::entities::variant::{
     IntervalSearchAssertion, IntervalSearchDisposition, VariantGuidance, VariantGuidanceKind,
     is_exact_gene_token, protein_interval_search,
@@ -13,7 +14,7 @@ pub(super) fn retained_preparation(tokens: &[String]) -> Option<String> {
         .filter(|token| !token.is_empty())
         .collect::<Vec<_>>()
         .join(" ");
-    crate::cli::normalize_cli_query(Some(positional))
+    normalize_cli_query(Some(positional))
 }
 
 fn operands(tokens: &[String]) -> Option<(Option<&str>, &str)> {

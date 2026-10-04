@@ -40,7 +40,7 @@ fn plan_value(p: &VariantSearchPlan) -> Value {
                 "transcript":i.transcript,"genomic_accession":i.genomic_accession,"genome_build":i.genome_build,
                 "position":i.position,"reference":i.reference,"alternate":i.alternate,"rsid":i.rsid}))}}),
         VariantSearchPlan::Guidance(g) => json!({"variant":"Guidance","guidance":{
-            "query":g.query,"kind":{"ProteinChangeOnly":{"change":g.query}},"next_commands":g.next_commands}}),
+            "query":g.query,"kind":g.kind,"next_commands":g.next_commands}}),
     }
 }
 fn assert_error(error: &BioMcpError, expected: &Value) {

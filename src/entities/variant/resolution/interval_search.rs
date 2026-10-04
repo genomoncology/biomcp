@@ -141,7 +141,11 @@ pub(crate) fn selected(source: &str) -> bool {
     {
         return false;
     }
-    if text.contains(":p.") || text.contains(":P.") {
+    if text.starts_with("p.")
+        || text.starts_with("P.")
+        || text.contains(":p.")
+        || text.contains(":P.")
+    {
         return true;
     }
     let body = text
