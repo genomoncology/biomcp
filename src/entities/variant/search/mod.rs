@@ -984,10 +984,10 @@ fn annotation_matches_request(
         return false;
     }
     if let Some(coding) = requested.coding_change.as_deref()
-        && !annotation.hgvs_c.as_deref().is_some_and(|value| {
-            super::coding_change_segment(value)
-                .eq_ignore_ascii_case(super::coding_change_segment(coding))
-        })
+        && !annotation
+            .hgvs_c
+            .as_deref()
+            .is_some_and(|value| super::resolution::coding_changes_equivalent(value, coding))
     {
         return false;
     }

@@ -1,7 +1,9 @@
 //! Accepted 0668 MIT synthetic literals; captured rows retain original receipt limits.
+use super::coding_alias::{CodingRoute, coding_assertion};
 use super::*;
 use crate::sources::myvariant::{MyVariantHit, MyVariantSearchResponse};
 use crate::utils::serde::StringOrVec;
+use biodata::{HgvsEdit, HgvsLocation, HgvsMolecule, HgvsPosition, HgvsSpan, ParsedHgvsNucleotide};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -22,18 +24,115 @@ fn root() -> std::path::PathBuf {
     env!("CARGO_MANIFEST_DIR").into()
 }
 
+fn span(value: HgvsSpan) -> [usize; 2] {
+    [value.start(), value.end()]
+}
+
 fn projection(source: &str) -> Value {
-    // Red scaffold observes the unchanged consumer's unqualified lexical key.
-    let segment = coding_change_segment(source);
-    let trimmed = source.trim();
-    let reference = trimmed
-        .rsplit_once(':')
-        .filter(|(_, c)| c.eq_ignore_ascii_case(segment))
-        .map(|(p, _)| p);
-    json!({"source":source,"segment":segment,"reference_prefix":reference,
-        "preparations":if trimmed==source {vec![]} else {vec!["outer_whitespace"]},
-        "route":"compatibility_body","diagnostic":null,
-        "comparison_key":segment.to_ascii_uppercase(),"checked":null})
+    let assertion = coding_assertion(source);
+    let checked = match &assertion.route {
+        CodingRoute::Checked(envelope) => {
+            let parsed = envelope.disposition().parsed().unwrap();
+            let Some(HgvsLocation::Point(position)) = parsed.location() else {
+                panic!("selected point missing");
+            };
+            let Some(HgvsEdit::Substitution {
+                reference,
+                alternate,
+            }) = parsed.edit()
+            else {
+                panic!("selected edit missing");
+            };
+            assert!(position.offset().is_none());
+            json!({"envelope_source":envelope.source(),"molecule":format!("{:?}",parsed.molecule()),
+                "reference":parsed.reference(),"prediction":parsed.is_predicted(),
+                "location":{"Point":{"marker":format!("{:?}",position.marker()),"digits":position.digits(),"offset":null}},
+                "edit":{"Substitution":{"reference":reference,"alternate":alternate}},
+                "rna_outcome":parsed.rna_outcome().map(|v|format!("{v:?}")),
+                "rna_basis":parsed.rna_basis().map(|v|format!("{v:?}")),
+                "reference_unavailable":parsed.reference_unavailable(),"span":span(parsed.span()),
+                "reference_span":parsed.reference_span().map(span),"location_span":parsed.location_span().map(span),
+                "source_render":envelope.render_source(),"constructed_render":parsed.render_constructed()})
+        }
+        _ => Value::Null,
+    };
+    json!({"source":assertion.source,"segment":assertion.segment,"reference_prefix":assertion.reference_prefix,
+        "preparations":if assertion.outer_whitespace {vec!["outer_whitespace"]} else {vec![]},
+        "route":assertion.route_name(),"diagnostic":assertion.diagnostic(),
+        "comparison_key":assertion.key(),"checked":checked})
+}
+
+fn privacy(source: &str) {
+    let assertion = coding_assertion(source);
+    let debug = format!("{assertion:?}");
+    for value in [
+        Some(source),
+        assertion.reference_prefix,
+        assertion.key().as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        if !value.trim().is_empty() {
+            assert!(!debug.contains(value), "input-derived Debug field");
+        }
+    }
+}
+
+fn constructor_controls(row: &Value) {
+    let expected = &row["expected"]["checked"];
+    let digits = expected["location"]["Point"]["digits"].as_str().unwrap();
+    let reference = expected["reference"].as_str();
+    let predicted = expected["prediction"].as_bool().unwrap();
+    let location = HgvsLocation::Point(HgvsPosition::new(digits, HgvsMolecule::Coding).unwrap());
+    let edit = HgvsEdit::Substitution {
+        reference: expected["edit"]["Substitution"]["reference"]
+            .as_str()
+            .unwrap()
+            .chars()
+            .next()
+            .unwrap(),
+        alternate: expected["edit"]["Substitution"]["alternate"]
+            .as_str()
+            .unwrap()
+            .chars()
+            .next()
+            .unwrap(),
+    };
+    let independent = ParsedHgvsNucleotide::construct(
+        reference,
+        HgvsMolecule::Coding,
+        location.clone(),
+        edit.clone(),
+        predicted,
+    )
+    .unwrap();
+    let assertion = coding_assertion(row["input"]["source"].as_str().unwrap());
+    let CodingRoute::Checked(envelope) = &assertion.route else {
+        panic!("constructor control lacks checked assertion");
+    };
+    assert_eq!(
+        independent.render_constructed(),
+        expected["constructed_render"]
+    );
+    assert_eq!(
+        envelope.render_source_for(&independent),
+        expected["source_render"].as_str()
+    );
+    let changed = if row["id"] == "A03" {
+        ParsedHgvsNucleotide::construct(reference, HgvsMolecule::Coding, location, edit, !predicted)
+            .unwrap()
+    } else {
+        ParsedHgvsNucleotide::construct(
+            reference,
+            HgvsMolecule::Coding,
+            HgvsLocation::Point(HgvsPosition::new("19", HgvsMolecule::Coding).unwrap()),
+            edit,
+            predicted,
+        )
+        .unwrap()
+    };
+    assert_eq!(envelope.render_source_for(&changed), None);
 }
 
 fn resource(row: &Value) -> (String, Value) {
@@ -88,12 +187,29 @@ fn coding_assertion_resources_and_privacy_table() {
     let mut failures = Vec::new();
     for row in rows["aliases"].as_array().unwrap() {
         let source = row["input"]["source"].as_str().unwrap();
+        privacy(source);
+        if row["id"] == "A03" || row["id"] == "A05" {
+            constructor_controls(row);
+        }
+        if row["expected_parser_calls"] == 0 {
+            assert!(!matches!(
+                coding_assertion(source).route,
+                CodingRoute::Checked(_)
+            ));
+        }
         if projection(source) != row["expected"] {
             failures.push(row["id"].as_str().unwrap());
         }
     }
     for row in rows["resources"].as_array().unwrap() {
         let (source, expected) = resource(row);
+        privacy(&source);
+        if row["parser_calls"] == 0 {
+            assert!(!matches!(
+                coding_assertion(&source).route,
+                CodingRoute::Checked(_)
+            ));
+        }
         if projection(&source) != expected {
             failures.push(row["id"].as_str().unwrap());
         }

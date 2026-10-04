@@ -13,7 +13,10 @@ use super::{
     VariantShorthand, transcript_coding_hgvs_re,
 };
 
+mod coding_alias;
 mod point_alias;
+pub(super) use coding_alias::coding_changes_equivalent;
+use coding_alias::coding_key;
 
 fn rsid_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
@@ -1004,9 +1007,7 @@ impl SourceVariantIdentity {
     pub(crate) fn normalized_key(&self) -> String {
         let mut genes = normalized_set(&self.genes, |v| Some(v.trim().to_ascii_uppercase()));
         let mut proteins = normalized_set(&self.protein_changes, normalize_protein_change);
-        let mut coding = normalized_set(&self.coding_changes, |v| {
-            Some(coding_change_segment(v).to_ascii_uppercase())
-        });
+        let mut coding = normalized_set(&self.coding_changes, coding_key);
         let mut rsids = normalized_set(&self.rsids, |v| Some(v.trim().to_ascii_lowercase()));
         genes.sort();
         proteins.sort();
@@ -1099,28 +1100,26 @@ pub(crate) fn compare_variant_identity(
         }
     }
     if let Some(value) = requested.coding_change.as_deref() {
-        let wanted = coding_change_segment(value).to_ascii_uppercase();
+        let wanted = coding_key(value);
         let usable = source
             .coding_changes
             .iter()
-            .filter(|v| !coding_change_segment(v).is_empty())
+            .filter_map(|alias| coding_key(alias).map(|key| (alias, key)))
             .collect::<Vec<_>>();
-        if usable.is_empty() {
-            indeterminate = Some("coding_change");
-        } else if let Some(alias) = usable
-            .iter()
-            .find(|v| v.trim() == value.trim())
-            .or_else(|| {
-                usable
-                    .iter()
-                    .find(|v| coding_change_segment(v).to_ascii_uppercase() == wanted)
-            })
-        {
-            matched_alias.get_or_insert_with(|| (*alias).clone());
+        if let Some(wanted) = wanted.filter(|_| !usable.is_empty()) {
+            if let Some((alias, _)) = usable
+                .iter()
+                .find(|(alias, _)| alias.trim() == value.trim())
+                .or_else(|| usable.iter().find(|(_, key)| key == &wanted))
+            {
+                matched_alias.get_or_insert_with(|| (*alias).clone());
+            } else {
+                return VariantIdentityComparison::Contradictory {
+                    field: "coding_change",
+                };
+            }
         } else {
-            return VariantIdentityComparison::Contradictory {
-                field: "coding_change",
-            };
+            indeterminate = Some("coding_change");
         }
     }
     if let Some(value) = requested.transcript.as_deref() {
