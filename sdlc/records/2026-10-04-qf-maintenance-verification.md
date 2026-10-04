@@ -19,7 +19,7 @@ All 43 original selected command receipts have exit 0, stdout and stderr EOF, re
 | Focused check | Recorded result |
 | --- | --- |
 | Exact Rust selectors | 33 product selectors and 3 retained integration selectors completed successfully. |
-| Selected Python contracts | 3 Python test files completed successfully in the retained support command. |
+| Selected Python contracts | 3 selected Python test functions across 3 files passed in the retained support command. |
 | Public article specification | 102 passed, 7 skipped. |
 | Public variant specification | 107 passed, 1 skipped. |
 | Source-size audit | 803 source files, 53 inventory entries, zero findings. |
