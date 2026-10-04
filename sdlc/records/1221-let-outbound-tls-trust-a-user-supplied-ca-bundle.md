@@ -42,7 +42,7 @@ as `91c0322a`, and `canonical-gates` is green at the wave's final head
 
 Reviews: the design review rejected the first draft and required the full
 client-coverage list, in-process DER validation, defined precedence, and a
-concrete TLS fixture plan. The code review accepted with six P2 notes; the
+concrete TLS fixture plan. The code review accepted with six second-priority notes; the
 delta review closed all six, including the `var_os` read, dropping the
 unmaintained `rustls-pemfile`, the unreadable-bundle test, the registry
 classification, and the package count.

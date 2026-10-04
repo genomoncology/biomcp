@@ -18,7 +18,7 @@ Ian cuts every release. Users install releases, not main. The release bar is the
 - [ ] The live docs serve the candidate commit or a descendant.
 - [ ] Every `gh` call in `.github/workflows/release.yml` carries `GH_REPO: ${{ github.repository }}` (or a checkout), and every repository script runs after a checkout — `tests/test_release_workflow_provenance.py` enforces both. Every job that downloads the release while it is still a draft has `contents: write`.
 - [ ] Merged ticket branches, worktrees and local branches are removed. Branches owned by the 1.0 team are left alone. `workspace repos --dirty` is clean for this repository.
-- [ ] The tag push has been rehearsed on a scratch repository (a copy of this repository, private, with the release workflow's PyPI job pointed at TestPyPI and the image name pointed at the scratch repository). The rehearsal runs to the end — draft creation, draft download, container publish, the latest move, the public flip and the Homebrew skip — and the run URL goes in the go request. A failed rehearsal is fixed and repeated; the real tag never cuts first.
+- [ ] The tag push has been rehearsed on the public scratch repository `genomoncology/biomcp-release-rehearsal`, which is kept for this purpose. NEVER private: the GenomOncology account has no payment method on GitHub, so private-repository minutes beyond the included allocation are refused at the spending limit (2026-10-01: a private rehearsal run stopped mid-flight exactly this way), while public-repository runners are free. The copy is main plus one rehearsal commit whose header lists the stated differences and nothing else: the image name is the scratch repository's own, the PyPI upload is replaced by a credential-free `uvx twine check dist/*` (no TestPyPI registration exists and none is planned), and docs-live is stubbed because the live-revision gate compares the real site with the scratch tag. The rehearsal runs to the end — draft creation, draft download, container publish, the latest move, the public flip and the Homebrew skip — and the run URL goes in the go request. A failed rehearsal continues with `gh run rerun <id> --failed`; only a workflow-graph change needs a fresh full run, and the real tag never cuts first. After each rehearsal delete the scratch release and tag (the test image needs the `delete:packages` right, which the release token does not carry — Ian's one click, or grant the scope).
 
 ### 2. The go request
 
@@ -39,6 +39,7 @@ Ian cuts every release. Users install releases, not main. The release bar is the
 - [ ] `ghcr.io/genomoncology/biomcp:X.Y.Z` and `:latest` both point at the new image for `linux/amd64` and `linux/arm64`.
 - [ ] The Homebrew formula names X.Y.Z with the published checksums, and `brew install` runs `biomcp --version`.
 - [ ] Each GitHub issue the release fixes is reproduced against the published artifacts and now passes. The evidence goes in the release record.
+- [ ] The rehearsal's own record names what the stubbed steps skipped: the live-documentation gate (stubbed because the real site cannot serve a scratch tag), the PyPI upload itself (a credential-free check stands in), and the Homebrew formula update (the scratch repository carries no tap token, so the job's skip is the exercised path). The 0.9.1 rehearsal run 36896962624 is the worked example.
 
 ### 5. After the release
 

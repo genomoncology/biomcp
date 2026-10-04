@@ -149,6 +149,8 @@
   (1220, 1250, 1252, 1275, 1278)
 - Record maintenance documentation and test hygiene through ticket 1284. (1284)
 - Prepare the DDInter bundle before the installed-wheel interactions smoke. (1285)
+- Pin the installed x86_64 macOS wheel smoke to the Intel runner image. (1286)
+- Clarify release rehearsal evidence and source licensing review counts. (1287)
 
 ## 0.9.0 — 2026-09-16
 

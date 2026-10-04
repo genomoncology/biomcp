@@ -13,5 +13,5 @@ The draft-visibility blocker (container-publish contents: write, with the guard 
 ## Evidence, read from the API
 
 - Branch runs: 36853923862 and 36854070476 FAILED the TBD scan (a test fixture carried the literal placeholder; 36853923862 also flaked stress-lane); fixed at 3aba3928, run 36856199864 success all eight jobs; 5f19f0a9 run 36859236631 success all eight jobs.
-- Code review: ACCEPT 2026-10-01 dispatch 16d922f8-6baa-4a4a-be90-959000d4580b (Claude vendor, read-only); one P2 folded at 5f19f0a9 (the word "bookkeeping" still present in the changelog line; reworded to "a push that skips the Rust jobs still runs the record tests"), plus a note that the scratch repository's graph is external to the clone.
+- Code review: ACCEPT 2026-10-01 dispatch 16d922f8-6baa-4a4a-be90-959000d4580b (Claude vendor, read-only); one second-priority finding folded at 5f19f0a9 (the word "bookkeeping" still present in the changelog line; reworded to "a push that skips the Rust jobs still runs the record tests"), plus a note that the scratch repository's graph is external to the clone.
 - The go request is withheld until the rehearsal run exists, per checklist section 1.
