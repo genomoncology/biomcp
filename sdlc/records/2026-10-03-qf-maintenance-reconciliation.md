@@ -2,7 +2,7 @@
 
 Date: 2026-10-03. Status: prepared candidate; independent review and shared integration remain pending.
 
-Ian authorized merging maintenance main into development now and requested an isolated Quick Fix candidate. This record serves the supported-product preservation requirement in [BioData ADR 0029](https://github.com/genomoncology/biodata/blob/main/sdlc/planning/adr/0029-integrate-biodata-into-the-working-biomcp-product.md). The [2007 reconciliation](2007-maintenance-reconciliation.md) supplies prior classification practice. The current Git merge base supplies the complete interval boundary; the older record's cutoff does not replace it. This Quick Fix creates no product ticket. Ian can overturn the routine compatibility classification.
+Ian authorizes merging maintenance under the standing programme instructions. The coordinator requested an isolated Quick Fix candidate. This record serves the supported-product preservation requirement in [BioData ADR 0029](https://github.com/genomoncology/biodata/blob/main/sdlc/planning/adr/0029-integrate-biodata-into-the-working-biomcp-product.md). The [2007 reconciliation](2007-maintenance-reconciliation.md) supplies prior classification practice. The current Git merge base supplies the complete interval boundary; the older record's cutoff does not replace it. This Quick Fix creates no product ticket. Ian can overturn the routine compatibility classification.
 
 ## Exact inputs and custody
 
