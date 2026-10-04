@@ -10,7 +10,7 @@ Status: OPEN.
 
 ## Evidence
 
-- Starts from: Experiment 432 question clinvar-09 names `NM_000249.4(MLH1):c.678-14_678-3del`. Two agent legs could not reach it: `get variant` did not parse it and it did not appear in MLH1 search listings. KB QA 0002 confirmed on 2026-10-04 that `clinvar-09` still resolves on neither 0.9.1 nor the 1290 branch.
+- Starts from: Experiment 432 question clinvar-09 names `NM_000249.4(MLH1):c.678-14_678-3del`. Two agent legs could not reach it: `get variant` did not parse it and it did not appear in MLH1 search listings. The maintenance owner's historical consumer QA report 0002 confirmed on 2026-10-04 that `clinvar-09` still resolves on neither 0.9.1 nor the 1290 branch.
 - Keeps: Every input form that works today keeps working.
 - Changes: See Change detail.
 - Proof: A table of input forms (substitution, deletion range, intronic offsets, VariationID, rsID) with expected results, as a spec page.

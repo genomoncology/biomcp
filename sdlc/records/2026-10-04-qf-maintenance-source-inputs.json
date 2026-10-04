@@ -44,8 +44,8 @@
     },
     {
       "path": "sdlc/tickets/1290-make-the-variant-headline-match-current-clinvar.md",
-      "classification": "adopted by merge",
-      "reason": "Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket."
+      "classification": "adopted by merge with generic wording correction",
+      "reason": "Carry the maintenance owner status, design and historical consumer QA evidence with generic unnamed consuming application wording. Preserve evidence values and donor attribution; remove private project names and private repository identifiers. This grants no implementation or combined runtime acceptance."
     },
     {
       "path": "sdlc/tickets/1291-reproduce-the-clinvar-section-source-switch.md",
@@ -54,13 +54,13 @@
     },
     {
       "path": "sdlc/tickets/1292-resolve-intronic-deletion-ranges-in-get-variant.md",
-      "classification": "adopted by merge",
-      "reason": "Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket."
+      "classification": "adopted by merge with generic wording correction",
+      "reason": "Carry the maintenance owner status, design and historical consumer QA evidence with generic unnamed consuming application wording. Preserve evidence values and donor attribution; remove private project names and private repository identifiers. This grants no implementation or combined runtime acceptance."
     },
     {
       "path": "sdlc/tickets/1293-bound-article-search-time-and-report-partial-sources.md",
-      "classification": "adopted by merge",
-      "reason": "Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket."
+      "classification": "adopted by merge with generic wording correction",
+      "reason": "Carry the maintenance owner status, design and historical consumer QA evidence with generic unnamed consuming application wording. Preserve evidence values and donor attribution; remove private project names and private repository identifiers. This grants no implementation or combined runtime acceptance."
     },
     {
       "path": "sdlc/tickets/1294-return-whole-abstracts-and-cleaner-full-text.md",
@@ -79,8 +79,8 @@
     },
     {
       "path": "sdlc/tickets/1297-a-protein-change-query-must-not-resolve-to-the-wrong-variant.md",
-      "classification": "adopted by merge",
-      "reason": "Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket."
+      "classification": "adopted by merge with generic wording correction",
+      "reason": "Carry the maintenance owner status, design and historical consumer QA evidence with generic unnamed consuming application wording. Preserve evidence values and donor attribution; remove private project names and private repository identifiers. This grants no implementation or combined runtime acceptance."
     },
     {
       "path": "skills/schemas/variant.json",
@@ -386,11 +386,11 @@
         "sha256": "a0b455a365ac2ed21ffc1bc4ceba174fcb2d5f93fe4c2d68438e900246212cae"
       },
       "candidate": {
-        "bytes": 8013,
-        "sha256": "c5702c74001f62e53fd34a731d82fb71bfa57a31dea9acb3240af1d18c6758b8"
+        "bytes": 8113,
+        "sha256": "7b872e5530b879cc780050ba4bf0d92b884ae355f509b44b23ed28af5ca35fb3"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "a0eafe36118db64accef3ab72f5ffc4659d337e7"
+      "candidate_git_blob": "889f9f34badeff27609920613e5f3fa8ac9d4ab0"
     },
     {
       "path": "sdlc/tickets/1291-reproduce-the-clinvar-section-source-switch.md",
@@ -418,11 +418,11 @@
         "sha256": "e9c0d2b44cb10851d94b9b9cf2676374fb12f802f3a27cc4826e05a8ecb4eebf"
       },
       "candidate": {
-        "bytes": 1427,
-        "sha256": "4d5874393955d8ec9d98455e3c4ae5ab1adc8a80022443971655357ba94d023e"
+        "bytes": 1475,
+        "sha256": "03d4a01483f8f9e8c2ca0a541ddc17901cd0583eec7fa187026a5e2f682920c0"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "1087d86972e74f2b29c853eb9f19f0724c6fe271"
+      "candidate_git_blob": "ebd20a183d24a78e4ac47bcac765d3a2521bc1c7"
     },
     {
       "path": "sdlc/tickets/1293-bound-article-search-time-and-report-partial-sources.md",
@@ -434,11 +434,11 @@
         "sha256": "7c1d7604fa25fdb684740e2d883f10e4708413f4f4cc5e183974b19a4f1b5840"
       },
       "candidate": {
-        "bytes": 5329,
-        "sha256": "b80b006391ec41d1d75cd3d407b240675c866aad187a0caf9f11528d16b6c716"
+        "bytes": 5390,
+        "sha256": "853d00a53f25a58cac6c2a94edd2f520172bef7a92795a801a136e5635a544fa"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "76d554f8830af1d47475cd26a5ab6d4ee971f31d"
+      "candidate_git_blob": "9dc0caee92584d27dc6bd1943b882e84dd9457be"
     },
     {
       "path": "sdlc/tickets/1294-return-whole-abstracts-and-cleaner-full-text.md",
@@ -495,11 +495,11 @@
       "removed_lines": 0,
       "base": null,
       "candidate": {
-        "bytes": 1882,
-        "sha256": "59f5c0e9df32061bb24e2be8b7bb28e07303f1486dd44958fde0b3cf01e849cd"
+        "bytes": 1987,
+        "sha256": "94168f1d0bbd8588e1542d755f98624ed4cc5b93be97de3bbf8c27782b66b7db"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "2ed5907a81af0acf85a043c01d32381a8bab1e34"
+      "candidate_git_blob": "384352cc9a267c5353a33af2f49bc556f33c4c48"
     },
     {
       "path": "skills/schemas/variant.json",
@@ -3475,5 +3475,15 @@
     "spec/entity/article.md",
     "spec/entity/variant.md"
   ],
-  "selector_proposal_limits": "28 literal Rust names for a later QF proof packet, plus two existing public spec pages under their own prepared offline fixture packet. Source names are checked; collection and execution are unproved. This does not replace or change the fixed 35-selector 0681 CASE."
+  "selector_proposal_limits": "28 literal Rust names for a later QF proof packet, plus two existing public spec pages under their own prepared offline fixture packet. Source names are checked; collection and execution are unproved. This does not replace or change the fixed 35-selector 0681 CASE.",
+  "public_wording_forward_correction": {
+    "base": "cc26694a9cae8536f8c545075418870165809de3",
+    "paths": [
+      "sdlc/tickets/1290-make-the-variant-headline-match-current-clinvar.md",
+      "sdlc/tickets/1292-resolve-intronic-deletion-ranges-in-get-variant.md",
+      "sdlc/tickets/1293-bound-article-search-time-and-report-partial-sources.md",
+      "sdlc/tickets/1297-a-protein-change-query-must-not-resolve-to-the-wrong-variant.md"
+    ],
+    "scope": "Four historical ticket narratives plus existing QF classification/seal metadata only; product source, selectors, migration gold and retired ledger absence unchanged."
+  }
 }
