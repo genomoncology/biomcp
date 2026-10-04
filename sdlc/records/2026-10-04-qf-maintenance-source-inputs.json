@@ -3807,5 +3807,22 @@
       "nonblank_lines": 1308,
       "total_lines": 1424
     }
-  ]
+  ],
+  "maintenance_currency_observation": {
+    "date": "2026-10-04",
+    "before_review_of_source_head": "402bfd6d1dcd1aee43887fe57032817148a8ed68",
+    "source_tree": "0b3fd806cd8197ccbeb0c01ecbf0c5671a9ffde4",
+    "fetch_command": "git fetch origin main",
+    "fetch_exit": 0,
+    "fetched_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+    "remote_confirmation_command": "git ls-remote origin refs/heads/main",
+    "confirmed_remote_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+    "additional_interval_commit_count": 0,
+    "additional_interval_path_count": 0,
+    "additional_interval_added_lines": 0,
+    "additional_interval_removed_lines": 0,
+    "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+    "disposition": "Empty additional interval; no additional behavior to classify.",
+    "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency."
+  }
 }
