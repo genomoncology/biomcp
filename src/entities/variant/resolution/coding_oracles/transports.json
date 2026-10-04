@@ -756,7 +756,8 @@
         },
         "_meta": {
           "not_found": false
-        }
+        },
+        "results": []
       },
       "expected_exit": 2,
       "expected_stderr": ""
