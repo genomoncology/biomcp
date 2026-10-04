@@ -4,4 +4,3 @@ Drafted by `pm init` from the linked worktrees. Holds cells stay blank for revie
 
 | Lane | Worktree | Holds |
 | --- | --- | --- |
-| biomcp-1290 | `biomcp-1290` |  |
