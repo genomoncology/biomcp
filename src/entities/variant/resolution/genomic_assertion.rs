@@ -232,7 +232,7 @@ impl<'a> GenomicAssertion<'a> {
         }
         substitution(self.candidate)
     }
-    pub(in crate::entities::variant) fn source_components(&self) -> super::GenomicComponents<'a> {
+    pub(super) fn source_components(&self) -> super::GenomicComponents<'a> {
         if self.route == "checked" {
             return match self.checked_components() {
                 Ok(c) => super::GenomicComponents {
