@@ -3243,13 +3243,14 @@
         },
         "nonblank_lines": 978,
         "total_lines": 1032,
-        "status": "proposed/pending independent review",
+        "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
         "owner": "Root migration coordinator",
         "current_threshold": 1000,
         "proposed_exact_baseline_lines": 1032,
         "floor_lines": 975,
         "reason": "Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. No current allowance is raised.",
-        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
+        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs.",
+        "independent_review_verdict": "ACCEPT exact proposal; original allowance remains unchanged; no green audit established"
       },
       {
         "path": "src/entities/article/search.rs",
@@ -3259,13 +3260,14 @@
         },
         "nonblank_lines": 966,
         "total_lines": 1009,
-        "status": "proposed/pending independent review",
+        "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
         "owner": "Root migration coordinator",
         "current_threshold": 1000,
         "proposed_exact_baseline_lines": 1009,
         "floor_lines": 969,
         "reason": "Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. No current allowance is raised.",
-        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
+        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs.",
+        "independent_review_verdict": "ACCEPT exact proposal; original allowance remains unchanged; no green audit established"
       },
       {
         "path": "src/cache/migration.rs",
@@ -3275,7 +3277,7 @@
         },
         "nonblank_lines": 1031,
         "total_lines": 1117,
-        "status": "proposed/pending independent review",
+        "status": "Exact proposal independently reviewed ACCEPT; current allowance unchanged; audit qualification deferred",
         "owner": "Root migration coordinator",
         "current_threshold": 1000,
         "current_accepted_baseline_lines": 1096,
@@ -3283,7 +3285,8 @@
         "floor_lines": 927,
         "retained_owner": "biodata-0203",
         "reason": "Test-only task-local cache-root observer witnesses an actual unsuccessful exclusive epoch-lock attempt before the constructor regression advances its controlled clock. Current allowance remains unchanged.",
-        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs.",
+        "independent_review_verdict": "ACCEPT exact proposal; original allowance remains unchanged; no green audit established"
       }
     ],
     "source_observation_diffs_from_04262459": [
@@ -3937,8 +3940,8 @@
   ],
   "maintenance_currency_observation": {
     "date": "2026-10-04",
-    "before_review_of_source_head": "0426245938f2fcab8e18462e37cbad482ef1d876",
-    "source_tree": "b561638b44fcbdd10c0a1e8fb99372d04228c4f1",
+    "before_review_of_source_head": "07909e05bac5cde879d8c0650f86580017a856d6",
+    "source_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
     "fetch_command": "git fetch origin main",
     "fetch_exit": 0,
     "fetched_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
@@ -3951,38 +3954,14 @@
     "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
     "disposition": "Empty additional interval; no additional behavior to classify.",
     "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency.",
-    "observation_context": "2026-10-04 Root pre-remediation-code-review fetch and immediate ls-remote confirmation; both exit 0"
+    "observation_context": "2026-10-04 Root repeated ADR0029-required fetch immediately before corrected-source re-review; fetch and immediate ls-remote exit0, both exact d8; empty additional interval."
   },
   "source_preparation_review": {
+    "reviewed_head": "07909e05bac5cde879d8c0650f86580017a856d6",
+    "reviewed_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
+    "verdict": "ACCEPT SOURCE only",
     "date": "2026-10-04",
-    "verdict": "SUPERSEDED; pending fresh independent whole-source review",
-    "scope": "Source preparation only",
-    "reviewed_head": "103eb29f9b5b8fc718b38f9f051810c64ac57a24",
-    "reviewed_tree": "a571fa02d6c33b7d01d92cbcbf49972478bf237f",
-    "reviewer_session": "01a107c9-97cd-78e3-bb9e-7e5412a98c98",
-    "reviewer_model": "GPT-6.1 SOL High",
-    "remaining_source_findings": [],
-    "full_delta_path_count": 58,
-    "reviewed_full_delta_added_lines": 7298,
-    "reviewed_full_delta_removed_lines": 262,
-    "complete_whitespace_check_exit": 2,
-    "whitespace_gate_waived": false,
-    "effective_inputs_changed_by_receipt": false,
-    "pending": [
-      "Compilation",
-      "Offline COMMAND and ACTUAL acceptance",
-      "Actual source-size audit",
-      "Provenance footprint proof",
-      "0681 SOURCE amendment",
-      "Shared integration"
-    ],
-    "not_granted": [
-      "0681 CODE authority",
-      "Runtime qualification",
-      "Release acceptance"
-    ],
-    "historical_status": "Superseded by fresh whole-source findings on 720fab97; this historical ACCEPT is not current source acceptance.",
-    "historical_verdict": "ACCEPT"
+    "limits": "Final custody metadata does not alter reviewed source. No build/runtime/provider/Docker/CI/release/audit/footprint proof, no 0681 or shared integration acceptance."
   },
   "root_remediation_history": [
     {
@@ -4053,7 +4032,7 @@
     }
   ],
   "raw_whitespace_exception_proposal": {
-    "status": "proposed/pending independent review",
+    "status": "Exact proposal independently reviewed ACCEPT; original exit2 preserved; no checker change or general waiver",
     "path": "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml",
     "sha256": "1077664822261adf69c1c7b6090f1df4d736c12113476f31a25d366c7689a329",
     "size": 56246,
@@ -4067,9 +4046,10 @@
     "original_exit": 2,
     "original_evidence_preserved": true,
     "other_checks_and_failures_waived": false,
-    "removal_condition": "Exact raw capture retired/replaced by a newly independently qualified receipt OR checker understands raw data. ANY path, byte, hash, size, line or new-diagnostic change invalidates the exception."
+    "removal_condition": "Exact raw capture retired/replaced by a newly independently qualified receipt OR checker understands raw data. ANY path, byte, hash, size, line or new-diagnostic change invalidates the exception.",
+    "independent_review_verdict": "ACCEPT exact proposal at04262459; retained at07909e05. Original diff-check exit2 remains; no checker change or general waiver."
   },
-  "current_source_status": "Constructor contention witness corrected after fresh SOURCE finding on 04262459; pending independent review; no current SOURCE acceptance",
+  "current_source_status": "Independent SOURCE ACCEPT at07909e05; custody-only final amendment; runtime/compiler/audit/footprint/0681 acceptance unproven. Three exact ceiling proposals independently reviewed, no allowance raises.",
   "maintenance_currency_observation_history": [
     {
       "date": "2026-10-04",
@@ -4087,6 +4067,24 @@
       "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
       "disposition": "Empty additional interval; no additional behavior to classify.",
       "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency."
+    },
+    {
+      "date": "2026-10-04",
+      "before_review_of_source_head": "0426245938f2fcab8e18462e37cbad482ef1d876",
+      "source_tree": "b561638b44fcbdd10c0a1e8fb99372d04228c4f1",
+      "fetch_command": "git fetch origin main",
+      "fetch_exit": 0,
+      "fetched_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "remote_confirmation_command": "git ls-remote origin refs/heads/main",
+      "confirmed_remote_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "additional_interval_commit_count": 0,
+      "additional_interval_path_count": 0,
+      "additional_interval_added_lines": 0,
+      "additional_interval_removed_lines": 0,
+      "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "disposition": "Empty additional interval; no additional behavior to classify.",
+      "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency.",
+      "observation_context": "2026-10-04 Root pre-remediation-code-review fetch and immediate ls-remote confirmation; both exit 0"
     }
   ],
   "maintenance_duplicate_issue_disposition": {
@@ -4119,6 +4117,76 @@
       "backends_ceiling_proposal_verdict": "ACCEPT exact1032/floor975 proposal; no allowance changed",
       "search_ceiling_proposal_verdict": "ACCEPT exact1009/floor969 proposal; no allowance changed",
       "correction": "63eca443 corrects contention witness; current metadata corrects selector description. Re-review required."
+    },
+    {
+      "reviewed_head": "07909e05bac5cde879d8c0650f86580017a856d6",
+      "reviewed_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
+      "reviewer": "independent SOL High; read-only re-review after fresh whole SOURCE findings",
+      "verdict": "ACCEPT SOURCE only",
+      "findings_resolved": [
+        "Actual epoch-lock WouldBlock witness scoped to task/exact root before expiry or successful release",
+        "Current selector limits33 with historical31 preserved"
+      ],
+      "migration_ceiling_proposal_verdict": "ACCEPT exact1117 against unchanged1096 accepted baseline/floor927;21 test-only witness lines; original owner/removal preserved",
+      "retained_proposal_verdicts": "Earlier exact rawXML/backends/search proposal ACCEPT verdicts still apply; no checker or inventory allowance changes",
+      "execution": "No prohibited execution; compilation/runtime/footprint/0681 acceptance unproven"
     }
-  ]
+  ],
+  "source_preparation_review_history": [
+    {
+      "date": "2026-10-04",
+      "verdict": "SUPERSEDED; pending fresh independent whole-source review",
+      "scope": "Source preparation only",
+      "reviewed_head": "103eb29f9b5b8fc718b38f9f051810c64ac57a24",
+      "reviewed_tree": "a571fa02d6c33b7d01d92cbcbf49972478bf237f",
+      "reviewer_session": "01a107c9-97cd-78e3-bb9e-7e5412a98c98",
+      "reviewer_model": "GPT-6.1 SOL High",
+      "remaining_source_findings": [],
+      "full_delta_path_count": 58,
+      "reviewed_full_delta_added_lines": 7298,
+      "reviewed_full_delta_removed_lines": 262,
+      "complete_whitespace_check_exit": 2,
+      "whitespace_gate_waived": false,
+      "effective_inputs_changed_by_receipt": false,
+      "pending": [
+        "Compilation",
+        "Offline COMMAND and ACTUAL acceptance",
+        "Actual source-size audit",
+        "Provenance footprint proof",
+        "0681 SOURCE amendment",
+        "Shared integration"
+      ],
+      "not_granted": [
+        "0681 CODE authority",
+        "Runtime qualification",
+        "Release acceptance"
+      ],
+      "historical_status": "Superseded by fresh whole-source findings on 720fab97; this historical ACCEPT is not current source acceptance.",
+      "historical_verdict": "ACCEPT"
+    }
+  ],
+  "final_custody": {
+    "reviewed_source_head": "07909e05bac5cde879d8c0650f86580017a856d6",
+    "reviewed_source_tree": "35368ffa2bb086c2f145b870e46d319c482ea485",
+    "effective_input_count": 57,
+    "changed_src_rust_path_count": 25,
+    "nine_baseline_count": 9,
+    "retained_inventory_count": 51,
+    "actual_overthreshold_count": 53,
+    "product_selectors": 33,
+    "support_selectors": 6,
+    "public_spec_pages": 2,
+    "light_checks": "Forward whitespace clean; all five tracked-text scans pass; complete c428-relative diff-check preserves exit2 solely exactXML line2.",
+    "full_c428_delta": {
+      "path_count": 59,
+      "added_lines": 8221,
+      "removed_lines": 393
+    },
+    "full_720_forward_delta": {
+      "path_count": 9,
+      "added_lines": 988,
+      "removed_lines": 231
+    },
+    "git_custody": "Normal forward [skip ci] commits and normal ticket-branch pushes; no rebase/force/no-verify/main writes/deletion."
+  }
 }
