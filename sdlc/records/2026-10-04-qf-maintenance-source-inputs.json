@@ -6329,21 +6329,21 @@
     "light_checks": "Forward whitespace clean; all five tracked-text scans pass; complete c428-relative diff-check preserves exit2 solely exactXML line2.",
     "full_c428_delta": {
       "path_count": 59,
-      "added_lines": 10502,
+      "added_lines": 10508,
       "removed_lines": 396
     },
     "full_720_forward_delta": {
       "path_count": 10,
-      "added_lines": 3288,
+      "added_lines": 3294,
       "removed_lines": 253
     },
     "git_custody": "Normal forward [skip ci] commits and normal ticket-branch pushes; no rebase/force/no-verify/main writes/deletion.",
     "current_inventory_count": 53,
     "forward_adoption_review": "Pending fresh SOL review; this writer grants no ACCEPT",
-    "current_source_input_seal_sha256": "d47c92e12a720a75861385605a44be162cdc90ec523a5e369b7a663b98ea15ac",
+    "current_source_input_seal_sha256": "82b3171c8bbcec400d941a8ca4232bd485ce5de6588f48903fc7c830e9f48782",
     "forward_9cb_delta": {
       "path_count": 3,
-      "added_lines": 2336,
+      "added_lines": 2342,
       "removed_lines": 58
     }
   },
@@ -6390,16 +6390,20 @@
     "footprint": "Required existing five-case contract measurement; no optimization or execution",
     "new_tools_or_global_PATH_changes": false,
     "future_execution_authority": null,
-    "source_input_seal_sha256": "d47c92e12a720a75861385605a44be162cdc90ec523a5e369b7a663b98ea15ac",
+    "source_input_seal_sha256": "82b3171c8bbcec400d941a8ca4232bd485ce5de6588f48903fc7c830e9f48782",
     "private_build_collection_command_count": 9,
     "private_deferred_execution_command_count": 43,
     "remaining_blockers": [
       "Fresh SOL forward inventory/attribution amendment and whole COMMAND acceptance",
-      "Rebind admitted existing M5/Linux capture executor and review its exact command/environment/clock bindings; no replacement backend assumed",
+      "Fresh SOL review of prepared existing M5/Linux capture rebinding and exact command/environment/clock bindings; absent parent Root build-collection GO",
       "Separate authorization to allocate owned source/cache/target copies and perform existing image/tool qualification and build/collection",
       "Bind actual artifacts/depfiles/dependencies/collection to source/package; fresh expanded COMMAND acceptance and separate execution GO",
       "Actual audit, footprint and offline test acceptance; 0681 SOURCE amendment and shared integration remain parent-owned holds"
-    ]
+    ],
+    "source_input_seal_history": [
+      "d47c92e12a720a75861385605a44be162cdc90ec523a5e369b7a663b98ea15ac"
+    ],
+    "capture_rebinding": "Prepared existing M5/Linux capture source rebinding and complete diffs; one unchanged685-second inner hard budget with35-second reserve,700-second outer budget with15-second reserve. No new backend. Fresh SOL source/COMMAND review required; packet-bound Root GO file absent."
   },
   "final_custody_history": [
     {
