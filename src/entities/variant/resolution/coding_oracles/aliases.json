@@ -1,0 +1,885 @@
+{
+  "status": "Authored DESIGN oracle; not executed or independently accepted",
+  "aliases": [
+    {
+      "id": "A01",
+      "input": {
+        "source": "c.19C>T"
+      },
+      "expected": {
+        "source": "c.19C>T",
+        "segment": "c.19C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": {
+          "envelope_source": "c.19C>T",
+          "molecule": "Coding",
+          "reference": null,
+          "prediction": false,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "19",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": true,
+          "span": [
+            0,
+            7
+          ],
+          "reference_span": null,
+          "location_span": [
+            2,
+            4
+          ],
+          "source_render": "c.19C>T",
+          "constructed_render": "c.19C>T"
+        }
+      }
+    },
+    {
+      "id": "A02",
+      "input": {
+        "source": "NM_012345.7:c.19C>T"
+      },
+      "expected": {
+        "source": "NM_012345.7:c.19C>T",
+        "segment": "c.19C>T",
+        "reference_prefix": "NM_012345.7",
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": {
+          "envelope_source": "NM_012345.7:c.19C>T",
+          "molecule": "Coding",
+          "reference": "NM_012345.7",
+          "prediction": false,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "19",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": false,
+          "span": [
+            0,
+            19
+          ],
+          "reference_span": [
+            0,
+            11
+          ],
+          "location_span": [
+            14,
+            16
+          ],
+          "source_render": "NM_012345.7:c.19C>T",
+          "constructed_render": "NM_012345.7:c.19C>T"
+        }
+      }
+    },
+    {
+      "id": "A03",
+      "input": {
+        "source": "c.(19C>T)"
+      },
+      "expected": {
+        "source": "c.(19C>T)",
+        "segment": "c.(19C>T)",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.(19C>T)",
+        "checked": {
+          "envelope_source": "c.(19C>T)",
+          "molecule": "Coding",
+          "reference": null,
+          "prediction": true,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "19",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": true,
+          "span": [
+            0,
+            9
+          ],
+          "reference_span": null,
+          "location_span": [
+            3,
+            5
+          ],
+          "source_render": "c.(19C>T)",
+          "constructed_render": "c.(19C>T)"
+        }
+      }
+    },
+    {
+      "id": "A04",
+      "input": {
+        "source": "NM_012345.7:c.(19C>T)"
+      },
+      "expected": {
+        "source": "NM_012345.7:c.(19C>T)",
+        "segment": "c.(19C>T)",
+        "reference_prefix": "NM_012345.7",
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.(19C>T)",
+        "checked": {
+          "envelope_source": "NM_012345.7:c.(19C>T)",
+          "molecule": "Coding",
+          "reference": "NM_012345.7",
+          "prediction": true,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "19",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": false,
+          "span": [
+            0,
+            21
+          ],
+          "reference_span": [
+            0,
+            11
+          ],
+          "location_span": [
+            15,
+            17
+          ],
+          "source_render": "NM_012345.7:c.(19C>T)",
+          "constructed_render": "NM_012345.7:c.(19C>T)"
+        }
+      }
+    },
+    {
+      "id": "A05",
+      "input": {
+        "source": "c.0019C>T"
+      },
+      "expected": {
+        "source": "c.0019C>T",
+        "segment": "c.0019C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.0019C>T",
+        "checked": {
+          "envelope_source": "c.0019C>T",
+          "molecule": "Coding",
+          "reference": null,
+          "prediction": false,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "0019",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": true,
+          "span": [
+            0,
+            9
+          ],
+          "reference_span": null,
+          "location_span": [
+            2,
+            6
+          ],
+          "source_render": "c.0019C>T",
+          "constructed_render": "c.0019C>T"
+        }
+      }
+    },
+    {
+      "id": "A06",
+      "input": {
+        "source": "c.2147483648C>T"
+      },
+      "expected": {
+        "source": "c.2147483648C>T",
+        "segment": "c.2147483648C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.2147483648C>T",
+        "checked": {
+          "envelope_source": "c.2147483648C>T",
+          "molecule": "Coding",
+          "reference": null,
+          "prediction": false,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "2147483648",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": true,
+          "span": [
+            0,
+            15
+          ],
+          "reference_span": null,
+          "location_span": [
+            2,
+            12
+          ],
+          "source_render": "c.2147483648C>T",
+          "constructed_render": "c.2147483648C>T"
+        }
+      }
+    },
+    {
+      "id": "A07",
+      "input": {
+        "source": " c.19C>T "
+      },
+      "expected": {
+        "source": " c.19C>T ",
+        "segment": "c.19C>T",
+        "reference_prefix": null,
+        "preparations": [
+          "outer_whitespace"
+        ],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": {
+          "envelope_source": "c.19C>T",
+          "molecule": "Coding",
+          "reference": null,
+          "prediction": false,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "19",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": true,
+          "span": [
+            0,
+            7
+          ],
+          "reference_span": null,
+          "location_span": [
+            2,
+            4
+          ],
+          "source_render": "c.19C>T",
+          "constructed_render": "c.19C>T"
+        }
+      }
+    },
+    {
+      "id": "A08",
+      "input": {
+        "source": "c.19C>C"
+      },
+      "expected": {
+        "source": "c.19C>C",
+        "segment": "c.19C>C",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "C.19C>C",
+        "checked": {
+          "envelope_source": "c.19C>C",
+          "molecule": "Coding",
+          "reference": null,
+          "prediction": false,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "19",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "C"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": true,
+          "span": [
+            0,
+            7
+          ],
+          "reference_span": null,
+          "location_span": [
+            2,
+            4
+          ],
+          "source_render": "c.19C>C",
+          "constructed_render": "c.19C>C"
+        }
+      }
+    },
+    {
+      "id": "A09",
+      "input": {
+        "source": "c.19c>t"
+      },
+      "expected": {
+        "source": "c.19c>t",
+        "segment": "c.19c>t",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_case",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A10",
+      "input": {
+        "source": "C.19C>T"
+      },
+      "expected": {
+        "source": "C.19C>T",
+        "segment": "C.19C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_case",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A11",
+      "input": {
+        "source": "c.0C>T"
+      },
+      "expected": {
+        "source": "c.0C>T",
+        "segment": "c.0C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_zero",
+        "diagnostic": null,
+        "comparison_key": "C.0C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A12",
+      "input": {
+        "source": "c.19+1C>T"
+      },
+      "expected": {
+        "source": "c.19+1C>T",
+        "segment": "c.19+1C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "C.19+1C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A13",
+      "input": {
+        "source": "c.-19C>T"
+      },
+      "expected": {
+        "source": "c.-19C>T",
+        "segment": "c.-19C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "C.-19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A14",
+      "input": {
+        "source": "c.19_21del"
+      },
+      "expected": {
+        "source": "c.19_21del",
+        "segment": "c.19_21del",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "C.19_21DEL",
+        "checked": null
+      }
+    },
+    {
+      "id": "A15",
+      "input": {
+        "source": "c.(19_21)C>T"
+      },
+      "expected": {
+        "source": "c.(19_21)C>T",
+        "segment": "c.(19_21)C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "C.(19_21)C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A16",
+      "input": {
+        "source": "c.19C>Tjunk"
+      },
+      "expected": {
+        "source": "c.19C>Tjunk",
+        "segment": "c.19C>Tjunk",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "C.19C>TJUNK",
+        "checked": null
+      }
+    },
+    {
+      "id": "A17",
+      "input": {
+        "source": "c.19CC>T"
+      },
+      "expected": {
+        "source": "c.19CC>T",
+        "segment": "c.19CC>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "C.19CC>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A18",
+      "input": {
+        "source": "c.[19C>T;21G>A]"
+      },
+      "expected": {
+        "source": "c.[19C>T;21G>A]",
+        "segment": "c.[19C>T;21G>A]",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "C.[19C>T;21G>A]",
+        "checked": null
+      }
+    },
+    {
+      "id": "A19",
+      "input": {
+        "source": "n.19C>T"
+      },
+      "expected": {
+        "source": "n.19C>T",
+        "segment": "n.19C>T",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_body",
+        "diagnostic": null,
+        "comparison_key": "N.19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A20",
+      "input": {
+        "source": "bad ref:c.19C>T"
+      },
+      "expected": {
+        "source": "bad ref:c.19C>T",
+        "segment": "c.19C>T",
+        "reference_prefix": "bad ref",
+        "preparations": [],
+        "route": "compatibility_reference",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A21",
+      "input": {
+        "source": ":c.19C>T"
+      },
+      "expected": {
+        "source": ":c.19C>T",
+        "segment": "c.19C>T",
+        "reference_prefix": "",
+        "preparations": [],
+        "route": "compatibility_reference",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A22",
+      "input": {
+        "source": "\u00e9:c.19C>T"
+      },
+      "expected": {
+        "source": "\u00e9:c.19C>T",
+        "segment": "c.19C>T",
+        "reference_prefix": "\u00e9",
+        "preparations": [],
+        "route": "compatibility_reference",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A23",
+      "input": {
+        "source": ""
+      },
+      "expected": {
+        "source": "",
+        "segment": "",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "absent",
+        "diagnostic": null,
+        "comparison_key": null,
+        "checked": null
+      }
+    },
+    {
+      "id": "A24",
+      "input": {
+        "source": "a:b:c.19C>T"
+      },
+      "expected": {
+        "source": "a:b:c.19C>T",
+        "segment": "c.19C>T",
+        "reference_prefix": "a:b",
+        "preparations": [],
+        "route": "compatibility_reference",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": null
+      }
+    },
+    {
+      "id": "A25",
+      "input": {
+        "source": "bad\u007fref:c.19C>T"
+      },
+      "expected": {
+        "source": "bad\u007fref:c.19C>T",
+        "segment": "c.19C>T",
+        "reference_prefix": "bad\u007fref",
+        "preparations": [],
+        "route": "compatibility_reference",
+        "diagnostic": null,
+        "comparison_key": "C.19C>T",
+        "checked": null
+      },
+      "expected_parser_calls": 0,
+      "retained_consumers": {
+        "normalized_key": {
+          "input": {
+            "genomic_id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genes": [
+              "GENE"
+            ],
+            "protein_changes": [],
+            "coding_changes": [
+              "bad\u007fref:c.19C>T"
+            ],
+            "rsids": []
+          },
+          "expected": "CHR1:G.19C>T|GRCH37|GENE||C.19C>T|"
+        },
+        "identity_comparison": {
+          "id": "C17",
+          "request": {
+            "gene": "GENE",
+            "protein_change": null,
+            "coding_change": "c.19C>T",
+            "transcript": null,
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          },
+          "source": {
+            "genomic_id": "chr1:g.19C>T",
+            "genome_build": "GRCh37",
+            "genes": [
+              "GENE"
+            ],
+            "protein_changes": [],
+            "coding_changes": [
+              "bad\u007fref:c.19C>T"
+            ],
+            "rsids": []
+          },
+          "expected": {
+            "Compatible": {
+              "matched_alias": "bad\u007fref:c.19C>T"
+            }
+          }
+        },
+        "annotation_match": {
+          "request": {
+            "gene": "GENE",
+            "protein_change": null,
+            "coding_change": "c.19C>T",
+            "transcript": "NM_012345.7",
+            "genomic_accession": null,
+            "genome_build": null,
+            "position": null,
+            "reference": null,
+            "alternate": null,
+            "rsid": null
+          },
+          "annotation": {
+            "feature_id": "NM_012345.7",
+            "genename": "GENE",
+            "hgvs_c": "bad\u007fref:c.19C>T",
+            "hgvs_p": null
+          },
+          "expected": true
+        }
+      },
+      "provenance": "Generic MIT synthetic control-byte literal authored for Carver DESIGN P2. No provider payload or runtime result."
+    }
+  ],
+  "resources": [
+    {
+      "id": "R01",
+      "input_recipe": "c. + 1 repeated (1048576 - 5) times + C>T",
+      "bytes": 1048576,
+      "expected_route": "checked",
+      "expected_key_recipe": "C. + identical decimal lexeme + C>T",
+      "prediction": false,
+      "reference": null,
+      "expected_projection_recipe": {
+        "source": "$input",
+        "segment": "$segment",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "$uppercase_segment",
+        "checked": {
+          "envelope_source": "$input",
+          "molecule": "Coding",
+          "reference": null,
+          "prediction": false,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "$digits",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": true,
+          "span": [
+            0,
+            1048576
+          ],
+          "reference_span": null,
+          "location_span": [
+            2,
+            1048573
+          ],
+          "source_render": "$input",
+          "constructed_render": "$input"
+        }
+      }
+    },
+    {
+      "id": "R02",
+      "input_recipe": "R01 plus one decimal digit",
+      "bytes": 1048577,
+      "expected_route": "compatibility_resource",
+      "parser_calls": 0,
+      "expected_key_recipe": "ASCII uppercase of original segment",
+      "expected_projection_recipe": {
+        "source": "$input",
+        "segment": "$segment",
+        "reference_prefix": null,
+        "preparations": [],
+        "route": "compatibility_resource",
+        "diagnostic": null,
+        "comparison_key": "$uppercase_segment",
+        "checked": null
+      }
+    },
+    {
+      "id": "R03",
+      "input_recipe": "N repeated 4096 times + :c.(19C>T)",
+      "bytes": 4106,
+      "expected_route": "checked",
+      "expected_reference_bytes": 4096,
+      "prediction": true,
+      "expected_key": "C.(19C>T)",
+      "expected_projection_recipe": {
+        "source": "$input",
+        "segment": "$segment",
+        "reference_prefix": "$reference",
+        "preparations": [],
+        "route": "checked",
+        "diagnostic": null,
+        "comparison_key": "$uppercase_segment",
+        "checked": {
+          "envelope_source": "$input",
+          "molecule": "Coding",
+          "reference": "$reference",
+          "prediction": true,
+          "location": {
+            "Point": {
+              "marker": "Ordinary",
+              "digits": "19",
+              "offset": null
+            }
+          },
+          "edit": {
+            "Substitution": {
+              "reference": "C",
+              "alternate": "T"
+            }
+          },
+          "rna_outcome": null,
+          "rna_basis": null,
+          "reference_unavailable": false,
+          "span": [
+            0,
+            4106
+          ],
+          "reference_span": [
+            0,
+            4096
+          ],
+          "location_span": [
+            4100,
+            4102
+          ],
+          "source_render": "$input",
+          "constructed_render": "$input"
+        }
+      }
+    },
+    {
+      "id": "R04",
+      "input_recipe": "R03 plus one reference N",
+      "bytes": 4107,
+      "expected_route": "compatibility_resource",
+      "parser_calls": 0,
+      "expected_key": "C.(19C>T)",
+      "expected_projection_recipe": {
+        "source": "$input",
+        "segment": "$segment",
+        "reference_prefix": "$reference",
+        "preparations": [],
+        "route": "compatibility_resource",
+        "diagnostic": null,
+        "comparison_key": "$uppercase_segment",
+        "checked": null
+      }
+    }
+  ],
+  "resource_recipe_language": "For each row, independently materialize input_recipe. In expected_projection_recipe replace $input with those exact input bytes, $digits with the stated repeated decimal, $reference with the stated repeated N prefix, $segment with the final c. body, and $uppercase_segment with ASCII uppercase of that body. These are authored text recipes; never call candidate parsing/rendering to generate the oracle."
+}
