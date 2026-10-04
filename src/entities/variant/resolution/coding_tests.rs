@@ -379,7 +379,11 @@ async fn coding_source_projection_table() {
     assert_eq!(key.normalized_key(), control["normalized_key"]["expected"]);
     let match_case = &control["annotation_match"];
     let annotation = &match_case["annotation"];
-    let page = json!({"total":1,"hits":[{"_id":"chr1:g.19C>T","dbnsfp":{"genename":"GENE","hgvsc":annotation["hgvs_c"]},"snpeff":{"ann":annotation}}]});
+    // Reuse accepted S02 source aliases to satisfy the separate source-transcript filter.
+    // The annotation control retains its complete original request and DEL-bearing annotation.
+    let mut hit = rows["S02"]["input"].clone();
+    hit["snpeff"]["ann"][0] = annotation.clone();
+    let page = json!({"total":1,"hits":[hit]});
     let observed = transport::search_row(page, match_case["request"].clone()).await;
     let actual = &observed["transcript_annotations"][0];
     assert_eq!(
