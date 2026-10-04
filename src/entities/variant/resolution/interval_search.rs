@@ -43,6 +43,9 @@ impl<'a> IntervalSearchAssertion<'a> {
     pub(crate) fn selects(source: &str) -> bool {
         selected(source)
     }
+    pub(crate) fn starts_change(source: &str) -> bool {
+        shaped(source)
+    }
     pub(crate) fn disposition(&self) -> IntervalSearchDisposition {
         self.disposition
     }
@@ -133,7 +136,7 @@ impl fmt::Debug for IntervalSearchAssertion<'_> {
 }
 
 /// Borrowed resemblance only. The producer proves grammar after resource preflight.
-pub(crate) fn selected(source: &str) -> bool {
+fn selected(source: &str) -> bool {
     let text = source.trim();
     if !["del", "dup", "ins"]
         .iter()
@@ -141,6 +144,10 @@ pub(crate) fn selected(source: &str) -> bool {
     {
         return false;
     }
+    shaped(text)
+}
+
+fn shaped(text: &str) -> bool {
     if text.starts_with("p.")
         || text.starts_with("P.")
         || text.contains(":p.")

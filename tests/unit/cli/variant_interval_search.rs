@@ -186,4 +186,20 @@ async fn interval_search_routing_table() {
             bounded(row).await;
         }
     }
+    // Nonexact gene operands retain condition fallback even beside qualified interval text.
+    for source in [
+        "gene NP_1:p.A11del",
+        "GENE_OTHER NP_1:p.A11del",
+        "gene NP_1:p.A11del extra",
+    ] {
+        let plan = dispatch::resolve_variant_query(None, None, None, None, vec![source.to_owned()])
+            .unwrap();
+        assert_eq!(
+            plan,
+            VariantSearchPlan::standard(ResolvedVariantQuery {
+                condition: Some(source.to_owned()),
+                ..Default::default()
+            })
+        );
+    }
 }

@@ -31,8 +31,10 @@ fn operands(tokens: &[String]) -> Option<(Option<&str>, &str)> {
                 }
                 let offset = change.as_ptr() as usize - first.as_ptr() as usize;
                 Some((Some(gene), &first[offset..]))
-            } else {
+            } else if IntervalSearchAssertion::starts_change(gene) {
                 Some((None, first))
+            } else {
+                None
             }
         }
         (Some(change), None)
