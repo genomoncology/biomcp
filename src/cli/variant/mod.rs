@@ -264,6 +264,31 @@ pub(super) enum VariantSearchPlan {
 }
 
 impl VariantSearchPlan {
+    fn checked_interval(
+        mut query: ResolvedVariantQuery,
+        assertion: &crate::entities::variant::IntervalSearchAssertion<'_>,
+    ) -> Result<Self, crate::error::BioMcpError> {
+        let spelling = assertion.query_spelling().ok_or_else(|| {
+            crate::error::BioMcpError::InvalidArgument(
+                "Positional protein interval cannot be searched".to_owned(),
+            )
+        })?;
+        if query.hgvsp.as_deref() != Some(spelling) {
+            return Err(crate::error::BioMcpError::InvalidArgument(
+                "Positional protein interval cannot be searched".to_owned(),
+            ));
+        }
+        query.requested_identity = Some(Box::new(
+            crate::entities::variant::RequestedVariantIdentity::for_search(
+                query.gene.clone(),
+                query.hgvsp.clone(),
+                query.hgvsc.clone(),
+                query.rsid.clone(),
+            ),
+        ));
+        Ok(Self::Standard(query))
+    }
+
     fn standard(mut query: ResolvedVariantQuery) -> Self {
         let exact = query.hgvsp.is_some() || query.hgvsc.is_some() || query.rsid.is_some();
         query.requested_identity = exact.then(|| {
@@ -286,6 +311,7 @@ mod car;
 mod dispatch;
 mod erepo;
 mod guidance;
+mod interval_search;
 mod normalization_json;
 mod trial;
 #[cfg(test)]
@@ -311,3 +337,7 @@ pub(crate) async fn handle_search_bounded(
 #[cfg(test)]
 #[path = "../../../tests/unit/cli/variant.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../../tests/unit/cli/variant_interval_search.rs"]
+mod interval_search_tests;

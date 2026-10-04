@@ -8,6 +8,9 @@ mod point;
 #[path = "interval_tests.rs"]
 pub(crate) mod interval;
 
+#[path = "interval_search_tests.rs"]
+mod interval_search;
+
 #[path = "coding_tests.rs"]
 mod coding;
 

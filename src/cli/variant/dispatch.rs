@@ -309,13 +309,13 @@ pub(super) fn resolve_variant_query(
     let consequence_flag = consequence_flag.map(|value| value.trim().to_string());
     let condition_flag = normalize_cli_query(condition_flag);
 
-    let positional = positional_tokens
-        .iter()
-        .map(|token| token.trim())
-        .filter(|token| !token.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ");
-    let positional = normalize_cli_query(Some(positional));
+    if let Some(plan) = super::interval_search::resolve(
+        &positional_tokens,
+        [&gene_flag, &hgvsp_flag, &consequence_flag, &condition_flag],
+    )? {
+        return Ok(plan);
+    }
+    let positional = super::interval_search::retained_preparation(&positional_tokens);
 
     let Some(query) = positional else {
         return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
