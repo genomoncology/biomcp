@@ -538,3 +538,6 @@ fn identity_comparison_is_indeterminate_for_missing_or_unlinked_annotation_evide
         }
     );
 }
+
+#[path = "genomic_tests.rs"]
+mod genomic;
