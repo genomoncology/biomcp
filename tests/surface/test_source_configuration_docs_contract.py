@@ -48,6 +48,7 @@ PRODUCTION_READ_ENV_ALLOWLIST = {
     "BIOMCP_TEST_CITATION_GRAPH_DEADLINE_MS": "debug-only citation graph deadline seam, not operator configuration",
     "BIOMCP_TEST_CITATION_CACHE_TTL_MS": "debug-only citation sidecar TTL seam, not operator configuration",
     "BIOMCP_TEST_AUTHOR_PAPERS_DEADLINE_MS": "debug-only author papers deadline seam, not operator configuration",
+    "BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS": "fixture article search deadline seam read in release builds, not operator configuration",
     "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": "fixture-only signal, not operator configuration",
     "BIOMCP_BUILD_DATE": "compile-time build metadata, not runtime operator configuration",
     "BIOMCP_BUILD_GIT_SHA": "compile-time build metadata, not runtime operator configuration",

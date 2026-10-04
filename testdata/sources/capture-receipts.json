@@ -2762,6 +2762,30 @@
         "minimization_or_redaction": "No field was removed, no value was redacted, and the bytes are unmodified. PharmacoDB publishes drug sensitivity measurements on immortalized cell lines and carries no personal data.",
         "provider_origin_statement": "Recorded through the BioMCP PharmacoDbClient production request path against the public PharmacoDB GraphQL API on 2026-09-18 as the `experiments` row projection with cellLineId 1248 and compoundId 53572 and all: true. The API is unauthenticated, read-only and publishes no rate limit. The projection is the one the production plan sends."
       }
+    },
+    {
+      "path": "myvariant/search_tp53_g105s_20261003.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ATP53+AND+dbnsfp.hgvsp%3A%22p.G105S%22&size=5&from=0&fields=_id%2Ccadd.phred%2Ccadd.consequence%2Cclinvar.gene.symbol%2Cclinvar.rcv.accession%2Cclinvar.rcv.version%2Cclinvar.rcv.clinical_significance%2Cclinvar.rcv.review_status%2Cclinvar.rcv.conditions%2Cclinvar.rcv.preferred_name%2Cclinvar.rcv.last_evaluated%2Cclinvar.rcv.number_submitters%2Cclinvar.variant_id%2Csnpeff.ann.feature_id%2Csnpeff.ann.genename%2Csnpeff.ann.hgvs_c%2Csnpeff.ann.hgvs_p%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.hgvsc%2Cdbnsfp.sift.pred%2Cdbnsfp.sift.score%2Cdbnsfp.polyphen2.hdiv.pred%2Cdbnsfp.revel.score%2Cdbnsfp.revel.rankscore%2Cdbnsfp.alphamissense.score%2Cdbnsfp.alphamissense.pred%2Cdbnsfp.alphamissense.rankscore%2Cdbnsfp.clinpred.score%2Cdbnsfp.clinpred.pred%2Cdbnsfp.metarnn.score%2Cdbnsfp.metarnn.pred%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.add_af.pred%2Cdbnsfp.bayesdel.no_af.score%2Cdbnsfp.bayesdel.no_af.pred%2Cdbnsfp.phylop.100way_vertebrate.rankscore%2Cdbnsfp.phylop.470way_mammalian.rankscore%2Cdbnsfp.phastcons.100way_vertebrate.rankscore%2Cdbnsfp.phastcons.470way_mammalian.rankscore%2Cdbnsfp.gerp%2B%2B.rs%2Cdbsnp.rsid%2Cgnomad_exome.af.af%2Cgnomad_exome.af.af_afr%2Cgnomad_exome.af.af_eas%2Cgnomad_exome.af.af_nfe%2Cgnomad_exome.af.af_sas%2Cgnomad_exome.af.af_amr%2Cgnomad_exome.af.af_asj%2Cgnomad_exome.af.af_fin%2Cgnomad_exome.af.af_afr_female%2Cgnomad_exome.af.af_afr_male%2Cgnomad_exome.af.af_amr_female%2Cgnomad_exome.af.af_amr_male%2Cgnomad_exome.af.af_eas_jpn%2Cgnomad_exome.af.af_eas_kor%2Cgnomad_exome.af.af_nfe_bgr%2Cgnomad_exome.af.af_nfe_est%2Cgnomad_exome.af.af_nfe_nwe%2Cgnomad_exome.af.af_nfe_onf%2Cgnomad_exome.af.af_nfe_seu%2Cgnomad_exome.af.af_nfe_swe%2Cgnomad_exome.af.af_oth%2Cgnomad.exomes.af.af%2Cgnomad.exomes.af.af_afr%2Cgnomad.exomes.af.af_eas%2Cgnomad.exomes.af.af_nfe%2Cgnomad.exomes.af.af_sas%2Cgnomad.exomes.af.af_asj%2Cgnomad.exomes.af.af_fin%2Cgnomad.genomes.af.af%2Cgnomad.genomes.af.af_afr%2Cgnomad.genomes.af.af_eas%2Cgnomad.genomes.af.af_nfe%2Cgnomad.genomes.af.af_sas%2Cgnomad.genomes.af.af_asj%2Cgnomad.genomes.af.af_fin%2Cexac.af%2Cexac_nontcga.af%2Ccosmic.cosmic_id%2Ccosmic.mut_freq%2Ccosmic.tumor_site%2Ccosmic.mut_nt%2Ccgi%2Ccivic",
+        "captured_at": "2026-10-03T00:00:00Z",
+        "sha256": "0151884cf180b543017413f9cecd6f8cdeaf12c695f077716f1b512208664f6e",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyVariant.info response through BioMCP's production request shape."
+      }
+    },
+    {
+      "path": "ncbi_efetch/clinvar_428884_20261003.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI EFetch ClinVar",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=clinvar&rettype=vcv&is_variationid=true&id=428884",
+        "captured_at": "2026-10-03T00:00:00Z",
+        "sha256": "1077664822261adf69c1c7b6090f1df4d736c12113476f31a25d366c7689a329",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public NCBI EFetch response through BioMCP's production request shape."
+      }
     }
   ],
   "fixture_key_contract": {

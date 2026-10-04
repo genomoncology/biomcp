@@ -3,6 +3,7 @@ use super::super::candidates::finalize_article_candidates;
 use super::super::test_support::*;
 use super::*;
 
+mod deadline;
 mod finalizer;
 mod integration;
 mod merge;

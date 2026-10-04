@@ -70,6 +70,12 @@ REQUIRED_ROOT_ENTRIES = {
     "uv.lock",
 }
 REQUIRED_PACKAGE_MEMBERS = {
+    "src/entities/article/search/deadline.rs",
+    "src/entities/article/search/tests/deadline.rs",
+    "src/cli/article/tests/diagnostics.rs",
+    "spec/fixtures/cleanup-article-search-deadline-fixture.sh",
+    "spec/fixtures/run-article-search-deadline-search.sh",
+    "spec/fixtures/setup-article-search-deadline-fixture.sh",
     "docs/sources/gencc.md",
     "src/entities/gene/gencc.rs",
     "src/entities/gene/gencc/tests.rs",

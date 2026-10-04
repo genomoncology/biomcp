@@ -1,28 +1,26 @@
 # 1292 — resolve intronic deletion ranges in get variant
 
-Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release. Status: accepted, ready to build.
+Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
+
+Status: OPEN.
+
+## Outcome
+
+`get variant` accepts transcript-qualified deletion ranges with intronic offsets and a ClinVar VariationID, or refuses with a message that prints a working input form.
 
 ## Evidence
 
-Experiment 432 question clinvar-09 names `NM_000249.4(MLH1):c.678-14_678-3del`. Two agent legs could not reach it: `get variant` did not parse it and it did not appear in MLH1 search listings.
+- Starts from: Experiment 432 question clinvar-09 names `NM_000249.4(MLH1):c.678-14_678-3del`. Two agent legs could not reach it: `get variant` did not parse it and it did not appear in MLH1 search listings. KB QA 0002 confirmed on 2026-10-04 that `clinvar-09` still resolves on neither 0.9.1 nor the 1290 branch.
+- Keeps: Every input form that works today keeps working.
+- Changes: See Change detail.
+- Proof: A table of input forms (substitution, deletion range, intronic offsets, VariationID, rsID) with expected results, as a spec page.
+- Defers: HGVS parsing moves to a shared parser in 1.0. This ticket fixes the 0.9 behavior only.
 
-## Change
+## Change detail
 
 1. Record the exact failing commands and errors on 0.9.1.
 2. Accept transcript-qualified deletion ranges with intronic offsets, or refuse with a message that prints a working form, such as a ClinVar VariationID or rsID lookup.
 3. Accept a ClinVar VariationID as a `get variant` input if it is not accepted today.
-
-## Retained behavior
-
-Every input form that works today keeps working.
-
-## Proof
-
-A table of input forms (substitution, deletion range, intronic offsets, VariationID, rsID) with expected results, as a spec page.
-
-## Deferred
-
-HGVS parsing moves to a shared parser in 1.0. This ticket fixes the 0.9 behavior only.
 
 ## Review
 

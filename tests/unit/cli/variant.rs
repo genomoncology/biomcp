@@ -641,6 +641,8 @@ fn ticket_377_variant_renderer_envelope_contracts() {
         transcript: Some("NM_004333.6".to_string()),
         legacy_name: Some("BRAF V600E".to_string()),
         significance: Some("Pathogenic".to_string()),
+        significance_source: None,
+        significance_evaluated: None,
         clinvar_stars: Some(3),
         gnomad_af: None,
         revel: Some(0.92),

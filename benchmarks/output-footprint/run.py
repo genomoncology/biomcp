@@ -24,7 +24,9 @@ COMPACT_BYTE_CEILINGS = {
     "article_search_compact": 1_600,
     # Typed genome-build identity added 1 byte to the committed corpus. Keep a
     # small explicit margin without relaxing the other compact surfaces.
-    "variant_search": 720,
+    # Significance provenance fields (source and newest cached evaluation date)
+    # added 41 more bytes to the same corpus row.
+    "variant_search": 800,
     "gene_get_sections": 7_000,
     # One captured trial plus six conversion rows fit within this ceiling.
     "trial_search": 6_100,

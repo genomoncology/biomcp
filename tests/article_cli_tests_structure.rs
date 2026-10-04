@@ -24,6 +24,7 @@ fn expected_article_cli_test_files(root: &Path) -> Vec<PathBuf> {
     let mut files = vec![
         root.join("src/cli/article/tests/mod.rs"),
         root.join("src/cli/article/tests/citation_evidence.rs"),
+        root.join("src/cli/article/tests/diagnostics.rs"),
         root.join("src/cli/article/tests/help.rs"),
         root.join("src/cli/article/tests/exact_lookup.rs"),
         root.join("src/cli/article/tests/json.rs"),

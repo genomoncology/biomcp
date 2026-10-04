@@ -571,6 +571,26 @@ pub enum ArticleSourceAvailability {
     Skipped,
 }
 
+/// Wall-clock record for one stage of an article search: the source that
+/// owned the work (when a single source did) and how long it took. Surfaced
+/// in `--full` diagnostics.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ArticleSearchTiming {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<ArticleSource>,
+    pub stage: &'static str,
+    pub elapsed_ms: u64,
+}
+
+/// Diagnostics for one article search invocation: the overall deadline
+/// applied to it and the per-source/per-stage timings recorded along the way.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub struct ArticleSearchDiagnostics {
+    pub deadline_ms: u64,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub source_timings: Vec<ArticleSearchTiming>,
+}
+
 #[derive(Debug, Clone)]
 pub struct ArticleSearchPage {
     pub results: Vec<ArticleSearchResult>,
@@ -579,6 +599,7 @@ pub struct ArticleSearchPage {
     #[allow(dead_code)]
     pub next_page_token: Option<String>,
     pub source_status: Vec<ArticleSourceStatus>,
+    pub diagnostics: ArticleSearchDiagnostics,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

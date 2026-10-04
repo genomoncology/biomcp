@@ -167,7 +167,8 @@ pub(crate) mod clinvar {
     use roxmltree::Node;
 
     use crate::entities::variant::{
-        ClinvarAggregate, ClinvarCitation, ClinvarRecord, ClinvarSubmission,
+        ClinvarAggregate, ClinvarCitation, ClinvarRecord, ClinvarRecordClassification,
+        ClinvarSubmission,
     };
     use crate::error::{BioMcpError, SourceContext, SourceProvider};
     use crate::sources::{RequestBuilderSourceContextExt, RequestPlan, request_from_plan};
@@ -480,6 +481,16 @@ pub(crate) mod clinvar {
         budget.charge("NCBI ClinVar".len())?;
         budget.charge(archive.attribute("Accession").map(str::len).unwrap_or(0))?;
         budget.charge(child_value_len(archive, "RecordStatus").unwrap_or(0))?;
+        if let Some(germline) = record_germline_node(archive) {
+            budget.charge(child_value_len(germline, "Description").unwrap_or(0))?;
+            budget.charge(child_value_len(germline, "ReviewStatus").unwrap_or(0))?;
+            budget.charge(
+                germline
+                    .attribute("DateLastEvaluated")
+                    .map(str::len)
+                    .unwrap_or(0),
+            )?;
+        }
 
         let mut aggregate_count = 0usize;
         for rcv in rcv_nodes {
@@ -619,6 +630,23 @@ pub(crate) mod clinvar {
             }
         }
         Ok(())
+    }
+
+    fn record_germline_node<'a, 'input>(archive: Node<'a, 'input>) -> Option<Node<'a, 'input>> {
+        child(archive, "ClassifiedRecord")
+            .and_then(|record| child(record, "Classifications"))
+            .and_then(|classifications| child(classifications, "GermlineClassification"))
+    }
+
+    fn record_germline_classification(
+        archive: Node<'_, '_>,
+    ) -> Option<ClinvarRecordClassification> {
+        let node = record_germline_node(archive)?;
+        Some(ClinvarRecordClassification {
+            classification: child_value(node, "Description"),
+            review_status: child_value(node, "ReviewStatus"),
+            evaluation_date: node.attribute("DateLastEvaluated").map(str::to_string),
+        })
     }
 
     fn rcv_conditions(node: Node<'_, '_>) -> Result<Vec<String>, BioMcpError> {
@@ -881,6 +909,7 @@ pub(crate) mod clinvar {
             record_status,
             number_submissions: optional_u32_attr(archive, "NumberOfSubmissions")?,
             number_submitters: optional_u32_attr(archive, "NumberOfSubmitters")?,
+            germline_classification: record_germline_classification(archive),
             aggregates,
             submissions,
         }))
@@ -921,6 +950,41 @@ pub(crate) mod clinvar {
                     .collect::<Vec<_>>(),
                 ["SCV001426412", "SCV006072505"]
             );
+        }
+
+        #[test]
+        fn parses_record_level_germline_classification_from_recorded_tp53_record() {
+            let xml = std::str::from_utf8(include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml"
+            )))
+            .expect("recorded ClinVar XML is UTF-8");
+            let record = parse_record(428884, xml).unwrap().unwrap();
+            let germline = record
+                .germline_classification
+                .expect("record-level germline classification");
+            assert_eq!(
+                germline.classification.as_deref(),
+                Some("Uncertain significance")
+            );
+            assert_eq!(
+                germline.review_status.as_deref(),
+                Some("reviewed by expert panel")
+            );
+            assert_eq!(germline.evaluation_date.as_deref(), Some("2026-06-04"));
+        }
+
+        #[test]
+        fn record_level_germline_classification_is_absent_when_the_record_has_none() {
+            for xml in [FIXTURE, HSD17B4] {
+                let record = parse_record(974782, xml).unwrap().unwrap();
+                assert!(record.germline_classification.is_none());
+            }
+            let somatic_only = archive_with(
+                "<Classifications><SomaticClinicalImpact><ReviewStatus>single submitter</ReviewStatus><Description>Tier II</Description></SomaticClinicalImpact></Classifications>",
+            );
+            let record = parse_record(7, &somatic_only).unwrap().unwrap();
+            assert!(record.germline_classification.is_none());
         }
 
         #[test]

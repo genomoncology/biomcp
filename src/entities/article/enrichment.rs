@@ -13,9 +13,39 @@ use super::detail::retained::{
     resolve_article_from_pmid_with_context, resolve_variant_article_from_pmid,
 };
 use super::{
-    Article, ArticleSearchFilters, ArticleSearchResult, ArticleSource, ArticleSourceAvailability,
-    ArticleSourceStatus, SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
+    Article, ArticleSearchFilters, ArticleSearchResult, ArticleSearchTiming, ArticleSource,
+    ArticleSourceAvailability, ArticleSourceStatus, SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
 };
+
+/// The overall article-search deadline active on this task, when the caller
+/// is a plain search page. Variant-article work carries its deadline on the
+/// execution context instead, so this seam only applies outside that path.
+fn plain_article_search_deadline_elapsed(
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+) -> bool {
+    execution.is_none()
+        && crate::sources::current_variant_article_deadline()
+            .is_some_and(|deadline| deadline.is_exhausted())
+}
+
+fn article_search_deadline_status(source: ArticleSource, stage: &str) -> ArticleSourceStatus {
+    ArticleSourceStatus {
+        source,
+        enabled: true,
+        auth_mode: None,
+        status: Some(ArticleSourceAvailability::Degraded),
+        message: Some(format!("article search deadline elapsed during {stage}")),
+    }
+}
+
+/// What an enrichment pass produced besides the finalized page: statuses for
+/// sources that degraded mid-pass and the per-stage wall-clock timings.
+pub(super) struct ArticleEnrichmentOutcome {
+    pub(super) page: SearchPage<ArticleSearchResult>,
+    pub(super) semantic_scholar_status: Option<ArticleSourceStatus>,
+    pub(super) statuses: Vec<ArticleSourceStatus>,
+    pub(super) timings: Vec<ArticleSearchTiming>,
+}
 
 fn article_search_semantic_scholar_lookup_id(row: &ArticleSearchResult) -> Option<String> {
     let pmid = row.pmid.trim();
@@ -177,6 +207,15 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
     };
 
     for chunk in lookup_ids.chunks(SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS) {
+        if plain_article_search_deadline_elapsed(execution) {
+            let deadline = article_search_deadline_status(
+                ArticleSource::SemanticScholar,
+                "Semantic Scholar enrichment",
+            );
+            status.status = deadline.status;
+            status.message = deadline.message;
+            break;
+        }
         let unit = match first_unit.take() {
             Some(unit) => Some(unit),
             None => match execution {
@@ -250,14 +289,14 @@ fn merge_article_search_row_with_article_base(row: &mut ArticleSearchResult, art
 
 pub(super) async fn enrich_visible_article_search_rows_with_article_base(
     rows: &mut [ArticleSearchResult],
-) {
-    enrich_visible_article_search_rows_with_article_base_context(rows, None).await;
+) -> Vec<ArticleSourceStatus> {
+    enrich_visible_article_search_rows_with_article_base_context(rows, None).await
 }
 
 pub(super) async fn enrich_visible_article_search_rows_with_article_base_context(
     rows: &mut [ArticleSearchResult],
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
-) {
+) -> Vec<ArticleSourceStatus> {
     let lookup_positions = rows
         .iter()
         .enumerate()
@@ -272,7 +311,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         execution.set_route_unit_plan("enrichment", "europepmc", Some(0));
     }
     if lookup_positions.is_empty() {
-        return;
+        return Vec::new();
     }
     if let Some(execution) = execution {
         for (row_idx, pmid) in lookup_positions {
@@ -290,7 +329,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 ),
             }
         }
-        return;
+        return Vec::new();
     }
 
     let pubtator = match PubTatorClient::new() {
@@ -301,7 +340,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 crate::error::SourceProvider::PUBTATOR3,
                 "initialize visible article metadata fallback",
             );
-            return;
+            return Vec::new();
         }
     };
     let europe = match EuropePmcClient::new() {
@@ -312,11 +351,24 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 crate::error::SourceProvider::EUROPE_PMC,
                 "initialize visible article metadata fallback",
             );
-            return;
+            return Vec::new();
         }
     };
 
+    let mut statuses = Vec::new();
     for (row_idx, pmid) in lookup_positions {
+        // The per-row PubTator/Europe PMC fallback chain is only as bounded as
+        // the invocation deadline: once it elapses, name both consulted
+        // sources and stop issuing further lookups.
+        if plain_article_search_deadline_elapsed(execution) {
+            for source in [ArticleSource::PubTator, ArticleSource::EuropePmc] {
+                statuses.push(article_search_deadline_status(
+                    source,
+                    "article metadata fallback",
+                ));
+            }
+            break;
+        }
         let lookup_id = rows[row_idx].pmid.clone();
         let result = resolve_article_from_pmid_with_context(
             pmid, &lookup_id, &lookup_id, &pubtator, &europe, None, execution,
@@ -331,6 +383,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
             ),
         }
     }
+    statuses
 }
 
 pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar_status(
@@ -340,9 +393,18 @@ pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar
     total: Option<usize>,
     filters: &ArticleSearchFilters,
     enrichment_sources: &[ArticleSource],
-) -> (SearchPage<ArticleSearchResult>, Option<ArticleSourceStatus>) {
+) -> ArticleEnrichmentOutcome {
+    let mut timings = Vec::new();
+    let mut statuses = Vec::new();
     let source_status = if enrichment_sources.contains(&ArticleSource::SemanticScholar) {
-        enrich_article_search_rows_with_semantic_scholar(&mut rows).await
+        let started = std::time::Instant::now();
+        let status = enrich_article_search_rows_with_semantic_scholar(&mut rows).await;
+        timings.push(ArticleSearchTiming {
+            source: Some(ArticleSource::SemanticScholar),
+            stage: "enrichment",
+            elapsed_ms: started.elapsed().as_millis() as u64,
+        });
+        status
     } else {
         None
     };
@@ -350,9 +412,21 @@ pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar
     if enrichment_sources.contains(&ArticleSource::PubTator)
         || enrichment_sources.contains(&ArticleSource::EuropePmc)
     {
-        enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
+        let started = std::time::Instant::now();
+        statuses
+            .extend(enrich_visible_article_search_rows_with_article_base(&mut page.results).await);
+        timings.push(ArticleSearchTiming {
+            source: None,
+            stage: "metadata_fallback",
+            elapsed_ms: started.elapsed().as_millis() as u64,
+        });
     }
-    (page, source_status)
+    ArticleEnrichmentOutcome {
+        page,
+        semantic_scholar_status: source_status,
+        statuses,
+        timings,
+    }
 }
 
 pub(super) async fn enrich_and_finalize_article_candidates(
@@ -362,7 +436,7 @@ pub(super) async fn enrich_and_finalize_article_candidates(
     total: Option<usize>,
     filters: &ArticleSearchFilters,
     enrichment_sources: &[ArticleSource],
-) -> SearchPage<ArticleSearchResult> {
+) -> ArticleEnrichmentOutcome {
     enrich_and_finalize_article_candidates_with_semantic_scholar_status(
         rows,
         limit,
@@ -372,22 +446,43 @@ pub(super) async fn enrich_and_finalize_article_candidates(
         enrichment_sources,
     )
     .await
-    .0
 }
 
 pub(super) async fn enrich_visible_article_search_page(
     mut page: SearchPage<ArticleSearchResult>,
     enrichment_sources: &[ArticleSource],
-) -> SearchPage<ArticleSearchResult> {
+) -> ArticleEnrichmentOutcome {
+    let mut timings = Vec::new();
+    let mut statuses = Vec::new();
+    let mut semantic_scholar_status = None;
     if enrichment_sources.contains(&ArticleSource::SemanticScholar) {
-        let _ = enrich_article_search_rows_with_semantic_scholar(&mut page.results).await;
+        let started = std::time::Instant::now();
+        semantic_scholar_status =
+            enrich_article_search_rows_with_semantic_scholar(&mut page.results).await;
+        timings.push(ArticleSearchTiming {
+            source: Some(ArticleSource::SemanticScholar),
+            stage: "enrichment",
+            elapsed_ms: started.elapsed().as_millis() as u64,
+        });
     }
     if enrichment_sources.contains(&ArticleSource::PubTator)
         || enrichment_sources.contains(&ArticleSource::EuropePmc)
     {
-        enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
+        let started = std::time::Instant::now();
+        statuses
+            .extend(enrich_visible_article_search_rows_with_article_base(&mut page.results).await);
+        timings.push(ArticleSearchTiming {
+            source: None,
+            stage: "metadata_fallback",
+            elapsed_ms: started.elapsed().as_millis() as u64,
+        });
     }
-    page
+    ArticleEnrichmentOutcome {
+        page,
+        semantic_scholar_status,
+        statuses,
+        timings,
+    }
 }
 
 #[cfg(test)]

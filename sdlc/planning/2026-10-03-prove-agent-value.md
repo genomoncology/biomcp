@@ -74,4 +74,4 @@ Each article comes from a recorded experiment and links its folder's numbers. Th
 
 - BioMCP defects and features become tickets in this repository for the next 0.9 release.
 - ThinkThen feature evidence goes to `repos/sdlc/inbox/thinkthen/`.
-- The knowledge base becomes its own repository, `biomcp-thinkthen-kb`, once experiment 437 works. Ian decides whether it goes public.
+- The knowledge base becomes its own repository once experiment 437 works. Ian decides whether it goes public.

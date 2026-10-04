@@ -51,6 +51,10 @@ impl Drop for TestEnv {
 
 pub(crate) enum TestHttpReply {
     Bytes(Vec<u8>),
+    /// Write nothing until every clone of the sender side has dropped, then
+    /// close the socket. The wait is the release signal, so a held request
+    /// models a hung source without any clock assumption.
+    Hold(std::sync::Arc<std::sync::Mutex<std::sync::mpsc::Receiver<()>>>),
 }
 
 pub(crate) struct TestHttpFixture {
@@ -76,8 +80,14 @@ impl TestHttpFixture {
                     let mut request = vec![0_u8; 16 * 1024];
                     let length = stream.read(&mut request).await.unwrap_or(0);
                     let request = String::from_utf8_lossy(&request[..length]);
-                    let TestHttpReply::Bytes(response) = handler(&request);
-                    let _ = stream.write_all(&response).await;
+                    match handler(&request) {
+                        TestHttpReply::Bytes(response) => {
+                            let _ = stream.write_all(&response).await;
+                        }
+                        TestHttpReply::Hold(release) => {
+                            let _ = release.lock().expect("held reply lock").recv();
+                        }
+                    }
                 });
             }
         });

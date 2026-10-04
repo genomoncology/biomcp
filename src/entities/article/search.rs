@@ -28,15 +28,21 @@ use super::planner::{
 };
 use super::ranking::validate_article_ranking_options;
 use super::{
-    ArticleSearchFilters, ArticleSearchPage, ArticleSearchResult, ArticleSort, ArticleSource,
-    ArticleSourceAvailability, ArticleSourceFilter, ArticleSourceStatus,
-    MAX_FEDERATED_FETCH_RESULTS, MAX_SEARCH_LIMIT,
+    ArticleSearchDiagnostics, ArticleSearchFilters, ArticleSearchPage, ArticleSearchResult,
+    ArticleSearchTiming, ArticleSort, ArticleSource, ArticleSourceAvailability,
+    ArticleSourceFilter, ArticleSourceStatus, MAX_FEDERATED_FETCH_RESULTS, MAX_SEARCH_LIMIT,
 };
 
 pub const VARIANT_ENTITY_RETRIEVAL_PATH: &str = "PubTator variant annotation recall";
 pub const VARIANT_FALLBACK_RETRIEVAL_PATH: &str = "best-effort free-text fallback";
 
 const FEDERATED_ARTICLE_SOURCE_TIMEOUT: Duration = Duration::from_secs(12);
+
+mod deadline;
+use deadline::{
+    article_search_deadline_budget, article_search_deadline_error, is_search_deadline_error,
+    timed_source_call, timed_source_leg,
+};
 
 pub async fn search(
     filters: &ArticleSearchFilters,
@@ -50,12 +56,19 @@ pub async fn search(
 fn article_search_page(
     page: SearchPage<ArticleSearchResult>,
     source_status: Vec<ArticleSourceStatus>,
+    timings: Vec<ArticleSearchTiming>,
 ) -> ArticleSearchPage {
     ArticleSearchPage {
         results: page.results,
         total: page.total,
         next_page_token: page.next_page_token,
         source_status,
+        diagnostics: ArticleSearchDiagnostics {
+            deadline_ms: crate::sources::current_variant_article_deadline()
+                .map(|deadline| deadline.limit().as_millis() as u64)
+                .unwrap_or_else(|| article_search_deadline_budget().as_millis() as u64),
+            source_timings: timings,
+        },
     }
 }
 
@@ -113,6 +126,7 @@ pub(super) struct FederatedArticleRows {
     pub(super) semantic_scholar_status: ArticleSourceStatus,
     pub(super) truncated_sources: Vec<ArticleSource>,
     pub(super) primary_error: Option<BioMcpError>,
+    pub(super) timings: Vec<ArticleSearchTiming>,
 }
 
 struct TypeCapableArticleRows {
@@ -175,12 +189,21 @@ where
                 source_provider(source),
                 "federated article search",
             );
+            // When the overall search deadline cancelled the send, say so
+            // instead of reporting an ordinary provider failure.
+            let message = if crate::sources::current_variant_article_deadline()
+                .is_some_and(|deadline| deadline.is_exhausted())
+            {
+                format!(
+                    "{} did not answer before the article search deadline",
+                    source.display_name()
+                )
+            } else {
+                format!("{} search unavailable", source.display_name())
+            };
             FederatedSourceOutcome::Unavailable {
                 error: Some(err),
-                status: source_degraded_status(
-                    source,
-                    format!("{} search unavailable", source.display_name()),
-                ),
+                status: source_degraded_status(source, message),
             }
         }
         Err(_) => {
@@ -290,20 +313,26 @@ pub(super) async fn acquire_federated_article_rows_with_context(
     }
     let include_pubmed = pubmed_filter_compatible(filters);
     let include_litsense2 = litsense2_search_enabled(filters, ArticleSourceFilter::All);
+    // Each leg is boxed so callers keep a small state machine: the joined
+    // futures carry every provider's request stack inline and previously
+    // overflowed the test-thread stack once timing fields joined them.
     let (pubtator_leg, europe_leg, pubmed_leg, semantic_scholar_leg, litsense2_leg) = tokio::join!(
-        with_federated_source_timeout(
+        Box::pin(timed_source_leg(
             ArticleSource::PubTator,
+            "search",
             search_pubtator_page_with_context(filters, fetch_count, 0, execution, route, None),
-        ),
-        with_federated_source_timeout(
+        )),
+        Box::pin(timed_source_leg(
             ArticleSource::EuropePmc,
+            "search",
             search_europepmc_page_with_context(filters, fetch_count, 0, execution, route, None),
-        ),
-        async {
+        )),
+        Box::pin(async {
             if include_pubmed {
                 Some(
-                    with_federated_source_timeout(
+                    timed_source_leg(
                         ArticleSource::PubMed,
+                        "search",
                         search_pubmed_page_with_context(
                             filters,
                             fetch_count,
@@ -318,25 +347,48 @@ pub(super) async fn acquire_federated_article_rows_with_context(
             } else {
                 None
             }
-        },
-        with_federated_source_timeout(
+        }),
+        Box::pin(timed_source_leg(
             ArticleSource::SemanticScholar,
+            "search",
             search_semantic_scholar_candidates(filters, fetch_count, execution, route, None),
-        ),
-        async {
+        )),
+        Box::pin(async {
             if include_litsense2 {
-                with_variant_article_budget(
+                let started = std::time::Instant::now();
+                let outcome = with_variant_article_budget(
                     execution,
                     route,
                     ArticleSource::LitSense2,
                     search_litsense2_candidates(filters, fetch_count),
                 )
-                .await
+                .await;
+                Some((
+                    outcome,
+                    ArticleSearchTiming {
+                        source: Some(ArticleSource::LitSense2),
+                        stage: "search",
+                        elapsed_ms: started.elapsed().as_millis() as u64,
+                    },
+                ))
             } else {
-                FederatedSourceOutcome::Available(Vec::new())
+                None
             }
-        }
+        })
     );
+
+    let (pubtator_leg, pubtator_timing) = pubtator_leg;
+    let (europe_leg, europe_timing) = europe_leg;
+    let (semantic_scholar_leg, semantic_scholar_timing) = semantic_scholar_leg;
+    let mut timings = vec![pubtator_timing, europe_timing, semantic_scholar_timing];
+    let pubmed_leg = pubmed_leg.map(|(outcome, timing)| {
+        timings.push(timing);
+        outcome
+    });
+    let litsense2_leg = litsense2_leg.map(|(outcome, timing)| {
+        timings.push(timing);
+        outcome
+    });
 
     let mut truncated_sources = Vec::new();
     if page_outcome_truncated(&pubtator_leg, fetch_count) {
@@ -357,11 +409,9 @@ pub(super) async fn acquire_federated_article_rows_with_context(
     ) {
         truncated_sources.push(ArticleSource::SemanticScholar);
     }
-    if include_litsense2
-        && matches!(
-            &litsense2_leg,
-            FederatedSourceOutcome::Available(rows) if rows.len() >= fetch_count
-        )
+    if litsense2_leg
+        .as_ref()
+        .is_some_and(|outcome| matches!(outcome, FederatedSourceOutcome::Available(rows) if rows.len() >= fetch_count))
     {
         truncated_sources.push(ArticleSource::LitSense2);
     }
@@ -370,9 +420,10 @@ pub(super) async fn acquire_federated_article_rows_with_context(
         europe_leg,
         pubmed_leg,
         semantic_scholar_leg,
-        litsense2_leg,
+        litsense2_leg.unwrap_or_else(|| FederatedSourceOutcome::Available(Vec::new())),
     )?;
     federated.truncated_sources = truncated_sources;
+    federated.timings = timings;
     Ok(federated)
 }
 
@@ -389,29 +440,36 @@ pub(super) async fn search_federated_page(
         )));
     }
     let federated = acquire_federated_article_rows(filters, fetch_count).await?;
-    if let Some(error) = federated.primary_error {
+    // Both primaries failing is fatal only when nothing else answered: any
+    // PubMed/Semantic Scholar/LitSense2 rows that did arrive are returned as
+    // a partial page (ticket 1293).
+    if federated.rows.is_empty()
+        && let Some(error) = federated.primary_error
+    {
         return Err(error);
     }
+    let mut timings = federated.timings;
     let mut tracker = SemanticScholarStatusTracker::default();
     tracker.record(federated.semantic_scholar_status);
-    let (page, enrichment_status) =
-        enrich_and_finalize_article_candidates_with_semantic_scholar_status(
-            federated.rows,
-            limit,
-            offset,
-            None,
-            filters,
-            enrichment_sources,
-        )
-        .await;
-    if let Some(status) = enrichment_status {
+    let enrichment = enrich_and_finalize_article_candidates_with_semantic_scholar_status(
+        federated.rows,
+        limit,
+        offset,
+        None,
+        filters,
+        enrichment_sources,
+    )
+    .await;
+    timings.extend(enrichment.timings);
+    if let Some(status) = enrichment.semantic_scholar_status {
         tracker.record(status);
     }
 
     let mut source_status = federated.source_status;
     source_status.extend(tracker.finish());
+    source_status.extend(enrichment.statuses);
 
-    Ok(article_search_page(page, source_status))
+    Ok(article_search_page(enrichment.page, source_status, timings))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -459,6 +517,7 @@ fn collect_federated_article_rows(
                 semantic_scholar_status,
                 truncated_sources: Vec::new(),
                 primary_error: None,
+                timings: Vec::new(),
             })
         }
         (
@@ -476,6 +535,7 @@ fn collect_federated_article_rows(
                 semantic_scholar_status,
                 truncated_sources: Vec::new(),
                 primary_error: None,
+                timings: Vec::new(),
             })
         }
         (
@@ -493,6 +553,7 @@ fn collect_federated_article_rows(
                 semantic_scholar_status,
                 truncated_sources: Vec::new(),
                 primary_error: None,
+                timings: Vec::new(),
             })
         }
         (
@@ -514,6 +575,7 @@ fn collect_federated_article_rows(
                 source_status,
                 semantic_scholar_status,
                 truncated_sources: Vec::new(),
+                timings: Vec::new(),
                 primary_error: Some(
                     error.unwrap_or_else(|| unavailable_source_error(ArticleSource::PubTator)),
                 ),
@@ -583,17 +645,22 @@ async fn search_type_capable_page(
         )));
     }
     let (europe_leg, pubmed_leg) = tokio::join!(
-        with_federated_source_timeout(
+        Box::pin(timed_source_leg(
             ArticleSource::EuropePmc,
+            "search",
             search_europepmc_page(filters, fetch_count, 0),
-        ),
-        with_federated_source_timeout(
+        )),
+        Box::pin(timed_source_leg(
             ArticleSource::PubMed,
+            "search",
             search_pubmed_page(filters, fetch_count, 0),
-        ),
+        )),
     );
+    let (europe_leg, europe_timing) = europe_leg;
+    let (pubmed_leg, pubmed_timing) = pubmed_leg;
+    let mut timings = vec![europe_timing, pubmed_timing];
     let capable = collect_type_capable_article_rows(europe_leg, pubmed_leg)?;
-    let page = enrich_and_finalize_article_candidates(
+    let enrichment = enrich_and_finalize_article_candidates(
         capable.rows,
         limit,
         offset,
@@ -602,7 +669,13 @@ async fn search_type_capable_page(
         enrichment_sources,
     )
     .await;
-    Ok(article_search_page(page, capable.source_status))
+    timings.extend(enrichment.timings);
+    let mut source_status = capable.source_status;
+    if let Some(status) = enrichment.semantic_scholar_status {
+        source_status.push(status);
+    }
+    source_status.extend(enrichment.statuses);
+    Ok(article_search_page(enrichment.page, source_status, timings))
 }
 
 async fn search_relevance_page(
@@ -611,7 +684,7 @@ async fn search_relevance_page(
     offset: usize,
     plan: BackendPlan,
     enrichment_sources: &[ArticleSource],
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+) -> Result<ArticleSearchPage, BioMcpError> {
     let fetch_count = limit.saturating_add(offset);
     if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
@@ -619,10 +692,19 @@ async fn search_relevance_page(
         )));
     }
 
+    // Single-backend plans carry no per-source timeout, so the invocation
+    // deadline is the only wall-clock bound on these legs; each is still
+    // timed for --full diagnostics.
     match plan {
         BackendPlan::EuropeOnly => {
-            let page = search_europepmc_page(filters, fetch_count, 0).await?;
-            Ok(enrich_and_finalize_article_candidates(
+            let (result, timing) = timed_source_call(
+                ArticleSource::EuropePmc,
+                "search",
+                search_europepmc_page(filters, fetch_count, 0),
+            )
+            .await;
+            let page = result?;
+            let enrichment = enrich_and_finalize_article_candidates(
                 page.results,
                 limit,
                 offset,
@@ -630,11 +712,18 @@ async fn search_relevance_page(
                 filters,
                 enrichment_sources,
             )
-            .await)
+            .await;
+            Ok(finish_single_backend_page(enrichment, timing))
         }
         BackendPlan::PubTatorOnly => {
-            let page = search_pubtator_page(filters, fetch_count, 0).await?;
-            Ok(enrich_and_finalize_article_candidates(
+            let (result, timing) = timed_source_call(
+                ArticleSource::PubTator,
+                "search",
+                search_pubtator_page(filters, fetch_count, 0),
+            )
+            .await;
+            let page = result?;
+            let enrichment = enrich_and_finalize_article_candidates(
                 page.results,
                 limit,
                 offset,
@@ -642,11 +731,18 @@ async fn search_relevance_page(
                 filters,
                 enrichment_sources,
             )
-            .await)
+            .await;
+            Ok(finish_single_backend_page(enrichment, timing))
         }
         BackendPlan::PubMedOnly => {
-            let page = search_pubmed_page(filters, fetch_count, 0).await?;
-            Ok(enrich_and_finalize_article_candidates(
+            let (result, timing) = timed_source_call(
+                ArticleSource::PubMed,
+                "search",
+                search_pubmed_page(filters, fetch_count, 0),
+            )
+            .await;
+            let page = result?;
+            let enrichment = enrich_and_finalize_article_candidates(
                 page.results,
                 limit,
                 offset,
@@ -654,13 +750,18 @@ async fn search_relevance_page(
                 filters,
                 enrichment_sources,
             )
-            .await)
+            .await;
+            Ok(finish_single_backend_page(enrichment, timing))
         }
         BackendPlan::SemanticScholarOnly => {
-            let outcome =
-                search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None)
-                    .await?;
-            Ok(enrich_and_finalize_article_candidates(
+            let (result, timing) = timed_source_call(
+                ArticleSource::SemanticScholar,
+                "search",
+                search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None),
+            )
+            .await;
+            let outcome = result?;
+            let enrichment = enrich_and_finalize_article_candidates(
                 outcome.rows,
                 limit,
                 offset,
@@ -668,11 +769,18 @@ async fn search_relevance_page(
                 filters,
                 enrichment_sources,
             )
-            .await)
+            .await;
+            Ok(finish_single_backend_page(enrichment, timing))
         }
         BackendPlan::LitSense2Only => {
-            let rows = search_litsense2_candidates(filters, fetch_count).await?;
-            Ok(enrich_and_finalize_article_candidates(
+            let (result, timing) = timed_source_call(
+                ArticleSource::LitSense2,
+                "search",
+                search_litsense2_candidates(filters, fetch_count),
+            )
+            .await;
+            let rows = result?;
+            let enrichment = enrich_and_finalize_article_candidates(
                 rows,
                 limit,
                 offset,
@@ -680,13 +788,27 @@ async fn search_relevance_page(
                 filters,
                 enrichment_sources,
             )
-            .await)
+            .await;
+            Ok(finish_single_backend_page(enrichment, timing))
         }
         BackendPlan::TypeCapable => {
             unreachable!("type-capable search is handled by search_page")
         }
         BackendPlan::Both => unreachable!("federated relevance is handled by search_page"),
     }
+}
+
+fn finish_single_backend_page(
+    enrichment: super::enrichment::ArticleEnrichmentOutcome,
+    search_timing: ArticleSearchTiming,
+) -> ArticleSearchPage {
+    let mut timings = vec![search_timing];
+    timings.extend(enrichment.timings);
+    let mut source_status = enrichment.statuses;
+    if let Some(status) = enrichment.semantic_scholar_status {
+        source_status.push(status);
+    }
+    article_search_page(enrichment.page, source_status, timings)
 }
 
 async fn search_semantic_scholar_page(
@@ -702,9 +824,15 @@ async fn search_semantic_scholar_page(
         )));
     }
 
-    let outcome =
-        search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None).await?;
-    let page = enrich_and_finalize_article_candidates(
+    let (result, timing) = timed_source_call(
+        ArticleSource::SemanticScholar,
+        "search",
+        search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None),
+    )
+    .await;
+    let outcome = result?;
+    let status = outcome.status;
+    let enrichment = enrich_and_finalize_article_candidates(
         outcome.rows,
         limit,
         offset,
@@ -713,7 +841,14 @@ async fn search_semantic_scholar_page(
         enrichment_sources,
     )
     .await;
-    Ok(article_search_page(page, vec![outcome.status]))
+    let mut timings = vec![timing];
+    timings.extend(enrichment.timings);
+    let mut source_status = vec![status];
+    if let Some(status) = enrichment.semantic_scholar_status {
+        source_status.push(status);
+    }
+    source_status.extend(enrichment.statuses);
+    Ok(article_search_page(enrichment.page, source_status, timings))
 }
 
 pub async fn search_page(
@@ -725,7 +860,42 @@ pub async fn search_page(
     validate_search_page_request(filters, limit, source)?;
     let plan = plan_backends(filters, source)?;
     let source_plan = super::planner::article_source_plan(filters, source)?;
-    let enrichment_sources = source_plan.enrichment_sources.as_slice();
+    let enrichment_sources = source_plan.enrichment_sources;
+    // Boxed for the same reason the federated legs are: the dispatch state
+    // machine carries every provider request stack inline and exceeds the
+    // test-thread stack when polled from `#[tokio::test]`.
+    let dispatch = Box::pin(search_page_dispatch(
+        filters,
+        limit,
+        offset,
+        plan,
+        &enrichment_sources,
+    ));
+    // One deadline per invocation. A caller that already scopes a deadline
+    // (the variant-article path) keeps it; every other article search gets
+    // the article-search budget so provider sends and enrichment loops stay
+    // bounded together.
+    if crate::sources::current_variant_article_deadline().is_some() {
+        return dispatch.await;
+    }
+    let deadline =
+        crate::sources::VariantArticleDeadline::from_now(article_search_deadline_budget());
+    let result = crate::sources::with_variant_article_deadline(deadline.clone(), dispatch).await;
+    match result {
+        Err(error) if deadline.is_exhausted() && is_search_deadline_error(&error) => {
+            Err(article_search_deadline_error(&deadline))
+        }
+        other => other,
+    }
+}
+
+async fn search_page_dispatch(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+    plan: BackendPlan,
+    enrichment_sources: &[ArticleSource],
+) -> Result<ArticleSearchPage, BioMcpError> {
     if plan == BackendPlan::TypeCapable {
         return search_type_capable_page(filters, limit, offset, enrichment_sources).await;
     }
@@ -736,30 +906,34 @@ pub async fn search_page(
         if plan == BackendPlan::SemanticScholarOnly {
             return search_semantic_scholar_page(filters, limit, offset, enrichment_sources).await;
         }
-        return Ok(article_search_page(
-            search_relevance_page(filters, limit, offset, plan, enrichment_sources).await?,
-            Vec::new(),
-        ));
+        return search_relevance_page(filters, limit, offset, plan, enrichment_sources).await;
     }
     match plan {
         BackendPlan::EuropeOnly => {
-            let page = search_europepmc_page(filters, limit, offset).await?;
-            Ok(article_search_page(
-                enrich_visible_article_search_page(page, enrichment_sources).await,
-                Vec::new(),
-            ))
+            let (result, timing) = timed_source_call(
+                ArticleSource::EuropePmc,
+                "search",
+                search_europepmc_page(filters, limit, offset),
+            )
+            .await;
+            let page = result?;
+            let enrichment = enrich_visible_article_search_page(page, enrichment_sources).await;
+            Ok(finish_single_backend_page(enrichment, timing))
         }
         BackendPlan::PubTatorOnly => {
-            let page = search_pubtator_page(filters, limit, offset).await?;
-            Ok(article_search_page(
-                enrich_visible_article_search_page(page, enrichment_sources).await,
-                Vec::new(),
-            ))
+            let (result, timing) = timed_source_call(
+                ArticleSource::PubTator,
+                "search",
+                search_pubtator_page(filters, limit, offset),
+            )
+            .await;
+            let page = result?;
+            let enrichment = enrich_visible_article_search_page(page, enrichment_sources).await;
+            Ok(finish_single_backend_page(enrichment, timing))
         }
-        BackendPlan::PubMedOnly | BackendPlan::LitSense2Only => Ok(article_search_page(
-            search_relevance_page(filters, limit, offset, plan, enrichment_sources).await?,
-            Vec::new(),
-        )),
+        BackendPlan::PubMedOnly | BackendPlan::LitSense2Only => {
+            search_relevance_page(filters, limit, offset, plan, enrichment_sources).await
+        }
         BackendPlan::TypeCapable => {
             unreachable!("type-capable search returned before sort dispatch")
         }

@@ -859,6 +859,7 @@ def test_only_owned_article_fixtures_export_unpaced_origin() -> None:
         "run-variant-articles-live-canary.sh",
         "setup-article-federated-timeout-fixture.sh",
         "setup-article-fulltext-source-fixture.sh",
+        "setup-article-search-deadline-fixture.sh",
     }
 
 

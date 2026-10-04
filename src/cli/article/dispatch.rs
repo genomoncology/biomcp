@@ -242,6 +242,7 @@ pub(in crate::cli) async fn handle_search(
         (search_future.await?, None)
     };
     let source_status = page.source_status;
+    let diagnostics = page.diagnostics;
     let results = page.results;
     let pagination = super::super::PaginationMeta::offset(offset, limit, results.len(), page.total);
     let _ = (request.sort, &request.ranking);
@@ -321,6 +322,7 @@ pub(in crate::cli) async fn handle_search(
                 next_commands,
                 suggestions,
                 source_status: source_status.clone(),
+                diagnostics,
             },
         )?
     } else {
@@ -565,6 +567,7 @@ pub(super) struct ArticleSearchJsonPage {
     pub next_commands: Vec<String>,
     pub suggestions: Vec<ArticleSuggestion>,
     pub source_status: Vec<crate::entities::article::ArticleSourceStatus>,
+    pub diagnostics: crate::entities::article::ArticleSearchDiagnostics,
 }
 
 #[cfg(test)]
@@ -614,6 +617,10 @@ pub(super) fn article_search_json_with_detail(
         results: ArticleSearchJsonRows<'a>,
         #[serde(skip_serializing_if = "Option::is_none")]
         debug_plan: Option<crate::cli::debug_plan::DebugPlan>,
+        /// The applied search deadline and per-source/per-stage timings.
+        /// Emitted only for `--full`, matching that flag's diagnostics role.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        diagnostics: Option<crate::entities::article::ArticleSearchDiagnostics>,
         #[serde(skip_serializing_if = "Option::is_none")]
         _meta: Option<ArticleSearchJsonMeta>,
     }
@@ -639,6 +646,10 @@ pub(super) fn article_search_json_with_detail(
         count,
         results,
         debug_plan,
+        diagnostics: match detail {
+            ArticleSearchDetail::Full => Some(page.diagnostics),
+            ArticleSearchDetail::Compact => None,
+        },
         _meta: article_search_json_meta(
             article_search_warnings(filters, &page.results),
             page.next_commands,

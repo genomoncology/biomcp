@@ -164,6 +164,7 @@ fn article_search_json_fails_open_when_exact_entity_lookup_returns_none() {
             next_commands: vec!["biomcp get article 22663011".into()],
             suggestions: Vec::new(),
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("article search json should render");
@@ -324,6 +325,7 @@ fn degraded_article_sources_share_safe_direct_retries_across_zero_row_surfaces()
             next_commands: retries.clone(),
             suggestions: Vec::new(),
             source_status: statuses,
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("zero-row JSON");

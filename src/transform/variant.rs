@@ -684,7 +684,23 @@ fn pick_significance(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-fn clinvar_review_stars(review_status: &str) -> Option<u8> {
+fn newest_rcv_evaluation_date(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
+    rcvs.iter()
+        .filter_map(|rcv| rcv.last_evaluated.as_deref().map(str::trim))
+        .filter(|value| !value.is_empty())
+        .max()
+        .map(str::to_string)
+}
+
+fn derived_significance_note(variant_id: &str) -> String {
+    format!(
+        "Most severe RCV classification in MyVariant.info's cached ClinVar copy; run \
+         `biomcp get variant \"{variant_id}\" clinvar` for the current NCBI ClinVar \
+         record-level classification."
+    )
+}
+
+pub(crate) fn clinvar_review_stars(review_status: &str) -> Option<u8> {
     let v = review_status.trim().to_ascii_lowercase();
     if v.is_empty() {
         return None;
@@ -860,6 +876,19 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         })
         .unwrap_or((None, None, None, Vec::new(), Vec::new(), None));
 
+    let significance_evaluated = hit
+        .clinvar
+        .as_ref()
+        .and_then(|c| newest_rcv_evaluation_date(&c.rcv));
+    let (significance_source, significance_note) = if significance.is_some() {
+        (
+            Some("MyVariant.info".to_string()),
+            Some(derived_significance_note(&hit.id)),
+        )
+    } else {
+        (None, None)
+    };
+
     let cadd_score = hit.cadd.as_ref().and_then(|c| c.phred);
     let consequence = pick_consequence(hit);
     let cached_civic = extract_civic_cached_evidence(hit);
@@ -882,6 +911,9 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         rsid,
         cosmic_id,
         significance,
+        significance_source,
+        significance_evaluated,
+        significance_note,
         clinvar_id,
         clinvar_review_status,
         clinvar_review_stars,
@@ -936,6 +968,11 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let legacy_name = legacy_name(&gene, hgvs_p.as_deref());
 
     let significance = hit.clinvar.as_ref().and_then(|c| pick_significance(&c.rcv));
+    let significance_source = significance.as_ref().map(|_| "MyVariant.info".to_string());
+    let significance_evaluated = hit
+        .clinvar
+        .as_ref()
+        .and_then(|c| newest_rcv_evaluation_date(&c.rcv));
     let clinvar_stars = hit
         .clinvar
         .as_ref()
@@ -962,6 +999,8 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
         transcript: annotation.and_then(|value| value.transcript),
         legacy_name,
         significance,
+        significance_source,
+        significance_evaluated,
         clinvar_stars,
         gnomad_af,
         revel,

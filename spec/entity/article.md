@@ -195,6 +195,26 @@ timed out
 BRAF melanoma bounded federation fixture'
 ```
 
+## One Deadline Bounds The Whole Article Search
+
+Article search also carries a single 60-second deadline covering acquisition
+and enrichment together. When a source outlasts it, the search still returns
+the rows other sources delivered, names the held source, and reports the
+applied deadline and per-source timing under `--full` diagnostics. The fixture
+points every article-provider base URL at local handlers: PubTator3, PubMed,
+and Semantic Scholar answer promptly, while Europe PMC holds its response past
+the deadline (which the fixture narrows to eight seconds through the recorded
+`BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS` seam).
+
+```bash
+bash ../fixtures/run-article-search-deadline-search.sh ../.. \
+  | mustmatch like 'deadline-bound federation PubTator row
+"deadline_ms": 8000
+"source": "europepmc"
+"status": "degraded"
+did not answer before the article search deadline'
+```
+
 ## Deterministic Renderer Envelope Contracts
 
 Ticket 377 moves routine article renderer/envelope proof into fixture-result

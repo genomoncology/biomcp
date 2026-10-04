@@ -77,12 +77,12 @@
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1385,
+      "baseline_lines": 1406,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144",
-        "delta": 71,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract.",
+        "ticket": "1144, 1293",
+        "delta": 92,
+        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract. Maintenance reconciliation adds 21 total lines for the article search diagnostics record.",
         "removal_condition": "Extract article graph result types when the article graph contract is next decomposed."
       }
     },
@@ -200,13 +200,35 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1268,
+      "baseline_lines": 1307,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, biodata-0672, biodata-0679",
-        "delta": 140,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, and direct ClinVar section dispatch. Root migration coordinator retains that inherited 127-line allowance and owns the additional observed 13 total lines from accepted 0672's pure preparation seam and test visibility, with the retained accessor correction at net zero. Ticket 0679 records the exact cumulative disposition.",
+        "ticket": "1022, 1035, 1086, 1154, biodata-0672, biodata-0679, 1290",
+        "delta": 179,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, and direct ClinVar section dispatch. Root migration coordinator retains that inherited 127-line allowance and owns the additional observed 13 total lines from accepted 0672's pure preparation seam and test visibility, with the retained accessor correction at net zero. Ticket 0679 records the exact cumulative disposition. Maintenance reconciliation adds 39 total lines for record-level ClinVar headline application.",
         "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed. Retire the added preparation allowance during that decomposition. Remove the inventory entry when the file reaches at most 1000 total lines."
+      }
+    },
+    {
+      "path": "src/entities/variant/get/tests.rs",
+      "baseline_lines": 1019,
+      "floor_lines": 911,
+      "authorized_increase": {
+        "ticket": "1290, qf-maintenance-20261003",
+        "delta": 108,
+        "reason": "Root maintenance source-preparation authority owns the 108 added total lines above the accepted development baseline. Retain the accepted genomic prediction preparation assertions and all incoming record-level ClinVar headline disagreement, missing-classification and agreement assertions.",
+        "removal_condition": "Split the getter tests when the variant workflow is next decomposed, retaining both genomic and ClinVar headline proofs. Remove this entry when the file reaches at most 1000 total lines."
+      }
+    },
+    {
+      "path": "src/entities/variant/mod.rs",
+      "baseline_lines": 1003,
+      "floor_lines": 978,
+      "authorized_increase": {
+        "ticket": "1290, qf-maintenance-20261003",
+        "delta": 25,
+        "reason": "Root maintenance source-preparation authority owns the 25 added total lines above the accepted development baseline. Retain migrated interval query identity and direct ClinVar behavior while adding significance provenance fields and record-level germline classification.",
+        "removal_condition": "Extract variant result and ClinVar record types when the variant workflow is next decomposed. Remove this entry when the file reaches at most 1000 total lines."
       }
     },
     {
@@ -322,23 +344,23 @@
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
-      "baseline_lines": 1098,
+      "baseline_lines": 1106,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1155",
-        "delta": 98,
-        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract.",
+        "ticket": "1155, 1290",
+        "delta": 106,
+        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract. Maintenance reconciliation adds 8 total lines for significance provenance render contexts.",
         "removal_condition": "Split variant-search renderer tests when the variant Markdown renderer tests are next decomposed."
       }
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1863,
+      "baseline_lines": 1866,
       "floor_lines": 1745,
       "authorized_increase": {
-        "ticket": "biodata-0203",
-        "delta": 118,
-        "reason": "The dedicated patient and publication provenance paths combine with main disease and drug source-state corrections.",
+        "ticket": "biodata-0203, 1290",
+        "delta": 121,
+        "reason": "The dedicated patient and publication provenance paths combine with main disease and drug source-state corrections. Maintenance reconciliation adds 3 total lines for significance provenance fields in the retained variant test literal.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
@@ -427,12 +449,12 @@
     },
     {
       "path": "src/sources/ncbi_efetch.rs",
-      "baseline_lines": 1217,
+      "baseline_lines": 1281,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1154",
-        "delta": 217,
-        "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client.",
+        "ticket": "1154, 1290",
+        "delta": 281,
+        "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client. Maintenance reconciliation adds 64 total lines for bounded record-level germline classification decoding and its assertions.",
         "removal_condition": "Split the ClinVar transport, parser, and tests when the NCBI EFetch client is next decomposed."
       }
     },
@@ -477,12 +499,12 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1385,
+      "baseline_lines": 1424,
       "floor_lines": 1335,
       "authorized_increase": {
-        "ticket": "1154, 1155",
-        "delta": 50,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner.",
+        "ticket": "1154, 1155, 1290",
+        "delta": 89,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner. Maintenance reconciliation adds 39 total lines for derived significance source and date labeling.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }

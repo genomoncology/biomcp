@@ -25,6 +25,7 @@ fn article_search_json_keeps_exact_variant_follow_up_on_empty_page() {
             next_commands,
             suggestions: Vec::new(),
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("empty article search JSON");

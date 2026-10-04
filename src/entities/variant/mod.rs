@@ -162,6 +162,12 @@ pub struct Variant {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub significance: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub significance_source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub significance_evaluated: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub significance_note: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub clinvar_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub clinvar_review_status: Option<String>,
@@ -232,10 +238,22 @@ pub struct ClinvarRecord {
     pub number_submissions: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub number_submitters: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub germline_classification: Option<ClinvarRecordClassification>,
     #[serde(default)]
     pub aggregates: Vec<ClinvarAggregate>,
     #[serde(default)]
     pub submissions: Vec<ClinvarSubmission>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarRecordClassification {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub classification: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub review_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evaluation_date: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -382,18 +400,20 @@ mod clinvar {
             record_status: None,
             number_submissions: None,
             number_submitters: None,
+            germline_classification: None,
             aggregates,
             submissions: Vec::new(),
         })
     }
 
-    fn apply_clinvar_result(
+    pub(super) fn apply_clinvar_result(
         variant: &mut Variant,
         fallback: Option<super::ClinvarRecord>,
         direct: Result<Option<super::ClinvarRecord>, ()>,
     ) {
         match direct {
             Ok(Some(record)) if !record.aggregates.is_empty() || !record.submissions.is_empty() => {
+                super::get::apply_record_level_headline(variant, &record);
                 variant.clinvar = Some(record);
                 variant
                     .section_outcomes
@@ -468,6 +488,7 @@ mod clinvar {
                 record_status: Some("current".into()),
                 number_submissions: None,
                 number_submitters: None,
+                germline_classification: None,
                 aggregates: if with_row {
                     indirect_clinvar_record(&hit())
                         .expect("fallback")
@@ -863,6 +884,10 @@ pub struct VariantSearchResult {
     pub legacy_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub significance: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub significance_source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub significance_evaluated: Option<String>,
     pub clinvar_stars: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gnomad_af: Option<f64>,

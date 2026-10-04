@@ -504,6 +504,7 @@ fn coverage_json(
             next_commands: Vec::new(),
             suggestions: Vec::new(),
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("coverage JSON");

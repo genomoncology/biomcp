@@ -73,3 +73,178 @@ Verification completed on the staged merge candidate on 2026-10-03. `git diff --
 Review: ACCEPT. Checked candidate: `0355281ae24eee66b225cdf92cc338d2064cfb59`. A fresh independent SOL review classified all 30 incoming paths and checked the complete effective merge. Changed matrix and date expectations passed independent source checks, including the failing reverted-host and stale-date alternatives. Runtime source, CLI/MCP contracts, dependencies, producer pin, development versions, citation and prior changelog entries remain unchanged. These source checks establish the bounded maintenance change; they establish no new product runtime result.
 
 The coordinator approves shared development integration under Ian's standing authorization. Existing reviewed product runtime evidence applies only to unchanged effective inputs. The merge adds no feature, release, provider action or hosted check. Final metadata review precedes advancing shared development. Preserve this record's earlier preparation history and the isolated checkout's evidence.
+
+## Amendment, 2026-10-04: current maintenance source preparation
+
+Status: source preparation only; fresh independent read-only review and Root shared integration remain pending. Earlier acceptance above covers its historical candidate only. Root authorizes this amendment under standing maintenance authority and ADR 0029. No duplicate Quick Fix or product ticket is created. Ian can overturn the routine source dispositions.
+
+The clean starting branch was `ticket/qf-maintenance-20261003` at `fdf9a0327d261d1dea0ff8fde084a40fa6aa3ce6`. Local Git objects and remote tips matched the supplied exact revisions. The first normal two-parent merge is `6770e9d3a0c2fc96bbb1d50ee7e614905aa395d5`, with parents fdf9a032 and `c42836e483e3b60d004a179cd09fcb097992dd01`. Its tree is exactly `669776c6f563a7c437596c6b291f96de5f7ce5c4`, the accepted development tree. It was committed and pushed before the second merge. The second normal merge takes that first merge and `d8c6ce8ba495639b8a798e69e58d379d3762b92a` as parents. The complete donor interval starts at `8277c521a4d350203d924b609a09da9ee40239e1`: 57 changed paths, 3,186 inserted lines and 262 removed lines. No rebase, cherry-pick, force push, hook bypass or whole-tree ours strategy is used.
+
+The command-local GitHub CLI credential helper supplies existing authentication for normal HTTPS pushes after the configured keychain helper failed without authentication. Shared configuration was not changed. The effective hooks directory contains only sample hooks; no active commit or push hook was found. Both commits use `[skip ci]`. This preparation initiates no CI or release. Shared development and maintenance source branches remain untouched.
+
+### Every incoming path and behavior
+
+The classifications below cover all 57 paths. Record and planning changes carry the maintenance owner history; their status and QA narratives establish no new combined product proof.
+
+| Incoming path | Classification and specific reason |
+| --- | --- |
+| `benchmarks/output-footprint/run.py` | adopted by merge: Variant-search ceiling 720 to 800 accounts for source/date provenance bytes; retain every other ceiling and the actual measurement assertions. No benchmark result is claimed. |
+| `docs/blog/variant-structure-in-commands.md` | adopted by merge: Label the cached MyVariant RCV summary and show the explicit direct ClinVar follow-up. |
+| `docs/sources/clinvar.md` | adopted by merge: Explain direct record-level headline, disagreement and degraded cached fallback. |
+| `sdlc/planning/2026-10-03-prove-agent-value.md` | adopted by merge: Carry the maintenance planning edit as historical evidence; grant no new product or experiment work. |
+| `sdlc/planning/lanes.md` | adopted by merge: Retain the maintenance draft lane table as evidence; programme PM still selects its existing programme table. |
+| `sdlc/pm.json` | inapplicable: The incoming maintenance acceptance list, status mapping, proof cutoff and lane target would replace programme policy. Retain exact development configuration, including targetRef, ownedElsewhere, proof-from-1 and light gates. |
+| `sdlc/tickets/1290-make-the-variant-headline-match-current-clinvar.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `sdlc/tickets/1291-reproduce-the-clinvar-section-source-switch.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `sdlc/tickets/1292-resolve-intronic-deletion-ranges-in-get-variant.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `sdlc/tickets/1293-bound-article-search-time-and-report-partial-sources.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `sdlc/tickets/1294-return-whole-abstracts-and-cleaner-full-text.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `sdlc/tickets/1295-find-diseases-by-common-abbreviation.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `sdlc/tickets/1296-give-article-entities-identifiers.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `sdlc/tickets/1297-a-protein-change-query-must-not-resolve-to-the-wrong-variant.md` | adopted by merge: Carry the maintenance owner status, design and QA narrative as historical evidence only; this grants no implementation or combined runtime acceptance for that ticket. |
+| `skills/schemas/variant.json` | adopted by merge: Declare optional significance source, evaluation date and note fields without removing existing fields. |
+| `skills/use-cases/05-variant-pathogenicity.md` | adopted by merge: Request direct ClinVar and distinguish record-level evidence from cached RCV details. |
+| `spec/entity/article.md` | adopted by merge: Add the local held-source whole-deadline contract with partial rows and full diagnostics. |
+| `spec/entity/variant.md` | adopted by merge: Add recorded cached/direct disagreement, JSON provenance and Markdown headline/record-level contracts; retain all prior cases. |
+| `spec/fixtures/cleanup-article-search-deadline-fixture.sh` | adopted by merge: Use existing routine owner cleanup for the new local deadline fixture; not executed. |
+| `spec/fixtures/run-article-search-deadline-search.sh` | adopted by merge: Prepare owned fixture through existing setup/cleanup and prepared CLI wrapper; not executed. |
+| `spec/fixtures/setup-article-search-deadline-fixture.sh` | adopted by merge: Local provider-shaped handlers hold Europe PMC while other legs answer, with owner/supervisor lifecycle and an eight-second fixture deadline; not executed. |
+| `spec/fixtures/setup-variant-identity-spec-fixture.sh` | adopted by merge: Serve the two recorded variant captures and local ClinVar endpoint without changing prior routes. |
+| `src/cli/article/dispatch.rs` | adopted by merge: Carry page timings and deadline to full JSON only; compact diagnostics stay absent. |
+| `src/cli/article/tests/diagnostics.rs` | adopted by merge: Assert exact full diagnostics and compact omission; no assertions removed. |
+| `src/cli/article/tests/exact_lookup.rs` | adopted by merge: Initialize diagnostics on existing test pages; preserve exact-lookup and degraded retry assertions. |
+| `src/cli/article/tests/filters.rs` | adopted by merge: Initialize diagnostics on coverage test pages; preserve filter assertions. |
+| `src/cli/article/tests/json.rs` | adopted by merge: Initialize diagnostics on existing JSON test pages; preserve context, warnings, next commands and envelopes. |
+| `src/cli/article/tests/mod.rs` | adopted by merge: Register the incoming diagnostics module without altering prior modules. |
+| `src/cli/article/tests/next_commands.rs` | adopted by merge: Initialize diagnostics while retaining exact-variant follow-up assertion. |
+| `src/entities/article/enrichment.rs` | adopted by merge: Bound plain-search enrichment through existing deadline seam; return statuses/timings. Preserve explicit variant execution context, migrated resolution/capture paths and existing row merge. |
+| `src/entities/article/mod.rs` | adopted by merge: Add diagnostics and timing records to search pages; preserve migrated article types. |
+| `src/entities/article/search.rs` | adopted by merge: Scope one 60-second deadline, retain an existing invocation deadline, time search/enrichment, box joined futures, and preserve auxiliary rows when primaries fail. |
+| `src/entities/article/search/deadline.rs` | adopted by merge: Use existing task-local deadline/HTTP seam, full timing wrappers, deadline error mapping and fixture override read in release builds. |
+| `src/entities/article/search/tests.rs` | adopted by merge: Register deadline tests; retain prior acquisition, pagination, retraction, type-capable and merge tests. |
+| `src/entities/article/search/tests/deadline.rs` | adopted by merge: Add held-source partial rows, failed-primary survivor and healthy timing assertions using owned signal-held replies. |
+| `src/entities/article/test_support.rs` | adopted by merge: Add signal-held fixture reply while retaining existing migrated fixture and TestEnv scheduling. |
+| `src/entities/variant/get.rs` | adopted by merge: Add direct record-level headline helper and empty literal fields; preserve genomic prediction preparation and every existing migrated getter boundary. |
+| `src/entities/variant/get/tests.rs` | adopted by merge: Combine all three incoming headline tests and literal fields with both existing genomic preparation functions. No oracle changes or assertion removal. |
+| `src/entities/variant/mod.rs` | adopted by merge: Add optional headline/search provenance and bounded ClinVar record classification; apply it only on usable direct records, retaining existing section outcomes and interval identity. |
+| `src/entities/variant/search/tests.rs` | adopted by merge: Six provenance literal lines only; retain exact aggregation, annotation, interval and coding behavior assertions. |
+| `src/render/markdown/variant.rs` | adopted by merge: Pass headline source/date/note into the existing safe render context. |
+| `src/render/markdown/variant/tests.rs` | adopted by merge: Initialize optional source/date fields in four search literals; preserve all exact transcript/render assertions. |
+| `src/render/provenance.rs` | adopted by merge: Initialize three headline fields in the retained test literal; migrated runtime provenance remains unchanged. |
+| `src/sources/ncbi_efetch.rs` | adopted by merge: Decode record-level germline classification with budget charges and two recorded/absence regressions; preserve direct ClinVar guardrails. |
+| `src/transform/variant.rs` | adopted by merge: Label cached significance as MyVariant with newest RCV evaluation date and direct follow-up note; retain migrated identity/annotation selection. |
+| `templates/variant.md.j2` | adopted by merge: Render headline provenance, disagreement/no-classification note and direct germline record detail. |
+| `templates/variant_search.md.j2` | adopted by merge: Keep the variant table and transcript explanation slot; add a cached-significance/direct-follow-up explanation. |
+| `testdata/sources/capture-receipts.json` | adopted by merge: Retain all development receipts and add two donor public capture provenance entries; no acquisition or provider freshness claim. |
+| `testdata/sources/myvariant/search_tp53_g105s_20261003.json` | adopted by merge: Retain exact donor capture bytes and receipt hash as a fixture input; no new provider request. |
+| `testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml` | adopted by merge: Retain exact donor XML and receipt hash, including its whitespace-only line; no new provider request. |
+| `tests/article_cli_tests_structure.rs` | adopted by merge: Add new CLI diagnostics owner to the exact file-set oracle; no exclusions. |
+| `tests/surface/test_source_configuration_docs_contract.py` | adopted by merge with forward correction: Add deadline seam to the existing allowlist. Correct its description to read in release builds because source reads it unconditionally; retain all environment-surface checks. |
+| `tests/test_article_spec_fixture_lifecycle.py` | adopted by merge: Add only the owned deadline fixture to the exact unpaced-origin oracle; preserve all ownership checks. |
+| `tests/test_source_package_boundary.py` | reimplemented through the BioData boundary: Require all six added package members using the development inclusion oracle. Retain all BioData/site/dependency checks; maintenance zero-coupling/removal rules and numerical package ceiling are inapplicable to the migrated package. |
+| `tests/unit/cli/variant.rs` | adopted by merge: Initialize source/date fields in the existing renderer envelope literal; retain assertions. |
+| `tools/rust-source-size-inventory.json` | reconciled through the migrated boundary: Retain 49 development objects, floors and conditions; reconcile six changed baselines and add two newly overthreshold retained variant owners. Do not resurrect three retired donor objects or drop typed MCP ownership. |
+| `tools/zero-coupling-historical.json` | already satisfied in development: Absent since development restored the BioData boundary. Reject merge resurrection of the retired ledger; no candidate baseline path is deleted. |
+
+### All five conflict paths and hunk decisions
+
+- `sdlc/pm.json`, add/add, two blocks: retain the complete programme configuration because the donor maintenance configuration belongs to another owner. Mailroom and record naming already agree. No incoming acceptance list, maintenance proof cutoff, forbidden-name list or maintenance lane target supersedes programme policy. The final file is byte-identical to c428.
+- `src/entities/variant/get/tests.rs`, adjacent additions: close the retained genomic optional-table function, then append all three donor headline functions. Retain the default genomic boundary helper, its optional-feature test, all existing assertions and all incoming assertions. The six added literal-field lines are also retained.
+- `tests/test_source_package_boundary.py`, ownership block: preserve every development BioData, website, root-entry, area and dependency assertion. The maintenance ban on the BioData crate and retired zero-coupling checker would contradict the migrated package. Translate the six incoming packaged-path additions into six required-members assertions. The maintenance-only numerical package ceiling has already been replaced by explicit inclusion and boundary proof on development; no development oracle is removed or weakened.
+- `tools/rust-source-size-inventory.json`, five conflicting blocks and the sixth auto-merged owner: preserve development floors, owners, reasons, conditions and retired-owner dispositions; add the exact observed source growth and maintenance reasons. Combine the getter preparation allowance with the headline allowance, retain the migrated provenance floor, and preserve programme package-neutral decomposition conditions instead of restoring the maintenance-only package ceiling. The auto-merged variant-transform reason remains development-owned with an appended maintenance explanation. Two additional combined-tree owners need new entries, as detailed below.
+- `tools/zero-coupling-historical.json`, modify/delete: retain its preexisting development absence. The maintenance edit only refreshes a receipt hash inside a retired ledger. Rejecting its resurrection introduces no deletion relative to the accepted development tree and changes no active checker.
+
+All auto-merged overlaps were inspected for retained ownership: article enrichment keeps its migrated resolution functions and explicit variant context, test support keeps scheduling, the getter keeps genomic preparation, variant types keep interval identity, search tests keep coding/interval assertions, runtime provenance keeps migrated behavior, and capture receipts keep all development entries. The only additional donor correction changes the article-deadline allowlist description from debug-only to release-read; the source reads this fixture seam unconditionally. It changes no assertion or environment admission.
+
+### Exact effective delta and preserved inputs
+
+Before amendment metadata, the effective delta against c428 is 55 paths: 3,007 inserted lines and 260 removed lines. Categories are 23 Rust paths under src, 10 SDLC paths, 6 spec/fixture paths, 5 other test paths, 3 capture/receipt paths, 2 docs, 2 skill/schema paths, 2 templates, 1 benchmark input and 1 inventory. These are 45 non-SDLC effective inputs and 10 maintenance administrative inputs. The owner record amendment and its machine-readable companion add two changed metadata paths, so the complete candidate delta contains 57 paths. There are no tracked deletions or mode changes. Tracked paths grow from 3,980 to 3,991, including the new companion; src Rust grows from 800 to 803.
+
+The [machine-readable companion](2026-10-04-qf-maintenance-source-inputs.json) seals every changed effective input with old/new byte hashes, modes, Git blobs and exact line deltas. It excludes its own bytes and this record from that input list to avoid recursive seals; the final commit/tree binds both metadata files. It also contains all 51 candidate overthreshold objects with actual source hashes/counts and old/donor/candidate entry dispositions.
+
+Manifest, lock, development version/citation/changelog policy, programme PM configuration, quality checker, accepted producer `ad6219d2e61ed208a8bf6ac4caca1131c4a4e200`, focused runner configuration and existing migration oracle bytes are unchanged from c428. The four coding gold inputs and interval-search oracle remain unchanged. No 0680 CASE artifact or gold is edited. Runtime source changes mean the prior c428 acceptance cannot be relabeled as acceptance of this candidate.
+
+### Complete static source inventory reconciliation
+
+The candidate has 51 overthreshold src Rust files and exactly 51 inventory objects at the unchanged 1,000-line threshold. Static splitlines/non-whitespace counts reconcile every object, exact baseline and delta; this does not execute or qualify the quality checker. Of 49 development objects, 43 are byte-equivalent objects and six gain exact count/reason increments. Every existing floor and removal condition stays exact. The two new entries retain the development source baseline as their floor and name Root maintenance authority, retained assertions and a decomposition/removal condition.
+
+| Changed inventory owner | Development total | Candidate total | Floor | Exact authorized delta |
+| --- | --- | --- | --- | --- |
+| `src/entities/article/mod.rs` | 1385 | 1406 | 1314 | 92 |
+| `src/entities/variant/get.rs` | 1268 | 1307 | 1128 | 179 |
+| `src/entities/variant/get/tests.rs` | 911 | 1019 | 911 | 108 |
+| `src/entities/variant/mod.rs` | 978 | 1003 | 978 | 25 |
+| `src/render/markdown/variant/tests.rs` | 1098 | 1106 | 1000 | 106 |
+| `src/render/provenance.rs` | 1863 | 1866 | 1745 | 121 |
+| `src/sources/ncbi_efetch.rs` | 1217 | 1281 | 1000 | 281 |
+| `src/transform/variant.rs` | 1385 | 1424 | 1335 | 89 |
+
+Donor inventory count 51 is not the candidate inventory count by copying: donor-only retired owners are `src/entities/drug/get.rs`, `src/sources/tests/provider_network.rs` and `src/transform/drug.rs`. Their candidate totals are 661, 956, 771 in that listed order. They remain below threshold. The development-only `src/mcp/shell/typed_get_tests.rs` object remains exact. Together with the two new combined variant owners, this yields 51. The companion records every donor-only object and the measured candidate count. Inventory SHA-256 is `83ddeed0411719cc6e4dadbf7ca47a35ffe34fa945c6836784abe20366cb099c`.
+
+### Nine new source baselines for the later 0681 SOURCE amendment
+
+Counts use splitlines for total and non-whitespace splitlines for nonblank, including comments. The old accepted CASE and its caps are preserved. These observations propose new SOURCE inputs; they do not approve new caps or change the eight-path 0681 claim. Search tests grow by six literal-field lines, from 831/876 to 837/882, leaving 13 nonblank and 18 total lines under the old 850/900 final cap. The frozen getter grows from 1195/1268 to 1233/1307. Its byte-identical requirement must be rebound to the independently accepted new base before coding; seven other frozen/mutable baseline files remain unchanged.
+
+| Path | Candidate nonblank / total | SHA-256 |
+| --- | --- | --- |
+| `src/entities/variant/resolution/coding_alias.rs` | 181 / 194 | `502262e30683be3c1b9a18973b67158ba756917e7435fd1d89ac9d5acb3e2c28` |
+| `src/entities/variant/resolution/coding_tests.rs` | 387 / 402 | `ba2add2fb823012a2aef02e41ba267a0e68fa13a77f033f36b041750efbbd5d9` |
+| `src/entities/variant/resolution/coding_transport_tests.rs` | 176 / 179 | `1acd2e67e73ce79575ac9c40a2405af8e4870d945c770ff4ff415c430033260a` |
+| `src/entities/variant/search/tests.rs` | 837 / 882 | `f4f2cf93fcacbb643a21455e4c8eab803ac771fc6eb636d81d57cf0d3b55a472` |
+| `src/entities/variant/resolution.rs` | 1149 / 1224 | `98cf7b7051c712c88aa9c131dca197ec07caca6c5c98931863aa3c193c5895a6` |
+| `src/entities/variant/resolution/tests.rs` | 508 / 548 | `d2b8a5ac3f9efacd948aaac862e3bb94b32b2dc049309f75f522bc370cf1a684` |
+| `src/entities/variant/search/mod.rs` | 1069 / 1113 | `a873265c6d2225c71a80edb1f3b68aa3bdb7cc9ef3fc481b9432fa908433c70f` |
+| `src/entities/variant/get.rs` | 1233 / 1307 | `e9face3a0208f3941efdb86b3026ddaf2bec4a9f520defb14f3762908b3f4b70` |
+| `src/mcp/shell/typed_get_tests.rs` | 1562 / 1631 | `c5bf1f2d30c4f44e4d3918f28ba0494ab12b04af55ee2040f42e26aad894d89c` |
+
+### Finite later OFFLINE proposal and proof boundaries
+
+Propose the 28 literal Rust selectors below as the bounded QF source-dependent proof set. Each name was found in its actual source owner. Choose one existing test binary under no-default-features in a separately reviewed offline packet; do not duplicate the main-source tests across aliases. This is a minimal table-oriented coverage proposal for the changed contracts and migrated boundaries, not collection, execution, acceptance, or permission to run it. It does not replace the fixed 35 selectors or any gold row of 0681. The affected prior article selectors retain no-provider enrichment, raw auxiliary rows and materialized variant work after deadline expiry.
+
+Coverage: new article deadline and diagnostics.
+
+- `entities::article::search::tests::deadline::overall_deadline_returns_partial_rows_and_names_the_held_source`
+- `entities::article::search::tests::deadline::failed_primaries_still_return_answered_rows`
+- `entities::article::search::tests::deadline::healthy_federated_search_keeps_output_shape_and_records_timings`
+- `cli::article::tests::diagnostics::article_search_diagnostics_render_only_in_full_detail`
+
+Coverage: variant headline fallback and provenance.
+
+- `entities::variant::get::tests::headline_follows_record_level_germline_classification_and_names_ncbi`
+- `entities::variant::get::tests::record_without_germline_classification_keeps_derived_value_labeled`
+- `entities::variant::get::tests::agreeing_record_level_classification_drops_the_cached_copy_note`
+- `entities::variant::get::tests::indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count`
+- `sources::ncbi_efetch::clinvar::tests::parses_record_level_germline_classification_from_recorded_tp53_record`
+- `sources::ncbi_efetch::clinvar::tests::record_level_germline_classification_is_absent_when_the_record_has_none`
+- `entities::variant::clinvar::tests::canonical_outcomes_and_provenance_match_selected_payload_source`
+- `render::markdown::variant::tests::variant_markdown_renders_compact_clinvar_and_population_fields`
+- `render::markdown::variant::tests::variant_search_explains_distinct_transcript_match_after_unchanged_table`
+
+Coverage: retained migrated resolution.
+
+- `entities::variant::resolution::tests::coding::coding_assertion_resources_and_privacy_table`
+- `entities::variant::resolution::tests::coding::coding_identity_comparison_table`
+- `entities::variant::resolution::tests::coding::coding_source_projection_table`
+- `entities::variant::resolution::tests::coding::transport::coding_cli_and_mcp_table`
+- `entities::variant::resolution::tests::genomic::genomic_assertion_and_resource_table`
+- `entities::variant::resolution::tests::genomic::genomic_identity_comparison_table`
+- `entities::variant::resolution::tests::genomic::genomic_consumer_boundary_table`
+- `entities::variant::resolution::tests::interval::interval_alias_pair_resource_privacy_table`
+- `entities::variant::resolution::tests::interval::interval_identity_comparison_table`
+- `entities::variant::resolution::tests::interval_search::interval_search_adapter_table`
+- `cli::variant::interval_search_tests::interval_search_routing_table`
+- `entities::variant::search::tests::interval_annotation_comparison_table`
+
+Coverage: affected retained article behavior.
+
+- `entities::article::enrichment::tests::empty_enrichment_plan_makes_no_provider_requests`
+- `entities::article::search::tests::raw_federated_acquisition_retains_auxiliary_rows_when_primary_sources_fail`
+- `entities::article::variant_search::tests::mid_route_expiry_preserves_materialized_units_across_strategy_identity_matrix`
+
+The source-named public process contract proposal is the two existing pages `spec/entity/article.md` and `spec/entity/variant.md`, including their new deadline/full-diagnostics and cached/direct headline JSON/Markdown cases. Their prepared executable, local fixture and offline runner packet needs separate COMMAND review before execution. Do not invent section filtering that the runner does not support. Existing footprint assertions remain a later separate measurement obligation for the changed provenance byte envelope. No full-suite execution or new helper is proposed.
+
+Risks: the combined source has not compiled; selector registration, fixture lifecycle, timings, cancellation/partial-page behavior, direct ClinVar absence/fallback and template output remain unproved. The migrated variant-article path shares deadline/timing acquisition seams while retaining its explicit execution context, so its unchanged source still needs affected proof. The two newly oversized retained files and six updated source baselines need independent SOURCE acceptance and the unchanged actual audit before integration; static exactness is not audit acceptance. The public recorded captures establish fixture provenance only, not current-provider truth. The donor XML has trailing whitespace on line 2; the normal complete diff check reports it, and exact donor/receipt bytes are preserved. No whitespace rule or test is relaxed to turn that finding green.
+
+Permitted verification: Git object/ancestry/tree inspection, complete donor/effective diff and tracked-mode inspection, static counts/hash/inventory comparisons, source-name inspection, unresolved-marker checks, local relative-link inspection, `git diff --check`, `git diff --cached --check`, and the tracked-text checker. No cargo, pytest, fixtures, quality checker, build, provider, Docker, CI or release action is performed. Root owns later independent read-only review, SOURCE amendment acceptance, offline COMMAND/ACTUAL proof and shared advancement. This writer stops at the clean normally pushed candidate and grants no runtime or release acceptance.
+
+Verification completed on the staged source candidate on 2026-10-04. All five tracked-text scans passed. Static seals, all 51 overthreshold counts/baselines, inherited floors and removal conditions, the 55-input inventory, nine baseline hashes, donor capture receipt hashes, named preserved development inputs, unresolved-marker/index checks and local relative Markdown links passed inspection. The complete c428-relative delta is 57 paths, 6,661 inserted lines and 260 removed lines, including amendment metadata; 11 paths are added and 46 modified. Normal staged/full whitespace checks exit 2 solely for the exact donor ClinVar XML line 2; the unstaged diff check exits zero. This is an explicit unresolved hygiene finding, not a green gate claim or a change to the fixture oracle. The independent reviewer and Root must assess it before shared integration. No runtime or quality-audit result is claimed.

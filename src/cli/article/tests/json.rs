@@ -101,6 +101,7 @@ fn article_search_json_includes_query_and_ranking_context() {
                 status: Some(crate::entities::article::ArticleSourceAvailability::Ok),
                 message: None,
             }],
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("article search json should render");
@@ -241,6 +242,7 @@ fn article_search_json_emits_structured_exact_entity_suggestions() {
             next_commands,
             suggestions,
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("article search json should render");
@@ -321,6 +323,7 @@ fn article_search_json_allows_loop_suggestions_without_sections() {
             next_commands: Vec::new(),
             suggestions,
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("article search json should render");
@@ -439,6 +442,7 @@ fn article_session_suggestions_flow_into_search_json_after_overlap() {
             next_commands,
             suggestions,
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("article search json should render");
@@ -526,6 +530,7 @@ fn article_search_json_next_commands_preserve_source_filter() {
             next_commands,
             suggestions: Vec::new(),
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("article search json should render");
@@ -559,6 +564,7 @@ fn compact_article_search_rows_preserve_triage_fields_and_date_warnings() {
         next_commands: vec!["biomcp get article PMC123".into()],
         suggestions: Vec::new(),
         source_status: Vec::new(),
+        diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
     };
 
     let compact = article_search_json_with_detail(
@@ -636,6 +642,7 @@ fn date_warning_alone_retains_article_search_metadata() {
             next_commands: Vec::new(),
             suggestions: Vec::new(),
             source_status: Vec::new(),
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("date warning JSON");
@@ -666,6 +673,7 @@ fn ticket_377_article_renderer_envelope_contracts_json_meta() {
                 status: Some(crate::entities::article::ArticleSourceAvailability::Degraded),
                 message: Some("Europe PMC timed out after 12s".to_string()),
             }],
+            diagnostics: crate::entities::article::ArticleSearchDiagnostics::default(),
         },
     )
     .expect("article_search_json");

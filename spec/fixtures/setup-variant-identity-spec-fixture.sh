@@ -66,6 +66,8 @@ RS334_GRCH38_RESPONSE = {
     "clinvar": {"gene": {"symbol": "HBB"}},
 }
 MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
+TP53_G105S_RESPONSE = (ROOT / "testdata/sources/myvariant/search_tp53_g105s_20261003.json").read_bytes()
+CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
     "dbnsfp": {
@@ -138,6 +140,14 @@ def send_json(handler, status, payload):
     handler.wfile.write(body)
 
 
+def send_xml(handler, status, payload):
+    handler.send_response(status)
+    handler.send_header("Content-Type", "application/xml")
+    handler.send_header("Content-Length", str(len(payload)))
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -146,6 +156,13 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/healthz":
             send_json(self, 200, {"status": "ok"})
+            return
+        if parsed.path == "/efetch.fcgi":
+            params = parse_qs(parsed.query)
+            if params.get("db") == ["clinvar"] and params.get("id") == ["428884"]:
+                send_xml(self, 200, CLINVAR_428884_XML)
+                return
+            send_json(self, 404, {"error": "fixture efetch record not found"})
             return
         if parsed.path == "/v1/variant/chr7:g.140753336A%3ET":
             if parse_qs(parsed.query).get("assembly") == ["hg38"]:
@@ -285,6 +302,9 @@ class Handler(BaseHTTPRequestHandler):
             if "dbnsfp.genename:MYD88" in query and 'dbnsfp.hgvsp:"p.L265P"' in query:
                 send_json(self, 200, MYD88_L265P_RESPONSE)
                 return
+            if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.G105S"' in query:
+                send_json(self, 200, TP53_G105S_RESPONSE)
+                return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return
 
@@ -381,6 +401,7 @@ PY
   printf 'export BIOMCP_DBSNP_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_GNOMAD_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CANCERHOTSPOTS_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_CLINVAR_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
