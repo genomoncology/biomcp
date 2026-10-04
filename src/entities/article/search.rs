@@ -39,9 +39,9 @@ pub const VARIANT_FALLBACK_RETRIEVAL_PATH: &str = "best-effort free-text fallbac
 const FEDERATED_ARTICLE_SOURCE_TIMEOUT: Duration = Duration::from_secs(12);
 
 mod deadline;
+pub(super) use deadline::{article_search_deadline_error, is_search_deadline_error};
 use deadline::{
-    article_search_deadline_budget, article_search_deadline_error, is_search_deadline_error,
-    timed_source_call, timed_source_leg,
+    article_search_deadline_budget, timed_source_call, timed_source_leg,
 };
 
 pub async fn search(

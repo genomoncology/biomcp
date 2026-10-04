@@ -233,3 +233,190 @@ async fn healthy_federated_search_keeps_output_shape_and_records_timings() {
         );
     }
 }
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn explicit_semantic_scholar_deadline_is_unavailable_but_successful_empty_is_not() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    let wrapped = BioMcpError::Api {
+        api: "semanticscholar".into(),
+        message: "invocation deadline exceeded".into(),
+    }
+    .with_source_context(crate::error::SourceContext::retry(
+        crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+    ));
+    assert!(is_search_deadline_error(&wrapped));
+    assert!(!is_search_deadline_error(&BioMcpError::Api {
+        api: "semanticscholar".into(),
+        message: "HTTP 503".into(),
+    }));
+    for held in [false, true] {
+        let (_release_tx, hold_rx) = mpsc::channel::<()>();
+        let hold = Arc::new(Mutex::new(hold_rx));
+        let hits = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&hits);
+        let fixture = TestHttpFixture::spawn(move |request| {
+            assert!(request.starts_with("GET /graph/v1/paper/search?"));
+            observed.fetch_add(1, Ordering::SeqCst);
+            if held {
+                TestHttpReply::Hold(Arc::clone(&hold))
+            } else {
+                TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"{"total":0,"data":[]}"#,
+                ))
+            }
+        })
+        .await;
+        let cache = TempDirGuard::new("article-search-explicit-s2-deadline");
+        let _env = deadline_env(&fixture, cache.path(), "4000");
+        let result = tokio::time::timeout(
+            crate::test_support::watchdog(60),
+            search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::SemanticScholar),
+        )
+        .await
+        .expect("explicit search settles within its watchdog");
+        assert!(hits.load(Ordering::SeqCst) > 0, "the request reached the fixture");
+        if held {
+            let BioMcpError::SourceUnavailable {
+                source_name,
+                reason,
+                suggestion,
+            } =
+                result.expect_err("zero answered rows on invocation expiry")
+            else {
+                panic!("expiry must be retryable SourceUnavailable");
+            };
+            assert_eq!(source_name, "article search");
+            assert!(reason.contains("deadline"));
+            assert!(suggestion.contains("Retry"));
+        } else {
+            let page = result.expect("a successful empty search stays successful");
+            assert!(page.results.is_empty());
+            assert_eq!(page.source_status.len(), 1);
+            assert_eq!(page.source_status[0].status, Some(ArticleSourceAvailability::Ok));
+        }
+    }
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn in_flight_semantic_scholar_enrichment_deadline_retains_rows_and_names_source() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use crate::entities::article::enrichment::enrich_article_search_rows_with_semantic_scholar;
+
+    for held in [false, true] {
+        let (_release_tx, hold_rx) = mpsc::channel::<()>();
+        let hold = Arc::new(Mutex::new(hold_rx));
+        let hits = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&hits);
+        let fixture = TestHttpFixture::spawn(move |request| {
+            assert!(request.starts_with("POST /graph/v1/paper/batch?"));
+            observed.fetch_add(1, Ordering::SeqCst);
+            if held {
+                TestHttpReply::Hold(Arc::clone(&hold))
+            } else {
+                TestHttpReply::Bytes(test_http_response("200 OK", "application/json", b"[null]"))
+            }
+        })
+        .await;
+        let cache = TempDirGuard::new("article-search-s2-enrichment-deadline");
+        let _env = deadline_env(&fixture, cache.path(), "4000");
+        let mut rows = vec![row("41800002", ArticleSource::PubMed)];
+        let retained = serde_json::to_value(&rows).unwrap();
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(4));
+        let status = tokio::time::timeout(
+            crate::test_support::watchdog(60),
+            crate::sources::with_variant_article_deadline(
+                deadline,
+                enrich_article_search_rows_with_semantic_scholar(&mut rows),
+            ),
+        )
+        .await
+        .expect("enrichment settles within its watchdog")
+        .expect("the attempted batch has a status");
+        assert!(hits.load(Ordering::SeqCst) > 0, "the batch reached the fixture");
+        assert_eq!(serde_json::to_value(&rows).unwrap(), retained);
+        assert_eq!(status.source, ArticleSource::SemanticScholar);
+        if held {
+            assert_eq!(status.status, Some(ArticleSourceAvailability::Degraded));
+            assert!(status.message.as_deref().unwrap().contains("deadline"));
+        } else {
+            assert_eq!(status.status, Some(ArticleSourceAvailability::Ok));
+            assert!(status.message.is_none(), "successful null enrichment is not a failure");
+        }
+    }
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn final_metadata_fallback_deadline_retains_row_and_names_both_consulted_sources() {
+    use crate::entities::article::enrichment::enrich_visible_article_search_rows_with_article_base;
+
+    for held in [false, true] {
+        let (_release_tx, hold_rx) = mpsc::channel::<()>();
+        let hold = Arc::new(Mutex::new(hold_rx));
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = Arc::clone(&requests);
+        let fixture = TestHttpFixture::spawn(move |request| {
+            if request.starts_with("GET /publications/export/biocjson?") {
+                observed.lock().unwrap().push(ArticleSource::PubTator);
+                if held {
+                    // A lag response consults Europe PMC before its in-flight expiry.
+                    TestHttpReply::Bytes(test_http_response(
+                        "404 Not Found",
+                        "application/json",
+                        b"{}",
+                    ))
+                } else {
+                    TestHttpReply::Bytes(test_http_response(
+                        "200 OK",
+                        "application/json",
+                        br#"{"PubTator3":[]}"#,
+                    ))
+                }
+            } else {
+                assert!(held && request.starts_with("GET /search?"));
+                observed.lock().unwrap().push(ArticleSource::EuropePmc);
+                TestHttpReply::Hold(Arc::clone(&hold))
+            }
+        })
+        .await;
+        let cache = TempDirGuard::new("article-search-final-metadata-deadline");
+        let _env = deadline_env(&fixture, cache.path(), "4000");
+        // The only row is also the final row: a next-iteration check cannot cover it.
+        let mut rows = vec![row("41800002", ArticleSource::PubMed)];
+        let retained = serde_json::to_value(&rows).unwrap();
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(4));
+        let statuses = tokio::time::timeout(
+            crate::test_support::watchdog(60),
+            crate::sources::with_variant_article_deadline(
+                deadline,
+                enrich_visible_article_search_rows_with_article_base(&mut rows),
+            ),
+        )
+        .await
+        .expect("final metadata fallback settles within its watchdog");
+        assert_eq!(serde_json::to_value(&rows).unwrap(), retained);
+        if held {
+            assert_eq!(
+                *requests.lock().unwrap(),
+                vec![ArticleSource::PubTator, ArticleSource::EuropePmc]
+            );
+            assert_eq!(statuses.len(), 2);
+            for (status, source) in statuses
+                .iter()
+                .zip([ArticleSource::PubTator, ArticleSource::EuropePmc])
+            {
+                assert_eq!(status.source, source);
+                assert_eq!(status.status, Some(ArticleSourceAvailability::Degraded));
+                assert!(status.message.as_deref().unwrap().contains("deadline"));
+            }
+        } else {
+            assert_eq!(*requests.lock().unwrap(), vec![ArticleSource::PubTator]);
+            assert!(statuses.is_empty(), "successful empty detail is not deadline degradation");
+        }
+    }
+}

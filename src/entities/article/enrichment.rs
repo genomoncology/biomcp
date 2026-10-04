@@ -259,8 +259,17 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
                     crate::error::SourceProvider::SEMANTIC_SCHOLAR,
                     "batch article search enrichment",
                 );
-                status.status = Some(ArticleSourceAvailability::Unavailable);
-                status.message = Some("Semantic Scholar enrichment unavailable".to_string());
+                if plain_article_search_deadline_elapsed(execution) {
+                    let deadline = article_search_deadline_status(
+                        ArticleSource::SemanticScholar,
+                        "Semantic Scholar enrichment",
+                    );
+                    status.status = deadline.status;
+                    status.message = deadline.message;
+                } else {
+                    status.status = Some(ArticleSourceAvailability::Unavailable);
+                    status.message = Some("Semantic Scholar enrichment unavailable".to_string());
+                }
                 break;
             }
         }
@@ -381,6 +390,18 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 crate::error::SourceProvider::PUBTATOR3,
                 "visible article metadata fallback",
             ),
+        }
+        // The final in-flight fallback may consume the deadline without another
+        // loop iteration. Keep any materialized article and report the affected
+        // PubTator/Europe PMC chain even when its detail helper returned success.
+        if plain_article_search_deadline_elapsed(execution) {
+            for source in [ArticleSource::PubTator, ArticleSource::EuropePmc] {
+                statuses.push(article_search_deadline_status(
+                    source,
+                    "article metadata fallback",
+                ));
+            }
+            break;
         }
     }
     statuses

@@ -82,7 +82,7 @@ where
 /// The terminal error for a search whose invocation deadline expired without
 /// producing a page: unavailable rather than an internal error, so agents see
 /// a retryable surface.
-pub(super) fn article_search_deadline_error(
+pub(in crate::entities::article) fn article_search_deadline_error(
     deadline: &crate::sources::VariantArticleDeadline,
 ) -> BioMcpError {
     BioMcpError::SourceUnavailable {
@@ -97,7 +97,7 @@ pub(super) fn article_search_deadline_error(
 
 /// Whether the propagated error is the invocation deadline itself, unwrapping
 /// the source-context envelope provider sends add on failure.
-pub(super) fn is_search_deadline_error(error: &BioMcpError) -> bool {
+pub(in crate::entities::article) fn is_search_deadline_error(error: &BioMcpError) -> bool {
     let mut current = error;
     loop {
         match current {

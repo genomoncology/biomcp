@@ -159,8 +159,8 @@
     },
     {
       "path": "src/entities/article/enrichment.rs",
-      "classification": "adopted by merge",
-      "reason": "Bound plain-search enrichment through existing deadline seam; return statuses/timings. Preserve explicit variant execution context, migrated resolution/capture paths and existing row merge."
+      "classification": "adopted by merge with bounded deadline correction",
+      "reason": "After in-flight plain Semantic Scholar batch expiry, emit degraded deadline status. After final plain metadata fallback completion or failure, retain materialized rows and name the affected PubTator/Europe PMC chain. Explicit migrated execution remains unchanged."
     },
     {
       "path": "src/entities/article/mod.rs",
@@ -169,13 +169,13 @@
     },
     {
       "path": "src/entities/article/search.rs",
-      "classification": "adopted by merge",
-      "reason": "Scope one 60-second deadline, retain an existing invocation deadline, time search/enrichment, box joined futures, and preserve auxiliary rows when primaries fail."
+      "classification": "adopted by merge with bounded deadline correction",
+      "reason": "Re-export existing deadline detector and mapper within article ownership for the bounded plain-backend correction; preserve deadline orchestration."
     },
     {
       "path": "src/entities/article/search/deadline.rs",
-      "classification": "adopted by merge",
-      "reason": "Use existing task-local deadline/HTTP seam, full timing wrappers, deadline error mapping and fixture override read in release builds."
+      "classification": "adopted by merge with bounded deadline correction",
+      "reason": "Widen only the existing detector and mapper visibility within article ownership; preserve wrapped-error recognition and retryable deadline mapping."
     },
     {
       "path": "src/entities/article/search/tests.rs",
@@ -184,8 +184,8 @@
     },
     {
       "path": "src/entities/article/search/tests/deadline.rs",
-      "classification": "adopted by merge",
-      "reason": "Add held-source partial rows, failed-primary survivor and healthy timing assertions using owned signal-held replies."
+      "classification": "adopted by merge with bounded deadline correction",
+      "reason": "Append three source-only signal-held regressions for explicit S2 zero-answer expiry, in-flight batch expiry and final metadata fallback expiry. Each includes successful empty/null control and actual fixture request assertions; retain all existing regressions."
     },
     {
       "path": "src/entities/article/test_support.rs",
@@ -730,20 +730,36 @@
       "candidate_git_blob": "d4cf8ebbd287df739d15458274cf34e7413d5478"
     },
     {
+      "path": "src/entities/article/backends.rs",
+      "status": "M",
+      "added_lines": 15,
+      "removed_lines": 0,
+      "base": {
+        "bytes": 33847,
+        "sha256": "585d8cef35dc9468d48654ec92ab1322690c00e9b32dcde3fa3dcbf6cd156582"
+      },
+      "candidate": {
+        "bytes": 34651,
+        "sha256": "f983a6c3d77bf5ce01f682830d95c29c1b6f3e2306e5026099c5b0020739524a"
+      },
+      "candidate_mode": "100644",
+      "candidate_git_blob": "dc96a4b2046ab5221c5a061555ab963c688a778e"
+    },
+    {
       "path": "src/entities/article/enrichment.rs",
       "status": "M",
-      "added_lines": 114,
-      "removed_lines": 19,
+      "added_lines": 137,
+      "removed_lines": 21,
       "base": {
         "bytes": 14013,
         "sha256": "8a4093aedea498569e9d6cc428a7811ae258e78387a305858e7113ebea146e0b"
       },
       "candidate": {
-        "bytes": 17792,
-        "sha256": "f2428e28ad86b723f440773adb0f3f38906c6c3b628122c9692f456645757f48"
+        "bytes": 18811,
+        "sha256": "c9ac54c4240e59303b50e074369c883724ff4ac6281dbe3e45ae8186042a0817"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "49d0e1f5e237e2fe0cca85c96f678a676d8183b2"
+      "candidate_git_blob": "518069e7e70033b72230ea5c0c10b605d36bd3db"
     },
     {
       "path": "src/entities/article/mod.rs",
@@ -771,11 +787,11 @@
         "sha256": "2c83048409be34d3dd3998d9f788300349e2d9df015e265f5d8b4c823098d806"
       },
       "candidate": {
-        "bytes": 34658,
-        "sha256": "5c7f65041303d95ebecebd51ecbe5f6589c68b60dc07d8858db030bb24f39966"
+        "bytes": 34681,
+        "sha256": "c8f3027c50618b78e32c1c0725b52be69747e7bba603f955d19ba8c76ff8369f"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "9f52343d8ed7ca0be6352ed8ed037bd226b3ac19"
+      "candidate_git_blob": "c80b89575fbfb6f3e95125713420d0a17b962d50"
     },
     {
       "path": "src/entities/article/search/deadline.rs",
@@ -784,11 +800,11 @@
       "removed_lines": 0,
       "base": null,
       "candidate": {
-        "bytes": 4439,
-        "sha256": "3686a87caef7dc2915dc53343cb1dcf14549a2b2f0d093f25617c290d975ce5d"
+        "bytes": 4483,
+        "sha256": "e7c96897c5a744c09c167045365d6993a96aef9ae60140c57719663f75ba7c4c"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "6e07bbd4d00ff11e2e4f27797085587c40824f3c"
+      "candidate_git_blob": "f07916f9c484356e245608f3261728a23db59f0c"
     },
     {
       "path": "src/entities/article/search/tests.rs",
@@ -809,15 +825,15 @@
     {
       "path": "src/entities/article/search/tests/deadline.rs",
       "status": "A",
-      "added_lines": 235,
+      "added_lines": 422,
       "removed_lines": 0,
       "base": null,
       "candidate": {
-        "bytes": 9265,
-        "sha256": "6ac1d3680bced94d8bc7ae543b0ff8a3861bb0bc2f0218aa01d1faf869e14302"
+        "bytes": 17677,
+        "sha256": "3ac6fcd7ab51aa451798f18b74aa29042c42a58ee6c76d116f439e2903728f16"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "8d69f80ef7eb24eebcc17a368cb6c66b8642b232"
+      "candidate_git_blob": "2599c2078e041be0877138ccee235955b0ef6a12"
     },
     {
       "path": "src/entities/article/test_support.rs",
@@ -1150,10 +1166,10 @@
       "candidate_git_blob": "08829fc41c8abde0eec3add06365a3c503224b8a"
     }
   ],
-  "effective_input_count_excluding_amendment_metadata": 55,
-  "effective_source_rust_path_count": 23,
-  "effective_added_lines_excluding_amendment_metadata": 3007,
-  "effective_removed_lines_excluding_amendment_metadata": 260,
+  "effective_input_count_excluding_amendment_metadata": 56,
+  "effective_source_rust_path_count": 24,
+  "effective_added_lines_excluding_amendment_metadata": 3232,
+  "effective_removed_lines_excluding_amendment_metadata": 262,
   "final_expected_tracked_paths": 3991,
   "final_expected_src_rust_paths": 803,
   "amendment_metadata_paths": [
@@ -3469,13 +3485,28 @@
       "coverage": "affected_retained_article_behavior",
       "path": "src/entities/article/variant_search.rs",
       "selector": "entities::article::variant_search::tests::mid_route_expiry_preserves_materialized_units_across_strategy_identity_matrix"
+    },
+    {
+      "coverage": "review_deadline_boundary_regressions",
+      "path": "src/entities/article/search/tests/deadline.rs",
+      "selector": "entities::article::search::tests::deadline::explicit_semantic_scholar_deadline_is_unavailable_but_successful_empty_is_not"
+    },
+    {
+      "coverage": "review_deadline_boundary_regressions",
+      "path": "src/entities/article/search/tests/deadline.rs",
+      "selector": "entities::article::search::tests::deadline::in_flight_semantic_scholar_enrichment_deadline_retains_rows_and_names_source"
+    },
+    {
+      "coverage": "review_deadline_boundary_regressions",
+      "path": "src/entities/article/search/tests/deadline.rs",
+      "selector": "entities::article::search::tests::deadline::final_metadata_fallback_deadline_retains_row_and_names_both_consulted_sources"
     }
   ],
   "offline_public_spec_proposal": [
     "spec/entity/article.md",
     "spec/entity/variant.md"
   ],
-  "selector_proposal_limits": "28 literal Rust names for a later QF proof packet, plus two existing public spec pages under their own prepared offline fixture packet. Source names are checked; collection and execution are unproved. This does not replace or change the fixed 35-selector 0681 CASE.",
+  "selector_proposal_limits": "31 literal product Rust names: retain the prior 28 and add exactly three new deadline regression selectors. Add only three named Python contracts and three named Rust integration layout selectors. Retain both public spec pages, unchanged actual rust_source_size audit and footprint measurement obligations. Proposals only: no build, collection, fixture, audit, measurement or runtime execution. The 0681 CASE fixed 35-selector/gold contract is not replaced.",
   "public_wording_forward_correction": {
     "base": "cc26694a9cae8536f8c545075418870165809de3",
     "paths": [
@@ -3485,5 +3516,296 @@
       "sdlc/tickets/1297-a-protein-change-query-must-not-resolve-to-the-wrong-variant.md"
     ],
     "scope": "Four historical ticket narratives plus existing QF classification/seal metadata only; product source, selectors, migration gold and retired ledger absence unchanged."
-  }
+  },
+  "bounded_forward_source_corrections": [
+    {
+      "path": "src/entities/article/backends.rs",
+      "classification": "bounded forward source correction",
+      "reason": "New bounded forward correction under Root authority after review 01a107c9-97cd-78e3-bb9e-7e5412a98c98: preserve plain-search wrapped deadline errors and map sanitized request failures on invocation expiry to retryable SourceUnavailable. Keep successful empty, ordinary unavailable and explicit migrated execution outcomes unchanged."
+    },
+    {
+      "path": "src/entities/article/enrichment.rs",
+      "classification": "bounded forward source correction",
+      "reason": "After in-flight plain Semantic Scholar batch expiry, emit degraded deadline status. After final plain metadata fallback completion or failure, retain materialized rows and name the affected PubTator/Europe PMC chain. Explicit migrated execution remains unchanged."
+    },
+    {
+      "path": "src/entities/article/search.rs",
+      "classification": "bounded forward source correction",
+      "reason": "Re-export existing deadline detector and mapper within article ownership for the bounded plain-backend correction; preserve deadline orchestration."
+    },
+    {
+      "path": "src/entities/article/search/deadline.rs",
+      "classification": "bounded forward source correction",
+      "reason": "Widen only the existing detector and mapper visibility within article ownership; preserve wrapped-error recognition and retryable deadline mapping."
+    },
+    {
+      "path": "src/entities/article/search/tests/deadline.rs",
+      "classification": "bounded forward source correction",
+      "reason": "Append three source-only signal-held regressions for explicit S2 zero-answer expiry, in-flight batch expiry and final metadata fallback expiry. Each includes successful empty/null control and actual fixture request assertions; retain all existing regressions."
+    }
+  ],
+  "offline_support_selector_proposal": [
+    {
+      "kind": "python",
+      "path": "tests/surface/test_source_configuration_docs_contract.py",
+      "selector": "tests/surface/test_source_configuration_docs_contract.py::test_biomcp_env_docs_match_runtime_reads"
+    },
+    {
+      "kind": "python",
+      "path": "tests/test_article_spec_fixture_lifecycle.py",
+      "selector": "tests/test_article_spec_fixture_lifecycle.py::test_only_owned_article_fixtures_export_unpaced_origin"
+    },
+    {
+      "kind": "python",
+      "path": "tests/test_source_package_boundary.py",
+      "selector": "tests/test_source_package_boundary.py::test_cargo_source_package_keeps_the_runtime_boundary"
+    },
+    {
+      "kind": "rust_integration",
+      "path": "tests/article_cli_tests_structure.rs",
+      "selector": "article_cli_flat_test_sidecar_is_replaced_by_directory"
+    },
+    {
+      "kind": "rust_integration",
+      "path": "tests/article_cli_tests_structure.rs",
+      "selector": "article_cli_test_split_files_exist_with_doc_headers"
+    },
+    {
+      "kind": "rust_integration",
+      "path": "tests/article_cli_tests_structure.rs",
+      "selector": "article_cli_test_sidecar_files_stay_under_700_lines"
+    }
+  ],
+  "review_remediation": {
+    "date": "2026-10-04",
+    "source_authority": "Root bounded source correction after fresh SOL High read-only review",
+    "review": "01a107c9-97cd-78e3-bb9e-7e5412a98c98",
+    "reviewed_head": "cc26694a9cae8536f8c545075418870165809de3",
+    "forward_base": "25161d7546d3c01fcbb9d494c3dc44446495d589",
+    "verdict": "FINDINGS",
+    "proof_scope": "source preparation only; fresh independent review of final HEAD remains required",
+    "product_rust_selectors": 31,
+    "support_python_selectors": 3,
+    "support_rust_integration_selectors": 3,
+    "spec_pages": 2,
+    "audit_and_footprint_obligations": "Retained without execution or waiver."
+  },
+  "all_effective_changed_src_rust_counts": [
+    {
+      "path": "src/cli/article/dispatch.rs",
+      "source": {
+        "bytes": 24527,
+        "sha256": "1a34c300d9da256074ffc74dbc0a082aa649dba791769d52f33d88dc4bfe95c2"
+      },
+      "nonblank_lines": 635,
+      "total_lines": 661
+    },
+    {
+      "path": "src/cli/article/tests/diagnostics.rs",
+      "source": {
+        "bytes": 2069,
+        "sha256": "6467ceb3e6f9b0b79a979fdf3c99e6d4193d9dc3dee77f896186c965cf8312ac"
+      },
+      "nonblank_lines": 60,
+      "total_lines": 64
+    },
+    {
+      "path": "src/cli/article/tests/exact_lookup.rs",
+      "source": {
+        "bytes": 15436,
+        "sha256": "fdbec6aaf4331957fa5d5b6212637230a809aeabbe6b6100941def71dd99c631"
+      },
+      "nonblank_lines": 421,
+      "total_lines": 444
+    },
+    {
+      "path": "src/cli/article/tests/filters.rs",
+      "source": {
+        "bytes": 21980,
+        "sha256": "741761bfb77dc821d1ec3998c850deb29e10dfb8ad9f1a6ef5ec4fb613e453bf"
+      },
+      "nonblank_lines": 585,
+      "total_lines": 641
+    },
+    {
+      "path": "src/cli/article/tests/json.rs",
+      "source": {
+        "bytes": 25177,
+        "sha256": "29865fd9e3ed3311734864fe03026d776724c11e0d123594f34b15f5941ecdb3"
+      },
+      "nonblank_lines": 671,
+      "total_lines": 691
+    },
+    {
+      "path": "src/cli/article/tests/mod.rs",
+      "source": {
+        "bytes": 151,
+        "sha256": "50fcf54df6afdf8f04c9574573e3fd4bf67ba24dbec591720545a0db3fda98d2"
+      },
+      "nonblank_lines": 8,
+      "total_lines": 9
+    },
+    {
+      "path": "src/cli/article/tests/next_commands.rs",
+      "source": {
+        "bytes": 1404,
+        "sha256": "4227bda978dda2b804824006611aafefefc14cb1719cec4fc5968e2a7c0bdc59"
+      },
+      "nonblank_lines": 38,
+      "total_lines": 40
+    },
+    {
+      "path": "src/entities/article/backends.rs",
+      "source": {
+        "bytes": 34651,
+        "sha256": "f983a6c3d77bf5ce01f682830d95c29c1b6f3e2306e5026099c5b0020739524a"
+      },
+      "nonblank_lines": 922,
+      "total_lines": 975
+    },
+    {
+      "path": "src/entities/article/enrichment.rs",
+      "source": {
+        "bytes": 18811,
+        "sha256": "c9ac54c4240e59303b50e074369c883724ff4ac6281dbe3e45ae8186042a0817"
+      },
+      "nonblank_lines": 481,
+      "total_lines": 510
+    },
+    {
+      "path": "src/entities/article/mod.rs",
+      "source": {
+        "bytes": 48024,
+        "sha256": "f85263d729cd49eb1cb770958d021a60cbd81914d536f16ae1fa2a6ad597c4d3"
+      },
+      "nonblank_lines": 1287,
+      "total_lines": 1406
+    },
+    {
+      "path": "src/entities/article/search.rs",
+      "source": {
+        "bytes": 34681,
+        "sha256": "c8f3027c50618b78e32c1c0725b52be69747e7bba603f955d19ba8c76ff8369f"
+      },
+      "nonblank_lines": 926,
+      "total_lines": 969
+    },
+    {
+      "path": "src/entities/article/search/deadline.rs",
+      "source": {
+        "bytes": 4483,
+        "sha256": "e7c96897c5a744c09c167045365d6993a96aef9ae60140c57719663f75ba7c4c"
+      },
+      "nonblank_lines": 107,
+      "total_lines": 115
+    },
+    {
+      "path": "src/entities/article/search/tests.rs",
+      "source": {
+        "bytes": 6144,
+        "sha256": "43a30cf9f578b3225db6ebed83b1a2959323032d25b84ac155e8cfb34c0282f3"
+      },
+      "nonblank_lines": 158,
+      "total_lines": 168
+    },
+    {
+      "path": "src/entities/article/search/tests/deadline.rs",
+      "source": {
+        "bytes": 17677,
+        "sha256": "3ac6fcd7ab51aa451798f18b74aa29042c42a58ee6c76d116f439e2903728f16"
+      },
+      "nonblank_lines": 402,
+      "total_lines": 422
+    },
+    {
+      "path": "src/entities/article/test_support.rs",
+      "source": {
+        "bytes": 5702,
+        "sha256": "4c743ab81f228cafece1063988695823f8dd62629bf3c4ef6a178e8825eeb053"
+      },
+      "nonblank_lines": 159,
+      "total_lines": 173
+    },
+    {
+      "path": "src/entities/variant/get.rs",
+      "source": {
+        "bytes": 46765,
+        "sha256": "e9face3a0208f3941efdb86b3026ddaf2bec4a9f520defb14f3762908b3f4b70"
+      },
+      "nonblank_lines": 1233,
+      "total_lines": 1307
+    },
+    {
+      "path": "src/entities/variant/get/tests.rs",
+      "source": {
+        "bytes": 38517,
+        "sha256": "85737a77f33458e9f3fd5886da4d06fe39dfc34953bf908905f3a0b0e658b9b3"
+      },
+      "nonblank_lines": 943,
+      "total_lines": 1019
+    },
+    {
+      "path": "src/entities/variant/mod.rs",
+      "source": {
+        "bytes": 37270,
+        "sha256": "53ea3a407c8ae1b5077d4a13d1ca3dfb5a17cd359ecc7998d211af9f15dcf143"
+      },
+      "nonblank_lines": 930,
+      "total_lines": 1003
+    },
+    {
+      "path": "src/entities/variant/search/tests.rs",
+      "source": {
+        "bytes": 29671,
+        "sha256": "f4f2cf93fcacbb643a21455e4c8eab803ac771fc6eb636d81d57cf0d3b55a472"
+      },
+      "nonblank_lines": 837,
+      "total_lines": 882
+    },
+    {
+      "path": "src/render/markdown/variant.rs",
+      "source": {
+        "bytes": 26867,
+        "sha256": "637a7758e60a6948772b39ba55de4410971c3289d5d508edffee942f103ca4a2"
+      },
+      "nonblank_lines": 673,
+      "total_lines": 707
+    },
+    {
+      "path": "src/render/markdown/variant/tests.rs",
+      "source": {
+        "bytes": 43982,
+        "sha256": "ab803f70c965b43e6a99f45a1a7952af87e89fc63cd88c6e784bc7cf7a9e57c8"
+      },
+      "nonblank_lines": 1048,
+      "total_lines": 1106
+    },
+    {
+      "path": "src/render/provenance.rs",
+      "source": {
+        "bytes": 64379,
+        "sha256": "a83efb6278419d3062b51bf9a00ca3392c338ba4882367fcc8b70d5f876cceb3"
+      },
+      "nonblank_lines": 1810,
+      "total_lines": 1866
+    },
+    {
+      "path": "src/sources/ncbi_efetch.rs",
+      "source": {
+        "bytes": 55604,
+        "sha256": "f5fb9a738829977711d04ef00295cd1bd6077e11e58b8c7e56394fb44bdc8b63"
+      },
+      "nonblank_lines": 1192,
+      "total_lines": 1281
+    },
+    {
+      "path": "src/transform/variant.rs",
+      "source": {
+        "bytes": 45702,
+        "sha256": "6b37ca0bee0424596f23899991c79651c7c5a798d565b6af70afd747efb8312b"
+      },
+      "nonblank_lines": 1308,
+      "total_lines": 1424
+    }
+  ]
 }

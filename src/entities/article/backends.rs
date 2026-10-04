@@ -729,6 +729,21 @@ pub(super) async fn search_semantic_scholar_candidates(
     };
     let response = match response {
         Ok(Some(response)) => response,
+        // Plain search must preserve invocation expiry for the outer retryable
+        // error mapping. Explicit variant work keeps its existing outcome ledger.
+        Err(error) if execution.is_none() => {
+            if super::search::is_search_deadline_error(&error) {
+                return Err(error);
+            }
+            // The S2 client sanitizes some outbound errors. An exhausted plain
+            // invocation still needs the same retryable deadline surface.
+            if let Some(deadline) = crate::sources::current_variant_article_deadline()
+                && deadline.is_exhausted()
+            {
+                return Err(super::search::article_search_deadline_error(&deadline));
+            }
+            return Ok(semantic_scholar_unavailable_outcome(auth_mode));
+        }
         Ok(None) | Err(_) => return Ok(semantic_scholar_unavailable_outcome(auth_mode)),
     };
 
