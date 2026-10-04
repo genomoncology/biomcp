@@ -9,8 +9,7 @@ pub(super) const INPUT_LIMIT: usize = 1_048_576;
 
 pub(super) struct IntervalAssertion<'a> {
     pub(super) source: &'a str,
-    // Retained provenance is intentionally not used as alias identity.
-    #[cfg_attr(not(test), allow(dead_code))]
+    #[cfg(test)]
     pub(super) reference: Option<&'a str>,
     pub(super) body: &'a str,
     pub(super) body_offset: usize,
@@ -21,10 +20,11 @@ pub(super) struct IntervalAssertion<'a> {
 impl<'a> IntervalAssertion<'a> {
     pub(super) fn prepare(source: &'a str) -> Self {
         let body = super::protein_alias_body(source);
-        let trimmed = source.trim();
         Self {
             source,
-            reference: trimmed
+            #[cfg(test)]
+            reference: source
+                .trim()
                 .rsplit_once(":p.")
                 .map(|(reference, _)| reference),
             body,
@@ -57,7 +57,7 @@ impl<'a> IntervalAssertion<'a> {
     }
 
     /// Translate a candidate body span without assigning it to the removed reference.
-    #[cfg_attr(not(test), allow(dead_code))]
+    #[cfg(test)]
     pub(super) fn source_span(&self, span: biodata::HgvsSpan) -> Option<(usize, usize)> {
         let start = span.start().checked_sub(2)?;
         let end = span.end().checked_sub(2)?;
