@@ -56,19 +56,24 @@ pub(super) async fn search_row(response: Value, request: Value) -> Value {
 #[serial_test::parallel(source_env)]
 async fn coding_cli_and_mcp_table() {
     let rows = oracle("transports");
-    assert_eq!(rows["cases"].as_array().unwrap().len(), 6);
+    assert_eq!(rows["cases"].as_array().unwrap().len(), 14);
     let interval: Value =
         serde_json::from_str(include_str!("interval_search_oracles.json")).unwrap();
     let original = rows["cases"].as_array().unwrap();
     let added = interval["transport_cases"].as_array().unwrap();
     assert_eq!(added.len(), 8);
     for (index, row) in original.iter().enumerate() {
-        assert_eq!(row["id"], format!("T{:02}", index + 1));
+        let (prefix, number) = if index < 6 {
+            ("T", index + 1)
+        } else {
+            ("CT", index - 5)
+        };
+        assert_eq!(row["id"], format!("{prefix}{number:02}"));
     }
     for (index, row) in added.iter().enumerate() {
         assert_eq!(row["id"], format!("IT{:02}", index + 1));
     }
-    assert_eq!(original.len() + added.len(), 14);
+    assert_eq!(original.len() + added.len(), 22);
     let binary = std::env::var_os("BIOMCP_BIN")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| root().join("target/debug/biomcp"));
