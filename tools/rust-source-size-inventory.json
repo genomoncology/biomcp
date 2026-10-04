@@ -211,12 +211,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1255,
+      "baseline_lines": 1294,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154",
-        "delta": 127,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, and direct ClinVar section dispatch.",
+        "ticket": "1022, 1035, 1086, 1154, 1290",
+        "delta": 166,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper.",
         "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed."
       }
     },
@@ -322,23 +322,23 @@
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
-      "baseline_lines": 1098,
+      "baseline_lines": 1106,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1155",
-        "delta": 98,
-        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
+        "ticket": "1155, 1290",
+        "delta": 106,
+        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, hostile inline-sanitization regressions, and significance provenance render contexts beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split variant-search renderer tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1916,
+      "baseline_lines": 1919,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1256",
-        "delta": 69,
-        "reason": "The DisGeNET seed contribution to the associated-genes provenance row.",
+        "ticket": "1256, 1290",
+        "delta": 72,
+        "reason": "The DisGeNET seed contribution to the associated-genes provenance row and the significance provenance fields on test literal construction.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
       }
     },
@@ -427,12 +427,12 @@
     },
     {
       "path": "src/sources/ncbi_efetch.rs",
-      "baseline_lines": 1217,
+      "baseline_lines": 1281,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1154",
-        "delta": 217,
-        "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client without adding a package file beyond the fixed 1300-file boundary.",
+        "ticket": "1154, 1290",
+        "delta": 281,
+        "reason": "Keep direct ClinVar transport, bounded typed parsing, record-level germline classification decoding, and adversarial allocation tests beside the existing NCBI EFetch client without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split the ClinVar transport, parser, and tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
     },
@@ -499,12 +499,12 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1385,
+      "baseline_lines": 1424,
       "floor_lines": 1335,
       "authorized_increase": {
-        "ticket": "1154, 1155",
-        "delta": 50,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner.",
+        "ticket": "1154, 1155, 1290",
+        "delta": 89,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }

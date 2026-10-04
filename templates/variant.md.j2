@@ -12,8 +12,9 @@ rsID: {% if rsid %}{{ rsid }}{% else %}Not reported{% endif %}
 {% if transcript %}Transcript: {{ transcript }}{% endif %}
 {% if consequence %}Consequence: {{ consequence }}{% endif %}
 {% if cosmic_id %}COSMIC: {{ cosmic_id }}{% endif %}
-{% if significance %}Significance: {{ significance }}{% endif %}
-Source: MyVariant.info / ClinVar
+{% if significance %}Significance: {{ significance }}{% if significance_source %} — {{ significance_source }}{% if significance_evaluated %} (evaluated {{ significance_evaluated }}){% endif %}{% endif %}{% endif %}
+{% if significance_note %}{{ significance_note }}
+{% endif %}Source: MyVariant.info / ClinVar
 {{ civic_actionability_pointer }}
 {% endif -%}
 {% if show_prediction_section and (prediction or source_states.predict.status) -%}
@@ -38,6 +39,8 @@ Note: AlphaGenome reports this field as a gene-level identifier from its model o
 {% if source_states.clinvar.payload_allowed and clinvar -%}
 - Source: {{ clinvar.source }}
 - Variation ID: {{ clinvar.variation_id }}{% if clinvar.accession %} ({{ clinvar.accession }}{% if clinvar.version is not none %}.{{ clinvar.version }}{% endif %}){% endif %}
+{% if clinvar.germline_classification %}- Record-level germline classification: {{ clinvar.germline_classification.classification or "Not reported" }}{% if clinvar.germline_classification.review_status %}; {{ clinvar.germline_classification.review_status }}{% endif %}{% if clinvar.germline_classification.evaluation_date %}; evaluated {{ clinvar.germline_classification.evaluation_date }}{% endif %}
+{% endif -%}
 {% if clinvar.record_status %}- VCV record status: {{ clinvar.record_status }}
 {% endif -%}
 {% if clinvar.number_submitters is not none %}- VCV submitters: {{ clinvar.number_submitters }}
