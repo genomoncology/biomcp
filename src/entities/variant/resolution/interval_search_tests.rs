@@ -117,9 +117,10 @@ fn check(row: &Value, objects: &Value) {
         assert_eq!(assertion.candidate(), Some(expected));
     }
     if let Some(n) = row["prepared_bytes"].as_u64() {
-        assert_eq!(assertion.candidate_bytes(), Some(n as usize));
+        let expected = (row["preparation"] != "None").then_some(n as usize);
+        assert_eq!(assertion.candidate_bytes(), expected);
     }
-    if !row["diagnostic_span"].is_null() {
+    if row.get("diagnostic_span").is_some() {
         assert_eq!(
             json!(assertion.diagnostic_span().map(|(a, b)| [a, b])),
             row["diagnostic_span"]
