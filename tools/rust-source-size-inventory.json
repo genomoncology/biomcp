@@ -211,14 +211,9 @@
     },
     {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1316,
-      "floor_lines": 1291,
-      "authorized_increase": {
-        "ticket": "1056, 1155",
-        "delta": 25,
-        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable, and one shared protein equivalence helper prevents exact admission and transcript-role drift.",
-        "removal_condition": "Remove this allowance when variant identity resolution is decomposed."
-      }
+      "baseline_lines": 1220,
+      "floor_lines": 1220,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/variant/search/mod.rs",
