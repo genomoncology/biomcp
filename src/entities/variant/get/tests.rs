@@ -859,3 +859,53 @@ fn therapies_from_oncokb_truncation_shows_count() {
             .is_some_and(|note| note.contains("(and 1 more)"))
     );
 }
+
+// B05 is called by the sole default genomic boundary table. No client is constructed.
+pub(in crate::entities::variant) fn genomic_prediction_preparation_cases() {
+    let all: serde_json::Value =
+        serde_json::from_str(include_str!("../resolution/genomic_oracles/cases.json")).unwrap();
+    for row in all["consumer_boundaries"][4]["cases"].as_array().unwrap() {
+        let result = prepare_prediction(row["input"].as_str().unwrap());
+        if let Some(message) = row["expected_error"].as_str() {
+            let error = result.unwrap_err();
+            assert!(matches!(&error,BioMcpError::InvalidArgument(v) if v == message));
+        } else if !row["expected"].is_null() {
+            let (chromosome, position, reference, alternate) = result.unwrap().unwrap();
+            assert_eq!(
+                serde_json::json!({"chromosome":chromosome,"position_i64":position,
+                "reference":reference,"alternate":alternate}),
+                row["expected"]
+            );
+        } else {
+            assert!(result.unwrap().is_none());
+            assert_eq!(
+                row["expected_inapplicable"],
+                "Genomic coordinates are required for prediction."
+            );
+        }
+    }
+}
+
+#[cfg(feature = "alphagenome")]
+#[tokio::test]
+async fn genomic_prediction_preparation_optional_table() {
+    genomic_prediction_preparation_cases();
+    let all: serde_json::Value =
+        serde_json::from_str(include_str!("../resolution/genomic_oracles/cases.json")).unwrap();
+    for row in all["consumer_boundaries"][4]["cases"].as_array().unwrap() {
+        if !row["expected"].is_null() {
+            continue;
+        } // Applicable input stops at pure preparation.
+        let mut variant = braf_variant_stub();
+        variant.id = row["input"].as_str().unwrap().to_string();
+        let result = add_prediction(&mut variant).await;
+        if let Some(message) = row["expected_error"].as_str() {
+            assert!(matches!(result,Err(BioMcpError::InvalidArgument(v)) if v == message));
+        } else {
+            result.unwrap();
+            let outcomes = serde_json::to_value(&variant.section_outcomes).unwrap();
+            assert_eq!(outcomes["predict"]["outcome"], "inapplicable");
+            assert_eq!(outcomes["predict"]["message"], row["expected_inapplicable"]);
+        }
+    }
+}

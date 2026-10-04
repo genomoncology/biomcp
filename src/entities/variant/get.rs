@@ -20,8 +20,6 @@ use crate::transform;
 use super::gwas::add_gwas_section;
 #[cfg(test)]
 use super::gwas::mark_gwas_unavailable;
-#[cfg(feature = "alphagenome")]
-use super::resolution::hgvs_coords_re;
 use super::resolution::parse_variant_id;
 use super::{
     GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, ResolvedPopulationCoordinate,
@@ -636,22 +634,37 @@ pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
 
 const VARIANT_SOURCE_UNAVAILABLE: &str =
     "Requested variant source data is temporarily unavailable.";
+#[cfg(any(feature = "alphagenome", test))]
+fn prepare_prediction(id: &str) -> Result<Option<(String, i64, String, String)>, BioMcpError> {
+    let assertion = super::resolution::genomic_assertion::genomic_assertion(
+        id,
+        super::resolution::genomic_assertion::Admission::Chromosome,
+        false,
+    );
+    let Some(c) = assertion.components() else {
+        return Ok(None);
+    };
+    let position = c
+        .position_lexeme
+        .parse()
+        .map_err(|_| BioMcpError::InvalidArgument("Invalid HGVS position for prediction".into()))?;
+    Ok(Some((
+        c.accession.to_string(),
+        position,
+        c.reference.to_string(),
+        c.alternate.to_string(),
+    )))
+}
+
 #[cfg(feature = "alphagenome")]
 async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
-    let Some(caps) = hgvs_coords_re().captures(&variant.id) else {
+    let Some((chr, pos, reference, alternate)) = prepare_prediction(&variant.id)? else {
         variant.section_outcomes.complete(
             "predict",
             SectionOutcome::inapplicable("Genomic coordinates are required for prediction."),
         );
         return Ok(());
     };
-
-    let chr = caps[1].to_string();
-    let pos: i64 = caps[2]
-        .parse()
-        .map_err(|_| BioMcpError::InvalidArgument("Invalid HGVS position for prediction".into()))?;
-    let reference = caps[3].to_string();
-    let alternate = caps[4].to_string();
 
     let client = match AlphaGenomeClient::new().await {
         Ok(client) => client,
@@ -677,7 +690,7 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
                     && let Some(symbol) = resp
                         .hits
                         .first()
-                        .and_then(|h| h.symbol.as_deref())
+                        .and_then(|h| h.symbol())
                         .map(str::trim)
                         .filter(|s| !s.is_empty())
                 {
@@ -1252,4 +1265,4 @@ pub async fn get_with_workflow_signals(
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

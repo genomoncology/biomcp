@@ -14,6 +14,7 @@ use super::{
 };
 
 mod coding_alias;
+pub(super) mod genomic_assertion;
 mod point_alias;
 pub(super) use coding_alias::coding_changes_equivalent;
 use coding_alias::coding_key;
@@ -225,21 +226,6 @@ pub(crate) fn normalize_genomic_coordinate(
         ));
     }
     Ok(None)
-}
-
-pub(in crate::entities::variant) fn hgvs_coords_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"^(chr[0-9XYM]+):g\.(\d+)([ACGT])>([ACGT])$").expect("valid regex")
-    })
-}
-
-fn structured_genomic_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"^((?:chr[0-9XYM]+)|(?:NC_[0-9]+\.[0-9]+)):g\.(\d+)([ACGT])>([ACGT])$")
-            .expect("valid regex")
-    })
 }
 
 fn refseq_accession_re() -> &'static Regex {
@@ -467,13 +453,15 @@ pub(crate) fn gnomad_variant_slug(id: &str) -> Option<String> {
     let VariantIdFormat::HgvsGenomic(hgvs) = parse_variant_id(id).ok()? else {
         return None;
     };
-    let caps = hgvs_coords_re().captures(&hgvs)?;
+    let assertion =
+        genomic_assertion::genomic_assertion(&hgvs, genomic_assertion::Admission::Chromosome, true);
+    let components = assertion.components()?;
     Some(format!(
         "{}-{}-{}-{}",
-        &caps[1][3..],
-        &caps[2],
-        &caps[3],
-        &caps[4]
+        components.accession.strip_prefix("chr")?,
+        components.position_lexeme,
+        components.reference,
+        components.alternate
     ))
 }
 
@@ -581,9 +569,7 @@ impl VariantArticleRequest {
         }
         if complete_genomic
             && (identity.position == Some(0)
-                || genomic_alias(&identity)
-                    .as_deref()
-                    .is_none_or(|value| !structured_genomic_re().is_match(value)))
+                || !genomic_assertion::structured_identity_admitted(&identity))
         {
             return Err(BioMcpError::InvalidArgument(
                 "variant article item genomic identity must use chr or versioned RefSeq coordinates, a positive position, and A/C/G/T ref and alt bases"
@@ -822,24 +808,22 @@ impl RequestedVariantIdentity {
     }
 
     pub(crate) fn populate_genomic(&mut self, value: &str) {
-        let Some(caps) = hgvs_coords_re().captures(value.trim()) else {
-            return;
-        };
-        self.populate_genomic_captures(&caps);
+        self.populate_genomic_assertion(value, genomic_assertion::Admission::Chromosome);
     }
 
     fn populate_structured_genomic(&mut self, value: &str) {
-        let Some(caps) = structured_genomic_re().captures(value.trim()) else {
-            return;
-        };
-        self.populate_genomic_captures(&caps);
+        self.populate_genomic_assertion(value, genomic_assertion::Admission::Structured);
     }
 
-    fn populate_genomic_captures(&mut self, caps: &regex::Captures<'_>) {
-        self.genomic_accession = Some(caps[1].to_string());
-        self.position = caps[2].parse().ok();
-        self.reference = Some(caps[3].to_string());
-        self.alternate = Some(caps[4].to_string());
+    fn populate_genomic_assertion(&mut self, value: &str, admission: genomic_assertion::Admission) {
+        let assertion = genomic_assertion::genomic_assertion(value, admission, true);
+        let Some(components) = assertion.components() else {
+            return;
+        };
+        self.genomic_accession = Some(components.accession.to_string());
+        self.position = components.position_lexeme.parse().ok();
+        self.reference = Some(components.reference.to_string());
+        self.alternate = Some(components.alternate.to_string());
     }
 
     pub(crate) fn is_authoritative_refseq(&self) -> bool {
@@ -892,41 +876,8 @@ struct GenomicComponents<'a> {
 }
 
 fn genomic_components(value: &str) -> GenomicComponents<'_> {
-    let trimmed = value.trim();
-    let (build, hgvs) = match trimmed.split_once(':') {
-        Some((prefix, rest))
-            if prefix.eq_ignore_ascii_case("GRCh37") || prefix.eq_ignore_ascii_case("GRCh38") =>
-        {
-            (Some(prefix), rest)
-        }
-        _ => (None, trimmed),
-    };
-    let Some((accession, change)) = hgvs.split_once(":g.") else {
-        return GenomicComponents {
-            build,
-            ..Default::default()
-        };
-    };
-    let Some(separator) = change.find('>') else {
-        return GenomicComponents {
-            build,
-            accession: Some(accession),
-            ..Default::default()
-        };
-    };
-    let left = &change[..separator];
-    let alternate = &change[separator + 1..];
-    let first_base = left.find(|ch: char| !ch.is_ascii_digit());
-    let (position, reference) = first_base
-        .map(|index| (left[..index].parse().ok(), Some(&left[index..])))
-        .unwrap_or((None, None));
-    GenomicComponents {
-        build,
-        accession: Some(accession),
-        position,
-        reference,
-        alternate: (!alternate.is_empty()).then_some(alternate),
-    }
+    genomic_assertion::genomic_assertion(value, genomic_assertion::Admission::Source, true)
+        .source_components()
 }
 
 fn coding_change_re() -> &'static Regex {
