@@ -147,6 +147,21 @@ where
     )
 }
 
+// Task-local and root-bound: no global observer or production lock behavior.
+#[cfg(test)]
+tokio::task_local! {
+    static EPOCH_LOCK_CONTENTION: (PathBuf, std::sync::Arc<tokio::sync::Notify>);
+}
+
+#[cfg(test)]
+pub(crate) async fn with_epoch_lock_contention_observer<F: Future>(
+    cache_root: PathBuf,
+    signal: std::sync::Arc<tokio::sync::Notify>,
+    future: F,
+) -> F::Output {
+    EPOCH_LOCK_CONTENTION.scope((cache_root, signal), future).await
+}
+
 pub(crate) async fn ensure_body_limited_cache_epoch_until(
     cache_root: &Path,
     legacy_cache_was_renamed: bool,
@@ -165,6 +180,12 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
         match lock.try_lock_exclusive() {
             Ok(()) => break,
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                #[cfg(test)]
+                let _ = EPOCH_LOCK_CONTENTION.try_with(|(root, signal)| {
+                    if root.as_path() == cache_root {
+                        signal.notify_one();
+                    }
+                });
                 deadline
                     .run(tokio::time::sleep(std::time::Duration::from_millis(10)))
                     .await

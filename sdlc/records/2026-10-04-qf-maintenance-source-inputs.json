@@ -621,6 +621,22 @@
       "candidate_git_blob": "0d94dade7d7a860b2e2c0479266414682fc2bfb4"
     },
     {
+      "path": "src/cache/migration.rs",
+      "status": "M",
+      "base": {
+        "bytes": 40467,
+        "sha256": "4584f3d17d8dce6ce79d7d278779586872f015863f587939f2058c646427d6b9"
+      },
+      "candidate": {
+        "bytes": 41166,
+        "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
+      },
+      "candidate_git_blob": "abfd4468721b24baabbb869e066804264e2ab08b",
+      "candidate_mode": "100644",
+      "added_lines": 21,
+      "removed_lines": 0
+    },
+    {
       "path": "src/cli/article/dispatch.rs",
       "status": "M",
       "added_lines": 11,
@@ -825,15 +841,15 @@
     {
       "path": "src/entities/article/search/tests/deadline.rs",
       "status": "A",
-      "added_lines": 595,
+      "added_lines": 603,
       "removed_lines": 0,
       "base": null,
       "candidate": {
-        "bytes": 27577,
-        "sha256": "2f19250ce865bf2e758c74bc85db37903c435c107db153bbe6d5be39fe898c55"
+        "bytes": 28192,
+        "sha256": "40594dbcfd881a76fdac1450e8a5e1969974faeca6c85c2572aac66a17e54c81"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "bf7a9f12839c295473dae2d2ef30b67ce2f5436f"
+      "candidate_git_blob": "3b1399b5e3535b0178851a088221f84b1853ea7a"
     },
     {
       "path": "src/entities/article/test_support.rs",
@@ -1166,9 +1182,9 @@
       "candidate_git_blob": "08829fc41c8abde0eec3add06365a3c503224b8a"
     }
   ],
-  "effective_input_count_excluding_amendment_metadata": 56,
-  "effective_source_rust_path_count": 24,
-  "effective_added_lines_excluding_amendment_metadata": 3668,
+  "effective_input_count_excluding_amendment_metadata": 57,
+  "effective_source_rust_path_count": 25,
+  "effective_added_lines_excluding_amendment_metadata": 3697,
   "effective_removed_lines_excluding_amendment_metadata": 393,
   "final_expected_tracked_paths": 3991,
   "final_expected_src_rust_paths": 803,
@@ -1234,13 +1250,13 @@
       },
       {
         "path": "src/cache/migration.rs",
-        "nonblank_lines": 1012,
-        "total_lines": 1096,
+        "nonblank_lines": 1031,
+        "total_lines": 1117,
         "source": {
-          "bytes": 40467,
-          "sha256": "4584f3d17d8dce6ce79d7d278779586872f015863f587939f2058c646427d6b9"
+          "bytes": 41166,
+          "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
         },
-        "disposition": "unchanged",
+        "disposition": "Source changed by test-only contention observer; accepted inventory entry retained; exact ceiling proposal pending independent review",
         "development_entry": {
           "path": "src/cache/migration.rs",
           "baseline_lines": 1096,
@@ -3250,6 +3266,57 @@
         "floor_lines": 969,
         "reason": "Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. No current allowance is raised.",
         "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
+      },
+      {
+        "path": "src/cache/migration.rs",
+        "source": {
+          "bytes": 41166,
+          "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
+        },
+        "nonblank_lines": 1031,
+        "total_lines": 1117,
+        "status": "proposed/pending independent review",
+        "owner": "Root migration coordinator",
+        "current_threshold": 1000,
+        "current_accepted_baseline_lines": 1096,
+        "proposed_exact_baseline_lines": 1117,
+        "floor_lines": 927,
+        "retained_owner": "biodata-0203",
+        "reason": "Test-only task-local cache-root observer witnesses an actual unsuccessful exclusive epoch-lock attempt before the constructor regression advances its controlled clock. Current allowance remains unchanged.",
+        "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+      }
+    ],
+    "source_observation_diffs_from_04262459": [
+      {
+        "path": "src/cache/migration.rs",
+        "previous_source_observation": {
+          "source": {
+            "bytes": 40467,
+            "sha256": "4584f3d17d8dce6ce79d7d278779586872f015863f587939f2058c646427d6b9"
+          },
+          "nonblank_lines": 1012,
+          "total_lines": 1096
+        },
+        "current_source_observation": {
+          "source": {
+            "bytes": 41166,
+            "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
+          },
+          "total_lines": 1117,
+          "nonblank_lines": 1031
+        },
+        "retained_candidate_entry": {
+          "path": "src/cache/migration.rs",
+          "baseline_lines": 1096,
+          "floor_lines": 927,
+          "authorized_increase": {
+            "ticket": "biodata-0203",
+            "delta": 169,
+            "reason": "The main cache deadline and epoch contention proofs combine with the dedicated branch cache migration tests.",
+            "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
+          }
+        },
+        "entry_diff": null
       }
     ]
   },
@@ -3588,6 +3655,11 @@
       "path": "src/entities/article/search/tests/deadline.rs",
       "classification": "bounded forward source correction",
       "reason": "Append three source-only signal-held regressions for explicit S2 zero-answer expiry, in-flight batch expiry and final metadata fallback expiry. Each includes successful empty/null control and actual fixture request assertions; retain all existing regressions."
+    },
+    {
+      "path": "src/cache/migration.rs",
+      "classification": "bounded forward test-only source correction after 04262459 review",
+      "reason": "A task-local exact-cache-root observer signals only after real exclusive epoch try-lock returns WouldBlock; existing constructor regression waits for contention before expiry or successful release. Production lock behavior and explicit variant ownership remain unchanged."
     }
   ],
   "offline_support_selector_proposal": [
@@ -3637,6 +3709,15 @@
     "audit_and_footprint_obligations": "Retained without execution or waiver."
   },
   "all_effective_changed_src_rust_counts": [
+    {
+      "path": "src/cache/migration.rs",
+      "source": {
+        "bytes": 41166,
+        "sha256": "f55229605bf43ef0298f2126a16ecfa5fdabb3fc2cb2136de081b34a7fc8050d"
+      },
+      "nonblank_lines": 1031,
+      "total_lines": 1117
+    },
     {
       "path": "src/cli/article/dispatch.rs",
       "source": {
@@ -3757,11 +3838,11 @@
     {
       "path": "src/entities/article/search/tests/deadline.rs",
       "source": {
-        "bytes": 27577,
-        "sha256": "2f19250ce865bf2e758c74bc85db37903c435c107db153bbe6d5be39fe898c55"
+        "bytes": 28192,
+        "sha256": "40594dbcfd881a76fdac1450e8a5e1969974faeca6c85c2572aac66a17e54c81"
       },
-      "nonblank_lines": 571,
-      "total_lines": 595
+      "nonblank_lines": 579,
+      "total_lines": 603
     },
     {
       "path": "src/entities/article/test_support.rs",
@@ -3856,8 +3937,8 @@
   ],
   "maintenance_currency_observation": {
     "date": "2026-10-04",
-    "before_review_of_source_head": "402bfd6d1dcd1aee43887fe57032817148a8ed68",
-    "source_tree": "0b3fd806cd8197ccbeb0c01ecbf0c5671a9ffde4",
+    "before_review_of_source_head": "0426245938f2fcab8e18462e37cbad482ef1d876",
+    "source_tree": "b561638b44fcbdd10c0a1e8fb99372d04228c4f1",
     "fetch_command": "git fetch origin main",
     "fetch_exit": 0,
     "fetched_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
@@ -3869,7 +3950,8 @@
     "additional_interval_removed_lines": 0,
     "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
     "disposition": "Empty additional interval; no additional behavior to classify.",
-    "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency."
+    "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency.",
+    "observation_context": "2026-10-04 Root pre-remediation-code-review fetch and immediate ls-remote confirmation; both exit 0"
   },
   "source_preparation_review": {
     "date": "2026-10-04",
@@ -3937,6 +4019,37 @@
         "added_lines": 650,
         "removed_lines": 198
       }
+    },
+    {
+      "date": "2026-10-04",
+      "reviewed_head": "0426245938f2fcab8e18462e37cbad482ef1d876",
+      "finding": "Constructor Notify signaled task entry before actual epoch-lock contention",
+      "authority": "Root bounded SOURCE-only forward correction; preserve uncommitted Root metadata",
+      "status": "pending fresh independent review",
+      "changed_sources": [
+        "src/cache/migration.rs",
+        "src/entities/article/search/tests/deadline.rs"
+      ],
+      "proof_proposal": "Same existing constructor selector now awaits task-local exact-root signal emitted only after exclusive epoch try-lock returns WouldBlock; both expiry and success controls await it. Explicit clock advance follows contention. Success unlocks and advances existing 10 ms retry timer.",
+      "new_selectors": [],
+      "product_rust_selector_count": 33,
+      "inventory_entry_diffs": [],
+      "full_042_forward_delta": {
+        "path_count": 4,
+        "added_lines": 226,
+        "removed_lines": 27
+      },
+      "full_720_forward_delta": {
+        "path_count": 9,
+        "added_lines": 858,
+        "removed_lines": 207
+      },
+      "full_c428_delta": {
+        "path_count": 59,
+        "added_lines": 8115,
+        "removed_lines": 393
+      },
+      "execution": "Static source/Git/hash/count inspection only; no runtime/build/test/formatter/checker/provider/Docker/CI/release/footprint execution"
     }
   ],
   "raw_whitespace_exception_proposal": {
@@ -3956,5 +4069,38 @@
     "other_checks_and_failures_waived": false,
     "removal_condition": "Exact raw capture retired/replaced by a newly independently qualified receipt OR checker understands raw data. ANY path, byte, hash, size, line or new-diagnostic change invalidates the exception."
   },
-  "current_source_status": "Pending fresh independent whole-source review after Lagrange findings; no current SOURCE acceptance"
+  "current_source_status": "Constructor contention witness corrected after fresh SOURCE finding on 04262459; pending independent review; no current SOURCE acceptance",
+  "maintenance_currency_observation_history": [
+    {
+      "date": "2026-10-04",
+      "before_review_of_source_head": "402bfd6d1dcd1aee43887fe57032817148a8ed68",
+      "source_tree": "0b3fd806cd8197ccbeb0c01ecbf0c5671a9ffde4",
+      "fetch_command": "git fetch origin main",
+      "fetch_exit": 0,
+      "fetched_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "remote_confirmation_command": "git ls-remote origin refs/heads/main",
+      "confirmed_remote_main": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "additional_interval_commit_count": 0,
+      "additional_interval_path_count": 0,
+      "additional_interval_added_lines": 0,
+      "additional_interval_removed_lines": 0,
+      "batch_donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+      "disposition": "Empty additional interval; no additional behavior to classify.",
+      "next_obligation": "Refresh maintenance before later code review or next product change; classify any newer exact interval and assign its next normal merge or reviewed amendment. The observation does not establish continuing upstream currency."
+    }
+  ],
+  "maintenance_duplicate_issue_disposition": {
+    "donor": "d8c6ce8ba495639b8a798e69e58d379d3762b92a",
+    "issue_text_count": 76,
+    "duplicate_constructor_issue": null,
+    "duplicate_pagination_issue": null,
+    "related_records": [
+      "sdlc/tickets/1293-bound-article-search-time-and-report-partial-sources.md",
+      "sdlc/issues/2026-09-12-gencc-store-deadline-expires-under-load-on-slower-machines.md",
+      "sdlc/issues/2026-09-23-source-failures-render-as-empty-or-complete-results.md"
+    ],
+    "verification": "Pi read all donor issue texts; Root verified pinned issue count, targeted Git searches, related source shapes and dispositions. Related records cover other subsystems or broader resolved work, not these open defects.",
+    "filing": "Two generic issue TEXT drafts remain private; Root owns separate main filing. No main mutation or queue management.",
+    "draft_correction": "Root removed unsupported Semantic Scholar page-2 claim and replaced timing-threshold proposals with signals and controlled clock."
+  }
 }

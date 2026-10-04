@@ -456,10 +456,11 @@ async fn contended_cache_constructor_deadline_and_success_preserve_search_and_en
                 .open(cache.path().join(".body-limit-cache-v1.lock")).unwrap();
             held.lock_exclusive().unwrap();
             let _env = deadline_env(&fixture, cache.path(), "60000");
-            let entered = Arc::new(tokio::sync::Notify::new());
-            let signal = Arc::clone(&entered);
-            let task = tokio::spawn(async move {
-                signal.notify_one();
+            let contended = Arc::new(tokio::sync::Notify::new());
+            let signal = Arc::clone(&contended);
+            let cache_root = cache.path().to_path_buf();
+            let mut task = tokio::spawn(crate::cache::migration::with_epoch_lock_contention_observer(
+                cache_root, signal, async move {
                 if enrichment {
                     let mut rows = vec![row("41800002", ArticleSource::PubMed)];
                     let original = serde_json::to_value(&rows).unwrap();
@@ -483,9 +484,14 @@ async fn contended_cache_constructor_deadline_and_success_preserve_search_and_en
                         assert_eq!(page.source_status[0].status, Some(ArticleSourceAvailability::Ok));
                     }
                 }
-            });
-            entered.notified().await;
-            assert!(!task.is_finished(), "construction cannot pass the held epoch lock");
+            }));
+            // The observer signals only after try_lock_exclusive returns WouldBlock.
+            // Both expiry and success controls must reach this same real contention.
+            tokio::select! {
+                () = contended.notified() => {}
+                result = &mut task => panic!("constructor settled before lock contention: {result:?}"),
+            }
+            assert!(!task.is_finished(), "construction is waiting on the held epoch lock");
             if expired {
                 tokio::time::advance(Duration::from_secs(61)).await;
                 task.await.unwrap();
@@ -493,6 +499,8 @@ async fn contended_cache_constructor_deadline_and_success_preserve_search_and_en
                 FileExt::unlock(&held).unwrap();
             } else {
                 FileExt::unlock(&held).unwrap();
+                // Drive the existing retry timer after releasing the witnessed lock.
+                tokio::time::advance(Duration::from_millis(10)).await;
                 task.await.unwrap();
                 let requests = requests.lock().unwrap();
                 assert_eq!(requests.len(), 1);
