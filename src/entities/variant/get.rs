@@ -690,7 +690,7 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
                     && let Some(symbol) = resp
                         .hits
                         .first()
-                        .and_then(|h| h.symbol.as_deref())
+                        .and_then(|h| h.symbol())
                         .map(str::trim)
                         .filter(|s| !s.is_empty())
                 {
