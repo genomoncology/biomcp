@@ -15,6 +15,7 @@ use super::{
 
 mod coding_alias;
 pub(super) mod genomic_assertion;
+mod interval_comparison;
 mod point_alias;
 pub(super) use coding_alias::coding_changes_equivalent;
 use coding_alias::coding_key;
@@ -482,16 +483,13 @@ fn protein_alias_body(value: &str) -> &str {
 }
 
 pub(crate) fn protein_changes_equivalent(left: &str, right: &str) -> bool {
-    let left_point = point_alias::point_assertion(left, None, false);
-    let right_point = point_alias::point_assertion(right, None, false);
     // Retained identical complex-body comparison claims no shared point payload.
     if protein_alias_body(left).eq_ignore_ascii_case(protein_alias_body(right)) {
         return true;
     }
-    match (left_point.alias(), right_point.alias()) {
-        (Some(left), Some(right)) => left == right,
-        _ => false,
-    }
+    let point_equal = normalize_protein_change(left).zip(normalize_protein_change(right));
+    let point_equal = point_equal.is_some_and(|(left, right)| left == right);
+    point_equal || interval_comparison::compare(left, right).equivalent
 }
 
 pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
@@ -1219,4 +1217,4 @@ pub(crate) struct VariantArticleResolutionContext {
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;
