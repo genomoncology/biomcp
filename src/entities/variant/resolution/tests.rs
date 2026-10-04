@@ -5,6 +5,8 @@ use crate::entities::variant::{GenomeBuild, resolved_default_assembly};
 
 #[path = "point_tests.rs"]
 mod point;
+#[path = "interval_search_tests.rs"]
+mod interval_search;
 #[path = "interval_tests.rs"]
 pub(crate) mod interval;
 

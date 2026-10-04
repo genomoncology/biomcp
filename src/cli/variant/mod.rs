@@ -311,3 +311,7 @@ pub(crate) async fn handle_search_bounded(
 #[cfg(test)]
 #[path = "../../../tests/unit/cli/variant.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../../tests/unit/cli/variant_interval_search.rs"]
+mod interval_search_tests;
