@@ -281,7 +281,7 @@ def test_every_real_unreleased_bullet_describes_its_ticket() -> None:
     # After the 0.9.1 release the live section is the 0.9.1 heading
     # (an Unreleased section returns with the next dev cycle).
     match = re.search(
-        r"^## (?:Unreleased|0\.9\.1 — 2026-09-30)\s*([\s\S]*?)(?=^## |\Z)",
+        r"^## (?:Unreleased|0\.9\.1 — 2026-10-01)\s*([\s\S]*?)(?=^## |\Z)",
         content,
         re.MULTILINE,
     )

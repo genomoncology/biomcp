@@ -531,7 +531,7 @@ EXPECTED_MATRICES = {
             "python": "bin/python",
         },
         {
-            "os": "macos-latest",
+            "os": "macos-15-intel",
             "artifact": "wheel-x86_64-apple-darwin",
             "executable": "bin/biomcp",
             "python": "bin/python",

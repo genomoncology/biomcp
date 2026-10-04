@@ -71,5 +71,5 @@ BioMCP works on networks that route outbound HTTPS through a corporate or intern
 ## Review
 
 - Design review: REJECT 2026-09-22 (gpt-5.6-sol, medium) — required the full client-coverage list, in-process DER validation, defined precedence, and a concrete TLS fixture plan; the rewrite folded all four in
-- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — six P2 notes, all closed in the delta review (var_os read, dropped `rustls-pemfile`, unreadable-bundle test, registry classification, package count, docs wording)
+- Code review: ACCEPT 2026-09-22 (gpt-5.6-sol, medium) — six second-priority notes, all closed in the delta review (var_os read, dropped `rustls-pemfile`, unreadable-bundle test, registry classification, package count, docs wording)
 - Verification: passed at 70584666 on yellow, lock consistent, fmt and clippy clean, five-case TLS contract test three times, full nextest 3776/3776, `make lint` OK, package boundary 9/9; see the record

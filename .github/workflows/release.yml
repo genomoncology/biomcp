@@ -295,7 +295,13 @@ jobs:
             artifact: wheel-aarch64-apple-darwin
             executable: bin/biomcp
             python: bin/python
-          - os: macos-latest
+          # 2026-10-01 rehearsal (run 36885506628): GitHub moved
+          # macos-latest to arm64 (image macos-26-arm64), so pip
+          # refuses this x86_64 wheel on that host. The build legs
+          # cross-compile with an explicit --target and stay on the
+          # moving label; the smoke needs a matching host, so it pins
+          # the Intel image.
+          - os: macos-15-intel
             artifact: wheel-x86_64-apple-darwin
             executable: bin/biomcp
             python: bin/python
