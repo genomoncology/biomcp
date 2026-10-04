@@ -109,6 +109,15 @@ pub(in crate::entities::article) fn is_search_deadline_error(error: &BioMcpError
             BioMcpError::Api { message, .. } => {
                 return message == "invocation deadline exceeded";
             }
+            BioMcpError::Io(error) => {
+                return error.kind() == std::io::ErrorKind::TimedOut
+                    && error.to_string() == "variant article invocation deadline exceeded"
+                    && crate::sources::current_variant_article_deadline()
+                        .is_some_and(|deadline| deadline.is_exhausted());
+            }
+            BioMcpError::SourceUnavailable { source_name, reason, .. } => {
+                return source_name == "article search" && reason.contains("deadline");
+            }
             _ => return false,
         }
     }

@@ -732,34 +732,34 @@
     {
       "path": "src/entities/article/backends.rs",
       "status": "M",
-      "added_lines": 15,
-      "removed_lines": 0,
+      "added_lines": 197,
+      "removed_lines": 125,
       "base": {
         "bytes": 33847,
         "sha256": "585d8cef35dc9468d48654ec92ab1322690c00e9b32dcde3fa3dcbf6cd156582"
       },
       "candidate": {
-        "bytes": 34651,
-        "sha256": "f983a6c3d77bf5ce01f682830d95c29c1b6f3e2306e5026099c5b0020739524a"
+        "bytes": 37500,
+        "sha256": "f75425a666aa2cfad8106f750c6c0abaf93ad3c13f77eed3aecdde2ecb35612e"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "dc96a4b2046ab5221c5a061555ab963c688a778e"
+      "candidate_git_blob": "4cdc7bb02240d3df6d88e5dec766232ec8ec59b0"
     },
     {
       "path": "src/entities/article/enrichment.rs",
       "status": "M",
-      "added_lines": 137,
-      "removed_lines": 21,
+      "added_lines": 164,
+      "removed_lines": 24,
       "base": {
         "bytes": 14013,
         "sha256": "8a4093aedea498569e9d6cc428a7811ae258e78387a305858e7113ebea146e0b"
       },
       "candidate": {
-        "bytes": 18811,
-        "sha256": "c9ac54c4240e59303b50e074369c883724ff4ac6281dbe3e45ae8186042a0817"
+        "bytes": 20102,
+        "sha256": "80c9147e15f45eba66aff08891dfe61d6144533738b8178e590bf266e65db66e"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "518069e7e70033b72230ea5c0c10b605d36bd3db"
+      "candidate_git_blob": "7e08a1a0d1c6498fc02e735de77a4b2233ec64d1"
     },
     {
       "path": "src/entities/article/mod.rs",
@@ -780,31 +780,31 @@
     {
       "path": "src/entities/article/search.rs",
       "status": "M",
-      "added_lines": 261,
-      "removed_lines": 87,
+      "added_lines": 304,
+      "removed_lines": 90,
       "base": {
         "bytes": 27497,
         "sha256": "2c83048409be34d3dd3998d9f788300349e2d9df015e265f5d8b4c823098d806"
       },
       "candidate": {
-        "bytes": 34681,
-        "sha256": "c8f3027c50618b78e32c1c0725b52be69747e7bba603f955d19ba8c76ff8369f"
+        "bytes": 36500,
+        "sha256": "a8fd2ca5702befec84007dd2d7a3fd972d5da6fe5000a03574c251a8e6f90778"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "c80b89575fbfb6f3e95125713420d0a17b962d50"
+      "candidate_git_blob": "df71ff97472368999bee941e4cd7c89377edfe2d"
     },
     {
       "path": "src/entities/article/search/deadline.rs",
       "status": "A",
-      "added_lines": 115,
+      "added_lines": 124,
       "removed_lines": 0,
       "base": null,
       "candidate": {
-        "bytes": 4483,
-        "sha256": "e7c96897c5a744c09c167045365d6993a96aef9ae60140c57719663f75ba7c4c"
+        "bytes": 5021,
+        "sha256": "a672cdfc45873e0cbd53a1b865be5701eb3cacd4c97338ab7c57f3b5a278eef9"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "f07916f9c484356e245608f3261728a23db59f0c"
+      "candidate_git_blob": "54b883b4175c7dd5c5f7b7f70e87669c19bb301e"
     },
     {
       "path": "src/entities/article/search/tests.rs",
@@ -825,31 +825,31 @@
     {
       "path": "src/entities/article/search/tests/deadline.rs",
       "status": "A",
-      "added_lines": 422,
+      "added_lines": 595,
       "removed_lines": 0,
       "base": null,
       "candidate": {
-        "bytes": 17677,
-        "sha256": "3ac6fcd7ab51aa451798f18b74aa29042c42a58ee6c76d116f439e2903728f16"
+        "bytes": 27577,
+        "sha256": "2f19250ce865bf2e758c74bc85db37903c435c107db153bbe6d5be39fe898c55"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "2599c2078e041be0877138ccee235955b0ef6a12"
+      "candidate_git_blob": "bf7a9f12839c295473dae2d2ef30b67ce2f5436f"
     },
     {
       "path": "src/entities/article/test_support.rs",
       "status": "M",
-      "added_lines": 12,
+      "added_lines": 14,
       "removed_lines": 2,
       "base": {
         "bytes": 5160,
         "sha256": "83eb8c97e450fd4c41d6e9ea7dc1216c6d047d6249ea5c302703b1a7182eae93"
       },
       "candidate": {
-        "bytes": 5702,
-        "sha256": "4c743ab81f228cafece1063988695823f8dd62629bf3c4ef6a178e8825eeb053"
+        "bytes": 5809,
+        "sha256": "8adb6b16425aabb226f99a7ac86201c9f2f5652905fb381d9cfb490616886ff8"
       },
       "candidate_mode": "100644",
-      "candidate_git_blob": "954bfddf0ce3f0ced9b457a0459b62d6dc908b09"
+      "candidate_git_blob": "c9894e4ed8902fe02829b800dc932ddedd1e3806"
     },
     {
       "path": "src/entities/variant/get.rs",
@@ -1168,8 +1168,8 @@
   ],
   "effective_input_count_excluding_amendment_metadata": 56,
   "effective_source_rust_path_count": 24,
-  "effective_added_lines_excluding_amendment_metadata": 3232,
-  "effective_removed_lines_excluding_amendment_metadata": 262,
+  "effective_added_lines_excluding_amendment_metadata": 3668,
+  "effective_removed_lines_excluding_amendment_metadata": 393,
   "final_expected_tracked_paths": 3991,
   "final_expected_src_rust_paths": 803,
   "amendment_metadata_paths": [
@@ -3215,7 +3215,43 @@
         "candidate_total_lines": 771
       }
     ],
-    "development_only_retained_owner": "src/mcp/shell/typed_get_tests.rs"
+    "development_only_retained_owner": "src/mcp/shell/typed_get_tests.rs",
+    "actual_overthreshold_source_count": 53,
+    "existing_51_entry_diffs_from_720": [],
+    "ceiling_proposals_pending_fresh_review": [
+      {
+        "path": "src/entities/article/backends.rs",
+        "source": {
+          "bytes": 37500,
+          "sha256": "f75425a666aa2cfad8106f750c6c0abaf93ad3c13f77eed3aecdde2ecb35612e"
+        },
+        "nonblank_lines": 978,
+        "total_lines": 1032,
+        "status": "proposed/pending independent review",
+        "owner": "Root migration coordinator",
+        "current_threshold": 1000,
+        "proposed_exact_baseline_lines": 1032,
+        "floor_lines": 975,
+        "reason": "Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. No current allowance is raised.",
+        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
+      },
+      {
+        "path": "src/entities/article/search.rs",
+        "source": {
+          "bytes": 36500,
+          "sha256": "a8fd2ca5702befec84007dd2d7a3fd972d5da6fe5000a03574c251a8e6f90778"
+        },
+        "nonblank_lines": 966,
+        "total_lines": 1009,
+        "status": "proposed/pending independent review",
+        "owner": "Root migration coordinator",
+        "current_threshold": 1000,
+        "proposed_exact_baseline_lines": 1009,
+        "floor_lines": 969,
+        "reason": "Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. No current allowance is raised.",
+        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
+      }
+    ]
   },
   "nine_source_baselines": [
     {
@@ -3500,6 +3536,16 @@
       "coverage": "review_deadline_boundary_regressions",
       "path": "src/entities/article/search/tests/deadline.rs",
       "selector": "entities::article::search::tests::deadline::final_metadata_fallback_deadline_retains_row_and_names_both_consulted_sources"
+    },
+    {
+      "coverage": "plain_constructor_and_pagination_invocation_expiry",
+      "path": "src/entities/article/search/tests/deadline.rs",
+      "selector": "entities::article::search::tests::deadline::contended_cache_constructor_deadline_and_success_preserve_search_and_enrichment"
+    },
+    {
+      "coverage": "plain_constructor_and_pagination_invocation_expiry",
+      "path": "src/entities/article/search/tests/deadline.rs",
+      "selector": "entities::article::search::tests::deadline::pagination_deadline_retains_completed_rows_and_rejects_zero_answers"
     }
   ],
   "offline_public_spec_proposal": [
@@ -3657,20 +3703,20 @@
     {
       "path": "src/entities/article/backends.rs",
       "source": {
-        "bytes": 34651,
-        "sha256": "f983a6c3d77bf5ce01f682830d95c29c1b6f3e2306e5026099c5b0020739524a"
+        "bytes": 37500,
+        "sha256": "f75425a666aa2cfad8106f750c6c0abaf93ad3c13f77eed3aecdde2ecb35612e"
       },
-      "nonblank_lines": 922,
-      "total_lines": 975
+      "nonblank_lines": 978,
+      "total_lines": 1032
     },
     {
       "path": "src/entities/article/enrichment.rs",
       "source": {
-        "bytes": 18811,
-        "sha256": "c9ac54c4240e59303b50e074369c883724ff4ac6281dbe3e45ae8186042a0817"
+        "bytes": 20102,
+        "sha256": "80c9147e15f45eba66aff08891dfe61d6144533738b8178e590bf266e65db66e"
       },
-      "nonblank_lines": 481,
-      "total_lines": 510
+      "nonblank_lines": 505,
+      "total_lines": 534
     },
     {
       "path": "src/entities/article/mod.rs",
@@ -3684,20 +3730,20 @@
     {
       "path": "src/entities/article/search.rs",
       "source": {
-        "bytes": 34681,
-        "sha256": "c8f3027c50618b78e32c1c0725b52be69747e7bba603f955d19ba8c76ff8369f"
+        "bytes": 36500,
+        "sha256": "a8fd2ca5702befec84007dd2d7a3fd972d5da6fe5000a03574c251a8e6f90778"
       },
-      "nonblank_lines": 926,
-      "total_lines": 969
+      "nonblank_lines": 966,
+      "total_lines": 1009
     },
     {
       "path": "src/entities/article/search/deadline.rs",
       "source": {
-        "bytes": 4483,
-        "sha256": "e7c96897c5a744c09c167045365d6993a96aef9ae60140c57719663f75ba7c4c"
+        "bytes": 5021,
+        "sha256": "a672cdfc45873e0cbd53a1b865be5701eb3cacd4c97338ab7c57f3b5a278eef9"
       },
-      "nonblank_lines": 107,
-      "total_lines": 115
+      "nonblank_lines": 116,
+      "total_lines": 124
     },
     {
       "path": "src/entities/article/search/tests.rs",
@@ -3711,20 +3757,20 @@
     {
       "path": "src/entities/article/search/tests/deadline.rs",
       "source": {
-        "bytes": 17677,
-        "sha256": "3ac6fcd7ab51aa451798f18b74aa29042c42a58ee6c76d116f439e2903728f16"
+        "bytes": 27577,
+        "sha256": "2f19250ce865bf2e758c74bc85db37903c435c107db153bbe6d5be39fe898c55"
       },
-      "nonblank_lines": 402,
-      "total_lines": 422
+      "nonblank_lines": 571,
+      "total_lines": 595
     },
     {
       "path": "src/entities/article/test_support.rs",
       "source": {
-        "bytes": 5702,
-        "sha256": "4c743ab81f228cafece1063988695823f8dd62629bf3c4ef6a178e8825eeb053"
+        "bytes": 5809,
+        "sha256": "8adb6b16425aabb226f99a7ac86201c9f2f5652905fb381d9cfb490616886ff8"
       },
-      "nonblank_lines": 159,
-      "total_lines": 173
+      "nonblank_lines": 161,
+      "total_lines": 175
     },
     {
       "path": "src/entities/variant/get.rs",
@@ -3827,7 +3873,7 @@
   },
   "source_preparation_review": {
     "date": "2026-10-04",
-    "verdict": "ACCEPT",
+    "verdict": "SUPERSEDED; pending fresh independent whole-source review",
     "scope": "Source preparation only",
     "reviewed_head": "103eb29f9b5b8fc718b38f9f051810c64ac57a24",
     "reviewed_tree": "a571fa02d6c33b7d01d92cbcbf49972478bf237f",
@@ -3852,6 +3898,63 @@
       "0681 CODE authority",
       "Runtime qualification",
       "Release acceptance"
-    ]
-  }
+    ],
+    "historical_status": "Superseded by fresh whole-source findings on 720fab97; this historical ACCEPT is not current source acceptance.",
+    "historical_verdict": "ACCEPT"
+  },
+  "root_remediation_history": [
+    {
+      "date": "2026-10-04",
+      "reviewer": "Lagrange",
+      "reviewed_head": "720fab97a854dd6c8d95b78d0d979ea6592b3637",
+      "verdict": "FINDINGS",
+      "authority": "Root SOURCE-only remediation in existing QF; no new ticket",
+      "status": "corrected source candidate; pending fresh independent whole-source review",
+      "findings": [
+        "P2 plain search and enrichment constructors can block past invocation deadline on exclusive cache epoch lock",
+        "P2 pagination error propagation discards completed rows on later invocation expiry"
+      ],
+      "forward_paths": [
+        "sdlc/records/2026-10-03-qf-maintenance-reconciliation.md",
+        "sdlc/records/2026-10-04-qf-maintenance-source-inputs.json",
+        "src/entities/article/backends.rs",
+        "src/entities/article/enrichment.rs",
+        "src/entities/article/search.rs",
+        "src/entities/article/search/deadline.rs",
+        "src/entities/article/search/tests/deadline.rs",
+        "src/entities/article/test_support.rs"
+      ],
+      "execution": "Only source inspection, static Git/text/count/hash checks and permitted light hygiene checks; no builds, tests, runtime, providers, Docker, CI, release, quality checker or footprint measurement.",
+      "product_rust_selector_count": 33,
+      "new_selector_count": 2,
+      "full_c428_delta": {
+        "path_count": 58,
+        "added_lines": 7916,
+        "removed_lines": 393
+      },
+      "full_720_forward_delta": {
+        "path_count": 8,
+        "added_lines": 650,
+        "removed_lines": 198
+      }
+    }
+  ],
+  "raw_whitespace_exception_proposal": {
+    "status": "proposed/pending independent review",
+    "path": "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml",
+    "sha256": "1077664822261adf69c1c7b6090f1df4d736c12113476f31a25d366c7689a329",
+    "size": 56246,
+    "line": 2,
+    "exact_line_bytes": "24 ASCII spaces followed by LF",
+    "scope": "ONLY git diff --check exit 2 caused by the exact diagnostic",
+    "exact_diagnostic": "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml:2: trailing whitespace.\n+                        \n",
+    "owner": "Root migration coordinator",
+    "reason": "retain byte-faithful public capture/receipt",
+    "acceptance": "Independent review REQUIRED; never accepted by builder or Root self-acceptance",
+    "original_exit": 2,
+    "original_evidence_preserved": true,
+    "other_checks_and_failures_waived": false,
+    "removal_condition": "Exact raw capture retired/replaced by a newly independently qualified receipt OR checker understands raw data. ANY path, byte, hash, size, line or new-diagnostic change invalidates the exception."
+  },
+  "current_source_status": "Pending fresh independent whole-source review after Lagrange findings; no current SOURCE acceptance"
 }

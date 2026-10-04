@@ -30,9 +30,9 @@ fn fixture_reply(
     }
     let body = if target.starts_with("/search/") && target.contains("text=") {
         br#"{"results":[{"_id":"pt-418","pmid":41800001,"title":"deadline fixture PubTator row","journal":"Fixture Journal","date":"2026-01-01","score":42.0}],"count":1,"total_pages":1,"current":1,"page_size":25,"facets":{}}"#.as_slice()
-    } else if target.ends_with("/esearch.fcgi") {
+    } else if target.split('?').next().unwrap().ends_with("/esearch.fcgi") {
         br#"{"esearchresult":{"count":"1","idlist":["41800002"]}}"#.as_slice()
-    } else if target.ends_with("/esummary.fcgi") {
+    } else if target.split('?').next().unwrap().ends_with("/esummary.fcgi") {
         br#"{"result":{"uids":["41800002"],"41800002":{"uid":"41800002","title":"deadline fixture PubMed row","sortpubdate":"2026/01/02 00:00","pubdate":"2026 Jan 2","fulljournalname":"Fixture Journal","source":"Fixture Journal"}}}"#
             .as_slice()
     } else if target.starts_with("/graph/v1/paper/batch") {
@@ -417,6 +417,179 @@ async fn final_metadata_fallback_deadline_retains_row_and_names_both_consulted_s
         } else {
             assert_eq!(*requests.lock().unwrap(), vec![ArticleSource::PubTator]);
             assert!(statuses.is_empty(), "successful empty detail is not deadline degradation");
+        }
+    }
+}
+
+// Keep the paused runtime runnable while filesystem and socket workers signal
+// progress. Only the test's explicit advance may consume invocation time.
+fn clock_driver() -> (Arc<std::sync::atomic::AtomicBool>, tokio::task::JoinHandle<()>) {
+    let running = Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let active = Arc::clone(&running);
+    let task = tokio::spawn(async move {
+        while active.load(std::sync::atomic::Ordering::SeqCst) {
+            tokio::task::yield_now().await;
+        }
+    });
+    (running, task)
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(start_paused = true)]
+async fn contended_cache_constructor_deadline_and_success_preserve_search_and_enrichment() {
+    use fs2::FileExt;
+    use crate::entities::article::enrichment::enrich_article_search_rows_with_semantic_scholar;
+
+    for enrichment in [false, true] {
+        for expired in [false, true] {
+            let (running, driver) = clock_driver();
+            let requests = Arc::new(Mutex::new(Vec::new()));
+            let observed = Arc::clone(&requests);
+            let fixture = TestHttpFixture::spawn(move |request| {
+                observed.lock().unwrap().push(request.split_whitespace().nth(1).unwrap().to_string());
+                TestHttpReply::Bytes(test_http_response("200 OK", "application/json",
+                    if enrichment { b"[null]" } else { br#"{"total":0,"data":[]}"# }))
+            }).await;
+            let cache = TempDirGuard::new("article-constructor-contention");
+            std::fs::create_dir_all(cache.path()).unwrap();
+            let held = std::fs::OpenOptions::new().create(true).truncate(false).read(true).write(true)
+                .open(cache.path().join(".body-limit-cache-v1.lock")).unwrap();
+            held.lock_exclusive().unwrap();
+            let _env = deadline_env(&fixture, cache.path(), "60000");
+            let entered = Arc::new(tokio::sync::Notify::new());
+            let signal = Arc::clone(&entered);
+            let task = tokio::spawn(async move {
+                signal.notify_one();
+                if enrichment {
+                    let mut rows = vec![row("41800002", ArticleSource::PubMed)];
+                    let original = serde_json::to_value(&rows).unwrap();
+                    let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(60));
+                    let status = crate::sources::with_variant_article_deadline(deadline,
+                        enrich_article_search_rows_with_semantic_scholar(&mut rows)).await.unwrap();
+                    assert_eq!(serde_json::to_value(&rows).unwrap(), original);
+                    assert_eq!(status.source, ArticleSource::SemanticScholar);
+                    assert_eq!(status.status, Some(if expired {
+                        ArticleSourceAvailability::Degraded
+                    } else { ArticleSourceAvailability::Ok }));
+                    assert_eq!(status.message.as_deref().is_some_and(|s| s.contains("deadline")), expired);
+                } else {
+                    let result = search_page(&deadline_filters(), 5, 0, ArticleSourceFilter::SemanticScholar).await;
+                    if expired {
+                        assert!(matches!(result, Err(BioMcpError::SourceUnavailable { source_name, reason, .. })
+                            if source_name == "article search" && reason.contains("deadline")));
+                    } else {
+                        let page = result.unwrap();
+                        assert!(page.results.is_empty());
+                        assert_eq!(page.source_status[0].status, Some(ArticleSourceAvailability::Ok));
+                    }
+                }
+            });
+            entered.notified().await;
+            assert!(!task.is_finished(), "construction cannot pass the held epoch lock");
+            if expired {
+                tokio::time::advance(Duration::from_secs(61)).await;
+                task.await.unwrap();
+                assert!(requests.lock().unwrap().is_empty(), "constructor expiry sends no request");
+                FileExt::unlock(&held).unwrap();
+            } else {
+                FileExt::unlock(&held).unwrap();
+                task.await.unwrap();
+                let requests = requests.lock().unwrap();
+                assert_eq!(requests.len(), 1);
+                assert!(requests[0].starts_with(if enrichment {
+                    "/graph/v1/paper/batch?"
+                } else { "/graph/v1/paper/search?" }));
+            }
+            running.store(false, std::sync::atomic::Ordering::SeqCst);
+            driver.await.unwrap();
+        }
+    }
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(start_paused = true)]
+async fn pagination_deadline_retains_completed_rows_and_rejects_zero_answers() {
+    for (filter, source, pmid, title, total) in [
+        (ArticleSourceFilter::PubTator, ArticleSource::PubTator, "41800001", "deadline fixture PubTator row", 100),
+        (ArticleSourceFilter::EuropePmc, ArticleSource::EuropePmc, "41800004", "deadline fixture Europe PMC row", 100),
+        (ArticleSourceFilter::PubMed, ArticleSource::PubMed, "41800002", "deadline fixture PubMed row", 100),
+    ] {
+        // Successful empty, held first page, completed first/held second page.
+        for mode in [0, 1, 2] {
+            let first_page = mode == 2;
+            let (running, driver) = clock_driver();
+            let (_release, receiver) = mpsc::channel();
+            let hold = Arc::new(Mutex::new(receiver));
+            let held = Arc::new(tokio::sync::Notify::new());
+            let signal = Arc::clone(&held);
+            let requests = Arc::new(Mutex::new(Vec::new()));
+            let observed = Arc::clone(&requests);
+            let fixture = TestHttpFixture::spawn(move |request| {
+                let target = request.split_whitespace().nth(1).unwrap();
+                observed.lock().unwrap().push(target.to_string());
+                if mode == 0 {
+                    return TestHttpReply::Bytes(test_http_response("200 OK", "application/json",
+                        match source {
+                            ArticleSource::PubTator => br#"{"results":[],"count":0,"total_pages":0,"current":1,"page_size":25,"facets":{}}"#,
+                            ArticleSource::EuropePmc => br#"{"hitCount":0,"resultList":{"result":[]}}"#,
+                            ArticleSource::PubMed => br#"{"esearchresult":{"count":"0","idlist":[]}}"#,
+                            _ => unreachable!(),
+                        }));
+                }
+                let summary = target.contains("esummary.fcgi");
+                let first = target.contains("page=1") || target.contains("retstart=0");
+                if !summary && (!first_page || !first) {
+                    signal.notify_one();
+                    return TestHttpReply::Hold(Arc::clone(&hold));
+                }
+                let reply = fixture_reply(request, None);
+                match reply {
+                    TestHttpReply::Bytes(bytes) if !summary => {
+                        // Replace the small fixture's total, retaining its literal row.
+                        let response = String::from_utf8(bytes).unwrap();
+                        let (_, body) = response.split_once("\r\n\r\n").unwrap();
+                        let body = body.replace("\"count\":1", "\"count\":100")
+                            .replace("\"hitCount\":1", "\"hitCount\":100")
+                            .replace("\"count\":\"1\"", "\"count\":\"100\"");
+                        TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body.as_bytes()))
+                    }
+                    reply => reply,
+                }
+            }).await;
+            let cache = TempDirGuard::new("article-pagination-deadline");
+            let _env = deadline_env(&fixture, cache.path(), "60000");
+            let task = tokio::spawn(async move { search_page(&deadline_filters(), 5, 0, filter).await });
+            if mode != 0 {
+                held.notified().await;
+                tokio::time::advance(Duration::from_secs(61)).await;
+            }
+            let result = task.await.unwrap();
+            if mode == 0 {
+                let page = result.unwrap();
+                assert!(page.results.is_empty());
+                assert_eq!(page.total, Some(0));
+                assert!(page.source_status.is_empty(), "empty success has no deadline status");
+            } else if first_page {
+                let page = result.unwrap();
+                assert_eq!(page.results.iter().map(|row| (row.pmid.as_str(), row.title.as_str(), row.source))
+                    .collect::<Vec<_>>(), vec![(pmid, title, source)]);
+                assert_eq!(page.total, Some(total));
+                assert_eq!(page.source_status.len(), 1);
+                assert_eq!(page.source_status[0].source, source);
+                assert_eq!(page.source_status[0].status, Some(ArticleSourceAvailability::Degraded));
+                assert_eq!(page.source_status[0].message.as_deref(),
+                    Some("article search deadline elapsed during pagination"));
+            } else {
+                assert!(matches!(result, Err(BioMcpError::SourceUnavailable { source_name, reason, .. })
+                    if source_name == "article search" && reason.contains("deadline")));
+            }
+            let requests = requests.lock().unwrap();
+            assert_eq!(requests.len(), if first_page { if source == ArticleSource::PubMed { 3 } else { 2 } } else { 1 });
+            assert!(requests.last().unwrap().contains(if source == ArticleSource::PubMed {
+                if first_page { "retstart=1" } else { "retstart=0" }
+            } else if first_page { "page=2" } else { "page=1" }));
+            running.store(false, std::sync::atomic::Ordering::SeqCst);
+            driver.await.unwrap();
         }
     }
 }

@@ -481,6 +481,17 @@ fn collect_federated_article_rows(
     litsense2_leg: FederatedSourceOutcome<Vec<ArticleSearchResult>>,
 ) -> Result<FederatedArticleRows, BioMcpError> {
     let mut source_status = Vec::new();
+    for (source, leg) in [
+        (ArticleSource::PubTator, Some(&pubtator_leg)),
+        (ArticleSource::EuropePmc, Some(&europe_leg)),
+        (ArticleSource::PubMed, pubmed_leg.as_ref()),
+    ] {
+        if let Some(FederatedSourceOutcome::Available(page)) = leg
+            && let Some(note) = &page.partial_note
+        {
+            source_status.push(source_degraded_status(source, note.clone()));
+        }
+    }
     let (semantic_scholar_rows, semantic_scholar_status) = match semantic_scholar_leg {
         FederatedSourceOutcome::Available(outcome) => (outcome.rows, outcome.status),
         FederatedSourceOutcome::Unavailable { status, .. } => (Vec::new(), status),
@@ -588,6 +599,17 @@ fn collect_type_capable_article_rows(
     europe_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
     pubmed_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
 ) -> Result<TypeCapableArticleRows, BioMcpError> {
+    let mut partial_status = Vec::new();
+    for (source, leg) in [
+        (ArticleSource::EuropePmc, &europe_leg),
+        (ArticleSource::PubMed, &pubmed_leg),
+    ] {
+        if let FederatedSourceOutcome::Available(page) = leg
+            && let Some(note) = &page.partial_note
+        {
+            partial_status.push(source_degraded_status(source, note.clone()));
+        }
+    }
     match (europe_leg, pubmed_leg) {
         (
             FederatedSourceOutcome::Available(europe_page),
@@ -598,7 +620,7 @@ fn collect_type_capable_article_rows(
             Ok(TypeCapableArticleRows {
                 rows,
                 total: None,
-                source_status: Vec::new(),
+                source_status: partial_status,
             })
         }
         (
@@ -607,7 +629,10 @@ fn collect_type_capable_article_rows(
         ) => Ok(TypeCapableArticleRows {
             rows: europe_page.results,
             total: europe_page.total,
-            source_status: vec![status],
+            source_status: {
+                partial_status.push(status);
+                partial_status
+            },
         }),
         (
             FederatedSourceOutcome::Unavailable { status, .. },
@@ -615,7 +640,10 @@ fn collect_type_capable_article_rows(
         ) => Ok(TypeCapableArticleRows {
             rows: pubmed_page.results,
             total: pubmed_page.total,
-            source_status: vec![status],
+            source_status: {
+                partial_status.push(status);
+                partial_status
+            },
         }),
         (
             FederatedSourceOutcome::Unavailable {
@@ -704,6 +732,8 @@ async fn search_relevance_page(
             )
             .await;
             let page = result?;
+            let status = page.partial_note.as_ref()
+                .map(|note| source_degraded_status(ArticleSource::EuropePmc, note.clone()));
             let enrichment = enrich_and_finalize_article_candidates(
                 page.results,
                 limit,
@@ -713,7 +743,7 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, status))
         }
         BackendPlan::PubTatorOnly => {
             let (result, timing) = timed_source_call(
@@ -723,6 +753,8 @@ async fn search_relevance_page(
             )
             .await;
             let page = result?;
+            let status = page.partial_note.as_ref()
+                .map(|note| source_degraded_status(ArticleSource::PubTator, note.clone()));
             let enrichment = enrich_and_finalize_article_candidates(
                 page.results,
                 limit,
@@ -732,7 +764,7 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, status))
         }
         BackendPlan::PubMedOnly => {
             let (result, timing) = timed_source_call(
@@ -742,6 +774,8 @@ async fn search_relevance_page(
             )
             .await;
             let page = result?;
+            let status = page.partial_note.as_ref()
+                .map(|note| source_degraded_status(ArticleSource::PubMed, note.clone()));
             let enrichment = enrich_and_finalize_article_candidates(
                 page.results,
                 limit,
@@ -751,7 +785,7 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, status))
         }
         BackendPlan::SemanticScholarOnly => {
             let (result, timing) = timed_source_call(
@@ -770,7 +804,7 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, None))
         }
         BackendPlan::LitSense2Only => {
             let (result, timing) = timed_source_call(
@@ -789,7 +823,7 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, None))
         }
         BackendPlan::TypeCapable => {
             unreachable!("type-capable search is handled by search_page")
@@ -801,10 +835,12 @@ async fn search_relevance_page(
 fn finish_single_backend_page(
     enrichment: super::enrichment::ArticleEnrichmentOutcome,
     search_timing: ArticleSearchTiming,
+    status: Option<ArticleSourceStatus>,
 ) -> ArticleSearchPage {
     let mut timings = vec![search_timing];
     timings.extend(enrichment.timings);
     let mut source_status = enrichment.statuses;
+    source_status.extend(status);
     if let Some(status) = enrichment.semantic_scholar_status {
         source_status.push(status);
     }
@@ -917,8 +953,10 @@ async fn search_page_dispatch(
             )
             .await;
             let page = result?;
+            let status = page.partial_note.as_ref()
+                .map(|note| source_degraded_status(ArticleSource::EuropePmc, note.clone()));
             let enrichment = enrich_visible_article_search_page(page, enrichment_sources).await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, status))
         }
         BackendPlan::PubTatorOnly => {
             let (result, timing) = timed_source_call(
@@ -928,8 +966,10 @@ async fn search_page_dispatch(
             )
             .await;
             let page = result?;
+            let status = page.partial_note.as_ref()
+                .map(|note| source_degraded_status(ArticleSource::PubTator, note.clone()));
             let enrichment = enrich_visible_article_search_page(page, enrichment_sources).await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, status))
         }
         BackendPlan::PubMedOnly | BackendPlan::LitSense2Only => {
             search_relevance_page(filters, limit, offset, plan, enrichment_sources).await

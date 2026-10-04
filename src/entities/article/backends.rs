@@ -26,6 +26,26 @@ use super::{
     WARN_PAGE_THRESHOLD,
 };
 
+// Only invocation expiry may turn a failed next request into a partial page.
+// Completed requests have already committed their typed rows before this seam.
+macro_rules! plain_page_result {
+    ($result:expr, $execution:expr, $out:expr, $total:expr) => {
+        match $result {
+            Ok(value) => value,
+            Err(error) if $execution.is_none()
+                && super::search::is_search_deadline_error(&error)
+                && !$out.is_empty()
+                && crate::sources::current_variant_article_deadline()
+                    .is_some_and(|deadline| deadline.is_exhausted()) => {
+                let mut page = SearchPage::offset($out, $total);
+                page.partial_note = Some("article search deadline elapsed during pagination".into());
+                return Ok(page);
+            }
+            Err(error) => return Err(error),
+        }
+    };
+}
+
 pub(crate) struct VariantArticleProviderUnit<'a> {
     execution: &'a super::variant_search::VariantArticleExecutionContext,
     route: String,
@@ -184,6 +204,11 @@ where
             if let Some(unit) = unit {
                 unit.record_error(&error);
             }
+            if execution.is_none()
+                && super::search::is_search_deadline_error(&error)
+                && let Some(deadline) = crate::sources::current_variant_article_deadline() {
+                return Err(super::search::article_search_deadline_error(&deadline));
+            }
             Err(error)
         }
     }
@@ -241,7 +266,10 @@ pub(super) async fn search_pubmed_page_with_context(
     let (client, mut first_unit) = variant_article_client(execution, route, "pubmed", async {
         match execution {
             Some(execution) => PubMedClient::new_with_deadline(execution.deadline()).await,
-            None => PubMedClient::new(),
+            None => match crate::sources::current_variant_article_deadline() {
+                Some(deadline) => PubMedClient::new_with_deadline(&deadline).await,
+                None => PubMedClient::new(),
+            },
         }
     })
     .await?;
@@ -266,26 +294,31 @@ pub(super) async fn search_pubmed_page_with_context(
             );
         }
 
-        let Some(response) = variant_article_request(
+        let Some(response) = plain_page_result!(
+            variant_article_request(
+                execution,
+                route,
+                "pubmed",
+                &mut first_unit,
+                client.esearch(&PubMedESearchParams {
+                    term: term.clone(),
+                    retstart: batch_start,
+                    retmax: PUBMED_PAGE_SIZE,
+                    date_from: normalized_date_from.clone(),
+                    date_to: normalized_date_to.clone(),
+                }),
+                |response| {
+                    if total.is_none() {
+                        total = Some(response.count as usize);
+                    }
+                    Ok(response)
+                },
+            )
+            .await,
             execution,
-            route,
-            "pubmed",
-            &mut first_unit,
-            client.esearch(&PubMedESearchParams {
-                term: term.clone(),
-                retstart: batch_start,
-                retmax: PUBMED_PAGE_SIZE,
-                date_from: normalized_date_from.clone(),
-                date_to: normalized_date_to.clone(),
-            }),
-            |response| {
-                if total.is_none() {
-                    total = Some(response.count as usize);
-                }
-                Ok(response)
-            },
+            out,
+            total
         )
-        .await?
         else {
             break;
         };
@@ -300,30 +333,35 @@ pub(super) async fn search_pubmed_page_with_context(
         if let Some(execution) = execution {
             execution.add_route_unit(route, "pubmed");
         }
-        let Some(()) = variant_article_request(
+        let Some(()) = plain_page_result!(
+            variant_article_request(
+                execution,
+                route,
+                "pubmed",
+                &mut first_unit,
+                client.esummary(&response.idlist),
+                |entries| {
+                    append_pubmed_entries(
+                        entries,
+                        filters,
+                        normalized_date_from.as_deref(),
+                        normalized_date_to.as_deref(),
+                        limit,
+                        offset,
+                        PubMedAppendState {
+                            out: &mut out,
+                            seen_pmids: &mut seen_pmids,
+                            visible_skipped: &mut visible_skipped,
+                            source_position: &mut source_position,
+                        },
+                    )
+                },
+            )
+            .await,
             execution,
-            route,
-            "pubmed",
-            &mut first_unit,
-            client.esummary(&response.idlist),
-            |entries| {
-                append_pubmed_entries(
-                    entries,
-                    filters,
-                    normalized_date_from.as_deref(),
-                    normalized_date_to.as_deref(),
-                    limit,
-                    offset,
-                    PubMedAppendState {
-                        out: &mut out,
-                        seen_pmids: &mut seen_pmids,
-                        visible_skipped: &mut visible_skipped,
-                        source_position: &mut source_position,
-                    },
-                )
-            },
+            out,
+            total
         )
-        .await?
         else {
             break;
         };
@@ -407,7 +445,10 @@ pub(super) async fn search_europepmc_page_with_context(
     let (europe, mut first_unit) = variant_article_client(execution, route, "europepmc", async {
         match execution {
             Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
-            None => EuropePmcClient::new(),
+            None => match crate::sources::current_variant_article_deadline() {
+                Some(deadline) => EuropePmcClient::new_with_deadline(&deadline).await,
+                None => EuropePmcClient::new(),
+            },
         }
     })
     .await?;
@@ -437,52 +478,57 @@ pub(super) async fn search_europepmc_page_with_context(
                 "article search is deep (>{WARN_PAGE_THRESHOLD} page fetches); continuing up to {MAX_PAGE_FETCHES} — consider narrowing your query"
             );
         }
-        let Some((offset_beyond_total, empty)) = variant_article_request(
-            execution,
-            route,
-            "europepmc",
-            &mut first_unit,
-            europe.search_query_with_sort(&query, page, EUROPE_PMC_PAGE_SIZE, europepmc_sort),
-            |resp| {
-                if total.is_none() {
-                    total = resp.hit_count.map(|v| v as usize);
-                }
-                if total.is_some_and(|value| offset >= value) {
-                    return Ok((true, false));
-                }
-                let Some(results) = resp.result_list.map(|v| v.result) else {
-                    return Ok((false, true));
-                };
-                let empty = results.is_empty();
-                for hit in results {
-                    if local_skip > 0 {
-                        local_skip -= 1;
-                        continue;
+        let Some((offset_beyond_total, empty)) = plain_page_result!(
+            variant_article_request(
+                execution,
+                route,
+                "europepmc",
+                &mut first_unit,
+                europe.search_query_with_sort(&query, page, EUROPE_PMC_PAGE_SIZE, europepmc_sort),
+                |resp| {
+                    if total.is_none() {
+                        total = resp.hit_count.map(|v| v as usize);
                     }
-                    let Some(mut row) = transform::article::from_europepmc_search_result(&hit)
-                    else {
-                        continue;
+                    if total.is_some_and(|value| offset >= value) {
+                        return Ok((true, false));
+                    }
+                    let Some(results) = resp.result_list.map(|v| v.result) else {
+                        return Ok((false, true));
                     };
-                    if !matches_result_filters(
-                        &row,
-                        filters,
-                        normalized_date_from.as_deref(),
-                        normalized_date_to.as_deref(),
-                    ) || !seen_pmids.insert(row.pmid.clone())
-                    {
-                        continue;
+                    let empty = results.is_empty();
+                    for hit in results {
+                        if local_skip > 0 {
+                            local_skip -= 1;
+                            continue;
+                        }
+                        let Some(mut row) = transform::article::from_europepmc_search_result(&hit)
+                        else {
+                            continue;
+                        };
+                        if !matches_result_filters(
+                            &row,
+                            filters,
+                            normalized_date_from.as_deref(),
+                            normalized_date_to.as_deref(),
+                        ) || !seen_pmids.insert(row.pmid.clone())
+                        {
+                            continue;
+                        }
+                        row.source_local_position = source_position;
+                        source_position = source_position.saturating_add(1);
+                        out.push(row);
+                        if out.len() >= limit {
+                            break;
+                        }
                     }
-                    row.source_local_position = source_position;
-                    source_position = source_position.saturating_add(1);
-                    out.push(row);
-                    if out.len() >= limit {
-                        break;
-                    }
-                }
-                Ok((false, empty))
-            },
+                    Ok((false, empty))
+                },
+            )
+            .await,
+            execution,
+            out,
+            total
         )
-        .await?
         else {
             break;
         };
@@ -571,7 +617,10 @@ pub(super) async fn search_pubtator_page_with_context(
     let (pubtator, mut first_unit) = variant_article_client(execution, route, "pubtator", async {
         match execution {
             Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
-            None => PubTatorClient::new(),
+            None => match crate::sources::current_variant_article_deadline() {
+                Some(deadline) => PubTatorClient::new_with_deadline(&deadline).await,
+                None => PubTatorClient::new(),
+            },
         }
     })
     .await?;
@@ -596,49 +645,54 @@ pub(super) async fn search_pubtator_page_with_context(
         {
             execution.add_route_unit(route, "pubtator");
         }
-        let Some((offset_beyond_total, empty)) = variant_article_request(
+        let Some((offset_beyond_total, empty)) = plain_page_result!(
+            variant_article_request(
+                execution,
+                route,
+                "pubtator",
+                &mut first_unit,
+                pubtator.search(&query, page, PUBTATOR_PAGE_SIZE, sort),
+                |resp| {
+                    if total.is_none() {
+                        total = resp.count.map(|v| v as usize);
+                    }
+                    if total.is_some_and(|value| offset >= value) {
+                        return Ok((true, false));
+                    }
+                    let empty = resp.results.is_empty();
+                    for hit in resp.results {
+                        if local_skip > 0 {
+                            local_skip -= 1;
+                            continue;
+                        }
+                        let Some(mut row) = transform::article::from_pubtator_search_result(&hit)
+                        else {
+                            continue;
+                        };
+                        if !matches_result_filters(
+                            &row,
+                            filters,
+                            normalized_date_from.as_deref(),
+                            normalized_date_to.as_deref(),
+                        ) || !seen_pmids.insert(row.pmid.clone())
+                        {
+                            continue;
+                        }
+                        row.source_local_position = source_position;
+                        source_position = source_position.saturating_add(1);
+                        out.push(row);
+                        if out.len() >= limit {
+                            break;
+                        }
+                    }
+                    Ok((false, empty))
+                },
+            )
+            .await,
             execution,
-            route,
-            "pubtator",
-            &mut first_unit,
-            pubtator.search(&query, page, PUBTATOR_PAGE_SIZE, sort),
-            |resp| {
-                if total.is_none() {
-                    total = resp.count.map(|v| v as usize);
-                }
-                if total.is_some_and(|value| offset >= value) {
-                    return Ok((true, false));
-                }
-                let empty = resp.results.is_empty();
-                for hit in resp.results {
-                    if local_skip > 0 {
-                        local_skip -= 1;
-                        continue;
-                    }
-                    let Some(mut row) = transform::article::from_pubtator_search_result(&hit)
-                    else {
-                        continue;
-                    };
-                    if !matches_result_filters(
-                        &row,
-                        filters,
-                        normalized_date_from.as_deref(),
-                        normalized_date_to.as_deref(),
-                    ) || !seen_pmids.insert(row.pmid.clone())
-                    {
-                        continue;
-                    }
-                    row.source_local_position = source_position;
-                    source_position = source_position.saturating_add(1);
-                    out.push(row);
-                    if out.len() >= limit {
-                        break;
-                    }
-                }
-                Ok((false, empty))
-            },
+            out,
+            total
         )
-        .await?
         else {
             break;
         };
@@ -670,7 +724,10 @@ pub(super) async fn search_semantic_scholar_candidates(
                 Some(execution) => {
                     SemanticScholarClient::new_with_deadline(execution.deadline()).await
                 }
-                None => SemanticScholarClient::new(),
+                None => match crate::sources::current_variant_article_deadline() {
+                    Some(deadline) => SemanticScholarClient::new_with_deadline(&deadline).await,
+                    None => SemanticScholarClient::new(),
+                },
             }
         })
         .await?;

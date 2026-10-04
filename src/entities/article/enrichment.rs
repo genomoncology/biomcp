@@ -176,7 +176,10 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
     }
     let client = match match execution {
         Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
-        None => SemanticScholarClient::new(),
+        None => match crate::sources::current_variant_article_deadline() {
+            Some(deadline) => SemanticScholarClient::new_with_deadline(&deadline).await,
+            None => SemanticScholarClient::new(),
+        },
     } {
         Ok(client) => client,
         Err(err) => {
@@ -188,6 +191,11 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
                 crate::error::SourceProvider::SEMANTIC_SCHOLAR,
                 "initialize article search enrichment",
             );
+            if plain_article_search_deadline_elapsed(execution)
+                && super::search::is_search_deadline_error(&err)
+            {
+                return Some(article_search_deadline_status(ArticleSource::SemanticScholar, "initialization"));
+            }
             return Some(ArticleSourceStatus {
                 source: ArticleSource::SemanticScholar,
                 enabled: true,
@@ -341,7 +349,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         return Vec::new();
     }
 
-    let pubtator = match PubTatorClient::new() {
+    let pubtator = match match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => PubTatorClient::new_with_deadline(&deadline).await,
+        None => PubTatorClient::new(),
+    } {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(
@@ -349,10 +360,18 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 crate::error::SourceProvider::PUBTATOR3,
                 "initialize visible article metadata fallback",
             );
+            if plain_article_search_deadline_elapsed(execution)
+                && super::search::is_search_deadline_error(&err)
+            {
+                return vec![article_search_deadline_status(ArticleSource::PubTator, "initialization")];
+            }
             return Vec::new();
         }
     };
-    let europe = match EuropePmcClient::new() {
+    let europe = match match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => EuropePmcClient::new_with_deadline(&deadline).await,
+        None => EuropePmcClient::new(),
+    } {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(
@@ -360,6 +379,11 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 crate::error::SourceProvider::EUROPE_PMC,
                 "initialize visible article metadata fallback",
             );
+            if plain_article_search_deadline_elapsed(execution)
+                && super::search::is_search_deadline_error(&err)
+            {
+                return vec![article_search_deadline_status(ArticleSource::EuropePmc, "initialization")];
+            }
             return Vec::new();
         }
     };

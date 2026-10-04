@@ -85,7 +85,9 @@ impl TestHttpFixture {
                             let _ = stream.write_all(&response).await;
                         }
                         TestHttpReply::Hold(release) => {
-                            let _ = release.lock().expect("held reply lock").recv();
+                            let _ = tokio::task::spawn_blocking(move || {
+                                release.lock().expect("held reply lock").recv()
+                            }).await;
                         }
                     }
                 });
