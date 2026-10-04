@@ -54,9 +54,10 @@ fn structured(reference: &str) -> bool {
             })
 }
 fn decimal(value: &str) -> bool {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^\d+$").expect("fixed Unicode decimal class"))
-        .is_match(value)
+    static RE: OnceLock<Option<Regex>> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^\d+$").ok())
+        .as_ref()
+        .is_some_and(|re| re.is_match(value))
 }
 // Complete compatibility captures use the old Unicode decimal class. This selects
 // ownership only; selected syntax is verified by BioData on the complete candidate.
