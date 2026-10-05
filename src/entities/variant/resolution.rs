@@ -868,20 +868,6 @@ fn genomic_alias(identity: &RequestedVariantIdentity) -> Option<String> {
     ))
 }
 
-#[derive(Default)]
-struct GenomicComponents<'a> {
-    build: Option<&'a str>,
-    accession: Option<&'a str>,
-    position: Option<u64>,
-    reference: Option<&'a str>,
-    alternate: Option<&'a str>,
-}
-
-fn genomic_components(value: &str) -> GenomicComponents<'_> {
-    genomic_assertion::genomic_assertion(value, genomic_assertion::Admission::Source, true)
-        .source_components()
-}
-
 fn coding_change_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
@@ -1093,7 +1079,19 @@ pub(crate) fn compare_variant_identity(
             };
         }
     }
-    let source_genomic = genomic_components(&source.genomic_id);
+    let assertion = genomic_assertion::genomic_assertion(
+        &source.genomic_id,
+        genomic_assertion::Admission::Source,
+        true,
+    );
+    let source_genomic = assertion.source_assertion();
+    let source_genomic = source_genomic
+        .as_ref()
+        .map(|source| source.comparison_fields())
+        .unwrap_or(genomic_assertion::LegacyComparisonFields {
+            build: assertion.build,
+            ..Default::default()
+        });
     macro_rules! compare_genomic_field {
         ($requested:expr, $source:expr, $field:literal, $matches:expr) => {
             if let Some(wanted) = $requested {

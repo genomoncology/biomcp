@@ -17,7 +17,14 @@ fn component_view(c: Option<Components<'_>>) -> Value {
     })
     .unwrap_or(Value::Null)
 }
-fn source_view(c: GenomicComponents<'_>) -> Value {
+fn source_view(a: &GenomicAssertion<'_>) -> Value {
+    let c = a
+        .source_assertion()
+        .map(|s| s.comparison_fields())
+        .unwrap_or(super::genomic_assertion::LegacyComparisonFields {
+            build: a.build,
+            ..Default::default()
+        });
     json!({"build":c.build,"accession":c.accession,"position":c.position,
         "reference":c.reference,"alternate":c.alternate})
 }
@@ -33,16 +40,27 @@ fn complete_facts(p: &biodata::ParsedHgvsNucleotide) -> Value {
         HgvsLocation::UncertainBreakpoint(..) => "UncertainBreakpoint",
         HgvsLocation::UncertainRange(..) => "UncertainRange",
     };
-    let positions: Vec<_> = location.positions().iter().map(|p| {
-        json!({"marker": match p.marker() { HgvsMarker::Unknown => "Unknown",
+    let positions: Vec<_> = location
+        .positions()
+        .iter()
+        .map(|p| {
+            json!({"marker": match p.marker() { HgvsMarker::Unknown => "Unknown",
             HgvsMarker::Ordinary => "Ordinary", _ => panic!("unexpected marker") },
             "digits":p.digits(),"offset":p.offset().map(|o| json!({
                 "positive":o.is_positive(),"digits":o.digits()}))})
-    }).collect();
+        })
+        .collect();
     let edit = match p.edit().unwrap() {
-        HgvsEdit::Substitution { reference, alternate } => json!({"kind":"Substitution","reference":reference.to_string(),"alternate":alternate.to_string()}),
+        HgvsEdit::Substitution {
+            reference,
+            alternate,
+        } => {
+            json!({"kind":"Substitution","reference":reference.to_string(),"alternate":alternate.to_string()})
+        }
         HgvsEdit::Deletion { deleted } => json!({"kind":"Deletion","deleted":deleted}),
-        HgvsEdit::Duplication { duplicated } => json!({"kind":"Duplication","duplicated":duplicated}),
+        HgvsEdit::Duplication { duplicated } => {
+            json!({"kind":"Duplication","duplicated":duplicated})
+        }
         HgvsEdit::Insertion { inserted } => json!({"kind":"Insertion","inserted":inserted}),
         HgvsEdit::Delins { inserted } => json!({"kind":"Delins","inserted":inserted}),
         HgvsEdit::Inversion => json!({"kind":"Inversion"}),
@@ -106,7 +124,7 @@ fn retained_transport_custody() {
     let raw = include_bytes!("coding_oracles/transports.json");
     assert_eq!(
         format!("{:x}", Sha256::digest(raw)),
-        "6c8c4b6e258852e0bccdb6f86348512cfca069f5fcbf0701a45454e73241f213"
+        "f8bde31e7d94a4ea34b9636d235e8adcbc2339ba0145933d79d7a7ff35944412"
     );
     assert_eq!(corpus()["retained_transport_cases"], 6);
     assert_eq!(corpus()["complete_source_transport_cases"], 4);
@@ -123,17 +141,28 @@ fn genomic_assertion_and_resource_table() {
         let source = genomic_assertion(input, Admission::Source, true);
         assert_eq!(source.route_name(), row["route"], "{}", row["id"]);
         assert_eq!(
-            source_view(source.source_components()),
+            source_view(&source),
             row["source_components"],
             "{}",
             row["id"]
         );
         assert_eq!(
-            source_view(genomic_components(input)),
+            source_view(&genomic_assertion(input, Admission::Source, true)),
             row["source_components"]
         );
         if !row["checked_facts"].is_null() {
-            assert_eq!(complete_facts(source.envelope.as_ref().unwrap().disposition().parsed().unwrap()), row["checked_facts"]);
+            assert_eq!(
+                complete_facts(
+                    source
+                        .envelope
+                        .as_ref()
+                        .unwrap()
+                        .disposition()
+                        .parsed()
+                        .unwrap()
+                ),
+                row["checked_facts"]
+            );
             assert!(source.components().is_none());
         } else if source.route_name() == "checked" {
             checked(&source, row);
@@ -185,14 +214,40 @@ fn genomic_assertion_and_resource_table() {
         assert_eq!(a.source, input);
         assert_eq!(a.candidate, row["candidate"]);
         assert_eq!(json!(a.build), row["build"]);
-        assert_eq!(a.candidate_offset_bytes, row["offset"].as_u64().unwrap() as usize);
-        assert_eq!(a.envelope.as_ref().unwrap().disposition().code(), row["code"]);
-        let observed = a.envelope.as_ref().unwrap().disposition().parsed().map(complete_facts);
+        assert_eq!(
+            a.candidate_offset_bytes,
+            row["offset"].as_u64().unwrap() as usize
+        );
+        assert_eq!(
+            a.envelope.as_ref().unwrap().disposition().code(),
+            row["code"]
+        );
+        let source = a.source_assertion().unwrap();
+        let observed = match &source {
+            super::genomic_assertion::SourceGenomicAssertion::Checked { parsed, .. } => {
+                Some(complete_facts(parsed))
+            }
+            super::genomic_assertion::SourceGenomicAssertion::Compatibility {
+                diagnostic, ..
+            } => {
+                assert_eq!(json!(diagnostic), row["code"]);
+                None
+            }
+            _ => panic!("source unexpectedly absent"),
+        };
         assert_eq!(json!(observed), row["facts"], "{}", row["id"]);
         assert_eq!(component_view(a.components()), row["point"]);
-        assert_eq!(source_view(a.source_components()), row["legacy_fields"]);
+        assert_eq!(source_view(&a), row["legacy_fields"]);
+        // The same complete borrowed facts survive consumer point refusal.
+        if let super::genomic_assertion::SourceGenomicAssertion::Checked { parsed, .. } = source {
+            assert_eq!(complete_facts(parsed), row["facts"]);
+        }
         for admission in [Admission::Chromosome, Admission::Structured] {
-            assert!(genomic_assertion(input, admission, true).components().is_none());
+            assert!(
+                genomic_assertion(input, admission, true)
+                    .components()
+                    .is_none()
+            );
         }
         let debug = format!("{a:?}");
         assert!(!debug.contains(input));
@@ -219,7 +274,10 @@ fn genomic_assertion_and_resource_table() {
             );
         }
         if let Some(pos) = row["expected_position_u64"].as_u64() {
-            assert_eq!(a.source_components().position, Some(pos));
+            assert_eq!(
+                a.source_assertion().unwrap().comparison_fields().position,
+                Some(pos)
+            );
         }
     }
     for row in all["assertion_cases"].as_array().unwrap() {
@@ -229,7 +287,8 @@ fn genomic_assertion_and_resource_table() {
                 row["input_recipe"]["candidate_bytes"].as_u64().unwrap() as usize,
             )
         });
-        let envelope = parse_hgvs_nucleotide_21_1_4(row["envelope_input"].as_str().unwrap_or(&input));
+        let envelope =
+            parse_hgvs_nucleotide_21_1_4(row["envelope_input"].as_str().unwrap_or(&input));
         let disposition = match envelope.disposition() {
             biodata::HgvsDisposition::Parsed(_) => "Parsed",
             biodata::HgvsDisposition::Invalid(_) => "Invalid",
@@ -239,10 +298,19 @@ fn genomic_assertion_and_resource_table() {
         assert_eq!(disposition, row["producer_disposition"]);
         let a = GenomicAssertion::from_checked_envelope(&input, envelope);
         if !row["complete_facts"].is_null() {
-            assert_eq!(complete_facts(a.envelope.as_ref().unwrap().disposition().parsed().unwrap()), row["complete_facts"]);
+            let super::genomic_assertion::SourceGenomicAssertion::Checked { parsed, .. } =
+                a.source_assertion().unwrap()
+            else {
+                panic!("checked facts lost")
+            };
+            assert_eq!(complete_facts(parsed), row["complete_facts"]);
         }
         assert_eq!(a.route_name(), row["expected"]["route"]);
         assert_eq!(json!(a.diagnostic()), row["expected"]["diagnostic"]);
+        if row["complete_facts"].is_null() && !row["expected"]["diagnostic"].is_null() {
+            assert_eq!(a.source_assertion().err(), row["expected"]["diagnostic"].as_str());
+            assert_eq!(source_view(&a), json!({"build":null,"accession":null,"position":null,"reference":null,"alternate":null}));
+        }
         // No compatibility is called at this seam; refusal leaves the accumulator unset.
         let components = component_view(a.components());
         assert_eq!(components, row["expected"]["components"]);

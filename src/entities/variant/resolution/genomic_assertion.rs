@@ -1,6 +1,7 @@
-//! Private checked genomic substitutions with caller admission and named compatibility.
+//! Complete checked genomic source facts with explicit point admission.
 use biodata::{
-    HgvsEdit, HgvsEnvelope, HgvsLocation, HgvsMarker, HgvsMolecule, parse_hgvs_nucleotide_21_1_4,
+    HgvsEdit, HgvsEnvelope, HgvsLocation, HgvsMarker, HgvsMolecule, ParsedHgvsNucleotide,
+    parse_hgvs_nucleotide_21_1_4,
 };
 use regex::Regex;
 use std::{fmt, sync::OnceLock};
@@ -32,6 +33,62 @@ pub(in crate::entities::variant) struct GenomicAssertion<'a> {
     reference_prefix: Option<&'a str>,
     admission: Admission,
     admitted: bool,
+}
+
+// This is a comparison policy, never the authoritative source representation.
+#[derive(Default)]
+pub(super) struct LegacyComparisonFields<'a> {
+    pub(super) build: Option<&'a str>,
+    pub(super) accession: Option<&'a str>,
+    pub(super) position: Option<u64>,
+    pub(super) reference: Option<&'a str>,
+    pub(super) alternate: Option<&'a str>,
+}
+
+pub(super) enum SourceGenomicAssertion<'s, 'a> {
+    Absent {
+        build: Option<&'a str>,
+    },
+    Checked {
+        assertion: &'s GenomicAssertion<'a>,
+        parsed: &'s ParsedHgvsNucleotide,
+    },
+    Compatibility {
+        fields: LegacyComparisonFields<'a>,
+        diagnostic: Option<&'static str>,
+    },
+}
+impl<'a> SourceGenomicAssertion<'_, 'a> {
+    pub(super) fn comparison_fields(&self) -> LegacyComparisonFields<'a> {
+        match self {
+            Self::Absent { build } => LegacyComparisonFields {
+                build: *build,
+                ..Default::default()
+            },
+            Self::Compatibility { fields, .. } => LegacyComparisonFields { ..*fields },
+            Self::Checked { assertion, parsed } => {
+                if let Ok(c) = assertion.checked_components() {
+                    return LegacyComparisonFields {
+                        build: assertion.build,
+                        accession: Some(c.accession),
+                        position: c.position_lexeme.parse().ok(),
+                        reference: Some(c.reference),
+                        alternate: Some(c.alternate),
+                    };
+                }
+                // Delete this lexical policy only after separately reviewed changes
+                // to unknown/uncertain substitution comparison decisions.
+                if matches!(parsed.edit(), Some(HgvsEdit::Substitution { .. })) {
+                    return legacy_source_field_policy(assertion.candidate, assertion.build);
+                }
+                LegacyComparisonFields {
+                    build: assertion.build,
+                    accession: assertion.reference_prefix,
+                    ..Default::default()
+                }
+            }
+        }
+    }
 }
 
 fn chromosome(reference: &str) -> bool {
@@ -107,7 +164,7 @@ pub(in crate::entities::variant) fn genomic_assertion(
             .as_ref()
             .is_some_and(|v| structured(v.accession) && decimal(v.position_lexeme)),
     };
-    let route = if !admitted {
+    let mut route = if !admitted {
         "body_compatibility"
     } else if candidate.len() > INPUT_LIMIT
         || reference_prefix.is_some_and(|v| v.len() > REFERENCE_LIMIT)
@@ -132,12 +189,23 @@ pub(in crate::entities::variant) fn genomic_assertion(
     } else {
         "body_compatibility"
     };
+    let envelope = if route == "checked"
+        || (admitted && matches!(admission, Admission::Source) && route == "body_compatibility")
+    {
+        let envelope = parse_hgvs_nucleotide_21_1_4(candidate);
+        if envelope.disposition().parsed().is_some() {
+            route = "checked";
+        }
+        Some(envelope)
+    } else {
+        None
+    };
     GenomicAssertion {
         source,
         candidate,
         candidate_offset_bytes: candidate.as_ptr() as usize - source.as_ptr() as usize,
         build,
-        envelope: (route == "checked").then(|| parse_hgvs_nucleotide_21_1_4(candidate)),
+        envelope,
         route,
         reference_prefix,
         admission,
@@ -150,7 +218,7 @@ impl<'a> GenomicAssertion<'a> {
         self.route
     }
     // The checked seam has no route back to compatibility after a refusal.
-    fn checked_components(&self) -> Result<Components<'a>, &'static str> {
+    fn checked_parsed(&self) -> Result<&ParsedHgvsNucleotide, &'static str> {
         let envelope = self
             .envelope
             .as_ref()
@@ -166,6 +234,29 @@ impl<'a> GenomicAssertion<'a> {
             .disposition()
             .parsed()
             .ok_or(envelope.disposition().code())?;
+        let reference = parsed
+            .reference_span()
+            .and_then(|s| s.slice(self.candidate));
+        let location = parsed.location_span().and_then(|s| s.slice(self.candidate));
+        if parsed.molecule() != HgvsMolecule::Genomic
+            || parsed.span().start() != 0
+            || parsed.span().end() != self.candidate.len()
+            || parsed.span().slice(self.candidate) != Some(self.candidate)
+            || reference.is_none()
+            || reference != parsed.reference()
+            || reference != self.reference_prefix
+            || parsed.location().is_none()
+            || parsed.edit().is_none()
+            || location.is_none()
+            || parsed.location_span().map(|s| s.start()) != reference.map(|r| r.len() + 3)
+            || parsed.render_constructed() != self.candidate
+        {
+            return Err("genomic_substitution_unrepresentable");
+        }
+        Ok(parsed)
+    }
+    fn checked_components(&self) -> Result<Components<'a>, &'static str> {
+        let parsed = self.checked_parsed()?;
         let Some(HgvsLocation::Point(position)) = parsed.location() else {
             return Err("genomic_substitution_unrepresentable");
         };
@@ -221,7 +312,10 @@ impl<'a> GenomicAssertion<'a> {
         if self.route == "checked" {
             self.checked_components().err()
         } else {
-            None
+            match self.source_assertion().ok()? {
+                SourceGenomicAssertion::Compatibility { diagnostic, .. } => diagnostic,
+                _ => None,
+            }
         }
     }
     pub(in crate::entities::variant) fn components(&self) -> Option<Components<'a>> {
@@ -233,23 +327,20 @@ impl<'a> GenomicAssertion<'a> {
         }
         substitution(self.candidate)
     }
-    pub(super) fn source_components(&self) -> super::GenomicComponents<'a> {
-        if self.route == "checked" {
-            return match self.checked_components() {
-                Ok(c) => super::GenomicComponents {
-                    build: self.build,
-                    accession: Some(c.accession),
-                    position: c.position_lexeme.parse().ok(),
-                    reference: Some(c.reference),
-                    alternate: Some(c.alternate),
-                },
-                Err(_) => super::GenomicComponents {
-                    build: self.build,
-                    ..Default::default()
-                },
-            };
+    pub(super) fn source_assertion(&self) -> Result<SourceGenomicAssertion<'_, 'a>, &'static str> {
+        if !self.admitted {
+            return Ok(SourceGenomicAssertion::Absent { build: self.build });
         }
-        nonselected_source_compatibility(self.candidate, self.build)
+        if self.route == "checked" {
+            return Ok(SourceGenomicAssertion::Checked {
+                assertion: self,
+                parsed: self.checked_parsed()?,
+            });
+        }
+        Ok(SourceGenomicAssertion::Compatibility {
+            fields: legacy_source_field_policy(self.candidate, self.build),
+            diagnostic: self.envelope.as_ref().map(|e| e.disposition().code()),
+        })
     }
     #[cfg(test)]
     pub(in crate::entities::variant) fn from_checked_envelope(
@@ -290,18 +381,18 @@ impl fmt::Debug for GenomicAssertion<'_> {
 }
 // Delete only after separate reviewed adoption of every retained nonselected
 // source form. Partial components are engineering compatibility, not syntax success.
-fn nonselected_source_compatibility<'a>(
+fn legacy_source_field_policy<'a>(
     candidate: &'a str,
     build: Option<&'a str>,
-) -> super::GenomicComponents<'a> {
+) -> LegacyComparisonFields<'a> {
     let Some((accession, change)) = candidate.split_once(":g.") else {
-        return super::GenomicComponents {
+        return LegacyComparisonFields {
             build,
             ..Default::default()
         };
     };
     let Some((left, alternate)) = change.split_once('>') else {
-        return super::GenomicComponents {
+        return LegacyComparisonFields {
             build,
             accession: Some(accession),
             ..Default::default()
@@ -311,7 +402,7 @@ fn nonselected_source_compatibility<'a>(
         .find(|ch: char| !ch.is_ascii_digit())
         .map(|i| (left[..i].parse().ok(), Some(&left[i..])))
         .unwrap_or((None, None));
-    super::GenomicComponents {
+    LegacyComparisonFields {
         build,
         accession: Some(accession),
         position,
