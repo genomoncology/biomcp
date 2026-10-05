@@ -858,7 +858,7 @@ class Handler(BaseHTTPRequestHandler):
             decoded_path == "/search"
             and query.get("query") == ["EXT_ID:20516115 AND SRC:MED"]
             and query.get("format") == ["json"]
-            and query.get("page") == ["1"]
+            and query.get("cursorMark") == ["*"]
             and query.get("pageSize") == ["1"]
         ):
             send_bytes(self, 200, EUROPEPMC_20516115, "application/json")
@@ -1124,7 +1124,7 @@ class Handler(BaseHTTPRequestHandler):
             decoded_path == "/search"
             and search_query
             and query.get("format") == ["json"]
-            and query.get("page") == ["1"]
+            and query.get("cursorMark") == ["*"]
             and query.get("pageSize") == ["1"]
         ):
             for pmid in ARTICLES:

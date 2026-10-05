@@ -354,10 +354,10 @@ class Handler(BaseHTTPRequestHandler):
             send_bytes(self, 200, SURVIVAL_PAYLOAD)
             return
         if parsed.path == "/europepmc/search":
-            page = query.get("page", ["1"])[0]
+            cursor = query.get("cursorMark", ["*"])[0]
             send_json(self, 200, {
                 "hitCount": len(EUROPEPMC_FALLBACK_ROWS),
-                "resultList": {"result": EUROPEPMC_FALLBACK_ROWS if page == "1" else []},
+                "resultList": {"result": EUROPEPMC_FALLBACK_ROWS if cursor == "*" else []},
             })
             return
         if parsed.path == "/pubmed/esearch.fcgi":

@@ -421,8 +421,13 @@ pub(super) async fn search_europepmc_page_with_context(
     let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
     let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
     let mut total: Option<usize> = None;
-    let mut page: usize = (offset / EUROPE_PMC_PAGE_SIZE) + 1;
-    let mut local_skip = offset % EUROPE_PMC_PAGE_SIZE;
+    // Europe PMC ignores the `page` parameter, so paging is cursorMark-based:
+    // start at `*`, follow `nextCursorMark`, and serve `offset` by walking and
+    // discarding rows inside the fetched pages (bounded by MAX_PAGE_FETCHES).
+    let mut cursor: String = "*".to_string();
+    let mut next_cursor: Option<String> = None;
+    let mut local_skip = offset;
+    let mut fetched_rows: usize = 0;
     let mut source_position = 0usize;
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
@@ -442,17 +447,19 @@ pub(super) async fn search_europepmc_page_with_context(
             route,
             "europepmc",
             &mut first_unit,
-            europe.search_query_with_sort(&query, page, EUROPE_PMC_PAGE_SIZE, europepmc_sort),
+            europe.search_query_with_sort(&query, &cursor, EUROPE_PMC_PAGE_SIZE, europepmc_sort),
             |resp| {
                 if total.is_none() {
                     total = resp.hit_count.map(|v| v as usize);
                 }
+                next_cursor = resp.next_cursor_mark.clone();
                 if total.is_some_and(|value| offset >= value) {
                     return Ok((true, false));
                 }
                 let Some(results) = resp.result_list.map(|v| v.result) else {
                     return Ok((false, true));
                 };
+                fetched_rows = fetched_rows.saturating_add(results.len());
                 let empty = results.is_empty();
                 for hit in results {
                     if local_skip > 0 {
@@ -493,10 +500,18 @@ pub(super) async fn search_europepmc_page_with_context(
             break;
         }
 
-        if total.is_some_and(|value| page.saturating_mul(EUROPE_PMC_PAGE_SIZE) >= value) {
+        // Cursor exhaustion: stop when the service omits `nextCursorMark`,
+        // repeats the cursor just sent, or every hit has been fetched.
+        let Some(next) = next_cursor.take() else {
+            break;
+        };
+        if next == cursor {
             break;
         }
-        page += 1;
+        if total.is_some_and(|value| fetched_rows >= value) {
+            break;
+        }
+        cursor = next;
     }
 
     // Safety-first default: when date-sorted results contain no visible retraction marker,
@@ -515,7 +530,7 @@ pub(super) async fn search_europepmc_page_with_context(
             route,
             "europepmc",
             &mut first_unit,
-            europe.search_query_with_sort(&retracted_query, 1, 10, europepmc_sort),
+            europe.search_query_with_sort(&retracted_query, "*", 10, europepmc_sort),
             |resp| {
                 let replacement = resp
                     .result_list

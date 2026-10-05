@@ -215,6 +215,28 @@ bash ../fixtures/run-article-search-deadline-search.sh ../.. \
 did not answer before the article search deadline'
 ```
 
+## Europe PMC Pages Follow The Cursor
+
+Europe PMC ignores the `page` parameter, so the Europe PMC backend pages
+with `cursorMark`: the first request starts at `*`, later requests follow
+`nextCursorMark`, and the walk stops on the limit, an absent or repeated
+cursor, an empty page, or every hit fetched. `--offset` is served by walking
+and discarding rows inside the fetched pages. The fixture serves three pages
+by cursor — two full pages and one exhausted page with no `nextCursorMark` —
+and records every request it receives.
+
+```bash
+bash ../fixtures/run-europepmc-cursor-search.sh ../.. \
+  | mustmatch like '"limit50_rows": 50
+"limit50_search_requests": 2
+"limit50_page_parameter_sent": false
+"limit50_cursormark_sent": true
+"limit50_distinct_pmids": 50
+"exhaustion_rows": 40
+"exhaustion_search_requests": 3
+"offset25_first_pmid": "41800126"'
+```
+
 ## Deterministic Renderer Envelope Contracts
 
 Ticket 377 moves routine article renderer/envelope proof into fixture-result
