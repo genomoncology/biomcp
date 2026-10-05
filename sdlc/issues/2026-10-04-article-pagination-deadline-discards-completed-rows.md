@@ -1,6 +1,6 @@
 # page-2 deadline expiry discards already-fetched rows in plain article pagination
 
-Status: open. Filed from source review at the named revision. No runtime reproduction is claimed.
+Status: closed. Filed from source review at the named revision. No runtime reproduction is claimed.
 
 Donor revision: `d8c6ce8ba495639b8a798e69e58d379d3762b92a` (main, 2026-10-04, "Clear the lane table: tickets 1290 and 1293 landed and their worktrees are gone").
 

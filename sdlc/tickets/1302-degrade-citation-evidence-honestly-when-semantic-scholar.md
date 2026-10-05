@@ -1,0 +1,17 @@
+# 1302 — degrade citation-evidence honestly when Semantic Scholar refuses
+
+Filed 2026-10-05 by the BioMCP 0.9 lead, promoting the issue of 2026-10-02 after reproduction; supersedes that issue.
+
+Status: OPEN.
+
+## Outcome
+
+`article citation-evidence` answers from OpenCitations when Semantic Scholar refuses, names the provider it used and the provider that failed, and stops burning tens of seconds of CPU on a refused request.
+
+## Evidence
+
+- Starts from: Reproduced 2026-10-05 on main a877443f: `article citation-evidence 35063965 31392741 -j` fails in 22 s wall (17 s user CPU) with `api / API request to BioMCP source failed`, `source: "BioMCP source"`. The issue's 2026-10-02 diagnosis holds: a direct probe of `api.semanticscholar.org/graph/v1` answers HTTP 429 in 0.13 s today for unauthenticated traffic, every other article path works, and the command's first hop is Semantic Scholar. An OpenCitations client already exists (`src/sources/opencitations.rs`, used for confirmation) but the command never reaches it when the first hop is refused. The error names "BioMCP source" instead of the provider (the generic naming in `src/error.rs`), and the recovery hint points at configuration no user has.
+- Keeps: The passage-bounded evidence output, the `reference_confirmed_without_passage` outcome, and Semantic Scholar as the first source when it answers.
+- Changes: (1) Fall back to OpenCitations-first when Semantic Scholar is refused (429/5xx), or retry the pair reversed, so the command answers when either provider works. (2) The error and the source status name the actual provider and the actual reason (rate-limited, unavailable), never "BioMCP source". (3) A refused first hop fails fast — no multi-second CPU burn after refusal; isolate the spin the same way ticket 1299 requires.
+- Proof: Recorded fixtures: a 429 from Semantic Scholar with a working OpenCitations answers the edge; both refused names both providers and the reason; wall time for a refused request stays under a few seconds.
+- Defers: Authenticated Semantic Scholar keys.

@@ -1,5 +1,9 @@
 # citation-evidence fails on every pair and names the wrong source
 
+
+Status: closed.
+
+Resolution: filed as ticket 1302 (degrade citation-evidence honestly when Semantic Scholar refuses); reproduced 2026-10-05 on main.
 Filed 2026-10-02 from experiment 421 (`experiments/421-rank-then-read-biomcp-literature`), run against the published 0.9.1 wheel.
 
 ## What happens

@@ -1,6 +1,8 @@
 # Europe PMC ignores the page parameter; BioMCP's Europe PMC searches return one page forever
 
-Status: open.
+Status: closed.
+
+Resolution: filed as ticket 1298 (page Europe PMC with cursorMark); root cause verified 2026-10-05 in experiment 439.
 
 Priority: P1. Every Europe PMC search and every federated article search that includes Europe PMC returns a fraction of its rows and burns its page-fetch budget today, against a live upstream change.
 
