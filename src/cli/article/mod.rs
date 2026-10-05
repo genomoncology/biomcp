@@ -119,7 +119,7 @@ pub struct ArticleSearchArgs {
     /// Include the executed search planner output and redacted source status in markdown or JSON output
     #[arg(long = "debug-plan")]
     pub debug_plan: bool,
-    /// Return detailed JSON rows including abstracts, provenance, and ranking diagnostics
+    /// Return detailed JSON rows including abstract snippets (capped at 240 bytes; use `biomcp get article` for the whole abstract), provenance, and ranking diagnostics
     #[arg(long)]
     pub full: bool,
 }

@@ -538,6 +538,18 @@ fn append_inline_text(text: &str, out: &mut String) {
         out.push_str(rest);
         return;
     }
+    push_word_separated(out, text);
+}
+
+/// Joins inline content at word boundaries: when the pending output and the new
+/// text both touch the boundary with word characters, the rendered words need a
+/// separating space even though the source kept the elements adjacent (for
+/// example `<surname>Jemal</surname><given-names>A</given-names>`). Markup
+/// markers such as `*`, `^`, `~`, and `[` keep attached runs attached.
+fn push_word_separated(out: &mut String, text: &str) {
+    if text.starts_with(char::is_alphanumeric) && out.ends_with(char::is_alphanumeric) {
+        out.push(' ');
+    }
     out.push_str(text);
 }
 
@@ -570,7 +582,7 @@ fn append_xref(node: Node<'_, '_>, out: &mut String) {
             out.push_str(&text);
             out.push(')');
         }
-        _ => out.push_str(&text),
+        _ => push_word_separated(out, &text),
     }
 }
 
@@ -600,8 +612,8 @@ fn append_ext_link(node: Node<'_, '_>, out: &mut String) {
             out.push_str(url);
             out.push(')');
         }
-        (false, None) => out.push_str(&text),
-        (true, Some(url)) => out.push_str(url),
+        (false, None) => push_word_separated(out, &text),
+        (true, Some(url)) => push_word_separated(out, url),
         (true, None) => {}
     }
 }

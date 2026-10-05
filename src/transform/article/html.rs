@@ -1,6 +1,9 @@
 //! Article HTML-to-markdown extraction and structural classification helpers.
 
+use std::sync::OnceLock;
+
 use readability_rust::Readability;
+use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
 
 use crate::error::BioMcpError;
@@ -248,7 +251,96 @@ pub fn extract_text_from_html(html: &str, base_url: &str) -> Result<String, BioM
         message: format!("HTML to markdown conversion failed: {err}"),
     })?;
 
-    Ok(markdown.trim().to_string())
+    let cleaned = strip_page_viewer_and_lookup_links(&markdown);
+    Ok(prepend_missing_title_and_byline(html, &cleaned)
+        .trim()
+        .to_string())
+}
+
+/// Drops page furniture from provider article pages: figure/table viewer
+/// links, `[Open in a new tab]` lines, and reference lookup URLs such as the
+/// long Google Scholar `scholar_lookup` query strings printed after every
+/// reference entry.
+fn strip_page_viewer_and_lookup_links(markdown: &str) -> String {
+    static NOISE_LINK_RE: OnceLock<Regex> = OnceLock::new();
+    static OPEN_IN_NEW_TAB_RE: OnceLock<Regex> = OnceLock::new();
+    let noise = NOISE_LINK_RE.get_or_init(|| {
+        Regex::new(concat!(
+            // Bracket-wrapped link-bundle entry, e.g. `\[[Google Scholar](…scholar_lookup…)]`.
+            r"(?:\\)?\[(?:\\)?\[[^\]\n]*\]\((?:https://scholar\.google\.com/scholar_lookup|[^)\n]*tileshop)[^)\n]*\)(?:\\)?\]",
+            // Linked image whose target is a figure viewer page.
+            r"|\[!\[[^\]\n]*\]\([^)\n]*\)\]\([^)\n]*tileshop[^)\n]*\)",
+            // Plain link to a viewer or lookup URL.
+            r"|\[[^\]\n]*\]\((?:https://scholar\.google\.com/scholar_lookup|[^)\n]*tileshop)[^)\n]*\)",
+        ))
+        .expect("static noise-link regex")
+    });
+    let open_tab = OPEN_IN_NEW_TAB_RE.get_or_init(|| {
+        Regex::new(r"^\s*\[Open in a new tab\]\([^)\n]*\)\s*$")
+            .expect("static open-in-new-tab regex")
+    });
+
+    let mut kept = Vec::new();
+    for line in markdown.lines() {
+        if open_tab.is_match(line) {
+            continue;
+        }
+        let stripped = noise.replace_all(line, "");
+        if stripped.trim().is_empty() && !line.trim().is_empty() {
+            continue;
+        }
+        kept.push(stripped.trim_end().to_string());
+    }
+    kept.join("\n")
+}
+
+/// Restores the article title and byline that readability strips from provider
+/// pages. The title returns as a level-1 heading only when the converted body
+/// does not already open with it; byline names come from the page's author
+/// spans, deduplicated in document order.
+fn prepend_missing_title_and_byline(html: &str, markdown: &str) -> String {
+    let document = Html::parse_document(html);
+    let Some(root) = select_content_root(&document) else {
+        return markdown.to_string();
+    };
+    let heading = Selector::parse("h1, hgroup h1").expect("static title selector");
+    let Some(title_node) = root.select(&heading).next() else {
+        return markdown.to_string();
+    };
+    let title = collapse_whitespace(&title_node.text().collect::<String>());
+    if title.is_empty() || markdown_has_heading(markdown, &title) {
+        return markdown.to_string();
+    }
+
+    let mut blocks = vec![format!("# {title}")];
+    let names = byline_names(root);
+    if !names.is_empty() {
+        blocks.push(names.join(", "));
+    }
+    format!("{}\n\n{}", blocks.join("\n\n"), markdown)
+}
+
+fn markdown_has_heading(markdown: &str, title: &str) -> bool {
+    markdown.lines().any(|line| {
+        let trimmed = line.trim_start();
+        let Some(rest) = trimmed.strip_prefix('#') else {
+            return false;
+        };
+        let rest = rest.trim_start_matches('#');
+        rest.starts_with(' ') && collapse_whitespace(rest) == title
+    })
+}
+
+fn byline_names(root: ElementRef<'_>) -> Vec<String> {
+    let names = Selector::parse("span.name").expect("static byline selector");
+    let mut seen = Vec::new();
+    for node in root.select(&names) {
+        let name = collapse_whitespace(&node.text().collect::<String>());
+        if !name.is_empty() && !seen.contains(&name) {
+            seen.push(name);
+        }
+    }
+    seen
 }
 
 fn extract_readable_html(html: &str, base_url: &str) -> Result<String, BioMcpError> {
@@ -384,5 +476,53 @@ mod tests {
                 "fixture: {html}"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod scratch_dump {
+    use super::*;
+    const PMC3040717_PAGE: &str =
+        include_str!("../../../testdata/sources/pmc_article/pmc3040717.html");
+    const PMC_ARTICLE_PAGE: &str =
+        include_str!("../../../tests/fixtures/article/fulltext/html/pmc_article_page.html");
+    const NIH_NEWS_RELEASE_PAGE: &str =
+        include_str!("../../../tests/fixtures/article/fulltext/html/nih_news_release.html");
+    const PMC6695558_PAGE: &str =
+        include_str!("../../../testdata/sources/pmc_article/pmc6695558.html");
+    const BIORXIV_PREPRINT_PAGE: &str =
+        include_str!("../../../tests/fixtures/article/fulltext/html/biorxiv_preprint_page.html");
+    #[test]
+    fn scratch_dump_pmc_page_markdown() {
+        let md = extract_text_from_html(
+            PMC3040717_PAGE,
+            "https://pmc.ncbi.nlm.nih.gov/articles/PMC3040717/",
+        )
+        .unwrap();
+        std::fs::write("/tmp/pmc3040717_new.md", &md).unwrap();
+        let md2 = extract_text_from_html(
+            PMC_ARTICLE_PAGE,
+            "https://pmc.ncbi.nlm.nih.gov/articles/PMC123457/",
+        )
+        .unwrap();
+        std::fs::write("/tmp/pmc123457_new.md", &md2).unwrap();
+        let md3 = extract_text_from_html(
+            NIH_NEWS_RELEASE_PAGE,
+            "https://www.nih.gov/news-events/news-releases/nih-quality-guard",
+        )
+        .unwrap();
+        std::fs::write("/tmp/nih_new.md", &md3).unwrap();
+        let md4 = extract_text_from_html(
+            BIORXIV_PREPRINT_PAGE,
+            "https://www.biorxiv.org/content/10.1101/2025.01.01.123456v1",
+        )
+        .unwrap();
+        std::fs::write("/tmp/biorxiv_new.md", &md4).unwrap();
+        let md5 = extract_text_from_html(
+            PMC6695558_PAGE,
+            "https://pmc.ncbi.nlm.nih.gov/articles/PMC6695558/",
+        )
+        .unwrap();
+        std::fs::write("/tmp/pmc6695558_new.md", &md5).unwrap();
     }
 }
