@@ -1,5 +1,5 @@
 //! Transport expectations are literals authored before interval admission.
-use super::tests::{fixture, ledger, oracle};
+use super::tests::{fixture, ledger, oracle, point_pages};
 use biomcp_mcp_contract_client::{ContractHarness, first_text};
 use rmcp::ServiceExt;
 use rmcp::model::CallToolRequestParams;
@@ -22,7 +22,7 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
     h2["dbsnp"]["rsid"] = json!("rs102");
     let original_over_limit = format!("{}GENE p.A11del", " ".repeat(500));
     assert_eq!(original_over_limit.len(), 513);
-    for (channel, input, pages, expected, offsets) in [
+    let rows = [
         (
             "typed-original-limit",
             original_over_limit.as_str(),
@@ -72,7 +72,25 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
             data["incomplete_mcp"].clone(),
             (0..20).map(|n| n * 50).collect(),
         ),
-    ] {
+    ];
+    run_transport(
+        &harness,
+        &data,
+        row,
+        rows.into_iter()
+            .map(|(c, i, p, e, o)| (c.to_string(), i.to_string(), p, e, o))
+            .collect(),
+    )
+    .await;
+}
+
+async fn run_transport(
+    harness: &ContractHarness,
+    data: &Value,
+    row: &Value,
+    rows: Vec<(String, String, Vec<Value>, Value, Vec<usize>)>,
+) {
+    for (channel, input, pages, expected, offsets) in rows {
         let (fixture, requests) = fixture(pages).await;
         let cache = tempfile::tempdir().unwrap();
         let env = [
@@ -83,8 +101,8 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
             ("RUST_LOG", "off,reqwest_retry=error".into()),
             ("ONCOKB_TOKEN", "".into()),
         ];
-        if channel == "cli" || channel == "assembly" {
-            let mut args = vec!["get", "variant", input, "--json"];
+        if channel.starts_with("cli") || channel == "assembly" {
+            let mut args = vec!["get", "variant", input.as_str(), "--json"];
             if channel == "assembly" {
                 args.extend(["--assembly", "grch38"]);
             }
@@ -96,9 +114,18 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
                 .unwrap();
             assert_eq!(
                 output.status.code(),
-                Some(if channel == "cli" { 0 } else { 2 })
+                Some(if channel == "assembly" {
+                    2
+                } else if channel == "cli" || channel.ends_with("success") {
+                    0
+                } else if expected["error"]["code"] == "invalid_argument" {
+                    2
+                } else {
+                    1
+                })
             );
             assert!(output.stderr.is_empty(), "{:?}", output.stderr);
+            assert_eq!(output.stdout.last(), Some(&b'\n'));
             assert_eq!(
                 serde_json::from_slice::<Value>(&output.stdout).unwrap(),
                 expected
@@ -152,7 +179,7 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
                 ledger(&requests, row["query"].as_str().unwrap(), &offsets);
             }
             let mut actual = serde_json::to_value(&result).unwrap();
-            if channel == "typed-success" {
+            if channel.ends_with("success") {
                 actual["content"][0]["text"] =
                     serde_json::from_str::<Value>(first_text(&result.content)).unwrap();
                 assert_eq!(
@@ -180,4 +207,68 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
             &offsets,
         );
     }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[serial_test::parallel(source_env)]
+async fn point_get_cli_typed_and_raw_mcp_preserve_complete_transport_contracts() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let binary = std::env::var_os("BIOMCP_BIN")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| root.join("target/debug/biomcp"));
+    let harness = ContractHarness::new(binary, root);
+    let data = oracle();
+    let point = &data["point"];
+    let mut rows = Vec::new();
+    for (name, channels) in [
+        (
+            "later protein assertion",
+            vec!["cli-success", "typed-point-success", "raw-success"],
+        ),
+        (
+            "later ambiguity",
+            vec!["cli-ambiguous", "typed-point", "raw-point"],
+        ),
+        (
+            "missing protein",
+            vec!["cli-evidence", "typed-point", "raw-point"],
+        ),
+        (
+            "bound 1001",
+            vec!["cli-incomplete", "typed-point", "raw-point"],
+        ),
+        ("absence", vec!["cli-absent"]),
+        ("late failure", vec!["cli-failure", "typed-point"]),
+        ("malformed", vec!["cli-malformed", "raw-point"]),
+    ] {
+        let case = point["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["name"] == name)
+            .unwrap();
+        for channel in channels {
+            let outcome = case["outcome"].as_str().unwrap();
+            let expected = if outcome == "success" {
+                point["cli_success"].clone()
+            } else if channel.starts_with("cli") {
+                point["payloads"][outcome].clone()
+            } else {
+                point["wrappers"][outcome].clone()
+            };
+            rows.push((
+                channel.into(),
+                point["input"].as_str().unwrap().into(),
+                point_pages(case, point),
+                expected,
+                case["offsets"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|n| n.as_u64().unwrap() as usize)
+                    .collect(),
+            ));
+        }
+    }
+    run_transport(&harness, &data, point, rows).await;
 }

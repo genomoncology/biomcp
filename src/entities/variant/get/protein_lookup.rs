@@ -1,4 +1,4 @@
-//! Execute gene plus protein detail queries without changing point selection policy.
+//! Select a unique source identity only after a complete bounded protein lookup.
 use crate::entities::variant::resolution::protein_get;
 use crate::entities::variant::{
     RequestedVariantIdentity, SourceVariantIdentity, VariantIdentityComparison,
@@ -13,6 +13,10 @@ const CANDIDATE_LIMIT: usize = 1_000;
 const AMBIGUOUS: &str = "Protein interval lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.";
 const EVIDENCE: &str = "Protein interval lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.";
 const INCOMPLETE: &str = "Protein interval lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.";
+
+const POINT_AMBIGUOUS: &str = "Protein point lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.";
+const POINT_EVIDENCE: &str = "Protein point lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.";
+const POINT_INCOMPLETE: &str = "Protein point lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.";
 
 pub(super) async fn lookup(
     client: &MyVariantClient,
@@ -37,20 +41,14 @@ pub(super) async fn lookup(
             prepared.gene,
             terms.join(" OR ")
         );
-        return interval_lookup(client, &query, id, gene, change, requested).await;
+        return bounded_lookup(client, &query, id, gene, change, requested, false).await;
     }
     let q = format!(
         "dbnsfp.genename:{} AND dbnsfp.hgvsp:\"p.{}\"",
         gene,
         MyVariantClient::escape_query_value(change)
     );
-    let resp = client
-        .query_with_fields(&q, 5, 0, MYVARIANT_FIELDS_GET)
-        .await?;
-    resp.hits
-        .into_iter()
-        .find(|hit| super::candidate_matches_requested_identity(requested, hit))
-        .ok_or_else(|| not_found(id, gene, change))
+    bounded_lookup(client, &q, id, gene, change, requested, true).await
 }
 
 fn not_found(id: &str, gene: &str, change: &str) -> BioMcpError {
@@ -61,15 +59,16 @@ fn not_found(id: &str, gene: &str, change: &str) -> BioMcpError {
     }
 }
 
-async fn interval_lookup(
+async fn bounded_lookup(
     client: &MyVariantClient,
     query: &str,
     id: &str,
     gene: &str,
     change: &str,
     requested: &RequestedVariantIdentity,
+    point: bool,
 ) -> Result<MyVariantHit, BioMcpError> {
-    let mut seen: HashSet<(String, Vec<String>)> = HashSet::new();
+    let mut seen: HashSet<(String, Vec<String>, Vec<String>)> = HashSet::new();
     let mut selected = None;
     let mut indeterminate = false;
     let mut examined = 0;
@@ -79,6 +78,7 @@ async fn interval_lookup(
             .query_with_fields(query, PAGE_SIZE, examined, MYVARIANT_FIELDS_GET)
             .await?;
         let count = response.hits.len();
+        let page_start = examined;
         for hit in response.hits.into_iter().take(CANDIDATE_LIMIT - examined) {
             examined += 1;
             let source = SourceVariantIdentity::from_myvariant_hit(&hit);
@@ -86,13 +86,24 @@ async fn interval_lookup(
                 VariantIdentityComparison::Compatible { .. } => {
                     let mut assertions = source.protein_changes.clone();
                     assertions.sort();
-                    if seen.insert((source.normalized_key(), assertions)) && selected.is_none() {
+                    let mut coding = if point {
+                        source.coding_changes.clone()
+                    } else {
+                        Vec::new()
+                    };
+                    coding.sort();
+                    if seen.insert((source.normalized_key(), assertions, coding))
+                        && selected.is_none()
+                    {
                         selected = Some(hit);
                     }
                 }
                 VariantIdentityComparison::Indeterminate { .. } => indeterminate = true,
                 VariantIdentityComparison::Contradictory { .. } => {}
             }
+        }
+        if point && count > examined - page_start {
+            break;
         }
         if crate::entities::variant::search::candidate_scan_exhaustive(
             response.total,
@@ -103,14 +114,19 @@ async fn interval_lookup(
             break;
         }
     }
+    let [ambiguous, evidence, incomplete] = if point {
+        [POINT_AMBIGUOUS, POINT_EVIDENCE, POINT_INCOMPLETE]
+    } else {
+        [AMBIGUOUS, EVIDENCE, INCOMPLETE]
+    };
     if !complete {
-        return Err(BioMcpError::InvalidArgument(INCOMPLETE.into()));
+        return Err(BioMcpError::InvalidArgument(incomplete.into()));
     }
     if seen.len() > 1 {
-        return Err(BioMcpError::InvalidArgument(AMBIGUOUS.into()));
+        return Err(BioMcpError::InvalidArgument(ambiguous.into()));
     }
     if indeterminate {
-        return Err(BioMcpError::InvalidArgument(EVIDENCE.into()));
+        return Err(BioMcpError::InvalidArgument(evidence.into()));
     }
     selected.ok_or_else(|| not_found(id, gene, change))
 }

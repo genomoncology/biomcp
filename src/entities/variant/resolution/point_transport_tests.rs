@@ -1,4 +1,4 @@
-//! Current requests replay admitted A01 bytes as engineering evidence only.
+//! Search replays admitted A01 bytes; bounded get owns synthetic later-array success.
 use super::*;
 use crate::entities::article::test_support::{TestHttpFixture, TestHttpReply, test_http_response};
 use biomcp_mcp_contract_client::{ContractHarness, first_text};
@@ -95,14 +95,6 @@ async fn accepted_point_cli_and_mcp_transport_table() {
     let mut failures = Vec::new();
     for (case, args, code, fields, query, size) in [
         (
-            "T01",
-            vec!["get", "variant", "BRAF p.Val600Glu", "--json"],
-            0,
-            "GET_FIELDS.txt",
-            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
-            "5",
-        ),
-        (
             "T02",
             vec![
                 "search",
@@ -169,24 +161,13 @@ async fn accepted_point_cli_and_mcp_transport_table() {
     }
     // T04 calls the private dispatch in cli::variant::tests.
     let client = harness.spawn_stdio_client(&env).await.unwrap();
-    for (tool, arguments, case, fields, query, size) in [
-        (
-            "get",
-            json!({"entity":"variant","id":"BRAF p.Val600Glu","json":true}),
-            "T01",
-            "GET_FIELDS.txt",
-            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
-            "5",
-        ),
-        (
-            "search",
-            json!({"entity":"variant","gene":"BRAF","hgvsp":"p.Val600Glu","limit":5,"json":true}),
-            "T02",
-            "SEARCH_FIELDS.txt",
-            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
-            "50",
-        ),
-    ] {
+    for (tool, arguments, fields, query, size) in [(
+        "search",
+        json!({"entity":"variant","gene":"BRAF","hgvsp":"p.Val600Glu","limit":5,"json":true}),
+        "SEARCH_FIELDS.txt",
+        "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
+        "50",
+    )] {
         requests.lock().unwrap().clear();
         let result = AssertUnwindSafe(async {
             let result = client
@@ -198,19 +179,14 @@ async fn accepted_point_cli_and_mcp_transport_table() {
                 .await
                 .unwrap();
             let output_matches = std::panic::catch_unwind(|| {
-                if tool == "search" {
-                    let mut expected = oracle("correction_retained_transport/T06.output.json");
-                    let payload: Value =
-                        serde_json::from_str(expected["content"][0]["text"].as_str().unwrap())
-                            .unwrap();
-                    expected["content"][0]["text"] = payload.clone();
-                    let mut actual = serde_json::to_value(&result).unwrap();
-                    actual["content"][0]["text"] =
-                        serde_json::from_str::<Value>(first_text(&result.content)).unwrap();
-                    assert_eq!(actual, expected);
-                } else {
-                    wrapper(&result, transport_oracle(case), false);
-                }
+                let mut expected = oracle("correction_retained_transport/T06.output.json");
+                let payload: Value =
+                    serde_json::from_str(expected["content"][0]["text"].as_str().unwrap()).unwrap();
+                expected["content"][0]["text"] = payload.clone();
+                let mut actual = serde_json::to_value(&result).unwrap();
+                actual["content"][0]["text"] =
+                    serde_json::from_str::<Value>(first_text(&result.content)).unwrap();
+                assert_eq!(actual, expected);
             })
             .is_ok();
             let requests_match = std::panic::catch_unwind(|| {
@@ -225,7 +201,7 @@ async fn accepted_point_cli_and_mcp_transport_table() {
         .catch_unwind()
         .await;
         if result.is_err() {
-            failures.push(if tool == "get" { "T05" } else { "T06" });
+            failures.push("T06");
         }
     }
     for (arguments, message) in [

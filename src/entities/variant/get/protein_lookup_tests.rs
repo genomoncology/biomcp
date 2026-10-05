@@ -96,7 +96,10 @@ async fn exercise(input: &str, pages: Vec<Value>, expected: &str, offsets: &[usi
                 assert_eq!(id, input);
                 assert_eq!(
                     suggestion,
-                    "Try searching: biomcp search variant -g GENE --hgvsp A11_G12del"
+                    format!(
+                        "Try searching: biomcp search variant -g GENE --hgvsp {}",
+                        row["change"].as_str().unwrap()
+                    )
                 );
             }
             other => panic!("{other:?}"),
@@ -114,7 +117,10 @@ async fn exercise(input: &str, pages: Vec<Value>, expected: &str, offsets: &[usi
             );
         }
         error => match result.unwrap_err() {
-            BioMcpError::InvalidArgument(message) => assert_eq!(message, oracle()["errors"][error]),
+            BioMcpError::InvalidArgument(message) => assert_eq!(
+                message,
+                row.get("errors").unwrap_or(&oracle()["errors"])[error]
+            ),
             other => panic!("{other:?}"),
         },
     }
@@ -352,4 +358,54 @@ async fn interval_get_refuses_invalid_inputs_and_original_or_rendered_limits_wit
         format!("{prepared:?}"),
         "ProteinGet { source_bytes: 21, gene_bytes: 4, change_bytes: 16, query_bytes: [12, 16], disposition: Checked }"
     );
+}
+
+pub(super) fn point_pages(case: &Value, point: &Value) -> Vec<Value> {
+    case["pages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|page| {
+            if page.is_string() {
+                return page.clone();
+            }
+            let mut hits = Vec::new();
+            for group in page["rows"].as_array().unwrap() {
+                hits.extend(std::iter::repeat_n(
+                    point["records"][group[0].as_str().unwrap()].clone(),
+                    group[1].as_u64().unwrap() as usize,
+                ));
+            }
+            let mut value = json!({"hits":hits});
+            if !page["total"].is_null() {
+                value["total"] = page["total"].clone();
+            }
+            value
+        })
+        .collect()
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn point_get_finishes_scan_before_resolving_complete_assertion_identity() {
+    let data = oracle();
+    let point = &data["point"];
+    for case in point["cases"].as_array().unwrap() {
+        let mut row = point.clone();
+        row["decoded_hit"] = point["decoded"][case["selected"].as_str().unwrap()].clone();
+        let offsets = case["offsets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|n| n.as_u64().unwrap() as usize)
+            .collect::<Vec<_>>();
+        exercise(
+            point["input"].as_str().unwrap(),
+            point_pages(case, point),
+            case["outcome"].as_str().unwrap(),
+            &offsets,
+            &row,
+        )
+        .await;
+    }
 }

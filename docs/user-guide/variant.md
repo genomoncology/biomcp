@@ -32,6 +32,14 @@ to restore GRCh37 preference; an explicit `--assembly` always wins. If the same
 spelling identifies different records, BioMCP returns the preferred record and
 reports the other identity in `build_candidates` JSON and a Markdown warning.
 
+## Protein point detail lookup
+
+Use a gene plus a checked protein substitution, for example `biomcp get variant 'GENE p.Ala11Val'`. BioMCP examines at most 1,000 candidates in 50-row pages. It returns a detail card only after the provider query completes with one distinct compatible source identity. Exact duplicates and reordered assertions collapse. Additional assertions, assertion multiplicity and different written reference prefixes retain distinct identities.
+
+Multiple compatible identities, missing identity evidence and incomplete scans refuse to select a card. A returned page containing any unexamined row remains incomplete even if its reported total suggests completion. A complete scan with no compatible or uncertain candidate returns not found. Provider failures remain errors, including a failure after a provisional match.
+
+For a refusal, use an exact rsID or genomic HGVS ID, or search with the gene and protein change. Query completion establishes identity within the provider results. It does not validate a reference sequence or select a transcript. The displayed protein annotation belongs to the selected source record.
+
 ## Protein interval detail lookup
 
 Gene plus protein deletion, duplication, insertion and delins inputs reach the detail lookup. For example, use `biomcp get variant 'GENE p.Ala11_Gly12del'` with a gene symbol. Bare changes and `p.` or `P.` prefixes use the existing checked interval syntax. Written prediction and decimal positions remain part of the request.

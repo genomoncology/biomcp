@@ -1548,5 +1548,1999 @@
       }
     ],
     "isError": true
+  },
+  "point": {
+    "input": "GENE p.Ala11Val",
+    "change": "A11V",
+    "query": "dbnsfp.genename:GENE AND dbnsfp.hgvsp:\"p.A11V\"",
+    "records": {
+      "H": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "H2": {
+        "_id": "chr1:g.102A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": "NM_000002.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs102"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000002.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "W": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "OTHER",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "M": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "G": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": [
+            "GENE",
+            "OTHER"
+          ],
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "C": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": "NM_000002.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "P": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": [
+            "p.Ala11Val",
+            "p.Ser20dup"
+          ],
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "P2": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": [
+            "p.Ser20dup",
+            "p.Ala11Val"
+          ],
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "D": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": [
+            "p.Ala11Val",
+            "p.Ala11Val"
+          ],
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "R": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala12Val",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "K": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": [
+            "NM_000001.1:c.1A>T",
+            "NM_000002.1:c.1A>T"
+          ]
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "K2": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": [
+            "NM_000002.1:c.1A>T",
+            "NM_000001.1:c.1A>T"
+          ]
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "KD": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": [
+            "NM_000001.1:c.1A>T",
+            "NM_000001.1:c.1A>T"
+          ]
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "PR": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "NP_000001.1:p.Ala11Val",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "L": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": [
+            "p.Ala12Val",
+            "p.Ala11Val"
+          ],
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      }
+    },
+    "detail": {
+      "section_outcomes": {
+        "cancerhotspots": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "cbioportal": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "civic": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "clinvar": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "gwas": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "population": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "predict": {
+          "outcome": "not_requested",
+          "sources": []
+        }
+      },
+      "gene": "GENE",
+      "id": "chr1:g.101A>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "hgvs_p": "p.Ala11Val",
+      "legacy_name": "GENE A11V",
+      "hgvs_c": "c.1A>T",
+      "transcript": "NM_000001.1",
+      "rsid": "rs101"
+    },
+    "decoded": {
+      "H": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "K": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11Val",
+          "hgvsc": [
+            "NM_000001.1:c.1A>T",
+            "NM_000002.1:c.1A>T"
+          ],
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "L": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": [
+            "p.Ala12Val",
+            "p.Ala11Val"
+          ],
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      },
+      "P": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": [
+            "p.Ala11Val",
+            "p.Ser20dup"
+          ],
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11Val"
+            }
+          ]
+        }
+      }
+    },
+    "cli_success": {
+      "section_outcomes": {
+        "cancerhotspots": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "cbioportal": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "civic": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "clinvar": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "gwas": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "population": {
+          "outcome": "not_requested",
+          "sources": []
+        },
+        "predict": {
+          "outcome": "not_requested",
+          "sources": []
+        }
+      },
+      "gene": "GENE",
+      "id": "chr1:g.101A>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "hgvs_p": "p.Ala11Val",
+      "legacy_name": "GENE A11V",
+      "hgvs_c": "c.1A>T",
+      "transcript": "NM_000001.1",
+      "rsid": "rs101",
+      "_meta": {
+        "evidence_urls": [
+          {
+            "label": "dbSNP",
+            "url": "https://www.ncbi.nlm.nih.gov/snp/rs101"
+          }
+        ],
+        "next_commands": [
+          "biomcp get gene GENE",
+          "biomcp search drug --target GENE",
+          "biomcp variant trials \"chr1:g.101A>T\"",
+          "biomcp variant articles \"chr1:g.101A>T\""
+        ],
+        "section_sources": [
+          {
+            "key": "identity",
+            "label": "Identity",
+            "outcome": "data",
+            "sources": [
+              "MyVariant.info",
+              "ClinVar"
+            ]
+          }
+        ]
+      }
+    },
+    "errors": {
+      "ambiguous": "Protein point lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.",
+      "evidence": "Protein point lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.",
+      "incomplete": "Protein point lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+    },
+    "payloads": {
+      "ambiguous": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "Invalid argument: Protein point lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+        },
+        "_meta": {
+          "not_found": false
+        }
+      },
+      "evidence": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "Invalid argument: Protein point lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+        },
+        "_meta": {
+          "not_found": false
+        }
+      },
+      "incomplete": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "Invalid argument: Protein point lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+        },
+        "_meta": {
+          "not_found": false
+        }
+      },
+      "absent": {
+        "error": {
+          "code": "not_found",
+          "message": "variant 'GENE p.Ala11Val' not found.\n\nTry searching: biomcp search variant -g GENE --hgvsp A11V"
+        },
+        "_meta": {
+          "not_found": true
+        }
+      },
+      "failure": {
+        "error": {
+          "code": "api",
+          "message": "API request to MyVariant.info failed.",
+          "source": "MyVariant.info",
+          "recovery": "Retry the remote source."
+        },
+        "_meta": {
+          "not_found": false
+        }
+      },
+      "malformed": {
+        "error": {
+          "code": "api_json",
+          "message": "API response from MyVariant.info could not be decoded.",
+          "source": "MyVariant.info",
+          "recovery": "Retry the remote source."
+        },
+        "_meta": {
+          "not_found": false
+        }
+      }
+    },
+    "wrappers": {
+      "ambiguous": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: Invalid argument: Protein point lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+          }
+        ],
+        "isError": true
+      },
+      "evidence": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: Invalid argument: Protein point lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+          }
+        ],
+        "isError": true
+      },
+      "incomplete": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: Invalid argument: Protein point lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+          }
+        ],
+        "isError": true
+      },
+      "absent": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: variant 'GENE p.Ala11Val' not found.\n\nTry searching: biomcp search variant -g GENE --hgvsp A11V"
+          }
+        ],
+        "isError": true
+      },
+      "failure": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: API request to MyVariant.info failed. Retry the remote source."
+          }
+        ],
+        "isError": true
+      },
+      "malformed": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: API response from MyVariant.info could not be decoded. Retry the remote source."
+          }
+        ],
+        "isError": true
+      }
+    },
+    "cases": [
+      {
+        "name": "unique",
+        "pages": [
+          {
+            "total": 1,
+            "rows": [
+              [
+                "H",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "success",
+        "selected": "H"
+      },
+      {
+        "name": "later protein assertion",
+        "pages": [
+          {
+            "total": 1,
+            "rows": [
+              [
+                "L",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "success",
+        "selected": "L"
+      },
+      {
+        "name": "contradiction ignored",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "W",
+                1
+              ],
+              [
+                "H",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "success",
+        "selected": "H"
+      },
+      {
+        "name": "duplicate collapse",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "H",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "success",
+        "selected": "H"
+      },
+      {
+        "name": "source identity",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "H2",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "coding prefix",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "C",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "complete coding vector",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "K",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "coding order",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "K",
+                1
+              ],
+              [
+                "K2",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "success",
+        "selected": "K"
+      },
+      {
+        "name": "coding multiplicity",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "KD",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "protein prefix",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "PR",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "extra protein",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "P",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "protein order",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "P",
+                1
+              ],
+              [
+                "P2",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "success",
+        "selected": "P"
+      },
+      {
+        "name": "protein multiplicity",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "D",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "missing protein",
+        "pages": [
+          {
+            "total": 1,
+            "rows": [
+              [
+                "M",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "evidence",
+        "selected": "H"
+      },
+      {
+        "name": "missing beside match",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "M",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "evidence",
+        "selected": "H"
+      },
+      {
+        "name": "multiple genes",
+        "pages": [
+          {
+            "total": 1,
+            "rows": [
+              [
+                "G",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "evidence",
+        "selected": "H"
+      },
+      {
+        "name": "ambiguity precedence",
+        "pages": [
+          {
+            "total": 3,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "H2",
+                1
+              ],
+              [
+                "M",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "contradiction",
+        "pages": [
+          {
+            "total": 1,
+            "rows": [
+              [
+                "R",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "absent",
+        "selected": "H"
+      },
+      {
+        "name": "absence",
+        "pages": [
+          {
+            "total": 0,
+            "rows": []
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "absent",
+        "selected": "H"
+      },
+      {
+        "name": "later match",
+        "pages": [
+          {
+            "total": 51,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 51,
+            "rows": [
+              [
+                "H",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0,
+          50
+        ],
+        "outcome": "success",
+        "selected": "H"
+      },
+      {
+        "name": "later ambiguity",
+        "pages": [
+          {
+            "total": 51,
+            "rows": [
+              [
+                "H",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 51,
+            "rows": [
+              [
+                "H2",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0,
+          50
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "unknown short",
+        "pages": [
+          {
+            "total": null,
+            "rows": [
+              [
+                "H",
+                1
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": []
+          }
+        ],
+        "offsets": [
+          0,
+          1
+        ],
+        "outcome": "success",
+        "selected": "H"
+      },
+      {
+        "name": "remaining short",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ]
+            ]
+          },
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H2",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0,
+          1
+        ],
+        "outcome": "ambiguous",
+        "selected": "H"
+      },
+      {
+        "name": "late failure",
+        "pages": [
+          {
+            "total": 2,
+            "rows": [
+              [
+                "H",
+                1
+              ]
+            ]
+          },
+          "failure"
+        ],
+        "offsets": [
+          0,
+          1
+        ],
+        "outcome": "failure",
+        "selected": "H"
+      },
+      {
+        "name": "malformed",
+        "pages": [
+          "malformed"
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "malformed",
+        "selected": "H"
+      },
+      {
+        "name": "bound 1000",
+        "pages": [
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "W",
+                49
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0,
+          50,
+          100,
+          150,
+          200,
+          250,
+          300,
+          350,
+          400,
+          450,
+          500,
+          550,
+          600,
+          650,
+          700,
+          750,
+          800,
+          850,
+          900,
+          950
+        ],
+        "outcome": "success",
+        "selected": "H"
+      },
+      {
+        "name": "bound 1001",
+        "pages": [
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "W",
+                49
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0,
+          50,
+          100,
+          150,
+          200,
+          250,
+          300,
+          350,
+          400,
+          450,
+          500,
+          550,
+          600,
+          650,
+          700,
+          750,
+          800,
+          850,
+          900,
+          950
+        ],
+        "outcome": "incomplete",
+        "selected": "H"
+      },
+      {
+        "name": "bound None",
+        "pages": [
+          {
+            "total": null,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "W",
+                49
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          },
+          {
+            "total": null,
+            "rows": [
+              [
+                "W",
+                50
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0,
+          50,
+          100,
+          150,
+          200,
+          250,
+          300,
+          350,
+          400,
+          450,
+          500,
+          550,
+          600,
+          650,
+          700,
+          750,
+          800,
+          850,
+          900,
+          950
+        ],
+        "outcome": "incomplete",
+        "selected": "H"
+      },
+      {
+        "name": "concealed unexamined match",
+        "pages": [
+          {
+            "total": 1000,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "W",
+                999
+              ],
+              [
+                "H2",
+                1
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "incomplete",
+        "selected": "H"
+      },
+      {
+        "name": "truncation precedence",
+        "pages": [
+          {
+            "total": 1001,
+            "rows": [
+              [
+                "H",
+                1
+              ],
+              [
+                "H2",
+                1
+              ],
+              [
+                "W",
+                999
+              ]
+            ]
+          }
+        ],
+        "offsets": [
+          0
+        ],
+        "outcome": "incomplete",
+        "selected": "H"
+      }
+    ]
   }
 }
