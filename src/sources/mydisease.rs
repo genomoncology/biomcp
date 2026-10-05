@@ -216,9 +216,11 @@ impl MyDiseaseClient {
             format!("(_id:\"{escaped}\" OR disease_ontology.doid:\"{escaped}\")")
         } else {
             // Keep the legacy name search semantics (tokenized by backend) to avoid
-            // over-constraining common disease names like "lung cancer".
+            // over-constraining common disease names like "lung cancer". Synonyms are
+            // indexed as objects scoped by synonym type, so exact-synonym retrieval
+            // must target the `exact` leaf fields; the parent paths hold no tokens.
             format!(
-                "(disease_ontology.name:{escaped} OR disease_ontology.synonyms:{escaped} OR mondo.name:{escaped} OR mondo.synonym:{escaped})"
+                "(disease_ontology.name:{escaped} OR disease_ontology.synonyms.exact:{escaped} OR mondo.name:{escaped} OR mondo.synonym.exact:{escaped})"
             )
         };
         if let Some(source) = source.map(str::trim).filter(|v| !v.is_empty()) {

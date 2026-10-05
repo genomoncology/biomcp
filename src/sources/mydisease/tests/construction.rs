@@ -36,6 +36,20 @@ fn query_plan_sets_search_shape() {
 }
 
 #[test]
+fn query_plan_retrieves_exact_synonym_leaf_fields_for_abbreviations() {
+    // MyDisease indexes `mondo.synonym` and `disease_ontology.synonyms` as
+    // objects scoped by synonym type, so only the `exact` leaf fields hold
+    // tokens. The parent paths match nothing and hid every exact synonym and
+    // abbreviation from the candidate set (ticket 1295).
+    let plan = MyDiseaseClient::query_plan("NSCLC", 15, 0, None, None, None, None).unwrap();
+
+    assert_eq!(
+        q(&plan),
+        "(disease_ontology.name:NSCLC OR disease_ontology.synonyms.exact:NSCLC OR mondo.name:NSCLC OR mondo.synonym.exact:NSCLC)"
+    );
+}
+
+#[test]
 fn query_plan_builds_id_lookup_shape() {
     let plan = MyDiseaseClient::query_plan("MONDO:0005105", 1, 0, None, None, None, None).unwrap();
 
