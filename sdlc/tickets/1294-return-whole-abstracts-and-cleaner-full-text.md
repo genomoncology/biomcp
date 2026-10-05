@@ -4,6 +4,13 @@ Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1294-whole-abstracts`, sha `d00f515c`, 2026-10-05. Two review cycles.
+- Code review (cycle 1): REJECT 2026-10-05, two findings: the ticket's named spec page did not exist (P1), and one receipt recorded a non-production request URL while claiming the production shape (P2).
+- Code re-review (cycle 2): ACCEPT 2026-10-05, both findings resolved with evidence; the two proof substitutions (PubTator3 export for PMID 30738221 because no PMC record exists; authored fixture for the ragged banner because no recorded capture contains one) ruled acceptable.
+- Spec page `spec/entity/article-text-fidelity.md` pins six behaviors from recorded bytes, names the 240-byte snippet cap, and is registered in the routine lane and the registry test. 51+ targeted tests, lint green.
+
 ## Outcome
 
 Article JSON returns whole abstracts with no cut-off, and full text reads cleanly: spaced JATS inline text, labeled reference identifiers, kept PMC titles, and no viewer links or lookup URLs.
@@ -16,6 +23,7 @@ Article JSON returns whole abstracts with no cut-off, and full text reads cleanl
 - Proof: Recorded fixtures with expected output in a spec page: PMID 30738221's abstract; one JATS paper with inline markup, references and a ragged table; one PMC HTML paper. Each fixture names the defect it pins. Bound, measured 2026-10-05: real abstracts run 1,467 to 5,057 characters, median about 3,550 — whole abstracts roughly triple today's abstract cost, so `get article` and `batch --mode detail` carry whole abstracts, search rows keep their snippet, and `search article --full` keeps a documented per-row abstract cap with a way to ask for the whole one. The proof names that cap.
 - Defers: Rendering tables with merged cells as Markdown. JATS author bylines.
 
+## Change detail
 ## Change detail
 ## Review amendments (2026-10-05, folded from code review)
 
