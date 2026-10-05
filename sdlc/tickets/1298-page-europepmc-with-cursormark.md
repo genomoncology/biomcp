@@ -18,9 +18,12 @@ Europe PMC searches return distinct rows for every requested page, up to the req
 
 ## Build status
 
-- Built on branch `tickets/1298-page-europepmc`, final sha `f1824a0b` (2026-10-05). Design review: FIX on the first pass (dispatch e3f043f1), every finding folded into Changes and Proof above. Code review: ACCEPT, no blocking findings (dispatch 0c7c8861); its one strengthening finding — pinning the fetched-rows-versus-hitCount stop with a short corpus — is folded into the fixture (four corpora: 50 rows in 2 requests; hitCount stop in 2; absent-cursor stop in 3; offset 25 first row).
+- Built on branch `tickets/1298-page-europepmc`, final sha `f1824a0b`, 2026-10-05.
+- Design review: ACCEPT 2026-10-05 (dispatch e3f043f1; the first pass returned findings and every one is folded into Changes and Proof above).
+- Code review: ACCEPT 2026-10-05 (dispatch 0c7c8861; its one strengthening finding, pinning the fetched-rows-versus-hitCount stop with a short corpus, is folded into the fixture: four corpora covering 50 rows in 2 requests, hitCount stop in 2, absent-cursor stop in 3, offset 25 first row).
 - The variant-articles corpus canary now canonicalizes only the paging parameter when routing, so captured bodies, receipts, and sha256 provenance stay byte-identical while the cursorMark request shape is served. Fulltext and disease fixture handlers keyed on `page` moved to `cursorMark`. Package count 1385 to 1388; unpaced-origin owners list registers the new fixture.
 - Gates at `f1824a0b`: local `make lint` exit 0; 677 article/europepmc nextest scope passed; CI in flight; yellow full lint/spec/test under the shared lock (`~/biomcp-gates-1298-final.log`). On green: write the build record, notify the KB lead for QA (QA before landing), land on their pass.
+- Final: branch sha `2d75971d` (adds the shape-test pin for the canary's canonicalized routing). CI green, all lanes. Yellow: lint and spec green; Rust 3918 of 3918; Python suite green except four offline-sandbox tests, which pass through tools/run-offline. Build record: sdlc/records/1298-europepmc-cursormark-build.md. QA requested from the KB lead before landing.
 
 ## Priority note
 
