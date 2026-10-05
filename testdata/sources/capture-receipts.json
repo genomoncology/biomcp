@@ -1062,6 +1062,18 @@
       }
     },
     {
+      "path": "ncbi_efetch/pmc6172658.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI EFetch PMC",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=6172658&retmode=xml",
+        "captured_at": "2026-10-05T18:52:00Z",
+        "sha256": "21981604084d4dddd7b583f0ed5116072ad5fc6bdf8f84acbc6e38b8725da074",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public NCBI EFetch response through BioMCP's production request shape."
+      }
+    },
+    {
       "path": "ncbi_efetch/pmc6329583.xml",
       "classification": "real_and_receipted",
       "receipt": {
@@ -1071,6 +1083,18 @@
         "sha256": "9c617ce21d1d11f10b706cf8596c68d11230cc0326968625b039cf9627f4558e",
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public NCBI EFetch response through BioMCP's production request shape."
+      }
+    },
+    {
+      "path": "pmc_article/pmc6695558.html",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubMed Central article HTML",
+        "request": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6695558/",
+        "captured_at": "2026-10-05T19:57:00Z",
+        "sha256": "a13a086cb3b0f192c5249248fba35c1d17f895b575c27996939ea68b4c3e3bb4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
       }
     },
     {
