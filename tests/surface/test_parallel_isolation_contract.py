@@ -1243,6 +1243,7 @@ def test_ticket_377_renderer_envelope_specs_document_deterministic_coverage() ->
 
 ROUTINE_SPEC_PATHS = (
     "spec/entity/article.md",
+    "spec/entity/article-text-fidelity.md",
     "spec/entity/author.md",
     "spec/entity/disease.md",
     "spec/entity/disease-survival-fixture.md",
