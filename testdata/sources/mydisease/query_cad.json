@@ -1,0 +1,284 @@
+{
+ "took": 4,
+ "total": 8,
+ "max_score": 12.724326,
+ "hits": [
+  {
+   "_id": "MONDO:0100077",
+   "_score": 12.724326,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "CAD"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0018212",
+   "_score": 12.494551,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "familial CAD",
+      "hereditary CAD",
+      "hereditary cervical artery dissection"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850371",
+   "_score": 12.420673,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "nonobstructive coronary artery disease",
+    "synonyms": {
+     "exact": [
+      "non-CAD"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100097",
+   "_score": 11.272236,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "CAD due to TBX4"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100090",
+   "_score": 11.272236,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "CAD due to FGF10"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0018922",
+   "_score": 9.470885,
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0000980"
+     },
+     {
+      "hpo_id": "HP:0001324"
+     },
+     {
+      "hpo_id": "HP:0001744"
+     },
+     {
+      "hpo_id": "HP:0001878"
+     },
+     {
+      "hpo_id": "HP:0002014"
+     },
+     {
+      "hpo_id": "HP:0002017"
+     },
+     {
+      "hpo_id": "HP:0002240"
+     },
+     {
+      "hpo_id": "HP:0002315"
+     },
+     {
+      "hpo_id": "HP:0002716"
+     },
+     {
+      "hpo_id": "HP:0002829"
+     },
+     {
+      "hpo_id": "HP:0002960"
+     },
+     {
+      "hpo_id": "HP:0003418"
+     },
+     {
+      "hpo_id": "HP:0012086"
+     },
+     {
+      "hpo_id": "HP:0012378"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "CAD",
+      "CAS",
+      "chronic cold agglutinin disease",
+      "cold agglutinin syndrome"
+     ],
+     "related": [
+      "anemia, hemolytic, cold antibody",
+      "cold antibody disease",
+      "cold antibody hemolytic anaemia",
+      "cold antibody hemolytic anemia"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0005010",
+   "_score": 5.458411,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "coronary artery disease",
+    "synonyms": {
+     "exact": [
+      "CHD",
+      "coronary arteriosclerosis",
+      "Coronary disease",
+      "coronary heart disease",
+      "Ischemic Heart Disease",
+      "myocardial ischemia"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "CAD",
+      "CHD (coronary heart disease)",
+      "coronary artery disease",
+      "coronary artery disease or disorder",
+      "coronary disease",
+      "coronary heart disease",
+      "disease of coronary artery",
+      "disease or disorder of coronary artery",
+      "disorder of coronary artery"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0014647",
+   "_score": 5.359685,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "developmental and epileptic encephalopathy 50",
+    "synonyms": {
+     "exact": [
+      "Carbohydrate deficient glycoprotein syndrome type Iz",
+      "CDG syndrome type Iz",
+      "CDG-Iz",
+      "Congenital disorder of glycosylation type 1z",
+      "DEE50",
+      "early infantile epileptic encephalopathy 50"
+     ]
+    }
+   },
+   "hpo": {
+    "clinical_course": [
+     {
+      "hpo_name": "Progressive"
+     },
+     {
+      "hpo_name": "Infantile onset"
+     },
+     {
+      "hpo_name": "Childhood onset"
+     },
+     {
+      "hpo_name": "Death in childhood"
+     }
+    ],
+    "inheritance": {
+     "hpo_id": "HP:0000007",
+     "hpo_name": "Autosomal recessive inheritance"
+    },
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0002465"
+     },
+     {
+      "hpo_id": "HP:0001250"
+     },
+     {
+      "hpo_id": "HP:0001252"
+     },
+     {
+      "hpo_id": "HP:0002283"
+     },
+     {
+      "hpo_id": "HP:0012345"
+     },
+     {
+      "hpo_id": "HP:0001508"
+     },
+     {
+      "hpo_id": "HP:0001947"
+     },
+     {
+      "hpo_id": "HP:0001903"
+     },
+     {
+      "hpo_id": "HP:0001927"
+     },
+     {
+      "hpo_id": "HP:0001987"
+     },
+     {
+      "hpo_id": "HP:0002014"
+     },
+     {
+      "hpo_id": "HP:0002136"
+     },
+     {
+      "hpo_id": "HP:0002015"
+     },
+     {
+      "hpo_id": "HP:0002133"
+     },
+     {
+      "hpo_id": "HP:0001981"
+     },
+     {
+      "hpo_id": "HP:0002376"
+     },
+     {
+      "hpo_id": "HP:0001263"
+     },
+     {
+      "hpo_id": "HP:0200134"
+     },
+     {
+      "hpo_id": "HP:0004823"
+     },
+     {
+      "hpo_id": "HP:0003218"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "CAD-CDG",
+      "carbohydrate deficient glycoprotein syndrome type Iz",
+      "CDG syndrome type Iz",
+      "CDG-Iz",
+      "CDG1Z",
+      "congenital disorder of glycosylation type 1z",
+      "DEE50",
+      "developmental and epileptic encephalopathy 50",
+      "EIEE50",
+      "epileptic encephalopathy, early infantile, 50"
+     ],
+     "related": [
+      "congenital disorder of glycosylation, type Iz"
+     ]
+    }
+   }
+  }
+ ]
+}

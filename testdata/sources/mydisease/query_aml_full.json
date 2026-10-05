@@ -1,0 +1,549 @@
+{
+ "took": 4,
+ "total": 29,
+ "max_score": 198.34245,
+ "hits": [
+  {
+   "_id": "MONDO:0018874",
+   "_score": 198.34245,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia",
+    "synonyms": {
+     "exact": [
+      "acute myeloblastic leukaemia",
+      "acute myeloblastic leukemia",
+      "acute myelogenous leukaemia",
+      "acute myelogenous leukemia",
+      "acute myeloid leukaemia",
+      "AML - acute Myeloid Leukemia",
+      "Leukemia, Myelocytic, acute"
+     ]
+    }
+   },
+   "hpo": {
+    "inheritance": [
+     {
+      "hpo_id": "HP:0001442",
+      "hpo_name": "Typified by somatic mosaicism"
+     },
+     {
+      "hpo_id": "HP:0000006",
+      "hpo_name": "Autosomal dominant inheritance"
+     }
+    ],
+    "phenotype_related_to_disease": {
+     "hpo_id": "HP:0004808"
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute granulocytic leukaemia",
+      "acute granulocytic leukemia",
+      "acute myeloblastic leukemia",
+      "acute myelocytic leukaemia",
+      "acute myelocytic leukemia",
+      "acute myelogenous leukemia",
+      "acute myelogenous leukemias",
+      "acute myeloid leukaemia (AML)",
+      "acute myeloid leukemia",
+      "acute myeloid leukemia (AML)",
+      "acute myeloid leukemia, somatic",
+      "acute Nonlymphocytic leukaemia",
+      "acute nonlymphocytic leukaemia",
+      "acute Nonlymphocytic leukemia",
+      "acute nonlymphocytic leukemia",
+      "AML",
+      "AML - acute myeloid leukaemia",
+      "AML - acute myeloid leukemia",
+      "ANLL",
+      "hematopoeitic - acute Myleogenous leukaemia (AML)",
+      "hematopoeitic - acute Myleogenous leukemia (AML)",
+      "leukemia, acute myeloid, autosomal dominant, somatic mutation",
+      "leukemia, acute myeloid, reduced survival in, somatic",
+      "leukemia, acute myeloid, somatic",
+      "leukemia, acute myeloid, susceptibility to, autosomal dominant, somatic mutation",
+      "leukemia, myelocytic, acute",
+      "myeloid leukemia, acute",
+      "myeloid leukemia, acute, M4/M4Eo subtype, somatic"
+     ],
+     "related": [
+      "acute non lymphoblastic leukaemia",
+      "acute non lymphoblastic leukemia",
+      "leukemia, acute myeloid"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0017858",
+   "_score": 180.79243,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute erythroid leukemia",
+    "synonyms": {}
+   },
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0001876"
+     },
+     {
+      "hpo_id": "HP:0001882"
+     },
+     {
+      "hpo_id": "HP:0001903"
+     },
+     {
+      "hpo_id": "HP:0004828"
+     },
+     {
+      "hpo_id": "HP:0005508"
+     },
+     {
+      "hpo_id": "HP:0012133"
+     },
+     {
+      "hpo_id": "HP:0025035"
+     },
+     {
+      "hpo_id": "HP:0031020"
+     },
+     {
+      "hpo_id": "HP:0005528"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute erythroblastic leukaemia",
+      "acute erythroblastic leukemia",
+      "acute erythroid leukemia",
+      "acute myeloid leukaemia M6",
+      "acute myeloid leukemia M6",
+      "AEL",
+      "AML M6",
+      "erythroblastic leukaemia",
+      "erythroblastic leukemia",
+      "FAB M6",
+      "leukemia, erythroid, malignant",
+      "M6 acute myeloid leukaemia",
+      "M6 acute myeloid leukemia"
+     ],
+     "related": [
+      "acute erythroleukemia",
+      "acute erythroleukemia M6a subtype",
+      "acute erythroleukemia M6b subtype",
+      "acute myeloid leukaemia FAB-M6",
+      "acute myeloid leukemia FAB-M6",
+      "AML-M6",
+      "Di Guglielmo syndrome",
+      "Di Guglielmo's syndrome"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0004996",
+   "_score": 169.71062,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "childhood acute myeloid leukemia",
+    "synonyms": {
+     "exact": [
+      "childhood acute myeloid leukaemia",
+      "paediatric acute myeloid leukaemia",
+      "pediatric acute myeloid leukemia"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute myeloid leukaemia of childhood",
+      "acute myeloid leukemia of childhood",
+      "childhood acute granulocytic leukaemia",
+      "childhood acute granulocytic leukemia",
+      "childhood acute myeloblastic leukaemia",
+      "childhood acute myeloblastic leukemia",
+      "childhood acute myelocytic leukaemia",
+      "childhood acute myelocytic leukemia",
+      "childhood acute myelogenous leukaemia",
+      "childhood acute myelogenous leukemia",
+      "childhood acute myeloid leukemia",
+      "childhood AML",
+      "paediatric acute myeloblastic leukaemia",
+      "paediatric acute myelocytic leukaemia",
+      "paediatric acute myelogenous leukaemia",
+      "paediatric AML",
+      "pediatric acute myeloblastic leukemia",
+      "pediatric acute myelocytic leukemia",
+      "pediatric acute myelogenous leukemia",
+      "pediatric acute myeloid leukemia",
+      "pediatric AML"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0018872",
+   "_score": 156.54904,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute megakaryocytic leukemia",
+    "synonyms": {
+     "exact": [
+      "Megakaryocytic myelosis",
+      "Thrombocytic leukaemia"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute M7 myeloid leukaemia",
+      "acute M7 myeloid leukemia",
+      "acute megakaryoblastic leukaemia (FAB type M7)",
+      "acute megakaryoblastic leukemia",
+      "acute megakaryoblastic leukemia (FAB type M7)",
+      "acute megakaryoblastic leukemia, FAB M7",
+      "acute megakaryocytic leukaemia",
+      "acute megakaryocytic leukemia",
+      "acute megakaryocytic leukemias",
+      "acute myeloid leukaemia M7",
+      "acute myeloid leukemia M7",
+      "AMKL",
+      "AML M7",
+      "FAB M7",
+      "leukemia, megakaryocytic, malignant",
+      "thrombocytic leukemia"
+     ],
+     "related": [
+      "acute myeloblastic leukaemia type 7",
+      "acute myeloblastic leukemia type 7",
+      "megakaryocytic leukaemia"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0975868",
+   "_score": 154.54185,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with CBFA2T3-GLIS2 fusion",
+    "synonyms": {
+     "exact": [
+      "Acute Megakaryoblastic Leukemia with CBFA2T3-GLIS2",
+      "Acute myeloid leukaemia with CBFA2T3::GLIS2 fusion",
+      "acute myeloid leukemia with CBFA2T3::GLIS2 fusion",
+      "acute myeloid leukemia with inv(16)(p13q24)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850452",
+   "_score": 153.47491,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "mixed phenotype acute leukemia, T/myeloid",
+    "synonyms": {}
+   }
+  },
+  {
+   "_id": "MONDO:0850492",
+   "_score": 150.83284,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with t(8;21); (q22; q22.1)",
+    "synonyms": {
+     "exact": [
+      "Acute Myeloid Leukemia with t(8;21); (q22; q22.1); RUNX1-RUNX1T1",
+      "acute myeloid leukemia, t(8;21)(q22;q22)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0020320",
+   "_score": 147.38513,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with maturation",
+    "synonyms": {}
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute M2 myeloid leukaemia",
+      "acute M2 myeloid leukemia",
+      "acute myeloblastic leukaemia M2",
+      "acute myeloblastic leukemia M2",
+      "acute myelocytic leukaemia with maturation",
+      "acute myelocytic leukemia with maturation",
+      "acute myelogenous leukaemia with maturation",
+      "acute myelogenous leukemia with maturation",
+      "acute myeloid leukaemia (AML-M2)",
+      "acute myeloid leukaemia with maturation",
+      "acute myeloid leukemia (AML-M2)",
+      "acute myeloid leukemia with maturation",
+      "AML M2",
+      "AML with maturation",
+      "FAB M2",
+      "M2 acute granulocytic leukaemia",
+      "M2 acute granulocytic leukemia",
+      "M2 acute myeloblastic leukaemia",
+      "M2 acute myeloblastic leukaemia with maturation",
+      "M2 acute myeloblastic leukemia",
+      "M2 acute myeloblastic leukemia with maturation",
+      "M2 acute myelocytic leukaemia with maturation",
+      "M2 acute myelocytic leukemia with maturation",
+      "M2 acute myelogenous leukaemia",
+      "M2 acute myelogenous leukaemia with maturation",
+      "M2 acute myelogenous leukemia",
+      "M2 acute myelogenous leukemia with maturation",
+      "M2 acute myeloid leukaemia",
+      "M2 acute myeloid leukaemia with maturation",
+      "M2 acute myeloid leukemia",
+      "M2 acute myeloid leukemia with maturation"
+     ],
+     "related": [
+      "acute myeloblastic leukaemia type 2",
+      "acute myeloblastic leukemia type 2",
+      "AM",
+      "LAM M2"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0005223",
+   "_score": 147.34175,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with minimal differentiation",
+    "synonyms": {
+     "exact": [
+      "Acute myeloid leukemia, minimal differentiation",
+      "AML-M0"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute myeloblastic leukaemia with minimal differentiation",
+      "acute myeloblastic leukemia with minimal differentiation",
+      "acute myeloblastic leukemia, minimally differentiated",
+      "acute myelocytic leukaemia with minimal differentiation",
+      "acute myelocytic leukemia with minimal differentiation",
+      "acute myelogenous leukaemia with minimal differentiation",
+      "acute myelogenous leukemia with minimal differentiation",
+      "acute myeloid leukaemia with minimal differentiation (MO)",
+      "acute myeloid leukemia with minimal differentiation",
+      "acute myeloid leukemia with minimal differentiation (MO)",
+      "acute myeloid leukemia, minimally differentiated",
+      "AML M0",
+      "AML with minimal differentiation",
+      "M0 acute granulocytic leukaemia",
+      "M0 acute granulocytic leukaemia with minimal differentiation",
+      "M0 acute granulocytic leukemia",
+      "M0 acute granulocytic leukemia with minimal differentiation",
+      "M0 acute myeloblastic leukaemia",
+      "M0 acute myeloblastic leukemia",
+      "M0 acute myelocytic leukaemia",
+      "M0 acute myelocytic leukemia",
+      "M0 acute myelogenous leukaemia",
+      "M0 acute myelogenous leukaemia with minimal differentiation",
+      "M0 acute myelogenous leukemia",
+      "M0 acute myelogenous leukemia with minimal differentiation",
+      "M0 myeloid leukaemia",
+      "M0 myeloid leukaemia with minimal differentiation",
+      "M0 myeloid leukemia",
+      "M0 myeloid leukemia with minimal differentiation",
+      "minimally differentiated acute myeloblastic leukaemia",
+      "minimally differentiated acute myeloblastic leukemia"
+     ],
+     "related": [
+      "AMLMD"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0975871",
+   "_score": 145.54935,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with MNX1-ETV6 fusion",
+    "synonyms": {
+     "exact": [
+      "Acute myeloid leukaemia with MNX1::ETV6 fusion",
+      "acute myeloid leukemia with MNX1::ETV6 fusion",
+      "acute myeloid leukemia with t(7;12)(q36;p13)",
+      "Acute Myeloid Leukemia with t(7;12)(q36;p13); HLXB9-ETV6"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0005224",
+   "_score": 143.58455,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia without maturation",
+    "synonyms": {}
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute granulocytic leukaemia without maturation",
+      "acute granulocytic leukemia without maturation",
+      "acute M1 myeloid leukaemia",
+      "acute M1 myeloid leukemia",
+      "acute myeloblastic leukaemia M1",
+      "acute myeloblastic leukemia M1",
+      "acute myelocytic leukaemia without maturation",
+      "acute myelocytic leukemia without maturation",
+      "acute myelogenous leukaemia without maturation",
+      "acute myelogenous leukemia without maturation",
+      "acute myeloid leukaemia without maturation",
+      "acute myeloid leukaemia without maturation (FAB M1)",
+      "acute myeloid leukemia without maturation",
+      "acute myeloid leukemia without maturation (FAB M1)",
+      "AML M1",
+      "AML without maturation",
+      "FAB M1",
+      "M1 acute granulocytic leukaemia",
+      "M1 acute granulocytic leukaemia without maturation",
+      "M1 acute granulocytic leukemia",
+      "M1 acute granulocytic leukemia without maturation",
+      "M1 acute myeloblastic leukaemia",
+      "M1 acute myeloblastic leukaemia without maturation",
+      "M1 acute myeloblastic leukemia",
+      "M1 acute myeloblastic leukemia without maturation",
+      "M1 acute myelocytic leukaemia",
+      "M1 acute myelocytic leukaemia without maturation",
+      "M1 acute myelocytic leukemia",
+      "M1 acute myelocytic leukemia without maturation",
+      "M1 acute myelogenous leukaemia",
+      "M1 acute myelogenous leukaemia without maturation",
+      "M1 acute myelogenous leukemia",
+      "M1 acute myelogenous leukemia without maturation",
+      "M1 acute myeloid leukaemia",
+      "M1 acute myeloid leukaemia without maturation",
+      "M1 acute myeloid leukemia",
+      "M1 acute myeloid leukemia without maturation"
+     ],
+     "related": [
+      "acute myeloblastic leukaemia type 1",
+      "acute myeloblastic leukemia type 1",
+      "AWM"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0975870",
+   "_score": 141.3922,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with FUS-ERG fusion",
+    "synonyms": {
+     "exact": [
+      "Acute myeloid leukaemia with FUS::ERG fusion",
+      "acute myeloid leukemia with FUS::ERG fusion",
+      "acute myeloid leukemia with t(16;21)(p11.2;q22)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0975872",
+   "_score": 141.3922,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with NPM1-MLF1 fusion",
+    "synonyms": {
+     "exact": [
+      "Acute myeloid leukaemia with NPM1::MLF1 fusion",
+      "acute myeloid leukemia with NPM1::MLF1 fusion",
+      "acute myeloid leukemia with t(3;5)(q25;q35)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0018871",
+   "_score": 140.16331,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myelomonocytic leukemia",
+    "synonyms": {}
+   },
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0001873"
+     },
+     {
+      "hpo_id": "HP:0001903"
+     },
+     {
+      "hpo_id": "HP:0001974"
+     },
+     {
+      "hpo_id": "HP:0000980"
+     },
+     {
+      "hpo_id": "HP:0001824"
+     },
+     {
+      "hpo_id": "HP:0001892"
+     },
+     {
+      "hpo_id": "HP:0002094"
+     },
+     {
+      "hpo_id": "HP:0000168"
+     },
+     {
+      "hpo_id": "HP:0001880"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute M4 myeloid leukaemia",
+      "acute M4 myeloid leukemia",
+      "acute myelomonocytic leukaemia",
+      "acute myelomonocytic leukaemia (FAB type M4)",
+      "acute myelomonocytic leukemia",
+      "acute myelomonocytic leukemia (FAB type M4)",
+      "AML M4",
+      "AMML",
+      "AMMoL"
+     ],
+     "related": [
+      "acute myeloblastic leukaemia type 4",
+      "acute myeloblastic leukemia type 4",
+      "AML-M4"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850269",
+   "_score": 138.69133,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "core binding factor acute myeloid leukemia",
+    "synonyms": {}
+   }
+  }
+ ]
+}
