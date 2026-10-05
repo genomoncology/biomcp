@@ -266,14 +266,17 @@ fn article_json_next_commands_parse() {
             genes: vec![AnnotationCount {
                 text: "serine-threonine protein kinase".to_string(),
                 count: 1,
+                ..Default::default()
             }],
             diseases: vec![AnnotationCount {
                 text: "melanoma".to_string(),
                 count: 1,
+                ..Default::default()
             }],
             chemicals: vec![AnnotationCount {
                 text: "osimertinib".to_string(),
                 count: 1,
+                ..Default::default()
             }],
             mutations: Vec::new(),
         }),

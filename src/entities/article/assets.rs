@@ -151,7 +151,7 @@ pub async fn article_assets_manifest(
     {
         return Ok(manifest);
     }
-    let article = super::detail::get_article_base(requested_id).await?;
+    let article = super::detail::get_article_base(requested_id, false).await?;
     let manifest = resolve_article_assets(requested_id, article)
         .await?
         .manifest;
@@ -281,7 +281,7 @@ pub async fn article_asset_bytes(
     requested_id: &str,
     asset_key: &str,
 ) -> Result<(Vec<u8>, Option<String>, String), BioMcpError> {
-    let article = super::detail::get_article_base(requested_id).await?;
+    let article = super::detail::get_article_base(requested_id, false).await?;
     let resolved = resolve_article_assets(requested_id, article).await?;
     article_asset_bytes_from_resolution(requested_id, asset_key.trim(), resolved)
 }

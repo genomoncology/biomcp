@@ -47,7 +47,7 @@ get article <id> asset <asset-key>
 raw bytes
 - `get article <id> all` - include all article sections, including PubMed indexing
 - `article authors <id>` - provider-exact Semantic Scholar authors for a PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
-- `article entities <pmid> --limit <N>` - annotated entities with next commands
+- `article entities <pmid> [--limit <N>] [--full]` - annotated entities with identifiers and next commands; `--full` adds passage positions in JSON
 - `batch article <id1,id2,...> [--mode compact|detail] [--sections <s1,s2,...>]` - multi-article lookup; detail is the default and compact accepts up to 20 IDs
 - `article citations <id> --limit <N>` - citation graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)
 - `article references <id> --limit <N>` - reference graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)

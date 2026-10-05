@@ -329,6 +329,7 @@ See also: biomcp list article")]
 EXAMPLES:
   biomcp article entities 22663011
   biomcp article entities 22663011 --limit 5
+  biomcp article entities 30738221 --full
   biomcp article entities 24200969
 
 See also: biomcp list article")]
@@ -338,6 +339,9 @@ See also: biomcp list article")]
         /// Maximum related entity commands to surface, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
+        /// Include annotation passage positions in JSON output
+        #[arg(long)]
+        full: bool,
     },
     /// Compatibility syntax for compact multi-article summary cards
     #[command(after_help = "\

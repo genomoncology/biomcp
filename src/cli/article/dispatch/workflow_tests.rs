@@ -33,6 +33,7 @@ fn article_with_signal() -> crate::entities::article::Article {
             genes: vec![crate::entities::article::AnnotationCount {
                 text: "BRAF".to_string(),
                 count: 1,
+                ..Default::default()
             }],
             diseases: Vec::new(),
             chemicals: Vec::new(),

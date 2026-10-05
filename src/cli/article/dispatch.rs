@@ -52,6 +52,7 @@ pub(in crate::cli) async fn handle_get(
         crate::entities::article::ArticleGetOptions {
             allow_pdf: args.pdf || pdf_from_sections,
             include_asset_summary: true,
+            ..crate::entities::article::ArticleGetOptions::default()
         },
     )
     .await?;
@@ -387,13 +388,16 @@ pub(in crate::cli) async fn handle_command(
                 crate::render::markdown::article_authors_markdown(&result)
             }
         }
-        ArticleCommand::Entities { pmid, limit } => {
+        ArticleCommand::Entities { pmid, limit, full } => {
             let limit = super::super::paged_fetch_limit(limit, 0, 50)?;
             let sections = vec!["annotations".to_string()];
             let article = crate::entities::article::get(
                 &pmid,
                 &sections,
-                crate::entities::article::ArticleGetOptions::default(),
+                crate::entities::article::ArticleGetOptions {
+                    include_annotation_positions: full,
+                    ..crate::entities::article::ArticleGetOptions::default()
+                },
             )
             .await?;
             let annotations = article

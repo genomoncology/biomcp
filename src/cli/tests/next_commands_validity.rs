@@ -64,9 +64,14 @@ fn article_next_commands_parse() {
     assert_parses("biomcp search disease --query melanoma");
     assert_parses("biomcp get drug osimertinib");
     assert_parses("biomcp article entities 12345");
+    assert_parses("biomcp article entities 30738221 --full");
     assert_parses("biomcp article citations 12345 --limit 3");
     assert_parses("biomcp article references 12345 --limit 3");
     assert_parses("biomcp article recommendations 12345 67890 --negative 11111 --limit 3");
+    assert_parses("biomcp get disease MESH:D002289");
+    assert_parses("biomcp get disease OMIM:155601");
+    assert_parses("biomcp get variant rs121913530");
+    assert_parses(r#"biomcp get variant "NM_004333.6:c.1799T>A""#);
 }
 
 #[test]

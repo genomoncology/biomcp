@@ -177,7 +177,7 @@ pub async fn get_batch_compact(ids: &[String]) -> Result<Vec<ArticleBatchItem>, 
     let europe = EuropePmcClient::new()?;
     let articles = try_join_all(
         ids.iter()
-            .map(|id| get_article_base_with_clients(id, &pubtator, &europe)),
+            .map(|id| get_article_base_with_clients(id, &pubtator, &europe, false)),
     )
     .await?;
 
@@ -193,7 +193,7 @@ pub async fn get_batch_compact(ids: &[String]) -> Result<Vec<ArticleBatchItem>, 
 pub async fn get_compact(id: &str) -> Result<ArticleBatchItem, BioMcpError> {
     let pubtator = PubTatorClient::new()?;
     let europe = EuropePmcClient::new()?;
-    let article = get_article_base_with_clients(id, &pubtator, &europe).await?;
+    let article = get_article_base_with_clients(id, &pubtator, &europe, false).await?;
     let mut items = vec![article_batch_item_from_article(id, &article)];
     enrich_article_batch_with_semantic_scholar(&mut items).await?;
     Ok(items.remove(0))
