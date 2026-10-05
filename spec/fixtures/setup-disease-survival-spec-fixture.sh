@@ -106,6 +106,22 @@ EUROPEPMC_FALLBACK_ROWS = [
         "pubType": "review",
     },
 ]
+# Ticket 1295: recorded MyDisease responses for common disease abbreviations
+# and their full names. The provider keys match the de-escaped scoped query.
+ABBREVIATION_RESPONSES = [
+    ("NSCLC", "mydisease/query_nsclc.json"),
+    ("DLBCL", "mydisease/query_dlbcl.json"),
+    ("CRC", "mydisease/query_crc.json"),
+    ("AML", "mydisease/query_aml.json"),
+    ("CAD", "mydisease/query_cad.json"),
+    ("HGSC", "mydisease/query_hgsc.json"),
+    ("non-small cell lung carcinoma", "mydisease/query_nsclc_full.json"),
+    ("diffuse large B-cell lymphoma", "mydisease/query_dlbcl_full.json"),
+    ("colorectal carcinoma", "mydisease/query_crc_full.json"),
+    ("acute myeloid leukemia", "mydisease/query_aml_full.json"),
+    ("acute myelogenous leukemia", "mydisease/query_aml_myelogenous.json"),
+    ("ovarian serous carcinoma", "mydisease/query_hgsc_full.json"),
+]
 
 
 def send_json(handler, status, payload):
@@ -315,6 +331,10 @@ class Handler(BaseHTTPRequestHandler):
             if "Marfan syndrome" in disease_query:
                 send_bytes(self, 200, source_bytes("mydisease/query_marfan_syndrome.json"))
                 return
+            for provider_key, payload in ABBREVIATION_RESPONSES:
+                if provider_key in literal_query:
+                    send_bytes(self, 200, source_bytes(payload))
+                    return
             if (
                 "chronic myeloid leukemia" in disease_query
                 or "chronic myelogenous leukemia" in disease_query

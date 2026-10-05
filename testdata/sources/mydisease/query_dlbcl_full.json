@@ -1,0 +1,184 @@
+{
+ "took": 3,
+ "total": 13,
+ "max_score": 170.42291,
+ "hits": [
+  {
+   "_id": "MONDO:0850468",
+   "_score": 170.42291,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "BN2 diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "BN2 DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850469",
+   "_score": 170.42291,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "EZB diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "EZB DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850470",
+   "_score": 170.42291,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "MCD diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "MCD DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850471",
+   "_score": 170.42291,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "N1 diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "N1 DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850472",
+   "_score": 170.42291,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "ST2 diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "ST2 DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850473",
+   "_score": 170.42291,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "A53 diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "A53 DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0000901",
+   "_score": 170.05646,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "relapsed/refractory diffuse large B-cell lymphoma",
+    "synonyms": {}
+   }
+  },
+  {
+   "_id": "MONDO:0956987",
+   "_score": 164.9372,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "EZB-MYC+ diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "EZB-MYC+ DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0956988",
+   "_score": 164.9372,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "EZB-MYC- diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "EZB-MYC- DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0018905",
+   "_score": 161.491,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "diffuse large B-cell lymphoma",
+    "synonyms": {
+     "exact": [
+      "DLBCL"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "diffuse large B-cell lymphoma",
+      "DLBCL"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0850419",
+   "_score": 160.09363,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "diffuse large B-cell lymphoma germinal center B-cell type",
+    "synonyms": {}
+   }
+  },
+  {
+   "_id": "MONDO:0850418",
+   "_score": 156.49722,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "diffuse large B-cell lymphoma activated B-cell type",
+    "synonyms": {
+     "exact": [
+      "DLBCL ABC type"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0017596",
+   "_score": 153.88834,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "primary diffuse large B-cell lymphoma of the central nervous system",
+    "synonyms": {}
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "central nervous system diffuse large B-cell lymphoma",
+      "CNS DLBCL",
+      "diffuse large B-cell lymphoma of central nervous system",
+      "DLBCL of the CNS",
+      "primary diffuse large B-cell lymphoma of the central nervous system",
+      "primary DLBCL of the CNS"
+     ]
+    }
+   }
+  }
+ ]
+}

@@ -1780,6 +1780,150 @@
       }
     },
     {
+      "path": "mydisease/query_nsclc.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3ANSCLC%5E10+OR+disease_ontology.synonyms.exact%3ANSCLC+OR+mondo.name%3ANSCLC%5E10+OR+mondo.synonym.exact%3ANSCLC%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "014b07abe51ddde5b6e9aa82f367ff946d340c6dcc1aadfbbb91097dbbd19663",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_dlbcl.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3ADLBCL%5E10+OR+disease_ontology.synonyms.exact%3ADLBCL+OR+mondo.name%3ADLBCL%5E10+OR+mondo.synonym.exact%3ADLBCL%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "a784eac4b65f826e9c4f9dbbadc5c7a6bfd082a6fc55eb28b7dd9bf96b7bb834",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_crc.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3ACRC%5E10+OR+disease_ontology.synonyms.exact%3ACRC+OR+mondo.name%3ACRC%5E10+OR+mondo.synonym.exact%3ACRC%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "aa8ea92d766892ba3d8a808863c1f365b2849db4f114c89a1e4c4e01cc1bca2e",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_aml.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3AAML%5E10+OR+disease_ontology.synonyms.exact%3AAML+OR+mondo.name%3AAML%5E10+OR+mondo.synonym.exact%3AAML%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "cae512b1f80809f6c3232c2977284c7c167d3d466fdecb5cf377530dd33c673d",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_cad.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3ACAD%5E10+OR+disease_ontology.synonyms.exact%3ACAD+OR+mondo.name%3ACAD%5E10+OR+mondo.synonym.exact%3ACAD%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "fc6a002cc5f970cfbbfd7a7d37ca1f8390e5655039c8430414a78e0e43d4c7b2",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_hgsc.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3AHGSC%5E10+OR+disease_ontology.synonyms.exact%3AHGSC+OR+mondo.name%3AHGSC%5E10+OR+mondo.synonym.exact%3AHGSC%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "35b8b897fd437484288f071f234f48bdeb78138998917f527a21113255608d97",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_nsclc_full.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Anon%5C-small+cell+lung+carcinoma%5E10+OR+disease_ontology.synonyms.exact%3Anon%5C-small+cell+lung+carcinoma+OR+mondo.name%3Anon%5C-small+cell+lung+carcinoma%5E10+OR+mondo.synonym.exact%3Anon%5C-small+cell+lung+carcinoma%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "6a938939f2c46fcaf760f8f0fcab64f75f0839d3be6408e11a853764ae8335a4",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_dlbcl_full.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Adiffuse+large+B%5C-cell+lymphoma%5E10+OR+disease_ontology.synonyms.exact%3Adiffuse+large+B%5C-cell+lymphoma+OR+mondo.name%3Adiffuse+large+B%5C-cell+lymphoma%5E10+OR+mondo.synonym.exact%3Adiffuse+large+B%5C-cell+lymphoma%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "5355f68d6f1c490cab43ac99c23cb6d1850ebcbbf22fad8a8ff86b1cc7dd368a",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_crc_full.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Acolorectal+carcinoma%5E10+OR+disease_ontology.synonyms.exact%3Acolorectal+carcinoma+OR+mondo.name%3Acolorectal+carcinoma%5E10+OR+mondo.synonym.exact%3Acolorectal+carcinoma%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "58cc282c558e85a8f4a80209dc4e7e569714601ae2066d862539b47c017ae0f5",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_aml_full.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Aacute+myeloid+leukemia%5E10+OR+disease_ontology.synonyms.exact%3Aacute+myeloid+leukemia+OR+mondo.name%3Aacute+myeloid+leukemia%5E10+OR+mondo.synonym.exact%3Aacute+myeloid+leukemia%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "e8c7790b673c030a53a4c8cf3c224d7249f6b5ad9d780d587d1eae19caf549a3",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_aml_myelogenous.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Aacute+myelogenous+leukemia%5E10+OR+disease_ontology.synonyms.exact%3Aacute+myelogenous+leukemia+OR+mondo.name%3Aacute+myelogenous+leukemia%5E10+OR+mondo.synonym.exact%3Aacute+myelogenous+leukemia%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "61d844b9ea6a34d905b78eb0a1f39b4d3b2d4ae4220a9e186b3767d4441dc28b",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_hgsc_full.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3Aovarian+serous+carcinoma%5E10+OR+disease_ontology.synonyms.exact%3Aovarian+serous+carcinoma+OR+mondo.name%3Aovarian+serous+carcinoma%5E10+OR+mondo.synonym.exact%3Aovarian+serous+carcinoma%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-05T20:15:00Z",
+        "sha256": "1572094b83bd246d792dff45746be1b06cc932c3b74c7694bdde643986e55c7b",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
       "path": "nih_reporter/funding_marfan_syndrome.json",
       "classification": "real_and_receipted",
       "receipt": {

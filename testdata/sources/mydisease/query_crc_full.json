@@ -1,0 +1,32 @@
+{
+ "took": 2,
+ "total": 1,
+ "max_score": 169.18971,
+ "hits": [
+  {
+   "_id": "MONDO:0024331",
+   "_score": 169.18971,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "colorectal carcinoma",
+    "synonyms": {}
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "carcinoma of colorectum",
+      "carcinoma of large bowel",
+      "carcinoma of large intestine",
+      "carcinoma of the large bowel",
+      "carcinoma of the large intestine",
+      "colorectal carcinoma",
+      "colorectum carcinoma",
+      "CRC",
+      "large bowel carcinoma",
+      "large intestine carcinoma"
+     ]
+    }
+   }
+  }
+ ]
+}

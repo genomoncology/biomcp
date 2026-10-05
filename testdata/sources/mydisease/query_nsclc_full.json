@@ -1,0 +1,59 @@
+{
+ "took": 2,
+ "total": 2,
+ "max_score": 173.11006,
+ "hits": [
+  {
+   "_id": "MONDO:0005233",
+   "_score": 173.11006,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "lung non-small cell carcinoma",
+    "synonyms": {
+     "exact": [
+      "Non-small cell lung cancer",
+      "non-small cell lung carcinoma",
+      "NSCLC"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "non-small cell cancer of lung",
+      "non-small cell cancer of the lung",
+      "non-small cell carcinoma of lung",
+      "non-small cell carcinoma of the lung",
+      "non-small cell lung cancer",
+      "non-small cell lung carcinoma",
+      "non-small cell lung carcinoma (disease)",
+      "NSCLC",
+      "NSCLC - non-small cell lung cancer"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0056806",
+   "_score": 157.64294,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "lung non-squamous non-small cell carcinoma",
+    "synonyms": {
+     "exact": [
+      "non- squamous NSCLC"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "non-small cell squamous lung cancer",
+      "non-small cell squamous lung carcinoma",
+      "squamous non-small cell lung carcinoma"
+     ]
+    }
+   }
+  }
+ ]
+}

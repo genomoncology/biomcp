@@ -1,0 +1,355 @@
+{
+ "took": 4,
+ "total": 84,
+ "max_score": 10.951414,
+ "hits": [
+  {
+   "_id": "MONDO:0018874",
+   "_score": 10.951414,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia",
+    "synonyms": {
+     "exact": [
+      "acute myeloblastic leukaemia",
+      "acute myeloblastic leukemia",
+      "acute myelogenous leukaemia",
+      "acute myelogenous leukemia",
+      "acute myeloid leukaemia",
+      "AML - acute Myeloid Leukemia",
+      "Leukemia, Myelocytic, acute"
+     ]
+    }
+   },
+   "hpo": {
+    "inheritance": [
+     {
+      "hpo_id": "HP:0001442",
+      "hpo_name": "Typified by somatic mosaicism"
+     },
+     {
+      "hpo_id": "HP:0000006",
+      "hpo_name": "Autosomal dominant inheritance"
+     }
+    ],
+    "phenotype_related_to_disease": {
+     "hpo_id": "HP:0004808"
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute granulocytic leukaemia",
+      "acute granulocytic leukemia",
+      "acute myeloblastic leukemia",
+      "acute myelocytic leukaemia",
+      "acute myelocytic leukemia",
+      "acute myelogenous leukemia",
+      "acute myelogenous leukemias",
+      "acute myeloid leukaemia (AML)",
+      "acute myeloid leukemia",
+      "acute myeloid leukemia (AML)",
+      "acute myeloid leukemia, somatic",
+      "acute Nonlymphocytic leukaemia",
+      "acute nonlymphocytic leukaemia",
+      "acute Nonlymphocytic leukemia",
+      "acute nonlymphocytic leukemia",
+      "AML",
+      "AML - acute myeloid leukaemia",
+      "AML - acute myeloid leukemia",
+      "ANLL",
+      "hematopoeitic - acute Myleogenous leukaemia (AML)",
+      "hematopoeitic - acute Myleogenous leukemia (AML)",
+      "leukemia, acute myeloid, autosomal dominant, somatic mutation",
+      "leukemia, acute myeloid, reduced survival in, somatic",
+      "leukemia, acute myeloid, somatic",
+      "leukemia, acute myeloid, susceptibility to, autosomal dominant, somatic mutation",
+      "leukemia, myelocytic, acute",
+      "myeloid leukemia, acute",
+      "myeloid leukemia, acute, M4/M4Eo subtype, somatic"
+     ],
+     "related": [
+      "acute non lymphoblastic leukaemia",
+      "acute non lymphoblastic leukemia",
+      "leukemia, acute myeloid"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0005223",
+   "_score": 10.659198,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with minimal differentiation",
+    "synonyms": {
+     "exact": [
+      "Acute myeloid leukemia, minimal differentiation",
+      "AML-M0"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "acute myeloblastic leukaemia with minimal differentiation",
+      "acute myeloblastic leukemia with minimal differentiation",
+      "acute myeloblastic leukemia, minimally differentiated",
+      "acute myelocytic leukaemia with minimal differentiation",
+      "acute myelocytic leukemia with minimal differentiation",
+      "acute myelogenous leukaemia with minimal differentiation",
+      "acute myelogenous leukemia with minimal differentiation",
+      "acute myeloid leukaemia with minimal differentiation (MO)",
+      "acute myeloid leukemia with minimal differentiation",
+      "acute myeloid leukemia with minimal differentiation (MO)",
+      "acute myeloid leukemia, minimally differentiated",
+      "AML M0",
+      "AML with minimal differentiation",
+      "M0 acute granulocytic leukaemia",
+      "M0 acute granulocytic leukaemia with minimal differentiation",
+      "M0 acute granulocytic leukemia",
+      "M0 acute granulocytic leukemia with minimal differentiation",
+      "M0 acute myeloblastic leukaemia",
+      "M0 acute myeloblastic leukemia",
+      "M0 acute myelocytic leukaemia",
+      "M0 acute myelocytic leukemia",
+      "M0 acute myelogenous leukaemia",
+      "M0 acute myelogenous leukaemia with minimal differentiation",
+      "M0 acute myelogenous leukemia",
+      "M0 acute myelogenous leukemia with minimal differentiation",
+      "M0 myeloid leukaemia",
+      "M0 myeloid leukaemia with minimal differentiation",
+      "M0 myeloid leukemia",
+      "M0 myeloid leukemia with minimal differentiation",
+      "minimally differentiated acute myeloblastic leukaemia",
+      "minimally differentiated acute myeloblastic leukemia"
+     ],
+     "related": [
+      "AMLMD"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100421",
+   "_score": 9.229603,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, ERYF1 Gene Mutation",
+      "AML, GATA Binding Protein 1 Gene Mutation",
+      "AML, GATA-1 Gene Mutation",
+      "AML, GATA1 gene mutation",
+      "AML, GATA1 Mutation",
+      "AML, GF-1 Gene Mutation",
+      "AML, GF1 Gene Mutation",
+      "AML, NF-E1 Gene Mutation",
+      "AML, NFE1 Gene Mutation"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100415",
+   "_score": 9.228773,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, Activating FLT3-ITD Gene Mutation",
+      "AML, Activating FLT3-ITD Mutation",
+      "AML, FLT3 internal tandem duplication",
+      "AML, FLT3 ITD",
+      "AML, FLT3-ITD",
+      "AML, FLT3-ITD Activating Mutation",
+      "AML, FLT3-ITD Mutation",
+      "AML, FLT3/ITD Mutation"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100389",
+   "_score": 9.206427,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, tri8",
+      "AML, Trisomy 8"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100390",
+   "_score": 9.206427,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, der(12p)",
+      "AML, der12p"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100417",
+   "_score": 9.177014,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, GUD Gene Mutation",
+      "AML, WAGR Gene Mutation",
+      "AML, Wilms Tumor 1 Gene Mutation",
+      "AML, Wilms Tumour 1 Gene Mutation",
+      "AML, WIT-2 Gene Mutation",
+      "AML, WT1 gene mutation",
+      "AML, WT1 mutation",
+      "AML, WT33 Gene Mutation"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100373",
+   "_score": 9.089612,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, inv(16)(p13.1;q22)",
+      "AML, inv(16)(p13.1;q22.1)",
+      "AML, inv(16)(p13.1q22)",
+      "AML, inv(16)(p13.1q22.1)",
+      "AML, inv(16)(p13;q22)",
+      "AML, inv(16)(p13q22)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100374",
+   "_score": 9.089612,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with inv(16)(p13.1q22) or t(16;16)(p13.1;q22)",
+    "synonyms": {
+     "exact": [
+      "acute myeloid leukemia with abnormal marrow eosinophils",
+      "Acute Myeloid Leukemia with inv(16)(p13.1q22) or t(16;16)(p13.1;q22); CBFB-MYH11"
+     ]
+    }
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, t(16;16)(p13.1;q22)",
+      "AML, t(16;16)(p13.1;q22.1)",
+      "AML, t(16;16)(p13.1q22)",
+      "AML, t(16;16)(p13.1q22.1)",
+      "AML, t(16;16)(p13;q22)",
+      "AML, t(16;16)(p13q22)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100402",
+   "_score": 9.0608425,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, 13q14-q21 Deletion",
+      "AML, del(13)(q14-q21)",
+      "AML, del(13)(q14q21)",
+      "AML, del(13q)(13q14-21)",
+      "AML, del(13q14-q21)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100422",
+   "_score": 9.048139,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "acute myeloid leukemia with mutated RUNX1",
+    "synonyms": {}
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, Acute Myeloid Leukaemia 1 Gene Mutation",
+      "AML, Acute Myeloid Leukemia 1 Gene Mutation",
+      "AML, AML1 Gene Mutation",
+      "AML, AML1 Mutation",
+      "AML, AMLCR1 Gene Mutation",
+      "AML, CBFA2 Gene Mutation",
+      "AML, CBFalpha2 Mutation",
+      "AML, Runt-Related Transcription Factor 1 Gene Mutation",
+      "AML, RUNX1 gene mutation"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100401",
+   "_score": 9.018027,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, 5q31-32 Deletion",
+      "AML, del(5)(q31-q32)",
+      "AML, del(5)(q31q32)",
+      "AML, del(5q31-q32)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100406",
+   "_score": 8.919709,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, inv(16)(p13.3;q24.3)",
+      "AML, inv(16)(p13.3q24.3)",
+      "AML, inv(16)(p13;q24)",
+      "AML, inv(16)(p13q24)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100414",
+   "_score": 8.829366,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, C/EBP-Alpha Gene Mutation",
+      "AML, C/EBPalpha Mutation",
+      "AML, CCAAT Enhancer Binding Protein Alpha Gene Mutation",
+      "AML, CCAAT/Enhancer Binding Protein, Alpha Gene Mutation",
+      "AML, CEBP Gene Mutation",
+      "AML, CEBPA gene mutation",
+      "AML, CEBPA Mutation"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0100386",
+   "_score": 8.828064,
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "AML, 11q23.3 Translocation",
+      "AML, t(11;v)(q23.3;v)",
+      "AML, t(11;v)(q23;v)",
+      "AML, t(V;11)(v;q23)",
+      "AML, t(V;11)(v;q23.3)",
+      "AML, t(v;11q23.3)"
+     ]
+    }
+   }
+  }
+ ]
+}

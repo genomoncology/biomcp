@@ -201,6 +201,71 @@ fn rerank_disease_search_hits_prefers_canonical_exact_candidate_across_query_var
 }
 
 #[test]
+fn rerank_disease_search_hits_ranks_exact_abbreviation_holder_first() {
+    // Ticket 1295: the source's exact synonym lists hold "NSCLC" for the
+    // parent only; a subtype holds the token inside a longer exact synonym.
+    let ranked = rerank_disease_search_hits(
+        "NSCLC",
+        vec![(
+            0,
+            vec![
+                test_disease_hit(
+                    "MONDO:0056806",
+                    "lung non-squamous non-small cell carcinoma",
+                    &["squamous non-small cell lung carcinoma"],
+                    &["non- squamous NSCLC"],
+                ),
+                test_disease_hit(
+                    "MONDO:0005233",
+                    "lung non-small cell carcinoma",
+                    &[
+                        "non-small cell lung carcinoma",
+                        "NSCLC",
+                        "NSCLC - non-small cell lung cancer",
+                    ],
+                    &["NSCLC"],
+                ),
+            ],
+        )],
+    );
+
+    let ids = ranked.iter().map(|hit| hit.id.as_str()).collect::<Vec<_>>();
+    assert_eq!(ids, vec!["MONDO:0005233", "MONDO:0056806"]);
+}
+
+#[test]
+fn rerank_disease_search_hits_keeps_every_exact_abbreviation_holder_above_loose_matches() {
+    // "CAD" is ambiguous in the source's own exact synonym lists: coronary
+    // artery disease, cold agglutinin disease, and alveolar capillary
+    // dysplasia each hold it. Search resolves the ambiguity to all exact
+    // holders, ranked above token-only matches, in provider order.
+    let ranked = rerank_disease_search_hits(
+        "CAD",
+        vec![(
+            0,
+            vec![
+                test_disease_hit(
+                    "MONDO:0014647",
+                    "developmental and epileptic encephalopathy 50",
+                    &["developmental and epileptic encephalopathy 50"],
+                    &[],
+                ),
+                test_disease_hit("MONDO:0018922", "cold agglutinin disease", &["CAD"], &[]),
+                test_disease_hit(
+                    "MONDO:0005010",
+                    "coronary artery disease",
+                    &["CAD"],
+                    &["coronary arteriosclerosis"],
+                ),
+            ],
+        )],
+    );
+
+    let ids = ranked.iter().map(|hit| hit.id.as_str()).collect::<Vec<_>>();
+    assert_eq!(ids, vec!["MONDO:0018922", "MONDO:0005010", "MONDO:0014647"]);
+}
+
+#[test]
 fn disease_exact_rank_prefers_exact_then_prefix_then_contains() {
     assert!(
         disease_exact_rank("colorectal cancer", "colorectal cancer")
@@ -319,6 +384,29 @@ async fn exact_resolution_rejects_incomplete_query_without_fetching_detail() {
         .expect_err("an incomplete candidate page cannot prove uniqueness");
     server.abort();
     assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
+    assert_eq!(requests.lock().expect("lock requests").len(), 1);
+}
+
+#[tokio::test]
+async fn exact_resolution_refuses_ambiguous_abbreviation_held_by_two_diseases() {
+    // Ticket 1295: "CAD" is an exact synonym of both coronary artery disease
+    // and cold agglutinin disease in the source's own lists. Exact resolution
+    // must refuse the abbreviation instead of picking one identity.
+    let (client, requests, server) = exact_resolution_fixture(|_| {
+        r#"{"total":2,"hits":[
+            {"_id":"MONDO:0005010","disease_ontology":{"name":"coronary artery disease"},"mondo":{"synonym":{"exact":["CAD"]}}},
+            {"_id":"MONDO:0018922","mondo":{"synonym":{"exact":["CAD","cold agglutinin disease"]}}}
+        ]}"#
+    })
+    .await;
+    let terms = resolve_exact_disease_terms(&client, "CAD")
+        .await
+        .expect("ambiguity safely retains the literal term");
+    server.abort();
+    assert_eq!(terms.requested, "CAD");
+    assert!(terms.canonical_id.is_none());
+    assert!(terms.canonical_name.is_none());
+    assert!(terms.synonyms.is_empty());
     assert_eq!(requests.lock().expect("lock requests").len(), 1);
 }
 
