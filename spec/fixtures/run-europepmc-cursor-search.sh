@@ -19,8 +19,8 @@ run_case() {
   local label="$1" limit="$2" offset="${3:-0}" phrase="${4:-cursor fixture}"
   : >"$REQUESTS"
   "$BIN" --json search article --source europepmc "$phrase" \
-    --limit "$limit" --offset "$offset" >"/tmp/europepmc-cursor-$label.json"
-  python3 - "$label" "$REQUESTS" "/tmp/europepmc-cursor-$label.json" <<'PY'
+    --limit "$limit" --offset "$offset" >"$ROOT/.cache/europepmc-cursor-$label.json"
+  python3 - "$label" "$REQUESTS" "$ROOT/.cache/europepmc-cursor-$label.json" <<'PY'
 import json
 import sys
 
@@ -39,5 +39,6 @@ PY
 }
 
 run_case limit50 50 0 "cursor fixture full"
+run_case short 50 0 "cursor fixture short"
 run_case exhaustion 50 0 "cursor fixture lying"
 run_case offset25 10 25 "cursor fixture full"

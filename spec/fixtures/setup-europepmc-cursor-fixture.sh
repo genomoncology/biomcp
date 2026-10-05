@@ -83,9 +83,10 @@ class Handler(BaseHTTPRequestHandler):
             with requests_file.open("a") as fh:
                 fh.write(parsed.query + "\n")
             cursor = query.get("cursorMark", [""])[0]
-            # Two corpora: the full one holds 50 rows in two pages plus an
-            # exhausted third; the short one holds 40 so a --limit 50 search
-            # walks into the exhausted page and stops there.
+            # Three corpora: the full one holds 50 rows in two pages plus an
+            # exhausted third; the short one reports hitCount 40 with 40 real
+            # rows, so the walk stops after page 2 on fetched rows reaching
+            # the hit count, without a third request.
             phrase = query.get("query", [""])[0]
             short = "short" in phrase
             # The lying corpus reports a hitCount above its real rows, so the

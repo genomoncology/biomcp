@@ -232,6 +232,8 @@ bash ../fixtures/run-europepmc-cursor-search.sh ../.. \
 "limit50_page_parameter_sent": false
 "limit50_cursormark_sent": true
 "limit50_distinct_pmids": 50
+"short_rows": 40
+"short_search_requests": 2
 "exhaustion_rows": 40
 "exhaustion_search_requests": 3
 "offset25_first_pmid": "41800126"'
