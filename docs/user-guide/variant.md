@@ -32,6 +32,14 @@ to restore GRCh37 preference; an explicit `--assembly` always wins. If the same
 spelling identifies different records, BioMCP returns the preferred record and
 reports the other identity in `build_candidates` JSON and a Markdown warning.
 
+## rsID detail
+
+Use `biomcp get variant rs101` to retrieve an rsID detail card. BioMCP examines at most 1,000 source rows in 50-row pages and selects one distinct compatible identity after the scan completes. Exact duplicates and reordered assertion vectors collapse. Source ID case, verbatim assertion prefixes and assertion multiplicity preserve distinct identities. Annotation richness does not choose between them.
+
+A complete scan with only contradictory rows returns not found. Multiple compatible identities, unusable identity evidence and an incomplete scan produce distinct refusals. Without a reported total, a short page requires another request and only an empty page completes the scan. An empty page below any previously reported total refuses selection. Provider failures remain errors even after a provisional match.
+
+For a refusal, use an exact genomic HGVS ID or search with the rsID. Completion establishes identity within the provider results. It does not establish reference correctness. A unique complete result keeps the existing detail fields and provider default build. The separate GWAS-only route retains its behavior.
+
 ## Protein point detail lookup
 
 Use a gene plus a checked protein substitution, for example `biomcp get variant 'GENE p.Ala11Val'`. BioMCP examines at most 1,000 candidates in 50-row pages. It returns a detail card only after the provider query completes with one distinct compatible source identity. Exact duplicates and reordered assertions collapse. Additional assertions, assertion multiplicity and different written reference prefixes retain distinct identities.

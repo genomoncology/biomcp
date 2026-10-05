@@ -1,6 +1,7 @@
 //! Variant detail retrieval, section gating, and enrichment orchestration.
 
 mod protein_lookup;
+mod rsid_lookup;
 
 use std::time::Duration;
 
@@ -506,28 +507,11 @@ pub(super) async fn resolve_base_with_hit(
                 }
             }
         }
-        VariantIdFormat::RsId(rsid) => {
-            let q = format!("dbsnp.rsid:{rsid}");
-            let resp = myvariant
-                .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
-                .await?;
-            let compatible_hits = resp
-                .hits
-                .into_iter()
-                .filter(&compatible)
-                .collect::<Vec<_>>();
-            (
-                best_hit(&compatible_hits)
-                    .cloned()
-                    .ok_or_else(|| BioMcpError::NotFound {
-                        entity: "variant".into(),
-                        id: rsid.to_string(),
-                        suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
-                    })?,
-                Some(GenomeBuild::Grch37),
-                Vec::new(),
-            )
-        }
+        VariantIdFormat::RsId(rsid) => (
+            rsid_lookup::lookup(&myvariant, id, rsid, &requested).await?,
+            Some(GenomeBuild::Grch37),
+            Vec::new(),
+        ),
         VariantIdFormat::GeneProteinChange { gene, change } => (
             protein_lookup::lookup(&myvariant, id, gene, change, &requested).await?,
             Some(GenomeBuild::Grch37),
