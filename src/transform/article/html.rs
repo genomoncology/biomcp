@@ -370,6 +370,13 @@ mod tests {
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/pmc_article/pmc3040717.html"
     ));
+    // Real recorded PMC article page (Blood 2019, PMID 31648294) carrying the
+    // tileshop image viewers, `[Open in a new tab]` links, and reference
+    // `scholar_lookup` URLs named by ticket 1294.
+    const PMC6695558_PAGE: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pmc_article/pmc6695558.html"
+    ));
 
     #[test]
     fn extract_text_from_html_keeps_article_signals_across_fixture_family() {
@@ -477,52 +484,81 @@ mod tests {
             );
         }
     }
-}
 
-#[cfg(test)]
-mod scratch_dump {
-    use super::*;
-    const PMC3040717_PAGE: &str =
-        include_str!("../../../testdata/sources/pmc_article/pmc3040717.html");
-    const PMC_ARTICLE_PAGE: &str =
-        include_str!("../../../tests/fixtures/article/fulltext/html/pmc_article_page.html");
-    const NIH_NEWS_RELEASE_PAGE: &str =
-        include_str!("../../../tests/fixtures/article/fulltext/html/nih_news_release.html");
-    const PMC6695558_PAGE: &str =
-        include_str!("../../../testdata/sources/pmc_article/pmc6695558.html");
-    const BIORXIV_PREPRINT_PAGE: &str =
-        include_str!("../../../tests/fixtures/article/fulltext/html/biorxiv_preprint_page.html");
     #[test]
-    fn scratch_dump_pmc_page_markdown() {
-        let md = extract_text_from_html(
-            PMC3040717_PAGE,
-            "https://pmc.ncbi.nlm.nih.gov/articles/PMC3040717/",
-        )
-        .unwrap();
-        std::fs::write("/tmp/pmc3040717_new.md", &md).unwrap();
-        let md2 = extract_text_from_html(
-            PMC_ARTICLE_PAGE,
-            "https://pmc.ncbi.nlm.nih.gov/articles/PMC123457/",
-        )
-        .unwrap();
-        std::fs::write("/tmp/pmc123457_new.md", &md2).unwrap();
-        let md3 = extract_text_from_html(
-            NIH_NEWS_RELEASE_PAGE,
-            "https://www.nih.gov/news-events/news-releases/nih-quality-guard",
-        )
-        .unwrap();
-        std::fs::write("/tmp/nih_new.md", &md3).unwrap();
-        let md4 = extract_text_from_html(
-            BIORXIV_PREPRINT_PAGE,
-            "https://www.biorxiv.org/content/10.1101/2025.01.01.123456v1",
-        )
-        .unwrap();
-        std::fs::write("/tmp/biorxiv_new.md", &md4).unwrap();
-        let md5 = extract_text_from_html(
-            PMC6695558_PAGE,
-            "https://pmc.ncbi.nlm.nih.gov/articles/PMC6695558/",
-        )
-        .unwrap();
-        std::fs::write("/tmp/pmc6695558_new.md", &md5).unwrap();
+    fn stored_pmc_pages_keep_title_and_byline_and_drop_page_furniture() {
+        let cases = [
+            (
+                PMC6695558_PAGE,
+                "https://pmc.ncbi.nlm.nih.gov/articles/PMC6695558/",
+                "# High rate of durable complete remission in follicular lymphoma after CD19 CAR-T cell immunotherapy",
+                "Alexandre V Hirayama, Jordan Gauthier, Kevin A Hay",
+                // New-style PMC page: every blob image sits inside a tileshop
+                // viewer link, so the blobs drop with the viewers.
+                [
+                    "tileshop",
+                    "[Open in a new tab]",
+                    "scholar.google.com/scholar_lookup",
+                    "cdn.ncbi.nlm.nih.gov/pmc/blobs",
+                ]
+                .as_slice(),
+            ),
+            (
+                PMC3040717_PAGE,
+                "https://pmc.ncbi.nlm.nih.gov/articles/PMC3040717/",
+                "# Comprehensive Analysis of Missense Variations in the BRCT Domain of BRCA1 by Structural and Functional Assays",
+                "Megan S Lee, Ruth Green, Sylvia M Marsillac",
+                [
+                    "tileshop",
+                    "[Open in a new tab]",
+                    "scholar.google.com/scholar_lookup",
+                ]
+                .as_slice(),
+            ),
+        ];
+
+        for (page, base_url, title_line, byline_prefix, absent_signals) in cases {
+            let markdown =
+                extract_text_from_html(page, base_url).expect("stored PMC page should convert");
+            assert!(
+                markdown.starts_with(&format!("{title_line}\n\n")),
+                "title must lead the converted page: {}",
+                markdown.lines().next().unwrap_or_default()
+            );
+            assert!(
+                markdown.contains(byline_prefix),
+                "byline must follow the title"
+            );
+            for absent in absent_signals {
+                assert!(
+                    !markdown.contains(absent),
+                    "page furniture leaked: {absent}"
+                );
+            }
+            assert!(
+                markdown.contains("https://doi.org/"),
+                "reference DOI links stay"
+            );
+        }
+    }
+
+    #[test]
+    fn fixture_family_titles_are_kept_exactly_once() {
+        let cases = [
+            (PMC_ARTICLE_PAGE, "# PMC HTML fallback winner"),
+            (NIH_NEWS_RELEASE_PAGE, "# NIH release quality guard"),
+            // readability drops the `<header>` block, so the preprint regains
+            // its title through the same heading restore.
+            (BIORXIV_PREPRINT_PAGE, "# bioRxiv preprint quality guard"),
+        ];
+        for (page, title_line) in cases {
+            let markdown = extract_text_from_html(page, "https://example.test/article")
+                .expect("fixture HTML should convert");
+            assert_eq!(
+                markdown.matches(title_line).count(),
+                1,
+                "title must appear exactly once"
+            );
+        }
     }
 }
