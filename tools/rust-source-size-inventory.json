@@ -530,5 +530,17 @@
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }
+  ],
+  "measured_files": [
+    {
+      "path": "src/entities/variant/resolution/genomic_lookup.rs",
+      "lines": 295,
+      "ticket": "biodata-0685"
+    },
+    {
+      "path": "src/entities/variant/resolution/genomic_lookup_tests.rs",
+      "lines": 382,
+      "ticket": "biodata-0685"
+    }
   ]
 }

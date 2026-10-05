@@ -2,6 +2,7 @@ version = 1
 
 [selection]
 rust = [
+  "entities::variant::resolution::tests::genomic_lookup::genomic_lookup_contract_and_caller_table",
   "sources::mygene::tests::construction::search_plan_sets_path_and_core_query_params",
   "sources::mygene::tests::construction::search_plan_adds_chr_filter_only_when_non_empty",
   "sources::mygene::tests::construction::search_plan_rejects_offset_at_or_above_window",

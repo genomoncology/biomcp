@@ -1,0 +1,1799 @@
+{
+  "provenance": {
+    "origin": "Authored synthetic engineering expectations from accepted CASES.md and baseline contracts",
+    "license": "MIT",
+    "attribution": "BioMCP contributors",
+    "transformation": "No provider acquisition; reuse existing receipted point hit and literal get-field selection",
+    "retained_hit_file": "src/entities/variant/resolution/point_oracles/A01_HIT.json",
+    "synthetic_404_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  "coordinates": [
+    {
+      "input": "GRCh37:chr7:g.140453136A>T",
+      "candidate": "chr7:g.140453136A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr7:g.140453136A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr7",
+        "location": "Point",
+        "digits": [
+          "140453136"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "hg38:CHR7:g.00019c>t",
+      "candidate": "chr7:g.00019C>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr7:g.19C>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr7",
+        "location": "Point",
+        "digits": [
+          "00019"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "C",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "hg38:CHR7:g.140753336a>t",
+      "candidate": "chr7:g.140753336A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr7:g.140753336A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr7",
+        "location": "Point",
+        "digits": [
+          "140753336"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "chr10:87925512:G:A",
+      "candidate": "chr10:g.87925512G>A",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr10:g.87925512G>A",
+        "genome_build": null,
+        "requires_comparison": true
+      },
+      "facts": {
+        "reference": "chr10",
+        "location": "Point",
+        "digits": [
+          "87925512"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "G",
+          "alternate": "A"
+        }
+      }
+    },
+    {
+      "input": "NC_000010.11:87925511:G:A",
+      "candidate": "chr10:g.87925512G>A",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr10:g.87925512G>A",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr10",
+        "location": "Point",
+        "digits": [
+          "87925512"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "G",
+          "alternate": "A"
+        }
+      }
+    },
+    {
+      "input": "NC_000010.11:0:G:A",
+      "candidate": "chr10:g.1G>A",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr10:g.1G>A",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr10",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "G",
+          "alternate": "A"
+        }
+      }
+    },
+    {
+      "input": "NC_000010.11:g.87925512del",
+      "candidate": "chr10:g.87925512del",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr10:g.87925512del",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr10",
+        "location": "Point",
+        "digits": [
+          "87925512"
+        ],
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        }
+      }
+    },
+    {
+      "input": "chr1:g.18446744073709551615A>T",
+      "candidate": "chr1:g.18446744073709551615A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr1:g.18446744073709551615A>T",
+        "genome_build": null,
+        "requires_comparison": true
+      },
+      "facts": {
+        "reference": "chr1",
+        "location": "Point",
+        "digits": [
+          "18446744073709551615"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000001.10:g.1A>T",
+      "candidate": "chr1:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr1:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr1",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000001.11:g.1A>T",
+      "candidate": "chr1:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr1:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr1",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000002.11:g.1A>T",
+      "candidate": "chr2:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr2:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr2",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000002.12:g.1A>T",
+      "candidate": "chr2:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr2:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr2",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000003.11:g.1A>T",
+      "candidate": "chr3:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr3:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr3",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000003.12:g.1A>T",
+      "candidate": "chr3:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr3:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr3",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000004.11:g.1A>T",
+      "candidate": "chr4:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr4:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr4",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000004.12:g.1A>T",
+      "candidate": "chr4:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr4:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr4",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000005.9:g.1A>T",
+      "candidate": "chr5:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr5:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr5",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000005.10:g.1A>T",
+      "candidate": "chr5:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr5:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr5",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000006.11:g.1A>T",
+      "candidate": "chr6:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr6:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr6",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000006.12:g.1A>T",
+      "candidate": "chr6:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr6:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr6",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000007.13:g.1A>T",
+      "candidate": "chr7:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr7:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr7",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000007.14:g.1A>T",
+      "candidate": "chr7:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr7:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr7",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000008.10:g.1A>T",
+      "candidate": "chr8:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr8:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr8",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000008.11:g.1A>T",
+      "candidate": "chr8:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr8:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr8",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000009.11:g.1A>T",
+      "candidate": "chr9:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr9:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr9",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000009.12:g.1A>T",
+      "candidate": "chr9:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr9:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr9",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000010.10:g.1A>T",
+      "candidate": "chr10:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr10:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr10",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000010.11:g.1A>T",
+      "candidate": "chr10:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr10:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr10",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000011.9:g.1A>T",
+      "candidate": "chr11:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr11:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr11",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000011.10:g.1A>T",
+      "candidate": "chr11:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr11:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr11",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000012.11:g.1A>T",
+      "candidate": "chr12:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr12:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr12",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000012.12:g.1A>T",
+      "candidate": "chr12:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr12:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr12",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000013.10:g.1A>T",
+      "candidate": "chr13:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr13:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr13",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000013.11:g.1A>T",
+      "candidate": "chr13:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr13:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr13",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000014.8:g.1A>T",
+      "candidate": "chr14:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr14:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr14",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000014.9:g.1A>T",
+      "candidate": "chr14:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr14:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr14",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000015.9:g.1A>T",
+      "candidate": "chr15:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr15:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr15",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000015.10:g.1A>T",
+      "candidate": "chr15:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr15:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr15",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000016.9:g.1A>T",
+      "candidate": "chr16:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr16:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr16",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000016.10:g.1A>T",
+      "candidate": "chr16:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr16:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr16",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000017.10:g.1A>T",
+      "candidate": "chr17:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr17:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr17",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000017.11:g.1A>T",
+      "candidate": "chr17:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr17:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr17",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000018.9:g.1A>T",
+      "candidate": "chr18:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr18:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr18",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000018.10:g.1A>T",
+      "candidate": "chr18:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr18:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr18",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000019.9:g.1A>T",
+      "candidate": "chr19:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr19:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr19",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000019.10:g.1A>T",
+      "candidate": "chr19:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr19:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr19",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000020.10:g.1A>T",
+      "candidate": "chr20:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr20:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr20",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000020.11:g.1A>T",
+      "candidate": "chr20:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr20:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr20",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000021.8:g.1A>T",
+      "candidate": "chr21:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr21:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr21",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000021.9:g.1A>T",
+      "candidate": "chr21:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr21:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr21",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000022.10:g.1A>T",
+      "candidate": "chr22:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr22:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr22",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000022.11:g.1A>T",
+      "candidate": "chr22:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chr22:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chr22",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000023.10:g.1A>T",
+      "candidate": "chrX:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chrX:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chrX",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000023.11:g.1A>T",
+      "candidate": "chrX:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chrX:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chrX",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000024.9:g.1A>T",
+      "candidate": "chrY:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chrY:g.1A>T",
+        "genome_build": "GRCh37",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chrY",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    },
+    {
+      "input": "NC_000024.10:g.1A>T",
+      "candidate": "chrY:g.1A>T",
+      "code": "hgvs_parsed",
+      "coordinate": {
+        "id": "chrY:g.1A>T",
+        "genome_build": "GRCh38",
+        "requires_comparison": false
+      },
+      "facts": {
+        "reference": "chrY",
+        "location": "Point",
+        "digits": [
+          "1"
+        ],
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        }
+      }
+    }
+  ],
+  "direct": [
+    {
+      "input": "chr2:g.17_19del",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Range",
+        "digits": [
+          "17",
+          "19"
+        ],
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17delAC",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Point",
+        "digits": [
+          "17"
+        ],
+        "edit": {
+          "kind": "Deletion",
+          "deleted": "AC"
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17_19dupAC",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Range",
+        "digits": [
+          "17",
+          "19"
+        ],
+        "edit": {
+          "kind": "Duplication",
+          "duplicated": "AC"
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17dup",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Point",
+        "digits": [
+          "17"
+        ],
+        "edit": {
+          "kind": "Duplication",
+          "duplicated": null
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17_18insAC",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "InsertionFlanks",
+        "digits": [
+          "17",
+          "18"
+        ],
+        "edit": {
+          "kind": "Insertion",
+          "inserted": "AC"
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17_19inv",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Range",
+        "digits": [
+          "17",
+          "19"
+        ],
+        "edit": {
+          "kind": "Inversion"
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17delinsAC",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Point",
+        "digits": [
+          "17"
+        ],
+        "edit": {
+          "kind": "Delins",
+          "inserted": "AC"
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17_19delinsAC",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Range",
+        "digits": [
+          "17",
+          "19"
+        ],
+        "edit": {
+          "kind": "Delins",
+          "inserted": "AC"
+        }
+      }
+    },
+    {
+      "input": " chr2:g.00017_00019del ",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Range",
+        "digits": [
+          "00017",
+          "00019"
+        ],
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        }
+      }
+    },
+    {
+      "input": "chr2:g.19_17del",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "Range",
+        "digits": [
+          "19",
+          "17"
+        ],
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        }
+      }
+    },
+    {
+      "input": "chr19:g.11106928delAAG",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr19",
+        "location": "Point",
+        "digits": [
+          "11106928"
+        ],
+        "edit": {
+          "kind": "Deletion",
+          "deleted": "AAG"
+        }
+      }
+    },
+    {
+      "input": "chr2:g.47641567_47641568insA",
+      "code": "hgvs_parsed",
+      "facts": {
+        "reference": "chr2",
+        "location": "InsertionFlanks",
+        "digits": [
+          "47641567",
+          "47641568"
+        ],
+        "edit": {
+          "kind": "Insertion",
+          "inserted": "A"
+        }
+      }
+    },
+    {
+      "input": "chr2:g.17_19insAC",
+      "code": "hgvs_invalid",
+      "facts": null
+    },
+    {
+      "input": "chr2:g.0_1del",
+      "code": "hgvs_invalid",
+      "facts": null
+    },
+    {
+      "input": "chr1:g.0C>T",
+      "code": "hgvs_invalid",
+      "facts": null
+    },
+    {
+      "input": "chr1:g.١C>T",
+      "code": "hgvs_invalid",
+      "facts": null
+    },
+    {
+      "input": "chr19:g.11106928AAG[1]",
+      "code": "hgvs_unsupported_repeat",
+      "facts": null
+    },
+    {
+      "input": "chr19:g.11106928_11106930AAG[1]",
+      "code": "hgvs_unsupported_repeat",
+      "facts": null
+    }
+  ],
+  "errors": [
+    {
+      "input": "chr1:g.18446744073709551616A>T",
+      "error": "Invalid argument: genomic coordinate position must be positive"
+    },
+    {
+      "input": "NC_000010.11:18446744073709551615:G:A",
+      "error": "Invalid argument: genomic coordinate position must be positive"
+    },
+    {
+      "input": "NC_000010:g.19C>T",
+      "error": "Invalid argument: RefSeq genomic accessions must include a supported version"
+    },
+    {
+      "input": "NC_000010.99:g.19C>T",
+      "error": "Invalid argument: unsupported RefSeq genomic accession: NC_000010.99"
+    },
+    {
+      "input": "chr1:g.0C>T",
+      "error": "Invalid argument: genomic coordinate position must be positive"
+    },
+    {
+      "input": "chr1:g.١C>T",
+      "error": "Invalid argument: genomic coordinate position must be positive"
+    }
+  ],
+  "refused": [
+    "chr2:g.17insAC",
+    "chr2:g.17inv",
+    "chr2:g.17_19C>T",
+    "chr2:g.17delins",
+    "chr2:g.17delac",
+    "chr2:g.17=",
+    "chr2:g.?del",
+    "chr2:g.(17_19)del",
+    "chrM:g.17C>T",
+    "NC_000002.12:g.17_19del",
+    "chr19:g.17AAG[0]",
+    "chr19:g.17AAG[1_3]",
+    "chr2:g.[17C>T;19del]"
+  ],
+  "transports": [
+    {
+      "name": "build routing",
+      "channel": "get",
+      "input": "NC_000007.13:g.140453136A>T",
+      "replies": [
+        "hit"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/variant/chr7:g.140453136A%3ET",
+          "query_pairs": [
+            [
+              "fields",
+              {
+                "literal_file": "src/entities/variant/resolution/point_oracles/GET_FIELDS.txt"
+              }
+            ],
+            [
+              "assembly",
+              "hg19"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "payload_file": "src/entities/variant/resolution/point_oracles/A01_VARIANT.json",
+      "omit_payload_fields": [
+        "expanded_predictions"
+      ],
+      "payload_overrides": {
+        "genome_build": "GRCh37"
+      }
+    },
+    {
+      "name": "SPDI executable",
+      "channel": "cli",
+      "argv": [
+        "get",
+        "variant",
+        "NC_000007.13:140453135:A:T",
+        "--json"
+      ],
+      "replies": [
+        "hit"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/variant/chr7:g.140453136A%3ET",
+          "query_pairs": [
+            [
+              "fields",
+              {
+                "literal_file": "src/entities/variant/resolution/point_oracles/GET_FIELDS.txt"
+              }
+            ],
+            [
+              "assembly",
+              "hg19"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "payload_file": "src/entities/variant/resolution/point_oracles/T01.json",
+      "omit_payload_fields": [
+        "genome_build_provenance"
+      ],
+      "payload_overrides": {}
+    },
+    {
+      "name": "typed conflict",
+      "channel": "mcp",
+      "tool": "get",
+      "arguments": {
+        "entity": "variant",
+        "id": "NC_000007.13:g.140453136A>T",
+        "assembly": "grch38",
+        "json": true
+      },
+      "replies": [],
+      "payload": "Error: Invalid argument: --assembly conflicts with the genomic coordinate's genome build",
+      "wrapper": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: Invalid argument: --assembly conflicts with the genomic coordinate's genome build"
+          }
+        ],
+        "isError": true
+      },
+      "exit": 0,
+      "stderr": "",
+      "requests": []
+    },
+    {
+      "name": "retained raw indel assembly refusal",
+      "channel": "mcp",
+      "tool": "biomcp",
+      "arguments": {
+        "command": "get variant chr2:g.17_19del --assembly grch38 --json"
+      },
+      "replies": [],
+      "payload": "Error: Invalid argument: --assembly only applies to chromosome-prefixed genomic coordinates",
+      "wrapper": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: Invalid argument: --assembly only applies to chromosome-prefixed genomic coordinates"
+          }
+        ],
+        "isError": true
+      },
+      "exit": 0,
+      "stderr": "",
+      "requests": []
+    },
+    {
+      "name": "raw indel",
+      "channel": "mcp",
+      "tool": "biomcp",
+      "arguments": {
+        "command": "get variant chr2:g.17_19del --json"
+      },
+      "replies": [
+        "404"
+      ],
+      "payload": "Error: variant 'chr2:g.17_19del' not found. Try searching: biomcp search variant",
+      "wrapper": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: variant 'chr2:g.17_19del' not found. Try searching: biomcp search variant"
+          }
+        ],
+        "isError": true
+      },
+      "exit": 0,
+      "stderr": "",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/variant/chr2:g.17_19del",
+          "query_pairs": [
+            [
+              "fields",
+              {
+                "literal_file": "src/entities/variant/resolution/point_oracles/GET_FIELDS.txt"
+              }
+            ]
+          ],
+          "body": ""
+        }
+      ]
+    },
+    {
+      "name": "unqualified recovery",
+      "channel": "get",
+      "input": "chr7:g.140453136A>T",
+      "replies": [
+        "hit",
+        "404"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/variant/chr7:g.140453136A%3ET",
+          "query_pairs": [
+            [
+              "fields",
+              {
+                "literal_file": "src/entities/variant/resolution/point_oracles/GET_FIELDS.txt"
+              }
+            ],
+            [
+              "assembly",
+              "hg38"
+            ]
+          ],
+          "body": ""
+        },
+        {
+          "method": "GET",
+          "path": "/variant/chr7:g.140453136A%3ET",
+          "query_pairs": [
+            [
+              "fields",
+              {
+                "literal_file": "src/entities/variant/resolution/point_oracles/GET_FIELDS.txt"
+              }
+            ],
+            [
+              "assembly",
+              "hg19"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "payload_file": "src/entities/variant/resolution/point_oracles/A01_VARIANT.json",
+      "omit_payload_fields": [
+        "expanded_predictions"
+      ],
+      "payload_overrides": {
+        "genome_build": "GRCh38"
+      }
+    },
+    {
+      "name": "distinct builds",
+      "channel": "get",
+      "input": "chr7:g.140453136A>T",
+      "replies": [
+        "hit",
+        "distinct"
+      ],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/variant/chr7:g.140453136A%3ET",
+          "query_pairs": [
+            [
+              "fields",
+              {
+                "literal_file": "src/entities/variant/resolution/point_oracles/GET_FIELDS.txt"
+              }
+            ],
+            [
+              "assembly",
+              "hg38"
+            ]
+          ],
+          "body": ""
+        },
+        {
+          "method": "GET",
+          "path": "/variant/chr7:g.140453136A%3ET",
+          "query_pairs": [
+            [
+              "fields",
+              {
+                "literal_file": "src/entities/variant/resolution/point_oracles/GET_FIELDS.txt"
+              }
+            ],
+            [
+              "assembly",
+              "hg19"
+            ]
+          ],
+          "body": ""
+        }
+      ],
+      "payload_file": "src/entities/variant/resolution/point_oracles/A01_VARIANT.json",
+      "omit_payload_fields": [
+        "expanded_predictions"
+      ],
+      "payload_overrides": {
+        "genome_build": "GRCh38",
+        "build_ambiguous": true,
+        "build_candidates": [
+          {
+            "genome_build": "GRCh37",
+            "id": "chr7:g.140453136A>T",
+            "rsid": "rs1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "zero refusal",
+      "channel": "cli",
+      "argv": [
+        "get",
+        "variant",
+        "chr1:g.0C>T",
+        "--json"
+      ],
+      "replies": [],
+      "payload": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "Invalid argument: genomic coordinate position must be positive"
+        },
+        "_meta": {
+          "not_found": false
+        }
+      },
+      "exit": 2,
+      "stderr": "",
+      "requests": []
+    }
+  ],
+  "review_gap": "Accepted raw-MCP explicit-assembly row conflicts with retained src/cli/variant/dispatch.rs admission. Prove existing refusal and supported unqualified indel routing; Root must reconcile the reviewed case."
+}

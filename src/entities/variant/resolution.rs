@@ -15,6 +15,7 @@ use super::{
 
 mod coding_alias;
 pub(super) mod genomic_assertion;
+mod genomic_lookup;
 mod interval_comparison;
 mod interval_search;
 pub(crate) use interval_search::{
@@ -31,59 +32,6 @@ fn rsid_re() -> &'static Regex {
 
 pub(crate) fn is_rsid(value: &str) -> bool {
     rsid_re().is_match(value.trim())
-}
-
-const CHROMOSOME_PATTERN: &str = r"chr(?:[1-9]|1[0-9]|2[0-2]|X|Y)";
-const GENOMIC_CHANGE_PATTERN: &str = concat!(
-    r"(?:[ACGT]>[ACGT]",
-    r"|(?:_\d+)?del(?:[ACGT]+)?",
-    r"|(?:_\d+)?dup(?:[ACGT]+)?",
-    r"|_\d+ins[ACGT]+",
-    r"|_\d+inv",
-    r"|(?:_\d+)?delins[ACGT]+",
-    r"|(?:_\d+)?[ACGT]+\[[1-9]\d*\])",
-);
-
-fn hgvs_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(&format!(
-            r"^({CHROMOSOME_PATTERN}:g\.\d+{GENOMIC_CHANGE_PATTERN})$"
-        ))
-        .expect("valid regex")
-    })
-}
-
-fn coordinate_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(&format!(
-            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?({CHROMOSOME_PATTERN}):g\.(\d+)([ACGT]>[ACGT]|del)$"
-        ))
-        .expect("valid regex")
-    })
-}
-
-fn vcf_coordinate_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?i)^(chr(?:[1-9]|1[0-9]|2[0-2]|X|Y)):(\d+):([ACGT]):([ACGT])$")
-            .expect("valid regex")
-    })
-}
-
-fn refseq_coordinate_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?i)^(NC_\d+\.\d+):g\.(\d+)([ACGT]>[ACGT]|del)$").expect("valid regex")
-    })
-}
-
-fn spdi_coordinate_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?i)^(NC_\d+\.\d+):(\d+):([ACGT]):([ACGT])$").expect("valid regex")
-    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,90 +95,10 @@ const REFSEQ_GENOMIC_BUILDS: &[(&str, &str, super::GenomeBuild)] = &[
 pub(crate) fn normalize_genomic_coordinate(
     input: &str,
 ) -> Result<Option<NormalizedGenomicCoordinate>, BioMcpError> {
-    let input = input.trim();
-    let normalized = |chromosome: &str,
-                      position: &str,
-                      change: &str,
-                      genome_build: Option<super::GenomeBuild>| {
-        let position = position.parse::<u64>().map_err(|_| {
-            BioMcpError::InvalidArgument("genomic coordinate position must be positive".into())
-        })?;
-        if position == 0 {
-            return Err(BioMcpError::InvalidArgument(
-                "genomic coordinate position must be positive".into(),
-            ));
-        }
-        let change = if change.eq_ignore_ascii_case("del") {
-            "del".to_string()
-        } else {
-            change.to_ascii_uppercase()
-        };
-        Ok(Some(NormalizedGenomicCoordinate {
-            id: format!(
-                "chr{}:g.{position}{}",
-                chromosome[3..].to_ascii_uppercase(),
-                change
-            ),
-            requires_comparison: genome_build.is_none(),
-            genome_build,
-        }))
-    };
-    if let Some(caps) = coordinate_re().captures(input) {
-        let build = caps
-            .get(1)
-            .map(|value| value.as_str().parse())
-            .transpose()
-            .map_err(BioMcpError::InvalidArgument)?;
-        return normalized(&caps[2], &caps[3], &caps[4], build);
-    }
-    if let Some(caps) = vcf_coordinate_re().captures(input) {
-        return normalized(
-            &caps[1],
-            &caps[2],
-            &format!("{}>{}", &caps[3], &caps[4]),
-            None,
-        );
-    }
-    let refseq = refseq_coordinate_re()
-        .captures(input)
-        .or_else(|| spdi_coordinate_re().captures(input));
-    if let Some(caps) = refseq {
-        let Some((_, chromosome, build)) = REFSEQ_GENOMIC_BUILDS
-            .iter()
-            .find(|(accession, _, _)| accession.eq_ignore_ascii_case(&caps[1]))
-        else {
-            return Err(BioMcpError::InvalidArgument(format!(
-                "unsupported RefSeq genomic accession: {}",
-                &caps[1]
-            )));
-        };
-        let position = if spdi_coordinate_re().is_match(input) {
-            caps[2]
-                .parse::<u64>()
-                .ok()
-                .and_then(|value| value.checked_add(1))
-                .ok_or_else(|| {
-                    BioMcpError::InvalidArgument(
-                        "genomic coordinate position must be positive".into(),
-                    )
-                })?
-                .to_string()
-        } else {
-            caps[2].to_string()
-        };
-        let change = if spdi_coordinate_re().is_match(input) {
-            format!("{}>{}", &caps[3], &caps[4])
-        } else {
-            caps[3].to_string()
-        };
-        return normalized(chromosome, &position, &change, Some(*build));
-    }
-    if input.to_ascii_uppercase().starts_with("NC_") {
-        return Err(BioMcpError::InvalidArgument(
-            "RefSeq genomic accessions must include a supported version".into(),
-        ));
-    }
-    Ok(None)
+    genomic_lookup::genomic_lookup(input, genomic_lookup::LookupRoute::Coordinate)?
+        .map(|lookup| lookup.coordinate())
+        .transpose()
+        .map(Option::flatten)
 }
 
 fn refseq_accession_re() -> &'static Regex {
@@ -323,8 +191,11 @@ pub fn classify_variant_input(input: &str) -> VariantInputKind {
     if let Some(caps) = rsid_re().captures(input) {
         return VariantInputKind::Exact(VariantIdFormat::RsId(caps[1].to_ascii_lowercase()));
     }
-    if let Some(caps) = hgvs_re().captures(input) {
-        return VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(caps[1].to_string()));
+    if let Ok(Some(lookup)) =
+        genomic_lookup::genomic_lookup(input, genomic_lookup::LookupRoute::Direct)
+        && let Ok(Some(id)) = lookup.exact_id()
+    {
+        return VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(id.to_string()));
     }
     if transcript_coding_hgvs_re().is_match(input) {
         return VariantInputKind::TranscriptCodingHgvs(input.to_string());

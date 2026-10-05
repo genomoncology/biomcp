@@ -3,63 +3,16 @@
 use super::*;
 use crate::entities::variant::{GenomeBuild, resolved_default_assembly};
 
-#[path = "point_tests.rs"]
-mod point;
 #[path = "interval_tests.rs"]
 pub(crate) mod interval;
+#[path = "point_tests.rs"]
+mod point;
 
 #[path = "interval_search_tests.rs"]
 mod interval_search;
 
 #[path = "coding_tests.rs"]
 mod coding;
-
-#[test]
-fn versioned_refseq_rows_normalize_to_their_chromosome_and_build() {
-    for (accession, chromosome, genome_build) in REFSEQ_GENOMIC_BUILDS {
-        let coordinate = normalize_genomic_coordinate(&format!("{accession}:g.1A>T"))
-            .expect("valid RefSeq coordinate")
-            .expect("recognized RefSeq coordinate");
-        assert_eq!(coordinate.id, format!("{chromosome}:g.1A>T"));
-        assert_eq!(coordinate.genome_build, Some(*genome_build));
-        assert!(!coordinate.requires_comparison);
-    }
-}
-
-#[test]
-fn coordinate_normalizer_handles_aliases_and_alternate_spellings() {
-    let rows = [
-        (
-            "GRCh37:chr7:g.140453136A>T",
-            "chr7:g.140453136A>T",
-            Some(GenomeBuild::Grch37),
-        ),
-        (
-            "hg38:CHR7:g.140753336a>t",
-            "chr7:g.140753336A>T",
-            Some(GenomeBuild::Grch38),
-        ),
-        ("chr10:87925512:G:A", "chr10:g.87925512G>A", None),
-        (
-            "NC_000010.11:87925511:G:A",
-            "chr10:g.87925512G>A",
-            Some(GenomeBuild::Grch38),
-        ),
-        (
-            "NC_000010.11:g.87925512del",
-            "chr10:g.87925512del",
-            Some(GenomeBuild::Grch38),
-        ),
-    ];
-    for (input, id, build) in rows {
-        let coordinate = normalize_genomic_coordinate(input).unwrap().unwrap();
-        assert_eq!(coordinate.id, id);
-        assert_eq!(coordinate.genome_build, build);
-    }
-    assert!(normalize_genomic_coordinate("NC_000010:g.1A>T").is_err());
-    assert!(normalize_genomic_coordinate("NC_000010.99:g.1A>T").is_err());
-    assert!(normalize_genomic_coordinate("chr10:g.0A>T").is_err());
-}
 
 #[test]
 #[serial_test::serial(source_env)]
@@ -104,28 +57,6 @@ fn parse_variant_id_examples() {
         }
         _ => panic!("expected gene+protein"),
     }
-}
-
-#[test]
-fn parse_variant_id_accepts_genomic_indel_and_repeat_forms() {
-    let accepted = [
-        "chr19:g.11106928AAG[1]",
-        "chr2:g.47641567_47641569del",
-        "chr19:g.11106928delAAG",
-        "chr19:g.11106928dup",
-        "chr2:g.47641567_47641568insA",
-        "chr2:g.47641567_47641569inv",
-        "chr2:g.47641567_47641569delinsA",
-        "chr19:g.11106928_11106930AAG[1]",
-    ];
-
-    for id in accepted {
-        match parse_variant_id(id) {
-            Ok(VariantIdFormat::HgvsGenomic(parsed)) => assert_eq!(parsed, id),
-            other => panic!("expected genomic HGVS support for {id}, got {other:?}"),
-        }
-    }
-    assert!(parse_variant_id("chr19:g.11106928AAG[1_3]").is_err());
 }
 
 #[test]
@@ -546,3 +477,6 @@ fn identity_comparison_is_indeterminate_for_missing_or_unlinked_annotation_evide
 
 #[path = "genomic_tests.rs"]
 mod genomic;
+
+#[path = "genomic_lookup_tests.rs"]
+mod genomic_lookup;
