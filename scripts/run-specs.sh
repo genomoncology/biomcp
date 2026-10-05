@@ -12,6 +12,7 @@ export ROUTINE_FIXTURE_OWNER_START_ID="${routine_owner_fields[19]}"
 
 SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
+  spec/entity/article-text-fidelity.md
   spec/entity/author.md
   spec/entity/disease.md
   spec/entity/disease-survival-fixture.md
