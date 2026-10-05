@@ -22,4 +22,4 @@ A protein-change query such as `DICER1 p.Met1483Ile` resolves to the variant Cli
 
 ## Note
 
-Numbered by hand as 1297. pm's reservation counter reads every remote branch number, and this remote carries the biodata line's branches (ticket/2007 to ticket/2009, biodata/2003), so `pm ticket new` would reserve 2010. The cause and a request to scope the counter to `tickets/*` went to the pm team on 2026-10-04.
+Numbered by hand as 1297. pm's reservation counter reads every remote branch number, and this remote carries the sibling line's branches (numbered 2003 and 2007 to 2009), so `pm ticket new` would reserve 2010. The cause and a request to scope the counter to `tickets/*` went to the pm team on 2026-10-04.
