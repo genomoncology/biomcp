@@ -114,6 +114,13 @@ MYCHEM = {
 }
 MYGENE = {
     "(symbol:BRAF OR alias:BRAF)": fixture("mygene/search_braf_20260811.json"),
+    # Ticket 1301: the gene-first free-text routing oracle resolves SCN5A as
+    # one human entrez-backed symbol and refuses the uppercase non-gene word.
+    "(symbol:SCN5A OR alias:SCN5A)": json.dumps({
+        "total": 1,
+        "hits": [{"symbol": "SCN5A", "entrezgene": 6331}],
+    }).encode("utf-8"),
+    "(symbol:BRUGADA OR alias:BRUGADA)": b'{"total":0,"hits":[]}',
     "(symbol:ODC1 OR alias:ODC1)": json.dumps({
         "total": 4,
         "hits": [

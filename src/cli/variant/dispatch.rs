@@ -273,6 +273,129 @@ pub(super) fn parse_exon_deletion_phrase(query: &str) -> Option<(String, String)
     Some((gene.to_string(), "inframe_deletion".to_string()))
 }
 
+/// Split a free-text variant query whose first token has the exact-form
+/// gene-token shape into a gene-first candidate (ticket 1301).
+///
+/// The shape alone does not make the token a gene: `is_exact_gene_token`
+/// accepts any uppercase word, so the caller must confirm the token against
+/// the gene-symbol oracle before routing anything.
+pub(super) fn split_gene_first_candidate(query: &str) -> Option<(String, String)> {
+    let mut tokens = query.split_whitespace();
+    let gene = tokens.next()?;
+    let remainder = tokens.collect::<Vec<_>>().join(" ");
+    if remainder.is_empty() || !crate::entities::variant::is_exact_gene_token(gene) {
+        return None;
+    }
+    Some((gene.to_string(), remainder))
+}
+
+/// A gene-first phrase the oracle refused, kept so a zero-row search can
+/// print the working form.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct GeneFirstFallback {
+    gene: String,
+    condition: String,
+}
+
+/// Apply the gene-symbol oracle verdict to a gene-first candidate (ticket 1301).
+///
+/// A confirmed symbol routes the first token to the gene filter and the
+/// remainder to the condition. Refusal, ambiguity, and preference `off` all
+/// keep today's whole-phrase condition search and remember the phrase so a
+/// zero-row result can print the explicit `-g`/`--condition` form.
+pub(super) fn apply_gene_first_routing(
+    gene: String,
+    condition: String,
+    confirmed_symbol: Option<String>,
+) -> (ResolvedVariantQuery, Option<GeneFirstFallback>) {
+    match confirmed_symbol {
+        Some(symbol) => (
+            ResolvedVariantQuery {
+                gene: Some(symbol),
+                condition: Some(condition),
+                ..Default::default()
+            },
+            None,
+        ),
+        None => (
+            ResolvedVariantQuery {
+                condition: Some(format!("{gene} {condition}")),
+                ..Default::default()
+            },
+            Some(GeneFirstFallback { gene, condition }),
+        ),
+    }
+}
+
+/// The explicit form a gene-first phrase routing would have used.
+pub(super) fn gene_first_working_form(gene: &str, condition: &str) -> String {
+    crate::next_command::NextCommand::biomcp()
+        .args(["search", "variant", "-g", gene, "--condition", condition])
+        .render_shell()
+}
+
+const VARIANT_QUERY_GENE_ROUTING_ENV: &str = "BIOMCP_VARIANT_QUERY_GENE_ROUTING";
+const GENE_FIRST_ROUTING_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(2_500);
+
+/// How a free-text variant query's gene-symbol first token is recognized.
+///
+/// `mygene` is the supported default because no offline gene list ships with
+/// BioMCP and MyGene's unique canonical symbol/alias resolution is the lookup
+/// the `discover` path already trusts for the same question. `off` restores
+/// the whole-phrase condition search for operators who must not spend a
+/// MyGene call on routing.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(super) enum VariantQueryGeneRouting {
+    #[default]
+    Mygene,
+    Off,
+}
+
+impl VariantQueryGeneRouting {
+    fn from_env() -> Self {
+        Self::from_env_value(
+            std::env::var(VARIANT_QUERY_GENE_ROUTING_ENV)
+                .ok()
+                .as_deref(),
+        )
+    }
+
+    pub(super) fn from_env_value(value: Option<&str>) -> Self {
+        let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
+            return Self::Mygene;
+        };
+        match value.to_ascii_lowercase().as_str() {
+            "mygene" => Self::Mygene,
+            "off" => Self::Off,
+            _ => {
+                tracing::warn!("Unknown {VARIANT_QUERY_GENE_ROUTING_ENV}={value:?}, using mygene");
+                Self::Mygene
+            }
+        }
+    }
+}
+
+/// Confirm a free-text first token is a known gene symbol (ticket 1301).
+///
+/// MyGene's unique canonical symbol/alias resolution is the admitted in-repo
+/// oracle: it requires exactly one canonical entrez-backed match, so an
+/// uppercase non-gene word such as BRUGADA is refused instead of routed.
+/// Refusal, ambiguity, timeout, and MyGene outages all return `None`.
+async fn confirm_gene_first_candidate(gene: &str) -> Option<String> {
+    if VariantQueryGeneRouting::from_env() == VariantQueryGeneRouting::Off {
+        return None;
+    }
+    match tokio::time::timeout(
+        GENE_FIRST_ROUTING_TIMEOUT,
+        crate::entities::gene::resolve_unique_canonical_alias(gene),
+    )
+    .await
+    {
+        Ok(Ok(Some(alias))) => Some(alias.symbol),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone)]
 struct VariantSearchRequest {
     gene: Option<String>,
@@ -494,6 +617,11 @@ pub(super) fn resolve_variant_query(
             "Use either positional QUERY or --condition, not both".into(),
         ));
     }
+    if gene_flag.is_none()
+        && let Some((gene, condition)) = split_gene_first_candidate(&query)
+    {
+        return Ok(VariantSearchPlan::GeneFirstCandidate { gene, condition });
+    }
     Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
         gene: gene_flag,
         hgvsp: hgvsp_flag,
@@ -598,11 +726,15 @@ async fn render_variant_search_outcome(
         offset,
     } = request;
 
-    let resolved =
+    let (resolved, gene_first_fallback) =
         match resolve_variant_query(gene, hgvsp, consequence, condition, positional_query)? {
-            VariantSearchPlan::Standard(resolved) => resolved,
+            VariantSearchPlan::Standard(resolved) => (resolved, None),
             VariantSearchPlan::Guidance(guidance) => {
                 return variant_guidance_outcome(&guidance, json_output || guidance_as_json);
+            }
+            VariantSearchPlan::GeneFirstCandidate { gene, condition } => {
+                let confirmed = confirm_gene_first_candidate(&gene).await;
+                apply_gene_first_routing(gene, condition, confirmed)
             }
         };
 
@@ -643,12 +775,19 @@ async fn render_variant_search_outcome(
     let results = page.results;
     let mut pagination = PaginationMeta::offset(offset, limit, results.len(), page.total);
     pagination.has_more = page.has_more.unwrap_or(pagination.has_more);
+    let working_form = gene_first_fallback
+        .as_ref()
+        .filter(|_| results.is_empty())
+        .map(|fallback| gene_first_working_form(&fallback.gene, &fallback.condition));
     if json_output {
-        let next_commands = crate::render::markdown::search_next_commands_variant(
+        let mut next_commands = crate::render::markdown::search_next_commands_variant(
             &results,
             filters.gene.as_deref(),
             filters.condition.as_deref(),
         );
+        if let Some(command) = working_form.as_ref() {
+            next_commands.push(command.clone());
+        }
         let output = search_json_with_meta(results, pagination, next_commands)?;
         return Ok(CommandOutcome::stdout(
             crate::render::json::with_variant_search_resolution(
@@ -676,6 +815,14 @@ async fn render_variant_search_outcome(
             "Requested variant: {}\n\nVariant identity: {}\n\n{body}",
             requested.human_label(),
             format!("{:?}", resolution.status).to_lowercase()
+        ),
+        _ => body,
+    };
+    let body = match (working_form, gene_first_fallback.as_ref()) {
+        (Some(command), Some(fallback)) => format!(
+            "{body}\n\nNo variants matched the phrase as a condition. If {} is a gene symbol, \
+             try the working form: {command}",
+            fallback.gene
         ),
         _ => body,
     };

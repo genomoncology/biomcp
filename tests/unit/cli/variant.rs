@@ -5,7 +5,10 @@ mod articles;
 #[path = "variant/parsing.rs"]
 mod parsing;
 
-use super::dispatch::{VariantSearchPlan, parse_simple_gene_change, resolve_variant_query};
+use super::dispatch::{
+    VariantQueryGeneRouting, VariantSearchPlan, apply_gene_first_routing, gene_first_working_form,
+    parse_simple_gene_change, resolve_variant_query, split_gene_first_candidate,
+};
 
 use crate::cli::{Cli, Commands, GetEntity, OutputStream, VariantCommand, run_outcome};
 use crate::entities::variant as entity;
@@ -346,6 +349,155 @@ fn resolve_variant_query_maps_exon_deletion_phrase_to_gene_and_consequence() {
     assert!(resolved.hgvsc.is_none());
     assert!(resolved.rsid.is_none());
     assert!(resolved.condition.is_none());
+}
+
+#[test]
+fn split_gene_first_candidate_accepts_symbol_shaped_first_tokens() {
+    let cases = [
+        ("SCN5A Brugada", Some(("SCN5A", "Brugada"))),
+        ("TP53 osteosarcoma", Some(("TP53", "osteosarcoma"))),
+        (
+            "BRCA1 hereditary breast cancer",
+            Some(("BRCA1", "hereditary breast cancer")),
+        ),
+        (
+            "SCN5A   Brugada  syndrome",
+            Some(("SCN5A", "Brugada syndrome")),
+        ),
+        // Single tokens keep the existing gene-only routing.
+        ("SCN5A", None),
+        // Lowercase words are not gene-shaped.
+        ("Lung cancer", None),
+        // Hyphenated symbols fall outside the exact-form token shape.
+        ("H3-3A glioma", None),
+        ("", None),
+    ];
+    for (query, expected) in cases {
+        assert_eq!(
+            split_gene_first_candidate(query),
+            expected.map(|(gene, condition)| (gene.to_string(), condition.to_string())),
+            "query: {query:?}"
+        );
+    }
+}
+
+#[test]
+fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
+    let (resolved, fallback) = apply_gene_first_routing(
+        "SCN5A".into(),
+        "Brugada syndrome".into(),
+        Some("SCN5A".into()),
+    );
+    assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
+    assert_eq!(resolved.condition.as_deref(), Some("Brugada syndrome"));
+    assert!(fallback.is_none());
+
+    // An uppercase non-gene first token such as BRUGADA is refused by the
+    // oracle, so the whole phrase keeps the condition routing.
+    let (resolved, fallback) = apply_gene_first_routing("BRUGADA".into(), "syndrome".into(), None);
+    assert_eq!(resolved.gene, None);
+    assert_eq!(resolved.condition.as_deref(), Some("BRUGADA syndrome"));
+    assert!(fallback.is_some());
+
+    // A confirmed alias routes under its canonical symbol.
+    let (resolved, fallback) =
+        apply_gene_first_routing("ERBB1".into(), "glioblastoma".into(), Some("EGFR".into()));
+    assert_eq!(resolved.gene.as_deref(), Some("EGFR"));
+    assert_eq!(resolved.condition.as_deref(), Some("glioblastoma"));
+    assert!(fallback.is_none());
+}
+
+#[test]
+fn gene_first_working_form_quotes_multi_word_conditions() {
+    assert_eq!(
+        gene_first_working_form("SCN5A", "Brugada syndrome"),
+        "biomcp search variant -g SCN5A --condition \"Brugada syndrome\""
+    );
+}
+
+#[test]
+fn variant_query_gene_routing_preference_defaults_to_mygene() {
+    let cases = [
+        (None, VariantQueryGeneRouting::Mygene),
+        (Some(""), VariantQueryGeneRouting::Mygene),
+        (Some("mygene"), VariantQueryGeneRouting::Mygene),
+        (Some("MYGENE"), VariantQueryGeneRouting::Mygene),
+        (Some("off"), VariantQueryGeneRouting::Off),
+        (Some("bogus"), VariantQueryGeneRouting::Mygene),
+    ];
+    for (value, expected) in cases {
+        assert_eq!(
+            VariantQueryGeneRouting::from_env_value(value),
+            expected,
+            "value: {value:?}"
+        );
+    }
+}
+
+#[test]
+fn resolve_variant_query_offers_gene_first_candidate_for_free_text_phrases() {
+    let resolved = resolve_variant_query(
+        None,
+        None,
+        None,
+        None,
+        vec!["SCN5A".into(), "Brugada".into()],
+    )
+    .unwrap();
+    assert_eq!(
+        resolved,
+        VariantSearchPlan::GeneFirstCandidate {
+            gene: "SCN5A".into(),
+            condition: "Brugada".into(),
+        }
+    );
+}
+
+#[test]
+fn resolve_variant_query_keeps_non_gene_phrases_as_conditions() {
+    let resolved = resolve_variant_query(
+        None,
+        None,
+        None,
+        None,
+        vec!["melanoma".into(), "treatment".into()],
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.gene, None);
+    assert_eq!(resolved.condition.as_deref(), Some("melanoma treatment"));
+}
+
+#[test]
+fn resolve_variant_query_keeps_explicit_gene_flag_routing() {
+    let resolved = resolve_variant_query(
+        Some("BRAF".into()),
+        None,
+        None,
+        None,
+        vec!["SCN5A".into(), "Brugada".into()],
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
+    assert_eq!(resolved.condition.as_deref(), Some("SCN5A Brugada"));
+}
+
+#[test]
+fn resolve_variant_query_still_rejects_condition_flag_with_positional_phrase() {
+    let error = resolve_variant_query(
+        None,
+        None,
+        None,
+        Some("Brugada".into()),
+        vec!["SCN5A".into(), "Brugada".into()],
+    )
+    .unwrap_err();
+    assert!(format!("{error}").contains("not both"));
 }
 
 #[test]

@@ -261,6 +261,13 @@ pub(super) struct ResolvedVariantQuery {
 pub(super) enum VariantSearchPlan {
     Standard(ResolvedVariantQuery),
     Guidance(crate::entities::variant::VariantGuidance),
+    /// A free-text phrase whose first token has the exact-form gene-token
+    /// shape (ticket 1301). The parser does not route it: the caller must
+    /// confirm the token against the gene-symbol oracle first.
+    GeneFirstCandidate {
+        gene: String,
+        condition: String,
+    },
 }
 
 impl VariantSearchPlan {
