@@ -16,6 +16,12 @@ Europe PMC searches return distinct rows for every requested page, up to the req
 - Proof: A recorded fixture serving distinct rows per cursorMark with an exhausted final page (no `nextCursorMark`): `--limit 50` at page size 25 returns 50 distinct rows in exactly two Europe PMC search requests; the cursor-exhaustion stop is pinned; a regression asserts the request carries `cursorMark`, never `page`; an offset case (offset 25 returns the second page's rows) is pinned inside the window. Sort stability validated live 2026-10-05: three-page walks under relevance (no sort), `P_PDATE_D desc` and `CITED desc` each returned 75 unique rows of 75. The fixture pins the relevance walk; skipped-row drift under the tie-heavy sorts remains a residual risk the dedup cannot detect, recorded here.
 - Defers: None.
 
+## Build status
+
+- Built on branch `tickets/1298-page-europepmc`, final sha `f1824a0b` (2026-10-05). Design review: FIX on the first pass (dispatch e3f043f1), every finding folded into Changes and Proof above. Code review: ACCEPT, no blocking findings (dispatch 0c7c8861); its one strengthening finding — pinning the fetched-rows-versus-hitCount stop with a short corpus — is folded into the fixture (four corpora: 50 rows in 2 requests; hitCount stop in 2; absent-cursor stop in 3; offset 25 first row).
+- The variant-articles corpus canary now canonicalizes only the paging parameter when routing, so captured bodies, receipts, and sha256 provenance stay byte-identical while the cursorMark request shape is served. Fulltext and disease fixture handlers keyed on `page` moved to `cursorMark`. Package count 1385 to 1388; unpaced-origin owners list registers the new fixture.
+- Gates at `f1824a0b`: local `make lint` exit 0; 677 article/europepmc nextest scope passed; CI in flight; yellow full lint/spec/test under the shared lock (`~/biomcp-gates-1298-final.log`). On green: write the build record, notify the KB lead for QA (QA before landing), land on their pass.
+
 ## Priority note
 
 P1. Every Europe PMC search and every federated search that includes Europe PMC returns a fraction of its rows and burns its page-fetch budget today. This predates ticket 1293 (QA 0003 recorded identical rows on both binaries) and changes every search result count, so it lands before the 59-question rerun.
