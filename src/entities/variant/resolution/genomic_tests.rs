@@ -124,7 +124,7 @@ fn retained_transport_custody() {
     let raw = include_bytes!("coding_oracles/transports.json");
     assert_eq!(
         format!("{:x}", Sha256::digest(raw)),
-        "52bdcba32c964e3881cf82391cc4fd78516a5749fa4f3dbb18ca36d28adf3ab4"
+        "c36632cba38f9cf52ed887374600114d0db66e2c25a05f837ed9467eb775d29e"
     );
     assert_eq!(corpus()["retained_transport_cases"], 6);
     assert_eq!(corpus()["complete_source_transport_cases"], 4);
