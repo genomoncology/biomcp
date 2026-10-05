@@ -1,6 +1,10 @@
 # page-2 deadline expiry discards already-fetched rows in plain article pagination
 
-Status: open. Filed from source review at the named revision. No runtime reproduction is claimed.
+Status: closed.
+
+Resolution: ticket 1299 (make the article search deadline honest end to end), changes 1 to 3; reproduced in experiment 439.
+
+Filed from source review at the named revision. No runtime reproduction was claimed at filing; reproduced 2026-10-05 in experiment 439.
 
 Donor revision: `d8c6ce8ba495639b8a798e69e58d379d3762b92a` (main, 2026-10-04, "Clear the lane table: tickets 1290 and 1293 landed and their worktrees are gone").
 
@@ -49,3 +53,7 @@ In the plain single-backend paths (and the single-backend dispatch arms), catch 
 Ticket 1293 ("bound article search time and report partial sources", complete, landed `6bf7ca55`) introduced the invocation deadline and retention on the federated legs; its deferral list names only NCBI rate-limit handling, and the single-backend retention gap is not recorded there or in any open `sdlc/issues/` file. The resolved issue on source failures rendering as empty or complete results (closed by ticket 1242) is the honesty theme behind this gap, not the same defect.
 
 Root source verification: Semantic Scholar candidates use one provider response here, so this draft makes no Semantic Scholar page-2 claim.
+
+## Reproduced 2026-10-05
+
+Experiment 439 (`~/workspace/experiments/439-reproduce-1293-p2-and-1291-switch/`), binary at main a877443f, live sources. `search article --source europepmc "glioblastoma treatment resistance" --limit 50 -j` with `BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS=6000`: 3 provider pages fetched, then a hard failure with **0 rows** — the rows already fetched were discarded. Confirmed twice, once through a logging proxy and once direct (proxy ruled out). Two behaviors beyond the filing: the invocation ran 37–42 s wall against the 6 s budget (25–35 s of CPU/IO spin after expiry, no network calls, root cause not yet isolated), and the error surfaced as generic `io / I/O operation failed` rather than the intended `article_search_deadline_error`. A federated control under the same deadline also failed whole: all four sources "internal failure", generic io error, 0 rows — the partial-page retention from QA 0003 appears when sources are slow but successful, not when the deadline fires mid-flight. Root cause in code confirmed at `src/entities/article/search.rs:706, 725, 744` (`let page = result?;`).

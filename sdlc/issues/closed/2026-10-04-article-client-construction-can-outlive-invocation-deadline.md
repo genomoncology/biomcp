@@ -1,6 +1,10 @@
 # plain article provider-client construction blocks on an unbounded cache epoch lock
 
-Status: open. Filed from source review at the named revision. No runtime reproduction is claimed.
+Status: closed.
+
+Resolution: ticket 1299 (make the article search deadline honest end to end), change 4; reproduced in experiment 439.
+
+Filed from source review at the named revision. No runtime reproduction was claimed at filing; reproduced 2026-10-05 in experiment 439.
 
 Donor revision: `d8c6ce8ba495639b8a798e69e58d379d3762b92a` (main, 2026-10-04, "Clear the lane table: tickets 1290 and 1293 landed and their worktrees are gone").
 
@@ -56,3 +60,7 @@ On the plain article path (no variant-article execution context), read the task-
 ## Relationship to existing records
 
 Ticket 1293 ("bound article search time and report partial sources", complete, landed `6bf7ca55`) introduced the invocation deadline and the deadline-aware seams; its deferral list names only NCBI rate-limit handling, and no open issue in `sdlc/issues/` records this lock-acquisition gap. The GenCC store lock deadline work (ticket 1187) is a different subsystem with the opposite direction of change and is not affected.
+
+## Reproduced 2026-10-05
+
+Experiment 439, binary at main a877443f. With an exclusive flock held on `~/.cache/biomcp/.body-limit-cache-v1.lock` and `BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS=3000`, `search article --source pubmed "BRAF melanoma" --limit 3 -j` produced no output for the full 90 s harness timeout: the deadline cannot cancel the block. Lock-free control: the same command exits 0 with 3 rows in 35.0 s wall (10.2 s user, 5.9 s sys), so the plain path's own floor is high independently. Root cause in code confirmed: the plain branch constructs clients synchronously (`src/entities/article/backends.rs:244, 410, 574, 673`; `src/entities/article/enrichment.rs:178, 334, 345`) through `shared_client()` → `ensure_body_limited_cache_epoch` → `lock.lock_exclusive()` (`src/cache/migration.rs:130-132`), a blocking lock with no await point; the deadline-aware `ensure_body_limited_cache_epoch_until` (`migration.rs:150-176`) exists and is used only by the variant-article path.
