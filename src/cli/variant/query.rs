@@ -96,26 +96,34 @@ pub(super) struct GeneFirstFallback {
 /// A confirmed symbol routes the first token to the gene filter and the
 /// remainder to the condition. Refusal, ambiguity, and preference `off` all
 /// keep today's whole-phrase condition search and remember the phrase so a
-/// zero-row result can print the explicit `-g`/`--condition` form.
+/// zero-row result can print the explicit `-g`/`--condition` form. Both
+/// branches attach the leftover `--hgvsp` and `--consequence` flags exactly
+/// as the whole-phrase fallthrough did, so no explicit filter is dropped.
 pub(super) fn apply_gene_first_routing(
     gene: String,
     condition: String,
     confirmed_symbol: Option<String>,
+    hgvsp_flag: Option<String>,
+    consequence_flag: Option<String>,
 ) -> (ResolvedVariantQuery, Option<GeneFirstFallback>) {
     match confirmed_symbol {
         Some(symbol) => (
-            ResolvedVariantQuery {
+            VariantSearchPlan::finalize(ResolvedVariantQuery {
                 gene: Some(symbol),
+                hgvsp: hgvsp_flag,
+                consequence: consequence_flag,
                 condition: Some(condition),
                 ..Default::default()
-            },
+            }),
             None,
         ),
         None => (
-            ResolvedVariantQuery {
+            VariantSearchPlan::finalize(ResolvedVariantQuery {
+                hgvsp: hgvsp_flag,
+                consequence: consequence_flag,
                 condition: Some(format!("{gene} {condition}")),
                 ..Default::default()
-            },
+            }),
             Some(GeneFirstFallback { gene, condition }),
         ),
     }
@@ -390,7 +398,12 @@ pub(super) fn resolve_variant_query(
     if gene_flag.is_none()
         && let Some((gene, condition)) = split_gene_first_candidate(&query)
     {
-        return Ok(VariantSearchPlan::GeneFirstCandidate { gene, condition });
+        return Ok(VariantSearchPlan::GeneFirstCandidate {
+            gene,
+            condition,
+            hgvsp: hgvsp_flag,
+            consequence: consequence_flag,
+        });
     }
     Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
         gene: gene_flag,

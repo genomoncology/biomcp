@@ -341,9 +341,14 @@ async fn render_variant_search_outcome(
             VariantSearchPlan::Guidance(guidance) => {
                 return variant_guidance_outcome(&guidance, json_output || guidance_as_json);
             }
-            VariantSearchPlan::GeneFirstCandidate { gene, condition } => {
+            VariantSearchPlan::GeneFirstCandidate {
+                gene,
+                condition,
+                hgvsp,
+                consequence,
+            } => {
                 let confirmed = confirm_gene_first_candidate(&gene).await;
-                apply_gene_first_routing(gene, condition, confirmed)
+                apply_gene_first_routing(gene, condition, confirmed, hgvsp, consequence)
             }
         };
 
