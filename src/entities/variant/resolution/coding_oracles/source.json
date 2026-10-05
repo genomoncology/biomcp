@@ -252,5 +252,6713 @@
     "expected_projection_file": "A02_SEARCH_ROW.json",
     "expected_coding_aliases": [],
     "expected_coding_shape": "StringOrVec::None"
+  },
+  "SG01": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P01.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17A>G"
+    }
+  },
+  "SG02": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P02.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17del"
+    }
+  },
+  "SG03": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17dup"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17dup",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17dup",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17dup",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17dup"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P03.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17dup",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17dup"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17dup",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17dup",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17dup"
+    }
+  },
+  "SG04": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17delinsAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17delinsAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17delinsAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17delinsAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17delinsAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P04.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17delinsAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17delinsAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17delinsAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17delinsAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17delinsAC"
+    }
+  },
+  "SG05": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17inv"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17inv",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17inv",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17inv",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17inv"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P05.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17inv",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17inv"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17inv",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17inv",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17inv"
+    }
+  },
+  "SG06": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17="
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17=",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17=",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17=",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17="
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P06.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17=",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17="
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17=",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17=",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17="
+    }
+  },
+  "SG07": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P07.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18del"
+    }
+  },
+  "SG08": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18dup"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18dup",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18dup",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18dup",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18dup"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P08.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18dup",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18dup"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18dup",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18dup",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18dup"
+    }
+  },
+  "SG09": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18insAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18insAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18insAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18insAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18insAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P09.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18insAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18insAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18insAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18insAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18insAC"
+    }
+  },
+  "SG10": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18delinsAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18delinsAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18delinsAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18delinsAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18delinsAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P10.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18delinsAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18delinsAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18delinsAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18delinsAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18delinsAC"
+    }
+  },
+  "SG11": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18inv"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18inv",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18inv",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18inv",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18inv"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P11.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18inv",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18inv"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18inv",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18inv",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18inv"
+    }
+  },
+  "SG12": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18="
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18=",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18=",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18=",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18="
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P12.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18=",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18="
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18=",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18=",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18="
+    }
+  },
+  "SG13": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P13.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)A>G"
+    }
+  },
+  "SG14": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P14.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)del"
+    }
+  },
+  "SG15": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)dup"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)dup",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)dup",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)dup",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)dup"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P15.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)dup",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)dup"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)dup",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)dup",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)dup"
+    }
+  },
+  "SG16": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)delinsAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)delinsAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)delinsAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)delinsAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)delinsAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P16.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)delinsAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)delinsAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)delinsAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)delinsAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)delinsAC"
+    }
+  },
+  "SG17": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)inv"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)inv",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)inv",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)inv",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)inv"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P17.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)inv",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)inv"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)inv",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)inv",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)inv"
+    }
+  },
+  "SG18": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)="
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)=",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)=",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)=",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)="
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P18.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)=",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)="
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)=",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)=",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)="
+    }
+  },
+  "SG19": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)_(31_34)del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)_(31_34)del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)_(31_34)del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)_(31_34)del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)_(31_34)del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P19.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)_(31_34)del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)_(31_34)del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)_(31_34)del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)_(31_34)del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)_(31_34)del"
+    }
+  },
+  "SG20": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)_(31_34)dup"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)_(31_34)dup",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)_(31_34)dup",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)_(31_34)dup",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)_(31_34)dup"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P20.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)_(31_34)dup",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)_(31_34)dup"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)_(31_34)dup",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)_(31_34)dup",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)_(31_34)dup"
+    }
+  },
+  "SG21": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)_(31_34)delinsAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)_(31_34)delinsAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)_(31_34)delinsAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)_(31_34)delinsAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)_(31_34)delinsAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P21.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)_(31_34)delinsAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)_(31_34)delinsAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)_(31_34)delinsAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)_(31_34)delinsAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)_(31_34)delinsAC"
+    }
+  },
+  "SG22": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)_(31_34)inv"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)_(31_34)inv",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)_(31_34)inv",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)_(31_34)inv",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)_(31_34)inv"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P22.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)_(31_34)inv",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)_(31_34)inv"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)_(31_34)inv",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)_(31_34)inv",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)_(31_34)inv"
+    }
+  },
+  "SG23": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17_19)_(31_34)="
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17_19)_(31_34)=",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17_19)_(31_34)=",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17_19)_(31_34)=",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17_19)_(31_34)="
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P23.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17_19)_(31_34)=",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17_19)_(31_34)="
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17_19)_(31_34)=",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17_19)_(31_34)=",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17_19)_(31_34)="
+    }
+  },
+  "SG24": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.?A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.?A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.?A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.?A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.?A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P24.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.?A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.?A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.?A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.?A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.?A>G"
+    }
+  },
+  "SG25": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.?del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.?del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.?del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.?del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.?del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P25.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.?del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.?del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.?del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.?del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.?del"
+    }
+  },
+  "SG26": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.?dup"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.?dup",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.?dup",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.?dup",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.?dup"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P26.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.?dup",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.?dup"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.?dup",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.?dup",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.?dup"
+    }
+  },
+  "SG27": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.?delinsAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.?delinsAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.?delinsAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.?delinsAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.?delinsAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P27.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.?delinsAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.?delinsAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.?delinsAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.?delinsAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.?delinsAC"
+    }
+  },
+  "SG28": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.?inv"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.?inv",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.?inv",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.?inv",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.?inv"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P28.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.?inv",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.?inv"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.?inv",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.?inv",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.?inv"
+    }
+  },
+  "SG29": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.?="
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.?=",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.?=",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.?=",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.?="
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P29.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.?=",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.?="
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.?=",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.?=",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.?="
+    }
+  },
+  "SG30": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.-7A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.-7A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.-7A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.-7A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.-7A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P30.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.-7A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.-7A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.-7A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.-7A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.-7A>G"
+    }
+  },
+  "SG31": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.*8A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.*8A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.*8A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.*8A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.*8A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P31.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.*8A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.*8A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.*8A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.*8A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.*8A>G"
+    }
+  },
+  "SG32": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.41-2A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.41-2A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.41-2A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.41-2A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.41-2A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P32.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.41-2A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.41-2A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.41-2A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.41-2A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.41-2A>G"
+    }
+  },
+  "SG33": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.-7+2A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.-7+2A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.-7+2A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.-7+2A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.-7+2A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P33.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.-7+2A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.-7+2A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.-7+2A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.-7+2A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.-7+2A>G"
+    }
+  },
+  "SG34": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.-7_41del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.-7_41del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.-7_41del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.-7_41del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.-7_41del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P34.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.-7_41del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.-7_41del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.-7_41del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.-7_41del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.-7_41del"
+    }
+  },
+  "SG35": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.-7_-6insA"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.-7_-6insA",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.-7_-6insA",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.-7_-6insA",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.-7_-6insA"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P35.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.-7_-6insA",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.-7_-6insA"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.-7_-6insA",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.-7_-6insA",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.-7_-6insA"
+    }
+  },
+  "SG36": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17+1_18-1insAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17+1_18-1insAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17+1_18-1insAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17+1_18-1insAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17+1_18-1insAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P36.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17+1_18-1insAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17+1_18-1insAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17+1_18-1insAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17+1_18-1insAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17+1_18-1insAC"
+    }
+  },
+  "SG37": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.*7_*8dup"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.*7_*8dup",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.*7_*8dup",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.*7_*8dup",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.*7_*8dup"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P37.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.*7_*8dup",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.*7_*8dup"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.*7_*8dup",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.*7_*8dup",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.*7_*8dup"
+    }
+  },
+  "SG38": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.?_19del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.?_19del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.?_19del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.?_19del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.?_19del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P38.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.?_19del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.?_19del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.?_19del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.?_19del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.?_19del"
+    }
+  },
+  "SG39": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(?_19)_(31_?)del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(?_19)_(31_?)del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(?_19)_(31_?)del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(?_19)_(31_?)del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(?_19)_(31_?)del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P39.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(?_19)_(31_?)del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(?_19)_(31_?)del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(?_19)_(31_?)del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(?_19)_(31_?)del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(?_19)_(31_?)del"
+    }
+  },
+  "SG40": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(17+1_19-1)del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(17+1_19-1)del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(17+1_19-1)del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(17+1_19-1)del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(17+1_19-1)del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P40.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(17+1_19-1)del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(17+1_19-1)del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(17+1_19-1)del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(17+1_19-1)del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(17+1_19-1)del"
+    }
+  },
+  "SG41": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.-7_*8delinsAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.-7_*8delinsAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.-7_*8delinsAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.-7_*8delinsAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.-7_*8delinsAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P41.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.-7_*8delinsAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.-7_*8delinsAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.-7_*8delinsAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.-7_*8delinsAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.-7_*8delinsAC"
+    }
+  },
+  "SG42": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.999999999999999999999999A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.999999999999999999999999A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.999999999999999999999999A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.999999999999999999999999A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.999999999999999999999999A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P42.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.999999999999999999999999A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999999999999999999999999A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.999999999999999999999999A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.999999999999999999999999A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.999999999999999999999999A>G"
+    }
+  },
+  "SG43": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18dupAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18dupAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18dupAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18dupAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18dupAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P43.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18dupAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18dupAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18dupAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18dupAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18dupAC"
+    }
+  },
+  "SG44": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17+1_18+2del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17+1_18+2del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17+1_18+2del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17+1_18+2del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17+1_18+2del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P44.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17+1_18+2del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17+1_18+2del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17+1_18+2del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17+1_18+2del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17+1_18+2del"
+    }
+  },
+  "SG45": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(*17_*19)A>G"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(*17_*19)A>G",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(*17_*19)A>G",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(*17_*19)A>G",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(*17_*19)A>G"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P45.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(*17_*19)A>G",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(*17_*19)A>G"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(*17_*19)A>G",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(*17_*19)A>G",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(*17_*19)A>G"
+    }
+  },
+  "SG46": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.(19C>T)"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.(19C>T)",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.(19C>T)",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.(19C>T)",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.(19C>T)"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P46.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.(19C>T)",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.(19C>T)"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.(19C>T)",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.(19C>T)",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.(19C>T)"
+    }
+  },
+  "SG47": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17delAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17delAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17delAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17delAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17delAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P47.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17delAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17delAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17delAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17delAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17delAC"
+    }
+  },
+  "SG48": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18delAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18delAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18delAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18delAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18delAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P48.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18delAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18delAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18delAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18delAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18delAC"
+    }
+  },
+  "SG49": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17dupAC"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17dupAC",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17dupAC",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17dupAC",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17dupAC"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P49.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17dupAC",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17dupAC"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17dupAC",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17dupAC",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17dupAC"
+    }
+  },
+  "SG50": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17_18dupGT"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17_18dupGT",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17_18dupGT",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17_18dupGT",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17_18dupGT"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P50.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17_18dupGT",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17_18dupGT"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17_18dupGT",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17_18dupGT",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17_18dupGT"
+    }
+  },
+  "SG51": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.0017del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.0017del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.0017del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.0017del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.0017del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P51.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.0017del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.0017del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.0017del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.0017del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.0017del"
+    }
+  },
+  "SG52": {
+    "kind": "synthetic engineering",
+    "input": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.17+0001del"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.17+0001del",
+              "hgvs_p": null
+            }
+          }
+        }
+      ]
+    },
+    "expected_decoded": {
+      "total": 1,
+      "hits": [
+        {
+          "_id": "chr1:g.19C>T",
+          "cadd": null,
+          "clinvar": null,
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsp": null,
+            "hgvsc": "c.17+0001del",
+            "sift": null,
+            "polyphen2": null,
+            "revel": null,
+            "alphamissense": null,
+            "clinpred": null,
+            "metarnn": null,
+            "bayesdel": null,
+            "phylop": null,
+            "phastcons": null,
+            "gerp++": null
+          },
+          "dbsnp": null,
+          "gnomad_exome": null,
+          "gnomad": null,
+          "exac": null,
+          "exac_nontcga": null,
+          "cosmic": null,
+          "cgi": null,
+          "civic": null,
+          "snpeff": {
+            "ann": [
+              {
+                "feature_id": "NM_012345.7",
+                "genename": "GENE",
+                "hgvs_c": "c.17+0001del",
+                "hgvs_p": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "expected_internal": {
+      "genename_variant": "StringOrVec::Single",
+      "hgvsc_variant": "StringOrVec::Single",
+      "hgvsp_variant": "StringOrVec::None",
+      "snpeff_complete": true
+    },
+    "expected_identity": {
+      "genomic_id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genes": [
+        "GENE"
+      ],
+      "protein_changes": [],
+      "coding_changes": [
+        "c.17+0001del"
+      ],
+      "rsids": []
+    },
+    "expected_aliases": [
+      "P52.B"
+    ],
+    "expected_exact_search_row": {
+      "id": "chr1:g.19C>T",
+      "genome_build": "GRCh37",
+      "genome_build_provenance": "MyVariant.info provider default",
+      "gene": "GENE",
+      "hgvs_c": "c.17+0001del",
+      "transcript": "NM_012345.7",
+      "clinvar_stars": null,
+      "revel": null,
+      "gerp": null,
+      "source_identity": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.17+0001del"
+        ],
+        "rsids": []
+      },
+      "matched_alias": "c.17+0001del",
+      "transcript_annotations_complete": true,
+      "transcript_annotations": [
+        {
+          "source": "myvariant.info/snpeff.ann",
+          "gene": "GENE",
+          "transcript": "NM_012345.7",
+          "hgvs_c": "c.17+0001del",
+          "hgvs_p": null,
+          "roles": [
+            "displayed",
+            "matched"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "gene": "GENE",
+      "coding_change": "c.17+0001del"
+    }
   }
 }

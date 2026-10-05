@@ -361,52 +361,58 @@ fn split_snpeff_fields_do_not_inherit_dbnsfp_match_role() {
 
 #[test]
 fn matched_role_requires_one_complete_transcript_specific_tuple() {
-    let annotation = MyVariantSnpeffAnnotation {
-        feature_id: Some("NM_000001.2".into()),
-        genename: Some("GENE".into()),
-        hgvs_c: Some("NM_000001.2:c.1A>G".into()),
-        hgvs_p: Some("p.Ala1Val".into()),
-    };
-    let coding = RequestedVariantIdentity {
-        gene: Some("gene".into()),
-        coding_change: Some("c.1a>g".into()),
-        transcript: Some("nm_000001.2".into()),
-        ..Default::default()
-    };
-    assert!(annotation_matches_request(&annotation, &coding));
-    let combined = RequestedVariantIdentity {
-        protein_change: Some("A1V".into()),
-        ..coding.clone()
-    };
-    assert!(annotation_matches_request(&annotation, &combined));
-
-    for requested in [
-        RequestedVariantIdentity::from_variant_input("rs123").unwrap(),
-        RequestedVariantIdentity::from_variant_input("chr1:g.1A>G").unwrap(),
-        RequestedVariantIdentity {
-            gene: Some("OTHER".into()),
-            coding_change: Some("c.1A>G".into()),
-            ..Default::default()
-        },
-        RequestedVariantIdentity {
-            gene: Some("GENE".into()),
-            coding_change: Some("c.1A>G".into()),
-            protein_change: Some("p.Ala2Val".into()),
-            ..Default::default()
-        },
-    ] {
-        assert!(!annotation_matches_request(&annotation, &requested));
+    let rows: serde_json::Value =
+        serde_json::from_str(include_str!("../resolution/coding_oracles/aliases.json")).unwrap();
+    assert_eq!(rows["annotations"].as_array().unwrap().len(), 69);
+    let mut predicates = 0;
+    for row in rows["annotations"].as_array().unwrap() {
+        let requested: RequestedVariantIdentity =
+            serde_json::from_value(row["request"].clone()).unwrap();
+        if let Some(input) = match row["id"].as_str().unwrap() {
+            "RETAINED03" => Some("rs123"),
+            "RETAINED04" => Some("chr1:g.1A>G"),
+            _ => None,
+        } {
+            assert_eq!(
+                RequestedVariantIdentity::from_variant_input(input).unwrap(),
+                requested
+            );
+        }
+        let annotations = row
+            .get("annotations")
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!([row["annotation"]]));
+        let expected = if row["expected"].is_array() {
+            row["expected"].clone()
+        } else {
+            serde_json::json!([row["expected"]])
+        };
+        assert_eq!(
+            annotations.as_array().unwrap().len(),
+            expected.as_array().unwrap().len()
+        );
+        for (annotation, expected) in annotations
+            .as_array()
+            .unwrap()
+            .iter()
+            .zip(expected.as_array().unwrap())
+        {
+            let annotation = MyVariantSnpeffAnnotation {
+                feature_id: annotation["feature_id"].as_str().map(str::to_owned),
+                genename: annotation["genename"].as_str().map(str::to_owned),
+                hgvs_c: annotation["hgvs_c"].as_str().map(str::to_owned),
+                hgvs_p: annotation["hgvs_p"].as_str().map(str::to_owned),
+            };
+            assert_eq!(
+                annotation_matches_request(&annotation, &requested),
+                expected.as_bool().unwrap(),
+                "{}",
+                row["id"]
+            );
+            predicates += 1;
+        }
     }
-    let missing = MyVariantSnpeffAnnotation {
-        hgvs_c: None,
-        ..annotation.clone()
-    };
-    assert!(!annotation_matches_request(&missing, &coding));
-    let missing_feature = MyVariantSnpeffAnnotation {
-        feature_id: None,
-        ..annotation
-    };
-    assert!(!annotation_matches_request(&missing_feature, &coding));
+    assert_eq!(predicates, 70);
 }
 
 #[test]

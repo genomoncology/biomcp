@@ -536,13 +536,5057 @@
         ],
         "protein_changes": [],
         "coding_changes": [
-          "bad\u007fref:c.19C>T"
+          "badref:c.19C>T"
         ],
         "rsids": []
       },
       "expected": {
         "Compatible": {
-          "matched_alias": "bad\u007fref:c.19C>T"
+          "matched_alias": "badref:c.19C>T"
+        }
+      }
+    },
+    {
+      "id": "CC01.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17A>G"
+        }
+      }
+    },
+    {
+      "id": "CC01.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17A>G",
+          "c.17A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17A>G"
+        }
+      }
+    },
+    {
+      "id": "CC01.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC02.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17del"
+        }
+      }
+    },
+    {
+      "id": "CC02.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17del",
+          "c.17del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17del"
+        }
+      }
+    },
+    {
+      "id": "CC02.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC03.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17dup"
+        }
+      }
+    },
+    {
+      "id": "CC03.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17dup",
+          "c.17dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17dup"
+        }
+      }
+    },
+    {
+      "id": "CC03.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC04.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC04.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17delinsAC",
+          "c.17delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC04.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC05.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17inv"
+        }
+      }
+    },
+    {
+      "id": "CC05.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17inv",
+          "c.17inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17inv"
+        }
+      }
+    },
+    {
+      "id": "CC05.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC06.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17="
+        }
+      }
+    },
+    {
+      "id": "CC06.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17=",
+          "c.17="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17="
+        }
+      }
+    },
+    {
+      "id": "CC06.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC07.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18del"
+        }
+      }
+    },
+    {
+      "id": "CC07.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18del",
+          "c.17_18del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18del"
+        }
+      }
+    },
+    {
+      "id": "CC07.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC08.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18dup"
+        }
+      }
+    },
+    {
+      "id": "CC08.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18dup",
+          "c.17_18dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18dup"
+        }
+      }
+    },
+    {
+      "id": "CC08.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC09.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18insAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18insAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18insAC"
+        }
+      }
+    },
+    {
+      "id": "CC09.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18insAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18insAC",
+          "c.17_18insAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18insAC"
+        }
+      }
+    },
+    {
+      "id": "CC09.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18insAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC10.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC10.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18delinsAC",
+          "c.17_18delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC10.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC11.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18inv"
+        }
+      }
+    },
+    {
+      "id": "CC11.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18inv",
+          "c.17_18inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18inv"
+        }
+      }
+    },
+    {
+      "id": "CC11.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC12.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18="
+        }
+      }
+    },
+    {
+      "id": "CC12.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18=",
+          "c.17_18="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18="
+        }
+      }
+    },
+    {
+      "id": "CC12.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC13.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)A>G"
+        }
+      }
+    },
+    {
+      "id": "CC13.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)A>G",
+          "c.(17_19)A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)A>G"
+        }
+      }
+    },
+    {
+      "id": "CC13.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC14.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)del"
+        }
+      }
+    },
+    {
+      "id": "CC14.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)del",
+          "c.(17_19)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)del"
+        }
+      }
+    },
+    {
+      "id": "CC14.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC15.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)dup"
+        }
+      }
+    },
+    {
+      "id": "CC15.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)dup",
+          "c.(17_19)dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)dup"
+        }
+      }
+    },
+    {
+      "id": "CC15.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC16.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC16.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)delinsAC",
+          "c.(17_19)delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC16.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC17.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)inv"
+        }
+      }
+    },
+    {
+      "id": "CC17.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)inv",
+          "c.(17_19)inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)inv"
+        }
+      }
+    },
+    {
+      "id": "CC17.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC18.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)="
+        }
+      }
+    },
+    {
+      "id": "CC18.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)=",
+          "c.(17_19)="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)="
+        }
+      }
+    },
+    {
+      "id": "CC18.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC19.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)_(31_34)del"
+        }
+      }
+    },
+    {
+      "id": "CC19.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)del",
+          "c.(17_19)_(31_34)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)_(31_34)del"
+        }
+      }
+    },
+    {
+      "id": "CC19.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC20.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)_(31_34)dup"
+        }
+      }
+    },
+    {
+      "id": "CC20.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)dup",
+          "c.(17_19)_(31_34)dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)_(31_34)dup"
+        }
+      }
+    },
+    {
+      "id": "CC20.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC21.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)_(31_34)delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC21.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)delinsAC",
+          "c.(17_19)_(31_34)delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)_(31_34)delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC21.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC22.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)_(31_34)inv"
+        }
+      }
+    },
+    {
+      "id": "CC22.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)inv",
+          "c.(17_19)_(31_34)inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)_(31_34)inv"
+        }
+      }
+    },
+    {
+      "id": "CC22.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC23.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17_19)_(31_34)="
+        }
+      }
+    },
+    {
+      "id": "CC23.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17_19)_(31_34)=",
+          "c.(17_19)_(31_34)="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17_19)_(31_34)="
+        }
+      }
+    },
+    {
+      "id": "CC23.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17_19)_(31_34)=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC24.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.?A>G"
+        }
+      }
+    },
+    {
+      "id": "CC24.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?A>G",
+          "c.?A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.?A>G"
+        }
+      }
+    },
+    {
+      "id": "CC24.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC25.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.?del"
+        }
+      }
+    },
+    {
+      "id": "CC25.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?del",
+          "c.?del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.?del"
+        }
+      }
+    },
+    {
+      "id": "CC25.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC26.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.?dup"
+        }
+      }
+    },
+    {
+      "id": "CC26.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?dup",
+          "c.?dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.?dup"
+        }
+      }
+    },
+    {
+      "id": "CC26.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC27.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.?delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC27.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?delinsAC",
+          "c.?delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.?delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC27.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC28.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.?inv"
+        }
+      }
+    },
+    {
+      "id": "CC28.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?inv",
+          "c.?inv"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.?inv"
+        }
+      }
+    },
+    {
+      "id": "CC28.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?inv",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC29.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.?="
+        }
+      }
+    },
+    {
+      "id": "CC29.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?=",
+          "c.?="
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.?="
+        }
+      }
+    },
+    {
+      "id": "CC29.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?=",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC30.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.-7A>G"
+        }
+      }
+    },
+    {
+      "id": "CC30.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7A>G",
+          "c.-7A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.-7A>G"
+        }
+      }
+    },
+    {
+      "id": "CC30.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC31.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.*8A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.*8A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.*8A>G"
+        }
+      }
+    },
+    {
+      "id": "CC31.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.*8A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.*8A>G",
+          "c.*8A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.*8A>G"
+        }
+      }
+    },
+    {
+      "id": "CC31.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.*8A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC32.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.41-2A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.41-2A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.41-2A>G"
+        }
+      }
+    },
+    {
+      "id": "CC32.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.41-2A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.41-2A>G",
+          "c.41-2A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.41-2A>G"
+        }
+      }
+    },
+    {
+      "id": "CC32.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.41-2A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC33.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7+2A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7+2A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.-7+2A>G"
+        }
+      }
+    },
+    {
+      "id": "CC33.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7+2A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7+2A>G",
+          "c.-7+2A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.-7+2A>G"
+        }
+      }
+    },
+    {
+      "id": "CC33.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7+2A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC34.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_41del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7_41del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.-7_41del"
+        }
+      }
+    },
+    {
+      "id": "CC34.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_41del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7_41del",
+          "c.-7_41del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.-7_41del"
+        }
+      }
+    },
+    {
+      "id": "CC34.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_41del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC35.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_-6insA",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7_-6insA"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.-7_-6insA"
+        }
+      }
+    },
+    {
+      "id": "CC35.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_-6insA",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7_-6insA",
+          "c.-7_-6insA"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.-7_-6insA"
+        }
+      }
+    },
+    {
+      "id": "CC35.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_-6insA",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC36.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+1_18-1insAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17+1_18-1insAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17+1_18-1insAC"
+        }
+      }
+    },
+    {
+      "id": "CC36.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+1_18-1insAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17+1_18-1insAC",
+          "c.17+1_18-1insAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17+1_18-1insAC"
+        }
+      }
+    },
+    {
+      "id": "CC36.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+1_18-1insAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC37.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.*7_*8dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.*7_*8dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.*7_*8dup"
+        }
+      }
+    },
+    {
+      "id": "CC37.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.*7_*8dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.*7_*8dup",
+          "c.*7_*8dup"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.*7_*8dup"
+        }
+      }
+    },
+    {
+      "id": "CC37.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.*7_*8dup",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC38.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?_19del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?_19del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.?_19del"
+        }
+      }
+    },
+    {
+      "id": "CC38.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?_19del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.?_19del",
+          "c.?_19del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.?_19del"
+        }
+      }
+    },
+    {
+      "id": "CC38.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.?_19del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC39.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(?_19)_(31_?)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(?_19)_(31_?)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(?_19)_(31_?)del"
+        }
+      }
+    },
+    {
+      "id": "CC39.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(?_19)_(31_?)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(?_19)_(31_?)del",
+          "c.(?_19)_(31_?)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(?_19)_(31_?)del"
+        }
+      }
+    },
+    {
+      "id": "CC39.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(?_19)_(31_?)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC40.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17+1_19-1)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17+1_19-1)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(17+1_19-1)del"
+        }
+      }
+    },
+    {
+      "id": "CC40.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17+1_19-1)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(17+1_19-1)del",
+          "c.(17+1_19-1)del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(17+1_19-1)del"
+        }
+      }
+    },
+    {
+      "id": "CC40.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(17+1_19-1)del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC41.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_*8delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7_*8delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.-7_*8delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC41.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_*8delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.-7_*8delinsAC",
+          "c.-7_*8delinsAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.-7_*8delinsAC"
+        }
+      }
+    },
+    {
+      "id": "CC41.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.-7_*8delinsAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC42.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.999999999999999999999999A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.999999999999999999999999A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.999999999999999999999999A>G"
+        }
+      }
+    },
+    {
+      "id": "CC42.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.999999999999999999999999A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.999999999999999999999999A>G",
+          "c.999999999999999999999999A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.999999999999999999999999A>G"
+        }
+      }
+    },
+    {
+      "id": "CC42.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.999999999999999999999999A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC43.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dupAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18dupAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18dupAC"
+        }
+      }
+    },
+    {
+      "id": "CC43.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dupAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18dupAC",
+          "c.17_18dupAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18dupAC"
+        }
+      }
+    },
+    {
+      "id": "CC43.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dupAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC44.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+1_18+2del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17+1_18+2del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17+1_18+2del"
+        }
+      }
+    },
+    {
+      "id": "CC44.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+1_18+2del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17+1_18+2del",
+          "c.17+1_18+2del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17+1_18+2del"
+        }
+      }
+    },
+    {
+      "id": "CC44.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+1_18+2del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC45.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(*17_*19)A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(*17_*19)A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(*17_*19)A>G"
+        }
+      }
+    },
+    {
+      "id": "CC45.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(*17_*19)A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(*17_*19)A>G",
+          "c.(*17_*19)A>G"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(*17_*19)A>G"
+        }
+      }
+    },
+    {
+      "id": "CC45.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(*17_*19)A>G",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC46.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(19C>T)",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(19C>T)"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.(19C>T)"
+        }
+      }
+    },
+    {
+      "id": "CC46.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(19C>T)",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.(19C>T)",
+          "c.(19C>T)"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.(19C>T)"
+        }
+      }
+    },
+    {
+      "id": "CC46.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.(19C>T)",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC47.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17delAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17delAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17delAC"
+        }
+      }
+    },
+    {
+      "id": "CC47.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17delAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17delAC",
+          "c.17delAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17delAC"
+        }
+      }
+    },
+    {
+      "id": "CC47.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17delAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC48.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18delAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18delAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18delAC"
+        }
+      }
+    },
+    {
+      "id": "CC48.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18delAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18delAC",
+          "c.17_18delAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18delAC"
+        }
+      }
+    },
+    {
+      "id": "CC48.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18delAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC49.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17dupAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17dupAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17dupAC"
+        }
+      }
+    },
+    {
+      "id": "CC49.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17dupAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17dupAC",
+          "c.17dupAC"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17dupAC"
+        }
+      }
+    },
+    {
+      "id": "CC49.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17dupAC",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC50.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dupGT",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18dupGT"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17_18dupGT"
+        }
+      }
+    },
+    {
+      "id": "CC50.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dupGT",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17_18dupGT",
+          "c.17_18dupGT"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17_18dupGT"
+        }
+      }
+    },
+    {
+      "id": "CC50.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17_18dupGT",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC51.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.0017del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.0017del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.0017del"
+        }
+      }
+    },
+    {
+      "id": "CC51.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.0017del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.0017del",
+          "c.0017del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.0017del"
+        }
+      }
+    },
+    {
+      "id": "CC51.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.0017del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
+        }
+      }
+    },
+    {
+      "id": "CC52.E",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+0001del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17+0001del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "NM_012345.7:c.17+0001del"
+        }
+      }
+    },
+    {
+      "id": "CC52.L",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+0001del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "NM_012345.7:c.17+0001del",
+          "c.17+0001del"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Compatible": {
+          "matched_alias": "c.17+0001del"
+        }
+      }
+    },
+    {
+      "id": "CC52.D",
+      "request": {
+        "gene": "GENE",
+        "protein_change": null,
+        "coding_change": "c.17+0001del",
+        "transcript": null,
+        "genomic_accession": null,
+        "genome_build": null,
+        "position": null,
+        "reference": null,
+        "alternate": null,
+        "rsid": null
+      },
+      "source": {
+        "genomic_id": "chr1:g.19C>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.999C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "Contradictory": {
+          "field": "coding_change"
         }
       }
     }

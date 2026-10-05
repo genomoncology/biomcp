@@ -33,21 +33,55 @@ fn projection(source: &str) -> Value {
     let checked = match &assertion.route {
         CodingRoute::Checked(envelope) => {
             let parsed = envelope.disposition().parsed().unwrap();
-            let Some(HgvsLocation::Point(position)) = parsed.location() else {
-                panic!("selected point missing");
+            let position = |p: &HgvsPosition| {
+                json!({"marker":format!("{:?}",p.marker()),
+                "digits":p.digits(),"offset":p.offset().map(|o|json!({"positive":o.is_positive(),"digits":o.digits()}))})
             };
-            let Some(HgvsEdit::Substitution {
-                reference,
-                alternate,
-            }) = parsed.edit()
-            else {
-                panic!("selected edit missing");
+            let location = match parsed.location().unwrap() {
+                HgvsLocation::Point(p) => json!({"Point":position(p)}),
+                HgvsLocation::Range(a, b) => json!({"Range":[position(a),position(b)]}),
+                HgvsLocation::InsertionFlanks(a, b) => {
+                    json!({"InsertionFlanks":[position(a),position(b)]})
+                }
+                HgvsLocation::UncertainBreakpoint(a, b) => {
+                    json!({"UncertainBreakpoint":[position(a),position(b)]})
+                }
+                HgvsLocation::UncertainRange((a, b), (c, d)) => {
+                    json!({"UncertainRange":[[position(a),position(b)],[position(c),position(d)]]})
+                }
             };
-            assert!(position.offset().is_none());
+            let edit = match parsed.edit().unwrap() {
+                HgvsEdit::Substitution {
+                    reference,
+                    alternate,
+                } => json!({"Substitution":{"reference":reference,"alternate":alternate}}),
+                HgvsEdit::Deletion { deleted } => json!({"Deletion":{"deleted":deleted}}),
+                HgvsEdit::Duplication { duplicated } => {
+                    json!({"Duplication":{"duplicated":duplicated}})
+                }
+                HgvsEdit::Insertion { inserted } => json!({"Insertion":{"inserted":inserted}}),
+                HgvsEdit::Delins { inserted } => json!({"Delins":{"inserted":inserted}}),
+                HgvsEdit::Inversion => json!("Inversion"),
+                HgvsEdit::NoChange => json!("NoChange"),
+            };
+            assert_eq!(parsed.span().slice(envelope.source()), Some(source.trim()));
+            let displacement = source.len() - source.trim_start().len();
+            for range in [
+                Some(parsed.span()),
+                parsed.reference_span(),
+                parsed.location_span(),
+            ]
+            .into_iter()
+            .flatten()
+            {
+                assert_eq!(
+                    range.slice(envelope.source()),
+                    source.get(displacement + range.start()..displacement + range.end())
+                );
+            }
             json!({"envelope_source":envelope.source(),"molecule":format!("{:?}",parsed.molecule()),
                 "reference":parsed.reference(),"prediction":parsed.is_predicted(),
-                "location":{"Point":{"marker":format!("{:?}",position.marker()),"digits":position.digits(),"offset":null}},
-                "edit":{"Substitution":{"reference":reference,"alternate":alternate}},
+                "location":location,"edit":edit,
                 "rna_outcome":parsed.rna_outcome().map(|v|format!("{v:?}")),
                 "rna_basis":parsed.rna_basis().map(|v|format!("{v:?}")),
                 "reference_unavailable":parsed.reference_unavailable(),"span":span(parsed.span()),
@@ -81,23 +115,80 @@ fn privacy(source: &str) {
 
 fn constructor_controls(row: &Value) {
     let expected = &row["expected"]["checked"];
-    let digits = expected["location"]["Point"]["digits"].as_str().unwrap();
     let reference = expected["reference"].as_str();
     let predicted = expected["prediction"].as_bool().unwrap();
-    let location = HgvsLocation::Point(HgvsPosition::new(digits, HgvsMolecule::Coding).unwrap());
-    let edit = HgvsEdit::Substitution {
-        reference: expected["edit"]["Substitution"]["reference"]
-            .as_str()
-            .unwrap()
-            .chars()
-            .next()
-            .unwrap(),
-        alternate: expected["edit"]["Substitution"]["alternate"]
-            .as_str()
-            .unwrap()
-            .chars()
-            .next()
-            .unwrap(),
+    let position = |p: &Value| {
+        let marker = match p["marker"].as_str().unwrap() {
+            "Ordinary" => "",
+            "Upstream" => "-",
+            "CodingEnd" => "*",
+            "Unknown" => "?",
+            _ => panic!("unknown gold position marker"),
+        };
+        let offset = &p["offset"];
+        let written = format!(
+            "{marker}{}{}{}",
+            p["digits"].as_str().unwrap_or(""),
+            if offset.is_null() {
+                ""
+            } else if offset["positive"] == true {
+                "+"
+            } else {
+                "-"
+            },
+            offset["digits"].as_str().unwrap_or("")
+        );
+        HgvsPosition::new(&written, HgvsMolecule::Coding).unwrap()
+    };
+    let (kind, value) = expected["location"]
+        .as_object()
+        .unwrap()
+        .iter()
+        .next()
+        .unwrap();
+    let location = match kind.as_str() {
+        "Point" => HgvsLocation::Point(position(value)),
+        "Range" => HgvsLocation::Range(position(&value[0]), position(&value[1])),
+        "InsertionFlanks" => {
+            HgvsLocation::InsertionFlanks(position(&value[0]), position(&value[1]))
+        }
+        "UncertainBreakpoint" => {
+            HgvsLocation::UncertainBreakpoint(position(&value[0]), position(&value[1]))
+        }
+        "UncertainRange" => HgvsLocation::UncertainRange(
+            (position(&value[0][0]), position(&value[0][1])),
+            (position(&value[1][0]), position(&value[1][1])),
+        ),
+        _ => panic!("unknown gold location"),
+    };
+    let value = &expected["edit"];
+    let edit = if let Some(kind) = value.as_str() {
+        match kind {
+            "Inversion" => HgvsEdit::Inversion,
+            "NoChange" => HgvsEdit::NoChange,
+            _ => panic!("unknown gold edit"),
+        }
+    } else {
+        let (kind, value) = value.as_object().unwrap().iter().next().unwrap();
+        match kind.as_str() {
+            "Substitution" => HgvsEdit::Substitution {
+                reference: value["reference"].as_str().unwrap().chars().next().unwrap(),
+                alternate: value["alternate"].as_str().unwrap().chars().next().unwrap(),
+            },
+            "Deletion" => HgvsEdit::Deletion {
+                deleted: value["deleted"].as_str().map(str::to_owned),
+            },
+            "Duplication" => HgvsEdit::Duplication {
+                duplicated: value["duplicated"].as_str().map(str::to_owned),
+            },
+            "Insertion" => HgvsEdit::Insertion {
+                inserted: value["inserted"].as_str().unwrap().into(),
+            },
+            "Delins" => HgvsEdit::Delins {
+                inserted: value["inserted"].as_str().unwrap().into(),
+            },
+            _ => panic!("unknown gold edit"),
+        }
     };
     let independent = ParsedHgvsNucleotide::construct(
         reference,
@@ -119,19 +210,18 @@ fn constructor_controls(row: &Value) {
         envelope.render_source_for(&independent),
         expected["source_render"].as_str()
     );
-    let changed = if row["id"] == "A03" {
-        ParsedHgvsNucleotide::construct(reference, HgvsMolecule::Coding, location, edit, !predicted)
-            .unwrap()
-    } else {
-        ParsedHgvsNucleotide::construct(
+    let (reference, location, predicted) = match row["id"].as_str().unwrap() {
+        "A03" => (reference, location, !predicted),
+        "A05" => (
             reference,
-            HgvsMolecule::Coding,
             HgvsLocation::Point(HgvsPosition::new("19", HgvsMolecule::Coding).unwrap()),
-            edit,
             predicted,
-        )
-        .unwrap()
+        ),
+        _ => (Some("OTHER"), location, predicted),
     };
+    let changed =
+        ParsedHgvsNucleotide::construct(reference, HgvsMolecule::Coding, location, edit, predicted)
+            .unwrap();
     assert_eq!(envelope.render_source_for(&changed), None);
 }
 
@@ -182,13 +272,13 @@ fn substitute(value: &mut Value, replacements: &Value) {
 #[test]
 fn coding_assertion_resources_and_privacy_table() {
     let rows = oracle("aliases");
-    assert_eq!(rows["aliases"].as_array().unwrap().len(), 25);
+    assert_eq!(rows["aliases"].as_array().unwrap().len(), 205);
     assert_eq!(rows["resources"].as_array().unwrap().len(), 4);
     let mut failures = Vec::new();
     for row in rows["aliases"].as_array().unwrap() {
         let source = row["input"]["source"].as_str().unwrap();
         privacy(source);
-        if row["id"] == "A03" || row["id"] == "A05" {
+        if !row["expected"]["checked"].is_null() {
             constructor_controls(row);
         }
         if row["expected_parser_calls"] == 0 {
@@ -204,7 +294,7 @@ fn coding_assertion_resources_and_privacy_table() {
     for row in rows["resources"].as_array().unwrap() {
         let (source, expected) = resource(row);
         privacy(&source);
-        if row["parser_calls"] == 0 {
+        if row["expected_route"] != "checked" {
             assert!(!matches!(
                 coding_assertion(&source).route,
                 CodingRoute::Checked(_)
@@ -237,7 +327,7 @@ fn comparison(value: VariantIdentityComparison) -> Value {
 #[test]
 fn coding_identity_comparison_table() {
     let rows = oracle("comparisons");
-    assert_eq!(rows["cases"].as_array().unwrap().len(), 17);
+    assert_eq!(rows["cases"].as_array().unwrap().len(), 173);
     for row in rows["cases"].as_array().unwrap() {
         let request = serde_json::from_value(row["request"].clone()).unwrap();
         let source = serde_json::from_value(row["source"].clone()).unwrap();
@@ -265,11 +355,16 @@ fn source_internal(hit: &MyVariantHit) -> Value {
 #[serial_test::serial(source_env)]
 async fn coding_source_projection_table() {
     let rows = oracle("source");
-    assert_eq!(rows.as_object().unwrap().len(), 4);
-    for id in ["S01", "S02"] {
-        let row = &rows[id];
+    let aliases = oracle("aliases");
+    assert_eq!(rows.as_object().unwrap().len(), 56);
+    for (id, row) in rows
+        .as_object()
+        .unwrap()
+        .iter()
+        .filter(|(id, _)| !matches!(id.as_str(), "S03" | "S04"))
+    {
         let raw = serde_json::to_vec(&row["input"]).unwrap();
-        let hit: MyVariantHit = if id == "S01" {
+        let hit: MyVariantHit = if id != "S02" {
             let page: MyVariantSearchResponse = serde_json::from_slice(&raw).unwrap();
             assert_eq!(
                 serde_json::to_value(&page).unwrap(),
@@ -281,28 +376,41 @@ async fn coding_source_projection_table() {
         } else {
             let hit: MyVariantHit = serde_json::from_slice(&raw).unwrap();
             assert_eq!(serde_json::to_value(&hit).unwrap(), row["expected_decoded"]);
-            assert_eq!(source_internal(&hit), row["expected_internal"]);
             hit
         };
+        assert_eq!(source_internal(&hit), row["expected_internal"]);
         let identity = SourceVariantIdentity::from_myvariant_hit(&hit);
         assert_eq!(
             serde_json::to_value(&identity).unwrap(),
             row["expected_identity"]
         );
-        if id == "S01" {
+        if id != "S02" {
             let observed = transport::search_row(
                 row["input"].clone(),
-                json!({"gene":"GENE","coding_change":"c.19C>T"}),
+                row.get("request")
+                    .cloned()
+                    .unwrap_or_else(|| json!({"gene":"GENE","coding_change":"c.19C>T"})),
             )
             .await;
             assert_eq!(observed, row["expected_exact_search_row"]);
-            let aliases = oracle("aliases");
             assert_eq!(
-                projection(&identity.coding_changes[0]),
-                aliases["aliases"][0]["expected"]
+                identity.coding_changes.len(),
+                row["expected_aliases"].as_array().unwrap().len()
             );
+            for (source, alias_id) in identity
+                .coding_changes
+                .iter()
+                .zip(row["expected_aliases"].as_array().unwrap())
+            {
+                let alias = aliases["aliases"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|alias| alias["id"] == *alias_id)
+                    .unwrap();
+                assert_eq!(projection(source), alias["expected"], "{id}");
+            }
         } else {
-            assert_eq!(identity.normalized_key(), row["expected_normalized_key"]);
             let request =
                 serde_json::from_value(json!({"gene":"GENE","coding_change":"c.19C>T"})).unwrap();
             assert_eq!(
@@ -372,11 +480,16 @@ async fn coding_source_projection_table() {
             ))
         );
     }
-    let aliases = oracle("aliases");
     let control = &aliases["aliases"][24]["retained_consumers"];
-    let key: SourceVariantIdentity =
-        serde_json::from_value(control["normalized_key"]["input"].clone()).unwrap();
-    assert_eq!(key.normalized_key(), control["normalized_key"]["expected"]);
+    assert_eq!(aliases["source_keys"].as_array().unwrap().len(), 56);
+    for row in aliases["source_keys"].as_array().unwrap() {
+        let key: SourceVariantIdentity = serde_json::from_value(row["input"].clone()).unwrap();
+        assert_eq!(key.normalized_key(), row["expected"], "{}", row["id"]);
+        assert_eq!(
+            json!(key.coding_changes),
+            row["expected_source_coding_changes_unchanged"]
+        );
+    }
     let match_case = &control["annotation_match"];
     let annotation = &match_case["annotation"];
     // Reuse accepted S02 source aliases to satisfy the separate source-transcript filter.

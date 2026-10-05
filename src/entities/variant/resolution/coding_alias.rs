@@ -1,7 +1,5 @@
-//! One private owner for checked coding substitutions and retained lexical compatibility.
-use biodata::{
-    HgvsEdit, HgvsEnvelope, HgvsLocation, HgvsMarker, HgvsMolecule, parse_hgvs_nucleotide_21_1_4,
-};
+//! One private owner for complete checked coding assertions and retained lexical compatibility.
+use biodata::{HgvsEnvelope, HgvsMolecule, parse_hgvs_nucleotide_21_1_4};
 use std::fmt;
 
 const INPUT_LIMIT: usize = 1024 * 1024;
@@ -23,6 +21,7 @@ pub(super) struct CodingAssertion<'a> {
     pub(super) reference_prefix: Option<&'a str>,
     pub(super) outer_whitespace: bool,
     pub(super) route: CodingRoute,
+    parser_diagnostic: Option<&'static str>,
 }
 
 impl CodingAssertion<'_> {
@@ -44,9 +43,10 @@ impl CodingAssertion<'_> {
             .parsed()
             .ok_or(envelope.disposition().code())?;
         if parsed.molecule() != HgvsMolecule::Coding
-            || !matches!(parsed.location(), Some(HgvsLocation::Point(p))
-                if p.marker() == HgvsMarker::Ordinary && p.offset().is_none() && p.digits().is_some())
-            || !matches!(parsed.edit(), Some(HgvsEdit::Substitution { .. }))
+            || parsed.location().is_none()
+            || parsed.edit().is_none()
+            || parsed.rna_outcome().is_some()
+            || parsed.rna_basis().is_some()
         {
             return Err("coding_alias_unrepresentable");
         }
@@ -54,6 +54,9 @@ impl CodingAssertion<'_> {
             .render_source()
             .ok_or("coding_alias_unrepresentable")?;
         let rendered = parsed.render_constructed();
+        if rendered != envelope.source() {
+            return Err("coding_alias_unrepresentable");
+        }
         let segment = match parsed.reference() {
             Some(reference) => rendered
                 .strip_prefix(reference)
@@ -70,7 +73,7 @@ impl CodingAssertion<'_> {
     pub(super) fn diagnostic(&self) -> Option<&'static str> {
         match &self.route {
             CodingRoute::Checked(envelope) => Self::checked_key(envelope).err(),
-            _ => None,
+            _ => self.parser_diagnostic,
         }
     }
 
@@ -102,7 +105,7 @@ impl fmt::Debug for CodingAssertion<'_> {
     }
 }
 
-/// Select only finite complete spellings. BioData owns their syntax verification.
+/// Retain only the old ordinary-point compatibility exceptions.
 enum Spelling {
     Checked,
     Zero,
@@ -153,6 +156,7 @@ pub(super) fn coding_assertion(source: &str) -> CodingAssertion<'_> {
                 .is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"c."))
         })
         .map(|(prefix, _)| prefix);
+    let mut parser_diagnostic = None;
     let route = if segment.is_empty() {
         CodingRoute::Absent
     } else if candidate.len() > INPUT_LIMIT
@@ -167,10 +171,21 @@ pub(super) fn coding_assertion(source: &str) -> CodingAssertion<'_> {
         match spelling_class(segment) {
             Some(Spelling::Zero) => CodingRoute::CompatibilityZero,
             Some(Spelling::Case) => CodingRoute::CompatibilityCase,
-            Some(Spelling::Checked) => {
-                CodingRoute::Checked(parse_hgvs_nucleotide_21_1_4(candidate))
+            _ if segment.starts_with("C.") => CodingRoute::CompatibilityCase,
+            _ if segment.starts_with("c.") => {
+                let envelope = parse_hgvs_nucleotide_21_1_4(candidate);
+                if envelope
+                    .disposition()
+                    .parsed()
+                    .is_some_and(|parsed| parsed.molecule() == HgvsMolecule::Coding)
+                {
+                    CodingRoute::Checked(envelope)
+                } else {
+                    parser_diagnostic = Some(envelope.disposition().code());
+                    CodingRoute::CompatibilityBody
+                }
             }
-            None => CodingRoute::CompatibilityBody,
+            _ => CodingRoute::CompatibilityBody,
         }
     };
     CodingAssertion {
@@ -179,6 +194,7 @@ pub(super) fn coding_assertion(source: &str) -> CodingAssertion<'_> {
         reference_prefix,
         outer_whitespace: candidate != source,
         route,
+        parser_diagnostic,
     }
 }
 
