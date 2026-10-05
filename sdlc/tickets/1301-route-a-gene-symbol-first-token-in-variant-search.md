@@ -4,6 +4,13 @@ Filed 2026-10-05 by the BioMCP 0.9 lead, from the KB lead's message of 2026-10-0
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1301-gene-symbol-first`, sha `22d15888` (2026-10-05). Two review cycles, both recorded. Cycle 1: FIX, one P1 (explicit `--hgvsp`/`--consequence` dropped in both gene-first branches); fixed by carrying the flags through `VariantSearchPlan::GeneFirstCandidate` into a `finalize` extraction shared with the standard path — a pure move, so `off` restores the old fallthrough exactly. Cycle 2: ACCEPT, all four verification points confirmed, no scope creep.
+- Gene-symbol source: the existing MyGene unique canonical symbol-or-alias oracle (the same one `discover` trusts, 2.5 s shared budget), behind `BIOMCP_VARIANT_QUERY_GENE_ROUTING` (`mygene` default, `off` restores). Rationale recorded in code comments and `docs/reference/configuration.md`. Reviewer rulings: no second knob; `off` stays the sole non-default value; no MCP description change (a help example line is a separate follow-up).
+- Spec page `spec/entity/variant-gene-first-routing.md` proves routed, refused-uppercase, and lowercase behavior from recorded fixtures, plus zero-row working-form output. 51 targeted tests, lint green.
+- Deferred: hyphenated symbols never reach the oracle (exact-form token shape); CHANGELOG bullet owed before the next release; help example line follow-up.
+
 ## Outcome
 
 `search variant "SCN5A Brugada"` finds the SCN5A variants tied to Brugada syndrome, because the gene-symbol first token routes to the gene filter and the rest routes to the condition. A zero result never silently swallows a gene symbol.
