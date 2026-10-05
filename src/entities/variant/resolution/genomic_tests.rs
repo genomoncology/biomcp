@@ -124,7 +124,7 @@ fn retained_transport_custody() {
     let raw = include_bytes!("coding_oracles/transports.json");
     assert_eq!(
         format!("{:x}", Sha256::digest(raw)),
-        "f8bde31e7d94a4ea34b9636d235e8adcbc2339ba0145933d79d7a7ff35944412"
+        "52bdcba32c964e3881cf82391cc4fd78516a5749fa4f3dbb18ca36d28adf3ab4"
     );
     assert_eq!(corpus()["retained_transport_cases"], 6);
     assert_eq!(corpus()["complete_source_transport_cases"], 4);
@@ -308,8 +308,14 @@ fn genomic_assertion_and_resource_table() {
         assert_eq!(a.route_name(), row["expected"]["route"]);
         assert_eq!(json!(a.diagnostic()), row["expected"]["diagnostic"]);
         if row["complete_facts"].is_null() && !row["expected"]["diagnostic"].is_null() {
-            assert_eq!(a.source_assertion().err(), row["expected"]["diagnostic"].as_str());
-            assert_eq!(source_view(&a), json!({"build":null,"accession":null,"position":null,"reference":null,"alternate":null}));
+            assert_eq!(
+                a.source_assertion().err(),
+                row["expected"]["diagnostic"].as_str()
+            );
+            assert_eq!(
+                source_view(&a),
+                json!({"build":null,"accession":null,"position":null,"reference":null,"alternate":null})
+            );
         }
         // No compatibility is called at this seam; refusal leaves the accumulator unset.
         let components = component_view(a.components());

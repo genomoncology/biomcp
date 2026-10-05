@@ -273,7 +273,10 @@ fn exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match() {
         for (field, value) in observations["identity"].as_object().unwrap() {
             assert_eq!(identity[field], *value);
         }
-        assert_eq!(serde_json::to_value(requested.normalized_aliases()).unwrap(), observations["normalized_aliases"]);
+        assert_eq!(
+            serde_json::to_value(requested.normalized_aliases()).unwrap(),
+            observations["normalized_aliases"]
+        );
         assert_eq!(requested.human_label(), observations["human_label"]);
         let mut seen = HashSet::new();
         let mut retained = Vec::new();
@@ -284,10 +287,8 @@ fn exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match() {
             &mut seen,
             &mut retained
         ));
-        assert_eq!(
-            seen,
-            HashSet::from([case["source_key"].as_str().unwrap().to_owned()])
-        );
+        let keys: HashSet<String> = serde_json::from_value(case["source_keys"].clone()).unwrap();
+        assert_eq!(seen, keys);
         let page = finalize_exact_page(&requested, retained, 0, 5, false, true);
         assert_eq!(
             serde_json::to_value(&page.results).unwrap(),

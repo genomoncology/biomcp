@@ -4,8 +4,11 @@ use crate::entities::article::test_support::{
     TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
 };
 use biomcp_mcp_contract_client::{ContractHarness, first_text};
+use rmcp::ServiceExt;
 use rmcp::model::CallToolRequestParams;
+use std::process::Stdio;
 use std::sync::{Arc, Mutex};
+use tokio::io::AsyncReadExt;
 
 fn decoded_requests(requests: &Arc<Mutex<Vec<String>>>) -> Value {
     let items: Vec<_> = requests
@@ -131,7 +134,29 @@ async fn coding_cli_and_mcp_table() {
                 "{id}"
             );
         } else {
-            let client = harness.spawn_stdio_client(&env).await.unwrap();
+            let mut child = tokio::process::Command::new(&harness.biomcp_bin)
+                .arg("serve")
+                .current_dir(&harness.repo_root)
+                .envs(env.iter().cloned())
+                .env("UMLS_API_KEY", "")
+                .env_remove("RUST_MIN_STACK")
+                .env_remove("BIOMCP_TEST_PANIC_TOOL")
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .kill_on_drop(true)
+                .spawn()
+                .unwrap();
+            let mut stderr = child.stderr.take().unwrap();
+            let stderr = tokio::spawn(async move {
+                let mut text = String::new();
+                stderr.read_to_string(&mut text).await.unwrap();
+                text
+            });
+            let client =
+                ().serve((child.stdout.take().unwrap(), child.stdin.take().unwrap()))
+                    .await
+                    .unwrap();
             let result = client
                 .peer()
                 .call_tool(
@@ -161,6 +186,18 @@ async fn coding_cli_and_mcp_table() {
             actual["content"][0].as_object_mut().unwrap().remove("text");
             assert_eq!(actual, expected, "complete wrapper {id}");
             client.cancel().await.unwrap();
+            let status = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait())
+                .await
+                .unwrap()
+                .unwrap();
+            let stderr = stderr.await.unwrap();
+            if let Some(expected) = row.get("expected_process") {
+                assert_eq!(
+                    json!({"exit":status.code(),"stderr":stderr}),
+                    *expected,
+                    "process {id}"
+                );
+            }
         }
         let expected = if id == "T06" {
             let mut expected = read_json(row["expected_request_file"].as_str().unwrap());
