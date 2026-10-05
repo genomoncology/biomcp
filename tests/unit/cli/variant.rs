@@ -5,8 +5,9 @@ mod articles;
 #[path = "variant/parsing.rs"]
 mod parsing;
 
-use super::dispatch::{
-    VariantQueryGeneRouting, VariantSearchPlan, apply_gene_first_routing, gene_first_working_form,
+use super::VariantSearchPlan;
+use super::query::{
+    VariantQueryGeneRouting, apply_gene_first_routing, gene_first_working_form,
     parse_simple_gene_change, resolve_variant_query, split_gene_first_candidate,
 };
 

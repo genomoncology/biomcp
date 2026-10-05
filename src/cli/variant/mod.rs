@@ -283,7 +283,7 @@ impl VariantSearchPlan {
                 ),
             )
         });
-        query.hgvsp = query.hgvsp.as_deref().map(dispatch::normalize_search_hgvsp);
+        query.hgvsp = query.hgvsp.as_deref().map(query::normalize_search_hgvsp);
         Self::Standard(query)
     }
 }
@@ -294,6 +294,7 @@ mod dispatch;
 mod erepo;
 mod guidance;
 mod normalization_json;
+mod query;
 mod trial;
 #[cfg(test)]
 pub(crate) use self::dispatch::render_loaded_card;
