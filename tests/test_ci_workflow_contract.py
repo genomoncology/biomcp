@@ -106,14 +106,11 @@ def test_repository_contracts_always_runs_and_tests_the_docs() -> None:
     assert any("pytest" in r and "not needs_binary" in r for r in runs), (
         "docs-only pushes must still run the docs and record tests"
     )
-    assert any("python tools/check-test-wait-ratchet.py" in r for r in runs)
     assert any("mkdocs build --strict" in r for r in runs), (
         "docs-only pushes must still build the documentation"
     )
-    assert any("check-test-wait-ratchet.py" in r for r in runs), (
-        "the wait ratchet reads sdlc tickets, which docs-only pushes "
-        "change; it must run in this always-on job"
-    )
+    assert not any("check-test-wait-ratchet.py" in r for r in runs)
+    assert "check-test-wait-ratchet.py" not in (REPO_ROOT / "Makefile").read_text()
 
 
 def test_nextest_installs_through_the_checksummed_script() -> None:

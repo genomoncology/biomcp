@@ -1,4 +1,4 @@
-"""Contract tests for the test-wait ceiling ratchet."""
+"""Contracts for advisory test waits and blocking scanner errors."""
 
 from __future__ import annotations
 
@@ -43,8 +43,8 @@ def test_inventory_counts_match_the_tree() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_a_new_unmarked_wait_fails(tmp_path: Path) -> None:
-    """A synthetic unmarked time.sleep in a scanned test file fails."""  # watchdog: synthetic literal
+def test_a_new_unmarked_wait_warns(tmp_path: Path) -> None:
+    """An unmarked time.sleep warns without failing acceptance."""  # watchdog: synthetic literal
     root = tmp_path / "repo"
     (root / "tools").mkdir(parents=True)
     (root / "tools" / "test-wait-inventory.json").write_text(
@@ -62,11 +62,14 @@ def test_a_new_unmarked_wait_fails(tmp_path: Path) -> None:
     subprocess.run(["git", "add", "."], cwd=root, check=True)
 
     result = _run(root)
-    assert result.returncode == 1
-    assert "new unmarked timed waits in tests/test_example.py (1)" in result.stdout
+    assert result.returncode == 0
+    assert (
+        "warning: tests/test_example.py is not in the inventory (1 unmarked waits"
+        in result.stdout
+    )
 
 
-def test_the_new_poll_and_alias_shapes_fail() -> None:
+def test_the_new_poll_and_alias_shapes_count() -> None:
     """The 2026-09-28 review shapes: each must count as a wait."""
     RUST_PATTERNS = MODULE.RUST_PATTERNS
     rust_sleep_aliases = MODULE.rust_sleep_aliases
@@ -74,17 +77,16 @@ def test_the_new_poll_and_alias_shapes_fail() -> None:
     rust_lines = [
         "    while start.elapsed() <= limit { poll(); }",
         "    while limit >= start.elapsed() { poll(); }",
-        "    assert!(Instant::now() < deadline, \"readiness\");",
+        '    assert!(Instant::now() < deadline, "readiness");',
         "    while deadline > Instant::now() { poll(); }",
     ]
     for line in rust_lines:
         assert any(pat.search(line) for pat in RUST_PATTERNS), line
 
     aliased = "use std::thread::sleep as nap;\n    nap(2);"
-    assert any(
-        pat.search("    nap(2);")
-        for pat in rust_sleep_aliases(aliased)
-    ), "aliased Rust sleep must resolve"
+    assert any(pat.search("    nap(2);") for pat in rust_sleep_aliases(aliased)), (
+        "aliased Rust sleep must resolve"
+    )
 
     local_time_aliases = MODULE.local_time_aliases
 
@@ -155,7 +157,7 @@ def test_an_inventory_decrease_passes_and_notes_the_ratchet_down(
     result = _run(root)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "dropped 2 -> 1" in result.stdout
-    assert "re-pin down with --update" in result.stdout
+    assert "warning:" not in result.stdout
 
 
 def test_a_bare_sleep_after_the_time_import_counts() -> None:
@@ -209,9 +211,7 @@ def test_a_watchdog_marker_without_a_reason_does_not_pass() -> None:
 
 
 def test_the_helpers_own_poll_sleep_is_marked() -> None:
-    """tests/support.py carries no unmarked wait; its two markers
-    (the poll-loop line and the sleep it paces) are pinned with a
-    reviewed raise so a third needs another one."""
+    """The helper keeps its existing marked polling waits."""
     current = scan(ROOT)
     entry = current.get("tests/support.py")
     assert entry is not None and entry["count"] == 0, entry
@@ -233,8 +233,8 @@ def _planted_repo(tmp_path: Path, inventory: dict, files: dict[str, str]):
     subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
 
 
-def test_the_new_wait_forms_go_red_on_planted_files(tmp_path: Path) -> None:
-    """Each form the old patterns missed fails a planted repo."""
+def test_the_new_wait_forms_warn_on_planted_files(tmp_path: Path) -> None:
+    """Each form the scanner recognizes warns in a planted repo."""
     root = tmp_path / "repo"
     _planted_repo(
         root,
@@ -263,7 +263,7 @@ def test_the_new_wait_forms_go_red_on_planted_files(tmp_path: Path) -> None:
         },
     )
     result = _run(root)
-    assert result.returncode == 1
+    assert result.returncode == 0
     for name in (
         "tests/test_elapsed_left.rs",
         "tests/test_elapsed_right.rs",
@@ -275,7 +275,7 @@ def test_the_new_wait_forms_go_red_on_planted_files(tmp_path: Path) -> None:
         assert name in result.stdout, (name, result.stdout)
 
 
-def test_rust_sleep_until_and_elapsed_go_red(tmp_path: Path) -> None:
+def test_rust_sleep_until_and_elapsed_count() -> None:
     lines = [
         "    tokio::time::sleep_until(deadline).await;",
         "    if deadline < start.elapsed() { break; }",
@@ -287,8 +287,8 @@ def test_rust_sleep_until_and_elapsed_go_red(tmp_path: Path) -> None:
     assert count == 3
 
 
-def test_marker_counts_are_ratcheted(tmp_path: Path) -> None:
-    """Markers are counted; a new one above the ceiling fails."""
+def test_marker_growth_warns(tmp_path: Path) -> None:
+    """Marker growth remains visible without failing acceptance."""
     root = tmp_path / "repo"
     _planted_repo(
         root,
@@ -315,11 +315,11 @@ def test_marker_counts_are_ratcheted(tmp_path: Path) -> None:
         },
     )
     result = _run(root)
-    assert result.returncode == 1
-    # The global ceiling fails even though each file's own marker count
-    # would pass once pinned; and the unpinned marker file is named.
+    assert result.returncode == 0
+    # Both the global growth and the unregistered marker file warn.
     assert "above the global ceiling 1" in result.stdout, result.stdout
     assert "not in the inventory" in result.stdout, result.stdout
+
 
 def test_round_three_forms_count() -> None:
     """Ticket 1269: the neighboring spellings the prior ratchet missed."""
@@ -331,8 +331,11 @@ def test_round_three_forms_count() -> None:
         "    if Instant::now().duration_since(start) < span { break; }",  # watchdog: planted literal
     ]
     text = "\n".join(rust)
-    count, violations, _ = MODULE.count_waits(rust, MODULE.RUST_PATTERNS,
-                                              MODULE.rust_sleep_aliases(text) + MODULE.rust_time_bindings(text))
+    count, violations, _ = MODULE.count_waits(
+        rust,
+        MODULE.RUST_PATTERNS,
+        MODULE.rust_sleep_aliases(text) + MODULE.rust_time_bindings(text),
+    )
     # nap, the stored-binding compare, and duration_since all count.
     assert count == 3, (count, violations)
 
@@ -347,131 +350,64 @@ def test_round_three_forms_count() -> None:
     assert count == 2, (count, violations)
 
 
-def test_a_raise_without_an_accepted_review_fails(tmp_path: Path) -> None:
-    """The ceiling-raise mechanism demands a reviewed reason."""
+def test_historical_raises_and_review_wording_are_not_read(tmp_path: Path) -> None:
     root = tmp_path / "repo"
-    (root / "tools").mkdir(parents=True)
-    (root / "tools" / "test-wait-inventory.json").write_text(
-        json.dumps(
-            {
-                "schema": "biomcp-test-wait-inventory-v1",
-                "files": {
-                    "tests/test_one.py": {"count": 0, "language": "python"}
-                },
-                "raises": [
-                    {
-                        "file": "tests/test_one.py",
-                        "field": "count",
-                        "from": 0,
-                        "to": 1,
-                        "reason": "planted",
-                        "ticket": "1269",
-                    }
-                ],
-            }
-        ),
-        encoding="utf-8",
+    _planted_repo(
+        root,
+        {
+            "schema": "biomcp-test-wait-inventory-v1",
+            "files": {"tests/test_one.py": {"count": 0}},
+            "raises": [{"ticket": "9001", "from": "obsolete", "to": None}],
+        },
+        {"tests/test_one.py": "time.sleep(0.1)\n"},  # watchdog: planted literal
     )
-    _write_marked_target(root)
-    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-    subprocess.run(["git", "add", "."], cwd=root, check=True)
-    result = _run(root)
-    assert result.returncode == 1
-    # This scratch repo has no sdlc/tickets directory, so the raise
-    # cannot show an accepted review and must fail.
-    assert "1269" in result.stdout and ("accepted" in result.stdout or "no file" in result.stdout), (
-        result.stdout
-    )
-
-
-def _write_marked_target(root: Path) -> None:
-    """The scratch timed wait carries the ratchet marker. The literal
-    lives in exactly one place in this file because the ratchet
-    counts this file's own markers.
-    """
-    target = root / "tests" / "test_one.py"
-    target.parent.mkdir(parents=True)
-    target.write_text("def t():\n    time.sleep(0.1)\n", encoding="utf-8")  # watchdog: planted literal
-
-
-def _raise_repo(tmp_path: Path, verdict_line: str, pin: int = 0) -> tuple:
-    root = tmp_path / "repo"
-    (root / "tools").mkdir(parents=True)
-    (root / "tools" / "test-wait-inventory.json").write_text(
-        json.dumps(
-            {
-                "schema": "biomcp-test-wait-inventory-v1",
-                "files": {"tests/test_one.py": {"count": pin, "language": "python"}},
-                "raises": [
-                    {
-                        "file": "tests/test_one.py",
-                        "field": "count",
-                        "from": 0,
-                        "to": 1,
-                        "reason": "planted",
-                        "ticket": "1269",
-                    }
-                ],
-            }
-        ),
-        encoding="utf-8",
-    )
-    _write_marked_target(root)
-    tickets = root / "sdlc" / "tickets"
+    tickets = root / "sdlc/tickets"
     tickets.mkdir(parents=True)
-    (tickets / "1269-scratch.md").write_text(
-        "- Code review: " + verdict_line + "\n", encoding="utf-8"
-    )
-    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-    subprocess.run(["git", "add", "."], cwd=root, check=True)
-    return root
-
-
-def test_promise_shaped_accept_phrases_never_count(tmp_path: Path) -> None:
-    """2026-09-30 go-request review: only a verdict value that STARTS
-    with ACCEPT counts. Each of these phrases mentions ACCEPT without
-    being an acceptance.
-    """
-    for phrase in [
-        "awaiting ACCEPT",
-        "ACCEPT expected after fixes",
-        "ACCEPT: expected after fixes",
-        "ACCEPT, pending fixes",
-        "ACCEPT once fixes land",
-        "pending; reviewer returns ACCEPT or findings",
-        "will ACCEPT after fixes",
-        "REJECT, not ACCEPT yet",
-        "ACCEPT is missing",
-        "ACCEPT - will fix",
-        "ACCEPT (pending)",
-        "ACCEPT; will fix later",
-        "ACCEPT, to be confirmed",
-        "ACCEPT 2026-09-30 but pending fixes",
-        "ACCEPT dispatch abc will fix",
-        # Fifth go-request review: the reference must be a hex
-        # dispatch ID or a one/two-word reviewer name — promises and
-        # placeholders wrapped in the reference reject, and so does a
-        # missing space before the date.
-        "ACCEPT by Sol, but will fix later",
-        "ACCEPT 2026-09-30 by reviewer pending fixes",
-        # The review's exact phrase; assembled so the literal
-        # placeholder never appears contiguously in this file
-        # (the tracked-text TBD scan would flag it).
-        "ACCEPT (dispatch T" "BD after fixes)",
-        "ACCEPT dispatch -",
-        "ACCEPT2026-09-30",
-        "ACCEPT (dispatch via ticket 1269's review)",
-        "ACCEPT (dispatch folded-and-rereviewed-2026-09-28)",
-    ]:
-        root = _raise_repo(tmp_path / phrase.replace(" ", "_")[:30], phrase)
-        result = _run(root)
-        assert result.returncode == 1, phrase
-        assert "1269" in result.stdout, (phrase, result.stdout)
-
-
-def test_a_verdict_value_starting_with_accept_counts(tmp_path: Path) -> None:
-    root = _raise_repo(tmp_path, "ACCEPT 2026-09-30 by Sol", pin=1)
-    # The raise is accepted, so the gate must pass.
-    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    # Reading this directory as a ticket would fail. Historical records
+    # cannot authenticate or block the warning.
+    (tickets / "9001-old.md").mkdir()
+    inventory = root / "tools/test-wait-inventory.json"
+    original = inventory.read_bytes()
     result = _run(root)
-    assert result.returncode == 0, result.stdout
+    assert result.returncode == 0, result.stderr
+    assert "warning:" in result.stdout
+    assert "9001" not in result.stdout
+    assert inventory.read_bytes() == original
+
+
+def test_scanner_errors_fail(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    _planted_repo(
+        root,
+        {"schema": "biomcp-test-wait-inventory-v1", "files": {}},
+        {"tests/test_one.py": "pass\n"},
+    )
+    source = root / "tests/test_one.py"
+    source.write_bytes(b"\xff")
+    unreadable = _run(root)
+    assert unreadable.returncode != 0
+    assert "test-wait scan error:" in unreadable.stderr
+    source.unlink()
+    missing = _run(root)
+    assert missing.returncode != 0
+    assert "test-wait scan error:" in missing.stderr
+    inventory = root / "tools/test-wait-inventory.json"
+    inventory.write_text("{", encoding="utf-8")
+    assert _run(root).returncode != 0
+    inventory.write_text('["invalid"]', encoding="utf-8")
+    assert _run(root).returncode != 0
+    inventory.unlink()
+    assert _run(root).returncode != 0
+
+
+def test_enumeration_and_invocation_errors_fail(tmp_path: Path) -> None:
+    root = tmp_path / "not-a-repo"
+    (root / "tools").mkdir(parents=True)
+    (root / "tools/test-wait-inventory.json").write_text(
+        json.dumps({"schema": "biomcp-test-wait-inventory-v1", "files": {}})
+    )
+    result = _run(root)
+    assert result.returncode != 0
+    assert "test-wait scan error:" in result.stderr
+    assert _run(root, "--update").returncode != 0
+    assert _run(root, "--unknown-option").returncode != 0

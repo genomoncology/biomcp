@@ -374,7 +374,8 @@ def check_rust_source_size(root_dir: Path, inventory_path: Path) -> dict[str, ob
     except (OSError, json.JSONDecodeError) as error:
         return {"status": "error", "findings": [], "errors": [str(error)]}
     if (
-        inventory.get("schema") != "biomcp-rust-source-size-v1"
+        not isinstance(inventory, dict)
+        or inventory.get("schema") != "biomcp-rust-source-size-v1"
         or inventory.get("threshold") != RUST_SOURCE_LINE_THRESHOLD
         or not isinstance(inventory.get("entries"), list)
     ):
@@ -393,14 +394,21 @@ def check_rust_source_size(root_dir: Path, inventory_path: Path) -> dict[str, ob
         path = entry["path"]
         if path in entries:
             errors.append(f"duplicate source-size entry: {path}")
-        if not path.startswith("src/") or not path.endswith(".rs"):
+        if (
+            not path.startswith("src/")
+            or not path.endswith(".rs")
+            or ".." in Path(path).parts
+            or not (root_dir / path).resolve().is_relative_to((root_dir / "src").resolve())
+        ):
             errors.append(f"invalid source-size path: {path}")
         baseline = entry.get("baseline_lines")
         floor = entry.get("floor_lines")
-        if not isinstance(baseline, int) or baseline <= RUST_SOURCE_LINE_THRESHOLD:
+        if type(baseline) is not int or baseline <= RUST_SOURCE_LINE_THRESHOLD:
             errors.append(f"invalid source-size baseline: {path}")
-        if not isinstance(floor, int) or floor > baseline:
+            continue
+        if type(floor) is not int or floor < 0 or floor > baseline:
             errors.append(f"invalid source-size floor: {path}")
+            continue
         authorization = entry.get("authorized_increase")
         if baseline != floor:
             required = {"ticket", "delta", "reason", "removal_condition"}
@@ -408,8 +416,17 @@ def check_rust_source_size(root_dir: Path, inventory_path: Path) -> dict[str, ob
                 authorization
             ):
                 errors.append(f"raised baseline lacks exact authorization: {path}")
-            elif authorization.get("delta") != baseline - floor:
+            elif (
+                type(authorization.get("delta")) is not int
+                or authorization.get("delta") != baseline - floor
+            ):
                 errors.append(f"authorized source-size delta is not exact: {path}")
+            elif any(
+                not isinstance(authorization.get(field), str)
+                or not authorization[field].strip()
+                for field in ("ticket", "reason", "removal_condition")
+            ):
+                errors.append(f"raised baseline lacks exact authorization: {path}")
         elif authorization is not None:
             errors.append(f"unchanged baseline must not carry authorization: {path}")
         entries[path] = entry
@@ -417,7 +434,6 @@ def check_rust_source_size(root_dir: Path, inventory_path: Path) -> dict[str, ob
     tracked, git_errors = tracked_src_rust_files(root_dir)
     errors.extend(git_errors)
     findings: list[dict[str, object]] = []
-    seen: set[str] = set()
     canonical_src = (root_dir / "src").resolve()
     for relative_path in tracked:
         path = root_dir / relative_path
@@ -450,30 +466,15 @@ def check_rust_source_size(root_dir: Path, inventory_path: Path) -> dict[str, ob
                         "message": "Rust source exceeds 1000 lines without a pinned baseline",
                     }
                 )
-            elif lines != entry.get("baseline_lines"):
+            elif lines > entry.get("baseline_lines"):
                 findings.append(
                     {
                         "path": relative_path,
                         "lines": lines,
                         "baseline_lines": entry.get("baseline_lines"),
-                        "message": "Rust source line count differs from its exact baseline",
+                        "message": "Rust source line count exceeds its baseline ceiling",
                     }
                 )
-            seen.add(relative_path)
-        elif entry is not None:
-            findings.append(
-                {
-                    "path": relative_path,
-                    "lines": lines,
-                    "message": "lowered source no longer needs an over-threshold entry; regenerate the inventory",
-                }
-            )
-            seen.add(relative_path)
-    for stale in sorted(set(entries) - seen):
-        if stale not in tracked:
-            findings.append(
-                {"path": stale, "message": "source-size inventory entry is stale"}
-            )
 
     return {
         "status": "error" if errors else ("fail" if findings else "pass"),

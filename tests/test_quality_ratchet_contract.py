@@ -581,30 +581,95 @@ def test_rust_source_size_rejects_added_renamed_grown_and_symlinked_files(
     payload = ratchet.check_rust_source_size(root, inventory)
     assert payload["status"] == "fail"
     messages = "\n".join(row["message"] for row in payload["findings"])
-    assert "differs from its exact baseline" in messages
+    assert "exceeds its baseline ceiling" in messages
     assert "without a pinned baseline" in messages
-    assert "entry is stale" in messages
     assert "regular file below src" in messages
 
 
-def test_rust_source_size_accepts_a_lowered_exact_baseline(tmp_path: Path) -> None:
+@pytest.mark.parametrize("lines", [0, 999, 1000, 1001, 1050, 1100, None])
+def test_rust_source_size_accepts_reductions_and_removed_entries(
+    tmp_path: Path,
+    lines: int | None,
+) -> None:
     ratchet = _load_ratchet_module()
     root = tmp_path / "lowered"
     root.mkdir()
     _init_git_fixture(root)
-    _write_tracked_file(root, "src/lib.rs", 1001)
+    if lines is not None:
+        _write_tracked_file(root, "src/lib.rs", lines)
     inventory = _write_source_size_inventory(
         root,
         [
             {
                 "path": "src/lib.rs",
-                "baseline_lines": 1001,
-                "floor_lines": 1001,
+                "baseline_lines": 1100,
+                "floor_lines": 1100,
                 "authorized_increase": None,
             }
         ],
     )
-    assert ratchet.check_rust_source_size(root, inventory)["status"] == "pass"
+    original = inventory.read_bytes()
+    payload = ratchet.check_rust_source_size(root, inventory)
+    assert payload["status"] == "pass", payload
+    assert inventory.read_bytes() == original
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"path": "src/../outside.rs"},
+        {"path": "/outside.rs"},
+        {"baseline_lines": "1100"},
+        {"baseline_lines": True},
+        {"floor_lines": None},
+        {"floor_lines": -1},
+        {"floor_lines": 1101},
+        {"floor_lines": 1000, "authorized_increase": None},
+        {
+            "floor_lines": 1000,
+            "authorized_increase": {
+                "ticket": "test",
+                "delta": 99,
+                "reason": "growth",
+                "removal_condition": "split",
+            },
+        },
+        {
+            "floor_lines": 1000,
+            "authorized_increase": {
+                "ticket": "",
+                "delta": 100,
+                "reason": "growth",
+                "removal_condition": "split",
+            },
+        },
+    ],
+)
+def test_rust_source_size_rejects_malformed_or_escaping_removed_entries(
+    tmp_path: Path,
+    change: dict,
+) -> None:
+    ratchet = _load_ratchet_module()
+    root = tmp_path / "invalid"
+    root.mkdir()
+    _init_git_fixture(root)
+    entry = {
+        "path": "src/removed.rs",
+        "baseline_lines": 1100,
+        "floor_lines": 1100,
+        "authorized_increase": None,
+    }
+    entry.update(change)
+    inventory = _write_source_size_inventory(root, [entry])
+    assert ratchet.check_rust_source_size(root, inventory)["status"] == "error"
+
+
+@pytest.mark.parametrize("payload", [[], {}, {"schema": "wrong", "entries": []}])
+def test_rust_source_size_rejects_malformed_inventory(tmp_path: Path, payload) -> None:
+    ratchet = _load_ratchet_module()
+    inventory = tmp_path / "inventory.json"
+    inventory.write_text(json.dumps(payload), encoding="utf-8")
+    assert ratchet.check_rust_source_size(tmp_path, inventory)["status"] == "error"
 
 
 def test_rust_source_size_rejects_an_unexplained_raised_baseline(
@@ -644,7 +709,7 @@ def test_graph_inventory_pins_exact_cumulative_provenance(tmp_path: Path) -> Non
     for needle, replacement in (
         ('"baseline_lines": 1802', '"baseline_lines": 1803'),
         ('"delta": 804', '"delta": 805'),
-        (graph, graph.replace("tests.rs", "test.rs")),
+        (graph, "src/../escaped.rs"),
     ):
         mutated = tmp_path / "inventory.json"
         mutated.write_text(source.replace(needle, replacement, 1), encoding="utf-8")

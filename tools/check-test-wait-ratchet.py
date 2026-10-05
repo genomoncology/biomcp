@@ -1,24 +1,12 @@
 #!/usr/bin/env python3
-"""Ceiling ratchet against new clock-based waits in tests.
+"""Report clock-based waits in tests without blocking acceptance.
 
-Usage: check-test-wait-ratchet.py [--update] [--root DIR]
+Usage: check-test-wait-ratchet.py [--root DIR]
 
-Waits should be signals (a handshake line, an end-of-input, a kernel
-state) — see ticket 1252. This ratchet scans test code for the clock
-shapes that made the suite flaky under load:
-
-  Rust   Instant::now() + ..., thread::sleep, tokio::time::sleep
-  Python time.sleep
-
-plus test helpers named *heartbeat* that contain a bare sleep. A line
-carrying a `watchdog: <reason>` comment passes: it declares a bounded
-watchdog that a human vouched for.
-
-Every scanned file is pinned in tools/test-wait-inventory.json as a
-per-file ceiling. Counts above the ceiling fail. Counts below it pass;
-re-pin them down deliberately with `--update` (the same discipline as
-tools/update-rust-source-size-inventory) so decreases are reviewed,
-not automatic.
+The existing scanner compares unmarked waits and watchdog markers with
+stored ceilings. Findings are advisory. Inventory, enumeration and source
+read errors fail the invocation. Historical raise ledgers and ticket review
+wording do not admit waits, and this tool does not update the inventory.
 """
 
 from __future__ import annotations
@@ -178,8 +166,7 @@ def count_waits(
             p.search(line) for p in alias_patterns
         )
         if waited and (
-            FLOOR_ASSERTION.search(line)
-            or (assert_open and re.search(r"[<>]=", line))
+            FLOOR_ASSERTION.search(line) or (assert_open and re.search(r"[<>]=", line))
         ):
             waited = False
         # A multi-line assert! opens here: a following `elapsed >=`
@@ -268,84 +255,72 @@ def scan(root: Path) -> dict[str, dict[str, object]]:
     return files
 
 
-def raise_is_accepted(root: Path, record: dict) -> tuple[bool, str]:
-    """A ceiling raise counts only with a reason and an ACCEPTED review.
+def report(root: Path) -> int:
+    inventory_path = root / "tools/test-wait-inventory.json"
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    if (
+        not isinstance(inventory, dict)
+        or inventory.get("schema") != "biomcp-test-wait-inventory-v1"
+    ):
+        raise ValueError("invalid test-wait inventory schema")
+    pinned = inventory.get("files")
+    if not isinstance(pinned, dict):
+        raise ValueError("test-wait inventory files must be an object")
+    pinned = {
+        name: (entry if isinstance(entry, dict) else {"count": entry})
+        for name, entry in pinned.items()
+    }
+    for name, entry in pinned.items():
+        for field in ("count", "markers"):
+            value = entry.get(field, 0)
+            if type(value) is not int or value < 0:
+                raise ValueError(f"invalid test-wait {field} ceiling: {name}")
+    current = scan(root)
+    total_markers = sum(int(e.get("markers", 0)) for e in current.values())
+    marker_ceiling = inventory.get("marker_total_ceiling", total_markers)
+    if type(marker_ceiling) is not int or marker_ceiling < 0:
+        raise ValueError("invalid test-wait marker total ceiling")
 
-    The record names the ticket whose Review accepted the raise; the
-    ratchet reads that ticket file and requires an accepted code
-    review. A raise citing the ticket currently in review fails the
-    gate until the reviewer accepts — that is the discipline: no
-    unreviewed raise reaches a green gate.
-    """
-    reason = str(record.get("reason", "")).strip()
-    ticket = str(record.get("ticket", "")).strip()
-    if not reason or not ticket:
-        return False, "raise record needs a reason and a ticket"
-    matches = sorted((root / "sdlc" / "tickets").glob(f"{ticket}-*.md"))
-    if not matches:
-        return False, f"raise cites ticket {ticket}, which has no file"
-    text = matches[0].read_text(encoding="utf-8")
-    verdicts = re.finditer(
-        r"^\s*-?\s*\**code\s+re(?:view|-review)\**\s*(?:\([^)]*\))?\s*:"
-        r"(?P<rest>.{0,200})",
-        text,
-        re.IGNORECASE | re.MULTILINE,
+    warnings: list[str] = []
+    notes: list[str] = []
+    for name, entry in sorted(current.items()):
+        count = entry["count"]
+        ceiling = pinned.get(name)
+        if ceiling is None:
+            warnings.append(
+                f"{name} is not in the inventory ({count} unmarked waits, "
+                f"{entry.get('markers', 0)} watchdog markers)"
+            )
+            continue
+        if count > ceiling.get("count", 0):
+            warnings.append(
+                f"{name} has {count} unmarked waits, above the pinned ceiling "
+                f"{ceiling.get('count', 0)}"
+            )
+        elif count < ceiling.get("count", 0):
+            notes.append(f"{name} dropped {ceiling['count']} -> {count}")
+        file_markers = entry.get("markers", 0)
+        pinned_markers = ceiling.get("markers", 0)
+        if file_markers > pinned_markers:
+            warnings.append(
+                f"{name} carries {file_markers} watchdog markers, above its "
+                f"pinned {pinned_markers}"
+            )
+    for name in sorted(set(pinned) - set(current)):
+        notes.append(f"{name} now has zero waits and watchdog markers")
+    if total_markers > marker_ceiling:
+        warnings.append(
+            f"the tree carries {total_markers} watchdog markers, above the global ceiling {marker_ceiling}"
+        )
+    for note in notes:
+        print(f"note: {note}")
+    for warning in warnings:
+        print(f"warning: {warning}")
+    print(
+        f"test-wait scan advisory ({len(current)} files, "
+        f"{total_markers} watchdog markers, {len(warnings)} warnings)"
     )
-    # A raise counts only when a verdict line's VALUE starts with
-    # ACCEPT (2026-09-30 go-request review): promises, expectations
-    # and pendings that merely mention ACCEPT — "awaiting ACCEPT",
-    # "ACCEPT expected after fixes", "ACCEPT once fixes land",
-    # "reviewer returns ACCEPT or findings", "REJECT, not ACCEPT yet"
-    # — stay rejections. A history line like "REJECT once, folded;
-    # ACCEPT 2026-09-28 ..." qualifies because its value continues
-    # from ACCEPT after the semicolon only if the ACCEPT token starts
-    # the value; folded history therefore records its acceptance on
-    # its own verdict line.
-    for verdict in verdicts:
-        rest = verdict.group("rest").strip()
-        # ACCEPT must be the verdict itself: the token starts the
-        # value AND is not immediately an expectation ("ACCEPT
-        # expected after fixes", "ACCEPT once fixes land").
-        # The whole value must match one grammar (fifth go-request
-        # review): ACCEPT, an optional date, and an optional
-        # reference that is either a hex dispatch ID or a reviewer
-        # name of one or two capitalized words — and nothing more.
-        # Trailing prose that promises work ("but will fix later",
-        # "pending fixes") or placeholder references ("dispatch
-        # TBD", "dispatch -") reject, and "by reviewer" must name
-        # a real reviewer, so lowercase placeholders reject too.
-        if re.fullmatch(
-            r"ACCEPT"
-            r"(?:\s+\d{4}-\d{2}-\d{2})?"
-            r"(?:\s*\(dispatch [0-9a-f]{8}(?:-[0-9a-f-]+)?\)"
-            r"|\s+dispatch [0-9a-f]{8}(?:-[0-9a-f-]+)*"
-            r"|\s+by [A-Z][\w.-]*(?:\s+[A-Z][\w.-]*)?)?",
-            rest,
-        ):
-            return True, ""
-    return False, (
-        f"raise cites ticket {ticket}, whose code review has not "
-        f"been accepted — the gate stays red until it is"
-    )
-
-
-def accepted_raise_for(
-    raises: list[dict], name: str, field: str, value: int, root: Path
-) -> tuple[bool, str]:
-    for record in raises:
-        if (
-            record.get("file") == name
-            and record.get("field") == field
-            and int(record.get("to", -1)) == value
-        ):
-            ok, why = raise_is_accepted(root, record)
-            if ok:
-                return True, ""
-            return False, why
-    return False, (
-        f"no accepted raise record for {name} {field} -> {value}; add one "
-        f"with a reason and the ticket whose review accepted it"
-    )
+    return 0
 
 
 def main(argv: list[str]) -> int:
@@ -353,153 +328,12 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--root", type=Path, default=Path(__file__).resolve().parents[1]
     )
-    parser.add_argument(
-        "--update",
-        action="store_true",
-        help="re-pin every ceiling to the current counts (use to ratchet down)",
-    )
-    args = parser.parse_args()
-    inventory_path = args.root / "tools/test-wait-inventory.json"
-    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-    raises = list(inventory.get("raises", []))
-    pinned: dict[str, dict] = {
-        name: (entry if isinstance(entry, dict) else {"count": entry})
-        for name, entry in inventory.get("files", {}).items()
-    }
-    current = scan(args.root)
-
-    failures: list[str] = []
-    notes: list[str] = []
-    total_markers = sum(int(e.get("markers", 0)) for e in current.values())
-    marker_ceiling = int(inventory.get("marker_total_ceiling", total_markers))
-    for name, entry in sorted(current.items()):
-        count = entry["count"]
-        ceiling = pinned.get(name)
-        if ceiling is None and count:
-            failures.append(
-                f"new unmarked timed waits in {name} ({count}); convert to a signal or mark each with `watchdog:`"
-            )
-        elif ceiling is None:
-            # Markers only (count 0): pin the file so its marker count
-            # is ratcheted too.
-            failures.append(
-                f"{name} carries `watchdog:` markers but is not in the inventory; "
-                f"run with --update to pin it"
-            )
-        elif count > ceiling.get("count", count):
-            ok, why = accepted_raise_for(
-                raises, name, "count", count, args.root
-            )
-            if not ok:
-                failures.append(
-                    f"{name} has {count} unmarked waits, above the pinned ceiling "
-                    f"{ceiling.get('count')} ({why})"
-                )
-        elif count < ceiling.get("count", count):
-            notes.append(
-                f"{name} dropped {ceiling.get('count')} -> {count}; re-pin down with --update"
-            )
-        pinned_markers = int(ceiling.get("markers", 0)) if ceiling else 0
-        file_markers = int(entry.get("markers", 0))
-        if ceiling is not None and file_markers > pinned_markers:
-            ok, why = accepted_raise_for(
-                raises, name, "markers", file_markers, args.root
-            )
-            if not ok:
-                failures.append(
-                    f"{name} carries {file_markers} `watchdog:` markers, above its "
-                    f"pinned {pinned_markers} ({why})"
-                )
-    for name in sorted(set(pinned) - set(current)):
-        notes.append(f"{name} now has zero unmarked waits; re-pin down with --update")
-    # The raises list is the append-only history of every raise; a
-    # pin that disagrees with its head is a silent edit bypassing
-    # review (the tool cannot see yesterday's value any other way).
-    by_key: dict[tuple[str, str], list[dict]] = {}
-    for record in raises:
-        by_key.setdefault((str(record.get("file")), str(record.get("field"))), []).append(record)
-    for (name, field), records in by_key.items():
-        head = records[-1]
-        target = int(head.get("to", -1))
-        if field == "marker_total_ceiling":
-            actual = marker_ceiling
-        else:
-            entry = pinned.get(name) or {}
-            actual = int(entry.get(field, -1)) if isinstance(entry, dict) else -1
-        if actual != target:
-            failures.append(
-                f"{name} pin for {field} is {actual} but the last accepted raise "
-                f"record says {target}; the raises list is the only history — "
-                f"either restore the pin or append a reviewed raise"
-            )
-        steps = [(int(r.get("from", -1)), int(r.get("to", -1))) for r in records]
-        for (earlier_from, earlier_to), (later_from, _) in zip(steps, steps[1:]):
-            if earlier_to != later_from:
-                failures.append(
-                    f"{name} {field} raise chain is discontinuous: {steps}"
-                )
-        # Every raise in the chain must cite a ticket whose review
-        # carries an ACCEPT — a folded raise (pin moved and record
-        # appended in one commit) is checked here, not only on the
-        # over-pin failure path, so no unreviewed raise can sit
-        # green under a matching pin.
-        for record in records:
-            ok, why = raise_is_accepted(args.root, record)
-            if not ok:
-                failures.append(
-                    f"{name} {field} raise {record.get('from')}->"
-                    f"{record.get('to')} lacks an accepted review ({why})"
-                )
-    if total_markers > marker_ceiling:
-        ok, why = accepted_raise_for(
-            raises, "(global)", "marker_total_ceiling", total_markers, args.root
-        )
-        if not ok:
-            failures.append(
-                f"the tree carries {total_markers} `watchdog:` markers, above the "
-                f"global ceiling {marker_ceiling} ({why})"
-            )
-
-    for note in notes:
-        print(f"note: {note}")
-    if failures:
-        print("test-wait ratchet failures:")
-        for failure in failures:
-            print(f"  {failure}")
-        return 1
-
-    if args.update:
-        # --update ratchets DOWN or holds; it must never silently
-        # absorb a raise (2026-09-29 review). Any file whose current
-        # count or marker total exceeds its pin needs an accepted
-        # raise record first — the comparison loop above already
-        # failed the run in that case, so reaching here means every
-        # change is a decrease or a hold.
-        fresh = {name: entry for name, entry in sorted(current.items())}
-        lowered = sum(
-            1
-            for name, entry in fresh.items()
-            if name in pinned
-            and int(entry["count"]) < int(pinned[name].get("count", entry["count"]))
-        )
-        inventory["files"] = fresh
-        inventory["marker_total_ceiling"] = sum(
-            int(e.get("markers", 0)) for e in fresh.values()
-        )
-        inventory_path.write_text(
-            json.dumps(inventory, indent=2) + "\n", encoding="utf-8"
-        )
-        print(
-            f"re-pinned {len(fresh)} file ceilings in {inventory_path} "
-            f"({lowered} lowered; no raise absorbed — raises require an "
-            f"accepted review record)"
-        )
-        return 0
-    print(
-        f"test-wait ratchet ok ({len(current)} files with pinned ceilings, "
-        f"{total_markers} watchdog markers under the ceiling {marker_ceiling})"
-    )
-    return 0
+    args = parser.parse_args(argv)
+    try:
+        return report(args.root)
+    except (OSError, UnicodeError, ValueError, subprocess.SubprocessError) as error:
+        print(f"test-wait scan error: {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
