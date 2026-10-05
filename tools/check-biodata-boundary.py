@@ -364,7 +364,8 @@ def check_rust_ownership(root: Path, files: list[Path], failures: list[str]) -> 
     for relative, source in sources:
         for marker in point_markers:
             require(
-                marker not in source or relative == point_owner,
+                marker not in source or relative == point_owner
+                or (marker == "HgvsProteinStyle" and relative == Path("src/entities/variant/resolution/protein_get.rs")),
                 f"{relative} uses checked point marker {marker} outside its private owner",
                 failures,
             )

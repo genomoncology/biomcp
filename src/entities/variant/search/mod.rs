@@ -862,7 +862,7 @@ async fn search_page_with_execution(
     Ok(page)
 }
 
-fn candidate_scan_exhaustive(
+pub(super) fn candidate_scan_exhaustive(
     provider_total: Option<usize>,
     examined_offset: usize,
     returned_count: usize,

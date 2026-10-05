@@ -32,6 +32,14 @@ to restore GRCh37 preference; an explicit `--assembly` always wins. If the same
 spelling identifies different records, BioMCP returns the preferred record and
 reports the other identity in `build_candidates` JSON and a Markdown warning.
 
+## Protein interval detail lookup
+
+Gene plus protein deletion, duplication, insertion and delins inputs reach the detail lookup. For example, use `biomcp get variant 'GENE p.Ala11_Gly12del'` with a gene symbol. Bare changes and `p.` or `P.` prefixes use the existing checked interval syntax. Written prediction and decimal positions remain part of the request.
+
+BioMCP queries the checked one-letter and three-letter spellings. It examines at most 1,000 candidates in 50-row pages and returns a detail card only after the query completes with one compatible source identity. Ambiguous results, missing identity evidence and scans that reach the limit refuse to select a card. A complete scan with no compatible or uncertain candidate returns not found. Provider failures remain errors.
+
+The submitted input and each rendered query spelling must fit 512 bytes. Explicit `--assembly` requires a chromosome-prefixed genomic coordinate. The displayed protein annotation belongs to the selected source record. This lookup establishes identity within the completed provider query; syntax acceptance does not validate a reference sequence or resolve transcript selection.
+
 ## ClinGen Allele Registry normalization
 
 Use CAR for a source-provided CAid and bounded alias collections for versioned RefSeq

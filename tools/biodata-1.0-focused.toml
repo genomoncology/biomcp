@@ -2,6 +2,11 @@ version = 1
 
 [selection]
 rust = [
+  "entities::variant::get::protein_lookup::tests::interval_edits_reach_detail_with_written_source_and_two_query_styles",
+  "entities::variant::get::protein_lookup::tests::interval_get_finishes_scan_before_resolving_identity",
+  "entities::variant::get::protein_lookup::tests::interval_get_refuses_invalid_inputs_and_original_or_rendered_limits_without_requests",
+  "entities::variant::get::protein_lookup::transport_tests::interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts",
+
   "entities::variant::resolution::tests::genomic_lookup::genomic_lookup_contract_and_caller_table",
   "sources::mygene::tests::construction::search_plan_sets_path_and_core_query_params",
   "sources::mygene::tests::construction::search_plan_adds_chr_filter_only_when_non_empty",

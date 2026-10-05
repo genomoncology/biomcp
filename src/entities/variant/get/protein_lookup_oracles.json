@@ -1,0 +1,1552 @@
+{
+  "origin": "Synthetic MIT engineering fixtures authored for a generic consuming application; no provider captures.",
+  "fields": "_id,cadd.phred,cadd.consequence,clinvar.gene.symbol,clinvar.rcv.accession,clinvar.rcv.version,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.rcv.preferred_name,clinvar.rcv.last_evaluated,clinvar.rcv.number_submitters,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.sift.pred,dbnsfp.sift.score,dbnsfp.polyphen2.hdiv.pred,dbnsfp.revel.score,dbnsfp.revel.rankscore,dbnsfp.alphamissense.score,dbnsfp.alphamissense.pred,dbnsfp.alphamissense.rankscore,dbnsfp.clinpred.score,dbnsfp.clinpred.pred,dbnsfp.metarnn.score,dbnsfp.metarnn.pred,dbnsfp.bayesdel.add_af.score,dbnsfp.bayesdel.add_af.pred,dbnsfp.bayesdel.no_af.score,dbnsfp.bayesdel.no_af.pred,dbnsfp.phylop.100way_vertebrate.rankscore,dbnsfp.phylop.470way_mammalian.rankscore,dbnsfp.phastcons.100way_vertebrate.rankscore,dbnsfp.phastcons.470way_mammalian.rankscore,dbnsfp.gerp++.rs,dbsnp.rsid,gnomad_exome.af.af,gnomad_exome.af.af_afr,gnomad_exome.af.af_eas,gnomad_exome.af.af_nfe,gnomad_exome.af.af_sas,gnomad_exome.af.af_amr,gnomad_exome.af.af_asj,gnomad_exome.af.af_fin,gnomad_exome.af.af_afr_female,gnomad_exome.af.af_afr_male,gnomad_exome.af.af_amr_female,gnomad_exome.af.af_amr_male,gnomad_exome.af.af_eas_jpn,gnomad_exome.af.af_eas_kor,gnomad_exome.af.af_nfe_bgr,gnomad_exome.af.af_nfe_est,gnomad_exome.af.af_nfe_nwe,gnomad_exome.af.af_nfe_onf,gnomad_exome.af.af_nfe_seu,gnomad_exome.af.af_nfe_swe,gnomad_exome.af.af_oth,gnomad.exomes.af.af,gnomad.exomes.af.af_afr,gnomad.exomes.af.af_eas,gnomad.exomes.af.af_nfe,gnomad.exomes.af.af_sas,gnomad.exomes.af.af_amr,gnomad.exomes.af.af_asj,gnomad.exomes.af.af_fin,gnomad.genomes.af.af,gnomad.genomes.af.af_afr,gnomad.genomes.af.af_eas,gnomad.genomes.af.af_nfe,gnomad.genomes.af.af_sas,gnomad.genomes.af.af_amr,gnomad.genomes.af.af_asj,gnomad.genomes.af.af_fin,exac.af,exac_nontcga.af,cosmic.cosmic_id,cosmic.mut_freq,cosmic.tumor_site,cosmic.mut_nt,cgi,civic",
+  "admission": [
+    {
+      "input": "GENE p.Ala11del",
+      "change": "A11del",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11del\" OR dbnsfp.hgvsp:\"p.Ala11del\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11del",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11del"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11del",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11del",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11del"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.Ala11_Gly12del",
+      "change": "A11_G12del",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11_G12del\" OR dbnsfp.hgvsp:\"p.Ala11_Gly12del\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12del",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12del"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11_Gly12del",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12del",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12del"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE A11dup",
+      "change": "A11dup",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11dup\" OR dbnsfp.hgvsp:\"p.Ala11dup\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11dup",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11dup"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11dup",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11dup",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11dup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE P.Ala11_Gly12dup",
+      "change": "A11_G12dup",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11_G12dup\" OR dbnsfp.hgvsp:\"p.Ala11_Gly12dup\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12dup",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12dup"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11_Gly12dup",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12dup",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12dup"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.A11_G12insSer",
+      "change": "A11_G12insS",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11_G12insS\" OR dbnsfp.hgvsp:\"p.Ala11_Gly12insSer\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12insSer",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12insSer"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11_Gly12insSer",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12insSer",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12insSer"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.Ala11delinsSerVal",
+      "change": "A11delinsSV",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11delinsSV\" OR dbnsfp.hgvsp:\"p.Ala11delinsSerVal\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11delinsSerVal",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11delinsSerVal"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11delinsSerVal",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11delinsSerVal",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11delinsSerVal"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.A11_Gly12delinsSV",
+      "change": "A11_G12delinsSV",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11_G12delinsSV\" OR dbnsfp.hgvsp:\"p.Ala11_Gly12delinsSerVal\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12delinsSerVal",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12delinsSerVal"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11_Gly12delinsSerVal",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12delinsSerVal",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12delinsSerVal"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.(A11_G12del)",
+      "change": "(A11_G12del)",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.\\(A11_G12del\\)\" OR dbnsfp.hgvsp:\"p.\\(Ala11_Gly12del\\)\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.(Ala11_Gly12del)",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.(Ala11_Gly12del)"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.(Ala11_Gly12del)",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.(Ala11_Gly12del)",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.(Ala11_Gly12del)"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.Ala0011_Gly0012del",
+      "change": "A0011_G0012del",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A0011_G0012del\" OR dbnsfp.hgvsp:\"p.Ala0011_Gly0012del\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala0011_Gly0012del",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala0011_Gly0012del"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala0011_Gly0012del",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala0011_Gly0012del",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala0011_Gly0012del"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.A4294967296del",
+      "change": "A4294967296del",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A4294967296del\" OR dbnsfp.hgvsp:\"p.Ala4294967296del\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala4294967296del",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala4294967296del"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala4294967296del",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala4294967296del",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala4294967296del"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.A11_G12insV*",
+      "change": "A11_G12insV*",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.A11_G12insV\\*\" OR dbnsfp.hgvsp:\"p.Ala11_Gly12insValTer\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12insValTer",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12insValTer"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Ala11_Gly12insValTer",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Ala11_Gly12insValTer",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Ala11_Gly12insValTer"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "input": "GENE p.B11_Z12insUXaa",
+      "change": "B11_Z12insUXaa",
+      "query": "dbnsfp.genename:GENE AND (dbnsfp.hgvsp:\"p.B11_Z12insUXaa\" OR dbnsfp.hgvsp:\"p.Asx11_Glx12insSecXaa\")",
+      "hit": {
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Asx11_Glx12insSecXaa",
+          "hgvsc": "NM_000001.1:c.1A>T"
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Asx11_Glx12insSecXaa"
+            }
+          ]
+        }
+      },
+      "detail": {
+        "section_outcomes": {
+          "cancerhotspots": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "cbioportal": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "civic": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "clinvar": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "gwas": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "population": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "predict": {
+            "outcome": "not_requested",
+            "sources": []
+          }
+        },
+        "gene": "GENE",
+        "id": "chr1:g.101A>T",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "MyVariant.info provider default",
+        "hgvs_p": "p.Asx11_Glx12insSecXaa",
+        "hgvs_c": "c.1A>T",
+        "transcript": "NM_000001.1",
+        "rsid": "rs101"
+      },
+      "decoded_hit": {
+        "cadd": null,
+        "clinvar": null,
+        "gnomad_exome": null,
+        "gnomad": null,
+        "exac": null,
+        "exac_nontcga": null,
+        "cosmic": null,
+        "cgi": null,
+        "civic": null,
+        "_id": "chr1:g.101A>T",
+        "dbnsfp": {
+          "genename": "GENE",
+          "hgvsp": "p.Asx11_Glx12insSecXaa",
+          "hgvsc": "NM_000001.1:c.1A>T",
+          "sift": null,
+          "polyphen2": null,
+          "revel": null,
+          "alphamissense": null,
+          "clinpred": null,
+          "metarnn": null,
+          "bayesdel": null,
+          "phylop": null,
+          "phastcons": null,
+          "gerp++": null
+        },
+        "dbsnp": {
+          "rsid": "rs101"
+        },
+        "snpeff": {
+          "ann": [
+            {
+              "feature_id": "NM_000001.1",
+              "genename": "GENE",
+              "hgvs_c": "c.1A>T",
+              "hgvs_p": "p.Asx11_Glx12insSecXaa"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "errors": {
+    "ambiguous": "Protein interval lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.",
+    "evidence": "Protein interval lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.",
+    "incomplete": "Protein interval lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change.",
+    "limit": "Protein interval lookup exceeds its input limit."
+  },
+  "cli_success": {
+    "section_outcomes": {
+      "cancerhotspots": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "cbioportal": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "civic": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "clinvar": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "gwas": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "population": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "predict": {
+        "outcome": "not_requested",
+        "sources": []
+      }
+    },
+    "gene": "GENE",
+    "id": "chr1:g.101A>T",
+    "genome_build": "GRCh37",
+    "genome_build_provenance": "MyVariant.info provider default",
+    "hgvs_p": "p.Ala11_Gly12del",
+    "hgvs_c": "c.1A>T",
+    "transcript": "NM_000001.1",
+    "rsid": "rs101",
+    "_meta": {
+      "evidence_urls": [
+        {
+          "label": "dbSNP",
+          "url": "https://www.ncbi.nlm.nih.gov/snp/rs101"
+        }
+      ],
+      "next_commands": [
+        "biomcp get gene GENE",
+        "biomcp search drug --target GENE",
+        "biomcp variant trials \"chr1:g.101A>T\"",
+        "biomcp variant articles \"chr1:g.101A>T\""
+      ],
+      "section_sources": [
+        {
+          "key": "identity",
+          "label": "Identity",
+          "outcome": "data",
+          "sources": [
+            "MyVariant.info",
+            "ClinVar"
+          ]
+        }
+      ]
+    }
+  },
+  "ambiguous_payload": {
+    "error": {
+      "code": "invalid_argument",
+      "message": "Invalid argument: Protein interval lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+    },
+    "_meta": {
+      "not_found": false
+    }
+  },
+  "incomplete_payload": {
+    "error": {
+      "code": "invalid_argument",
+      "message": "Invalid argument: Protein interval lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+    },
+    "_meta": {
+      "not_found": false
+    }
+  },
+  "assembly_payload": {
+    "error": {
+      "code": "invalid_argument",
+      "message": "Invalid argument: --assembly only applies to chromosome-prefixed genomic coordinates"
+    },
+    "_meta": {
+      "not_found": false
+    }
+  },
+  "typed_success": {
+    "section_outcomes": {
+      "cancerhotspots": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "cbioportal": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "civic": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "clinvar": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "gwas": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "population": {
+        "outcome": "not_requested",
+        "sources": []
+      },
+      "predict": {
+        "outcome": "not_requested",
+        "sources": []
+      }
+    },
+    "gene": "GENE",
+    "id": "chr1:g.101A>T",
+    "genome_build": "GRCh37",
+    "genome_build_provenance": "MyVariant.info provider default",
+    "hgvs_p": "p.Ala11_Gly12insValTer",
+    "hgvs_c": "c.1A>T",
+    "transcript": "NM_000001.1",
+    "rsid": "rs101",
+    "_meta": {
+      "evidence_urls": [
+        {
+          "label": "dbSNP",
+          "url": "https://www.ncbi.nlm.nih.gov/snp/rs101"
+        }
+      ],
+      "next_commands": [
+        "biomcp get gene GENE",
+        "biomcp search drug --target GENE",
+        "biomcp variant trials \"chr1:g.101A>T\"",
+        "biomcp variant articles \"chr1:g.101A>T\""
+      ],
+      "section_sources": [
+        {
+          "key": "identity",
+          "label": "Identity",
+          "outcome": "data",
+          "sources": [
+            "MyVariant.info",
+            "ClinVar"
+          ]
+        }
+      ]
+    }
+  },
+  "malformed_payload": {
+    "error": {
+      "code": "api_json",
+      "message": "API response from MyVariant.info could not be decoded.",
+      "source": "MyVariant.info",
+      "recovery": "Retry the remote source."
+    },
+    "_meta": {
+      "not_found": false
+    }
+  },
+  "source_failure_payload": {
+    "error": {
+      "code": "api",
+      "message": "API request to MyVariant.info failed.",
+      "source": "MyVariant.info",
+      "recovery": "Retry the remote source."
+    },
+    "_meta": {
+      "not_found": false
+    }
+  },
+  "refusals": [
+    {
+      "input": "p.A11del",
+      "message": "Unrecognized variant format: 'p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "gene p.A11del",
+      "message": "Unrecognized variant format: 'gene p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "G p.A11del",
+      "message": "Unrecognized variant format: 'G p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A11del prose",
+      "message": "Unrecognized variant format: 'GENE p.A11del prose'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE NP_000001.1:p.A11del",
+      "message": "Unrecognized variant format: 'GENE NP_000001.1:p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A0del",
+      "message": "Unrecognized variant format: 'GENE p.A0del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A11_A11del",
+      "message": "Unrecognized variant format: 'GENE p.A11_A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A12_A11del",
+      "message": "Unrecognized variant format: 'GENE p.A12_A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A11_G13insS",
+      "message": "Unrecognized variant format: 'GENE p.A11_G13insS'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A11delinsS",
+      "message": "Unrecognized variant format: 'GENE p.A11delinsS'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A11delgarbage",
+      "message": "Unrecognized variant format: 'GENE p.A11delgarbage'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.X11_X12del",
+      "message": "Unrecognized variant format: 'GENE p.X11_X12del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A11fs",
+      "message": "Unrecognized variant format: 'GENE p.A11fs'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A11ext",
+      "message": "Unrecognized variant format: 'GENE p.A11ext'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    },
+    {
+      "input": "GENE p.A?del",
+      "message": "Unrecognized variant format: 'GENE p.A?del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+    }
+  ],
+  "ambiguous_mcp": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Error: Invalid argument: Protein interval lookup is ambiguous. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+      }
+    ],
+    "isError": true
+  },
+  "incomplete_mcp": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Error: Invalid argument: Protein interval lookup reached its candidate limit. Use an exact rsID or genomic HGVS ID, or search with the gene and protein change."
+      }
+    ],
+    "isError": true
+  },
+  "malformed_mcp": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Error: API response from MyVariant.info could not be decoded. Retry the remote source."
+      }
+    ],
+    "isError": true
+  }
+}

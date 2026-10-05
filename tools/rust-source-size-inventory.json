@@ -222,14 +222,9 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1307,
-      "floor_lines": 1128,
-      "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, biodata-0672, biodata-0679, 1290",
-        "delta": 179,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, and direct ClinVar section dispatch. Root migration coordinator retains that inherited 127-line allowance and owns the additional observed 13 total lines from accepted 0672's pure preparation seam and test visibility, with the retained accessor correction at net zero. Ticket 0679 records the exact cumulative disposition. Maintenance reconciliation adds 39 total lines for record-level ClinVar headline application.",
-        "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed. Retire the added preparation allowance during that decomposition. Remove the inventory entry when the file reaches at most 1000 total lines."
-      }
+      "baseline_lines": 1292,
+      "floor_lines": 1292,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/variant/get/tests.rs",
@@ -255,14 +250,9 @@
     },
     {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1224,
-      "floor_lines": 1220,
-      "authorized_increase": {
-        "ticket": "biodata-0676, biodata-0679",
-        "delta": 4,
-        "reason": "Root migration coordinator owns this exact budget. Accepted 0676 adds five total lines and removes one for private interval module wiring and predicate visibility. Ticket 0679 admits only the observed four-line growth above the corrected 1220-line floor.",
-        "removal_condition": "Remove this allowance when variant identity resolution is decomposed. Remove the inventory entry when the file reaches at most 1000 total lines."
-      }
+      "baseline_lines": 1091,
+      "floor_lines": 1091,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/variant/search/mod.rs",

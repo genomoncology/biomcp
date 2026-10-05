@@ -22,8 +22,10 @@ pub(crate) use interval_search::{
     IntervalSearchAssertion, IntervalSearchDisposition, protein_interval_search,
 };
 mod point_alias;
+pub(super) mod protein_get;
 pub(super) use coding_alias::coding_changes_equivalent;
 use coding_alias::coding_key;
+use protein_get::parse_exact_gene_protein_change;
 
 fn rsid_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
@@ -170,19 +172,15 @@ fn split_gene_change_tokens(input: &str) -> Option<(&str, &str)> {
     Some((gene, change))
 }
 
-fn parse_exact_gene_protein_change(input: &str) -> Option<VariantIdFormat> {
-    let (gene, change) = split_gene_change_tokens(input)?;
-    if !is_exact_gene_token(gene) {
-        return None;
-    }
-    let change = normalize_protein_change(change)?;
-    Some(VariantIdFormat::GeneProteinChange {
-        gene: gene.to_string(),
-        change,
-    })
-}
-
 pub fn classify_variant_input(input: &str) -> VariantInputKind {
+    if protein_get::selects(input) {
+        return protein_get::prepare(input)
+            .ok()
+            .flatten()
+            .map_or(VariantInputKind::Unsupported, |prepared| {
+                VariantInputKind::Exact(prepared.format())
+            });
+    }
     let input = input.trim();
     if input.is_empty() {
         return VariantInputKind::Unsupported;

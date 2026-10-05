@@ -415,3 +415,32 @@ def test_biodata_boundary_rejects_the_retired_point_residue_owner(tmp_path: Path
            "fn amino_acid_one_letter(token: &str) -> Option<char> { None }\n")
     subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
     assert _run(tmp_path).returncode == 1
+
+
+@pytest.mark.parametrize("path", [
+    "src/entities/variant/resolution/point_alias.rs",
+    "src/entities/variant/resolution/protein_get.rs",
+])
+def test_biodata_boundary_accepts_style_in_exact_protein_owners(tmp_path: Path, path: str) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / path, "use biodata::HgvsProteinStyle;\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 0
+
+
+@pytest.mark.parametrize(("path", "marker"), [
+    ("src/entities/variant/resolution/protein_get.rs", "parse_hgvs_protein_point_21_1_4"),
+    ("src/entities/variant/resolution/protein_get.rs", "HgvsProteinPointEnvelope"),
+    ("src/entities/variant/resolution/protein_get.rs", "ParsedHgvsProteinPoint"),
+    ("src/entities/variant/resolution/protein_get.rs", "HgvsProteinPointDisposition"),
+    ("src/entities/variant/resolution/protein_get.rs", "HgvsProteinPointEdit"),
+    ("src/entities/variant/resolution/protein_get.rs", "HgvsProteinResidue"),
+    ("src/entities/variant/resolution/protein_get.rs", "HgvsProteinPointError"),
+    ("src/entities/variant/resolution/protein_get_other.rs", "HgvsProteinStyle"),
+    ("src/sources/myvariant.rs", "HgvsProteinStyle"),
+])
+def test_biodata_boundary_retains_point_only_and_nearest_style_refusals(tmp_path: Path, path: str, marker: str) -> None:
+    _fixture(tmp_path)
+    _write(tmp_path / path, f"use biodata::{marker};\n")
+    subprocess.run(["git", "add", "src"], cwd=tmp_path, check=True)
+    assert _run(tmp_path).returncode == 1

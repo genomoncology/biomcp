@@ -1,5 +1,7 @@
 //! Variant detail retrieval, section gating, and enrichment orchestration.
 
+mod protein_lookup;
+
 use std::time::Duration;
 
 use crate::entities::section_outcome::SectionOutcome;
@@ -371,6 +373,7 @@ pub(super) async fn resolve_base_with_hit(
     ),
     BioMcpError,
 > {
+    super::resolution::protein_get::prepare(id)?;
     let id = id.trim();
     if id.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -525,30 +528,11 @@ pub(super) async fn resolve_base_with_hit(
                 Vec::new(),
             )
         }
-        VariantIdFormat::GeneProteinChange { gene, change } => {
-            let q = format!(
-                "dbnsfp.genename:{} AND dbnsfp.hgvsp:\"p.{}\"",
-                gene,
-                MyVariantClient::escape_query_value(change)
-            );
-            let resp = myvariant
-                .query_with_fields(&q, 5, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
-                .await?;
-            (
-                resp.hits
-                    .into_iter()
-                    .find(&compatible)
-                    .ok_or_else(|| BioMcpError::NotFound {
-                        entity: "variant".into(),
-                        id: id.to_string(),
-                        suggestion: format!(
-                            "Try searching: biomcp search variant -g {gene} --hgvsp {change}"
-                        ),
-                    })?,
-                Some(GenomeBuild::Grch37),
-                Vec::new(),
-            )
-        }
+        VariantIdFormat::GeneProteinChange { gene, change } => (
+            protein_lookup::lookup(&myvariant, id, gene, change, &requested).await?,
+            Some(GenomeBuild::Grch37),
+            Vec::new(),
+        ),
     };
 
     let mut variant = transform::variant::from_myvariant_hit(&hit);
@@ -1232,6 +1216,7 @@ pub async fn get_with_workflow_signals(
     sections: &[String],
     genome_build: Option<GenomeBuild>,
 ) -> Result<(Variant, VariantWorkflowSignals), BioMcpError> {
+    super::resolution::protein_get::prepare(id)?;
     let section_flags = parse_sections(sections)?;
     if is_gwas_only_request(&section_flags)
         && let VariantIdFormat::RsId(rsid) = parse_variant_id(id)?
