@@ -4,6 +4,13 @@ Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1294-whole-abstracts`, sha `d00f515c`, 2026-10-05. Two review cycles.
+- Code review (cycle 1): REJECT 2026-10-05, two findings: the ticket's named spec page did not exist (P1), and one receipt recorded a non-production request URL while claiming the production shape (P2).
+- Code re-review (cycle 2): ACCEPT 2026-10-05, both findings resolved with evidence; the two proof substitutions (PubTator3 export for PMID 30738221 because no PMC record exists; authored fixture for the ragged banner because no recorded capture contains one) ruled acceptable.
+- Spec page `spec/entity/article-text-fidelity.md` pins six behaviors from recorded bytes, names the 240-byte snippet cap, and is registered in the routine lane and the registry test. 51+ targeted tests, lint green.
+
 ## Outcome
 
 Article JSON returns whole abstracts with no cut-off, and full text reads cleanly: spaced JATS inline text, labeled reference identifiers, kept PMC titles, and no viewer links or lookup URLs.
@@ -17,6 +24,14 @@ Article JSON returns whole abstracts with no cut-off, and full text reads cleanl
 - Defers: Rendering tables with merged cells as Markdown. JATS author bylines.
 
 ## Change detail
+## Change detail
+## Review amendments (2026-10-05, folded from code review)
+
+- Change 2 wording: element-adjacent splits (adjacent elements whose text touches with alphanumeric characters on both sides, like a surname element joined to a given-names element) gain one space. Defects that live in the source text itself, with no element boundary in the rendition, stay as-is; BioMCP does not rewrite source prose. On the recorded NCBI EFetch rendition of the TAILORx paper, `JemalA` is an element join and gains the space; `recurrencescore` is plain source text and stays.
+- Reference-link scope for Change 4: drop scholar_lookup URLs, tileshop viewer links (including linked viewer images), and whole-line open-in-new-tab entries. Keep short canonical links: DOI, PubMed, PMC free article.
+- Proof, 30738221 case: PMID 30738221 has no PMC record (esearch db=pmc returns count 0), so no EFetch capture can exist. The abstract's production source is the PubTator3 export; the capture `pubtator/export_30738221.json` records that production request shape. The whole abstract is pinned byte-for-byte against the recorded bytes. The EFetch-shaped whole-abstract pin is delivered on the TAILORx capture instead. The seam test over the synthetic abstract remains as the edge-case floor.
+- Ragged-table banner: no recorded capture contains a ragged table (TAILORx and RxPONDER tables are all merged-cell), so the banner is pinned on a fixture-authored JATS document with uneven row widths.
+
 
 1. JSON output carries the whole abstract. If Markdown output keeps a short form, it says how to get the rest. Search rows keep their 240-byte snippet.
 2. JATS conversion inserts whitespace between inline elements where the source has it, fixing `JemalA` and `recurrencescore`. Defects in the source text itself, such as `Score of≤1O`, stay as they are.
