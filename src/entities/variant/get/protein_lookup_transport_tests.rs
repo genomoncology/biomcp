@@ -20,7 +20,16 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
     let mut h2 = row["hit"].clone();
     h2["_id"] = json!("chr1:g.102A>T");
     h2["dbsnp"]["rsid"] = json!("rs102");
+    let original_over_limit = format!("{}GENE p.A11del", " ".repeat(500));
+    assert_eq!(original_over_limit.len(), 513);
     for (channel, input, pages, expected, offsets) in [
+        (
+            "typed-original-limit",
+            original_over_limit.as_str(),
+            vec![json!({"total":1,"hits":[data["admission"][0]["hit"]]})],
+            json!({"content":[{"type":"text","text":"Protein interval lookup exceeds its input limit."}],"isError":true}),
+            vec![],
+        ),
         (
             "cli",
             "GENE p.Ala11_Gly12del",
@@ -139,6 +148,9 @@ async fn interval_get_cli_typed_and_raw_mcp_preserve_transport_contracts() {
                     .await
                     .unwrap()
             };
+            if channel == "typed-original-limit" {
+                ledger(&requests, row["query"].as_str().unwrap(), &offsets);
+            }
             let mut actual = serde_json::to_value(&result).unwrap();
             if channel == "typed-success" {
                 actual["content"][0]["text"] =

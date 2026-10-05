@@ -872,19 +872,7 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
     }
     Ok(args)
 }
-
-/// Maps typed get input onto the existing CLI grammar without doing provider work.
-///
-/// The accepted entity, section, and duplicate policies come from the same MCP
-/// capability projection that generates the schema. That projection starts from
-/// the CLI catalog but deliberately excludes article `asset`: it is a variadic
-/// binary download that can name server-local output and is therefore CLI-only.
-/// The safe article `assets` manifest remains an ordinary typed section. Trial
-/// terminal document forms remain outside the typed projection as well. Their
-/// explicit checks below run before ordinary section validation so callers keep
-/// the established CLI-only guidance instead of receiving a generic bad-section
-/// error. Adverse-event's repeated-section behavior remains intentionally
-/// idempotent; all other section-bearing entities reject duplicates.
+/// Map typed get input through the CLI catalog and terminal-section policies.
 fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
     let object = input
         .0
@@ -896,10 +884,23 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         .iter()
         .find(|capability| capability.entity == entity)
         .ok_or_else(|| input_error("invalid typed get entity"))?;
+    if entity == "variant"
+        && let Some(original) = object.get("id").and_then(Value::as_str)
+        && original.len() > 512
+    {
+        use crate::entities::variant::{IntervalSearchAssertion, is_exact_gene_token};
+        let mut tokens = original.split_whitespace();
+        if tokens.next().is_some_and(is_exact_gene_token)
+            && tokens.next().is_some_and(IntervalSearchAssertion::selects)
+            && tokens.next().is_none()
+        {
+            let message = "Protein interval lookup exceeds its input limit.";
+            return Err(input_error(message));
+        }
+    }
     let id = checked_text(object.get("id").unwrap_or(&Value::Null), "id", 512)?;
     let allowed_keys = typed_get_allowed_keys(&entity, capability.sections.is_some());
-    debug_assert!(allowed_keys.contains(&"entity"));
-    debug_assert!(allowed_keys.contains(&"id"));
+    debug_assert!(allowed_keys.contains(&"entity") && allowed_keys.contains(&"id"));
     debug_assert!(allowed_keys.contains(&"json"));
     if let Some(key) = object
         .keys()
@@ -967,7 +968,6 @@ struct McpSectionSource {
     label: String,
     sources: Vec<String>,
 }
-
 #[derive(Debug, Default)]
 struct McpMetaFooter {
     section_sources: Vec<McpSectionSource>,
