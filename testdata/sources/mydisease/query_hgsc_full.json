@@ -1,0 +1,33 @@
+{
+ "took": 1,
+ "total": 1,
+ "max_score": 141.8954,
+ "hits": [
+  {
+   "_id": "MONDO:0005211",
+   "_score": 141.8954,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "ovarian serous carcinoma",
+    "synonyms": {}
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "ovarian serous adenocarcinoma",
+      "ovarian serous carcinoma",
+      "ovary serous adenocarcinoma",
+      "serous adenocarcinoma of ovary",
+      "serous adenocarcinoma of the ovary",
+      "serous carcinoma of ovary",
+      "serous carcinoma of the ovary"
+     ],
+     "related": [
+      "malignant ovarian serous tumour",
+      "serous ovarian cancer"
+     ]
+    }
+   }
+  }
+ ]
+}

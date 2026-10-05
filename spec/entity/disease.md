@@ -76,6 +76,71 @@ ranking is fixture-backed, OLS4 search construction is asserted by
 `MyDiseaseXrefLookupRequestPlan`. Any live OLS4/MyDisease upstream probe belongs
 in a release/live-smoke lane, not routine `make spec-pr`.
 
+## Common Abbreviation Search
+
+Ticket 1295. MyDisease indexes `mondo.synonym` and `disease_ontology.synonyms`
+as objects scoped by synonym type; only the `exact` leaf fields hold tokens, so
+the search query targets those leaf fields for exact synonym and abbreviation
+retrieval, and BioMCP adds no abbreviations of its own. The abbreviation source
+is the provider's own exact synonym lists, strict to the exact scope. The
+abbreviation table below records, from responses captured on 2026-10-05, which
+of the ticket's abbreviations the source holds. `CAD` is ambiguous in the
+source's own lists (coronary artery disease, cold agglutinin disease, and
+alveolar capillary dysplasia each hold it), so search resolves it to every
+exact holder. `HGSC` is held by no exact synonym list in the source, so it
+returns no rows and stays a deferred gap; the parent is reachable by its full
+name.
+
+| Input | Expected first identifier |
+| --- | --- |
+| NSCLC | MONDO:0005233 |
+| DLBCL | MONDO:0018905 |
+| CRC | MONDO:0024331 |
+| AML | MONDO:0018874 |
+| CAD | all three exact holders (see below) |
+| HGSC | none (no source synonym) |
+| non-small cell lung carcinoma | MONDO:0005233 |
+| diffuse large B-cell lymphoma | MONDO:0018905 |
+| colorectal carcinoma | MONDO:0024331 |
+| acute myeloid leukemia | MONDO:0018874 |
+| ovarian serous carcinoma | MONDO:0005211 |
+
+```bash
+set -o pipefail
+first_id() {
+  ../../tools/biomcp-ci --json search disease -q "$1" --no-fallback --limit 3 \
+    | jq -r '.results[0].id // "none"'
+}
+{
+  first_id NSCLC
+  first_id DLBCL
+  first_id CRC
+  first_id AML
+  first_id HGSC
+  first_id "non-small cell lung carcinoma"
+  first_id "diffuse large B-cell lymphoma"
+  first_id "colorectal carcinoma"
+  first_id "acute myeloid leukemia"
+  first_id "ovarian serous carcinoma"
+} | mustmatch 'MONDO:0005233
+MONDO:0018905
+MONDO:0024331
+MONDO:0018874
+none
+MONDO:0005233
+MONDO:0018905
+MONDO:0024331
+MONDO:0018874
+MONDO:0005211'
+```
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json search disease -q CAD --no-fallback --limit 3 \
+  | jq '([.results[].id] | sort) == ["MONDO:0005010", "MONDO:0018922", "MONDO:0100077"]' \
+  | mustmatch 'true'
+```
+
 
 ## Genes & Diagnostics
 
