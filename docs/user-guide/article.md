@@ -394,7 +394,8 @@ Scholar only after a successful response.
 ## Helper commands
 
 ```bash
-biomcp article entities 22663011   # extract annotated entities via PubTator
+biomcp article entities 30738221   # annotated entities with identifiers and follow-up get commands
+biomcp --json article entities 30738221 --full   # same rows with passage positions
 biomcp batch article 22663011,24200969 --mode compact  # compact summary cards
 biomcp batch article 22663011,24200969                 # detail records (default)
 biomcp article citations 22663011 --limit 3 --offset 0   # one Semantic Scholar citation page

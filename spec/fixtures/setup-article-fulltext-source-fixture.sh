@@ -58,6 +58,7 @@ def source_bytes(path):
 
 POW_INTERSTITIAL = source_bytes("pmc_article/pmc3040717-supplementary-tables-pow.html")
 PUBTATOR_20516115 = source_bytes("pubtator/export_20516115.json")
+PUBTATOR_30738221 = source_bytes("pubtator/export_30738221.json")
 EUROPEPMC_20516115 = source_bytes("europepmc/search_pmid_20516115.json")
 PMC_OA_3040717_VERSIONS = source_bytes("pmc_oa/pmc3040717-versions.xml")
 PMC_OA_3040717_METADATA = source_bytes("pmc_oa/pmc3040717.1.json")
@@ -849,6 +850,11 @@ class Handler(BaseHTTPRequestHandler):
         pmids = query.get("pmids")
         if decoded_path == "/publications/export/biocjson" and pmids == ["20516115"]:
             send_bytes(self, 200, PUBTATOR_20516115, "application/json")
+            return
+        if decoded_path == "/publications/export/biocjson" and pmids == ["30738221"]:
+            # Ticket 1296: provider-faithful PubTator3 capture carrying
+            # identifiers, namespaces, and document-global locations.
+            send_bytes(self, 200, PUBTATOR_30738221, "application/json")
             return
         if decoded_path == "/publications/export/biocjson" and pmids and pmids[0] in ARTICLES:
             send_json(self, 200, pubtator_payload(pmids[0]))
