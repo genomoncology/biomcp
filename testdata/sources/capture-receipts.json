@@ -1066,7 +1066,7 @@
       "classification": "real_and_receipted",
       "receipt": {
         "provider": "NCBI EFetch PMC",
-        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=6172658&retmode=xml",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=6172658&rettype=xml",
         "captured_at": "2026-10-05T18:52:00Z",
         "sha256": "21981604084d4dddd7b583f0ed5116072ad5fc6bdf8f84acbc6e38b8725da074",
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
@@ -1119,6 +1119,18 @@
         "sha256": "7e4d3dc39447c6fe955ef297ce0d024c0da10fcec5ded9e71b9362678ca586d9",
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "pubtator/export_30738221.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3 export",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=30738221",
+        "captured_at": "2026-10-05T20:44:04Z",
+        "sha256": "c47da2626c4dd666c183cb7886999784cf612520a43a5882b653c292c5573651",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public PubTator3 export response through BioMCP's production request shape."
       }
     },
     {
