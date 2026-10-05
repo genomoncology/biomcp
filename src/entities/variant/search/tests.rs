@@ -263,6 +263,17 @@ fn exact_aggregation_retains_identical_complex_protein_hgvs() {
 
 #[test]
 fn exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match() {
+    let corpus: serde_json::Value = serde_json::from_str(include_str!("../resolution/genomic_oracles/cases.json")).unwrap();
+    for case in corpus["search_cases"].as_array().unwrap() {
+        let requested: RequestedVariantIdentity = serde_json::from_value(case["requested"].clone()).unwrap();
+        let mut seen = HashSet::new();
+        let mut retained = Vec::new();
+        let hits: Vec<MyVariantHit> = serde_json::from_value(case["hits"].clone()).unwrap();
+        assert!(!retain_compatible_hits(&requested, hits, &mut seen, &mut retained));
+        assert_eq!(seen, HashSet::from([case["source_key"].as_str().unwrap().to_owned()]));
+        let page = finalize_exact_page(&requested, retained, 0, 5, false, true);
+        assert_eq!(serde_json::to_value(&page.results).unwrap(), case["expected_results"], "{}", case["id"]);
+    }
     let requested = RequestedVariantIdentity::for_search(
         Some("HSD17B4".into()),
         Some("H540R".into()),

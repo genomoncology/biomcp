@@ -484,7 +484,8 @@
       "chromosome_components": null,
       "structured_components": null,
       "prediction_components": null,
-      "prediction_parser_calls": 0
+      "prediction_parser_calls": 0,
+      "classification_code": "hgvs_invalid"
     },
     {
       "id": "G16",
@@ -509,7 +510,7 @@
     {
       "id": "G17",
       "input": "chr7:g.1del",
-      "route": "body_compatibility",
+      "route": "checked",
       "chromosome_extracts": false,
       "structured_extracts": false,
       "source_components": {
@@ -520,11 +521,45 @@
         "alternate": null
       },
       "checked_digits": null,
-      "checked_prediction": null,
+      "checked_prediction": false,
       "chromosome_components": null,
       "structured_components": null,
       "prediction_components": null,
-      "prediction_parser_calls": 0
+      "prediction_parser_calls": 0,
+      "checked_facts": {
+        "molecule": "Genomic",
+        "reference": "chr7",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            11
+          ],
+          "reference": [
+            0,
+            4
+          ],
+          "location": [
+            7,
+            8
+          ]
+        },
+        "rendered": "chr7:g.1del"
+      }
     },
     {
       "id": "G18",
@@ -544,7 +579,8 @@
       "chromosome_components": null,
       "structured_components": null,
       "prediction_components": null,
-      "prediction_parser_calls": 0
+      "prediction_parser_calls": 0,
+      "classification_code": "hgvs_invalid"
     },
     {
       "id": "G19",
@@ -624,7 +660,8 @@
       "chromosome_components": null,
       "structured_components": null,
       "prediction_components": null,
-      "prediction_parser_calls": 0
+      "prediction_parser_calls": 0,
+      "classification_code": "hgvs_invalid"
     },
     {
       "id": "G23",
@@ -644,7 +681,8 @@
       "chromosome_components": null,
       "structured_components": null,
       "prediction_components": null,
-      "prediction_parser_calls": 0
+      "prediction_parser_calls": 0,
+      "classification_code": "hgvs_invalid"
     },
     {
       "id": "G24",
@@ -1024,6 +1062,405 @@
         "status": "Indeterminate",
         "field": "position"
       }
+    },
+    {
+      "id": "SC0-0",
+      "requested": {
+        "genomic_accession": "R"
+      },
+      "source": {
+        "genomic_id": "R:g.1del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "R:g.1del"
+      }
+    },
+    {
+      "id": "SC0-1",
+      "requested": {
+        "genomic_accession": "X"
+      },
+      "source": {
+        "genomic_id": "R:g.1del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "genomic_accession"
+      }
+    },
+    {
+      "id": "SC0-2",
+      "requested": {
+        "position": 1
+      },
+      "source": {
+        "genomic_id": "R:g.1del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Indeterminate",
+        "field": "position"
+      }
+    },
+    {
+      "id": "SC0-3",
+      "requested": {
+        "genomic_accession": "R",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "source": {
+        "genomic_id": "R:g.1del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Indeterminate",
+        "field": "alternate"
+      }
+    },
+    {
+      "id": "SC0-4",
+      "requested": {
+        "genome_build": "GRCh37"
+      },
+      "source": {
+        "genomic_id": "R:g.1del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Indeterminate",
+        "field": "genome_build"
+      }
+    },
+    {
+      "id": "UC0-0",
+      "requested": {
+        "alternate": "T"
+      },
+      "source": {
+        "genomic_id": "R:g.?A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "R:g.?A>T"
+      }
+    },
+    {
+      "id": "UC0-1",
+      "requested": {
+        "alternate": "G"
+      },
+      "source": {
+        "genomic_id": "R:g.?A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "alternate"
+      }
+    },
+    {
+      "id": "UC0-2",
+      "requested": {
+        "reference": "A"
+      },
+      "source": {
+        "genomic_id": "R:g.?A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "reference"
+      }
+    },
+    {
+      "id": "UC0-3",
+      "requested": {
+        "reference": "?A"
+      },
+      "source": {
+        "genomic_id": "R:g.?A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "R:g.?A>T"
+      }
+    },
+    {
+      "id": "UC0-4",
+      "requested": {
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "source": {
+        "genomic_id": "R:g.?A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "reference"
+      }
+    },
+    {
+      "id": "UC0-5",
+      "requested": {
+        "gene": "OTHER",
+        "alternate": "G"
+      },
+      "source": {
+        "genomic_id": "R:g.?A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "gene"
+      }
+    },
+    {
+      "id": "UC1-0",
+      "requested": {
+        "alternate": "T"
+      },
+      "source": {
+        "genomic_id": "R:g.(1_2)A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "R:g.(1_2)A>T"
+      }
+    },
+    {
+      "id": "UC1-1",
+      "requested": {
+        "alternate": "G"
+      },
+      "source": {
+        "genomic_id": "R:g.(1_2)A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "alternate"
+      }
+    },
+    {
+      "id": "UC1-2",
+      "requested": {
+        "reference": "A"
+      },
+      "source": {
+        "genomic_id": "R:g.(1_2)A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "reference"
+      }
+    },
+    {
+      "id": "UC1-3",
+      "requested": {
+        "reference": "(1_2)A"
+      },
+      "source": {
+        "genomic_id": "R:g.(1_2)A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "R:g.(1_2)A>T"
+      }
+    },
+    {
+      "id": "UC1-4",
+      "requested": {
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      },
+      "source": {
+        "genomic_id": "R:g.(1_2)A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "reference"
+      }
+    },
+    {
+      "id": "UC1-5",
+      "requested": {
+        "gene": "OTHER",
+        "alternate": "G"
+      },
+      "source": {
+        "genomic_id": "R:g.(1_2)A>T",
+        "genome_build": "GRCh37",
+        "genes": [
+          "GENE"
+        ],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "gene"
+      }
+    },
+    {
+      "id": "build-conflict",
+      "requested": {
+        "genome_build": "GRCh37"
+      },
+      "source": {
+        "genomic_id": "GrCh38:R:g.1_2del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Contradictory",
+        "field": "genome_build"
+      }
+    },
+    {
+      "id": "coding-precedence",
+      "requested": {
+        "coding_change": "c.19C>T",
+        "genomic_accession": "R"
+      },
+      "source": {
+        "genomic_id": "R:g.1_2del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [],
+        "coding_changes": [
+          "c.19C>T"
+        ],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "c.19C>T"
+      }
+    },
+    {
+      "id": "protein-precedence",
+      "requested": {
+        "protein_change": "A1V",
+        "genomic_accession": "R"
+      },
+      "source": {
+        "genomic_id": "R:g.1_2del",
+        "genome_build": "GRCh37",
+        "genes": [],
+        "protein_changes": [
+          "p.Ala1Val"
+        ],
+        "coding_changes": [],
+        "rsids": []
+      },
+      "expected": {
+        "status": "Compatible",
+        "matched_alias": "p.Ala1Val"
+      }
     }
   ],
   "consumer_boundaries": [
@@ -1297,7 +1734,27 @@
         "C06",
         "C07",
         "C08",
-        "C09"
+        "C09",
+        "SC0-0",
+        "SC0-1",
+        "SC0-2",
+        "SC0-3",
+        "SC0-4",
+        "UC0-0",
+        "UC0-1",
+        "UC0-2",
+        "UC0-3",
+        "UC0-4",
+        "UC0-5",
+        "UC1-0",
+        "UC1-1",
+        "UC1-2",
+        "UC1-3",
+        "UC1-4",
+        "UC1-5",
+        "build-conflict",
+        "coding-precedence",
+        "protein-precedence"
       ]
     },
     {
@@ -1665,7 +2122,46 @@
         ],
         "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
       },
-      "producer_parser_calls": 1
+      "producer_parser_calls": 1,
+      "complete_facts": {
+        "molecule": "Genomic",
+        "reference": "opaque",
+        "prediction": false,
+        "location": {
+          "kind": "Range",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            15
+          ],
+          "reference": [
+            0,
+            6
+          ],
+          "location": [
+            9,
+            12
+          ]
+        },
+        "rendered": "opaque:g.1_2del"
+      }
     },
     {
       "id": "A07",
@@ -1708,6 +2204,49 @@
         "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
       },
       "producer_parser_calls": 1
+    },
+    {
+      "id": "A08",
+      "execution_owner": "genomic_assertion_and_resource_table",
+      "entrypoint": "private genomic assertion checked-envelope adaptation boundary",
+      "construction": "Use public producer envelope directly at the private adapter boundary; do not change route selection or add a shipped parser hook",
+      "input": "opaque:g.1A>T",
+      "producer_disposition": "Parsed",
+      "expected": {
+        "route": "checked",
+        "diagnostic": "genomic_substitution_unrepresentable",
+        "components": null,
+        "compatibility_retry_calls": 0,
+        "post_refusal_parser_calls": 0,
+        "caller_admission_invoked": false,
+        "assertion_observation": "internal checked component view only; product masks are exercised in G/B rows"
+      },
+      "debug": {
+        "type": "GenomicAssertion",
+        "members": {
+          "source_bytes": 13,
+          "reference_bytes": 6,
+          "outer_whitespace": false,
+          "route": "checked",
+          "prediction": false,
+          "diagnostic": "genomic_substitution_unrepresentable"
+        },
+        "forbidden_member_names": [
+          "source",
+          "candidate",
+          "reference",
+          "position_lexeme",
+          "envelope",
+          "disposition_payload"
+        ],
+        "forbidden_text": [
+          "opaque",
+          "opaque:g.1A>T"
+        ],
+        "format_rule": "Format only the complete listed scalar members; never derive Debug or format parsed/envelope values"
+      },
+      "producer_parser_calls": 1,
+      "envelope_input": "other:g.1A>T"
     }
   ],
   "assertion_case_boundary": "Only the A01-A07 table passes actual public producer envelopes to the private adaptation seam to prove terminal handling. G/R rows exercise normal preselection. This supplies no public envelope injection API and no checked-route fallback. Assertion components in A01 are the internal typed component view; caller admission masks remain separate.",
@@ -1718,5 +2257,1806 @@
     "structured_populate_genomic": "trim outer whitespace",
     "source_components": "trim outer whitespace; remove one leading GRCh37/GRCh38 build; require remaining :g. separator",
     "prediction_input": "raw variant.id; no trimming"
-  }
+  },
+  "complete_source_origin": {
+    "origin": "Authored MIT synthetic literals from accepted complete source contract and locked parser API",
+    "license": "MIT",
+    "attribution": "BioMCP contributors",
+    "transformation": "Literal typed expectations; byte spans computed from authored reference/location strings. No provider payloads or candidate output."
+  },
+  "complete_source_cases": [
+    {
+      "id": "S01",
+      "input": "R:g.001A>T",
+      "candidate": "R:g.001A>T",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "001",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        },
+        "spans": {
+          "whole": [
+            0,
+            10
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.001A>T"
+      },
+      "point": {
+        "accession": "R",
+        "position_lexeme": "001",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "S01B",
+      "input": "\u2003 GrCh38:R:g.001A>T \n",
+      "candidate": "R:g.001A>T",
+      "offset": 11,
+      "build": "GrCh38",
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "001",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        },
+        "spans": {
+          "whole": [
+            0,
+            10
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.001A>T"
+      },
+      "point": {
+        "accession": "R",
+        "position_lexeme": "001",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "legacy_fields": {
+        "build": "GrCh38",
+        "accession": "R",
+        "position": 1,
+        "reference": "A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "S02",
+      "input": "R:g.1del",
+      "candidate": "R:g.1del",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            8
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            5
+          ]
+        },
+        "rendered": "R:g.1del"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S03",
+      "input": "R:g.1_2delAC",
+      "candidate": "R:g.1_2delAC",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Range",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": "AC"
+        },
+        "spans": {
+          "whole": [
+            0,
+            12
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.1_2delAC"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S03B",
+      "input": "\u2003 GrCh38:R:g.1_2delAC \n",
+      "candidate": "R:g.1_2delAC",
+      "offset": 11,
+      "build": "GrCh38",
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Range",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": "AC"
+        },
+        "spans": {
+          "whole": [
+            0,
+            12
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.1_2delAC"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": "GrCh38",
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S04",
+      "input": "R:g.1dup",
+      "candidate": "R:g.1dup",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Duplication",
+          "duplicated": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            8
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            5
+          ]
+        },
+        "rendered": "R:g.1dup"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S05",
+      "input": "R:g.1_2dupAC",
+      "candidate": "R:g.1_2dupAC",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Range",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Duplication",
+          "duplicated": "AC"
+        },
+        "spans": {
+          "whole": [
+            0,
+            12
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.1_2dupAC"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S06",
+      "input": "R:g.1_2insAC",
+      "candidate": "R:g.1_2insAC",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "InsertionFlanks",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Insertion",
+          "inserted": "AC"
+        },
+        "spans": {
+          "whole": [
+            0,
+            12
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.1_2insAC"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S07",
+      "input": "R:g.1_2delinsTG",
+      "candidate": "R:g.1_2delinsTG",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Range",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Delins",
+          "inserted": "TG"
+        },
+        "spans": {
+          "whole": [
+            0,
+            15
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.1_2delinsTG"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S08",
+      "input": "R:g.1_2inv",
+      "candidate": "R:g.1_2inv",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Range",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Inversion"
+        },
+        "spans": {
+          "whole": [
+            0,
+            10
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.1_2inv"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S09",
+      "input": "R:g.1=",
+      "candidate": "R:g.1=",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "NoChange"
+        },
+        "spans": {
+          "whole": [
+            0,
+            6
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            5
+          ]
+        },
+        "rendered": "R:g.1="
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S10",
+      "input": "R:g.?del",
+      "candidate": "R:g.?del",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Unknown",
+              "digits": null,
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            8
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            5
+          ]
+        },
+        "rendered": "R:g.?del"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S11",
+      "input": "R:g.?A>T",
+      "candidate": "R:g.?A>T",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Unknown",
+              "digits": null,
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        },
+        "spans": {
+          "whole": [
+            0,
+            8
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            5
+          ]
+        },
+        "rendered": "R:g.?A>T"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": "?A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "S11B",
+      "input": "\u2003 GrCh38:R:g.?A>T \n",
+      "candidate": "R:g.?A>T",
+      "offset": 11,
+      "build": "GrCh38",
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Unknown",
+              "digits": null,
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        },
+        "spans": {
+          "whole": [
+            0,
+            8
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            5
+          ]
+        },
+        "rendered": "R:g.?A>T"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": "GrCh38",
+        "accession": "R",
+        "position": null,
+        "reference": "?A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "S12",
+      "input": "R:g.(1_2)del",
+      "candidate": "R:g.(1_2)del",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "UncertainBreakpoint",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            12
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            9
+          ]
+        },
+        "rendered": "R:g.(1_2)del"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S13",
+      "input": "R:g.(1_2)A>T",
+      "candidate": "R:g.(1_2)A>T",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "UncertainBreakpoint",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        },
+        "spans": {
+          "whole": [
+            0,
+            12
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            9
+          ]
+        },
+        "rendered": "R:g.(1_2)A>T"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": "(1_2)A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "S14",
+      "input": "R:g.(1_2)_(3_4)del",
+      "candidate": "R:g.(1_2)_(3_4)del",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "UncertainRange",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "3",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "4",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            18
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            15
+          ]
+        },
+        "rendered": "R:g.(1_2)_(3_4)del"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S14B",
+      "input": "\u2003 GrCh38:R:g.(1_2)_(3_4)del \n",
+      "candidate": "R:g.(1_2)_(3_4)del",
+      "offset": 11,
+      "build": "GrCh38",
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "UncertainRange",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "3",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "4",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": null
+        },
+        "spans": {
+          "whole": [
+            0,
+            18
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            15
+          ]
+        },
+        "rendered": "R:g.(1_2)_(3_4)del"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": "GrCh38",
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S15",
+      "input": "R:g.?_2insAC",
+      "candidate": "R:g.?_2insAC",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "InsertionFlanks",
+          "positions": [
+            {
+              "marker": "Unknown",
+              "digits": null,
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Insertion",
+          "inserted": "AC"
+        },
+        "spans": {
+          "whole": [
+            0,
+            12
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.?_2insAC"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S16",
+      "input": "R:g.2_1delT",
+      "candidate": "R:g.2_1delT",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Range",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "2",
+              "offset": null
+            },
+            {
+              "marker": "Ordinary",
+              "digits": "1",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Deletion",
+          "deleted": "T"
+        },
+        "spans": {
+          "whole": [
+            0,
+            11
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            7
+          ]
+        },
+        "rendered": "R:g.2_1delT"
+      },
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "S17",
+      "input": "R:g.18446744073709551616A>T",
+      "candidate": "R:g.18446744073709551616A>T",
+      "offset": 0,
+      "build": null,
+      "route": "checked",
+      "code": "hgvs_parsed",
+      "facts": {
+        "molecule": "Genomic",
+        "reference": "R",
+        "prediction": false,
+        "location": {
+          "kind": "Point",
+          "positions": [
+            {
+              "marker": "Ordinary",
+              "digits": "18446744073709551616",
+              "offset": null
+            }
+          ]
+        },
+        "edit": {
+          "kind": "Substitution",
+          "reference": "A",
+          "alternate": "T"
+        },
+        "spans": {
+          "whole": [
+            0,
+            27
+          ],
+          "reference": [
+            0,
+            1
+          ],
+          "location": [
+            4,
+            24
+          ]
+        },
+        "rendered": "R:g.18446744073709551616A>T"
+      },
+      "point": {
+        "accession": "R",
+        "position_lexeme": "18446744073709551616",
+        "reference": "A",
+        "alternate": "T"
+      },
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": "A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "N01",
+      "input": "R:g.1insAC",
+      "candidate": "R:g.1insAC",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "N02",
+      "input": "R:g.1_2A>T",
+      "candidate": "R:g.1_2A>T",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": 1,
+        "reference": "_2A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "N03",
+      "input": "R:g.1delins",
+      "candidate": "R:g.1delins",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "N04",
+      "input": "R:g.1delac",
+      "candidate": "R:g.1delac",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "N05",
+      "input": "R:g.1+2A>T",
+      "candidate": "R:g.1+2A>T",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": 1,
+        "reference": "+2A",
+        "alternate": "T"
+      }
+    },
+    {
+      "id": "N06",
+      "input": "R:g.(1_)del",
+      "candidate": "R:g.(1_)del",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "N07",
+      "input": "R:g.(1A>T)",
+      "candidate": "R:g.(1A>T)",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": "(1A",
+        "alternate": "T)"
+      }
+    },
+    {
+      "id": "N08",
+      "input": "R:g.1_3insAC",
+      "candidate": "R:g.1_3insAC",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_invalid",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    },
+    {
+      "id": "N09",
+      "input": "R:g.[1A>T;2G>C]",
+      "candidate": "R:g.[1A>T;2G>C]",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_unsupported_allele_compound",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": "[1A",
+        "alternate": "T;2G>C]"
+      }
+    },
+    {
+      "id": "N10",
+      "input": "R:g.1A[2]",
+      "candidate": "R:g.1A[2]",
+      "offset": 0,
+      "build": null,
+      "route": "body_compatibility",
+      "code": "hgvs_unsupported_repeat",
+      "facts": null,
+      "point": null,
+      "legacy_fields": {
+        "build": null,
+        "accession": "R",
+        "position": null,
+        "reference": null,
+        "alternate": null
+      }
+    }
+  ],
+  "complete_source_transport_cases": 4,
+  "search_cases": [
+    {
+      "id": "SE0",
+      "requested": {
+        "gene": "GENE",
+        "coding_change": "c.19C>T",
+        "genomic_accession": "R"
+      },
+      "hits": [
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          }
+        },
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          }
+        }
+      ],
+      "expected_results": [
+        {
+          "id": "R:g.1_2delAC",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gene": "GENE",
+          "hgvs_c": "c.19C>T",
+          "clinvar_stars": null,
+          "revel": null,
+          "gerp": null,
+          "source_identity": {
+            "genomic_id": "R:g.1_2delAC",
+            "genome_build": "GRCh37",
+            "genes": [
+              "GENE"
+            ],
+            "protein_changes": [],
+            "coding_changes": [
+              "c.19C>T"
+            ],
+            "rsids": []
+          },
+          "matched_alias": "c.19C>T",
+          "transcript_annotations_complete": true,
+          "transcript_annotations": []
+        }
+      ],
+      "source_key": "R:G.1_2DELAC|GRCH37|GENE||C.19C>T|",
+      "requested_observations": {
+        "identity": {
+          "gene": "GENE",
+          "protein_change": null,
+          "coding_change": "c.19C>T",
+          "transcript": null,
+          "genomic_accession": "R",
+          "genome_build": null,
+          "position": null,
+          "reference": null,
+          "alternate": null,
+          "rsid": null
+        },
+        "normalized_aliases": {
+          "protein_changes": [],
+          "coding_changes": [
+            "c.19C>T"
+          ],
+          "genomic_ids": [],
+          "rsids": []
+        },
+        "human_label": "GENE c.19C>T"
+      }
+    },
+    {
+      "id": "SE1",
+      "requested": {
+        "gene": "GENE",
+        "coding_change": "c.19C>T",
+        "genomic_accession": "R"
+      },
+      "hits": [
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": null
+        },
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": null
+        }
+      ],
+      "expected_results": [
+        {
+          "id": "R:g.1_2delAC",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gene": "GENE",
+          "hgvs_c": "c.19C>T",
+          "clinvar_stars": null,
+          "revel": null,
+          "gerp": null,
+          "source_identity": {
+            "genomic_id": "R:g.1_2delAC",
+            "genome_build": "GRCh37",
+            "genes": [
+              "GENE"
+            ],
+            "protein_changes": [],
+            "coding_changes": [
+              "c.19C>T"
+            ],
+            "rsids": []
+          },
+          "matched_alias": "c.19C>T",
+          "transcript_annotations_complete": true,
+          "transcript_annotations": []
+        }
+      ],
+      "source_key": "R:G.1_2DELAC|GRCH37|GENE||C.19C>T|",
+      "requested_observations": {
+        "identity": {
+          "gene": "GENE",
+          "protein_change": null,
+          "coding_change": "c.19C>T",
+          "transcript": null,
+          "genomic_accession": "R",
+          "genome_build": null,
+          "position": null,
+          "reference": null,
+          "alternate": null,
+          "rsid": null
+        },
+        "normalized_aliases": {
+          "protein_changes": [],
+          "coding_changes": [
+            "c.19C>T"
+          ],
+          "genomic_ids": [],
+          "rsids": []
+        },
+        "human_label": "GENE c.19C>T"
+      }
+    },
+    {
+      "id": "SE2",
+      "requested": {
+        "gene": "GENE",
+        "coding_change": "c.19C>T",
+        "genomic_accession": "R"
+      },
+      "hits": [
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": {
+            "ann": "malformed"
+          }
+        },
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": {
+            "ann": "malformed"
+          }
+        }
+      ],
+      "expected_results": [
+        {
+          "id": "R:g.1_2delAC",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gene": "GENE",
+          "hgvs_c": "c.19C>T",
+          "clinvar_stars": null,
+          "revel": null,
+          "gerp": null,
+          "source_identity": {
+            "genomic_id": "R:g.1_2delAC",
+            "genome_build": "GRCh37",
+            "genes": [
+              "GENE"
+            ],
+            "protein_changes": [],
+            "coding_changes": [
+              "c.19C>T"
+            ],
+            "rsids": []
+          },
+          "matched_alias": "c.19C>T",
+          "transcript_annotations_complete": false,
+          "transcript_annotations": []
+        }
+      ],
+      "source_key": "R:G.1_2DELAC|GRCH37|GENE||C.19C>T|",
+      "requested_observations": {
+        "identity": {
+          "gene": "GENE",
+          "protein_change": null,
+          "coding_change": "c.19C>T",
+          "transcript": null,
+          "genomic_accession": "R",
+          "genome_build": null,
+          "position": null,
+          "reference": null,
+          "alternate": null,
+          "rsid": null
+        },
+        "normalized_aliases": {
+          "protein_changes": [],
+          "coding_changes": [
+            "c.19C>T"
+          ],
+          "genomic_ids": [],
+          "rsids": []
+        },
+        "human_label": "GENE c.19C>T"
+      }
+    },
+    {
+      "id": "SE3",
+      "requested": {
+        "gene": "GENE",
+        "coding_change": "c.19C>T",
+        "genomic_accession": "R"
+      },
+      "hits": [
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.19C>T",
+              "hgvs_p": null
+            }
+          }
+        },
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.19C>T",
+              "hgvs_p": null
+            }
+          }
+        }
+      ],
+      "expected_results": [
+        {
+          "id": "R:g.1_2delAC",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gene": "GENE",
+          "hgvs_c": "c.19C>T",
+          "clinvar_stars": null,
+          "revel": null,
+          "gerp": null,
+          "source_identity": {
+            "genomic_id": "R:g.1_2delAC",
+            "genome_build": "GRCh37",
+            "genes": [
+              "GENE"
+            ],
+            "protein_changes": [],
+            "coding_changes": [
+              "c.19C>T"
+            ],
+            "rsids": []
+          },
+          "matched_alias": "c.19C>T",
+          "transcript_annotations_complete": true,
+          "transcript_annotations": [
+            {
+              "source": "myvariant.info/snpeff.ann",
+              "gene": "GENE",
+              "transcript": "NM_012345.7",
+              "hgvs_c": "c.19C>T",
+              "hgvs_p": null,
+              "roles": [
+                "displayed",
+                "matched"
+              ]
+            }
+          ],
+          "transcript": "NM_012345.7"
+        }
+      ],
+      "source_key": "R:G.1_2DELAC|GRCH37|GENE||C.19C>T|",
+      "requested_observations": {
+        "identity": {
+          "gene": "GENE",
+          "protein_change": null,
+          "coding_change": "c.19C>T",
+          "transcript": null,
+          "genomic_accession": "R",
+          "genome_build": null,
+          "position": null,
+          "reference": null,
+          "alternate": null,
+          "rsid": null
+        },
+        "normalized_aliases": {
+          "protein_changes": [],
+          "coding_changes": [
+            "c.19C>T"
+          ],
+          "genomic_ids": [],
+          "rsids": []
+        },
+        "human_label": "GENE c.19C>T"
+      }
+    },
+    {
+      "id": "SE4",
+      "requested": {
+        "gene": "GENE",
+        "coding_change": "c.19C>T",
+        "genomic_accession": "R"
+      },
+      "hits": [
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.20C>T",
+              "hgvs_p": null
+            }
+          }
+        },
+        {
+          "_id": "R:g.1_2delAC",
+          "dbnsfp": {
+            "genename": "GENE",
+            "hgvsc": "c.19C>T"
+          },
+          "snpeff": {
+            "ann": {
+              "feature_id": "NM_012345.7",
+              "genename": "GENE",
+              "hgvs_c": "c.20C>T",
+              "hgvs_p": null
+            }
+          }
+        }
+      ],
+      "expected_results": [
+        {
+          "id": "R:g.1_2delAC",
+          "genome_build": "GRCh37",
+          "genome_build_provenance": "MyVariant.info provider default",
+          "gene": "GENE",
+          "hgvs_c": "c.20C>T",
+          "clinvar_stars": null,
+          "revel": null,
+          "gerp": null,
+          "source_identity": {
+            "genomic_id": "R:g.1_2delAC",
+            "genome_build": "GRCh37",
+            "genes": [
+              "GENE"
+            ],
+            "protein_changes": [],
+            "coding_changes": [
+              "c.19C>T"
+            ],
+            "rsids": []
+          },
+          "matched_alias": "c.19C>T",
+          "transcript_annotations_complete": true,
+          "transcript_annotations": [
+            {
+              "source": "myvariant.info/snpeff.ann",
+              "gene": "GENE",
+              "transcript": "NM_012345.7",
+              "hgvs_c": "c.20C>T",
+              "hgvs_p": null,
+              "roles": [
+                "displayed"
+              ]
+            }
+          ],
+          "transcript": "NM_012345.7"
+        }
+      ],
+      "source_key": "R:G.1_2DELAC|GRCH37|GENE||C.19C>T|",
+      "requested_observations": {
+        "identity": {
+          "gene": "GENE",
+          "protein_change": null,
+          "coding_change": "c.19C>T",
+          "transcript": null,
+          "genomic_accession": "R",
+          "genome_build": null,
+          "position": null,
+          "reference": null,
+          "alternate": null,
+          "rsid": null
+        },
+        "normalized_aliases": {
+          "protein_changes": [],
+          "coding_changes": [
+            "c.19C>T"
+          ],
+          "genomic_ids": [],
+          "rsids": []
+        },
+        "human_label": "GENE c.19C>T"
+      }
+    }
+  ]
 }
