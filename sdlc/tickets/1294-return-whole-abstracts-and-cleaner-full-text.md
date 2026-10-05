@@ -17,6 +17,12 @@ Article JSON returns whole abstracts with no cut-off, and full text reads cleanl
 - Defers: Rendering tables with merged cells as Markdown. JATS author bylines.
 
 ## Change detail
+## Review amendments (2026-10-05, folded from code review)
+
+- Change 2 wording: element-adjacent splits (adjacent elements whose text touches with alphanumeric characters on both sides, like a surname element joined to a given-names element) gain one space. Defects that live in the source text itself, with no element boundary in the rendition, stay as-is; BioMCP does not rewrite source prose. On the recorded NCBI EFetch rendition of the TAILORx paper, `JemalA` is an element join and gains the space; `recurrencescore` is plain source text and stays.
+- Reference-link scope for Change 4: drop scholar_lookup URLs, tileshop viewer links (including linked viewer images), and whole-line open-in-new-tab entries. Keep short canonical links: DOI, PubMed, PMC free article.
+- Proof, 30738221 case: record the capture through the production PMC EFetch request shape (rettype=xml, matching the sibling receipts) and pin the whole abstract from the recorded bytes; the seam test over the synthetic abstract remains as the edge-case floor.
+
 
 1. JSON output carries the whole abstract. If Markdown output keeps a short form, it says how to get the rest. Search rows keep their 240-byte snippet.
 2. JATS conversion inserts whitespace between inline elements where the source has it, fixing `JemalA` and `recurrencescore`. Defects in the source text itself, such as `Score of≤1O`, stay as they are.
