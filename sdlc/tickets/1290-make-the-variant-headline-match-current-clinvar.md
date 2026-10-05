@@ -4,7 +4,7 @@ Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
 Status: COMPLETE.
 
-Landed: 1db90d93.
+Landed: 8b188c99.
 
 ## Outcome
 
