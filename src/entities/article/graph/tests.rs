@@ -1785,6 +1785,14 @@ async fn spawn_degradation_fixture(
             .unwrap_or_default();
         if method == "POST" {
             logged.lock().unwrap().push("s2:seed".to_string());
+            if matches!(s2, S2Reply::CitingSeedWithCitedRefused(_))
+                && !request.contains(OPEN_CITED_DOI)
+            {
+                logged
+                    .lock()
+                    .unwrap()
+                    .push("s2:answered-citing".to_string());
+            }
             match &s2 {
                 S2Reply::Refused(status) => s2_reply(status),
                 S2Reply::CitingSeedWithCitedRefused(status) if request.contains(OPEN_CITED_DOI) => {
@@ -2022,7 +2030,10 @@ async fn citation_evidence_keeps_the_answered_seed_when_the_second_seed_refuses(
                 }
             );
             let logged = requests.lock().unwrap().join("\n");
-            assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
+            assert_eq!(logged.matches("s2:answered-citing").count(), 1, "{logged}");
+            if status.starts_with("429") {
+                assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
+            }
             assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
             assert!(
                 !logged.contains("europe:search"),
