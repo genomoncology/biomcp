@@ -52,7 +52,7 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
 }
 
 const POST_CHILD_FIXTURE_RESULT_TIMEOUT: Duration = Duration::from_secs(1);
-const CREDENTIAL_FIXTURE_HOST: &str = "127.0.0.2";
+const CREDENTIAL_FIXTURE_HOST: &str = "127.0.0.1";
 
 #[derive(Debug)]
 struct CredentialFixtureRequest {
