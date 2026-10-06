@@ -2,6 +2,14 @@
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1303-orcid-visibility-casing`, sha `21478d512`, 2026-10-06. Three build rounds: the person fix with the recorded capture; the works amendment after a live probe showed work summaries also carry lowercase public (so `author papers` was silently returning zero works); the review P2 fold that feeds the author surface docs lane the recorded shape.
+- Code review: ACCEPT 2026-10-06 after the P2 fold. The shared `is_public` helper is the single remaining visibility comparison in src/; both case tables pin public, PUBLIC, limited, private, absent on person (refusal) and works (silent filter) sides; the capture receipt is honest; the docs notes accurate; ticket-1142 works constraints untouched.
+- Gates: CI in flight; yellow lint/spec/test under the lock. Lands green; GitHub issue #289 closes with it.
+
+## Outcome
+
 ## Outcome
 
 `biomcp get author orcid:<id>` resolves with a valid token, because the
