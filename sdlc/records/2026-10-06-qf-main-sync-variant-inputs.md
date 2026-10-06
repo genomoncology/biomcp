@@ -1,6 +1,6 @@
 # Integrate current variant input maintenance
 
-October 6, 2026. Status: corrected build complete; original fresh High reviewer closure pending on the four CODE findings. Root authorizes this maintenance Quick Fix without a new ticket. This merge joins BioMCP 1.0 a6eba94cc3c0c87b3f036d9106bc41eb4679be8f and main ddc631fd503511e09e225c0bcae9f9c6797426c0. It includes the eight maintenance commits after 94820510. It does not land on either shared branch.
+October 6, 2026. Status: COMPLETE. Root authorizes this maintenance Quick Fix without a new ticket. This merge joins BioMCP 1.0 a6eba94cc3c0c87b3f036d9106bc41eb4679be8f and main ddc631fd503511e09e225c0bcae9f9c6797426c0. It includes the eight maintenance commits after 94820510. Root integrates this accepted result on the dedicated1.0 branch.
 
 The merge adds bare ClinVar VariationID detail and exact transcript coding alias fallback. It preserves accepted 1.0 genomic, protein, rsID, gene coding and decorated transcript coding detail. The existing BioData parser and bounded source selectors continue to own admission, complete scans, tuple correlation, conflicts, absent protein, population recovery, article safeguards, roles and CLI/MCP output. Search normalizes substitutions through the existing shared point adapter and keeps interval spelling. The dependency stays BioData 0.0.36 at 4f06f546b76c1eb60837fee7e56d25bbd4a9e051. Cargo.toml and Cargo.lock do not change.
 
