@@ -4430,8 +4430,8 @@ different provider surface.</p>
 </tr>
 <tr>
 <td><code>article entities &lt;pmid&gt;</code></td>
-<td>Entity-grouped follow-up view for a PMID</td>
-<td>Derived from PubTator3 annotation output</td>
+<td>Entity-grouped follow-up view for a PMID with each annotation's identifier and namespace</td>
+<td>Derived from PubTator3 annotation output; <code>--full</code> adds passage positions in JSON</td>
 </tr>
 </tbody>
 </table>
@@ -4450,7 +4450,7 @@ that preserves author-affiliation associations and MeSH descriptor/qualifier
 flags.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
-<p>Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections.</p>
+<p>Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections. JSON rows carry each annotation's identifier and namespace, such as <code>NCBIGene 3845</code> for KRAS or <code>MESH:D002289</code> for NSCLC, and rows print <code>get disease MESH:...</code> or <code>get variant rs...</code> commands where BioMCP accepts the identifier. Add <code>--full</code> for passage positions in JSON.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">27083046</span><span class="w"> </span>fulltext
 </code></pre></div>
 <p>Returns a full-text section with a <code>Saved to:</code> cache path.
