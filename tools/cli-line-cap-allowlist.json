@@ -2,5 +2,13 @@
   "cap": 700,
   "created": "2026-04-28",
   "scope": "tracked Rust files under src/cli",
-  "entries": []
+  "entries": [
+    {
+      "path": "src/cli/system/dispatch.rs",
+      "lines": 726,
+      "date": "2026-10-06",
+      "follow_up_ticket": 2010,
+      "reason": "Ticket 1304's honest who-sync reporting grew the file past the cap; ticket 2010 splits it."
+    }
+  ]
 }
