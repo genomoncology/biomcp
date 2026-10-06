@@ -214,6 +214,25 @@ async fn transcript_hgvs_alias_refuses_hits_without_the_exact_coding_alias() {
     );
 }
 
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn transcript_alias_declared_assembly_refuses_before_transport() {
+    let (base, requests, server) = transcript_alias_fixture_server(true).await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_MUTALYZER_BASE_URL", &format!("{base}/api"));
+    env.set("BIOMCP_VARIANTVALIDATOR_BASE_URL", &base);
+    env.set("BIOMCP_CLINGEN_CAR_BASE", &base);
+    env.set("BIOMCP_CACHE_MODE", "off");
+    let result = get_with_workflow_signals(
+        "NM_000249.4:c.678-14_678-3del", &[], Some(GenomeBuild::Grch38),
+    ).await;
+    server.abort();
+    assert!(matches!(result, Err(BioMcpError::InvalidArgument(ref message))
+        if message == "--assembly is only supported for genomic variant IDs"));
+    assert!(requests.lock().unwrap().is_empty());
+}
+
 #[test]
 fn exact_helper_candidate_selection_rejects_conflicts_and_missing_evidence() {
     let requested = super::super::RequestedVariantIdentity::for_search(

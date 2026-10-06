@@ -439,6 +439,11 @@ pub(super) async fn resolve_base_with_hit(
         || classify_variant_input(id),
         |value| VariantInputKind::Exact(value.format()),
     );
+    if genome_build.is_some() && matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_)) {
+        return Err(BioMcpError::InvalidArgument(
+            "--assembly is only supported for genomic variant IDs".into(),
+        ));
+    }
     let normalized_coordinate = super::normalize_genomic_coordinate(id)?;
     let mut requested = match (coding.as_ref(), normalized_coordinate.as_ref()) {
         (Some(value), _) => value.requested(),
