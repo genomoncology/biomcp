@@ -88,12 +88,12 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6116,
+      "baseline_lines": 6127,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150",
-        "delta": 1288,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
+        "ticket": "1150, 1292",
+        "delta": 1299,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Ticket 1292: the article entry refuses a bare ClinVar VariationID instead of silently resolving an empty identity.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },
@@ -211,23 +211,34 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1294,
+      "baseline_lines": 1369,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, 1290",
-        "delta": 166,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper.",
+        "ticket": "1022, 1035, 1086, 1154, 1290, 1292",
+        "delta": 241,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions.",
         "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed."
       }
     },
     {
+      "path": "src/entities/variant/get/tests.rs",
+      "floor_lines": 965,
+      "baseline_lines": 1074,
+      "authorized_increase": {
+        "ticket": "1292",
+        "delta": 109,
+        "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary.",
+        "removal_condition": "Split the transcript-alias fixture tests when a package-neutral module extraction can preserve the exact source package boundary."
+      }
+    },
+    {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1316,
+      "baseline_lines": 1407,
       "floor_lines": 1291,
       "authorized_increase": {
-        "ticket": "1056, 1155",
-        "delta": 25,
-        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable, and one shared protein equivalence helper prevents exact admission and transcript-role drift.",
+        "ticket": "1056, 1155, 1292",
+        "delta": 116,
+        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable, and one shared protein equivalence helper prevents exact admission and transcript-role drift. Ticket 1292: ClinVar VariationID classification, protein-range deletion normalization, and the ClinVar-style name working-form refusal.",
         "removal_condition": "Remove this allowance when variant identity resolution is decomposed."
       }
     },
@@ -416,13 +427,13 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1469,
+      "baseline_lines": 1489,
       "floor_lines": 1033,
       "authorized_increase": {
-        "ticket": "1091, 1154, 1155, 1150",
-        "delta": 436,
-        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, stream-isolate bounded SnpEff annotations, and expose deadline-aware construction without adding a package file beyond the fixed 1300-file boundary.",
-        "removal_condition": "Split MyVariant request planning and SnpEff decoding when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+        "ticket": "1091, 1154, 1155, 1150, 1292",
+        "delta": 456,
+        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, stream-isolate bounded SnpEff annotations, and expose deadline-aware construction without adding a package file beyond the fixed 1300-file boundary. Ticket 1292: the ClinVar coding-alias field on the get-fields projection with its exact membership check.",
+        "removal_condition": "Split MyVariant request planning and SnpEff decoding when a package-neutral module extraction can preserve the exact source package boundary."
       }
     },
     {
