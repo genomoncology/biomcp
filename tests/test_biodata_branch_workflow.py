@@ -70,7 +70,7 @@ def _load_mutation(tmp_path: Path, text: str) -> FocusedSelection:
 
 def test_manifest_is_the_only_focused_selection_source() -> None:
     selection = load_selection(MANIFEST)
-    assert len(selection.rust) == 572
+    assert len(selection.rust) == 583
     assert len(selection.python) == 15
     runner = RUNNER.read_text(encoding="utf-8")
     assert runner.count("biodata-1.0-focused.toml") == 1
@@ -194,6 +194,7 @@ def test_runner_uses_one_discovery_one_nextest_run_and_one_pytest(
 def test_runner_requires_the_prebuilt_worktree_local_binary(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.setattr(RUNNER_MODULE, "ROOT", tmp_path / "worktree")
     external = tmp_path / "biomcp"
     external.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
     external.chmod(0o755)
