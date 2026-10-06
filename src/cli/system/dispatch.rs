@@ -306,17 +306,50 @@ pub(crate) async fn handle_ema(cmd: EmaCommand, json: bool) -> anyhow::Result<Co
     )
 }
 
+/// `who sync` reports its per-file outcome honestly: which export files
+/// refreshed, which refreshes failed (existing data kept), and never a bare
+/// success claim when refreshes failed (ticket 1304).
+pub(super) fn who_sync_outcome(
+    report: crate::sources::who_pq::WhoPqSyncReport,
+    json: bool,
+) -> anyhow::Result<CommandOutcome> {
+    if json {
+        let text = crate::render::json::to_pretty(&serde_json::json!({
+            "kind": "data_sync",
+            "source": "who",
+            "status": "synchronized",
+            "changed": report.changed,
+            "refreshed": report.refreshed,
+            "failed": report.failed,
+        }))?;
+        return Ok(CommandOutcome::stdout(text));
+    }
+
+    let text = if report.failed.is_empty() {
+        format!(
+            "WHO Prequalification data synchronized successfully ({}).\n",
+            report.refreshed.join(", ")
+        )
+    } else {
+        let refreshed = if report.refreshed.is_empty() {
+            "no files refreshed".to_string()
+        } else {
+            format!("refreshed {}", report.refreshed.join(", "))
+        };
+        format!(
+            "WHO Prequalification data synchronized with failures: {refreshed}; refresh failed for {}.\n",
+            report.failed.join(", ")
+        )
+    };
+    Ok(CommandOutcome::stdout(text))
+}
+
 pub(crate) async fn handle_who(cmd: WhoCommand, json: bool) -> anyhow::Result<CommandOutcome> {
     let WhoCommand::Sync = cmd;
-    let changed =
+    let report =
         crate::sources::who_pq::WhoPqClient::sync(crate::sources::who_pq::WhoPqSyncMode::Force)
             .await?;
-    sync_outcome(
-        "who",
-        "WHO Prequalification data synchronized successfully.\n",
-        json,
-        changed,
-    )
+    who_sync_outcome(report, json)
 }
 
 pub(crate) async fn handle_cvx(cmd: CvxCommand, json: bool) -> anyhow::Result<CommandOutcome> {

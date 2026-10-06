@@ -13,14 +13,69 @@ fn boundary_phrase_rejection_advances_across_multibyte_character() {
 
 #[test]
 fn parsers_require_expected_headers() {
-    let err = parse_who_pq_csv("wrong,header\n1,2\n").expect_err("parse should fail");
-    assert!(format!("{err:?}").contains("missing required column"));
+    let err =
+        parse_who_pq_csv(WHO_PQ_CSV_FILE, "wrong,header\n1,2\n").expect_err("parse should fail");
+    let message = format!("{err}");
+    assert!(message.contains("headers did not match"));
+    assert!(message.contains(WHO_PQ_CSV_FILE));
+    assert!(message.contains("missing required column"));
 
-    let err = parse_who_api_csv("wrong,header\n1,2\n").expect_err("parse should fail");
-    assert!(format!("{err:?}").contains("missing required column"));
+    let err = parse_who_api_csv(WHO_PQ_API_CSV_FILE, "wrong,header\n1,2\n")
+        .expect_err("parse should fail");
+    let message = format!("{err}");
+    assert!(message.contains("headers did not match"));
+    assert!(message.contains(WHO_PQ_API_CSV_FILE));
 
-    let err = parse_who_vaccines_csv("wrong,header\n1,2\n").expect_err("parse should fail");
-    assert!(format!("{err:?}").contains("missing required column"));
+    let err = parse_who_vaccines_csv(WHO_VACCINES_CSV_FILE, "wrong,header\n1,2\n")
+        .expect_err("parse should fail");
+    let message = format!("{err}");
+    assert!(message.contains("headers did not match"));
+    assert!(message.contains(WHO_VACCINES_CSV_FILE));
+}
+
+#[test]
+fn vaccines_capture_keeps_the_trailing_space_header_and_trims_to_match() {
+    // The recorded vaccines export ships "Date of Prequalification " with a
+    // trailing space inside the quotes (issue #288, verified with cat -A).
+    // Pin the raw byte on the recorded capture and the trim-then-compare
+    // behavior that resolves it to the required column.
+    let payload = super::fixture_vaccine_csv();
+    let mut reader = csv::ReaderBuilder::new()
+        .flexible(true)
+        .from_reader(payload.as_bytes());
+    let headers = reader.headers().expect("vaccine headers should read");
+    assert_eq!(headers.get(0), Some("Date of Prequalification "));
+    assert_eq!(
+        normalize_header(headers.get(0).unwrap_or_default()),
+        "DATE OF PREQUALIFICATION"
+    );
+
+    let rows = parse_who_vaccines_csv(WHO_VACCINES_CSV_FILE, &payload)
+        .expect("recorded vaccines capture should parse");
+    assert!(rows.iter().any(|row| row.prequalification_date.is_some()));
+}
+
+#[test]
+fn medicines_captures_ship_title_case_headers_and_parse() {
+    // Both medicines exports moved to title-case headers and the
+    // finished-pharma export dropped "Basis of Alternative Listing"
+    // (issue #288); the recorded captures must parse against the re-derived
+    // header sets.
+    let finished = super::fixture_csv();
+    assert!(finished.starts_with("\"WHO Reference Number\""));
+    assert!(!finished.contains("Basis of Alternative Listing"));
+    let rows = parse_who_pq_csv(WHO_PQ_CSV_FILE, &finished)
+        .expect("recorded finished-pharma capture should parse");
+    assert!(
+        rows.iter()
+            .any(|row| row.who_reference_number.as_deref() == Some("MA051"))
+    );
+
+    let api = super::fixture_api_csv();
+    assert!(api.contains(",Applicant,"));
+    let rows =
+        parse_who_api_csv(WHO_PQ_API_CSV_FILE, &api).expect("recorded API capture should parse");
+    assert!(rows.iter().any(|row| row.who_product_id.is_some()));
 }
 
 #[test]
@@ -92,7 +147,8 @@ fn row_matching_strips_salt_suffixes_from_match_key() {
 
 #[test]
 fn row_matching_falls_back_to_full_presentation_for_combo_rows() {
-    let rows = parse_who_pq_csv(&super::fixture_csv()).expect("fixture should parse");
+    let rows =
+        parse_who_pq_csv(WHO_PQ_CSV_FILE, &super::fixture_csv()).expect("fixture should parse");
     let combo = rows
         .into_iter()
         .find(|row| row.who_reference_number.as_deref() == Some("BT-ON017"))
@@ -110,7 +166,7 @@ fn parse_who_pq_csv_deduplicates_by_reference_number() {
         "{csv}\n\"BT-ON001\",\"Trastuzumab Powder for concentrate for solution for infusion 150 mg\",\"Biotherapeutic Product\",\"Oncology\",\"Samsung Bioepis NL B.V.\",\"Powder for concentrate for solution for infusion\",\"Prequalification - Abridged\",,\"18  Dec,  2019\"\n",
         csv = super::fixture_csv().trim_end()
     );
-    let rows = parse_who_pq_csv(&payload).expect("duplicate payload should parse");
+    let rows = parse_who_pq_csv(WHO_PQ_CSV_FILE, &payload).expect("duplicate payload should parse");
     let count = rows
         .iter()
         .filter(|row| row.who_reference_number.as_deref() == Some("BT-ON001"))
@@ -120,7 +176,8 @@ fn parse_who_pq_csv_deduplicates_by_reference_number() {
 
 #[test]
 fn parse_who_api_csv_preserves_identifier_semantics() {
-    let rows = parse_who_api_csv(&super::fixture_api_csv()).expect("API fixture should parse");
+    let rows = parse_who_api_csv(WHO_PQ_API_CSV_FILE, &super::fixture_api_csv())
+        .expect("API fixture should parse");
     let row = rows
         .into_iter()
         .find(|row| row.who_product_id.as_deref() == Some("WHOAPI-010"))
@@ -163,7 +220,7 @@ fn read_rows_combines_finished_pharma_api_and_vaccine_rows() {
     );
     assert!(
         rows.iter()
-            .any(|row| row.who_product_id.as_deref() == Some("WHOAPI-001"))
+            .any(|row| row.who_product_id.as_deref() == Some("WHOAPI-081"))
     );
     assert!(rows.iter().any(|row| {
         row.commercial_name.as_deref() == Some("Gardasil 9")
@@ -174,17 +231,17 @@ fn read_rows_combines_finished_pharma_api_and_vaccine_rows() {
 #[test]
 fn product_type_filters_keep_expected_rows() {
     let rows = vec![
-        parse_who_pq_csv(&super::fixture_csv())
+        parse_who_pq_csv(WHO_PQ_CSV_FILE, &super::fixture_csv())
             .expect("fixture should parse")
             .into_iter()
             .find(|row| row.who_reference_number.as_deref() == Some("MA051"))
             .expect("finished row should exist"),
-        parse_who_api_csv(&super::fixture_api_csv())
+        parse_who_api_csv(WHO_PQ_API_CSV_FILE, &super::fixture_api_csv())
             .expect("API fixture should parse")
             .into_iter()
-            .find(|row| row.who_product_id.as_deref() == Some("WHOAPI-001"))
+            .find(|row| row.who_product_id.as_deref() == Some("WHOAPI-081"))
             .expect("API row should exist"),
-        parse_who_vaccines_csv(&super::fixture_vaccine_csv())
+        parse_who_vaccines_csv(WHO_VACCINES_CSV_FILE, &super::fixture_vaccine_csv())
             .expect("vaccine fixture should parse")
             .into_iter()
             .find(|row| row.commercial_name.as_deref() == Some("Comirnaty®"))
@@ -193,7 +250,7 @@ fn product_type_filters_keep_expected_rows() {
 
     let filtered = filter_rows_by_product_type(&rows, WhoProductTypeFilter::Api);
     assert_eq!(filtered.len(), 1);
-    assert_eq!(filtered[0].who_product_id.as_deref(), Some("WHOAPI-001"));
+    assert_eq!(filtered[0].who_product_id.as_deref(), Some("WHOAPI-081"));
 
     let filtered = filter_rows_by_product_type(&rows, WhoProductTypeFilter::FinishedPharma);
     assert_eq!(filtered.len(), 1);
@@ -206,7 +263,8 @@ fn product_type_filters_keep_expected_rows() {
 
 #[test]
 fn parse_who_vaccines_csv_preserves_blank_dose_rows() {
-    let rows = parse_who_vaccines_csv(&super::fixture_vaccine_csv()).expect("fixture should parse");
+    let rows = parse_who_vaccines_csv(WHO_VACCINES_CSV_FILE, &super::fixture_vaccine_csv())
+        .expect("fixture should parse");
     let row = rows
         .into_iter()
         .find(|row| row.commercial_name.as_deref() == Some("Comirnaty®"))
@@ -222,7 +280,8 @@ fn parse_who_vaccines_csv_preserves_blank_dose_rows() {
 
 #[test]
 fn vaccine_row_matching_uses_vaccine_type_and_brand_aliases() {
-    let rows = parse_who_vaccines_csv(&super::fixture_vaccine_csv()).expect("fixture should parse");
+    let rows = parse_who_vaccines_csv(WHO_VACCINES_CSV_FILE, &super::fixture_vaccine_csv())
+        .expect("fixture should parse");
     let bcg = rows
         .iter()
         .find(|row| row.commercial_name.as_deref() == Some("BCG Freeze Dried Glutamate vaccine"))
@@ -241,22 +300,27 @@ fn vaccine_row_matching_uses_vaccine_type_and_brand_aliases() {
 
 #[test]
 fn vaccine_dedupe_keeps_distinct_bevac_rows() {
-    let rows = parse_who_vaccines_csv(&super::fixture_vaccine_csv()).expect("fixture should parse");
+    let rows = parse_who_vaccines_csv(WHO_VACCINES_CSV_FILE, &super::fixture_vaccine_csv())
+        .expect("fixture should parse");
     let bevac = rows
         .into_iter()
         .filter(|row| row.commercial_name.as_deref() == Some("BEVAC®"))
         .collect::<Vec<_>>();
 
-    assert_eq!(bevac.len(), 2);
-    assert_ne!(
-        bevac[0].stable_identifier_key(),
-        bevac[1].stable_identifier_key()
-    );
+    // The 2026-10-06 capture carries three BEVAC\u{ae} rows across two
+    // products and three presentations; none of them may collapse.
+    assert_eq!(bevac.len(), 3);
+    let distinct = bevac
+        .iter()
+        .map(|row| row.stable_identifier_key())
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(distinct.len(), bevac.len());
 }
 
 #[test]
 fn vaccine_fixture_carries_full_validation_anchor_counts() {
-    let rows = parse_who_vaccines_csv(&super::fixture_vaccine_csv()).expect("fixture should parse");
+    let rows = parse_who_vaccines_csv(WHO_VACCINES_CSV_FILE, &super::fixture_vaccine_csv())
+        .expect("fixture should parse");
 
     let bcg = rows
         .iter()
@@ -288,8 +352,8 @@ fn vaccine_fixture_carries_full_validation_anchor_counts() {
         .count();
 
     assert_eq!(bcg, 7);
-    assert_eq!(hpv, 6);
-    assert_eq!(covid, 4);
+    assert_eq!(hpv, 9);
+    assert_eq!(covid, 3);
     assert_eq!(measles, 22);
     assert_eq!(yellow_fever, 10);
 }
