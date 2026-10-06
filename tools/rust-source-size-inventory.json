@@ -71,12 +71,12 @@
     },
     {
       "path": "src/entities/article/graph/citation_evidence.rs",
-      "baseline_lines": 1209,
+      "baseline_lines": 1210,
       "floor_lines": 859,
       "authorized_increase": {
         "ticket": "1302",
-        "delta": 350,
-        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes.",
+        "delta": 351,
+        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes. The dedicated branch imports the retained BioData Europe PMC first-row adapter.",
         "removal_condition": "Extract the degraded confirmation phase and the refusal vocabulary when the citation-evidence module is next decomposed."
       }
     },

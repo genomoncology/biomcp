@@ -15,7 +15,8 @@ use crate::sources::semantic_scholar::{
     semantic_scholar_refusal,
 };
 
-use super::super::detail::{first_europepmc_hit, parse_pmcid, parse_pmid};
+use super::super::detail::retained::first_europepmc_hit;
+use super::super::detail::{parse_pmcid, parse_pmid};
 use crate::transform::article::{
     JatsCitationExtraction, JatsCitationTargetIds,
     extract_citation_evidence as real_jats_extraction,
