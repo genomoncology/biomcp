@@ -10,10 +10,10 @@ use serde_json::json;
 async fn dbnsfp_structure_retains_repeated_matches_and_other_positions() {
     let fixture = TestHttpFixture::spawn(|request| {
         let target = request.lines().next().unwrap().split_whitespace().nth(1).unwrap();
-        let body = if target.starts_with("/variant/") {
-            json!({"_id":"chr7:g.140453136A>T","dbnsfp":{"genename":"BRAF",
+        let body = if target.starts_with("/variant/") || target.contains("dbnsfp") {
+            json!({"total":1,"hits":[{"_id":"chr7:g.140453136A>T","dbnsfp":{"genename":"BRAF",
                 "hgvsp":["p.Val600Glu","p.Val601Glu","p.V600E","p.V600E"]},
-                "snpeff":{"ann":{"genename":"BRAF","hgvs_p":"p.Val600Glu"}}})
+                "snpeff":{"ann":{"feature_id":"NM_004333.6","genename":"BRAF","hgvs_c":"c.1799T>A","hgvs_p":"p.Val600Glu"}}}]})
         } else if target.starts_with("/query") {
             json!({"total":1,"hits":[{"_id":"673","symbol":"BRAF","uniprot":{"Swiss-Prot":"P15056"}}]})
         } else if target.starts_with("/uniprotkb/") {
@@ -35,7 +35,7 @@ async fn dbnsfp_structure_retains_repeated_matches_and_other_positions() {
         env.set(key, &fixture.base);
     }
     env.set("BIOMCP_CACHE_MODE", "off");
-    let result = structure("chr7:g.140453136A>T").await.unwrap();
+    let result = structure("BRAF V600E").await.unwrap();
     assert_eq!(result.residue.position, Some(600));
     assert_eq!(
         result.residue.matched_hgvsp,

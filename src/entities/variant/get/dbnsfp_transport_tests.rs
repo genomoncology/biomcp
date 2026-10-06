@@ -18,7 +18,7 @@ fn row() -> Value {
 
 fn card(present: bool, revel: f64) -> Value {
     let mut expected = json!({"id":"chr7:g.140453136A>T","gene":"BRAF","cadd_score":32.0,
-        "genome_build":"GRCh37","genome_build_provenance":"MyVariant.info provider default",
+        "genome_build":"GRCh38",
         "section_outcomes":{
             "cancerhotspots":{"outcome":"not_requested","sources":[]},
             "cbioportal":{"outcome":"not_requested","sources":[]},
@@ -60,7 +60,10 @@ fn ledger(requests: &Arc<Mutex<Vec<String>>>) {
     let literal = include_str!("../resolution/point_oracles/GET_FIELDS.txt").trim_end();
     assert_eq!(
         url.query_pairs().into_owned().collect::<Vec<_>>(),
-        [("fields".into(), literal.into())]
+        [
+            ("fields".into(), literal.into()),
+            ("assembly".into(), "hg38".into())
+        ]
     );
     assert_eq!(log[0].split_once("\r\n\r\n").unwrap().1, "");
 }

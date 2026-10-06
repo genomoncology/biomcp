@@ -43,7 +43,7 @@ async fn dbnsfp_zero_result_reports_all_positions_without_renumbering() {
             .iter()
             .map(ToString::to_string)
             .collect::<Vec<_>>(),
-        ["no dbNSFP record for BRAF V600E; dbNSFP holds V to E at positions 599, 601"]
+        ["no dbNSFP record for BRAF p.V600E; dbNSFP holds V to E at positions 599, 601"]
     );
     let log = requests.lock().unwrap();
     assert_eq!(log.len(), 4, "{log:?}");
