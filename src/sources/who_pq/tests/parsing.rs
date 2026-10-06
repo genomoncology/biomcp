@@ -79,6 +79,45 @@ fn medicines_captures_ship_title_case_headers_and_parse() {
 }
 
 #[test]
+fn pre_1304_cache_with_alternative_listing_column_still_parses() {
+    // Caches the pre-1304 binary downloaded carry the old nine-column
+    // finished-pharma header including "Basis of Alternative Listing"
+    // (title case, trailing empty date column); they must keep parsing and
+    // populate the alternative listing basis (review fold).
+    let payload = "\"WHO Reference Number\",\"INN, Dosage Form and Strength\",\"Product Type\",\"Therapeutic Area\",Applicant,\"Dosage Form\",\"Basis of Listing\",\"Basis of alternative listing\",\"Date of Prequalification\"\n\"ANDA 077844 USFDA\",\"Abacavir (sulfate) Tablet 300mg\",\"Finished Pharmaceutical Product\",HIV/AIDS,\"Aurobindo Pharma Ltd\",Tablet,\"Alternative Listing\",\"USFDA - PEPFAR\",\n";
+    let rows = parse_who_pq_csv(WHO_PQ_CSV_FILE, payload)
+        .expect("pre-1304 finished-pharma cache should parse");
+    let row = rows
+        .iter()
+        .find(|row| row.who_reference_number.as_deref() == Some("ANDA 077844 USFDA"))
+        .expect("pre-1304 row should survive");
+    assert_eq!(row.listing_basis.as_deref(), Some("Alternative Listing"));
+    assert_eq!(
+        row.alternative_listing_basis.as_deref(),
+        Some("USFDA - PEPFAR")
+    );
+}
+
+#[test]
+fn pre_1304_cache_with_applicant_organization_column_still_parses() {
+    // The pre-1304 binary only ever accepted "Applicant Organization" on
+    // the API export, so every old cache carries that spelling; it must
+    // keep validating and supply the applicant field (review fold).
+    let payload = "\"WHO Product ID\",INN,Grade,\"Therapeutic area\",\"Applicant organization\",\"Date of prequalification\",\"Confirmation of Prequalification Document Date\"\nWHOAPI-010,\"Abacavir (sulfate)\",Standard,HIV/AIDS,\"Matrix Pharmacorp Private Limited\",\"27  May,  2014\",\"19  Sep,  2025\"\n";
+    let rows =
+        parse_who_api_csv(WHO_PQ_API_CSV_FILE, payload).expect("pre-1304 API cache should parse");
+    let row = rows
+        .iter()
+        .find(|row| row.who_product_id.as_deref() == Some("WHOAPI-010"))
+        .expect("pre-1304 API row should survive");
+    assert_eq!(row.applicant, "Matrix Pharmacorp Private Limited");
+    assert_eq!(
+        row.confirmation_document_date.as_deref(),
+        Some("2025-09-19")
+    );
+}
+
+#[test]
 fn ensure_csv_content_type_rejects_html_response_without_raw_tags() {
     let content_type = HeaderValue::from_static("text/html; charset=utf-8");
     let err = ensure_csv_content_type(Some(&content_type), b"<html><body>not csv</body></html>")

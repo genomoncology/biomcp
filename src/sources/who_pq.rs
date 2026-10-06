@@ -44,7 +44,9 @@ const WHO_VACCINES_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
 // Alternative Listing" column, and the API export's applicant column is
 // "Applicant" (issue #288). Validation compares case-insensitively on
 // trimmed header text, and the vaccines export's first header cell carries
-// a trailing space inside the quotes.
+// a trailing space inside the quotes. Columns the exports dropped or
+// renamed stay readable when a pre-1304 cache still carries them, so a
+// fresh-enough local cache keeps parsing after the upgrade (review fold).
 const REQUIRED_HEADERS: &[&str] = &[
     "WHO REFERENCE NUMBER",
     "INN, DOSAGE FORM AND STRENGTH",
@@ -61,10 +63,15 @@ const API_REQUIRED_HEADERS: &[&str] = &[
     "INN",
     "GRADE",
     "THERAPEUTIC AREA",
-    "APPLICANT",
     "DATE OF PREQUALIFICATION",
     "CONFIRMATION OF PREQUALIFICATION DOCUMENT DATE",
 ];
+
+// The API export renamed its applicant column to "Applicant"; caches the
+// pre-1304 binary downloaded carry "Applicant Organization", because the
+// old validator never accepted the renamed export. Either spelling
+// validates, and the row read takes whichever is present.
+const API_APPLICANT_HEADERS: &[&str] = &["APPLICANT", "APPLICANT ORGANIZATION"];
 
 const VACCINE_REQUIRED_HEADERS: &[&str] = &[
     "DATE OF PREQUALIFICATION",
@@ -365,6 +372,25 @@ fn clean_csv_field(
         .unwrap_or_default()
 }
 
+/// Reads the first candidate column that carries text, for columns whose
+/// spelling moved between export generations (e.g. the API applicant
+/// column).
+fn clean_csv_field_any(
+    record: &csv::StringRecord,
+    headers: &HashMap<String, usize>,
+    candidates: &[&str],
+) -> String {
+    candidates
+        .iter()
+        .find_map(|header| {
+            headers
+                .get(*header)
+                .and_then(|idx| record.get(*idx))
+                .and_then(clean_text)
+        })
+        .unwrap_or_default()
+}
+
 fn missing_header_error(file_name: &str, required: &str) -> BioMcpError {
     BioMcpError::Api {
         api: WHO_PQ_API.to_string(),
@@ -478,6 +504,15 @@ fn parse_who_api_csv(
             return Err(missing_header_error(file_name, required));
         }
     }
+    if !API_APPLICANT_HEADERS
+        .iter()
+        .any(|header| header_map.contains_key(*header))
+    {
+        return Err(missing_header_error(
+            file_name,
+            "APPLICANT or APPLICANT ORGANIZATION",
+        ));
+    }
 
     let mut out = Vec::new();
     let mut seen = HashSet::new();
@@ -492,7 +527,7 @@ fn parse_who_api_csv(
             inn: clean_csv_field(&record, &header_map, "INN"),
             grade: clean_csv_field(&record, &header_map, "GRADE"),
             therapeutic_area: clean_csv_field(&record, &header_map, "THERAPEUTIC AREA"),
-            applicant: clean_csv_field(&record, &header_map, "APPLICANT"),
+            applicant: clean_csv_field_any(&record, &header_map, API_APPLICANT_HEADERS),
             prequalification_date: clean_csv_field(
                 &record,
                 &header_map,
