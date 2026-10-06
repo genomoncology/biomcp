@@ -36,8 +36,19 @@ issue #289.
 
 ## Keeps
 
-- The works path, credential handling, and every sanitized message stay
-  unchanged.
+- Credential handling and every sanitized message stay unchanged.
+
+## Amendment (2026-10-06, live evidence after the first build round)
+
+A live probe of `/works` on the demo record shows work summaries also
+carry lowercase `public` (6 of 6 groups). The works path filters
+`selected_works` on an exact `"PUBLIC"` match, so `author papers orcid:`
+silently returns zero works today — the same defect one layer deeper.
+The fix covers it: the works filter compares case-insensitively too, its
+inline fixtures carry the recorded lowercase shape, and a case-table test
+pins public, PUBLIC, limited, private, and absent on the works side. The
+recorded works capture may reuse the existing uppercase fixture family
+for contract tests only where the casing is irrelevant.
 
 ## Proof
 
