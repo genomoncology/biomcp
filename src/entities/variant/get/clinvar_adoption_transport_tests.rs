@@ -69,6 +69,15 @@ fn native_card(mode: &str, name: &str) -> Value {
     }
     card["_meta"] = json!({"evidence_urls":[],"next_commands":["biomcp get gene BRAF","biomcp search drug --target BRAF",
         "biomcp variant trials \"chr7:g.140453136A>T\"","biomcp variant articles \"chr7:g.140453136A>T\""],"section_sources":sources});
+    if matches!(mode, "fallback" | "missing") {
+        card["_meta"]["next_commands"]
+            .as_array_mut()
+            .unwrap()
+            .insert(
+                0,
+                json!("biomcp get variant \"chr7:g.140453136A>T\" clinvar"),
+            );
+    }
     card["_meta"]["workflow"] = json!("variant-pathogenicity");
     card["_meta"]["workflow_rationale"] = json!(
         "Start with ClinVar, prediction, and population context, then widen to cancer evidence, trials, and literature."
