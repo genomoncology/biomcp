@@ -4516,6 +4516,10 @@ internal fixture overrides and release/install variables.</p>
 <td>PEM bundle of extra trusted TLS roots for ordinary provider HTTPS; <code>SSL_CERT_FILE</code> is the fallback</td>
 </tr>
 <tr>
+<td><code>BIOMCP_VARIANT_QUERY_GENE_ROUTING</code></td>
+<td>Source that recognizes a gene-symbol first token in a free-text <code>search variant</code> phrase; <code>mygene</code> (default) or <code>off</code></td>
+</tr>
+<tr>
 <td><code>cache.toml</code></td>
 <td>Persistent cache defaults under the resolved config root</td>
 </tr>
@@ -4555,6 +4559,15 @@ separate gRPC client does not use <code>BIOMCP_CA_BUNDLE</code>; when set,
 <code>BIOMCP_CA_BUNDLE</code> into that client requires retained PEM bytes and remains
 future work. BioMCP resolves and parses the ordinary-provider bundle once per
 process, so set it before startup and restart BioMCP after rotating it.</p>
+<p>Free-text <code>search variant "GENE condition"</code> routes the first token to the gene
+filter only after the <code>BIOMCP_VARIANT_QUERY_GENE_ROUTING</code> source confirms it is
+a known gene symbol. The supported default is <code>mygene</code>: MyGene's unique
+canonical symbol/alias resolution is the same lookup <code>discover</code> already trusts
+for this question, and no offline gene list ships with BioMCP. A refused,
+ambiguous, timed-out, or unavailable lookup keeps the whole phrase as the
+condition search and prints the explicit <code>-g</code>/<code>--condition</code> working form when
+that search returns zero rows, because refusal beats wrong routing. <code>off</code>
+restores the whole-phrase condition search without the routing lookup.</p>
 <h2 id="internal-and-measurement-controls">Internal and Measurement Controls<a class="headerlink" href="#internal-and-measurement-controls" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
