@@ -5208,6 +5208,32 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn article_search_refuses_a_bare_clinvar_variation_id() {
+        // A bare ClinVar VariationID carries no article-search alias, so the
+        // search refuses it before any provider call (ticket 1297). Ticket
+        // 1292 turns this into a dedicated guard message; both spellings
+        // refuse with "Unrecognized variant format" naming the input, so this
+        // assertion stays green through that merge.
+        let error = search_variant_articles_with_deadline(
+            "577152",
+            VariantArticleStrategy::default(),
+            10,
+            0,
+            false,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::from_secs(5),
+        )
+        .await
+        .expect_err("article search refuses a bare VariationID before any provider call");
+
+        assert!(matches!(
+            &error,
+            BioMcpError::InvalidArgument(message)
+                if message.contains("Unrecognized variant format") && message.contains("'577152'")
+        ));
+    }
+
     #[test]
     fn structured_input_enforces_byte_count_item_count_and_duplicate_ids() {
         let mut exact = br#"[{"gene":"BRAF","protein":"V600E"}]"#.to_vec();

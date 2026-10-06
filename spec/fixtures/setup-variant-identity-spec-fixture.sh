@@ -67,6 +67,10 @@ RS334_GRCH38_RESPONSE = {
 }
 MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
 TP53_G105S_RESPONSE = (ROOT / "testdata/sources/myvariant/search_tp53_g105s_20261003.json").read_bytes()
+# Ticket 1297: recorded gene+protein queries whose alias spans several
+# genomic variants. Only the DICER1 ClinVar record names one of its three.
+DICER1_M1483I_RESPONSE = (ROOT / "testdata/sources/myvariant/query_dicer1_m1483i_20261006.json").read_bytes()
+EGFR_M766I_RESPONSE = (ROOT / "testdata/sources/myvariant/query_egfr_m766i_20261006.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
@@ -412,6 +416,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.G105S"' in query:
                 send_json(self, 200, TP53_G105S_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:DICER1 AND dbnsfp.hgvsp:"p.M1483I"':
+                send_json(self, 200, json.loads(DICER1_M1483I_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:EGFR AND dbnsfp.hgvsp:"p.M766I"':
+                send_json(self, 200, json.loads(EGFR_M766I_RESPONSE))
                 return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return

@@ -93,12 +93,12 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6127,
+      "baseline_lines": 6153,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, 1292",
-        "delta": 1299,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Ticket 1292: the article entry refuses a bare ClinVar VariationID instead of silently resolving an empty identity.",
+        "ticket": "1150, 1292, 1297",
+        "delta": 1325,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Ticket 1292: the article entry refuses a bare ClinVar VariationID instead of silently resolving an empty identity. Ticket 1297: the folded-scope bare-VariationID refusal test.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },
@@ -216,13 +216,13 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1369,
+      "baseline_lines": 1452,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, 1290, 1292",
-        "delta": 241,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions.",
-        "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed."
+        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297",
+        "delta": 324,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback.",
+        "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms."
       }
     },
     {
