@@ -71,6 +71,7 @@ REQUIRED_ROOT_ENTRIES = {
 }
 REQUIRED_PACKAGE_MEMBERS = {
     "spec/entity/variant-input-forms.md",
+    "spec/entity/variant-protein-change-resolution.md",
     "src/cli/variant/query.rs",
     "spec/entity/variant-gene-first-routing.md",
     "spec/entity/article-entities.md",

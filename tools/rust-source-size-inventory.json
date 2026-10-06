@@ -115,12 +115,12 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6127,
+      "baseline_lines": 6153,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, qf-main-sync-variant-inputs-20261006",
-        "delta": 1299,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow.",
+        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006",
+        "delta": 1325,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },
@@ -227,12 +227,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1357,
+      "baseline_lines": 1444,
       "floor_lines": 1292,
       "authorized_increase": {
-        "ticket": "qf-main-sync-variant-inputs-20261006",
-        "delta": 65,
-        "reason": "Integrate ClinVar VariationID and exact transcript coding alias fallback beside retained bounded 1.0 lookup owners. Review finding 1: refuse transcript assembly before transport and verify that caller boundary. Review finding 2: complete bounded ClinVar scans and one caller table for both routes. Review finding 3: project the exact complete source tuple through the retained transcript lookup owner. Review finding 4: confirm requested numeric ClinVar evidence in each candidate and one getter regression table.",
+        "ticket": "qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006",
+        "delta": 152,
+        "reason": "Integrate ClinVar VariationID and exact transcript coding alias fallback beside retained bounded 1.0 lookup owners. Review finding 1: refuse transcript assembly before transport and verify that caller boundary. Review finding 2: complete bounded ClinVar scans and one caller table for both routes. Review finding 3: project the exact complete source tuple through the retained transcript lookup owner. Review finding 4: confirm requested numeric ClinVar evidence in each candidate and one getter regression table. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression.",
         "removal_condition": "Remove this allowance when the existing workflow is decomposed below the source-size threshold."
       }
     },

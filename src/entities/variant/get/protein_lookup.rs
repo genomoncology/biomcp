@@ -70,6 +70,7 @@ async fn bounded_lookup(
 ) -> Result<MyVariantHit, BioMcpError> {
     let mut seen: HashSet<(String, Vec<String>, Vec<String>)> = HashSet::new();
     let mut selected = None;
+    let mut point_candidates = Vec::new();
     let mut indeterminate = false;
     let mut examined = 0;
     let mut complete = false;
@@ -92,10 +93,13 @@ async fn bounded_lookup(
                         Vec::new()
                     };
                     coding.sort();
-                    if seen.insert((source.normalized_key(), assertions, coding))
-                        && selected.is_none()
-                    {
-                        selected = Some(hit);
+                    if seen.insert((source.normalized_key(), assertions, coding)) {
+                        if point {
+                            point_candidates.push(hit.clone());
+                        }
+                        if selected.is_none() {
+                            selected = Some(hit);
+                        }
                     }
                 }
                 VariantIdentityComparison::Indeterminate { .. } => indeterminate = true,
@@ -121,6 +125,15 @@ async fn bounded_lookup(
     };
     if !complete {
         return Err(BioMcpError::InvalidArgument(incomplete.into()));
+    }
+    if point && !indeterminate {
+        let keys = point_candidates
+            .iter()
+            .map(|hit| SourceVariantIdentity::from_myvariant_hit(hit).normalized_key())
+            .collect::<HashSet<_>>();
+        if keys.len() == point_candidates.len() {
+            return super::resolve_protein_change_hit(id, gene, change, point_candidates);
+        }
     }
     if seen.len() > 1 {
         return Err(BioMcpError::InvalidArgument(ambiguous.into()));

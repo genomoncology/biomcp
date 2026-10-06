@@ -2,7 +2,7 @@
 
 Proposed 2026-10-04 by the BioMCP 0.9 lead, from historical consumer QA report 0002 for an unnamed consuming application.
 
-Status: OPEN.
+Status: complete.
 
 ## Folded scope from 1292's review (2026-10-06)
 

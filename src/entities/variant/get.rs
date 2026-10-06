@@ -154,6 +154,90 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
     Ok(out)
 }
 
+/// A hit carries the ClinVar record for its own genomic variant. A protein
+/// change that resolves to such a hit resolves to the variant ClinVar
+/// cataloged, not a different transcript's spelling of the same alias.
+fn hit_carries_clinvar_record(hit: &crate::sources::myvariant::MyVariantHit) -> bool {
+    hit.clinvar
+        .as_ref()
+        .is_some_and(|clinvar| clinvar.variant_id.is_some() || !clinvar.rcv.is_empty())
+}
+
+fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> String {
+    let clinvar_id = hit
+        .clinvar
+        .as_ref()
+        .and_then(|clinvar| clinvar.variant_id)
+        .map(|variant_id| format!("ClinVar VariationID {variant_id}"));
+    let rsid = hit
+        .dbsnp
+        .as_ref()
+        .and_then(|dbsnp| dbsnp.rsid.clone())
+        .filter(|rsid| !rsid.trim().is_empty());
+    let details = [clinvar_id, rsid]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join("; ");
+    if details.is_empty() {
+        hit.id.trim().to_string()
+    } else {
+        format!("{} ({details})", hit.id.trim())
+    }
+}
+
+/// A gene+protein query names a protein change, not a genomic variant: the
+/// same alias can sit on several genomic variants (`DICER1 p.Met1483Ile`
+/// spans three alternate bases at chr14:g.95562808). Taking the first
+/// matching hit silently returns whichever variant the provider ranked
+/// first. Resolve only when one hit matches, or when exactly one matching
+/// hit carries the ClinVar record for that protein change; otherwise refuse
+/// with every candidate and a working input form (ticket 1297).
+fn resolve_protein_change_hit(
+    id: &str,
+    gene: &str,
+    change: &str,
+    mut hits: Vec<crate::sources::myvariant::MyVariantHit>,
+) -> Result<crate::sources::myvariant::MyVariantHit, BioMcpError> {
+    if hits.is_empty() {
+        return Err(BioMcpError::NotFound {
+            entity: "variant".into(),
+            id: id.to_string(),
+            suggestion: format!("Try searching: biomcp search variant -g {gene} --hgvsp {change}"),
+        });
+    }
+    if hits.len() == 1 {
+        return Ok(hits.into_iter().next().expect("one compatible hit"));
+    }
+    let clinvar_named = hits
+        .iter()
+        .filter(|hit| hit_carries_clinvar_record(hit))
+        .count();
+    if clinvar_named == 1 {
+        let index = hits
+            .iter()
+            .position(hit_carries_clinvar_record)
+            .expect("one ClinVar-named hit");
+        return Ok(hits.swap_remove(index));
+    }
+    let reason = if clinvar_named == 0 {
+        "none of them carries a ClinVar record that names one".to_string()
+    } else {
+        format!("{clinvar_named} of them carry conflicting ClinVar records")
+    };
+    let candidates = hits
+        .iter()
+        .map(|hit| format!("- {}\n", protein_change_candidate(hit)))
+        .collect::<String>();
+    Err(BioMcpError::InvalidArgument(format!(
+        "Ambiguous protein change '{id}': {count} variants match and {reason}; \
+BioMCP refuses rather than return the wrong variant.\n\
+Candidates:\n{candidates}\
+Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS.",
+        count = hits.len(),
+    )))
+}
+
 fn oncokb_alteration_from_variant(
     variant: &Variant,
     id_format: &VariantIdFormat,
@@ -1352,6 +1436,9 @@ pub async fn get_with_workflow_signals(
 
     Ok((variant, signals))
 }
+
+#[cfg(test)]
+mod protein_change_tests;
 
 #[cfg(test)]
 pub(super) mod tests;
