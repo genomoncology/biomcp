@@ -170,7 +170,7 @@ fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> St
     let rsid = hit
         .dbsnp
         .as_ref()
-        .and_then(|dbsnp| dbsnp.rsid.clone())
+        .and_then(|dbsnp| dbsnp.rsid().map(str::to_owned))
         .filter(|rsid| !rsid.trim().is_empty());
     let details = [clinvar_id, rsid]
         .into_iter()

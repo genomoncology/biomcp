@@ -1361,3 +1361,6 @@ fn agreeing_record_level_classification_drops_the_cached_copy_note() {
     assert_eq!(variant.significance_source.as_deref(), Some("NCBI ClinVar"));
     assert!(variant.significance_note.is_none());
 }
+
+#[path = "dbsnp_adoption_tests.rs"]
+mod dbsnp_adoption_tests;

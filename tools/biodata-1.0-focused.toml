@@ -2,6 +2,10 @@ version = 1
 
 [selection]
 rust = [
+  "sources::myvariant::tests::dbsnp_adoption::dbsnp_positional_embedding_encodes_canonical_object",
+  "sources::myvariant::tests::dbsnp_adoption::dbsnp_embedding_keeps_debug_and_outer_errors_private",
+  "entities::variant::get::tests::dbsnp_adoption_tests::dbsnp_detail_trims_card_but_keeps_nonblank_ambiguity_text",
+  "entities::article::variant_search::dbsnp_adoption_tests::confirmed_citations_use_canonical_hit_order_and_exclude_decoys",
   "sources::myvariant::tests::clinvar_adoption::clinvar_embedding_preserves_complete_hit_and_private_observations",
   "entities::variant::get::clinvar_adoption_transport_tests::clinvar_native_cards_keep_conditions_fallback_and_channels",
   "entities::variant::search::clinvar_adoption_tests::clinvar_search_preserves_fallback_gene_order_and_page",

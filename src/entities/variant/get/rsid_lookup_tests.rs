@@ -206,6 +206,23 @@ async fn rsid_get_distinguishes_absence_from_unusable_evidence() {
         detail(),
     )
     .await;
+    for (rsid, outcome, spelling) in [
+        (" RS101 ", "absent", "rs101"),
+        ("RS101", "success", "RS101"),
+    ] {
+        let mut source = hit();
+        source["dbsnp"]["rsid"] = json!(rsid);
+        let mut expected = detail();
+        expected["rsid"] = json!(spelling);
+        exercise(
+            vec![json!({"total":1,"hits":[source]})],
+            outcome,
+            &[0],
+            50,
+            expected,
+        )
+        .await;
+    }
     for rsid in [Value::Null, json!(""), json!("   ")] {
         let mut missing = hit();
         missing["_id"] = json!("chr1:g.104A>T");

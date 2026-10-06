@@ -12,3 +12,5 @@ mod parsing;
 mod dbnsfp_adoption;
 
 mod clinvar_adoption;
+
+mod dbsnp_adoption;

@@ -845,7 +845,12 @@ pub struct MyVariantHit {
         serialize_with = "serialize_dbnsfp"
     )]
     pub dbnsfp: Option<biodata::MyVariantDbnsfpProjection>,
-    pub dbsnp: Option<MyVariantDbsnp>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantDbsnp::deserialize",
+        serialize_with = "biodata::MyVariantDbsnp::serialize"
+    )]
+    pub dbsnp: Option<biodata::MyVariantDbsnpProjection>,
     pub gnomad_exome: Option<MyVariantGnomadExome>,
     pub gnomad: Option<MyVariantGnomad>,
     pub exac: Option<MyVariantExac>,
@@ -918,11 +923,6 @@ fn serialize_snpeff<S: serde::Serializer>(
 pub struct MyVariantCadd {
     pub phred: Option<f64>,
     pub consequence: Option<StringOrVec>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantDbsnp {
-    pub rsid: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

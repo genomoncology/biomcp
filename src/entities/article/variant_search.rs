@@ -6151,3 +6151,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "variant_search/dbsnp_adoption_tests.rs"]
+mod dbsnp_adoption_tests;

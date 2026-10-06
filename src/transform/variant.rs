@@ -816,7 +816,7 @@ fn from_myvariant_annotation(
     let rsid = hit
         .dbsnp
         .as_ref()
-        .and_then(|d| d.rsid.as_deref())
+        .and_then(|d| d.rsid())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 

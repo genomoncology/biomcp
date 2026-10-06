@@ -865,7 +865,7 @@ impl SourceVariantIdentity {
         let rsids = hit
             .dbsnp
             .as_ref()
-            .and_then(|db| db.rsid.clone())
+            .and_then(|db| db.rsid().map(str::to_owned))
             .into_iter()
             .collect();
         Self {
@@ -1075,7 +1075,7 @@ pub(crate) fn compare_variant_identity(
     {
         matched_alias.get_or_insert(source.genomic_id.clone());
     }
-    if let Some(value) = requested.rsid.as_deref() {
+    if let Some(value) = requested.rsid() {
         if source.rsids.is_empty() {
             indeterminate = Some("rsid");
         } else if let Some(alias) = source.rsids.iter().find(|v| v.eq_ignore_ascii_case(value)) {
