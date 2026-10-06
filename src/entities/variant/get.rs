@@ -156,20 +156,15 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
 
 /// A resolved protein change uses the ClinVar record for the hit's genomic variant.
 fn hit_carries_clinvar_record(hit: &crate::sources::myvariant::MyVariantHit) -> bool {
-    hit.clinvar
-        .as_ref()
+    hit.source().clinvar()
         .is_some_and(|clinvar| clinvar.variant_id().is_some() || !clinvar.rcv().is_empty())
 }
 
 fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> String {
-    let clinvar_id = hit
-        .clinvar
-        .as_ref()
+    let clinvar_id = hit.source().clinvar()
         .and_then(|clinvar| clinvar.variant_id())
         .map(|variant_id| format!("ClinVar VariationID {variant_id}"));
-    let rsid = hit
-        .dbsnp
-        .as_ref()
+    let rsid = hit.source().dbsnp()
         .and_then(|dbsnp| dbsnp.rsid().map(str::to_owned))
         .filter(|rsid| !rsid.trim().is_empty());
     let details = [clinvar_id, rsid]
@@ -178,9 +173,9 @@ fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> St
         .collect::<Vec<_>>()
         .join("; ");
     if details.is_empty() {
-        hit.id.trim().to_string()
+        hit.source().id().trim().to_string()
     } else {
-        format!("{} ({details})", hit.id.trim())
+        format!("{} ({details})", hit.source().id().trim())
     }
 }
 
@@ -389,8 +384,7 @@ fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
 /// comparison alone cannot confirm it: dbNSFP aliases arrive without
 /// transcript prefixes, so an unconfirmed hit stays refused.
 fn hit_confirms_transcript_alias(hit: &crate::sources::myvariant::MyVariantHit, id: &str) -> bool {
-    hit.clinvar
-        .as_ref()
+    hit.source().clinvar()
         .and_then(|clinvar| clinvar.hgvs())
         .is_some_and(|hgvs| hgvs.coding().values().iter().any(|alias| alias == id))
 }
@@ -485,7 +479,7 @@ pub(super) async fn resolve_base_with_hit(
                                     error
                                 }
                             })?;
-                    let format = parse_variant_id(hit.id.trim())?;
+                    let format = parse_variant_id(hit.source().id().trim())?;
                     if !matches!(format, VariantIdFormat::HgvsGenomic(_)) {
                         return Err(BioMcpError::InvalidArgument(
                             "Transcript lookup lacks a genomic identity.".into(),
@@ -546,7 +540,7 @@ pub(super) async fn resolve_base_with_hit(
                             {
                                 vec![super::VariantBuildCandidate {
                                     genome_build: other,
-                                    id: other_hit.id.clone(),
+                                    id: other_hit.source().id().to_owned(),
                                     rsid: transform::variant::from_myvariant_hit(&other_hit).rsid,
                                 }]
                             } else {
@@ -618,7 +612,7 @@ pub(super) async fn resolve_base_with_hit(
         VariantIdFormat::ClinvarVariationId(variation_id) => {
             let q = format!("clinvar.variant_id:{variation_id}");
             let hit = coding_lookup::lookup_exact(&myvariant, &q, |hit| {
-                match hit.clinvar.as_ref().and_then(|c| c.variant_id()) {
+                match hit.source().clinvar().and_then(|c| c.variant_id()) {
                     Some(actual) if actual == *variation_id => {
                         super::VariantIdentityComparison::Compatible {
                             matched_alias: variation_id.to_string(),
@@ -1444,3 +1438,6 @@ pub(super) mod tests;
 
 #[cfg(test)]
 mod cadd_adoption_tests;
+
+#[cfg(test)]
+mod hit_adoption_tests;

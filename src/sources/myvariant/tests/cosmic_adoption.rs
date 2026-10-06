@@ -26,7 +26,7 @@ fn cosmic_preserves_complete_hit_order_presence_and_carriers() {
     ] {
         let bytes: MyVariantHit = serde_json::from_slice(raw.as_bytes()).unwrap();
         let value: MyVariantHit =
-            serde_json::from_value(serde_json::from_str(raw).unwrap()).unwrap();
+            MyVariantHit::from_value(serde_json::from_str(raw).unwrap()).unwrap();
         for hit in [bytes, value] {
             assert_eq!(serde_json::to_string(&hit.clone()).unwrap(), expected);
         }
@@ -49,7 +49,7 @@ fn cosmic_preserves_complete_hit_order_presence_and_carriers() {
         );
         for hit in [
             serde_json::from_str::<MyVariantHit>(&raw).unwrap(),
-            serde_json::from_value(serde_json::from_str(&raw).unwrap()).unwrap(),
+            MyVariantHit::from_value(serde_json::from_str(&raw).unwrap()).unwrap(),
         ] {
             assert_eq!(serde_json::to_string(&hit).unwrap(), expected);
         }
@@ -58,7 +58,7 @@ fn cosmic_preserves_complete_hit_order_presence_and_carriers() {
         let raw = format!(r#"{{"_id":"safe-id","cosmic":{{"{field}":null,"{field}":null}}}}"#);
         assert!(serde_json::from_str::<MyVariantHit>(&raw).is_err());
         let erased: MyVariantHit =
-            serde_json::from_value(serde_json::from_str(&raw).unwrap()).unwrap();
+            MyVariantHit::from_value(serde_json::from_str(&raw).unwrap()).unwrap();
         assert_eq!(
             serde_json::to_string(&erased).unwrap(),
             r#"{"_id":"safe-id","cadd":null,"clinvar":null,"dbnsfp":null,"dbsnp":null,"gnomad_exome":null,"gnomad":null,"exac":null,"exac_nontcga":null,"cosmic":{"cosmic_id":null,"mut_freq":null,"tumor_site":null,"mut_nt":null},"cgi":null,"civic":null,"snpeff":null}"#
@@ -217,7 +217,7 @@ async fn cosmic_callable_clients_preserve_rows_masks_and_canonical_hits() {
     assert_eq!(search.total, Some(17));
     let rows = client.get_all("safe-id").await.unwrap();
     let first = client.get("safe-id", None).await.unwrap();
-    let cosmic: &biodata::MyVariantCosmicProjection = first.cosmic.as_ref().unwrap();
+    let cosmic: &biodata::MyVariantCosmicProjection = first.source().cosmic().unwrap();
     assert_eq!(cosmic.cosmic_id().unwrap().first(), Some("COSM1"));
     assert_eq!(cosmic.tumor_site().unwrap().values(), &["", "skin"]);
     assert_eq!(cosmic.mut_freq(), None);
@@ -225,11 +225,9 @@ async fn cosmic_callable_clients_preserve_rows_masks_and_canonical_hits() {
     assert_eq!(serde_json::to_string(&first).unwrap(), EXPECTED);
     for hits in [search.hits, rows] {
         assert_eq!(hits.len(), 2);
-        assert_eq!(hits[1].cosmic.as_ref().unwrap().mut_freq(), Some(2.83));
+        assert_eq!(hits[1].source().cosmic().unwrap().mut_freq(), Some(2.83));
         assert_eq!(
-            hits[1]
-                .cosmic
-                .as_ref()
+            hits[1].source().cosmic()
                 .unwrap()
                 .cosmic_id()
                 .unwrap()

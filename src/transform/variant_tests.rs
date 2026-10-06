@@ -4,8 +4,8 @@ use super::*;
 
 fn rcv(value: serde_json::Value) -> MyVariantClinVarRcv {
     let hit: MyVariantHit =
-        serde_json::from_value(serde_json::json!({"_id":"test", "clinvar":{"rcv":value}})).unwrap();
-    hit.clinvar.unwrap().rcv()[0].clone()
+        MyVariantHit::from_value(serde_json::json!({"_id":"test", "clinvar":{"rcv":value}})).unwrap();
+    hit.source().clinvar().unwrap().rcv()[0].clone()
 }
 
 #[test]
@@ -188,7 +188,7 @@ fn aggregate_clinvar_conditions_counts_reports() {
 
 #[test]
 fn extracts_expanded_variant_sections() {
-    let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
         "_id": "chr7:g.140453136A>T",
         "dbnsfp": {
             "genename": "BRAF",
@@ -240,7 +240,7 @@ fn extracts_expanded_variant_sections() {
 
 #[test]
 fn from_myvariant_hit_sets_top_disease_from_sorted_clinvar_rows() {
-    let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
         "_id": "chr7:g.140453136A>T",
         "dbnsfp": {
             "genename": "BRAF",
@@ -276,7 +276,7 @@ fn from_myvariant_hit_sets_top_disease_from_sorted_clinvar_rows() {
 #[test]
 fn derive_legacy_name_normalizes_stop_alias_variants() {
     for alias in ["p.L39X", "p.Leu39Ter", "p.Leu39*"] {
-        let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+        let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
                 "_id": "chr6:g.118880200T>G",
                 "dbnsfp": {
                     "genename": "PLN",
@@ -297,7 +297,7 @@ fn derive_legacy_name_normalizes_stop_alias_variants() {
 #[test]
 fn derive_legacy_name_normalizes_missense_alias_variants() {
     for alias in ["p.R25C", "p.Arg25Cys"] {
-        let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+        let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
                 "_id": "chr6:g.118880157C>T",
                 "dbnsfp": {
                     "genename": "PLN",
@@ -317,7 +317,7 @@ fn derive_legacy_name_normalizes_missense_alias_variants() {
 
 #[test]
 fn from_myvariant_hit_leaves_legacy_name_empty_without_clinvar() {
-    let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
         "_id": "chr6:g.118880200T>G",
         "dbnsfp": {
             "genename": "PLN",
@@ -332,7 +332,7 @@ fn from_myvariant_hit_leaves_legacy_name_empty_without_clinvar() {
 
 #[test]
 fn transcript_annotation_never_zips_independent_dbnsfp_arrays() {
-    let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
             "_id": "chr10:g.89720808T>G",
             "clinvar": {
                 "variant_id": 1,

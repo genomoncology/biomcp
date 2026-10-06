@@ -329,9 +329,7 @@ fn residue_summary(
     let requested_normalized = requested_change
         .as_deref()
         .and_then(super::normalize_protein_change);
-    let aliases = hit
-        .dbnsfp
-        .as_ref()
+    let aliases = hit.source().dbnsfp()
         .map(|dbnsfp| dbnsfp.hgvsp().values())
         .unwrap_or_default();
 

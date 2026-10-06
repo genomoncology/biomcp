@@ -294,7 +294,7 @@ pub(crate) fn annotation_table<T>(
         let hit: crate::sources::myvariant::MyVariantHit = serde_json::from_value(json!({
             "_id":"x", "snpeff":{"ann":annotation}
         })).unwrap();
-        let annotation = &hit.snpeff.as_ref().unwrap().annotations()[0];
+        let annotation = &hit.source().snpeff().unwrap().annotations()[0];
         let before = requested.clone();
         assert_eq!(matches(annotation, &requested), i < 4, "A{}", if i < 8 { i + 1 } else { i + 2 });
         assert_eq!(requested, before);

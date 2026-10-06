@@ -367,7 +367,7 @@ async fn coding_source_projection_table() {
             hit
         };
         assert_eq!(
-            hit.snpeff.as_ref().unwrap().is_complete(),
+            hit.source().snpeff().unwrap().is_complete(),
             row["expected_internal"]["snpeff_complete"]
                 .as_bool()
                 .unwrap()
@@ -460,7 +460,7 @@ async fn coding_source_projection_table() {
             json!(identity.coding_changes),
             row["expected_coding_aliases"]
         );
-        assert!(hit.dbnsfp.as_ref().unwrap().hgvsc().values().is_empty());
+        assert!(hit.source().dbnsfp().unwrap().hgvsc().values().is_empty());
         assert_eq!(
             serde_json::to_value(crate::transform::variant::from_myvariant_search_hit(&hit))
                 .unwrap(),

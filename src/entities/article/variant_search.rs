@@ -2175,7 +2175,7 @@ async fn citation_candidates(
     let Some(retained_hit) = context.source_hit.as_ref() else {
         return Ok((Vec::new(), false));
     };
-    let (hydrated_hit, hydration_unit) = if retained_hit.civic.is_none() {
+    let (hydrated_hit, hydration_unit) = if retained_hit.civic().is_none() {
         let Some(unit) = execution
             .begin_provider_unit("source_citation", "myvariant")
             .await
@@ -2198,7 +2198,7 @@ async fn citation_candidates(
             }
         };
         let result = client
-            .get_all(&retained_hit.id)
+            .get_all(&retained_hit.source().id())
             .await
             .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
         match result {
@@ -2558,7 +2558,7 @@ fn materialize_discovery_route_plans(
         context
             .source_hit
             .as_ref()
-            .map(|hit| usize::from(hit.civic.is_none()))
+            .map(|hit| usize::from(hit.civic().is_none()))
     })
     .flatten();
     execution.set_route_unit_plan("source_citation", "myvariant", citation_units);
@@ -6155,3 +6155,6 @@ mod tests {
 #[cfg(test)]
 #[path = "variant_search/dbsnp_adoption_tests.rs"]
 mod dbsnp_adoption_tests;
+
+#[cfg(test)]
+mod hit_adoption_tests;

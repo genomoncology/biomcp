@@ -15,7 +15,7 @@ fn exac_pair_preserves_complete_hit_order_and_independent_presence() {
     for raw in [EXPECTED, positional] {
         let bytes: MyVariantHit = serde_json::from_slice(raw.as_bytes()).unwrap();
         let value: MyVariantHit =
-            serde_json::from_value(serde_json::from_str(raw).unwrap()).unwrap();
+            MyVariantHit::from_value(serde_json::from_str(raw).unwrap()).unwrap();
         for hit in [bytes, value] {
             assert_eq!(serde_json::to_string(&hit.clone()).unwrap(), EXPECTED);
         }
@@ -50,7 +50,7 @@ fn exac_pair_preserves_complete_hit_order_and_independent_presence() {
         );
         for hit in [
             serde_json::from_str::<MyVariantHit>(&raw).unwrap(),
-            serde_json::from_value(serde_json::from_str(&raw).unwrap()).unwrap(),
+            MyVariantHit::from_value(serde_json::from_str(&raw).unwrap()).unwrap(),
         ] {
             assert_eq!(serde_json::to_string(&hit).unwrap(), expected);
         }
@@ -199,13 +199,13 @@ async fn exac_pair_callable_clients_preserve_rows_masks_and_canonical_hits() {
     assert_eq!(search.total, Some(17));
     let rows = client.get_all("safe-id").await.unwrap();
     let first = client.get("safe-id", None).await.unwrap();
-    assert_eq!(first.exac.as_ref().unwrap().af(), Some(0.1));
-    assert_eq!(first.exac_nontcga.as_ref().unwrap().af(), Some(0.2));
+    assert_eq!(first.source().exac().unwrap().af(), Some(0.1));
+    assert_eq!(first.source().exac_nontcga().unwrap().af(), Some(0.2));
     assert_eq!(serde_json::to_string(&first).unwrap(), EXPECTED);
     for hits in [search.hits, rows] {
         assert_eq!(hits.len(), 2);
-        assert_eq!(hits[1].exac.as_ref().unwrap().af(), Some(0.3));
-        assert_eq!(hits[1].exac_nontcga.as_ref().unwrap().af(), Some(0.2));
+        assert_eq!(hits[1].source().exac().unwrap().af(), Some(0.3));
+        assert_eq!(hits[1].source().exac_nontcga().unwrap().af(), Some(0.2));
         assert_eq!(serde_json::to_string(&hits[0]).unwrap(), EXPECTED);
         assert_eq!(serde_json::to_string(&hits[1]).unwrap(), SECOND);
     }

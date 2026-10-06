@@ -124,7 +124,7 @@ fn exact_aggregation_retains_identical_complex_protein_hgvs() {
         None,
         None,
     );
-    let source_hit = serde_json::from_value(serde_json::json!({
+    let source_hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": "chr7:g.55242465_55242479del",
         "dbnsfp": {
             "genename": "EGFR",
@@ -179,7 +179,7 @@ fn exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match() {
         assert_eq!(requested.human_label(), observations["human_label"]);
         let mut seen = HashSet::new();
         let mut retained = Vec::new();
-        let hits: Vec<MyVariantHit> = serde_json::from_value(case["hits"].clone()).unwrap();
+        let hits: Vec<MyVariantHit> = case["hits"].as_array().unwrap().iter().cloned().map(MyVariantHit::from_value).collect::<Result<_, _>>().unwrap();
         assert!(!retain_compatible_hits(
             &requested,
             hits,
@@ -202,7 +202,7 @@ fn exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match() {
         None,
         None,
     );
-    let source_hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let source_hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
         "_id": "chr5:g.118860951A>G",
         "dbnsfp": {"genename": "HSD17B4", "hgvsp": ["p.His515Arg", "p.His540Arg"]},
         "clinvar": {"rcv": {"preferred_name": "NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
@@ -266,7 +266,7 @@ fn split_snpeff_fields_do_not_inherit_dbnsfp_match_role() {
         Some("c.1799T>A".into()),
         None,
     );
-    let source_hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let source_hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
         "_id": "chr7:g.140453136A>T",
         "dbnsfp": {"genename":"BRAF", "hgvsp":"p.V600E", "hgvsc":"c.1799T>A"},
         "snpeff": {"ann": [
@@ -330,11 +330,11 @@ fn matched_role_requires_one_complete_transcript_specific_tuple() {
             .iter()
             .zip(expected.as_array().unwrap())
         {
-            let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+            let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
                 "_id":"x", "snpeff":{"ann":annotation}
             }))
             .unwrap();
-            let annotation = &hit.snpeff.as_ref().unwrap().annotations()[0];
+            let annotation = &hit.source().snpeff().unwrap().annotations()[0];
             assert_eq!(
                 annotation_matches_request(&annotation, &requested),
                 expected.as_bool().unwrap(),
@@ -354,7 +354,7 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
             "feature_id":"t".repeat(field_len), "genename":"g".repeat(field_len),
             "hgvs_c":"c".repeat(field_len), "hgvs_p":"p".repeat(field_len)
         });
-        let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+        let hit: MyVariantHit = MyVariantHit::from_value(serde_json::json!({
             "_id":"x", "snpeff":{"ann":vec![annotation; annotations]}
         }))
         .unwrap();
@@ -380,7 +380,7 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
                 transcript_annotations_complete: None,
                 transcript_annotations: None,
             },
-            snpeff: hit.snpeff,
+            snpeff: hit.source().snpeff().cloned(),
             displayed_snpeff_index: None,
         }
     }
@@ -397,11 +397,11 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
 
     let mut over = (0..8).map(|id| retained(id, 32, 256)).collect::<Vec<_>>();
     let mut one_byte = retained(9, 0, 0);
-    one_byte.snpeff = serde_json::from_value::<MyVariantHit>(serde_json::json!({
+    one_byte.snpeff = MyVariantHit::from_value(serde_json::json!({
         "_id":"x", "snpeff":{"ann":{"feature_id":"t"}}
     }))
     .unwrap()
-    .snpeff;
+    .source().snpeff().cloned();
     over.push(one_byte);
     let page = finalize_exact_page(&requested, over, 0, 50, false, true);
     assert!(page.results.iter().all(|row| {
@@ -416,7 +416,7 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
 #[test]
 fn malformed_snpeff_isolated_from_exact_broad_and_get_siblings() {
     let make_hit = || -> MyVariantHit {
-        serde_json::from_value(serde_json::json!({
+        crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
             "_id":"chr5:g.118860951A>G",
             "dbnsfp":{"genename":"HSD17B4", "hgvsp":"p.His540Arg"},
             "clinvar":{"rcv":{"preferred_name":"NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
@@ -435,7 +435,7 @@ fn malformed_snpeff_isolated_from_exact_broad_and_get_siblings() {
     assert_eq!(detail.hgvs_c.as_deref(), Some("c.1544A>G"));
     assert_eq!(detail.hgvs_p.as_deref(), Some("p.His515Arg"));
 
-    let no_valid_sibling: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let no_valid_sibling: MyVariantHit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id":"chr5:g.118860951A>G",
         "dbnsfp":{"genename":"HSD17B4", "hgvsc":["c.1544A>G", "c.1619A>G"], "hgvsp":["p.His515Arg", "p.His540Arg"]},
         "snpeff":{"ann":"malformed"}
@@ -488,7 +488,7 @@ fn incomplete_annotations_refuse_exact_metadata_and_keep_broad_get_siblings() {
             "clinvar":{"rcv":{"preferred_name":"NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
             "snpeff":snpeff
         });
-        let hit = || serde_json::from_value::<MyVariantHit>(payload.clone()).unwrap();
+        let hit = || MyVariantHit::from_value(payload.clone()).unwrap();
         let broad = transform::variant::from_myvariant_search_hit(&hit());
         assert_eq!(broad.transcript.as_deref(), Some("NM_000414.3"));
         assert!(
@@ -528,7 +528,7 @@ fn absent_and_null_annotation_sets_are_exact_empty_complete() {
         if let Some(snpeff) = snpeff_member {
             payload["snpeff"] = snpeff;
         }
-        let hit: MyVariantHit = serde_json::from_value(payload).unwrap();
+        let hit: MyVariantHit = MyVariantHit::from_value(payload).unwrap();
         let requested = RequestedVariantIdentity::for_search(
             Some("HSD17B4".into()),
             Some("H540R".into()),
@@ -564,7 +564,7 @@ fn refseq_request() -> RequestedVariantIdentity {
 }
 
 fn refseq_hit(id: &str, gene: Option<&str>, coding: Option<&str>) -> MyVariantHit {
-    serde_json::from_value(serde_json::json!({
+    crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": id,
         "dbnsfp": {
             "genename": gene,
@@ -620,7 +620,7 @@ fn article_provider_aggregation_follows_precedence_and_refseq_fallback_states() 
         Some(VariantArticleResolutionBasis::ProviderConfirmed)
     );
     assert_eq!(
-        confirmed.source_hit.as_ref().map(|hit| hit.id.as_str()),
+        confirmed.source_hit.as_ref().map(|hit| hit.source().id()),
         Some("GRCh38:NC_000011.10:g.108248927T>G")
     );
 
@@ -691,7 +691,7 @@ fn article_provider_aggregation_marks_distinct_compatible_and_indeterminate_sets
         Some("ATM"),
         Some("NM_000051.4:c.1066-6T>G"),
     );
-    let compatible_with_rsid: MyVariantHit = serde_json::from_value(serde_json::json!({
+    let compatible_with_rsid: MyVariantHit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": "GRCh38:NC_000011.10:g.108248927T>G",
         "dbnsfp": {
             "genename": "ATM",

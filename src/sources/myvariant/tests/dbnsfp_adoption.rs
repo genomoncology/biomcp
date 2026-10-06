@@ -8,7 +8,7 @@ fn dbnsfp_embedding_preserves_siblings_encoding_and_private_debug() {
         "snpeff":{"ann":{"genename":"BRAF","hgvs_p":"p.Val600Glu"}},
         "dbnsfp":{"genename":"private-dbnsfp-marker","hgvsp":["p.V600E","p.V600E"],"hgvsc":null,
             "revel":{"score":[0.94,0.11]}}});
-    let hit: MyVariantHit = serde_json::from_value(input).unwrap();
+    let hit: MyVariantHit = MyVariantHit::from_value(input).unwrap();
     assert!(!format!("{hit:?}").contains("private-dbnsfp-marker"));
     let encoded = serde_json::to_value(&hit).unwrap();
     assert_eq!(encoded["_id"], "chr7:g.140453136A>T");

@@ -59,8 +59,7 @@ pub struct MyVariantClient {
 
 pub(crate) fn civic_pubmed_ids(hit: &MyVariantHit) -> Vec<String> {
     let Some(profiles) = hit
-        .civic
-        .as_ref()
+        .civic()
         .and_then(|value| value.get("molecularProfiles"))
         .and_then(serde_json::Value::as_array)
     else {
@@ -772,7 +771,7 @@ impl MyVariantClient {
             }
         })?;
         let hit_value = Self::select_get_hit_value(value, id)?;
-        serde_json::from_value(hit_value).map_err(|source| BioMcpError::ApiJson {
+        MyVariantHit::from_value(hit_value).map_err(|source| BioMcpError::ApiJson {
             api: MYVARIANT_API.to_string(),
             source,
         })
@@ -810,7 +809,7 @@ impl MyVariantClient {
         Self::select_get_hit_values(value)?
             .into_iter()
             .map(|value| {
-                serde_json::from_value(value).map_err(|source| BioMcpError::ApiJson {
+                MyVariantHit::from_value(value).map_err(|source| BioMcpError::ApiJson {
                     api: MYVARIANT_API.to_string(),
                     source,
                 })
@@ -826,126 +825,108 @@ pub struct MyVariantSearchResponse {
     pub hits: Vec<MyVariantHit>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct MyVariantHit {
-    #[serde(rename = "_id")]
-    pub id: String,
-
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantCadd::deserialize",
-        serialize_with = "biodata::MyVariantCadd::serialize"
-    )]
-    pub cadd: Option<biodata::MyVariantCaddProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantClinVar::deserialize",
-        serialize_with = "biodata::MyVariantClinVar::serialize"
-    )]
-    pub clinvar: Option<biodata::MyVariantClinVarProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantDbnsfp::deserialize",
-        serialize_with = "serialize_dbnsfp"
-    )]
-    pub dbnsfp: Option<biodata::MyVariantDbnsfpProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantDbsnp::deserialize",
-        serialize_with = "biodata::MyVariantDbsnp::serialize"
-    )]
-    pub dbsnp: Option<biodata::MyVariantDbsnpProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantGnomadExome::deserialize",
-        serialize_with = "biodata::MyVariantGnomadExome::serialize"
-    )]
-    pub gnomad_exome: Option<biodata::MyVariantGnomadExomeProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantGnomad::deserialize",
-        serialize_with = "biodata::MyVariantGnomad::serialize"
-    )]
-    pub gnomad: Option<biodata::MyVariantGnomadProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantExac::deserialize",
-        serialize_with = "biodata::MyVariantExac::serialize"
-    )]
-    pub exac: Option<biodata::MyVariantExacProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantExac::deserialize",
-        serialize_with = "biodata::MyVariantExac::serialize"
-    )]
-    pub exac_nontcga: Option<biodata::MyVariantExacProjection>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantCosmic::deserialize",
-        serialize_with = "biodata::MyVariantCosmic::serialize"
-    )]
-    pub cosmic: Option<biodata::MyVariantCosmicProjection>,
-    pub cgi: Option<serde_json::Value>,
-    pub civic: Option<serde_json::Value>,
-    #[serde(
-        default,
-        deserialize_with = "biodata::MyVariantSnpEff::deserialize",
-        serialize_with = "serialize_snpeff"
-    )]
-    pub snpeff: Option<biodata::MyVariantSnpEffProjection>,
+    source: biodata::MyVariantHitProjection,
+    cgi: Option<OpaqueView>,
+    civic: Option<OpaqueView>,
 }
 
-// BioData owns the complete source representation and its borrowed encoder.
-fn serialize_dbnsfp<S: serde::Serializer>(
-    projection: &Option<biodata::MyVariantDbnsfpProjection>,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    projection
-        .as_ref()
-        .map(biodata::MyVariantDbnsfpProjection::as_source)
-        .serialize(serializer)
+#[derive(Clone)]
+struct OpaqueView {
+    value: serde_json::Value,
+    normalized: Box<serde_json::value::RawValue>,
 }
 
-// Preserve the intermediate hit encoding while BioData owns decoding.
-fn serialize_snpeff<S: serde::Serializer>(
-    projection: &Option<biodata::MyVariantSnpEffProjection>,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    struct Encode<'a>(&'a biodata::MyVariantSnpEffProjection);
-    impl Serialize for Encode<'_> {
-        fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-            use serde::ser::{SerializeSeq, SerializeStruct};
-            struct Annotations<'a>(&'a [biodata::MyVariantSnpEffAnnotation]);
-            impl Serialize for Annotations<'_> {
-                fn serialize<S: serde::Serializer>(
-                    &self,
-                    serializer: S,
-                ) -> Result<S::Ok, S::Error> {
-                    #[derive(Serialize)]
-                    struct Annotation<'a> {
-                        feature_id: Option<&'a str>,
-                        genename: Option<&'a str>,
-                        hgvs_c: Option<&'a str>,
-                        hgvs_p: Option<&'a str>,
-                    }
-                    let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
-                    for ann in self.0 {
-                        seq.serialize_element(&Annotation {
-                            feature_id: ann.feature_id(),
-                            genename: ann.genename(),
-                            hgvs_c: ann.hgvs_c(),
-                            hgvs_p: ann.hgvs_p(),
-                        })?;
-                    }
-                    seq.end()
-                }
-            }
-            let mut object = serializer.serialize_struct("MyVariantSnpeff", 1)?;
-            object.serialize_field("ann", &Annotations(self.0.annotations()))?;
-            object.end()
-        }
+impl std::fmt::Debug for MyVariantHit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("MyVariantHit")
     }
-    projection.as_ref().map(Encode).serialize(serializer)
+}
+
+impl std::fmt::Debug for OpaqueView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("OpaqueView")
+    }
+}
+
+fn invalid_hit() -> serde_json::Error {
+    <serde_json::Error as serde::de::Error>::custom("invalid_structure")
+}
+
+impl OpaqueView {
+    fn from_value(value: serde_json::Value) -> Result<Option<Self>, serde_json::Error> {
+        if value.is_null() {
+            return Ok(None);
+        }
+        let normalized = serde_json::value::to_raw_value(&value).map_err(|_| invalid_hit())?;
+        Ok(Some(Self { value, normalized }))
+    }
+
+    fn from_source(raw: Option<&serde_json::value::RawValue>) -> Result<Option<Self>, serde_json::Error> {
+        raw.map(|raw| {
+            let value = serde_json::from_str(raw.get()).map_err(|_| invalid_hit())?;
+            Self::from_value(value)
+        }).transpose().map(Option::flatten)
+    }
+}
+
+impl MyVariantHit {
+    pub(crate) fn source(&self) -> &biodata::MyVariantHitProjection {
+        &self.source
+    }
+
+    pub(crate) fn cgi(&self) -> Option<&serde_json::Value> {
+        self.cgi.as_ref().map(|view| &view.value)
+    }
+
+    pub(crate) fn civic(&self) -> Option<&serde_json::Value> {
+        self.civic.as_ref().map(|view| &view.value)
+    }
+
+    pub(crate) fn from_value(mut value: serde_json::Value) -> Result<Self, serde_json::Error> {
+        use serde::de::IntoDeserializer;
+        let (cgi, civic) = match &mut value {
+            serde_json::Value::Object(object) => (
+                object.remove("cgi").unwrap_or_default(),
+                object.remove("civic").unwrap_or_default(),
+            ),
+            serde_json::Value::Array(sequence) => (
+                sequence.get_mut(10).map(std::mem::take).unwrap_or_default(),
+                sequence.get_mut(11).map(std::mem::take).unwrap_or_default(),
+            ),
+            _ => (serde_json::Value::Null, serde_json::Value::Null),
+        };
+        let cgi = OpaqueView::from_value(cgi)?;
+        let civic = OpaqueView::from_value(civic)?;
+        let source = biodata::MyVariantHit::deserialize_with_source_companions(
+            value.into_deserializer(),
+            cgi.as_ref().map(|view| view.normalized.clone()),
+            civic.as_ref().map(|view| view.normalized.clone()),
+        ).map_err(|_| invalid_hit())?;
+        Ok(Self { source, cgi, civic })
+    }
+}
+
+impl<'de> Deserialize<'de> for MyVariantHit {
+    fn deserialize<D: serde::Deserializer<'de>>(decoder: D) -> Result<Self, D::Error> {
+        let source = biodata::MyVariantHit::deserialize(decoder)
+            .map_err(|_| serde::de::Error::custom("invalid_structure"))?;
+        let cgi = OpaqueView::from_source(source.cgi_json())
+            .map_err(|_| serde::de::Error::custom("invalid_structure"))?;
+        let civic = OpaqueView::from_source(source.civic_json())
+            .map_err(|_| serde::de::Error::custom("invalid_structure"))?;
+        Ok(Self { source, cgi, civic })
+    }
+}
+
+impl Serialize for MyVariantHit {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.source.as_normalized_source(biodata::MyVariantHitNormalizedOpaque::new(
+            self.cgi.as_ref().map(|view| view.normalized.as_ref()),
+            self.civic.as_ref().map(|view| view.normalized.as_ref()),
+        )).map_err(|_| serde::ser::Error::custom("invalid_structure"))?.serialize(serializer)
+    }
 }
 
 #[cfg(test)]

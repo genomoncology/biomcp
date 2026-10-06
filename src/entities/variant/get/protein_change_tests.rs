@@ -7,7 +7,7 @@ fn protein_change_hit(
     clinvar_variant_id: Option<u64>,
     rsid: Option<&str>,
 ) -> crate::sources::myvariant::MyVariantHit {
-    serde_json::from_value(serde_json::json!({
+    crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": id,
         "dbnsfp": {"genename": "GENE", "hgvsp": "p.M1483I"},
         "dbsnp": rsid.map(|value| serde_json::json!({"rsid": value})),
@@ -31,7 +31,7 @@ fn protein_change_resolution_prefers_the_clinvar_named_hit_over_first_match() {
 
     let resolved = resolve_protein_change_hit("DICER1 p.Met1483Ile", "DICER1", "M1483I", hits)
         .expect("the single ClinVar-named hit resolves");
-    assert_eq!(resolved.id, "chr14:g.95562808C>T");
+    assert_eq!(resolved.source().id(), "chr14:g.95562808C>T");
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn protein_change_resolution_keeps_a_single_matching_hit() {
 
     let resolved = resolve_protein_change_hit("BRAF V600E", "BRAF", "V600E", hits)
         .expect("one matching hit resolves without a ClinVar record");
-    assert_eq!(resolved.id, "chr7:g.140453136A>T");
+    assert_eq!(resolved.source().id(), "chr7:g.140453136A>T");
 }
 
 #[test]

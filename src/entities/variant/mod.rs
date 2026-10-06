@@ -365,7 +365,7 @@ mod clinvar {
     pub(super) fn indirect_clinvar_record(
         hit: &crate::sources::myvariant::MyVariantHit,
     ) -> Option<super::ClinvarRecord> {
-        let clinvar = hit.clinvar.as_ref()?;
+        let clinvar = hit.source().clinvar()?;
         let variation_id = clinvar.variant_id()?;
         let aggregates = clinvar
             .rcv()
@@ -439,9 +439,7 @@ mod clinvar {
         timeout: Duration,
     ) {
         let fallback = indirect_clinvar_record(hit);
-        let variation_id = hit
-            .clinvar
-            .as_ref()
+        let variation_id = hit.source().clinvar()
             .and_then(|clinvar| clinvar.variant_id());
         super::get::strip_clinvar_details(variant);
         let Some(variation_id) = variation_id else {
@@ -468,7 +466,7 @@ mod clinvar {
         use super::*;
 
         fn hit() -> crate::sources::myvariant::MyVariantHit {
-            serde_json::from_value(serde_json::json!({
+            crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
                 "_id": "chr5:g.118860951A>G",
                 "clinvar": {"variant_id": 974782, "rcv": {
                     "accession": "RCV001251043", "clinical_significance": "Likely pathogenic"
@@ -556,7 +554,7 @@ mod clinvar {
 
         #[tokio::test]
         async fn missing_numeric_variation_id_is_source_free_inapplicable() {
-            let hit = serde_json::from_value(serde_json::json!({
+            let hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
                 "_id": "chr5:g.118860951A>G",
                 "clinvar": {"rcv": {"accession": "RCV001251043"}}
             }))

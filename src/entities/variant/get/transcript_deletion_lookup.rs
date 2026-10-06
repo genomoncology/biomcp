@@ -106,9 +106,9 @@ fn matched_tuples(
     change: &str,
 ) -> (Vec<MatchedTuple>, bool) {
     let mut tuples = Vec::new();
-    let mut incomplete = hit.snpeff.as_ref().is_some_and(|s| !s.is_complete());
+    let mut incomplete = hit.source().snpeff().is_some_and(|s| !s.is_complete());
     let mut assertions = 0;
-    if let Some(snpeff) = &hit.snpeff {
+    if let Some(snpeff) = &hit.source().snpeff() {
         for (index, ann) in snpeff.annotations().iter().enumerate() {
             assertions += 1;
             match snpeff_tuple(ann, index) {
@@ -118,7 +118,7 @@ fn matched_tuples(
             }
         }
     }
-    if let Some(clinvar) = &hit.clinvar {
+    if let Some(clinvar) = &hit.source().clinvar() {
         for (index, rcv) in clinvar.rcv().iter().enumerate() {
             assertions += 1;
             match rcv
@@ -195,7 +195,7 @@ async fn lookup_source(
     let mut indeterminate = false;
     coding_lookup::scan(client, &query, INCOMPLETE, |hit| {
         if require_alias {
-            match hit.clinvar.as_ref().and_then(|clinvar| clinvar.hgvs()) {
+            match hit.source().clinvar().and_then(|clinvar| clinvar.hgvs()) {
                 Some(hgvs) if hgvs.coding().values().iter().any(|alias| alias == id) => {}
                 Some(_) => return,
                 None => {
@@ -205,15 +205,15 @@ async fn lookup_source(
             }
         }
         let (tuples, incomplete) = matched_tuples(&hit, transcript, gene, change);
-        indeterminate |= incomplete || hit.id.trim().is_empty();
-        if tuples.is_empty() || hit.id.trim().is_empty() {
+        indeterminate |= incomplete || hit.source().id().trim().is_empty();
+        if tuples.is_empty() || hit.source().id().trim().is_empty() {
             return;
         }
         for tuple in &tuples {
-            if let Some(prior) = proteins.get(&hit.id) {
+            if let Some(prior) = proteins.get(hit.source().id()) {
                 indeterminate |= prior != &(tuple.gene.clone(), tuple.protein.clone());
             } else {
-                proteins.insert(hit.id.clone(), (tuple.gene.clone(), tuple.protein.clone()));
+                proteins.insert(hit.source().id().to_owned(), (tuple.gene.clone(), tuple.protein.clone()));
             }
         }
         let source = SourceVariantIdentity::from_myvariant_hit(&hit);
@@ -221,7 +221,7 @@ async fn lookup_source(
         let mut coding = source.coding_changes.clone();
         protein.sort();
         coding.sort();
-        if seen.insert((hit.id.clone(), source.normalized_key(), protein, coding))
+        if seen.insert((hit.source().id().to_owned(), source.normalized_key(), protein, coding))
             && selected.is_none()
         {
             // RCV and snpEff are complete assertions. Do not combine their fields.

@@ -17,7 +17,7 @@ fn cadd_hit_retains_canonical_order_presence_and_carriers() {
         for raw in [&expected, &positional] {
             let bytes: MyVariantHit = serde_json::from_slice(raw.as_bytes()).unwrap();
             let value: MyVariantHit =
-                serde_json::from_value(serde_json::from_str(raw).unwrap()).unwrap();
+                MyVariantHit::from_value(serde_json::from_str(raw).unwrap()).unwrap();
             for hit in [bytes, value] {
                 assert_eq!(serde_json::to_string(&hit).unwrap(), expected);
                 assert!(!format!("{hit:?}").contains("NON_SYNONYMOUS"));

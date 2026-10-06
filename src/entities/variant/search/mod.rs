@@ -404,7 +404,7 @@ fn article_resolution_context(
                     None,
                 ),
             },
-            source_id: Some(selected.hit.id.clone()),
+            source_id: Some(selected.hit.source().id().to_owned()),
             source_identity: Some(selected.identity.clone()),
             source_hit: Some(selected.hit.clone()),
             fallback_source_identities,
@@ -847,7 +847,7 @@ fn retain_compatible_hits(
                     row.matched_alias = Some(matched_alias);
                     retained.push(RetainedVariant {
                         row,
-                        snpeff: hit.snpeff,
+                        snpeff: hit.source().snpeff().cloned(),
                         displayed_snpeff_index,
                     });
                 }

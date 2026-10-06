@@ -39,7 +39,7 @@ pub(super) async fn lookup(
         for hit in response.hits.into_iter().take(CANDIDATE_LIMIT - examined) {
             examined += 1;
             let source = SourceVariantIdentity::from_myvariant_hit(&hit);
-            if hit.id.trim().is_empty()
+            if hit.source().id().trim().is_empty()
                 || source.rsids.is_empty()
                 || source.rsids.iter().any(|value| value.trim().is_empty())
             {
@@ -52,7 +52,7 @@ pub(super) async fn lookup(
                     let mut coding = source.coding_changes.clone();
                     protein.sort();
                     coding.sort();
-                    if seen.insert((hit.id.clone(), source.normalized_key(), protein, coding))
+                    if seen.insert((hit.source().id().to_owned(), source.normalized_key(), protein, coding))
                         && selected.is_none()
                     {
                         selected = Some(hit);

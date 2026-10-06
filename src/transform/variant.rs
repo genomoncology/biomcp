@@ -42,7 +42,7 @@ fn accession_stem(value: &str) -> &str {
 }
 
 fn clinvar_preferred_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
-    hit.clinvar.as_ref()?.rcv().iter().find_map(|rcv| {
+    hit.source().clinvar()?.rcv().iter().find_map(|rcv| {
         let name = rcv.preferred_name()?.trim();
         let (left, rest) = name.split_once(":c.")?;
         let transcript = left.split_once('(').map_or(left, |(value, _)| value).trim();
@@ -79,7 +79,7 @@ pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usi
         .as_ref()
         .and_then(|value| value.transcript.as_deref())
         .map(accession_stem);
-    let annotations = hit.snpeff.as_ref()?.annotations();
+    let annotations = hit.source().snpeff()?.annotations();
     annotations
         .iter()
         .enumerate()
@@ -98,9 +98,7 @@ pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usi
 }
 
 fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
-    let selected = hit
-        .snpeff
-        .as_ref()?
+    let selected = hit.source().snpeff()?
         .annotations()
         .get(selected_snpeff_annotation_index(hit)?)?;
     Some(TranscriptAnnotation {
@@ -137,8 +135,7 @@ fn normalize_consequence(value: &str) -> String {
 }
 
 fn pick_consequence(hit: &MyVariantHit) -> Option<String> {
-    hit.cadd
-        .as_ref()
+    hit.source().cadd()
         .and_then(biodata::MyVariantCaddProjection::consequence)
         .and_then(biodata::MyVariantCaddConsequence::first)
         .map(normalize_consequence)
@@ -146,18 +143,15 @@ fn pick_consequence(hit: &MyVariantHit) -> Option<String> {
 }
 
 fn best_gnomad_af(hit: &MyVariantHit) -> Option<&MyVariantGnomadAf> {
-    hit.gnomad_exome
-        .as_ref()
+    hit.source().gnomad_exome()
         .and_then(|v| v.af())
         .or_else(|| {
-            hit.gnomad
-                .as_ref()
+            hit.source().gnomad()
                 .and_then(|g| g.exomes())
                 .and_then(|v| v.af())
         })
         .or_else(|| {
-            hit.gnomad
-                .as_ref()
+            hit.source().gnomad()
                 .and_then(|g| g.genomes())
                 .and_then(|v| v.af())
         })
@@ -175,7 +169,7 @@ fn first_nonempty(value: Option<&str>) -> Option<String> {
 }
 
 fn extract_conservation(hit: &MyVariantHit) -> Option<VariantConservationScores> {
-    let dbnsfp = hit.dbnsfp.as_ref()?;
+    let dbnsfp = hit.source().dbnsfp()?;
 
     let scores = VariantConservationScores {
         phylop_100way_vertebrate: dbnsfp
@@ -246,7 +240,7 @@ fn push_prediction(
 }
 
 fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScore> {
-    let Some(dbnsfp) = hit.dbnsfp.as_ref() else {
+    let Some(dbnsfp) = hit.source().dbnsfp() else {
         return Vec::new();
     };
 
@@ -340,7 +334,7 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
 }
 
 fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
-    let cosmic = hit.cosmic.as_ref()?;
+    let cosmic = hit.source().cosmic()?;
 
     let context = VariantCosmicContext {
         mut_freq: cosmic.mut_freq(),
@@ -373,7 +367,7 @@ fn value_first_string(value: &serde_json::Value) -> Option<String> {
 }
 
 fn extract_cgi_associations(hit: &MyVariantHit) -> Vec<VariantCgiAssociation> {
-    let Some(cgi) = hit.cgi.as_ref() else {
+    let Some(cgi) = hit.cgi() else {
         return Vec::new();
     };
 
@@ -417,7 +411,7 @@ fn extract_cgi_associations(hit: &MyVariantHit) -> Vec<VariantCgiAssociation> {
 }
 
 fn extract_civic_cached_evidence(hit: &MyVariantHit) -> Vec<CivicEvidenceItem> {
-    let Some(civic) = hit.civic.as_ref() else {
+    let Some(civic) = hit.civic() else {
         return Vec::new();
     };
 
@@ -782,7 +776,7 @@ fn from_myvariant_annotation(
     let mut sift_pred: Option<String> = None;
     let mut polyphen_pred: Option<String> = None;
 
-    if let Some(dbnsfp) = hit.dbnsfp.as_ref() {
+    if let Some(dbnsfp) = hit.source().dbnsfp() {
         gene = pick_gene(dbnsfp);
 
         sift_pred = dbnsfp
@@ -802,9 +796,7 @@ fn from_myvariant_annotation(
     }
 
     if gene.is_empty() {
-        gene = hit
-            .clinvar
-            .as_ref()
+        gene = hit.source().clinvar()
             .and_then(|clinvar| clinvar.gene())
             .and_then(|gene| gene.symbol())
             .unwrap_or_default()
@@ -821,25 +813,19 @@ fn from_myvariant_annotation(
 
     let legacy_name = legacy_name(&gene, hgvs_p.as_deref());
 
-    let rsid = hit
-        .dbsnp
-        .as_ref()
+    let rsid = hit.source().dbsnp()
         .and_then(|d| d.rsid())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    let cosmic_id = hit
-        .cosmic
-        .as_ref()
+    let cosmic_id = hit.source().cosmic()
         .and_then(biodata::MyVariantCosmicProjection::cosmic_id)
         .into_iter()
         .flat_map(biodata::MyVariantCosmicText::values)
         .map(|s| s.trim().to_string())
         .find(|s| !s.is_empty());
 
-    let clinvar_id = hit
-        .clinvar
-        .as_ref()
+    let clinvar_id = hit.source().clinvar()
         .and_then(|c| c.variant_id())
         .map(|n| n.to_string());
 
@@ -850,9 +836,7 @@ fn from_myvariant_annotation(
         conditions,
         clinvar_conditions,
         clinvar_condition_reports,
-    ) = hit
-        .clinvar
-        .as_ref()
+    ) = hit.source().clinvar()
         .map(|c| {
             let sig = pick_significance(c.rcv());
             let (review_status, review_stars) = pick_review_status(c.rcv());
@@ -868,22 +852,18 @@ fn from_myvariant_annotation(
         })
         .unwrap_or((None, None, None, Vec::new(), Vec::new(), None));
 
-    let significance_evaluated = hit
-        .clinvar
-        .as_ref()
+    let significance_evaluated = hit.source().clinvar()
         .and_then(|c| newest_rcv_evaluation_date(c.rcv()));
     let (significance_source, significance_note) = if significance.is_some() {
         (
             Some("MyVariant.info".to_string()),
-            Some(derived_significance_note(&hit.id)),
+            Some(derived_significance_note(&hit.source().id())),
         )
     } else {
         (None, None)
     };
 
-    let cadd_score = hit
-        .cadd
-        .as_ref()
+    let cadd_score = hit.source().cadd()
         .and_then(biodata::MyVariantCaddProjection::phred);
     let consequence = pick_consequence(hit);
     let cached_civic = extract_civic_cached_evidence(hit);
@@ -891,7 +871,7 @@ fn from_myvariant_annotation(
 
     Variant {
         section_outcomes: crate::entities::variant::default_variant_section_outcomes(),
-        id: hit.id.clone(),
+        id: hit.source().id().to_owned(),
         genome_build: None,
         genome_build_provenance: None,
         build_ambiguous: None,
@@ -942,11 +922,9 @@ fn from_myvariant_annotation(
 
 pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let annotation = paired_annotation(hit);
-    let mut gene = hit.dbnsfp.as_ref().map(pick_gene).unwrap_or_default();
+    let mut gene = hit.source().dbnsfp().map(pick_gene).unwrap_or_default();
     if gene.is_empty() {
-        gene = hit
-            .clinvar
-            .as_ref()
+        gene = hit.source().clinvar()
             .and_then(|value| value.gene())
             .and_then(|value| value.symbol())
             .and_then(normalize_gene)
@@ -962,33 +940,23 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let hgvs_p = annotation.as_ref().and_then(|value| value.protein.clone());
     let legacy_name = legacy_name(&gene, hgvs_p.as_deref());
 
-    let significance = hit
-        .clinvar
-        .as_ref()
+    let significance = hit.source().clinvar()
         .and_then(|c| pick_significance(c.rcv()));
     let significance_source = significance.as_ref().map(|_| "MyVariant.info".to_string());
-    let significance_evaluated = hit
-        .clinvar
-        .as_ref()
+    let significance_evaluated = hit.source().clinvar()
         .and_then(|c| newest_rcv_evaluation_date(c.rcv()));
-    let clinvar_stars = hit
-        .clinvar
-        .as_ref()
+    let clinvar_stars = hit.source().clinvar()
         .and_then(|c| pick_review_status(c.rcv()).1);
     let gnomad_af = best_gnomad_af(hit).and_then(MyVariantGnomadAf::af);
-    let revel = hit
-        .dbnsfp
-        .as_ref()
+    let revel = hit.source().dbnsfp()
         .and_then(|dbnsfp| dbnsfp.revel())
         .and_then(|revel| first_score(revel.score()));
-    let gerp = hit
-        .dbnsfp
-        .as_ref()
+    let gerp = hit.source().dbnsfp()
         .and_then(|dbnsfp| dbnsfp.gerp())
         .and_then(|gerp| first_score(gerp.rs()));
 
     VariantSearchResult {
-        id: hit.id.clone(),
+        id: hit.source().id().to_owned(),
         genome_build: crate::entities::variant::GenomeBuild::Grch37,
         genome_build_provenance: "MyVariant.info provider default".into(),
         gene,

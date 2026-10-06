@@ -303,7 +303,7 @@ fn accepted_original_byte_source_and_product_table() {
             serde_json::to_value(&hit).unwrap(),
             oracle(&format!("{case}_HIT.json"))
         );
-        let db = hit.dbnsfp.as_ref().unwrap();
+        let db = hit.source().dbnsfp().unwrap();
         assert!(db.genename().values() == ["BRAF", "BRAF", "BRAF", "BRAF"]);
         assert!(db.hgvsp().values() == ["p.Val640Glu", "p.Val600Glu", "p.Val207Glu", "p.V600E"]);
         assert!(db.hgvsc().values().is_empty());

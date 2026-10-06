@@ -21,3 +21,5 @@ mod cadd_adoption;
 
 mod cosmic_adoption;
 mod exac_adoption;
+
+mod hit_adoption;

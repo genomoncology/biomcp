@@ -29,7 +29,7 @@ pub(super) async fn lookup(
     let mut indeterminate = false;
     scan(client, &query, INCOMPLETE, |hit| {
         let source = SourceVariantIdentity::from_myvariant_hit(&hit);
-        if hit.id.trim().is_empty() {
+        if hit.source().id().trim().is_empty() {
             indeterminate = true;
             return;
         }
@@ -39,7 +39,7 @@ pub(super) async fn lookup(
                 let mut coding = source.coding_changes.clone();
                 protein.sort();
                 coding.sort();
-                if seen.insert((hit.id.clone(), source.normalized_key(), protein, coding))
+                if seen.insert((hit.source().id().to_owned(), source.normalized_key(), protein, coding))
                     && selected.is_none()
                 {
                     selected = Some(hit);
@@ -78,7 +78,7 @@ pub(super) async fn lookup_exact(
         "ClinVar exact lookup did not complete its candidate scan.",
         |hit| match confirm(&hit) {
             VariantIdentityComparison::Compatible { .. } => {
-                if hit.id.trim().is_empty() {
+                if hit.source().id().trim().is_empty() {
                     indeterminate = true;
                     return;
                 }
@@ -87,7 +87,7 @@ pub(super) async fn lookup_exact(
                 let mut coding = source.coding_changes.clone();
                 protein.sort();
                 coding.sort();
-                if seen.insert((hit.id.clone(), source.normalized_key(), protein, coding))
+                if seen.insert((hit.source().id().to_owned(), source.normalized_key(), protein, coding))
                     && selected.is_none()
                 {
                     selected = Some(hit);

@@ -22,7 +22,7 @@ fn gnomad_hit_encodes_complete_canonical_objects_from_bytes_and_value() {
         for raw in [&prefix, &positional] {
             for hit in [
                 serde_json::from_str::<MyVariantHit>(raw).unwrap(),
-                serde_json::from_value::<MyVariantHit>(serde_json::from_str(raw).unwrap()).unwrap(),
+                MyVariantHit::from_value(serde_json::from_str(raw).unwrap()).unwrap(),
             ] {
                 assert_eq!(serde_json::to_string(&hit.clone()).unwrap(), prefix);
             }

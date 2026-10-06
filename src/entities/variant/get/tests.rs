@@ -98,7 +98,7 @@ fn identity_hit(
 ) -> crate::sources::myvariant::MyVariantHit {
     let dbnsfp =
         protein_change.map(|change| serde_json::json!({"genename": gene, "hgvsp": change}));
-    serde_json::from_value(serde_json::json!({
+    crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": "chr7:g.140453136A>T",
         "dbnsfp": dbnsfp
     }))
@@ -473,7 +473,7 @@ fn exact_helper_candidate_selection_rejects_conflicts_and_missing_evidence() {
 
 #[test]
 fn indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count() {
-    let hit = serde_json::from_value(serde_json::json!({
+    let hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": "chr5:g.118860951A>G",
         "clinvar": {
             "variant_id": 974782,
@@ -1262,7 +1262,7 @@ async fn genomic_prediction_preparation_optional_table() {
 
 #[test]
 fn headline_follows_record_level_germline_classification_and_names_ncbi() {
-    let hit = serde_json::from_value(serde_json::json!({
+    let hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": "chr17:g.7579374C>T",
         "clinvar": {"variant_id": 428884, "rcv": {
             "accession": "RCV001379190",
@@ -1314,7 +1314,7 @@ fn headline_follows_record_level_germline_classification_and_names_ncbi() {
 
 #[test]
 fn record_without_germline_classification_keeps_derived_value_labeled() {
-    let hit = serde_json::from_value(serde_json::json!({
+    let hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": "chr17:g.7579374C>T",
         "clinvar": {"variant_id": 428884, "rcv": {
             "accession": "RCV001379190",
@@ -1339,7 +1339,7 @@ fn record_without_germline_classification_keeps_derived_value_labeled() {
 
 #[test]
 fn agreeing_record_level_classification_drops_the_cached_copy_note() {
-    let hit = serde_json::from_value(serde_json::json!({
+    let hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
         "_id": "chr5:g.118860951A>G",
         "clinvar": {"variant_id": 974782, "rcv": {
             "accession": "RCV001251043",

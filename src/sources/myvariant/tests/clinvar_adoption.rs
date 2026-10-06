@@ -14,7 +14,7 @@ fn clinvar_embedding_preserves_complete_hit_and_private_observations() {
                     "clinical_significance":"Pathogenic","review_status":"opaque review",
                     "conditions":{"name":"Alpha","unknown":{"private-condition-key":[true,1.25,null,["nested"]]}},
                     "preferred_name":"opaque name","last_evaluated":"opaque date","number_submitters":0}}});
-        let hit: MyVariantHit = serde_json::from_value(input.clone()).unwrap();
+        let hit: MyVariantHit = MyVariantHit::from_value(input.clone()).unwrap();
         assert!(!format!("{hit:?}").contains("private-clinvar-marker"));
         assert!(!format!("{hit:?}").contains("private-condition-key"));
         let expected = json!({"_id":"safe-id","cadd":{"phred":32.0,"consequence":"missense"},
@@ -35,8 +35,8 @@ fn clinvar_embedding_preserves_complete_hit_and_private_observations() {
         json!({"_id":"safe-id"}),
         json!({"_id":"safe-id","clinvar":null}),
     ] {
-        let hit: MyVariantHit = serde_json::from_value(input).unwrap();
-        assert!(hit.clinvar.is_none());
+        let hit: MyVariantHit = MyVariantHit::from_value(input).unwrap();
+        assert!(hit.source().clinvar().is_none());
         assert_eq!(serde_json::to_value(hit).unwrap()["clinvar"], Value::Null);
     }
     let error = crate::sources::decode_json::<MyVariantHit>(

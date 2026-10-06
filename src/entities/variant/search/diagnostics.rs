@@ -333,7 +333,7 @@ pub(super) async fn classify_provider_zero(
             for value in alternatives
                 .hits
                 .iter()
-                .filter_map(|hit| hit.dbnsfp.as_ref())
+                .filter_map(|hit| hit.source().dbnsfp())
                 .flat_map(|dbnsfp| dbnsfp.hgvsp().values())
             {
                 if let Some((_value, found_reference, position, found_alternate)) =

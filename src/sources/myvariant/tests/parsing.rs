@@ -12,7 +12,7 @@ use serde_json::json;
 #[test]
 fn snpeff_embedding_preserves_siblings_encoding_and_private_debug() {
     let exact = |ann: serde_json::Value| {
-        serde_json::from_value::<MyVariantHit>(json!({
+        MyVariantHit::from_value(json!({
             "_id": "chr5:g.118860951A>G",
             "clinvar": {"rcv": {"preferred_name": "NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
             "dbnsfp": {"genename": "HSD17B4", "hgvsp": "p.His540Arg"},
@@ -27,7 +27,7 @@ fn snpeff_embedding_preserves_siblings_encoding_and_private_debug() {
         "hgvs_c": " c.1619A>G ",
         "hgvs_p": " p.His540Arg "
     }));
-    assert!(!format!("{:?}", valid.snpeff).contains("NM_001199291.2"));
+    assert!(!format!("{:?}", valid.source().snpeff()).contains("NM_001199291.2"));
     assert_eq!(
         serde_json::to_value(&valid).unwrap()["snpeff"],
         json!({"ann":[{
@@ -47,12 +47,12 @@ fn snpeff_embedding_preserves_siblings_encoding_and_private_debug() {
         serde_json::to_value(&malformed).unwrap()["snpeff"],
         json!({"ann":[]})
     );
-    assert!(malformed.clinvar.is_some());
-    assert!(malformed.dbnsfp.is_some());
+    assert!(malformed.source().clinvar().is_some());
+    assert!(malformed.source().dbnsfp().is_some());
 
     for value in [json!({"_id":"x"}), json!({"_id":"x", "snpeff":null})] {
-        let hit: MyVariantHit = serde_json::from_value(value).unwrap();
-        assert!(hit.snpeff.is_none());
+        let hit: MyVariantHit = MyVariantHit::from_value(value).unwrap();
+        assert!(hit.source().snpeff().is_none());
         assert_eq!(serde_json::to_value(&hit).unwrap()["snpeff"], json!(null));
     }
 }
@@ -83,11 +83,9 @@ fn parses_search_response_total_and_hits_from_real_fixture() {
     .unwrap();
     assert_eq!(resp.total, Some(1));
     assert!(!resp.hits.is_empty());
-    assert!(resp.hits[0].id.starts_with("chr7"));
+    assert!(resp.hits[0].source().id().starts_with("chr7"));
     assert_eq!(
-        resp.hits[0]
-            .dbnsfp
-            .as_ref()
+        resp.hits[0].source().dbnsfp()
             .and_then(|d| d.genename().first()),
         Some("BRAF")
     );
@@ -104,13 +102,10 @@ fn parses_receipted_braf_filter_searches() {
     )
     .unwrap();
     assert!(missense.hits.iter().any(|hit| {
-        hit.dbnsfp
-            .as_ref()
+        hit.source().dbnsfp()
             .and_then(|dbnsfp| dbnsfp.genename().first())
             == Some("BRAF")
-            && hit
-                .cadd
-                .as_ref()
+            && hit.source().cadd()
                 .and_then(biodata::MyVariantCaddProjection::consequence)
                 .and_then(biodata::MyVariantCaddConsequence::first)
                 == Some("NON_SYNONYMOUS")
@@ -125,13 +120,10 @@ fn parses_receipted_braf_filter_searches() {
     )
     .unwrap();
     assert!(revel.hits.iter().any(|hit| {
-        hit.dbnsfp
-            .as_ref()
+        hit.source().dbnsfp()
             .and_then(|dbnsfp| dbnsfp.genename().first())
             == Some("BRAF")
-            && hit
-                .dbnsfp
-                .as_ref()
+            && hit.source().dbnsfp()
                 .and_then(|dbnsfp| dbnsfp.revel())
                 .and_then(|revel| revel.score())
                 .and_then(biodata::MyVariantDbnsfpNumber::first)
@@ -163,11 +155,10 @@ fn parses_receipted_variant_identity_searches() {
         .unwrap();
 
         assert!(response.hits.iter().any(|hit| {
-            hit.dbnsfp
-                .as_ref()
+            hit.source().dbnsfp()
                 .and_then(|dbnsfp| dbnsfp.genename().first())
                 == Some(gene)
-                && hit.dbnsfp.as_ref().is_some_and(|dbnsfp| {
+                && hit.source().dbnsfp().is_some_and(|dbnsfp| {
                     dbnsfp
                         .hgvsp()
                         .values()
@@ -189,14 +180,13 @@ fn parses_receipted_braf_get_hit() {
     )
     .unwrap();
 
-    assert_eq!(hit.id, "chr7:g.140453136A>T");
+    assert_eq!(hit.source().id(), "chr7:g.140453136A>T");
     assert_eq!(
-        hit.dbnsfp
-            .as_ref()
+        hit.source().dbnsfp()
             .and_then(|dbnsfp| dbnsfp.genename().first()),
         Some("BRAF")
     );
-    assert!(hit.dbnsfp.as_ref().is_some_and(|dbnsfp| {
+    assert!(hit.source().dbnsfp().is_some_and(|dbnsfp| {
         dbnsfp
             .hgvsp()
             .values()
@@ -216,30 +206,28 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
     )
     .unwrap();
 
-    assert_eq!(hit.id, "chr7:g.140453136A>T");
+    assert_eq!(hit.source().id(), "chr7:g.140453136A>T");
     assert_eq!(
-        hit.cadd
-            .as_ref()
+        hit.source().cadd()
             .and_then(biodata::MyVariantCaddProjection::phred),
         Some(32.0)
     );
     assert_eq!(
-        hit.dbsnp.as_ref().and_then(|d| d.rsid().map(str::to_owned)),
+        hit.source().dbsnp().and_then(|d| d.rsid().map(str::to_owned)),
         Some("rs113488022".into())
     );
     assert_eq!(
-        hit.dbnsfp
-            .as_ref()
+        hit.source().dbnsfp()
             .and_then(|d| d.revel())
             .and_then(|r| r.score())
             .and_then(biodata::MyVariantDbnsfpNumber::first),
         Some(0.931)
     );
     assert_eq!(
-        hit.dbnsfp.as_ref().and_then(|d| d.genename().first()),
+        hit.source().dbnsfp().and_then(|d| d.genename().first()),
         Some("BRAF")
     );
-    let bayesdel = hit.dbnsfp.as_ref().and_then(|d| d.bayesdel());
+    let bayesdel = hit.source().dbnsfp().and_then(|d| d.bayesdel());
     assert_eq!(
         bayesdel
             .and_then(|b| b.add_af())
@@ -254,27 +242,25 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
             .and_then(biodata::MyVariantDbnsfpNumber::first),
         Some(0.335473)
     );
-    assert_eq!(hit.cosmic.as_ref().and_then(|c| c.mut_freq()), Some(2.83));
-    assert!(hit.exac.as_ref().and_then(|e| e.af()).is_some());
+    assert_eq!(hit.source().cosmic().and_then(|c| c.mut_freq()), Some(2.83));
+    assert!(hit.source().exac().and_then(|e| e.af()).is_some());
     assert_eq!(
-        hit.clinvar.as_ref().and_then(|c| c.variant_id()),
+        hit.source().clinvar().and_then(|c| c.variant_id()),
         Some(13961)
     );
     assert!(
-        hit.clinvar
-            .as_ref()
+        hit.source().clinvar()
             .map(|c| !c.rcv().is_empty())
             .unwrap_or(false)
     );
     assert!(
-        hit.gnomad_exome
-            .as_ref()
+        hit.source().gnomad_exome()
             .and_then(|g| g.af())
             .and_then(|a| a.af())
             .is_some()
     );
-    assert!(hit.civic.is_some());
-    assert!(hit.cgi.is_some());
+    assert!(hit.civic().is_some());
+    assert!(hit.cgi().is_some());
 }
 
 #[test]

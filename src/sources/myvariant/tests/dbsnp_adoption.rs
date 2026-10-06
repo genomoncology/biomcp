@@ -7,7 +7,7 @@ fn dbsnp_positional_embedding_encodes_canonical_object() {
     let raw = br#"{"_id":"safe-id","dbsnp":[" RS101 "]}"#;
     for hit in [
         serde_json::from_slice::<MyVariantHit>(raw).unwrap(),
-        serde_json::from_value::<MyVariantHit>(serde_json::from_slice(raw).unwrap()).unwrap(),
+        MyVariantHit::from_value(serde_json::from_slice(raw).unwrap()).unwrap(),
     ] {
         assert_eq!(
             serde_json::to_value(hit).unwrap(),
