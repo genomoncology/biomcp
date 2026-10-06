@@ -16,3 +16,5 @@ mod clinvar_adoption;
 mod dbsnp_adoption;
 
 mod gnomad_adoption;
+
+mod cadd_adoption;

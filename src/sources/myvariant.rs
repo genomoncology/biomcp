@@ -832,7 +832,12 @@ pub struct MyVariantHit {
     #[serde(rename = "_id")]
     pub id: String,
 
-    pub cadd: Option<MyVariantCadd>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantCadd::deserialize",
+        serialize_with = "biodata::MyVariantCadd::serialize"
+    )]
+    pub cadd: Option<biodata::MyVariantCaddProjection>,
     #[serde(
         default,
         deserialize_with = "biodata::MyVariantClinVar::deserialize",
@@ -927,12 +932,6 @@ fn serialize_snpeff<S: serde::Serializer>(
         }
     }
     projection.as_ref().map(Encode).serialize(serializer)
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantCadd {
-    pub phred: Option<f64>,
-    pub consequence: Option<StringOrVec>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

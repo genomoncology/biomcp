@@ -111,8 +111,8 @@ fn parses_receipted_braf_filter_searches() {
             && hit
                 .cadd
                 .as_ref()
-                .and_then(|cadd| cadd.consequence.as_ref())
-                .and_then(crate::utils::serde::StringOrVec::first)
+                .and_then(biodata::MyVariantCaddProjection::consequence)
+                .and_then(biodata::MyVariantCaddConsequence::first)
                 == Some("NON_SYNONYMOUS")
     }));
 
@@ -217,7 +217,12 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
     .unwrap();
 
     assert_eq!(hit.id, "chr7:g.140453136A>T");
-    assert_eq!(hit.cadd.as_ref().and_then(|c| c.phred), Some(32.0));
+    assert_eq!(
+        hit.cadd
+            .as_ref()
+            .and_then(biodata::MyVariantCaddProjection::phred),
+        Some(32.0)
+    );
     assert_eq!(
         hit.dbsnp.as_ref().and_then(|d| d.rsid().map(str::to_owned)),
         Some("rs113488022".into())

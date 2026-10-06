@@ -2,6 +2,14 @@ version = 1
 
 [selection]
 rust = [
+  "sources::myvariant::tests::parsing::parses_receipted_braf_filter_searches",
+  "sources::myvariant::tests::parsing::parses_receipted_braf_get_hit",
+  "sources::myvariant::tests::parsing::parses_get_hit_nested_fields_from_real_fixture",
+  "entities::variant::resolution::tests::point::accepted_original_byte_source_and_product_table",
+  "entities::variant::resolution::tests::interval::interval_identity_comparison_table",
+  "sources::myvariant::tests::cadd_adoption::cadd_hit_retains_canonical_order_presence_and_carriers",
+  "sources::myvariant::tests::cadd_adoption::cadd_owned_failures_are_private_through_bytes_get_and_get_all",
+  "entities::variant::get::cadd_adoption_tests::cadd_callable_detail_preserves_scores_first_selection_and_public_omission",
   "sources::myvariant::tests::gnomad_adoption::gnomad_hit_encodes_complete_canonical_objects_from_bytes_and_value",
   "sources::myvariant::tests::gnomad_adoption::gnomad_owned_failures_are_private_through_bytes_get_and_get_all",
   "entities::variant::search::gnomad_adoption_tests::gnomad_search_selects_objects_before_reading_frequency",

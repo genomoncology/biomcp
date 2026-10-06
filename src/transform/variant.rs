@@ -10,7 +10,6 @@ use crate::entities::variant::{
 use crate::sources::cbioportal::CBioMutationSummary;
 use crate::sources::civic::CivicEvidenceItem;
 use crate::sources::myvariant::MyVariantHit;
-use crate::utils::serde::StringOrVec;
 use biodata::MyVariantClinVarRcv;
 use biodata::MyVariantGnomadAf;
 
@@ -140,8 +139,8 @@ fn normalize_consequence(value: &str) -> String {
 fn pick_consequence(hit: &MyVariantHit) -> Option<String> {
     hit.cadd
         .as_ref()
-        .and_then(|c| c.consequence.as_ref())
-        .and_then(StringOrVec::first)
+        .and_then(biodata::MyVariantCaddProjection::consequence)
+        .and_then(biodata::MyVariantCaddConsequence::first)
         .map(normalize_consequence)
         .filter(|v| !v.is_empty())
 }
@@ -874,7 +873,10 @@ fn from_myvariant_annotation(
         (None, None)
     };
 
-    let cadd_score = hit.cadd.as_ref().and_then(|c| c.phred);
+    let cadd_score = hit
+        .cadd
+        .as_ref()
+        .and_then(biodata::MyVariantCaddProjection::phred);
     let consequence = pick_consequence(hit);
     let cached_civic = extract_civic_cached_evidence(hit);
     let top_disease = clinvar_conditions.first().cloned();

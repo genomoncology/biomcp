@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-biodata-boundary.py"
 URL = "https://github.com/genomoncology/biodata"
-REVISION = "57a5dd48e3c67533e67d9fcffd28c07d854b2631"
+REVISION = "19f4dbeb23b5b5c09d315b08f02b0f438cd59c5e"
 
 
 def _write(path: Path, content: str) -> None:
@@ -178,6 +178,7 @@ def test_biodata_boundary_rejects_patch_and_source_replacements(
 @pytest.mark.parametrize(
     "declaration",
     [
+        "pub struct MyVariantCadd { phred: Option<f64> }",
         "pub struct ClinicalTrialArm { value: String }",
         "pub struct ClinicalTrialCore { value: String }",
         "pub struct NciCtsV2DetailPlan { identity: String }",

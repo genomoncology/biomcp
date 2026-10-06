@@ -1,0 +1,104 @@
+//! Complete CADD embedding and retained product errors.
+use super::super::{MyVariantClient, MyVariantHit};
+use crate::entities::article::test_support::{
+    TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+};
+use crate::error::BioMcpError;
+
+#[test]
+fn cadd_hit_retains_canonical_order_presence_and_carriers() {
+    for consequence in [r#"" NON_SYNONYMOUS ""#, r#"["","synonymous","synonymous"]"#] {
+        let expected = format!(
+            r#"{{"_id":"safe-id","cadd":{{"phred":0.0,"consequence":{consequence}}},"clinvar":null,"dbnsfp":null,"dbsnp":{{"rsid":"rs123"}},"gnomad_exome":null,"gnomad":null,"exac":{{"af":0.1}},"exac_nontcga":null,"cosmic":null,"cgi":{{"opaque":true}},"civic":{{"opaque":[]}},"snpeff":{{"ann":[{{"feature_id":null,"genename":"BRAF","hgvs_c":null,"hgvs_p":null}}]}}}}"#
+        );
+        let positional = format!(
+            r#"{{"_id":"safe-id","cadd":[0,{consequence}],"dbsnp":{{"rsid":"rs123"}},"exac":{{"af":0.1}},"cgi":{{"opaque":true}},"civic":{{"opaque":[]}},"snpeff":{{"ann":{{"genename":"BRAF"}}}}}}"#
+        );
+        for raw in [&expected, &positional] {
+            let bytes: MyVariantHit = serde_json::from_slice(raw.as_bytes()).unwrap();
+            let value: MyVariantHit =
+                serde_json::from_value(serde_json::from_str(raw).unwrap()).unwrap();
+            for hit in [bytes, value] {
+                assert_eq!(serde_json::to_string(&hit).unwrap(), expected);
+                assert!(!format!("{hit:?}").contains("NON_SYNONYMOUS"));
+            }
+        }
+    }
+    for (member, encoded) in [
+        ("", "null"),
+        (",\"cadd\":null", "null"),
+        (",\"cadd\":{}", r#"{"phred":null,"consequence":null}"#),
+    ] {
+        let hit: MyVariantHit =
+            serde_json::from_str(&format!(r#"{{"_id":"safe-id"{member}}}"#)).unwrap();
+        assert_eq!(
+            serde_json::to_string(&hit).unwrap(),
+            format!(
+                r#"{{"_id":"safe-id","cadd":{encoded},"clinvar":null,"dbnsfp":null,"dbsnp":null,"gnomad_exome":null,"gnomad":null,"exac":null,"exac_nontcga":null,"cosmic":null,"cgi":null,"civic":null,"snpeff":null}}"#
+            )
+        );
+    }
+    assert!(
+        serde_json::from_str::<MyVariantHit>(
+            r#"{"_id":"safe-id","cadd":{"phred":null,"phred":0}}"#
+        )
+        .is_err()
+    );
+}
+
+fn private_error(error: &BioMcpError) {
+    let underlying = match error {
+        BioMcpError::WithSourceContext { context, source } => {
+            assert_eq!(context.provider().label(), "MyVariant.info");
+            source.as_ref()
+        }
+        error => error,
+    };
+    assert!(
+        matches!(underlying, BioMcpError::ApiJson { api, .. } if api.eq_ignore_ascii_case("myvariant.info"))
+    );
+    let mut cause: Option<&dyn std::error::Error> = Some(error);
+    while let Some(error) = cause {
+        let diagnostic = format!("{error:?} {error}");
+        assert!(!diagnostic.contains("PRIVATE_CADD_MARKER"), "{diagnostic}");
+        assert!(!diagnostic.contains("987654321"), "{diagnostic}");
+        cause = error.source();
+    }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[serial_test::serial(source_env)]
+async fn cadd_owned_failures_are_private_through_bytes_get_and_get_all() {
+    for raw in [
+        r#"{"_id":"safe-id","cadd":{"phred":"PRIVATE_CADD_MARKER"}}"#,
+        r#"{"_id":"safe-id","cadd":987654321}"#,
+        r#"{"_id":"safe-id","cadd":{"consequence":987654321}}"#,
+    ] {
+        let error = crate::sources::decode_json::<MyVariantHit>(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+            reqwest::StatusCode::OK,
+            Some(&reqwest::header::HeaderValue::from_static(
+                "application/json",
+            )),
+            raw.as_bytes(),
+            true,
+        )
+        .unwrap_err();
+        private_error(&error);
+        let fixture = TestHttpFixture::spawn(move |_| {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                raw.as_bytes(),
+            ))
+        })
+        .await;
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_CACHE_MODE", "off");
+        let client = MyVariantClient::new().unwrap();
+        private_error(&client.get("safe-id", None).await.unwrap_err());
+        private_error(&client.get_all("safe-id").await.unwrap_err());
+    }
+}

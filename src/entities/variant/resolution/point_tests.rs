@@ -2,7 +2,6 @@
 use super::point_alias::{Compatibility, PointRoute, Preparation, point_assertion};
 use super::*;
 use crate::sources::myvariant::{MyVariantHit, MyVariantSearchResponse};
-use crate::utils::serde::StringOrVec;
 use biodata::{
     HgvsProteinPointDisposition, HgvsProteinPointEdit, HgvsProteinResidue,
     parse_hgvs_protein_point_21_1_4,
@@ -308,9 +307,6 @@ fn accepted_original_byte_source_and_product_table() {
         assert!(db.genename().values() == ["BRAF", "BRAF", "BRAF", "BRAF"]);
         assert!(db.hgvsp().values() == ["p.Val640Glu", "p.Val600Glu", "p.Val207Glu", "p.V600E"]);
         assert!(db.hgvsc().values().is_empty());
-        assert!(
-            matches!(&hit.cadd.as_ref().unwrap().consequence, Some(StringOrVec::Single(v)) if v == "NON_SYNONYMOUS")
-        );
         if let Some(score) = db.revel() {
             assert_eq!(
                 score
