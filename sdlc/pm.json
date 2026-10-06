@@ -27,5 +27,27 @@
       "name": "Tracked text",
       "command": "python3 tools/check-tracked-text ."
     }
-  ]
+  ],
+  "releaseMilestones": [
+    {
+      "name": "0.9.2",
+      "targetRef": "main",
+      "state": "active"
+    },
+    {
+      "name": "1.0",
+      "targetRef": "biodata/biomcp-1.0",
+      "state": "active"
+    }
+  ],
+  "ticketComponents": [
+    "backend"
+  ],
+  "milestones": {
+    "file": "planning/milestones.md",
+    "values": [
+      "0.9.2",
+      "1.0"
+    ]
+  }
 }
