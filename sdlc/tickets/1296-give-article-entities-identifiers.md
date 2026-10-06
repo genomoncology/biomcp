@@ -4,6 +4,14 @@ Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1296-article-entity-identifiers`, sha `b57b8fc6e`, 2026-10-05.
+- Code review: ACCEPT 2026-10-05, no blocking findings. One P2 (the hand-updated zero-coupling digest) closed by a local run of the ratchet suite, 35 passed.
+- Identifier derivation prefers rsID, falls back to HGVS, never surfaces the tmVar composite; placeholders carry nothing. Same text with different identifiers stays separate. Positions serialize only behind `--full` (JSON). Get commands print only where the real parsers accept the form: disease MESH/OMIM via the crosswalk, variant rsID/HGVS via the classifier; gene and chemical rows keep text search.
+- Spec page `spec/entity/article-entities.md` pins rows, compact-versus-full shapes, and markdown commands from the recorded 30738221 capture; 995 targeted tests, lint green, spec-pr article lane green.
+- Deferred: MeSH-to-MONDO mapping (disease rows open via the crosswalk, no mapping needed for the outcome); get gene accepting NCBI Gene ids is separate-ticket territory.
+
 ## Outcome
 
 `article entities` carries each annotation's identifier and namespace, keeps same-text different-identifier annotations separate, and prints a `get` command that opens the record. An agent can follow an entity from an article to its gene, disease or variant record.
