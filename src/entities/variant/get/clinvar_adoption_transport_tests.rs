@@ -46,14 +46,14 @@ fn card(mode: &str, name: &str) -> Value {
         }
         "fallback" => {
             card["section_outcomes"]["clinvar"] = json!({"outcome":"degraded","sources":["MyVariant.info"],
-                "reason":"Direct ClinVar retrieval is unavailable; showing MyVariant.info fallback data."});
+                "message":"Direct ClinVar retrieval is unavailable; showing MyVariant.info fallback data."});
             card["clinvar"] = json!({"source":"MyVariant.info","variation_id":123,"submissions":[],
                 "aggregates":[{"source":"MyVariant.info","accession":"RCV123","version":4,
                     "classification_domain":"germline","classification":"Pathogenic","review_status":"reviewed by expert panel",
                     "evaluation_date":"2024-02-03","number_submitters":3,"conditions":[format!(" {name} "),"Alpha","Beta","Gamma","Preferred"]}]});
         }
         "missing" => {
-            card["section_outcomes"]["clinvar"] = json!({"outcome":"unavailable","sources":[],"reason":"ClinVar data is temporarily unavailable."})
+            card["section_outcomes"]["clinvar"] = json!({"outcome":"unavailable","sources":[],"message":"ClinVar data is temporarily unavailable."})
         }
         _ => {}
     }
