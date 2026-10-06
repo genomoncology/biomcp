@@ -18,3 +18,5 @@ mod dbsnp_adoption;
 mod gnomad_adoption;
 
 mod cadd_adoption;
+
+mod exac_adoption;

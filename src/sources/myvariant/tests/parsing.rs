@@ -255,7 +255,7 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
         Some(0.335473)
     );
     assert_eq!(hit.cosmic.as_ref().and_then(|c| c.mut_freq), Some(2.83));
-    assert!(hit.exac.as_ref().and_then(|e| e.af).is_some());
+    assert!(hit.exac.as_ref().and_then(|e| e.af()).is_some());
     assert_eq!(
         hit.clinvar.as_ref().and_then(|c| c.variant_id()),
         Some(13961)

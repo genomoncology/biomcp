@@ -868,8 +868,18 @@ pub struct MyVariantHit {
         serialize_with = "biodata::MyVariantGnomad::serialize"
     )]
     pub gnomad: Option<biodata::MyVariantGnomadProjection>,
-    pub exac: Option<MyVariantExac>,
-    pub exac_nontcga: Option<MyVariantExac>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantExac::deserialize",
+        serialize_with = "biodata::MyVariantExac::serialize"
+    )]
+    pub exac: Option<biodata::MyVariantExacProjection>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantExac::deserialize",
+        serialize_with = "biodata::MyVariantExac::serialize"
+    )]
+    pub exac_nontcga: Option<biodata::MyVariantExacProjection>,
     pub cosmic: Option<MyVariantCosmic>,
     pub cgi: Option<serde_json::Value>,
     pub civic: Option<serde_json::Value>,
@@ -943,11 +953,6 @@ pub struct MyVariantCosmic {
     pub tumor_site: StringOrVec,
     #[serde(default)]
     pub mut_nt: StringOrVec,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantExac {
-    pub af: Option<f64>,
 }
 
 #[cfg(test)]

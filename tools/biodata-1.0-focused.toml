@@ -2,6 +2,10 @@ version = 1
 
 [selection]
 rust = [
+  "sources::myvariant::tests::exac_adoption::exac_pair_preserves_complete_hit_order_and_independent_presence",
+  "sources::myvariant::tests::exac_adoption::exac_pair_callable_clients_preserve_rows_masks_and_canonical_hits",
+  "sources::myvariant::tests::exac_adoption::exac_pair_owned_failures_are_private_through_search_get_and_get_all",
+
   "sources::myvariant::tests::parsing::parses_receipted_braf_filter_searches",
   "sources::myvariant::tests::parsing::parses_receipted_braf_get_hit",
   "sources::myvariant::tests::parsing::parses_get_hit_nested_fields_from_real_fixture",
