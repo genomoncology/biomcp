@@ -262,6 +262,7 @@ fn display_variant(id: &str, variant: &Variant, id_format: &VariantIdFormat) -> 
 fn input_kind_label(id_format: &VariantIdFormat) -> &'static str {
     match id_format {
         VariantIdFormat::TranscriptGeneDeletion { .. } => "transcript_gene_deletion",
+        VariantIdFormat::TranscriptGeneCodingChange { .. } => "transcript_gene_coding_change",
         VariantIdFormat::GeneCodingChange { .. } => "gene_coding_change",
         VariantIdFormat::RsId(_) => "rsid",
         VariantIdFormat::HgvsGenomic(_) => "hgvs_genomic",
@@ -422,6 +423,22 @@ fn change_aa(value: &str) -> Option<(Option<String>, Option<String>)> {
 mod tests {
     use super::*;
     use crate::entities::section_outcome::SectionOutcomeState;
+
+    #[test]
+    fn decorated_coding_input_preserves_deletion_and_new_edit_labels() {
+        for (input, expected) in [
+            ("NM_012345.7(TP53):c.17_18del", "transcript_gene_deletion"),
+            (
+                "NM_012345.7(TP53):c.19_20insAC",
+                "transcript_gene_coding_change",
+            ),
+        ] {
+            assert_eq!(
+                input_kind_label(&super::super::resolution::parse_variant_id(input).unwrap()),
+                expected
+            );
+        }
+    }
 
     #[test]
     fn hgvsp_position_extracts_three_letter_short_and_accession_prefixed_aliases() {

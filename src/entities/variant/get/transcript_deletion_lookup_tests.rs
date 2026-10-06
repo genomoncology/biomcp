@@ -55,6 +55,11 @@ pub(super) fn ledger(
         "c.-7_41del" => "c.\\-7_41del",
         "c.(17_19)_(31_34)del" => "c.\\(17_19\\)_\\(31_34\\)del",
         "c.-541-5533del" => "c.\\-541\\-5533del",
+        "c.(19C>T)" => "c.\\(19C>T\\)",
+        "c.(19_21)C>T" => "c.\\(19_21\\)C>T",
+        "c.19+1G>A" => "c.19\\+1G>A",
+        "c.-7dupAC" => "c.\\-7dupAC",
+        "c.*19_20inv" => "c.\\*19_20inv",
         other => other,
     };
     let log = requests.lock().unwrap();
@@ -79,13 +84,13 @@ pub(super) fn ledger(
         assert_eq!(request.split_once("\r\n\r\n").unwrap().1, "");
     }
 }
-const INVALID: &str = "Transcript gene deletion lookup requires an exact versioned transcript, gene and complete coding deletion.";
-const LIMIT: &str = "Transcript gene deletion lookup exceeds its input limit.";
+const INVALID: &str = "Transcript gene coding lookup requires an exact versioned transcript, gene and complete supported coding fragment.";
+const LIMIT: &str = "Transcript gene coding lookup exceeds its input limit.";
 pub(super) const AMBIGUOUS: &str =
-    "Transcript gene deletion lookup is ambiguous. Use an exact rsID or genomic HGVS ID.";
-const EVIDENCE: &str = "Transcript gene deletion lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID.";
-const INCOMPLETE: &str = "Transcript gene deletion lookup did not complete its candidate scan. Use an exact rsID or genomic HGVS ID.";
-const ARTICLES: &str = "Transcript gene deletion lookup is not supported for variant articles. Use get variant for coding detail.";
+    "Transcript gene coding lookup is ambiguous. Use an exact rsID or genomic HGVS ID.";
+const EVIDENCE: &str = "Transcript gene coding lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID.";
+const INCOMPLETE: &str = "Transcript gene coding lookup did not complete its candidate scan. Use an exact rsID or genomic HGVS ID.";
+const ARTICLES: &str = "Transcript gene coding lookup is not supported for variant articles. Use get variant for coding detail.";
 const D: &str = "c.17_18del";
 fn wrapper(change: &str) -> String {
     format!("NM_012345.7(TP53):{change}")
@@ -141,9 +146,14 @@ async fn exercise(
         let error = result.unwrap_err();
         if expected == "absent" {
             match error {
-                crate::error::BioMcpError::NotFound { entity, id, .. } => {
+                crate::error::BioMcpError::NotFound {
+                    entity,
+                    id,
+                    suggestion,
+                } => {
                     assert_eq!(entity, "variant");
                     assert_eq!(id, input.trim());
+                    assert_eq!(suggestion, "Try searching: biomcp search variant");
                 }
                 error => panic!("{error:?}"),
             }
@@ -171,11 +181,7 @@ async fn exercise(
     let logs = std::fs::read_to_string(trace.path()).unwrap();
     assert!(!logs.contains("credential-input-canary"));
     assert!(!logs.contains(input.trim()));
-    let transcript = if input.contains("NM_012345.2") {
-        "NM_012345.2"
-    } else {
-        "NM_012345.7"
-    };
+    let transcript = input.trim().split_once('(').unwrap().0;
     ledger(&requests, change, transcript, offsets);
 }
 async fn success(change: &str, spaced: bool) {
@@ -195,6 +201,9 @@ async fn success(change: &str, spaced: bool) {
     )
     .await;
 }
+macro_rules! source_case { ($name:ident, $body:block) => {
+    #[tokio::test] #[serial_test::serial(source_env)] async fn $name() $body
+}; }
 macro_rules! success_case {
     ($name:ident, $change:literal, $spaced:literal) => {
         #[tokio::test]
@@ -231,7 +240,15 @@ success_case!(
     "c.2147483648del",
     false
 );
-success_case!(transcript_deletion_12_spaced_wrapper, "c.17_18del", true);
+source_case!(transcript_deletion_12_spaced_wrapper, {
+    coding_exercise(
+        "NM_012345.7(TP53) c.19_20insAC",
+        "c.19_20insAC",
+        vec![rcv_hit("c.19_20insAC")],
+        coding_card("c.19_20insAC"),
+    )
+    .await;
+});
 
 macro_rules! refusal_case {
     ($name:ident, $input:expr, $message:expr, $assembly:literal, $article:literal) => {
@@ -279,13 +296,16 @@ refusal_case!(
     false,
     false
 );
-refusal_case!(
-    transcript_deletion_17_different_edit,
-    wrapper("c.17dup"),
-    INVALID,
-    false,
-    false
-);
+source_case!(transcript_deletion_17_duplication, {
+    let change = "c.17dup";
+    coding_exercise(
+        &wrapper(change),
+        change,
+        vec![coding_hit(change)],
+        coding_card(change),
+    )
+    .await;
+});
 refusal_case!(
     transcript_deletion_18_compound,
     wrapper("c.[17del;19del]"),
@@ -295,31 +315,37 @@ refusal_case!(
 );
 refusal_case!(
     transcript_deletion_19_original_limit,
-    format!("{}{}", " ".repeat(513 - wrapper(D).len()), wrapper(D)),
+    format!(
+        "{}{}",
+        " ".repeat(513 - wrapper("c.19_20insAC").len()),
+        wrapper("c.19_20insAC")
+    ),
     LIMIT,
     false,
     false
 );
 refusal_case!(
     transcript_deletion_20_assembly,
-    wrapper(D),
+    wrapper("c.19_20insAC"),
     "--assembly is only supported for genomic variant IDs",
     true,
     false
 );
 refusal_case!(
     transcript_deletion_44_colon_article,
-    wrapper(D),
+    wrapper("c.19_20insAC"),
     ARTICLES,
     false,
     true
 );
 refusal_case!(
     transcript_deletion_45_spaced_article,
-    "NM_012345.7(TP53) c.17_18del",
+    "NM_012345.7(TP53) c.19_20insAC",
     ARTICLES,
     false,
     true
 );
 
 include!("transcript_deletion_source_tests.rs");
+
+include!("transcript_coding_edit_tests.rs");

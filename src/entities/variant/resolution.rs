@@ -6,16 +6,20 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
-use crate::error::BioMcpError;
-
 use super::{
     VariantGuidance, VariantGuidanceKind, VariantInputKind, VariantProteinAlias, VariantShorthand,
     transcript_coding_hgvs_re,
 };
+use crate::error::BioMcpError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VariantIdFormat {
     TranscriptGeneDeletion {
+        transcript: String,
+        gene: String,
+        change: String,
+    },
+    TranscriptGeneCodingChange {
         transcript: String,
         gene: String,
         change: String,
@@ -31,7 +35,6 @@ pub enum VariantIdFormat {
         change: String,
     },
 }
-
 mod coding_alias;
 pub(super) mod coding_get;
 pub(super) mod transcript_deletion_get;

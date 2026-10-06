@@ -155,7 +155,7 @@ impl RequestedVariantIdentity {
                     ..Self::default()
                 })
             }
-            VariantInputKind::Exact(VariantIdFormat::TranscriptGeneDeletion { .. }) => {
+            VariantInputKind::Exact(VariantIdFormat::TranscriptGeneDeletion { .. } | VariantIdFormat::TranscriptGeneCodingChange { .. }) => {
                 Err(BioMcpError::InvalidArgument(super::transcript_deletion_get::ARTICLES.into()))
             }
             _ => match parse_variant_id(supplied) {

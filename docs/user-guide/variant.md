@@ -41,16 +41,16 @@ A complete scan with only contradictory rows returns not found. Multiple compati
 
 For a refusal, use an exact genomic HGVS ID or search with the rsID. Completion establishes identity within the provider results. It does not establish reference correctness. A unique complete result keeps the existing detail fields and provider default build. The separate GWAS-only route retains its behavior.
 
-## Transcript and gene deletion detail
+## Transcript and gene coding detail
 
 Quote the complete identifier for `get variant`:
 
 ```bash
-biomcp get variant 'NM_012345.7(TP53):c.17_18del' --json
-biomcp get variant 'NM_012345.7(TP53) c.17_18del'
+biomcp get variant 'NM_012345.7(TP53):c.19_20insAC' --json
+biomcp get variant 'NM_012345.7(TP53) c.19_20insAC'
 ```
 
-These examples use invented identifiers. The wrapper requires a versioned `NM_` transcript, an exact uppercase gene and a complete coding deletion. Written offsets, uncertainty, decimal spelling and stated deleted sequence remain unchanged. The original input must fit within 512 UTF-8 bytes before trimming. Other decorated edits, predicted deletions and an assembly option are refused. The wrapper is unavailable for variant articles. An unquoted spaced form makes the coding fragment a section argument.
+These examples use invented identifiers. The wrapper requires a versioned `NM_` transcript, an exact uppercase gene and a complete supported coding fragment. Substitutions, deletions, duplications, insertions, delins, inversions and no-change assertions retain their exact spelling. A no-change assertion supplies source detail without establishing a clinical negative. Written offsets, uncertainty, decimal spelling and stated sequences remain unchanged. The original input must fit within 512 UTF-8 bytes before trimming. Prediction is supported only for parenthesized ordinary point substitutions without offsets or upstream/coding-end markers. Predicted deletions and other predicted edits, unsupported compounds and repeats, invalid insertion flanks, and an assembly option are refused. The wrapper is unavailable for variant articles. An unquoted spaced form makes the coding fragment a section argument.
 
 BioMCP queries the exact transcript and coding spelling. It selects a complete ClinVar preferred-name assertion or a single complete snpEff annotation with the same transcript version, gene and coding change. The detail card uses that whole assertion. A missing protein stays absent. Another transcript version cannot supply it. Independent annotations remain source facts and do not establish equivalence.
 

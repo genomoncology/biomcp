@@ -10,9 +10,9 @@ use biodata::parse_hgvs_protein_interval_21_1_4;
 use std::collections::{HashMap, HashSet};
 
 const AMBIGUOUS: &str =
-    "Transcript gene deletion lookup is ambiguous. Use an exact rsID or genomic HGVS ID.";
-const EVIDENCE: &str = "Transcript gene deletion lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID.";
-const INCOMPLETE: &str = "Transcript gene deletion lookup did not complete its candidate scan. Use an exact rsID or genomic HGVS ID.";
+    "Transcript gene coding lookup is ambiguous. Use an exact rsID or genomic HGVS ID.";
+const EVIDENCE: &str = "Transcript gene coding lookup lacks complete identity evidence. Use an exact rsID or genomic HGVS ID.";
+const INCOMPLETE: &str = "Transcript gene coding lookup did not complete its candidate scan. Use an exact rsID or genomic HGVS ID.";
 
 // Source kind and original location remain attached to the complete matched assertion.
 pub(in crate::entities::variant) enum TupleLocation {
@@ -55,7 +55,7 @@ fn rcv_tuple(value: &str, index: usize) -> Option<MatchedTuple> {
         (value, None)
     };
     // Source preferred names use exactly the colon wrapper, never a prefix extractor.
-    let tuple = tuple(coding, false).ok()?;
+    let tuple = tuple(coding).ok()?;
     if coding != format!("{}({}):{}", tuple.transcript, tuple.gene, tuple.change) {
         return None;
     }
@@ -84,7 +84,7 @@ fn snpeff_tuple(
     };
     if !versioned_transcript(transcript)
         || !crate::entities::variant::is_exact_gene_token(gene)
-        || !coding_valid(coding, false)
+        || !coding_valid(coding)
         || ann.hgvs_p.as_deref().is_some_and(|p| !protein_valid(p))
     {
         return None;

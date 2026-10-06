@@ -1,18 +1,19 @@
-//! Strict decorated transcript admission around the locked shared deletion parser.
+//! Strict decorated transcript admission around the locked shared coding parser.
 use super::{VariantIdFormat, is_exact_gene_token};
 use crate::error::BioMcpError;
 use biodata::{HgvsEdit, HgvsMolecule, parse_hgvs_nucleotide_21_1_4};
 use std::fmt;
 
 pub(in crate::entities::variant) const LIMIT: &str =
-    "Transcript gene deletion lookup exceeds its input limit.";
-const INVALID: &str = "Transcript gene deletion lookup requires an exact versioned transcript, gene and complete coding deletion.";
-pub(super) const ARTICLES: &str = "Transcript gene deletion lookup is not supported for variant articles. Use get variant for coding detail.";
+    "Transcript gene coding lookup exceeds its input limit.";
+const INVALID: &str = "Transcript gene coding lookup requires an exact versioned transcript, gene and complete supported coding fragment.";
+pub(super) const ARTICLES: &str = "Transcript gene coding lookup is not supported for variant articles. Use get variant for coding detail.";
 
 pub(in crate::entities::variant) struct TranscriptDeletion<'a> {
     pub transcript: &'a str,
     pub gene: &'a str,
     pub change: &'a str,
+    deletion: bool,
 }
 impl fmt::Debug for TranscriptDeletion<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -25,10 +26,21 @@ impl fmt::Debug for TranscriptDeletion<'_> {
 }
 impl TranscriptDeletion<'_> {
     pub(in crate::entities::variant) fn format(&self) -> VariantIdFormat {
-        VariantIdFormat::TranscriptGeneDeletion {
-            transcript: self.transcript.into(),
-            gene: self.gene.into(),
-            change: self.change.into(),
+        let transcript = self.transcript.into();
+        let gene = self.gene.into();
+        let change = self.change.into();
+        if self.deletion {
+            VariantIdFormat::TranscriptGeneDeletion {
+                transcript,
+                gene,
+                change,
+            }
+        } else {
+            VariantIdFormat::TranscriptGeneCodingChange {
+                transcript,
+                gene,
+                change,
+            }
         }
     }
 }
@@ -50,19 +62,19 @@ pub(in crate::entities::variant) fn versioned_transcript(input: &str) -> bool {
                 && version.bytes().all(|b| b.is_ascii_digit())
         })
 }
-pub(in crate::entities::variant) fn coding_valid(change: &str, deletion: bool) -> bool {
+fn coding_kind(change: &str) -> Option<bool> {
     let envelope = parse_hgvs_nucleotide_21_1_4(change);
-    envelope.disposition().parsed().is_some_and(|parsed| {
-        parsed.molecule() == HgvsMolecule::Coding
-            && parsed.reference().is_none()
-            && parsed.location().is_some()
-            && parsed.edit().is_some()
-            && (!deletion
-                || (!parsed.is_predicted()
-                    && matches!(parsed.edit(), Some(HgvsEdit::Deletion { .. }))))
-            && envelope.render_source() == Some(change)
-            && parsed.render_constructed() == change
-    })
+    let parsed = envelope.disposition().parsed()?;
+    (parsed.molecule() == HgvsMolecule::Coding
+        && parsed.reference().is_none()
+        && parsed.location().is_some()
+        && parsed.edit().is_some()
+        && envelope.render_source() == Some(change)
+        && parsed.render_constructed() == change)
+        .then(|| !parsed.is_predicted() && matches!(parsed.edit(), Some(HgvsEdit::Deletion { .. })))
+}
+pub(in crate::entities::variant) fn coding_valid(change: &str) -> bool {
+    coding_kind(change).is_some()
 }
 pub(in crate::entities::variant) fn preflight(input: &str) -> Result<(), BioMcpError> {
     if input.len() > 512 && selects(input) {
@@ -77,11 +89,10 @@ pub(in crate::entities::variant) fn prepare(
         return Ok(None);
     }
     preflight(input)?;
-    tuple(input, true).map(Some)
+    tuple(input).map(Some)
 }
 pub(in crate::entities::variant) fn tuple(
     input: &str,
-    deletion: bool,
 ) -> Result<TranscriptDeletion<'_>, BioMcpError> {
     let invalid = || BioMcpError::InvalidArgument(INVALID.into());
     let input = input.trim();
@@ -94,15 +105,14 @@ pub(in crate::entities::variant) fn tuple(
                 .then(|| tail.trim_start())
         })
         .ok_or_else(invalid)?;
-    if !versioned_transcript(transcript)
-        || !is_exact_gene_token(gene)
-        || !coding_valid(change, deletion)
-    {
+    let deletion = coding_kind(change).ok_or_else(invalid)?;
+    if !versioned_transcript(transcript) || !is_exact_gene_token(gene) {
         return Err(invalid());
     }
     Ok(TranscriptDeletion {
         transcript,
         gene,
         change,
+        deletion,
     })
 }

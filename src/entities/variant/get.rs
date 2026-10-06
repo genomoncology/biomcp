@@ -345,7 +345,6 @@ fn build_aware_not_found(id: &str, build: GenomeBuild, error: BioMcpError) -> Bi
         suggestion: "Try searching: biomcp search variant".into(),
     }
 }
-
 pub(super) async fn resolve_base_with_hit(
     id: &str,
     genome_build: Option<GenomeBuild>,
@@ -511,9 +510,10 @@ pub(super) async fn resolve_base_with_hit(
             Some(GenomeBuild::Grch37),
             Vec::new(),
         ),
-        VariantIdFormat::TranscriptGeneDeletion { .. } => {
+        VariantIdFormat::TranscriptGeneDeletion { .. }
+        | VariantIdFormat::TranscriptGeneCodingChange { .. } => {
             return Err(BioMcpError::InvalidArgument(
-                "Transcript gene deletion lookup could not prepare its request.".into(),
+                "Transcript gene coding lookup could not prepare its request.".into(),
             ));
         }
         VariantIdFormat::GeneCodingChange { gene, change } => (
@@ -1015,7 +1015,6 @@ fn population_variant_id(variant: &Variant) -> Option<String> {
         .then(|| gnomad_variant_slug(&variant.id))
         .flatten()
 }
-
 fn dbsnp_population_rsid<'a>(variant: &'a Variant, id_format: &VariantIdFormat) -> Option<&'a str> {
     matches!(
         id_format,
@@ -1023,6 +1022,7 @@ fn dbsnp_population_rsid<'a>(variant: &'a Variant, id_format: &VariantIdFormat) 
             | VariantIdFormat::GeneProteinChange { .. }
             | VariantIdFormat::GeneCodingChange { .. }
             | VariantIdFormat::TranscriptGeneDeletion { .. }
+            | VariantIdFormat::TranscriptGeneCodingChange { .. }
     )
     .then(|| variant.rsid.as_deref())
     .flatten()

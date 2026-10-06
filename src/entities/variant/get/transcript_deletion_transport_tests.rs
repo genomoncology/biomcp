@@ -1,5 +1,5 @@
 //! Thin native channel contracts use original synthetic MIT provider rows.
-use super::tests::{AMBIGUOUS, card, fixture, hit, ledger};
+use super::tests::{AMBIGUOUS, coding_card, fixture, ledger};
 use biomcp_mcp_contract_client::{ContractHarness, first_text};
 use rmcp::ServiceExt;
 use rmcp::model::CallToolRequestParams;
@@ -8,7 +8,7 @@ use std::process::Stdio;
 use tokio::io::AsyncReadExt;
 
 fn native_card() -> Value {
-    let mut expected = card("c.17_18del");
+    let mut expected = coding_card("c.19_20insAC");
     expected["_meta"] = json!({"evidence_urls":[],
         "next_commands":["biomcp get gene TP53","biomcp search drug --target TP53",
             "biomcp variant trials \"chr17:g.101C>T\"","biomcp variant articles \"chr17:g.101C>T\""],
@@ -19,17 +19,17 @@ fn native_card() -> Value {
 async fn exercise(channel: &str) {
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let harness = ContractHarness::new(std::env::var_os("BIOMCP_BIN").unwrap(), root);
-    let row = hit("c.17_18del");
+    let row = json!({"_id":"chr17:g.101C>T","snpeff":{"ann":[{"feature_id":"NM_012345.7","genename":"TP53","hgvs_c":"c.19_20insAC"}]}});
     let mut other = row.clone();
     other["_id"] = json!("chr17:g.102C>T");
     let over_limit = format!(
-        "{}NM_012345.7(TP53):c.17_18del",
-        " ".repeat(513 - "NM_012345.7(TP53):c.17_18del".len())
+        "{}NM_012345.7(TP53):c.19_20insAC",
+        " ".repeat(513 - "NM_012345.7(TP53):c.19_20insAC".len())
     );
     let input = match channel {
         "typed-original-limit" => over_limit.as_str(),
-        "cli-markdown" | "cli-split" => "NM_012345.7(TP53) c.17_18del",
-        _ => "NM_012345.7(TP53):c.17_18del",
+        "cli-markdown" | "cli-split" => "NM_012345.7(TP53) c.19_20insAC",
+        _ => "NM_012345.7(TP53):c.19_20insAC",
     };
     let pages = match channel {
         "typed-original-limit" | "cli-split" => vec![],
@@ -52,7 +52,7 @@ async fn exercise(channel: &str) {
     ];
     if channel.starts_with("cli") {
         let mut args = if channel == "cli-split" {
-            vec!["get", "variant", "NM_012345.7(TP53)", "c.17_18del"]
+            vec!["get", "variant", "NM_012345.7(TP53)", "c.19_20insAC"]
         } else {
             vec!["get", "variant", input]
         };
@@ -73,9 +73,12 @@ async fn exercise(channel: &str) {
         assert_eq!(output.stdout.last(), Some(&b'\n'));
         if channel == "cli-markdown" {
             let text = String::from_utf8(output.stdout).unwrap();
-            assert!(text.starts_with("# TP53 p.Gly6del\n"));
+            assert!(text.starts_with("# TP53\n"));
+            assert!(!text.lines().any(|line| line.starts_with("Protein:")));
             for line in [
-                "cDNA: c.17_18del",
+                "rsID: Not reported",
+                "Source: MyVariant.info / ClinVar",
+                "cDNA: c.19_20insAC",
                 "Transcript: NM_012345.7",
                 "Genomic coordinate (GRCh37, provider default): chr17:g.101C>T",
             ] {
@@ -85,7 +88,7 @@ async fn exercise(channel: &str) {
             assert_eq!(
                 serde_json::from_slice::<Value>(&output.stdout).unwrap(),
                 json!({
-                    "error":{"code":"invalid_argument","message":"Invalid argument: Unknown section \"c.17_18del\" for variant. Available: predict, predictions, clinvar, population, population-details, conservation, cosmic, cgi, civic, cbioportal, gwas, all"},"_meta":{"not_found":false}})
+                    "error":{"code":"invalid_argument","message":"Invalid argument: Unknown section \"c.19_20insac\" for variant. Available: predict, predictions, clinvar, population, population-details, conservation, cosmic, cgi, civic, cbioportal, gwas, all"},"_meta":{"not_found":false}})
             );
         } else {
             assert_eq!(
@@ -146,7 +149,7 @@ async fn exercise(channel: &str) {
         } else {
             let text = match channel {
                 "typed-original-limit" => {
-                    "Transcript gene deletion lookup exceeds its input limit.".to_string()
+                    "Transcript gene coding lookup exceeds its input limit.".to_string()
                 }
                 "raw-ambiguous" => format!("Error: Invalid argument: {AMBIGUOUS}"),
                 _ => unreachable!(),
@@ -167,9 +170,9 @@ async fn exercise(channel: &str) {
         );
         let logs = stderr.await.unwrap();
         assert!(!logs.contains("credential-input-canary"));
-        assert!(!logs.contains("c.17_18del"));
+        assert!(!logs.contains("c.19_20insAC"));
     }
-    ledger(&requests, "c.17_18del", "NM_012345.7", &offsets);
+    ledger(&requests, "c.19_20insAC", "NM_012345.7", &offsets);
 }
 
 macro_rules! channel_case {
