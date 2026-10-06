@@ -875,7 +875,7 @@ fn from_myvariant_annotation(
     let (significance_source, significance_note) = if significance.is_some() {
         (
             Some("MyVariant.info".to_string()),
-            Some(derived_significance_note(&hit.source().id())),
+            Some(derived_significance_note(hit.source().id())),
         )
     } else {
         (None, None)
