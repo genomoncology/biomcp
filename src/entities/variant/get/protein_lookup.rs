@@ -129,7 +129,7 @@ async fn bounded_lookup(
     if point && !indeterminate {
         let keys = point_candidates
             .iter()
-            .map(|hit| SourceVariantIdentity::from_myvariant_hit(hit).normalized_key())
+            .map(|hit| hit.id.trim().to_string())
             .collect::<HashSet<_>>();
         if keys.len() == point_candidates.len() {
             return super::resolve_protein_change_hit(id, gene, change, point_candidates);
