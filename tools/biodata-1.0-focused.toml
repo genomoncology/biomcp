@@ -2,6 +2,10 @@ version = 1
 
 [selection]
 rust = [
+  "sources::myvariant::tests::dbnsfp_adoption::dbnsfp_embedding_preserves_siblings_encoding_and_private_debug",
+  "entities::variant::get::dbnsfp_transport_tests::dbnsfp_complete_detail_card_callable_cli_typed_and_raw",
+  "entities::variant::search::dbnsfp_adoption_tests::dbnsfp_zero_result_reports_all_positions_without_renumbering",
+  "entities::variant::structure::dbnsfp_adoption_tests::dbnsfp_structure_retains_repeated_matches_and_other_positions",
   "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_34_cli_json",
   "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_35_cli_split_section",
   "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_36_cli_markdown",

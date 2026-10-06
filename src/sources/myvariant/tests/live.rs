@@ -48,7 +48,7 @@ async fn live_get_braf_v600e_returns_hit() {
         .expect("live get BRAF V600E");
     assert_eq!(hit.id, "chr7:g.140453136A>T");
     assert_eq!(
-        hit.dbnsfp.as_ref().and_then(|d| d.genename.first()),
+        hit.dbnsfp.as_ref().and_then(|d| d.genename().first()),
         Some("BRAF")
     );
 }

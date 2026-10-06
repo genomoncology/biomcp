@@ -1,7 +1,6 @@
 //! Independent accepted 0663 literals, transcribed before consumer changes.
 use super::point_alias::{Compatibility, PointRoute, Preparation, point_assertion};
 use super::*;
-use crate::sources::myvariant::FloatOrVec;
 use crate::sources::myvariant::{MyVariantHit, MyVariantSearchResponse};
 use crate::utils::serde::StringOrVec;
 use biodata::{
@@ -306,25 +305,36 @@ fn accepted_original_byte_source_and_product_table() {
             oracle(&format!("{case}_HIT.json"))
         );
         let db = hit.dbnsfp.as_ref().unwrap();
-        assert!(
-            matches!(&db.genename, StringOrVec::Multiple(v) if v == &["BRAF", "BRAF", "BRAF", "BRAF"])
-        );
-        assert!(
-            matches!(&db.hgvsp, StringOrVec::Multiple(v) if v == &["p.Val640Glu", "p.Val600Glu", "p.Val207Glu", "p.V600E"])
-        );
-        assert!(matches!(db.hgvsc, StringOrVec::None));
+        assert!(db.genename().values() == ["BRAF", "BRAF", "BRAF", "BRAF"]);
+        assert!(db.hgvsp().values() == ["p.Val640Glu", "p.Val600Glu", "p.Val207Glu", "p.V600E"]);
+        assert!(db.hgvsc().values().is_empty());
         assert!(
             matches!(&hit.cadd.as_ref().unwrap().consequence, Some(StringOrVec::Single(v)) if v == "NON_SYNONYMOUS")
         );
-        if let Some(score) = &db.revel {
-            assert!(matches!(score.score, Some(FloatOrVec::Single(v)) if v == 0.931));
+        if let Some(score) = db.revel() {
+            assert_eq!(
+                score
+                    .score()
+                    .and_then(biodata::MyVariantDbnsfpNumber::first),
+                Some(0.931)
+            );
         }
-        let scores = db.bayesdel.as_ref().unwrap();
+        let scores = db.bayesdel().unwrap();
         assert!(
-            matches!(scores.add_af.as_ref().unwrap().score, Some(FloatOrVec::Single(v)) if v == 0.399079)
+            scores
+                .add_af()
+                .unwrap()
+                .score()
+                .and_then(biodata::MyVariantDbnsfpNumber::first)
+                == Some(0.399079)
         );
         assert!(
-            matches!(scores.no_af.as_ref().unwrap().score, Some(FloatOrVec::Single(v)) if v == 0.335473)
+            scores
+                .no_af()
+                .unwrap()
+                .score()
+                .and_then(biodata::MyVariantDbnsfpNumber::first)
+                == Some(0.335473)
         );
         let identity = SourceVariantIdentity::from_myvariant_hit(&hit);
         assert_eq!(

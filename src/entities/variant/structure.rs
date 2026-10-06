@@ -332,12 +332,12 @@ fn residue_summary(
     let aliases = hit
         .dbnsfp
         .as_ref()
-        .map(|dbnsfp| dbnsfp.hgvsp.clone().into_vec())
+        .map(|dbnsfp| dbnsfp.hgvsp().values())
         .unwrap_or_default();
 
     let mut matched_hgvsp = Vec::new();
     let mut positions = BTreeSet::new();
-    for alias in &aliases {
+    for alias in aliases {
         if let Some(position) = hgvsp_position(alias) {
             positions.insert(position);
         }
@@ -531,3 +531,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod dbnsfp_adoption_tests;

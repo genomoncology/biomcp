@@ -332,12 +332,12 @@ pub(super) async fn classify_provider_zero(
             let mut positions = BTreeSet::new();
             for value in alternatives
                 .hits
-                .into_iter()
-                .filter_map(|hit| hit.dbnsfp)
-                .flat_map(|dbnsfp| dbnsfp.hgvsp.into_vec())
+                .iter()
+                .filter_map(|hit| hit.dbnsfp.as_ref())
+                .flat_map(|dbnsfp| dbnsfp.hgvsp().values())
             {
                 if let Some((_value, found_reference, position, found_alternate)) =
-                    protein_parts(&value)
+                    protein_parts(value)
                     && found_reference == reference
                     && found_alternate == alternate
                 {

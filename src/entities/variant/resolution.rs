@@ -856,9 +856,9 @@ impl SourceVariantIdentity {
             .as_ref()
             .map(|db| {
                 (
-                    db.genename.clone().into_vec(),
-                    db.hgvsp.clone().into_vec(),
-                    db.hgvsc.clone().into_vec(),
+                    db.genename().values().to_vec(),
+                    db.hgvsp().values().to_vec(),
+                    db.hgvsc().values().to_vec(),
                 )
             })
             .unwrap_or_default();

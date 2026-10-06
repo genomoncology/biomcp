@@ -1442,3 +1442,6 @@ mod protein_change_tests;
 
 #[cfg(test)]
 pub(super) mod tests;
+
+#[cfg(test)]
+mod dbnsfp_transport_tests;

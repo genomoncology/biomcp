@@ -1,11 +1,11 @@
 //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json` and
 //! the response types, plus the pure post-processing helper `select_get_hit_value` and
-//! the `de_vec_or_single` / `FloatOrVec` shapes. No network, no server.
+//! the `de_vec_or_single` / shared dbNSFP carrier shapes. No network, no server.
 
 use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::myvariant::{
-    FloatOrVec, MyVariantClient, MyVariantClinVar, MyVariantHit, MyVariantSearchResponse,
+    MyVariantClient, MyVariantClinVar, MyVariantHit, MyVariantSearchResponse,
 };
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
@@ -90,7 +90,7 @@ fn parses_search_response_total_and_hits_from_real_fixture() {
         resp.hits[0]
             .dbnsfp
             .as_ref()
-            .and_then(|d| d.genename.first()),
+            .and_then(|d| d.genename().first()),
         Some("BRAF")
     );
 }
@@ -108,7 +108,7 @@ fn parses_receipted_braf_filter_searches() {
     assert!(missense.hits.iter().any(|hit| {
         hit.dbnsfp
             .as_ref()
-            .and_then(|dbnsfp| dbnsfp.genename.first())
+            .and_then(|dbnsfp| dbnsfp.genename().first())
             == Some("BRAF")
             && hit
                 .cadd
@@ -129,14 +129,14 @@ fn parses_receipted_braf_filter_searches() {
     assert!(revel.hits.iter().any(|hit| {
         hit.dbnsfp
             .as_ref()
-            .and_then(|dbnsfp| dbnsfp.genename.first())
+            .and_then(|dbnsfp| dbnsfp.genename().first())
             == Some("BRAF")
             && hit
                 .dbnsfp
                 .as_ref()
-                .and_then(|dbnsfp| dbnsfp.revel.as_ref())
-                .and_then(|revel| revel.score.as_ref())
-                .and_then(FloatOrVec::first)
+                .and_then(|dbnsfp| dbnsfp.revel())
+                .and_then(|revel| revel.score())
+                .and_then(biodata::MyVariantDbnsfpNumber::first)
                 .is_some()
     }));
 }
@@ -167,14 +167,14 @@ fn parses_receipted_variant_identity_searches() {
         assert!(response.hits.iter().any(|hit| {
             hit.dbnsfp
                 .as_ref()
-                .and_then(|dbnsfp| dbnsfp.genename.first())
+                .and_then(|dbnsfp| dbnsfp.genename().first())
                 == Some(gene)
                 && hit.dbnsfp.as_ref().is_some_and(|dbnsfp| {
-                    matches!(
-                        &dbnsfp.hgvsp,
-                        crate::utils::serde::StringOrVec::Multiple(values)
-                            if values.iter().any(|value| value == protein_change)
-                    )
+                    dbnsfp
+                        .hgvsp()
+                        .values()
+                        .iter()
+                        .any(|value| value == protein_change)
                 })
         }));
     }
@@ -195,15 +195,15 @@ fn parses_receipted_braf_get_hit() {
     assert_eq!(
         hit.dbnsfp
             .as_ref()
-            .and_then(|dbnsfp| dbnsfp.genename.first()),
+            .and_then(|dbnsfp| dbnsfp.genename().first()),
         Some("BRAF")
     );
     assert!(hit.dbnsfp.as_ref().is_some_and(|dbnsfp| {
-        matches!(
-            &dbnsfp.hgvsp,
-            crate::utils::serde::StringOrVec::Multiple(values)
-                if values.iter().any(|hgvsp| hgvsp == "p.V600E")
-        )
+        dbnsfp
+            .hgvsp()
+            .values()
+            .iter()
+            .any(|hgvsp| hgvsp == "p.V600E")
     }));
 }
 
@@ -227,28 +227,28 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
     assert_eq!(
         hit.dbnsfp
             .as_ref()
-            .and_then(|d| d.revel.as_ref())
-            .and_then(|r| r.score.as_ref())
-            .and_then(FloatOrVec::first),
+            .and_then(|d| d.revel())
+            .and_then(|r| r.score())
+            .and_then(biodata::MyVariantDbnsfpNumber::first),
         Some(0.931)
     );
     assert_eq!(
-        hit.dbnsfp.as_ref().and_then(|d| d.genename.first()),
+        hit.dbnsfp.as_ref().and_then(|d| d.genename().first()),
         Some("BRAF")
     );
-    let bayesdel = hit.dbnsfp.as_ref().and_then(|d| d.bayesdel.as_ref());
+    let bayesdel = hit.dbnsfp.as_ref().and_then(|d| d.bayesdel());
     assert_eq!(
         bayesdel
-            .and_then(|b| b.add_af.as_ref())
-            .and_then(|v| v.score.as_ref())
-            .and_then(FloatOrVec::first),
+            .and_then(|b| b.add_af())
+            .and_then(|v| v.score())
+            .and_then(biodata::MyVariantDbnsfpNumber::first),
         Some(0.399079)
     );
     assert_eq!(
         bayesdel
-            .and_then(|b| b.no_af.as_ref())
-            .and_then(|v| v.score.as_ref())
-            .and_then(FloatOrVec::first),
+            .and_then(|b| b.no_af())
+            .and_then(|v| v.score())
+            .and_then(biodata::MyVariantDbnsfpNumber::first),
         Some(0.335473)
     );
     assert_eq!(hit.cosmic.as_ref().and_then(|c| c.mut_freq), Some(2.83));
@@ -361,16 +361,6 @@ fn clinvar_rcv_defaults_to_empty_when_missing() {
         serde_json::from_value(json!({ "variant_id": 789 })).expect("missing rcv ok");
     assert_eq!(clinvar.variant_id, Some(789));
     assert!(clinvar.rcv.is_empty());
-}
-
-#[test]
-fn float_or_vec_first_returns_single_or_head_of_list() {
-    let single: FloatOrVec = serde_json::from_value(json!(0.5)).unwrap();
-    assert_eq!(single.first(), Some(0.5));
-    let multi: FloatOrVec = serde_json::from_value(json!([1.0, 2.0])).unwrap();
-    assert_eq!(multi.first(), Some(1.0));
-    let empty: FloatOrVec = serde_json::from_value(json!([])).unwrap();
-    assert_eq!(empty.first(), None);
 }
 
 #[test]

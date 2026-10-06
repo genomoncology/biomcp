@@ -854,7 +854,12 @@ pub struct MyVariantHit {
 
     pub cadd: Option<MyVariantCadd>,
     pub clinvar: Option<MyVariantClinVar>,
-    pub dbnsfp: Option<MyVariantDbnsfp>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantDbnsfp::deserialize",
+        serialize_with = "serialize_dbnsfp"
+    )]
+    pub dbnsfp: Option<biodata::MyVariantDbnsfpProjection>,
     pub dbsnp: Option<MyVariantDbsnp>,
     pub gnomad_exome: Option<MyVariantGnomadExome>,
     pub gnomad: Option<MyVariantGnomad>,
@@ -869,6 +874,17 @@ pub struct MyVariantHit {
         serialize_with = "serialize_snpeff"
     )]
     pub snpeff: Option<biodata::MyVariantSnpEffProjection>,
+}
+
+// BioData owns the complete source representation and its borrowed encoder.
+fn serialize_dbnsfp<S: serde::Serializer>(
+    projection: &Option<biodata::MyVariantDbnsfpProjection>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    projection
+        .as_ref()
+        .map(biodata::MyVariantDbnsfpProjection::as_source)
+        .serialize(serializer)
 }
 
 // Preserve the intermediate hit encoding while BioData owns decoding.
@@ -977,82 +993,6 @@ pub struct MyVariantExac {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantDbnsfp {
-    #[serde(default)]
-    pub genename: StringOrVec,
-    #[serde(default)]
-    pub hgvsp: StringOrVec,
-    #[serde(default)]
-    pub hgvsc: StringOrVec,
-    pub sift: Option<MyVariantSift>,
-    pub polyphen2: Option<MyVariantPolyPhen2>,
-    pub revel: Option<MyVariantScoreRank>,
-    pub alphamissense: Option<MyVariantPredScore>,
-    pub clinpred: Option<MyVariantPredScore>,
-    pub metarnn: Option<MyVariantPredScore>,
-    pub bayesdel: Option<MyVariantBayesDel>,
-    pub phylop: Option<MyVariantConservationGroup>,
-    pub phastcons: Option<MyVariantConservationGroup>,
-    #[serde(rename = "gerp++")]
-    pub gerp: Option<MyVariantGerp>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantBayesDel {
-    pub add_af: Option<MyVariantPredScore>,
-    pub no_af: Option<MyVariantPredScore>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantSift {
-    pub pred: Option<StringOrVec>,
-    pub score: Option<FloatOrVec>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantPolyPhen2 {
-    pub hdiv: Option<MyVariantPolyPhen2Hdiv>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantPolyPhen2Hdiv {
-    pub pred: Option<StringOrVec>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantScoreRank {
-    pub score: Option<FloatOrVec>,
-    pub rankscore: Option<FloatOrVec>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantPredScore {
-    #[serde(alias = "am_pathogenicity")]
-    pub score: Option<FloatOrVec>,
-    #[serde(alias = "am_class")]
-    pub pred: Option<StringOrVec>,
-    pub rankscore: Option<FloatOrVec>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantConservationGroup {
-    #[serde(rename = "100way_vertebrate")]
-    pub way_100_vertebrate: Option<MyVariantRankScore>,
-    #[serde(rename = "470way_mammalian")]
-    pub way_470_mammalian: Option<MyVariantRankScore>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantRankScore {
-    pub rankscore: Option<FloatOrVec>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantGerp {
-    pub rs: Option<FloatOrVec>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyVariantClinVar {
     pub variant_id: Option<u64>,
     pub gene: Option<MyVariantClinVarGene>,
@@ -1095,22 +1035,6 @@ pub struct MyVariantClinVarRcv {
     pub preferred_name: Option<String>,
     pub last_evaluated: Option<String>,
     pub number_submitters: Option<u32>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum FloatOrVec {
-    Single(f64),
-    Multiple(Vec<f64>),
-}
-
-impl FloatOrVec {
-    pub fn first(&self) -> Option<f64> {
-        match self {
-            Self::Single(v) => Some(*v),
-            Self::Multiple(v) => v.first().copied(),
-        }
-    }
 }
 
 #[cfg(test)]

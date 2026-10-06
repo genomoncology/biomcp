@@ -8,3 +8,5 @@
 mod construction;
 mod live;
 mod parsing;
+
+mod dbnsfp_adoption;

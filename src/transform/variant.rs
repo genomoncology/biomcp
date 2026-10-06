@@ -9,7 +9,7 @@ use crate::entities::variant::{
 };
 use crate::sources::cbioportal::CBioMutationSummary;
 use crate::sources::civic::CivicEvidenceItem;
-use crate::sources::myvariant::{FloatOrVec, MyVariantClinVarRcv, MyVariantGnomadAf, MyVariantHit};
+use crate::sources::myvariant::{MyVariantClinVarRcv, MyVariantGnomadAf, MyVariantHit};
 use crate::utils::serde::StringOrVec;
 
 fn normalize_gene(gene: &str) -> Option<String> {
@@ -20,9 +20,9 @@ fn normalize_gene(gene: &str) -> Option<String> {
     Some(g.to_uppercase())
 }
 
-fn pick_gene(dbnsfp: &crate::sources::myvariant::MyVariantDbnsfp) -> String {
+fn pick_gene(dbnsfp: &biodata::MyVariantDbnsfpProjection) -> String {
     dbnsfp
-        .genename
+        .genename()
         .first()
         .and_then(normalize_gene)
         .unwrap_or_default()
@@ -162,8 +162,16 @@ fn best_gnomad_af(hit: &MyVariantHit) -> Option<&MyVariantGnomadAf> {
         })
 }
 
-fn first_score(value: Option<&FloatOrVec>) -> Option<f64> {
-    value.and_then(FloatOrVec::first)
+fn first_score(value: Option<&biodata::MyVariantDbnsfpNumber>) -> Option<f64> {
+    value.and_then(biodata::MyVariantDbnsfpNumber::first)
+}
+
+fn first_nonempty_dbnsfp(values: &biodata::MyVariantDbnsfpText) -> Option<String> {
+    values
+        .first()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(str::to_string)
 }
 
 fn first_nonempty(values: &StringOrVec) -> Option<String> {
@@ -179,29 +187,22 @@ fn extract_conservation(hit: &MyVariantHit) -> Option<VariantConservationScores>
 
     let scores = VariantConservationScores {
         phylop_100way_vertebrate: dbnsfp
-            .phylop
-            .as_ref()
-            .and_then(|p| p.way_100_vertebrate.as_ref())
-            .and_then(|v| first_score(v.rankscore.as_ref())),
+            .phylop()
+            .and_then(|p| p.way_100_vertebrate())
+            .and_then(|v| first_score(v.rankscore())),
         phylop_470way_mammalian: dbnsfp
-            .phylop
-            .as_ref()
-            .and_then(|p| p.way_470_mammalian.as_ref())
-            .and_then(|v| first_score(v.rankscore.as_ref())),
+            .phylop()
+            .and_then(|p| p.way_470_mammalian())
+            .and_then(|v| first_score(v.rankscore())),
         phastcons_100way_vertebrate: dbnsfp
-            .phastcons
-            .as_ref()
-            .and_then(|p| p.way_100_vertebrate.as_ref())
-            .and_then(|v| first_score(v.rankscore.as_ref())),
+            .phastcons()
+            .and_then(|p| p.way_100_vertebrate())
+            .and_then(|v| first_score(v.rankscore())),
         phastcons_470way_mammalian: dbnsfp
-            .phastcons
-            .as_ref()
-            .and_then(|p| p.way_470_mammalian.as_ref())
-            .and_then(|v| first_score(v.rankscore.as_ref())),
-        gerp_rs: dbnsfp
-            .gerp
-            .as_ref()
-            .and_then(|g| first_score(g.rs.as_ref())),
+            .phastcons()
+            .and_then(|p| p.way_470_mammalian())
+            .and_then(|v| first_score(v.rankscore())),
+        gerp_rs: dbnsfp.gerp().and_then(|g| first_score(g.rs())),
     };
 
     if scores.phylop_100way_vertebrate.is_none()
@@ -261,71 +262,52 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
     push_prediction(
         &mut out,
         "REVEL",
-        dbnsfp
-            .revel
-            .as_ref()
-            .and_then(|v| first_score(v.score.as_ref())),
+        dbnsfp.revel().and_then(|v| first_score(v.score())),
         None,
     );
     push_prediction(
         &mut out,
         "AlphaMissense",
-        dbnsfp
-            .alphamissense
-            .as_ref()
-            .and_then(|v| first_score(v.score.as_ref())),
+        dbnsfp.alphamissense().and_then(|v| first_score(v.score())),
         normalize_prediction(
             dbnsfp
-                .alphamissense
-                .as_ref()
-                .and_then(|v| v.pred.as_ref())
-                .and_then(first_nonempty),
+                .alphamissense()
+                .and_then(|v| v.pred())
+                .and_then(first_nonempty_dbnsfp),
             "alphamissense",
         ),
     );
     push_prediction(
         &mut out,
         "ClinPred",
-        dbnsfp
-            .clinpred
-            .as_ref()
-            .and_then(|v| first_score(v.score.as_ref())),
+        dbnsfp.clinpred().and_then(|v| first_score(v.score())),
         normalize_prediction(
             dbnsfp
-                .clinpred
-                .as_ref()
-                .and_then(|v| v.pred.as_ref())
-                .and_then(first_nonempty),
+                .clinpred()
+                .and_then(|v| v.pred())
+                .and_then(first_nonempty_dbnsfp),
             "clinpred",
         ),
     );
     push_prediction(
         &mut out,
         "SIFT",
+        dbnsfp.sift().and_then(|v| first_score(v.score())),
         dbnsfp
-            .sift
-            .as_ref()
-            .and_then(|v| first_score(v.score.as_ref())),
-        dbnsfp
-            .sift
-            .as_ref()
-            .and_then(|v| v.pred.as_ref())
-            .and_then(StringOrVec::first)
+            .sift()
+            .and_then(|v| v.pred())
+            .and_then(biodata::MyVariantDbnsfpText::first)
             .map(normalize_sift),
     );
     push_prediction(
         &mut out,
         "MetaRNN",
-        dbnsfp
-            .metarnn
-            .as_ref()
-            .and_then(|v| first_score(v.score.as_ref())),
+        dbnsfp.metarnn().and_then(|v| first_score(v.score())),
         normalize_prediction(
             dbnsfp
-                .metarnn
-                .as_ref()
-                .and_then(|v| v.pred.as_ref())
-                .and_then(first_nonempty),
+                .metarnn()
+                .and_then(|v| v.pred())
+                .and_then(first_nonempty_dbnsfp),
             "metarnn",
         ),
     );
@@ -333,17 +315,15 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
         &mut out,
         "BayesDel add-AF",
         dbnsfp
-            .bayesdel
-            .as_ref()
-            .and_then(|v| v.add_af.as_ref())
-            .and_then(|v| first_score(v.score.as_ref())),
+            .bayesdel()
+            .and_then(|v| v.add_af())
+            .and_then(|v| first_score(v.score())),
         normalize_prediction(
             dbnsfp
-                .bayesdel
-                .as_ref()
-                .and_then(|v| v.add_af.as_ref())
-                .and_then(|v| v.pred.as_ref())
-                .and_then(first_nonempty),
+                .bayesdel()
+                .and_then(|v| v.add_af())
+                .and_then(|v| v.pred())
+                .and_then(first_nonempty_dbnsfp),
             "bayesdel_add_af",
         ),
     );
@@ -351,17 +331,15 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
         &mut out,
         "BayesDel no-AF",
         dbnsfp
-            .bayesdel
-            .as_ref()
-            .and_then(|v| v.no_af.as_ref())
-            .and_then(|v| first_score(v.score.as_ref())),
+            .bayesdel()
+            .and_then(|v| v.no_af())
+            .and_then(|v| first_score(v.score())),
         normalize_prediction(
             dbnsfp
-                .bayesdel
-                .as_ref()
-                .and_then(|v| v.no_af.as_ref())
-                .and_then(|v| v.pred.as_ref())
-                .and_then(first_nonempty),
+                .bayesdel()
+                .and_then(|v| v.no_af())
+                .and_then(|v| v.pred())
+                .and_then(first_nonempty_dbnsfp),
             "bayesdel_no_af",
         ),
     );
@@ -811,19 +789,17 @@ fn from_myvariant_annotation(
         gene = pick_gene(dbnsfp);
 
         sift_pred = dbnsfp
-            .sift
-            .as_ref()
-            .and_then(|s| s.pred.as_ref())
-            .and_then(StringOrVec::first)
+            .sift()
+            .and_then(|s| s.pred())
+            .and_then(biodata::MyVariantDbnsfpText::first)
             .map(normalize_sift)
             .filter(|s| !s.is_empty());
 
         polyphen_pred = dbnsfp
-            .polyphen2
-            .as_ref()
-            .and_then(|p| p.hdiv.as_ref())
-            .and_then(|h| h.pred.as_ref())
-            .and_then(StringOrVec::first)
+            .polyphen2()
+            .and_then(|p| p.hdiv())
+            .and_then(|h| h.pred())
+            .and_then(biodata::MyVariantDbnsfpText::first)
             .map(normalize_polyphen)
             .filter(|s| !s.is_empty());
     }
@@ -1000,13 +976,13 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let revel = hit
         .dbnsfp
         .as_ref()
-        .and_then(|dbnsfp| dbnsfp.revel.as_ref())
-        .and_then(|revel| first_score(revel.score.as_ref()));
+        .and_then(|dbnsfp| dbnsfp.revel())
+        .and_then(|revel| first_score(revel.score()));
     let gerp = hit
         .dbnsfp
         .as_ref()
-        .and_then(|dbnsfp| dbnsfp.gerp.as_ref())
-        .and_then(|gerp| first_score(gerp.rs.as_ref()));
+        .and_then(|dbnsfp| dbnsfp.gerp())
+        .and_then(|gerp| first_score(gerp.rs()));
 
     VariantSearchResult {
         id: hit.id.clone(),

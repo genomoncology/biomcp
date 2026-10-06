@@ -2,7 +2,6 @@
 use super::coding_alias::{CodingRoute, coding_assertion};
 use super::*;
 use crate::sources::myvariant::{MyVariantHit, MyVariantSearchResponse};
-use crate::utils::serde::StringOrVec;
 use biodata::{HgvsEdit, HgvsLocation, HgvsMolecule, HgvsPosition, HgvsSpan, ParsedHgvsNucleotide};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -342,13 +341,19 @@ fn coding_identity_comparison_table() {
 
 fn source_internal(hit: &MyVariantHit) -> Value {
     let db = hit.dbnsfp.as_ref().unwrap();
-    let shape = |v: &StringOrVec| match v {
-        StringOrVec::Single(_) => "StringOrVec::Single",
-        StringOrVec::Multiple(_) => "StringOrVec::Multiple",
-        StringOrVec::None => "StringOrVec::None",
+    // Preserve the existing oracle's shape labels through the public source encoder.
+    let shape = |v: &biodata::MyVariantDbnsfpText| {
+        let encoded = serde_json::to_value(v.as_source()).unwrap();
+        if encoded.is_string() {
+            "StringOrVec::Single"
+        } else if encoded.is_array() {
+            "StringOrVec::Multiple"
+        } else {
+            "StringOrVec::None"
+        }
     };
-    json!({"genename_variant":shape(&db.genename),"hgvsc_variant":shape(&db.hgvsc),
-        "hgvsp_variant":shape(&db.hgvsp),"snpeff_complete":hit.snpeff.as_ref().unwrap().is_complete()})
+    json!({"genename_variant":shape(db.genename()),"hgvsc_variant":shape(db.hgvsc()),
+        "hgvsp_variant":shape(db.hgvsp()),"snpeff_complete":hit.snpeff.as_ref().unwrap().is_complete()})
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -467,10 +472,7 @@ async fn coding_source_projection_table() {
             json!(identity.coding_changes),
             row["expected_coding_aliases"]
         );
-        assert!(matches!(
-            hit.dbnsfp.as_ref().unwrap().hgvsc,
-            StringOrVec::None
-        ));
+        assert!(hit.dbnsfp.as_ref().unwrap().hgvsc().values().is_empty());
         assert_eq!(
             serde_json::to_value(crate::transform::variant::from_myvariant_search_hit(&hit))
                 .unwrap(),

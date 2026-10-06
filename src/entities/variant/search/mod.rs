@@ -1070,3 +1070,6 @@ mod tests;
 mod exact_scan_tests;
 #[cfg(test)]
 mod exact_scan_transport_tests;
+
+#[cfg(test)]
+mod dbnsfp_adoption_tests;
