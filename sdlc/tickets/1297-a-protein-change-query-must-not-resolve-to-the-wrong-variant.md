@@ -2,7 +2,7 @@
 
 Proposed 2026-10-04 by the BioMCP 0.9 lead, from KB QA ticket 0002.
 
-Status: OPEN.
+Status: complete.
 
 ## Folded scope from 1292's review (2026-10-06)
 
