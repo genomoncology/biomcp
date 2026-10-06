@@ -46,6 +46,18 @@ fn parse_variant_id_examples() {
         VariantIdFormat::RsId(v) => assert_eq!(v, "rs113488022"),
         _ => panic!("expected rsid"),
     }
+    match parse_variant_id("577152").unwrap() {
+        VariantIdFormat::ClinvarVariationId(variation_id) => {
+            assert_eq!(variation_id, 577152);
+        }
+        _ => panic!("expected clinvar variation id"),
+    }
+    for malformed in ["0", "01", "1755396.1", "577152 clinvar"] {
+        assert!(
+            parse_variant_id(malformed).is_err(),
+            "refuse malformed variation id {malformed}"
+        );
+    }
     match parse_variant_id("chr7:g.140453136A>T").unwrap() {
         VariantIdFormat::HgvsGenomic(v) => assert_eq!(v, "chr7:g.140453136A>T"),
         _ => panic!("expected hgvs"),
@@ -218,6 +230,28 @@ fn parse_variant_id_suggests_search_for_complex_alteration_text() {
 }
 
 #[test]
+fn variant_identity_inputs_refuse_transcript_anchor_half_parses() {
+    for clinvar_style in [
+        "NM_177438.3(DICER1) c.4449G>A",
+        "NM_000249.4 c.678-14_678-3del",
+    ] {
+        assert!(
+            RequestedVariantIdentity::from_variant_input(clinvar_style).is_err(),
+            "refuse half-parse of {clinvar_style}"
+        );
+    }
+    let kept = RequestedVariantIdentity::from_variant_input("CHEK2 c.1100del")
+        .expect("gene plus coding stays accepted");
+    assert_eq!(kept.gene.as_deref(), Some("CHEK2"));
+    assert_eq!(kept.coding_change.as_deref(), Some("c.1100del"));
+
+    let variation_id = RequestedVariantIdentity::from_variant_input("577152")
+        .expect("clinvar variation id identity");
+    assert_eq!(variation_id.clinvar_variation_id, Some(577152));
+    assert_eq!(variation_id.human_label(), "ClinVar VariationID 577152");
+}
+
+#[test]
 fn structured_article_identity_accepts_refseq_forms_and_preserves_chr_compatibility() {
     let components: VariantArticleRequest = serde_json::from_value(serde_json::json!({
         "gene": " ATM ",
@@ -354,6 +388,7 @@ fn identity_comparison_preserves_provider_alias_and_checks_every_known_field() {
         protein_change: Some("p.Val600Glu".into()),
         coding_change: Some("c.1799T>A".into()),
         transcript: Some("NM_004333.6".into()),
+        clinvar_variation_id: Some(12304),
         genomic_accession: Some("chr7".into()),
         genome_build: Some("GRCh38".into()),
         position: Some(140453136),

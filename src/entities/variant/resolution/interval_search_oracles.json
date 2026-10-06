@@ -1292,11 +1292,11 @@
       "expected": {
         "variant": "Error",
         "type": "BioMcpError::InvalidArgument",
-        "message": "Unrecognized variant format: 'p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu",
+        "message": "Unrecognized variant format: 'p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- ClinVar VariationID: 577152\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu, EGFR E746_A750del",
         "public_cli_json": {
           "error": {
             "code": "invalid_argument",
-            "message": "Invalid argument: Unrecognized variant format: 'p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+            "message": "Invalid argument: Unrecognized variant format: 'p.A11del'\n\nSupported formats:\n- rsID: rs113488022\n- ClinVar VariationID: 577152\n- HGVS genomic: chr7:g.140453136A>T\n- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n- Transcript HGVS: NM_004333.6:c.1799T>A\n- Gene + protein: BRAF V600E, BRAF p.Val600Glu, EGFR E746_A750del"
           },
           "_meta": {
             "not_found": false

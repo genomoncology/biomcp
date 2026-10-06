@@ -238,6 +238,7 @@ fn debug(a: &IntervalAssertion<'_>, route: &str, source: usize, candidate: usize
 
 fn request(protein: &str) -> RequestedVariantIdentity {
     RequestedVariantIdentity {
+        clinvar_variation_id: None,
         gene: Some("EGFR".into()), protein_change: Some(protein.into()),
         coding_change: None, transcript: None, genomic_accession: None, genome_build: None,
         position: None, reference: None, alternate: None, rsid: None,

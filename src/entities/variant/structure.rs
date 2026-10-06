@@ -265,6 +265,7 @@ fn input_kind_label(id_format: &VariantIdFormat) -> &'static str {
         VariantIdFormat::TranscriptGeneCodingChange { .. } => "transcript_gene_coding_change",
         VariantIdFormat::GeneCodingChange { .. } => "gene_coding_change",
         VariantIdFormat::RsId(_) => "rsid",
+        VariantIdFormat::ClinvarVariationId(_) => "clinvar_variation_id",
         VariantIdFormat::HgvsGenomic(_) => "hgvs_genomic",
         VariantIdFormat::GeneProteinChange { .. } => "gene_protein_change",
     }

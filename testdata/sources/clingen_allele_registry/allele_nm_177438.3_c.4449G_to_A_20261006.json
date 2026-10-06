@@ -1,0 +1,140 @@
+{
+  "@id": "http://reg.genome.network/allele/CA390868420",
+  "communityStandardTitle": [
+    "NM_177438.3(DICER1):c.4449G>A (p.Met1483Ile)"
+  ],
+  "externalRecords": {
+    "ClinVarVariations": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/577152",
+        "RCV": [
+          "RCV000699832",
+          "RCV000765193",
+          "RCV001022497",
+          "RCV003126910",
+          "RCV003465610"
+        ],
+        "variationId": 577152
+      }
+    ],
+    "dbSNP": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/snp/1454569806",
+        "rs": 1454569806
+      }
+    ]
+  },
+  "genomicAlleles": [
+    {
+      "chromosome": "14",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 95096471,
+          "referenceAllele": "C",
+          "start": 95096470
+        }
+      ],
+      "hgvs": [
+        "NC_000014.9:g.95096471C>T",
+        "CM000676.2:g.95096471C>T"
+      ],
+      "referenceGenome": "GRCh38",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000062"
+    },
+    {
+      "chromosome": "14",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 95562808,
+          "referenceAllele": "C",
+          "start": 95562807
+        }
+      ],
+      "hgvs": [
+        "NC_000014.8:g.95562808C>T",
+        "CM000676.1:g.95562808C>T"
+      ],
+      "referenceGenome": "GRCh37",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000038"
+    },
+    {
+      "chromosome": "14",
+      "coordinates": [
+        {
+          "allele": "T",
+          "end": 94632561,
+          "referenceAllele": "C",
+          "start": 94632560
+        }
+      ],
+      "hgvs": [
+        "NC_000014.7:g.94632561C>T"
+      ],
+      "referenceGenome": "NCBI36",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000014"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "A",
+          "end": 65952,
+          "referenceAllele": "G",
+          "start": 65951
+        }
+      ],
+      "hgvs": [
+        "NG_016311.1:g.65952G>A",
+        "LRG_492:g.65952G>A"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS003089"
+    }
+  ],
+  "transcriptAlleles": [
+    {
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000343455.8:c.4449G>A"
+          },
+          "RefSeq": {
+            "hgvs": "NM_177438.3:c.4449G>A"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000343745.3:p.Met1483Ile"
+          },
+          "RefSeq": {
+            "hgvs": "NP_803187.1:p.Met1483Ile"
+          }
+        }
+      }
+    },
+    {
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000343455.8:c.4449G>A"
+          },
+          "RefSeq": {
+            "hgvs": "NM_177438.3:c.4449G>A"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000343745.3:p.Met1483Ile"
+          },
+          "RefSeq": {
+            "hgvs": "NP_803187.1:p.Met1483Ile"
+          }
+        }
+      }
+    }
+  ]
+}

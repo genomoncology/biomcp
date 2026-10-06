@@ -11,7 +11,7 @@ use std::time::Instant;
 use crate::entities::variant::{
     CarNormalizationItem, CarNormalizationStatus, NormalizedVariantAliases,
     RequestedVariantIdentity, VariantArticleResolution, VariantArticleResolutionContext,
-    VariantProviderValidationStatus, VariantResolutionStatus,
+    VariantIdFormat, VariantProviderValidationStatus, VariantResolutionStatus,
 };
 use crate::error::BioMcpError;
 use clap::ValueEnum;
@@ -2826,6 +2826,17 @@ async fn search_variant_articles_with_deadline(
     verification: VariantArticleVerificationOptions,
     deadline_limit: std::time::Duration,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
+    // Article search resolves identity through aliases a bare ClinVar
+    // VariationID does not carry; refuse it instead of returning an empty
+    // resolution (ticket 1292 keeps this surface to `get variant`).
+    if let crate::entities::variant::VariantInputKind::Exact(VariantIdFormat::ClinvarVariationId(
+        _,
+    )) = crate::entities::variant::classify_variant_input(input)
+    {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "Unrecognized variant format for article search: '{input}'. Pass a gene+protein change, transcript HGVS, rsID, or genomic HGVS; use `biomcp get variant {input}` for the ClinVar VariationID."
+        )));
+    }
     let requested = RequestedVariantIdentity::from_variant_input(input)?;
     if limit == 0 || limit > 50 {
         return Err(BioMcpError::InvalidArgument(

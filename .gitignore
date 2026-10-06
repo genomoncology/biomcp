@@ -33,3 +33,6 @@ zig-out/
 uv-*.lock
 
 .review-artifacts/
+
+# Preserve the incoming local probe without publishing retired proof artifacts.
+/tools/zero-coupling-historical.json.probe

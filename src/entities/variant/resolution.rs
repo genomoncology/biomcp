@@ -25,6 +25,7 @@ pub enum VariantIdFormat {
         change: String,
     },
     RsId(String),
+    ClinvarVariationId(u64),
     HgvsGenomic(String),
     GeneProteinChange {
         gene: String,
@@ -56,6 +57,18 @@ use protein_get::parse_exact_gene_protein_change;
 fn rsid_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"(?i)^(rs\d+)$").expect("valid regex"))
+}
+
+fn clinvar_variation_id_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^([1-9][0-9]{0,9})$").expect("valid regex"))
+}
+
+/// A bare positive integer is a ClinVar VariationID (ticket 1292).
+pub(crate) fn parse_clinvar_variation_id(value: &str) -> Option<u64> {
+    clinvar_variation_id_re()
+        .captures(value.trim())
+        .and_then(|caps| caps[1].parse().ok())
 }
 
 pub(crate) fn is_rsid(value: &str) -> bool {
@@ -149,6 +162,24 @@ fn residue_alias_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"^(\d+)([A-Z*])$").expect("valid regex"))
 }
 
+fn clinvar_name_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"^([A-Z]{2}_[0-9]+\.[0-9]+)\([A-Za-z0-9]+\)(?::|\s+)(c\.[^\s]+)$")
+            .expect("valid regex")
+    })
+}
+
+/// ClinVar-style names keep the gene in parentheses (`NM_177438.3(DICER1)
+/// c.4449G>A`). BioMCP refuses them instead of half-parsing; when the rest of
+/// the name is a complete coding change, the colon form is a working input.
+fn clinvar_style_name_working_form(id: &str) -> Option<String> {
+    let caps = clinvar_name_re().captures(id.trim())?;
+    let working_form = format!("{}:{}", &caps[1], &caps[2]);
+    (transcript_coding_hgvs_re().is_match(&working_form) && coding_change_re().is_match(&caps[2]))
+        .then_some(working_form)
+}
+
 fn quote_command_arg(value: &str) -> String {
     let trimmed = value.trim();
     if trimmed.is_empty() {
@@ -186,6 +217,18 @@ pub(crate) fn is_exact_gene_token(token: &str) -> bool {
     matches!(chars.next(), Some(first) if first.is_ascii_uppercase())
         && chars.clone().next().is_some()
         && chars.all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit())
+}
+
+/// Transcript accessions are not gene symbols. A first token shaped like
+/// `NM_000249.4` or `NM_177438.3(DICER1)` is a transcript anchor, so a
+/// two-token gene+coding reading would half-parse a ClinVar-style name.
+fn is_transcript_qualified_anchor(token: &str) -> bool {
+    token.contains('(') || transcript_anchor_re().is_match(token)
+}
+
+fn transcript_anchor_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^[A-Z]{2}_[0-9]+").expect("valid regex"))
 }
 
 fn split_gene_change_tokens(input: &str) -> Option<(&str, &str)> {
@@ -230,6 +273,9 @@ pub fn classify_variant_input(input: &str) -> VariantInputKind {
 
     if let Some(caps) = rsid_re().captures(input) {
         return VariantInputKind::Exact(VariantIdFormat::RsId(caps[1].to_ascii_lowercase()));
+    }
+    if let Some(variation_id) = parse_clinvar_variation_id(input) {
+        return VariantInputKind::Exact(VariantIdFormat::ClinvarVariationId(variation_id));
     }
     if let Ok(Some(lookup)) =
         genomic_lookup::genomic_lookup(input, genomic_lookup::LookupRoute::Direct)
@@ -333,6 +379,7 @@ pub fn parse_variant_id(id: &str) -> Result<VariantIdFormat, BioMcpError> {
         .any(|needle| lower.contains(needle))
     };
 
+    let clinvar_name_working_form = clinvar_style_name_working_form(id);
     let search_hint = match classify_variant_input(id) {
         VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias { .. }) => format!(
             "\n\nThis looks like search-only shorthand, not an exact variant ID.\n\
@@ -343,6 +390,13 @@ Use `biomcp search variant \"{id}\"` to resolve it, or pass an exact rsID/HGVS/g
 Try:\n\
 1. biomcp search variant --hgvsp {change} --limit 10\n\
 2. biomcp discover {change}"
+        ),
+        _ if clinvar_name_working_form.is_some() => format!(
+            "\n\nThis looks like a ClinVar-style name with the gene in parentheses.\n\
+BioMCP parses the colon form instead.\n\
+Working form: biomcp get variant {}\n\
+A ClinVar VariationID (e.g. biomcp get variant 577152) or rsID (e.g. biomcp get variant rs113488022) also works.",
+            clinvar_name_working_form.expect("checked above")
         ),
         _ if looks_like_search_phrase => format!(
             "\n\nThis looks like a search phrase or alteration description, not an exact variant ID.\n\
@@ -358,10 +412,11 @@ Use `biomcp search variant \"{id}\"` to search, or pass an exact rsID/HGVS/gene+
         "Unrecognized variant format: '{id}'{search_hint}\n\n\
 Supported formats:\n\
 - rsID: rs113488022\n\
+- ClinVar VariationID: 577152\n\
 - HGVS genomic: chr7:g.140453136A>T\n\
 - Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n\
 - Transcript HGVS: NM_004333.6:c.1799T>A\n\
-- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
+- Gene + protein: BRAF V600E, BRAF p.Val600Glu, EGFR E746_A750del"
     )))
 }
 
@@ -411,6 +466,11 @@ pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
     point_alias::point_assertion(value, None, false).alias()
 }
 
+/// Search filters normalize only complete supported point substitutions.
+pub(crate) fn normalize_protein_substitution(value: &str) -> Option<String> {
+    point_alias::point_assertion(value, None, false).alias()
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct VariantArticleRequest {
@@ -444,6 +504,7 @@ impl VariantArticleRequest {
             protein_change: Self::clean(&self.protein),
             coding_change: Self::clean(&self.coding),
             transcript: Self::clean(&self.transcript),
+            clinvar_variation_id: None,
             genomic_accession: Self::clean(&self.accession),
             genome_build: Self::clean(&self.build),
             position: self.position,
@@ -633,6 +694,8 @@ pub(crate) struct RequestedVariantIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transcript: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub clinvar_variation_id: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub genomic_accession: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub genome_build: Option<String>,
@@ -656,6 +719,9 @@ impl RequestedVariantIdentity {
         }
         if let (Some(transcript), Some(change)) = (&self.transcript, &self.coding_change) {
             return format!("{transcript}:{change}");
+        }
+        if let Some(variation_id) = &self.clinvar_variation_id {
+            return format!("ClinVar VariationID {variation_id}");
         }
         if let Some(rsid) = &self.rsid {
             return rsid.clone();

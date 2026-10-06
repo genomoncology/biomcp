@@ -113,6 +113,7 @@ impl RequestedVariantIdentity {
         let supplied = input.trim();
         if let Some((gene, coding)) = supplied.split_once(char::is_whitespace)
             && coding_change_re().is_match(coding.trim())
+            && !super::is_transcript_qualified_anchor(gene)
         {
             return Ok(Self {
                 gene: Some(gene.to_string()),
@@ -125,6 +126,9 @@ impl RequestedVariantIdentity {
                 rsid: Some(supplied.to_string()),
                 ..Self::default()
             }),
+            VariantInputKind::Exact(VariantIdFormat::ClinvarVariationId(variation_id)) => {
+                Ok(Self { clinvar_variation_id: Some(variation_id), ..Self::default() })
+            }
             VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(_)) => {
                 let mut identity = Self::default();
                 identity.populate_genomic(supplied);

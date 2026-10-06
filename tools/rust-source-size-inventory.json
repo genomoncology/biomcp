@@ -115,12 +115,12 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6116,
+      "baseline_lines": 6127,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150",
-        "delta": 1288,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
+        "ticket": "1150, qf-main-sync-variant-inputs-20261006",
+        "delta": 1299,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },
@@ -227,37 +227,36 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1292,
+      "baseline_lines": 1367,
       "floor_lines": 1292,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "qf-main-sync-variant-inputs-20261006",
+        "delta": 75,
+        "reason": "Integrate ClinVar VariationID and exact transcript coding alias fallback beside retained bounded 1.0 lookup owners.",
+        "removal_condition": "Remove this allowance when the existing workflow is decomposed below the source-size threshold."
+      }
     },
     {
       "path": "src/entities/variant/get/tests.rs",
-      "baseline_lines": 1019,
+      "baseline_lines": 1128,
       "floor_lines": 911,
       "authorized_increase": {
-        "ticket": "1290, qf-maintenance-20261003",
-        "delta": 108,
-        "reason": "Root maintenance source-preparation authority owns the 108 added total lines above the accepted development baseline. Retain the accepted genomic prediction preparation assertions and all incoming record-level ClinVar headline disagreement, missing-classification and agreement assertions.",
+        "ticket": "1290, qf-maintenance-20261003, qf-main-sync-variant-inputs-20261006",
+        "delta": 217,
+        "reason": "Root maintenance source-preparation authority owns the 108 added total lines above the accepted development baseline. Retain the accepted genomic prediction preparation assertions and all incoming record-level ClinVar headline disagreement, missing-classification and agreement assertions. Retain incoming exact-alias success and wrong-transcript refusal fixture cases.",
         "removal_condition": "Split the getter tests when the variant workflow is next decomposed, retaining both genomic and ClinVar headline proofs. Remove this entry when the file reaches at most 1000 total lines."
       }
     },
     {
-      "path": "src/entities/variant/mod.rs",
-      "baseline_lines": 1003,
-      "floor_lines": 978,
-      "authorized_increase": {
-        "ticket": "1290, qf-maintenance-20261003",
-        "delta": 25,
-        "reason": "Root maintenance source-preparation authority owns the 25 added total lines above the accepted development baseline. Retain migrated interval query identity and direct ClinVar behavior while adding significance provenance fields and record-level germline classification.",
-        "removal_condition": "Extract variant result and ClinVar record types when the variant workflow is next decomposed. Remove this entry when the file reaches at most 1000 total lines."
-      }
-    },
-    {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1091,
+      "baseline_lines": 1157,
       "floor_lines": 1091,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "qf-main-sync-variant-inputs-20261006",
+        "delta": 66,
+        "reason": "Add ClinVar VariationID classification and unsupported-wrapper guidance while retaining shared HGVS adapters.",
+        "removal_condition": "Remove this allowance when the existing workflow is decomposed below the source-size threshold."
+      }
     },
     {
       "path": "src/entities/variant/search/mod.rs",
@@ -455,12 +454,12 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1469,
+      "baseline_lines": 1489,
       "floor_lines": 1033,
       "authorized_increase": {
-        "ticket": "1091, 1154, 1155, 1150",
-        "delta": 436,
-        "reason": "Keep trusted MyGene alias probes, ClinVar fallback freshness, bounded SnpEff decoding, and deadline-aware construction beside the MyVariant request workflow.",
+        "ticket": "1091, 1154, 1155, 1150, qf-main-sync-variant-inputs-20261006",
+        "delta": 456,
+        "reason": "Keep trusted MyGene alias probes, ClinVar fallback freshness, bounded SnpEff decoding, and deadline-aware construction beside the MyVariant request workflow. Add ClinVar coding aliases to GET fields and exact membership access; retain the current SnpEff decoder.",
         "removal_condition": "Split MyVariant request planning and SnpEff decoding when the provider is next decomposed."
       }
     },

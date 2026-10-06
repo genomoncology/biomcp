@@ -70,6 +70,7 @@ REQUIRED_ROOT_ENTRIES = {
     "uv.lock",
 }
 REQUIRED_PACKAGE_MEMBERS = {
+    "spec/entity/variant-input-forms.md",
     "src/cli/variant/query.rs",
     "spec/entity/variant-gene-first-routing.md",
     "spec/entity/article-entities.md",
