@@ -1371,4 +1371,7 @@ pub async fn get_with_workflow_signals(
 }
 
 #[cfg(test)]
+mod protein_change_tests;
+
+#[cfg(test)]
 mod tests;
