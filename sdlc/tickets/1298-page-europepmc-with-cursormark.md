@@ -3,7 +3,7 @@
 Filed 2026-10-05 by the BioMCP 0.9 lead, from experiment 439. Design review: FIX on the first pass (dispatch e3f043f1, fresh read-only reviewer); every finding folded into the Changes and Proof below. The direction was accepted unchanged.
 
 Status: OPEN.
-Milestone: 0.9.2.
+Milestone: 0.9.2
 
 ## Outcome
 
