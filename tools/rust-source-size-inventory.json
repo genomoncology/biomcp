@@ -82,24 +82,24 @@
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1428,
+      "baseline_lines": 1432,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144, 1293, 1296",
-        "delta": 114,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
-        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
+        "ticket": "1299",
+        "delta": 118,
+        "reason": "Re-export the article-search deadline budget and error text for the exact-keyword lookup and the public error projection",
+        "removal_condition": "Return to the prior baseline when the deadline seam moves to the sources layer"
       }
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6153,
+      "baseline_lines": 6158,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, 1292, 1297",
-        "delta": 1325,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Ticket 1292: the article entry refuses a bare ClinVar VariationID instead of silently resolving an empty identity. Ticket 1297: the folded-scope bare-VariationID refusal test.",
-        "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
+        "ticket": "1299",
+        "delta": 1330,
+        "reason": "Adapt the strict-route and pubtator-variant legs to the partial-page outcome that keeps fetched rows when a page fails mid-flight",
+        "removal_condition": "Return to the prior baseline when partial outcomes compose without per-site mapping"
       }
     },
     {
@@ -115,13 +115,13 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4053,
+      "baseline_lines": 4060,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "1243",
-        "delta": 359,
-        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
-        "removal_condition": "None; the boxing is the point."
+        "ticket": "1299",
+        "delta": 366,
+        "reason": "Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it",
+        "removal_condition": "Return to the prior baseline when the OLS client gains an unconditional deadline constructor"
       }
     },
     {
@@ -260,13 +260,13 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1256,
+      "baseline_lines": 1303,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1256",
-        "delta": 134,
-        "reason": "The DDInter HTML-download projection arm and its test.",
-        "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
+        "ticket": "1299",
+        "delta": 181,
+        "reason": "Carry the article-search deadline reason and suggestion through the public error projection",
+        "removal_condition": "Return to the prior baseline when SourceUnavailable projections carry their reason by default"
       }
     },
     {

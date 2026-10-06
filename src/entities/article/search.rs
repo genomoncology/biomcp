@@ -45,6 +45,10 @@ pub(crate) use deadline::{
     ARTICLE_SEARCH_DEADLINE_REASON_PREFIX, ARTICLE_SEARCH_DEADLINE_SUGGESTION,
 };
 use deadline::{article_search_deadline_error, timed_source_call, timed_source_leg};
+mod status;
+use status::{
+    SemanticScholarStatusTracker, source_degraded_status, source_provider, timed_out_source_status,
+};
 
 pub async fn search(
     filters: &ArticleSearchFilters,
@@ -74,54 +78,6 @@ fn article_search_page(
     }
 }
 
-#[derive(Default)]
-struct SemanticScholarStatusTracker {
-    auth_mode: Option<crate::sources::semantic_scholar::SemanticScholarAuthMode>,
-    succeeded: bool,
-    failed: bool,
-    message: Option<String>,
-}
-
-impl SemanticScholarStatusTracker {
-    fn record(&mut self, status: ArticleSourceStatus) {
-        if self.auth_mode.is_none() {
-            self.auth_mode = status.auth_mode;
-        }
-        match status.status {
-            Some(ArticleSourceAvailability::Ok) => self.succeeded = true,
-            Some(ArticleSourceAvailability::Degraded) => {
-                self.succeeded = true;
-                self.failed = true;
-            }
-            Some(ArticleSourceAvailability::Unavailable) => self.failed = true,
-            Some(ArticleSourceAvailability::Skipped) | None => {}
-        }
-        if status.message.is_some() {
-            self.message = status.message;
-        }
-    }
-
-    fn finish(self) -> Vec<ArticleSourceStatus> {
-        let status = if self.failed && self.succeeded {
-            ArticleSourceAvailability::Degraded
-        } else if self.failed {
-            ArticleSourceAvailability::Unavailable
-        } else {
-            ArticleSourceAvailability::Ok
-        };
-        vec![ArticleSourceStatus {
-            source: ArticleSource::SemanticScholar,
-            enabled: true,
-            auth_mode: self.auth_mode,
-            status: Some(status),
-            message: self.failed.then_some(
-                self.message
-                    .unwrap_or_else(|| "Semantic Scholar unavailable".to_string()),
-            ),
-        }]
-    }
-}
-
 pub(super) struct FederatedArticleRows {
     pub(super) rows: Vec<ArticleSearchResult>,
     pub(super) source_status: Vec<ArticleSourceStatus>,
@@ -143,37 +99,6 @@ enum FederatedSourceOutcome<T> {
         error: Option<BioMcpError>,
         status: ArticleSourceStatus,
     },
-}
-
-fn source_provider(source: ArticleSource) -> crate::error::SourceProvider {
-    match source {
-        ArticleSource::PubTator => crate::error::SourceProvider::PUBTATOR3,
-        ArticleSource::EuropePmc => crate::error::SourceProvider::EUROPE_PMC,
-        ArticleSource::PubMed => crate::error::SourceProvider::PUBMED,
-        ArticleSource::SemanticScholar => crate::error::SourceProvider::SEMANTIC_SCHOLAR,
-        ArticleSource::LitSense2 => crate::error::SourceProvider::LITSENSE2,
-    }
-}
-
-fn source_degraded_status(source: ArticleSource, message: String) -> ArticleSourceStatus {
-    ArticleSourceStatus {
-        source,
-        enabled: true,
-        auth_mode: None,
-        status: Some(ArticleSourceAvailability::Degraded),
-        message: Some(message),
-    }
-}
-
-fn timed_out_source_status(source: ArticleSource) -> ArticleSourceStatus {
-    source_degraded_status(
-        source,
-        format!(
-            "{} timed out after {}s",
-            source.display_name(),
-            FEDERATED_ARTICLE_SOURCE_TIMEOUT.as_secs()
-        ),
-    )
 }
 
 async fn with_federated_source_timeout<T, F>(
