@@ -72,7 +72,7 @@ The result preserves the source's coherent transcript, coding and protein displa
 
 ## Protein point detail lookup
 
-Use a gene plus a checked protein substitution, for example `biomcp get variant 'GENE p.Ala11Val'`. BioMCP examines at most 1,000 candidates in 50-row pages. It returns a detail card only after the provider query completes with one distinct compatible source identity. Exact duplicates and reordered assertions collapse. Additional assertions, assertion multiplicity and different written reference prefixes retain distinct identities.
+Use a gene plus a checked protein substitution, for example `biomcp get variant 'GENE p.Ala11Val'`. BioMCP examines at most 1,000 candidates in 50-row pages. It returns a detail card only after the provider query completes and candidate selection succeeds. Exact duplicates and reordered assertions collapse. Additional assertions, assertion multiplicity and different written reference prefixes retain distinct identities.
 
 After a complete scan, distinct compatible genomic candidates resolve when exactly one carries a ClinVar record. Otherwise BioMCP refuses with the candidates and working exact input forms. Conflicting assertions on the same genomic identity, missing identity evidence and incomplete scans refuse to select a card. A returned page containing any unexamined row remains incomplete even if its reported total suggests completion. A complete scan with no compatible or uncertain candidate returns not found. Provider failures remain errors, including a failure after a provisional match.
 
