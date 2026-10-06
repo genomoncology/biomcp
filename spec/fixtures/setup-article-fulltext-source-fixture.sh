@@ -251,7 +251,7 @@ ORCID_WORKS_BODY = {
         {
             "work-summary": [
                 {
-                    "visibility": "PUBLIC",
+                    "visibility": "public",
                     "put-code": 42,
                     "display-index": "2",
                     "title": {"title": {"value": "A claimed work | `with markup` <b>and html</b>"}},
@@ -269,7 +269,7 @@ ORCID_WORKS_BODY = {
         {
             "work-summary": [
                 {
-                    "visibility": "PUBLIC",
+                    "visibility": "public",
                     "put-code": 43,
                     "display-index": "1",
                     "title": {"title": {"value": "Second claimed work"}},

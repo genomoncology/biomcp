@@ -231,7 +231,7 @@ mod orcid_row {
                 *counter.lock().unwrap() += 1;
                 let mut buffer = [0_u8; 4096];
                 let _ = stream.read(&mut buffer);
-                let body = r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"PUBLIC","given-names":{"value":"Josiah"},"family-name":{"value":"Carberry"}}}"#;
+                let body = r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"public","given-names":{"value":"Josiah"},"family-name":{"value":"Carberry"}}}"#;
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.orcid+json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                     body.len(),
