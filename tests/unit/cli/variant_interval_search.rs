@@ -167,6 +167,24 @@ async fn interval_search_routing_table() {
             assert_error(&result.unwrap_err(), expected);
         } else {
             let plan = result.unwrap();
+            // IR16 checks final refusal semantics for the original three-word input.
+            // It remains outside interval admission and keeps the complete fallback oracle.
+            let plan = if row["id"] == "IR16" {
+                let VariantSearchPlan::GeneFirstCandidate {
+                    gene,
+                    condition,
+                    hgvsp,
+                    consequence,
+                } = plan
+                else {
+                    panic!("IR16 must reach gene confirmation without interval selection");
+                };
+                let (resolved, _) =
+                    query::apply_gene_first_routing(gene, condition, None, hgvsp, consequence);
+                VariantSearchPlan::Standard(resolved)
+            } else {
+                plan
+            };
             let actual = plan_value(&plan);
             let mut expected_plan = expected.clone();
             for key in [

@@ -50,3 +50,13 @@ biomcp --no-cache search variant 'BRUGADA syndrome' --limit 3 \
   | mustmatch like 'Query: condition=BRUGADA syndrome
 No variants matched the phrase as a condition. If BRUGADA is a gene symbol, try the working form: biomcp search variant -g BRUGADA --condition syndrome'
 ```
+
+A refused symbol before interval-looking text preserves the entire three-word
+condition. The fixture refuses GENE and admits only the complete condition
+request with its exact parameters. The zero-result working form is intentional.
+
+```bash
+biomcp --json --no-cache search variant 'GENE p.A11del extra' --limit 3 \
+  | jq -cS . \
+  | mustmatch '{"_meta":{"next_commands":["biomcp search variant -g GENE --condition \"p.A11del extra\""]},"count":0,"diagnostics":[],"filter_evaluation":{"condition":"evaluated"},"pagination":{"has_more":false,"limit":3,"next_page_token":null,"offset":0,"returned":0,"total":0},"results":[]}'
+```

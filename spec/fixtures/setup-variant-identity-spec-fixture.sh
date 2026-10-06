@@ -287,6 +287,27 @@ class Handler(BaseHTTPRequestHandler):
             if query == 'dbnsfp.genename:SCN5A AND clinvar.rcv.conditions.name:"Brugada"':
                 send_json(self, 200, {"total": 3, "hits": SCN5A_BRUGADA_HITS})
                 return
+            if query == 'clinvar.rcv.conditions.name:"GENE p.A11del extra"':
+                # This authored case admits the whole GET parameter set, including
+                # the original suffix. Extra or duplicate parameters are refused.
+                expected_params = {
+                    "q": ['clinvar.rcv.conditions.name:"GENE p.A11del extra"'],
+                    "size": ["3"],
+                    "from": ["0"],
+                    "fields": [
+                        "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,"
+                        "dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,"
+                        "clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,"
+                        "snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,"
+                        "snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,"
+                        "gnomad.genomes.af.af,cadd.consequence"
+                    ],
+                }
+                if parse_qs(parsed.query, keep_blank_values=True) != expected_params:
+                    send_json(self, 400, {"error": "unexpected fallback parameters"})
+                    return
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
             if query == 'clinvar.rcv.conditions.name:"BRUGADA syndrome"':
                 send_json(self, 200, {"total": 0, "hits": []})
                 return

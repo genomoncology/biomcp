@@ -121,6 +121,8 @@ MYGENE = {
         "hits": [{"symbol": "SCN5A", "entrezgene": 6331}],
     }).encode("utf-8"),
     "(symbol:BRUGADA OR alias:BRUGADA)": b'{"total":0,"hits":[]}',
+    # Synthetic refusal for the original three-word non-interval fallback.
+    "(symbol:GENE OR alias:GENE)": b'{"total":0,"hits":[]}',
     "(symbol:ODC1 OR alias:ODC1)": json.dumps({
         "total": 4,
         "hits": [
