@@ -1,11 +1,11 @@
 //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json` and
 //! the response types, plus the pure post-processing helper `select_get_hit_value` and
-//! the `de_vec_or_single` / shared dbNSFP carrier shapes. No network, no server.
+//! the shared ClinVar / dbNSFP carrier shapes. No network, no server.
 
 use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::myvariant::{
-    MyVariantClient, MyVariantClinVar, MyVariantHit, MyVariantSearchResponse,
+    MyVariantClient, MyVariantHit, MyVariantSearchResponse,
 };
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
@@ -253,11 +253,11 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
     );
     assert_eq!(hit.cosmic.as_ref().and_then(|c| c.mut_freq), Some(2.83));
     assert!(hit.exac.as_ref().and_then(|e| e.af).is_some());
-    assert_eq!(hit.clinvar.as_ref().and_then(|c| c.variant_id), Some(13961));
+    assert_eq!(hit.clinvar.as_ref().and_then(|c| c.variant_id()), Some(13961));
     assert!(
         hit.clinvar
             .as_ref()
-            .map(|c| !c.rcv.is_empty())
+            .map(|c| !c.rcv().is_empty())
             .unwrap_or(false)
     );
     assert!(
@@ -320,47 +320,6 @@ fn select_get_hit_value_scalar_is_api_error() {
     let err = MyVariantClient::select_get_hit_value(json!("nope"), "x").unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(format!("{err:?}").contains("Unexpected response type"));
-}
-
-#[test]
-fn clinvar_rcv_deserializes_single_object() {
-    let clinvar: MyVariantClinVar = serde_json::from_value(json!({
-        "variant_id": 123,
-        "rcv": {
-            "clinical_significance": "Pathogenic",
-            "review_status": "criteria provided",
-            "conditions": "Lung carcinoma"
-        }
-    }))
-    .expect("single-object RCV should deserialize");
-    assert_eq!(clinvar.variant_id, Some(123));
-    assert_eq!(clinvar.rcv.len(), 1);
-    assert_eq!(
-        clinvar.rcv[0].clinical_significance.as_deref(),
-        Some("Pathogenic")
-    );
-}
-
-#[test]
-fn clinvar_rcv_deserializes_array() {
-    let clinvar: MyVariantClinVar = serde_json::from_value(json!({
-        "variant_id": 456,
-        "rcv": [
-            { "clinical_significance": "Pathogenic" },
-            { "clinical_significance": "Likely pathogenic" }
-        ]
-    }))
-    .expect("array RCV should deserialize");
-    assert_eq!(clinvar.variant_id, Some(456));
-    assert_eq!(clinvar.rcv.len(), 2);
-}
-
-#[test]
-fn clinvar_rcv_defaults_to_empty_when_missing() {
-    let clinvar: MyVariantClinVar =
-        serde_json::from_value(json!({ "variant_id": 789 })).expect("missing rcv ok");
-    assert_eq!(clinvar.variant_id, Some(789));
-    assert!(clinvar.rcv.is_empty());
 }
 
 #[test]

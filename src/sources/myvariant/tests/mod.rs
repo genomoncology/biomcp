@@ -10,3 +10,5 @@ mod live;
 mod parsing;
 
 mod dbnsfp_adoption;
+
+mod clinvar_adoption;

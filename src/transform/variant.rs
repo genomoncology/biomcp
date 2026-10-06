@@ -9,7 +9,8 @@ use crate::entities::variant::{
 };
 use crate::sources::cbioportal::CBioMutationSummary;
 use crate::sources::civic::CivicEvidenceItem;
-use crate::sources::myvariant::{MyVariantClinVarRcv, MyVariantGnomadAf, MyVariantHit};
+use crate::sources::myvariant::{MyVariantGnomadAf, MyVariantHit};
+use biodata::MyVariantClinVarRcv;
 use crate::utils::serde::StringOrVec;
 
 fn normalize_gene(gene: &str) -> Option<String> {
@@ -41,8 +42,8 @@ fn accession_stem(value: &str) -> &str {
 }
 
 fn clinvar_preferred_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
-    hit.clinvar.as_ref()?.rcv.iter().find_map(|rcv| {
-        let name = rcv.preferred_name.as_deref()?.trim();
+    hit.clinvar.as_ref()?.rcv().iter().find_map(|rcv| {
+        let name = rcv.preferred_name()?.trim();
         let (left, rest) = name.split_once(":c.")?;
         let transcript = left.split_once('(').map_or(left, |(value, _)| value).trim();
         if !transcript.starts_with("NM_") {
@@ -546,30 +547,27 @@ fn dedupe_limit(values: Vec<String>, max: usize) -> Vec<String> {
 }
 
 fn clinvar_condition_names(rcv: &MyVariantClinVarRcv) -> Vec<String> {
-    let Some(v) = rcv.conditions.as_ref() else {
+    let Some(v) = rcv.conditions() else {
         return vec![];
     };
 
     let mut names: Vec<String> = Vec::new();
-    match v {
-        serde_json::Value::Object(obj) => {
-            if let Some(name) = obj.get("name").and_then(|v| v.as_str()) {
+    if let Some(obj) = v.as_object() {
+        if let Some(name) = obj.get("name").and_then(|v| v.as_str()) {
+            names.push(name.to_string());
+        }
+    } else if let Some(arr) = v.as_array() {
+        for item in arr {
+            if let Some(name) = item.as_str() {
+                names.push(name.to_string());
+                continue;
+            }
+            if let Some(name) = item.get("name").and_then(|v| v.as_str()) {
                 names.push(name.to_string());
             }
         }
-        serde_json::Value::Array(arr) => {
-            for item in arr {
-                if let Some(name) = item.as_str() {
-                    names.push(name.to_string());
-                    continue;
-                }
-                if let Some(name) = item.get("name").and_then(|v| v.as_str()) {
-                    names.push(name.to_string());
-                }
-            }
-        }
-        serde_json::Value::String(s) => names.push(s.to_string()),
-        _ => {}
+    } else if let Some(s) = v.as_str() {
+        names.push(s.to_string());
     }
     names
 }
@@ -636,7 +634,7 @@ fn significance_rank(value: &str) -> i32 {
 fn pick_significance(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
     let mut best: Option<(&str, i32)> = None;
     for r in rcvs {
-        let Some(sig) = r.clinical_significance.as_deref() else {
+        let Some(sig) = r.clinical_significance() else {
             continue;
         };
         let rank = significance_rank(sig);
@@ -650,7 +648,7 @@ fn pick_significance(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
 
 fn newest_rcv_evaluation_date(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
     rcvs.iter()
-        .filter_map(|rcv| rcv.last_evaluated.as_deref().map(str::trim))
+        .filter_map(|rcv| rcv.last_evaluated().map(str::trim))
         .filter(|value| !value.is_empty())
         .max()
         .map(str::to_string)
@@ -692,7 +690,7 @@ fn pick_review_status(rcvs: &[MyVariantClinVarRcv]) -> (Option<String>, Option<u
     let mut fallback_status: Option<&str> = None;
 
     for r in rcvs {
-        let Some(status) = r.review_status.as_deref().map(str::trim) else {
+        let Some(status) = r.review_status().map(str::trim) else {
             continue;
         };
         if status.is_empty() {
@@ -799,8 +797,8 @@ fn from_myvariant_annotation(
         gene = hit
             .clinvar
             .as_ref()
-            .and_then(|clinvar| clinvar.gene.as_ref())
-            .and_then(|gene| gene.symbol.as_deref())
+            .and_then(|clinvar| clinvar.gene())
+            .and_then(|gene| gene.symbol())
             .unwrap_or_default()
             .to_string();
     }
@@ -834,7 +832,7 @@ fn from_myvariant_annotation(
     let clinvar_id = hit
         .clinvar
         .as_ref()
-        .and_then(|c| c.variant_id)
+        .and_then(|c| c.variant_id())
         .map(|n| n.to_string());
 
     let (
@@ -848,9 +846,9 @@ fn from_myvariant_annotation(
         .clinvar
         .as_ref()
         .map(|c| {
-            let sig = pick_significance(&c.rcv);
-            let (review_status, review_stars) = pick_review_status(&c.rcv);
-            let (conditions, condition_rows, report_count) = aggregate_clinvar_conditions(&c.rcv);
+            let sig = pick_significance(c.rcv());
+            let (review_status, review_stars) = pick_review_status(c.rcv());
+            let (conditions, condition_rows, report_count) = aggregate_clinvar_conditions(c.rcv());
             (
                 sig,
                 review_status,
@@ -865,7 +863,7 @@ fn from_myvariant_annotation(
     let significance_evaluated = hit
         .clinvar
         .as_ref()
-        .and_then(|c| newest_rcv_evaluation_date(&c.rcv));
+        .and_then(|c| newest_rcv_evaluation_date(c.rcv()));
     let (significance_source, significance_note) = if significance.is_some() {
         (
             Some("MyVariant.info".to_string()),
@@ -938,8 +936,8 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
         gene = hit
             .clinvar
             .as_ref()
-            .and_then(|value| value.gene.as_ref())
-            .and_then(|value| value.symbol.as_deref())
+            .and_then(|value| value.gene())
+            .and_then(|value| value.symbol())
             .and_then(normalize_gene)
             .unwrap_or_default();
     }
@@ -953,16 +951,16 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let hgvs_p = annotation.as_ref().and_then(|value| value.protein.clone());
     let legacy_name = legacy_name(&gene, hgvs_p.as_deref());
 
-    let significance = hit.clinvar.as_ref().and_then(|c| pick_significance(&c.rcv));
+    let significance = hit.clinvar.as_ref().and_then(|c| pick_significance(c.rcv()));
     let significance_source = significance.as_ref().map(|_| "MyVariant.info".to_string());
     let significance_evaluated = hit
         .clinvar
         .as_ref()
-        .and_then(|c| newest_rcv_evaluation_date(&c.rcv));
+        .and_then(|c| newest_rcv_evaluation_date(c.rcv()));
     let clinvar_stars = hit
         .clinvar
         .as_ref()
-        .and_then(|c| pick_review_status(&c.rcv).1);
+        .and_then(|c| pick_review_status(c.rcv()).1);
     let gnomad_af = best_gnomad_af(hit).and_then(|a| a.af);
     let revel = hit
         .dbnsfp
