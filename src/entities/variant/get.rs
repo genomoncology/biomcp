@@ -155,32 +155,6 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
     Ok(out)
 }
 
-fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
-    let mut score = 0;
-    if let Some(clinvar) = hit.clinvar.as_ref() {
-        if !clinvar.rcv.is_empty() {
-            score += 100;
-            score += clinvar.rcv.len().min(50) as i32;
-        }
-        if clinvar.variant_id.is_some() {
-            score += 5;
-        }
-    }
-    if hit.dbnsfp.as_ref().and_then(|d| d.hgvsp.first()).is_some() {
-        score += 10;
-    }
-    if hit.dbsnp.as_ref().and_then(|d| d.rsid.as_ref()).is_some() {
-        score += 5;
-    }
-    score
-}
-
-fn best_hit(
-    hits: &[crate::sources::myvariant::MyVariantHit],
-) -> Option<&crate::sources::myvariant::MyVariantHit> {
-    hits.iter().max_by_key(|h| score_myvariant_hit(h))
-}
-
 fn oncokb_alteration_from_variant(
     variant: &Variant,
     id_format: &VariantIdFormat,
@@ -345,17 +319,25 @@ async fn transcript_hgvs_clinvar_alias_hit(
     id: &str,
 ) -> Result<Option<crate::sources::myvariant::MyVariantHit>, BioMcpError> {
     let q = transcript_hgvs_clinvar_query(id);
-    let resp = myvariant
-        .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
-        .await?;
-    Ok(best_hit(
-        &resp
-            .hits
-            .into_iter()
-            .filter(|hit| hit_confirms_transcript_alias(hit, id))
-            .collect::<Vec<_>>(),
-    )
-    .cloned())
+    coding_lookup::lookup_exact(myvariant, &q, |hit| {
+        use super::VariantIdentityComparison;
+        match hit
+            .clinvar
+            .as_ref()
+            .and_then(|clinvar| clinvar.hgvs.as_ref())
+        {
+            Some(hgvs) if hgvs.coding_contains(id) => VariantIdentityComparison::Compatible {
+                matched_alias: id.into(),
+            },
+            Some(_) => VariantIdentityComparison::Contradictory {
+                field: "transcript_coding_alias",
+            },
+            None => VariantIdentityComparison::Indeterminate {
+                field: "transcript_coding_alias",
+            },
+        }
+    })
+    .await
 }
 
 async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
@@ -570,17 +552,18 @@ pub(super) async fn resolve_base_with_hit(
         }
         VariantIdFormat::ClinvarVariationId(variation_id) => {
             let q = format!("clinvar.variant_id:{variation_id}");
-            let resp = myvariant
-                .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
-                .await?;
+            let hit = coding_lookup::lookup_exact(&myvariant, &q, |_| {
+                super::VariantIdentityComparison::Compatible {
+                    matched_alias: variation_id.to_string(),
+                }
+            })
+            .await?;
             (
-                best_hit(&resp.hits)
-                    .cloned()
-                    .ok_or_else(|| BioMcpError::NotFound {
-                        entity: "variant".into(),
-                        id: format!("ClinVar VariationID {variation_id}"),
-                        suggestion: "Try searching: biomcp search variant".into(),
-                    })?,
+                hit.ok_or_else(|| BioMcpError::NotFound {
+                    entity: "variant".into(),
+                    id: format!("ClinVar VariationID {variation_id}"),
+                    suggestion: "Try searching: biomcp search variant".into(),
+                })?,
                 Some(GenomeBuild::Grch37),
                 Vec::new(),
             )

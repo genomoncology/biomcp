@@ -63,6 +63,54 @@ pub(super) async fn lookup(
     })
 }
 
+// The two ClinVar exact routes share the established raw-row scan and identity key.
+pub(super) async fn lookup_exact(
+    client: &MyVariantClient,
+    query: &str,
+    confirm: impl Fn(&MyVariantHit) -> VariantIdentityComparison,
+) -> Result<Option<MyVariantHit>, BioMcpError> {
+    let mut selected = None;
+    let mut seen = HashSet::new();
+    let mut indeterminate = false;
+    scan(
+        client,
+        query,
+        "ClinVar exact lookup did not complete its candidate scan.",
+        |hit| match confirm(&hit) {
+            VariantIdentityComparison::Compatible { .. } => {
+                if hit.id.trim().is_empty() {
+                    indeterminate = true;
+                    return;
+                }
+                let source = SourceVariantIdentity::from_myvariant_hit(&hit);
+                let mut protein = source.protein_changes.clone();
+                let mut coding = source.coding_changes.clone();
+                protein.sort();
+                coding.sort();
+                if seen.insert((hit.id.clone(), source.normalized_key(), protein, coding))
+                    && selected.is_none()
+                {
+                    selected = Some(hit);
+                }
+            }
+            VariantIdentityComparison::Indeterminate { .. } => indeterminate = true,
+            VariantIdentityComparison::Contradictory { .. } => {}
+        },
+    )
+    .await?;
+    if seen.len() > 1 {
+        return Err(BioMcpError::InvalidArgument(
+            "ClinVar exact lookup is ambiguous. Use an exact genomic HGVS ID.".into(),
+        ));
+    }
+    if indeterminate {
+        return Err(BioMcpError::InvalidArgument(
+            "ClinVar exact lookup lacks complete identity evidence.".into(),
+        ));
+    }
+    Ok(selected)
+}
+
 pub(super) fn candidate_matches_requested_identity(
     requested: &RequestedVariantIdentity,
     hit: &crate::sources::myvariant::MyVariantHit,

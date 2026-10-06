@@ -225,12 +225,157 @@ async fn transcript_alias_declared_assembly_refuses_before_transport() {
     env.set("BIOMCP_CLINGEN_CAR_BASE", &base);
     env.set("BIOMCP_CACHE_MODE", "off");
     let result = get_with_workflow_signals(
-        "NM_000249.4:c.678-14_678-3del", &[], Some(GenomeBuild::Grch38),
-    ).await;
+        "NM_000249.4:c.678-14_678-3del",
+        &[],
+        Some(GenomeBuild::Grch38),
+    )
+    .await;
     server.abort();
-    assert!(matches!(result, Err(BioMcpError::InvalidArgument(ref message))
-        if message == "--assembly is only supported for genomic variant IDs"));
+    assert!(
+        matches!(result, Err(BioMcpError::InvalidArgument(ref message))
+        if message == "--assembly is only supported for genomic variant IDs")
+    );
     assert!(requests.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn clinvar_exact_detail_requires_complete_unique_scan() {
+    use crate::entities::article::test_support::{
+        TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use serde_json::{Value, json};
+    let first = json!({"_id":"chr1:g.101A>T","clinvar":{"variant_id":577152,
+        "gene":{"symbol":"GENE"},"hgvs":{"coding":["NM_012345.7:c.19C>T"]},
+        "rcv":{"preferred_name":"NM_012345.7(GENE):c.19C>T"}}});
+    let mut other = first.clone();
+    other["_id"] = json!("chr1:g.102A>T");
+    let state = Arc::new(Mutex::new((Vec::<Value>::new(), Vec::<String>::new())));
+    let shared = state.clone();
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let mut state = shared.lock().unwrap();
+        if request.starts_with("GET /v1/query?") {
+            let page = state
+                .0
+                .get(state.1.len())
+                .cloned()
+                .unwrap_or(json!("failure"));
+            state.1.push(request.into());
+            let (status, body) = if page == "failure" {
+                ("400 Bad Request", b"synthetic source failure".to_vec())
+            } else {
+                ("200 OK", serde_json::to_vec(&page).unwrap())
+            };
+            TestHttpReply::Bytes(test_http_response(status, "application/json", &body))
+        } else if request.starts_with("GET /v1/variant/") {
+            let body = serde_json::to_vec(&state.0[0]["hits"][0]).unwrap();
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", &body))
+        } else {
+            TestHttpReply::Bytes(test_http_response(
+                "422 Unprocessable Entity",
+                "application/json",
+                b"{}",
+            ))
+        }
+    })
+    .await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{}/v1", fixture.base));
+    env.set(
+        "BIOMCP_MUTALYZER_BASE_URL",
+        &format!("{}/api", fixture.base),
+    );
+    env.set("BIOMCP_VARIANTVALIDATOR_BASE_URL", &fixture.base);
+    env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_CACHE_MODE", "off");
+    let rows = vec![
+        (
+            "distinct complete identities",
+            vec![json!({"total":2,"hits":[first,other]})],
+            "ambiguous",
+            vec![0],
+        ),
+        (
+            "eleventh identity",
+            vec![
+                json!({"total":11,"hits":vec![first.clone();10]}),
+                json!({"total":11,"hits":[other]}),
+            ],
+            "ambiguous",
+            vec![0, 10],
+        ),
+        (
+            "missing terminal page",
+            vec![
+                json!({"total":11,"hits":vec![first.clone();10]}),
+                json!({"total":11,"hits":[]}),
+            ],
+            "did not complete",
+            vec![0, 10],
+        ),
+        (
+            "unknown total terminal empty",
+            vec![json!({"hits":[first]}), json!({"hits":[]})],
+            "chr1:g.101A>T",
+            vec![0, 1],
+        ),
+        (
+            "complete absence",
+            vec![json!({"total":0,"hits":[]})],
+            "not found",
+            vec![0],
+        ),
+        (
+            "later source failure",
+            vec![json!({"total":2,"hits":[first]}), json!("failure")],
+            "API",
+            vec![0, 1],
+        ),
+        (
+            "complete ceiling",
+            vec![json!({"total":1000,"hits":vec![first.clone();50]}); 20],
+            "chr1:g.101A>T",
+            (0..1000).step_by(50).collect(),
+        ),
+        (
+            "unexamined excess",
+            vec![json!({"total":1001,"hits":vec![first.clone();50]}); 20],
+            "did not complete",
+            (0..1000).step_by(50).collect(),
+        ),
+    ];
+    for input in ["NM_012345.7:c.19C>T", "577152"] {
+        for (name, pages, expected, offsets) in &rows {
+            *state.lock().unwrap() = (pages.clone(), Vec::new());
+            let result = get(input, &[]).await;
+            let actual = match result {
+                Ok(card) => card.id,
+                Err(error) => error.to_string(),
+            };
+            assert!(actual.contains(expected), "{input}: {name}: {actual}");
+            let state = state.lock().unwrap();
+            let actual_offsets: Vec<_> = state
+                .1
+                .iter()
+                .map(|request| {
+                    let path = request
+                        .lines()
+                        .next()
+                        .unwrap()
+                        .split_whitespace()
+                        .nth(1)
+                        .unwrap();
+                    let url = reqwest::Url::parse(&format!("http://localhost{path}")).unwrap();
+                    let pairs: std::collections::HashMap<_, _> =
+                        url.query_pairs().into_owned().collect();
+                    assert_eq!(pairs["size"], "50", "{input}: {name}");
+                    pairs["from"].parse::<usize>().unwrap()
+                })
+                .collect();
+            assert_eq!(&actual_offsets, offsets, "{input}: {name}");
+        }
+    }
 }
 
 #[test]
