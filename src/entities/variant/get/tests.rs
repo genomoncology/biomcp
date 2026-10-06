@@ -378,6 +378,77 @@ async fn clinvar_exact_detail_requires_complete_unique_scan() {
     }
 }
 
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn clinvar_variation_id_detail_requires_matching_numeric_evidence() {
+    use crate::entities::article::test_support::{
+        TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use serde_json::{Value, json};
+    let correct =
+        json!({"_id":"chr1:g.101A>T","clinvar":{"variant_id":577152,"gene":{"symbol":"GENE"}}});
+    let mut wrong = correct.clone();
+    wrong["_id"] = json!("chr1:g.102A>T");
+    wrong["clinvar"]["variant_id"] = json!(577153);
+    let mut missing = wrong.clone();
+    missing["clinvar"]
+        .as_object_mut()
+        .unwrap()
+        .remove("variant_id");
+    let state = Arc::new(Mutex::new((Vec::<Value>::new(), Vec::<String>::new())));
+    let shared = state.clone();
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let mut state = shared.lock().unwrap();
+        state.1.push(request.into());
+        let body = serde_json::to_vec(&json!({"total":state.0.len(),"hits":state.0})).unwrap();
+        TestHttpReply::Bytes(test_http_response("200 OK", "application/json", &body))
+    })
+    .await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{}/v1", fixture.base));
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_CACHE_MODE", "off");
+    for (name, hits, expected) in [
+        ("wrong numeric identity", vec![wrong.clone()], "not found"),
+        (
+            "missing numeric evidence",
+            vec![missing.clone()],
+            "lacks complete identity evidence",
+        ),
+        (
+            "matching identity among contradictory rows",
+            vec![wrong, correct.clone()],
+            "chr1:g.101A>T",
+        ),
+        (
+            "missing evidence beside matching identity",
+            vec![missing, correct],
+            "lacks complete identity evidence",
+        ),
+    ] {
+        *state.lock().unwrap() = (hits, Vec::new());
+        let actual = match get("577152", &[]).await {
+            Ok(card) => card.id,
+            Err(error) => error.to_string(),
+        };
+        assert!(actual.contains(expected), "{name}: {actual}");
+        let state = state.lock().unwrap();
+        assert_eq!(state.1.len(), 1, "{name}");
+        let path = state.1[0]
+            .lines()
+            .next()
+            .unwrap()
+            .split_whitespace()
+            .nth(1)
+            .unwrap();
+        let url = reqwest::Url::parse(&format!("http://localhost{path}")).unwrap();
+        let pairs: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
+        assert_eq!(pairs["q"], "clinvar.variant_id:577152", "{name}");
+        assert_eq!(pairs["size"], "50", "{name}");
+        assert_eq!(pairs["from"], "0", "{name}");
+    }
+}
+
 #[test]
 fn exact_helper_candidate_selection_rejects_conflicts_and_missing_evidence() {
     let requested = super::super::RequestedVariantIdentity::for_search(

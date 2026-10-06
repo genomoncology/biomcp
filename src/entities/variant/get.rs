@@ -535,9 +535,19 @@ pub(super) async fn resolve_base_with_hit(
         }
         VariantIdFormat::ClinvarVariationId(variation_id) => {
             let q = format!("clinvar.variant_id:{variation_id}");
-            let hit = coding_lookup::lookup_exact(&myvariant, &q, |_| {
-                super::VariantIdentityComparison::Compatible {
-                    matched_alias: variation_id.to_string(),
+            let hit = coding_lookup::lookup_exact(&myvariant, &q, |hit| {
+                match hit.clinvar.as_ref().and_then(|clinvar| clinvar.variant_id) {
+                    Some(actual) if actual == *variation_id => {
+                        super::VariantIdentityComparison::Compatible {
+                            matched_alias: variation_id.to_string(),
+                        }
+                    }
+                    Some(_) => super::VariantIdentityComparison::Contradictory {
+                        field: "clinvar_variation_id",
+                    },
+                    None => super::VariantIdentityComparison::Indeterminate {
+                        field: "clinvar_variation_id",
+                    },
                 }
             })
             .await?;
