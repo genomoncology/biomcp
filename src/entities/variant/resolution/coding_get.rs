@@ -131,12 +131,13 @@ impl RequestedVariantIdentity {
                     ..Self::default()
                 })
             }
-            VariantInputKind::Exact(VariantIdFormat::GeneCodingChange { gene, change }) => {
-                Ok(Self {
-                    gene: Some(gene),
-                    coding_change: Some(change),
-                    ..Self::default()
-                })
+            // The legacy coding regex above owns article admission. New detail
+            // forms use CodingGet::requested without widening article lookup.
+            VariantInputKind::Exact(VariantIdFormat::GeneCodingChange { .. }) => {
+                Err(BioMcpError::InvalidArgument(
+                    "This coding form is not supported for variant articles. Use get variant for coding detail."
+                        .into(),
+                ))
             }
             VariantInputKind::TranscriptCodingHgvs(value) => {
                 let (transcript, coding) = value.split_once(':').unwrap_or(("", value.as_str()));

@@ -744,6 +744,43 @@ fn swallowed_source_failures_do_not_log_credentials() {
 }
 
 #[test]
+fn new_detail_only_coding_form_is_rejected_by_articles_before_source_contact() {
+    let fixture = MyGeneFixture::start();
+    let deny_proxy = LoopbackDenyProxy::start();
+    let result = run_biomcp_with_env(
+        &[
+            "--no-cache",
+            "--json",
+            "variant",
+            "articles",
+            "TP53 c.19=",
+            "--strategy",
+            "annotation",
+            "--limit",
+            "1",
+        ],
+        &[
+            ("BIOMCP_MYVARIANT_BASE", &fixture.base_url),
+            ("BIOMCP_PUBTATOR_BASE", &fixture.base_url),
+            ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
+            ("HTTP_PROXY", &deny_proxy.url),
+            ("HTTPS_PROXY", &deny_proxy.url),
+            ("ALL_PROXY", &deny_proxy.url),
+            ("NO_PROXY", "127.0.0.1"),
+        ],
+    );
+    assert!(
+        matches!(
+            fixture.request_rx.try_recv(),
+            Err(mpsc::TryRecvError::Empty)
+        ),
+        "article admission must reject the coding form before source requests"
+    );
+    assert!(deny_proxy.received_destinations().is_empty());
+    assert_json_error(&result, 2, "invalid_argument");
+}
+
+#[test]
 fn variant_article_hard_failure_keeps_the_structured_json_envelope() {
     let result = run_biomcp_with_env(
         &[
