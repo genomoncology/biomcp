@@ -10,9 +10,9 @@ use crate::entities::SearchPage;
 use crate::error::BioMcpError;
 
 use super::backends::{
-    search_europepmc_page, search_europepmc_page_with_context, search_litsense2_candidates,
-    search_pubmed_page, search_pubmed_page_with_context, search_pubtator_page,
-    search_pubtator_page_with_context, search_semantic_scholar_candidates,
+    PartialSearchPage, search_europepmc_page, search_europepmc_page_with_context,
+    search_litsense2_candidates, search_pubmed_page, search_pubmed_page_with_context,
+    search_pubtator_page, search_pubtator_page_with_context, search_semantic_scholar_candidates,
 };
 use super::candidates::validate_article_source_cap;
 use super::enrichment::{
@@ -39,10 +39,12 @@ pub const VARIANT_FALLBACK_RETRIEVAL_PATH: &str = "best-effort free-text fallbac
 const FEDERATED_ARTICLE_SOURCE_TIMEOUT: Duration = Duration::from_secs(12);
 
 mod deadline;
-use deadline::{
-    article_search_deadline_budget, article_search_deadline_error, is_search_deadline_error,
-    timed_source_call, timed_source_leg,
+pub(crate) use deadline::article_search_deadline_budget;
+pub(in crate::entities::article) use deadline::is_search_deadline_error;
+pub(crate) use deadline::{
+    ARTICLE_SEARCH_DEADLINE_REASON_PREFIX, ARTICLE_SEARCH_DEADLINE_SUGGESTION,
 };
+use deadline::{article_search_deadline_error, timed_source_call, timed_source_leg};
 
 pub async fn search(
     filters: &ArticleSearchFilters,
@@ -281,16 +283,19 @@ fn unavailable_source_error(source: ArticleSource) -> BioMcpError {
     }
 }
 
-fn page_outcome_truncated<T>(
-    outcome: &FederatedSourceOutcome<SearchPage<T>>,
+fn page_outcome_truncated(
+    outcome: &FederatedSourceOutcome<PartialSearchPage>,
     fetch_count: usize,
 ) -> bool {
-    matches!(
-        outcome,
-        FederatedSourceOutcome::Available(page)
-            if page.total.is_some_and(|total| total > page.results.len())
-                || (page.total.is_none() && page.results.len() >= fetch_count)
-    )
+    // A mid-flight truncation means more results exist than were returned.
+    matches!(outcome, FederatedSourceOutcome::Available(partial) if partial.degradation.is_some())
+        || matches!(
+            outcome,
+            FederatedSourceOutcome::Available(partial)
+                if partial.page.total.is_some_and(|total| total > partial.page.results.len())
+                    || (partial.page.total.is_none()
+                        && partial.page.results.len() >= fetch_count)
+        )
 }
 
 pub(super) async fn acquire_federated_article_rows(
@@ -474,9 +479,9 @@ pub(super) async fn search_federated_page(
 
 #[allow(clippy::too_many_arguments)]
 fn collect_federated_article_rows(
-    pubtator_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
-    europe_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
-    pubmed_leg: Option<FederatedSourceOutcome<SearchPage<ArticleSearchResult>>>,
+    pubtator_leg: FederatedSourceOutcome<PartialSearchPage>,
+    europe_leg: FederatedSourceOutcome<PartialSearchPage>,
+    pubmed_leg: Option<FederatedSourceOutcome<PartialSearchPage>>,
     semantic_scholar_leg: FederatedSourceOutcome<super::backends::SemanticScholarCandidateOutcome>,
     litsense2_leg: FederatedSourceOutcome<Vec<ArticleSearchResult>>,
 ) -> Result<FederatedArticleRows, BioMcpError> {
@@ -492,25 +497,36 @@ fn collect_federated_article_rows(
             Vec::new()
         }
     };
-    let pubmed_rows = match pubmed_leg {
-        Some(FederatedSourceOutcome::Available(page)) => page.results,
+    let (pubmed_rows, pubmed_degradation) = match pubmed_leg {
+        Some(FederatedSourceOutcome::Available(partial)) => {
+            (partial.page.results, partial.degradation)
+        }
         Some(FederatedSourceOutcome::Unavailable { status, .. }) => {
             source_status.push(status);
-            Vec::new()
+            (Vec::new(), None)
         }
-        None => Vec::new(),
+        None => (Vec::new(), None),
     };
 
     match (pubtator_leg, europe_leg) {
         (
-            FederatedSourceOutcome::Available(pubtator_page),
-            FederatedSourceOutcome::Available(europe_page),
+            FederatedSourceOutcome::Available(pubtator_partial),
+            FederatedSourceOutcome::Available(europe_partial),
         ) => {
-            let mut merged = pubtator_page.results;
-            merged.extend(europe_page.results);
+            let mut merged = pubtator_partial.page.results;
+            merged.extend(europe_partial.page.results);
             merged.extend(pubmed_rows);
             merged.extend(semantic_scholar_rows);
             merged.extend(litsense2_rows);
+            for degradation in [pubtator_partial.degradation, europe_partial.degradation]
+                .into_iter()
+                .flatten()
+            {
+                source_status.push(degradation);
+            }
+            if let Some(degradation) = pubmed_degradation {
+                source_status.push(degradation);
+            }
             Ok(FederatedArticleRows {
                 rows: merged,
                 source_status,
@@ -521,14 +537,20 @@ fn collect_federated_article_rows(
             })
         }
         (
-            FederatedSourceOutcome::Available(pubtator_page),
+            FederatedSourceOutcome::Available(pubtator_partial),
             FederatedSourceOutcome::Unavailable { status, .. },
         ) => {
             source_status.push(status);
-            let mut rows = pubtator_page.results;
+            let mut rows = pubtator_partial.page.results;
             rows.extend(pubmed_rows);
             rows.extend(semantic_scholar_rows);
             rows.extend(litsense2_rows);
+            if let Some(degradation) = pubtator_partial.degradation {
+                source_status.push(degradation);
+            }
+            if let Some(degradation) = pubmed_degradation {
+                source_status.push(degradation);
+            }
             Ok(FederatedArticleRows {
                 rows,
                 source_status,
@@ -540,13 +562,19 @@ fn collect_federated_article_rows(
         }
         (
             FederatedSourceOutcome::Unavailable { status, .. },
-            FederatedSourceOutcome::Available(europe_page),
+            FederatedSourceOutcome::Available(europe_partial),
         ) => {
             source_status.push(status);
-            let mut rows = europe_page.results;
+            let mut rows = europe_partial.page.results;
             rows.extend(pubmed_rows);
             rows.extend(semantic_scholar_rows);
             rows.extend(litsense2_rows);
+            if let Some(degradation) = europe_partial.degradation {
+                source_status.push(degradation);
+            }
+            if let Some(degradation) = pubmed_degradation {
+                source_status.push(degradation);
+            }
             Ok(FederatedArticleRows {
                 rows,
                 source_status,
@@ -570,6 +598,9 @@ fn collect_federated_article_rows(
             let mut rows = pubmed_rows;
             rows.extend(semantic_scholar_rows);
             rows.extend(litsense2_rows);
+            if let Some(degradation) = pubmed_degradation {
+                source_status.push(degradation);
+            }
             Ok(FederatedArticleRows {
                 rows,
                 source_status,
@@ -585,38 +616,57 @@ fn collect_federated_article_rows(
 }
 
 fn collect_type_capable_article_rows(
-    europe_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
-    pubmed_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
+    europe_leg: FederatedSourceOutcome<PartialSearchPage>,
+    pubmed_leg: FederatedSourceOutcome<PartialSearchPage>,
 ) -> Result<TypeCapableArticleRows, BioMcpError> {
     match (europe_leg, pubmed_leg) {
         (
-            FederatedSourceOutcome::Available(europe_page),
-            FederatedSourceOutcome::Available(pubmed_page),
+            FederatedSourceOutcome::Available(europe_partial),
+            FederatedSourceOutcome::Available(pubmed_partial),
         ) => {
-            let mut rows = europe_page.results;
-            rows.extend(pubmed_page.results);
+            let mut rows = europe_partial.page.results;
+            rows.extend(pubmed_partial.page.results);
+            let mut source_status = Vec::new();
+            for degradation in [europe_partial.degradation, pubmed_partial.degradation]
+                .into_iter()
+                .flatten()
+            {
+                source_status.push(degradation);
+            }
             Ok(TypeCapableArticleRows {
                 rows,
                 total: None,
-                source_status: Vec::new(),
+                source_status,
             })
         }
         (
-            FederatedSourceOutcome::Available(europe_page),
+            FederatedSourceOutcome::Available(europe_partial),
             FederatedSourceOutcome::Unavailable { status, .. },
-        ) => Ok(TypeCapableArticleRows {
-            rows: europe_page.results,
-            total: europe_page.total,
-            source_status: vec![status],
-        }),
+        ) => {
+            let mut source_status = vec![status];
+            if let Some(degradation) = europe_partial.degradation {
+                source_status.push(degradation);
+            }
+            Ok(TypeCapableArticleRows {
+                rows: europe_partial.page.results,
+                total: europe_partial.page.total,
+                source_status,
+            })
+        }
         (
             FederatedSourceOutcome::Unavailable { status, .. },
-            FederatedSourceOutcome::Available(pubmed_page),
-        ) => Ok(TypeCapableArticleRows {
-            rows: pubmed_page.results,
-            total: pubmed_page.total,
-            source_status: vec![status],
-        }),
+            FederatedSourceOutcome::Available(pubmed_partial),
+        ) => {
+            let mut source_status = vec![status];
+            if let Some(degradation) = pubmed_partial.degradation {
+                source_status.push(degradation);
+            }
+            Ok(TypeCapableArticleRows {
+                rows: pubmed_partial.page.results,
+                total: pubmed_partial.page.total,
+                source_status,
+            })
+        }
         (
             FederatedSourceOutcome::Unavailable {
                 error: europe_error,
@@ -703,17 +753,21 @@ async fn search_relevance_page(
                 search_europepmc_page(filters, fetch_count, 0),
             )
             .await;
-            let page = result?;
+            let partial = result?;
             let enrichment = enrich_and_finalize_article_candidates(
-                page.results,
+                partial.page.results,
                 limit,
                 offset,
-                page.total,
+                partial.page.total,
                 filters,
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(
+                enrichment,
+                timing,
+                partial.degradation,
+            ))
         }
         BackendPlan::PubTatorOnly => {
             let (result, timing) = timed_source_call(
@@ -722,17 +776,21 @@ async fn search_relevance_page(
                 search_pubtator_page(filters, fetch_count, 0),
             )
             .await;
-            let page = result?;
+            let partial = result?;
             let enrichment = enrich_and_finalize_article_candidates(
-                page.results,
+                partial.page.results,
                 limit,
                 offset,
-                page.total,
+                partial.page.total,
                 filters,
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(
+                enrichment,
+                timing,
+                partial.degradation,
+            ))
         }
         BackendPlan::PubMedOnly => {
             let (result, timing) = timed_source_call(
@@ -741,17 +799,21 @@ async fn search_relevance_page(
                 search_pubmed_page(filters, fetch_count, 0),
             )
             .await;
-            let page = result?;
+            let partial = result?;
             let enrichment = enrich_and_finalize_article_candidates(
-                page.results,
+                partial.page.results,
                 limit,
                 offset,
-                page.total,
+                partial.page.total,
                 filters,
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(
+                enrichment,
+                timing,
+                partial.degradation,
+            ))
         }
         BackendPlan::SemanticScholarOnly => {
             let (result, timing) = timed_source_call(
@@ -770,7 +832,7 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, None))
         }
         BackendPlan::LitSense2Only => {
             let (result, timing) = timed_source_call(
@@ -789,7 +851,7 @@ async fn search_relevance_page(
                 enrichment_sources,
             )
             .await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            Ok(finish_single_backend_page(enrichment, timing, None))
         }
         BackendPlan::TypeCapable => {
             unreachable!("type-capable search is handled by search_page")
@@ -801,10 +863,15 @@ async fn search_relevance_page(
 fn finish_single_backend_page(
     enrichment: super::enrichment::ArticleEnrichmentOutcome,
     search_timing: ArticleSearchTiming,
+    degradation: Option<ArticleSourceStatus>,
 ) -> ArticleSearchPage {
     let mut timings = vec![search_timing];
     timings.extend(enrichment.timings);
-    let mut source_status = enrichment.statuses;
+    let mut source_status = Vec::new();
+    if let Some(degradation) = degradation {
+        source_status.push(degradation);
+    }
+    source_status.extend(enrichment.statuses);
     if let Some(status) = enrichment.semantic_scholar_status {
         source_status.push(status);
     }
@@ -916,9 +983,14 @@ async fn search_page_dispatch(
                 search_europepmc_page(filters, limit, offset),
             )
             .await;
-            let page = result?;
-            let enrichment = enrich_visible_article_search_page(page, enrichment_sources).await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            let partial = result?;
+            let enrichment =
+                enrich_visible_article_search_page(partial.page, enrichment_sources).await;
+            Ok(finish_single_backend_page(
+                enrichment,
+                timing,
+                partial.degradation,
+            ))
         }
         BackendPlan::PubTatorOnly => {
             let (result, timing) = timed_source_call(
@@ -927,9 +999,14 @@ async fn search_page_dispatch(
                 search_pubtator_page(filters, limit, offset),
             )
             .await;
-            let page = result?;
-            let enrichment = enrich_visible_article_search_page(page, enrichment_sources).await;
-            Ok(finish_single_backend_page(enrichment, timing))
+            let partial = result?;
+            let enrichment =
+                enrich_visible_article_search_page(partial.page, enrichment_sources).await;
+            Ok(finish_single_backend_page(
+                enrichment,
+                timing,
+                partial.degradation,
+            ))
         }
         BackendPlan::PubMedOnly | BackendPlan::LitSense2Only => {
             search_relevance_page(filters, limit, offset, plan, enrichment_sources).await

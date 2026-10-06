@@ -797,7 +797,14 @@ pub(crate) async fn resolve_exact_article_keyword_entity(
         return Ok(None);
     }
 
-    let client = crate::sources::ols4::OlsClient::new()?;
+    // The lookup rides alongside the article search that spawned it, so its
+    // construction must not outlive a forced search deadline: cache epoch
+    // construction under a held lock would otherwise block the whole
+    // invocation past its deadline (ticket 1299).
+    let construction_budget =
+        OLS4_TIMEOUT.min(crate::entities::article::article_search_deadline_budget());
+    let deadline = crate::sources::VariantArticleDeadline::from_now(construction_budget);
+    let client = crate::sources::ols4::OlsClient::new_with_deadline(&deadline).await?;
     let docs = match tokio::time::timeout(OLS4_TIMEOUT, client.search(query)).await {
         Ok(result) => result?,
         Err(_) => {

@@ -1855,7 +1855,12 @@ async fn annotation_candidates(
         )
         .await;
         let page = match page_result {
-            Ok(page) => page,
+            Ok(partial) => {
+                if partial.degradation.is_some() {
+                    incomplete = true;
+                }
+                partial.page
+            }
             Err(_) => {
                 incomplete = true;
                 continue;
@@ -2002,7 +2007,7 @@ async fn strict_provider_candidates(
                 Some(&plan.query),
             )
             .await
-            .map(|page| page.results),
+            .map(|partial| partial.page.results),
             "europepmc" => search_europepmc_page_with_context(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -2012,7 +2017,7 @@ async fn strict_provider_candidates(
                 Some(&plan.query),
             )
             .await
-            .map(|page| page.results),
+            .map(|partial| partial.page.results),
             "semanticscholar" => search_semantic_scholar_candidates(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -2069,7 +2074,7 @@ async fn strict_provider_candidates(
                             )
                         }
                         .await
-                        .map(|page| page.results),
+                        .map(|partial| partial.page.results),
                         None => {
                             unit.record("ok", 1);
                             Ok(Vec::new())

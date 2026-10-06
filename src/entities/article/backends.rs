@@ -19,6 +19,7 @@ use super::query::{
     build_free_text_article_query, build_pubmed_search_term, build_pubtator_query,
     build_search_query, pubtator_sort,
 };
+use super::search::is_search_deadline_error;
 use super::{
     ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
     ArticleSourceAvailability, ArticleSourceStatus, EUROPE_PMC_PAGE_SIZE,
@@ -201,11 +202,88 @@ fn semantic_scholar_unavailable_outcome(
     }
 }
 
+/// One backend's search page plus the failure, if any, that truncated it.
+/// A paginating backend that already delivered rows must not discard them
+/// when a later page fails mid-flight (ticket 1299): the rows stay and the
+/// held source is named degraded, as the federated merge already does.
+pub(super) struct PartialSearchPage {
+    pub page: SearchPage<ArticleSearchResult>,
+    pub degradation: Option<ArticleSourceStatus>,
+}
+
+impl PartialSearchPage {
+    fn complete(page: SearchPage<ArticleSearchResult>) -> Self {
+        Self {
+            page,
+            degradation: None,
+        }
+    }
+}
+
+/// The status a mid-flight truncation reports: the deadline says so by
+/// name, any other failure says what failed.
+fn truncated_source_status(source: ArticleSource, error: &BioMcpError) -> ArticleSourceStatus {
+    let message = if is_search_deadline_error(error) {
+        format!(
+            "{} did not answer before the article search deadline",
+            source.display_name()
+        )
+    } else {
+        format!("{} search degraded: {error}", source.display_name())
+    };
+    ArticleSourceStatus {
+        source,
+        enabled: true,
+        auth_mode: None,
+        status: Some(ArticleSourceAvailability::Degraded),
+        message: Some(message),
+    }
+}
+
+/// Construct a provider client honoring the invocation deadline when one
+/// is active, so cache construction never blocks past the deadline on the
+/// epoch lock (ticket 1299). Without a deadline this is the plain path.
+async fn pubmed_client_for_current_deadline() -> Result<PubMedClient, BioMcpError> {
+    match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => PubMedClient::new_with_deadline(&deadline).await,
+        None => PubMedClient::new(),
+    }
+}
+
+async fn europepmc_client_for_current_deadline() -> Result<EuropePmcClient, BioMcpError> {
+    match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => EuropePmcClient::new_with_deadline(&deadline).await,
+        None => EuropePmcClient::new(),
+    }
+}
+
+async fn pubtator_client_for_current_deadline() -> Result<PubTatorClient, BioMcpError> {
+    match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => PubTatorClient::new_with_deadline(&deadline).await,
+        None => PubTatorClient::new(),
+    }
+}
+
+async fn semantic_scholar_client_for_current_deadline() -> Result<SemanticScholarClient, BioMcpError>
+{
+    match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => SemanticScholarClient::new_with_deadline(&deadline).await,
+        None => SemanticScholarClient::new(),
+    }
+}
+
+async fn litsense2_client_for_current_deadline() -> Result<LitSense2Client, BioMcpError> {
+    match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => LitSense2Client::new_with_deadline(&deadline).await,
+        None => LitSense2Client::new(),
+    }
+}
+
 pub(super) async fn search_pubmed_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+) -> Result<PartialSearchPage, BioMcpError> {
     search_pubmed_page_with_context(filters, limit, offset, None, "federated", None).await
 }
 
@@ -216,7 +294,7 @@ pub(super) async fn search_pubmed_page_with_context(
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
     route: &str,
     strict_query: Option<&str>,
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+) -> Result<PartialSearchPage, BioMcpError> {
     if limit == 0 || limit > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
             "--limit must be between 1 and {MAX_FEDERATED_FETCH_RESULTS}"
@@ -241,7 +319,7 @@ pub(super) async fn search_pubmed_page_with_context(
     let (client, mut first_unit) = variant_article_client(execution, route, "pubmed", async {
         match execution {
             Some(execution) => PubMedClient::new_with_deadline(execution.deadline()).await,
-            None => PubMedClient::new(),
+            None => pubmed_client_for_current_deadline().await,
         }
     })
     .await?;
@@ -253,6 +331,7 @@ pub(super) async fn search_pubmed_page_with_context(
     let mut visible_skipped = 0usize;
     let mut source_position = 0usize;
     let mut fetched_pages = 0usize;
+    let mut degradation = None;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
         if fetched_pages > 1
@@ -266,7 +345,7 @@ pub(super) async fn search_pubmed_page_with_context(
             );
         }
 
-        let Some(response) = variant_article_request(
+        let response = match variant_article_request(
             execution,
             route,
             "pubmed",
@@ -285,12 +364,25 @@ pub(super) async fn search_pubmed_page_with_context(
                 Ok(response)
             },
         )
-        .await?
-        else {
+        .await
+        {
+            Ok(response) => response,
+            // Rows already accumulated survive a mid-flight failure; the
+            // held source is named degraded (ticket 1299).
+            Err(error) if !out.is_empty() => {
+                degradation = Some(truncated_source_status(ArticleSource::PubMed, &error));
+                break;
+            }
+            Err(error) => return Err(error),
+        };
+        let Some(response) = response else {
             break;
         };
         if total.is_some_and(|value| offset >= value) {
-            return Ok(SearchPage::offset(Vec::new(), total));
+            return Ok(PartialSearchPage::complete(SearchPage::offset(
+                Vec::new(),
+                total,
+            )));
         }
         if response.idlist.is_empty() {
             break;
@@ -300,7 +392,7 @@ pub(super) async fn search_pubmed_page_with_context(
         if let Some(execution) = execution {
             execution.add_route_unit(route, "pubmed");
         }
-        let Some(()) = variant_article_request(
+        let outcome = match variant_article_request(
             execution,
             route,
             "pubmed",
@@ -323,8 +415,16 @@ pub(super) async fn search_pubmed_page_with_context(
                 )
             },
         )
-        .await?
-        else {
+        .await
+        {
+            Ok(outcome) => outcome,
+            Err(error) if !out.is_empty() => {
+                degradation = Some(truncated_source_status(ArticleSource::PubMed, &error));
+                break;
+            }
+            Err(error) => return Err(error),
+        };
+        let Some(()) = outcome else {
             break;
         };
         // Once a strict page has made page-eligible PMIDs visible, keep their
@@ -339,7 +439,10 @@ pub(super) async fn search_pubmed_page_with_context(
         }
     }
 
-    Ok(SearchPage::offset(out, total))
+    Ok(PartialSearchPage {
+        page: SearchPage::offset(out, total),
+        degradation,
+    })
 }
 
 struct PubMedAppendState<'a> {
@@ -392,7 +495,7 @@ pub(super) async fn search_europepmc_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+) -> Result<PartialSearchPage, BioMcpError> {
     search_europepmc_page_with_context(filters, limit, offset, None, "federated", None).await
 }
 
@@ -403,11 +506,11 @@ pub(super) async fn search_europepmc_page_with_context(
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
     route: &str,
     strict_query: Option<&str>,
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+) -> Result<PartialSearchPage, BioMcpError> {
     let (europe, mut first_unit) = variant_article_client(execution, route, "europepmc", async {
         match execution {
             Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
-            None => EuropePmcClient::new(),
+            None => europepmc_client_for_current_deadline().await,
         }
     })
     .await?;
@@ -425,6 +528,7 @@ pub(super) async fn search_europepmc_page_with_context(
     let mut local_skip = offset % EUROPE_PMC_PAGE_SIZE;
     let mut source_position = 0usize;
     let mut fetched_pages = 0usize;
+    let mut degradation = None;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
         if fetched_pages > 1
@@ -437,7 +541,7 @@ pub(super) async fn search_europepmc_page_with_context(
                 "article search is deep (>{WARN_PAGE_THRESHOLD} page fetches); continuing up to {MAX_PAGE_FETCHES} — consider narrowing your query"
             );
         }
-        let Some((offset_beyond_total, empty)) = variant_article_request(
+        let outcome = match variant_article_request(
             execution,
             route,
             "europepmc",
@@ -482,12 +586,25 @@ pub(super) async fn search_europepmc_page_with_context(
                 Ok((false, empty))
             },
         )
-        .await?
-        else {
+        .await
+        {
+            Ok(outcome) => outcome,
+            // Fetched rows survive a mid-flight page failure; the held
+            // source is named degraded (ticket 1299).
+            Err(error) if !out.is_empty() => {
+                degradation = Some(truncated_source_status(ArticleSource::EuropePmc, &error));
+                break;
+            }
+            Err(error) => return Err(error),
+        };
+        let Some((offset_beyond_total, empty)) = outcome else {
             break;
         };
         if offset_beyond_total {
-            return Ok(SearchPage::offset(Vec::new(), total));
+            return Ok(PartialSearchPage::complete(SearchPage::offset(
+                Vec::new(),
+                total,
+            )));
         }
         if empty {
             break;
@@ -549,14 +666,17 @@ pub(super) async fn search_europepmc_page_with_context(
         .await;
     }
 
-    Ok(SearchPage::offset(out, total))
+    Ok(PartialSearchPage {
+        page: SearchPage::offset(out, total),
+        degradation,
+    })
 }
 
 pub(super) async fn search_pubtator_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+) -> Result<PartialSearchPage, BioMcpError> {
     search_pubtator_page_with_context(filters, limit, offset, None, "federated", None).await
 }
 
@@ -567,11 +687,11 @@ pub(super) async fn search_pubtator_page_with_context(
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
     route: &str,
     strict_query: Option<&str>,
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+) -> Result<PartialSearchPage, BioMcpError> {
     let (pubtator, mut first_unit) = variant_article_client(execution, route, "pubtator", async {
         match execution {
             Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
-            None => PubTatorClient::new(),
+            None => pubtator_client_for_current_deadline().await,
         }
     })
     .await?;
@@ -589,6 +709,7 @@ pub(super) async fn search_pubtator_page_with_context(
     let mut local_skip = offset % PUBTATOR_PAGE_SIZE;
     let mut source_position = 0usize;
     let mut fetched_pages = 0usize;
+    let mut degradation = None;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
         if fetched_pages > 1
@@ -596,7 +717,7 @@ pub(super) async fn search_pubtator_page_with_context(
         {
             execution.add_route_unit(route, "pubtator");
         }
-        let Some((offset_beyond_total, empty)) = variant_article_request(
+        let outcome = match variant_article_request(
             execution,
             route,
             "pubtator",
@@ -638,12 +759,25 @@ pub(super) async fn search_pubtator_page_with_context(
                 Ok((false, empty))
             },
         )
-        .await?
-        else {
+        .await
+        {
+            Ok(outcome) => outcome,
+            // Fetched rows survive a mid-flight page failure; the held
+            // source is named degraded (ticket 1299).
+            Err(error) if !out.is_empty() => {
+                degradation = Some(truncated_source_status(ArticleSource::PubTator, &error));
+                break;
+            }
+            Err(error) => return Err(error),
+        };
+        let Some((offset_beyond_total, empty)) = outcome else {
             break;
         };
         if offset_beyond_total {
-            return Ok(SearchPage::offset(Vec::new(), total));
+            return Ok(PartialSearchPage::complete(SearchPage::offset(
+                Vec::new(),
+                total,
+            )));
         }
         if empty {
             break;
@@ -654,7 +788,10 @@ pub(super) async fn search_pubtator_page_with_context(
         page += 1;
     }
 
-    Ok(SearchPage::offset(out, total))
+    Ok(PartialSearchPage {
+        page: SearchPage::offset(out, total),
+        degradation,
+    })
 }
 
 pub(super) async fn search_semantic_scholar_candidates(
@@ -670,7 +807,7 @@ pub(super) async fn search_semantic_scholar_candidates(
                 Some(execution) => {
                     SemanticScholarClient::new_with_deadline(execution.deadline()).await
                 }
-                None => SemanticScholarClient::new(),
+                None => semantic_scholar_client_for_current_deadline().await,
             }
         })
         .await?;
@@ -826,14 +963,20 @@ pub(super) async fn search_litsense2_candidates(
         return Ok(Vec::new());
     }
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
-    let hits = LitSense2Client::new()?.sentence_search(&query).await?;
+    let litsense2 = litsense2_client_for_current_deadline().await?;
+    let hits = litsense2.sentence_search(&query).await?;
     let deduped = dedupe_litsense2_hits(hits);
 
     let pmids = deduped
         .iter()
         .map(|(hit, _)| hit.pmid.to_string())
         .collect::<Vec<_>>();
-    let hydrated = hydrate_pubmed_entries(PubMedClient::new()?.esummary(&pmids).await?);
+    let hydrated = hydrate_pubmed_entries(
+        pubmed_client_for_current_deadline()
+            .await?
+            .esummary(&pmids)
+            .await?,
+    );
 
     Ok(litsense2_rows_from_hits(
         filters,

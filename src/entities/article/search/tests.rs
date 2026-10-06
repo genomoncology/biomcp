@@ -21,9 +21,9 @@ fn semantic_scholar_unavailable_status(message: &str) -> ArticleSourceStatus {
 
 #[allow(clippy::too_many_arguments)]
 fn merge_federated_pages(
-    pubtator_leg: Result<SearchPage<ArticleSearchResult>, BioMcpError>,
-    europe_leg: Result<SearchPage<ArticleSearchResult>, BioMcpError>,
-    pubmed_leg: Option<Result<SearchPage<ArticleSearchResult>, BioMcpError>>,
+    pubtator_leg: Result<PartialSearchPage, BioMcpError>,
+    europe_leg: Result<PartialSearchPage, BioMcpError>,
+    pubmed_leg: Option<Result<PartialSearchPage, BioMcpError>>,
     semantic_scholar_leg: Result<Vec<ArticleSearchResult>, BioMcpError>,
     litsense2_leg: Result<Vec<ArticleSearchResult>, BioMcpError>,
     limit: usize,
@@ -120,16 +120,16 @@ fn validate_search_page_request_rejects_invalid_inputs_before_backend_io() {
 
 #[test]
 fn raw_federated_acquisition_marks_known_and_unknown_route_caps() {
-    let known_total = FederatedSourceOutcome::Available(SearchPage::offset(
-        vec![row("1", ArticleSource::PubTator)],
-        Some(2),
-    ));
+    let known_total = FederatedSourceOutcome::Available(PartialSearchPage {
+        page: SearchPage::offset(vec![row("1", ArticleSource::PubTator)], Some(2)),
+        degradation: None,
+    });
     assert!(page_outcome_truncated(&known_total, 100));
 
-    let unknown_total = FederatedSourceOutcome::Available(SearchPage::offset(
-        vec![row("1", ArticleSource::PubTator)],
-        None,
-    ));
+    let unknown_total = FederatedSourceOutcome::Available(PartialSearchPage {
+        page: SearchPage::offset(vec![row("1", ArticleSource::PubTator)], None),
+        degradation: None,
+    });
     assert!(page_outcome_truncated(&unknown_total, 1));
     assert!(!page_outcome_truncated(&unknown_total, 2));
 }

@@ -36,6 +36,15 @@ impl LitSense2Client {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        Ok(Self {
+            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            base: crate::sources::env_base(LITSENSE2_BASE, LITSENSE2_BASE_ENV),
+        })
+    }
+
     async fn send_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,

@@ -110,7 +110,7 @@ async fn pubtator_search_commits_transformed_page_before_one_terminal_event() {
     env.set("BIOMCP_CACHE_DIR", cache.path());
     let execution = super::super::variant_search::VariantArticleExecutionContext::single();
 
-    let page = search_pubtator_page_with_context(
+    let partial = search_pubtator_page_with_context(
         &empty_filters(),
         5,
         0,
@@ -120,6 +120,8 @@ async fn pubtator_search_commits_transformed_page_before_one_terminal_event() {
     )
     .await
     .expect("fixture PubTator page");
+    assert!(partial.degradation.is_none());
+    let page = partial.page;
 
     assert_eq!(page.results.len(), 1);
     assert_eq!(page.results[0].pmid, "123");

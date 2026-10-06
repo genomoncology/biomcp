@@ -156,6 +156,15 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
         return None;
     }
 
+    // An expired deadline must not construct a client at all: construction
+    // takes the cache epoch lock and would block past the deadline.
+    if plain_article_search_deadline_elapsed(execution) {
+        return Some(article_search_deadline_status(
+            ArticleSource::SemanticScholar,
+            "Semantic Scholar enrichment",
+        ));
+    }
+
     let mut first_unit = match execution {
         Some(execution) => {
             execution
@@ -175,7 +184,10 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
     }
     let client = match match execution {
         Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
-        None => SemanticScholarClient::new(),
+        None => match crate::sources::current_variant_article_deadline() {
+            Some(deadline) => SemanticScholarClient::new_with_deadline(&deadline).await,
+            None => SemanticScholarClient::new(),
+        },
     } {
         Ok(client) => client,
         Err(err) => {
@@ -331,7 +343,19 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         return Vec::new();
     }
 
-    let pubtator = match PubTatorClient::new() {
+    // An expired deadline must not construct clients at all: construction
+    // takes the cache epoch lock and would block past the deadline.
+    if plain_article_search_deadline_elapsed(execution) {
+        return [ArticleSource::PubTator, ArticleSource::EuropePmc]
+            .into_iter()
+            .map(|source| article_search_deadline_status(source, "article metadata fallback"))
+            .collect();
+    }
+
+    let pubtator = match match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => PubTatorClient::new_with_deadline(&deadline).await,
+        None => PubTatorClient::new(),
+    } {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(
@@ -342,7 +366,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
             return Vec::new();
         }
     };
-    let europe = match EuropePmcClient::new() {
+    let europe = match match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => EuropePmcClient::new_with_deadline(&deadline).await,
+        None => EuropePmcClient::new(),
+    } {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(
