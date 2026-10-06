@@ -11,7 +11,7 @@ rust = [
   "entities::variant::get::tests::population_request_requires_a_grch38_genomic_coordinate",
   "entities::variant::get::tests::population_result_names_the_pinned_dataset_and_keeps_sources_separate",
   "entities::variant::get::tests::population_status_json_keeps_explicit_null_exome_and_genome_results",
-  "entities::variant::get::transcript_deletion_source_tests::transcript_deletion_population_recovers_source_rsid",
+  "entities::variant::get::transcript_deletion_lookup::tests::transcript_deletion_population_recovers_source_rsid",
   "entities::article::variant_search::tests::real_car_and_ldh_captures_confirm_tp53_article_identity",
   "entities::article::variant_search::tests::missing_confirmed_record_during_citation_hydration_is_unavailable",
   "entities::article::variant_search::tests::citation_pre_call_stop_is_attributed_to_myvariant",
