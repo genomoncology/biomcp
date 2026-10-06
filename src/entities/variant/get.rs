@@ -154,20 +154,18 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
     Ok(out)
 }
 
-/// A hit carries the ClinVar record for its own genomic variant. A protein
-/// change that resolves to such a hit resolves to the variant ClinVar
-/// cataloged, not a different transcript's spelling of the same alias.
+/// A resolved protein change uses the ClinVar record for the hit's genomic variant.
 fn hit_carries_clinvar_record(hit: &crate::sources::myvariant::MyVariantHit) -> bool {
     hit.clinvar
         .as_ref()
-        .is_some_and(|clinvar| clinvar.variant_id.is_some() || !clinvar.rcv.is_empty())
+        .is_some_and(|clinvar| clinvar.variant_id().is_some() || !clinvar.rcv().is_empty())
 }
 
 fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> String {
     let clinvar_id = hit
         .clinvar
         .as_ref()
-        .and_then(|clinvar| clinvar.variant_id)
+        .and_then(|clinvar| clinvar.variant_id())
         .map(|variant_id| format!("ClinVar VariationID {variant_id}"));
     let rsid = hit
         .dbsnp
@@ -393,8 +391,8 @@ fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
 fn hit_confirms_transcript_alias(hit: &crate::sources::myvariant::MyVariantHit, id: &str) -> bool {
     hit.clinvar
         .as_ref()
-        .and_then(|clinvar| clinvar.hgvs.as_ref())
-        .is_some_and(|hgvs| hgvs.coding_contains(id))
+        .and_then(|clinvar| clinvar.hgvs())
+        .is_some_and(|hgvs| hgvs.coding().values().iter().any(|alias| alias == id))
 }
 
 async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
@@ -620,7 +618,7 @@ pub(super) async fn resolve_base_with_hit(
         VariantIdFormat::ClinvarVariationId(variation_id) => {
             let q = format!("clinvar.variant_id:{variation_id}");
             let hit = coding_lookup::lookup_exact(&myvariant, &q, |hit| {
-                match hit.clinvar.as_ref().and_then(|clinvar| clinvar.variant_id) {
+                match hit.clinvar.as_ref().and_then(|c| c.variant_id()) {
                     Some(actual) if actual == *variation_id => {
                         super::VariantIdentityComparison::Compatible {
                             matched_alias: variation_id.to_string(),
@@ -1435,6 +1433,8 @@ pub async fn get_with_workflow_signals(
 
     Ok((variant, signals))
 }
+#[cfg(test)]
+mod clinvar_adoption_transport_tests;
 #[cfg(test)]
 mod dbnsfp_transport_tests;
 #[cfg(test)]

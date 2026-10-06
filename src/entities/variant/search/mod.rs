@@ -1073,3 +1073,6 @@ mod exact_scan_transport_tests;
 
 #[cfg(test)]
 mod dbnsfp_adoption_tests;
+
+#[cfg(test)]
+mod clinvar_adoption_tests;

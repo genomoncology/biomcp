@@ -2,6 +2,12 @@
 
 use super::*;
 
+fn rcv(value: serde_json::Value) -> MyVariantClinVarRcv {
+    let hit: MyVariantHit =
+        serde_json::from_value(serde_json::json!({"_id":"test", "clinvar":{"rcv":value}})).unwrap();
+    hit.clinvar.unwrap().rcv()[0].clone()
+}
+
 #[test]
 fn significance_rank_prefers_pathogenic_over_benign() {
     assert!(significance_rank("Pathogenic") > significance_rank("Benign"));
@@ -42,26 +48,26 @@ fn clinvar_review_stars_known_statuses() {
 #[test]
 fn pick_review_status_prefers_highest_star_rating() {
     let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: Some("criteria provided, single submitter".into()),
-            conditions: None,
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: Some("reviewed by expert panel".into()),
-            conditions: None,
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
+        rcv(serde_json::json!({
+            "clinical_significance": null,
+            "review_status": "criteria provided, single submitter",
+            "conditions": null,
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
+        rcv(serde_json::json!({
+            "clinical_significance": null,
+            "review_status": "reviewed by expert panel",
+            "conditions": null,
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
     ];
 
     let (status, stars) = pick_review_status(&rcvs);
@@ -74,42 +80,42 @@ fn pick_significance_handles_empty_and_partial_rcvs() {
     let empty: Vec<MyVariantClinVarRcv> = Vec::new();
     assert_eq!(pick_significance(&empty), None);
 
-    let partial = vec![MyVariantClinVarRcv {
-        clinical_significance: None,
-        review_status: Some("criteria provided, single submitter".into()),
-        conditions: None,
-        preferred_name: None,
-        accession: None,
-        version: None,
-        last_evaluated: None,
-        number_submitters: None,
-    }];
+    let partial = vec![rcv(serde_json::json!({
+        "clinical_significance": null,
+        "review_status": "criteria provided, single submitter",
+        "conditions": null,
+        "preferred_name": null,
+        "accession": null,
+        "version": null,
+        "last_evaluated": null,
+        "number_submitters": null,
+    }))];
     assert_eq!(pick_significance(&partial), None);
 }
 
 #[test]
 fn pick_significance_with_brca1_rcvs() {
     let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Likely benign".into()),
-            review_status: Some("criteria provided, single submitter".into()),
-            conditions: Some(serde_json::json!({"name": "Breast-ovarian cancer"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Pathogenic".into()),
-            review_status: Some("reviewed by expert panel".into()),
-            conditions: Some(serde_json::json!({"name": "Hereditary breast cancer"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
+        rcv(serde_json::json!({
+            "clinical_significance": "Likely benign",
+            "review_status": "criteria provided, single submitter",
+            "conditions": serde_json::json!({"name": "Breast-ovarian cancer"}),
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
+        rcv(serde_json::json!({
+            "clinical_significance": "Pathogenic",
+            "review_status": "reviewed by expert panel",
+            "conditions": serde_json::json!({"name": "Hereditary breast cancer"}),
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
     ];
 
     assert_eq!(pick_significance(&rcvs).as_deref(), Some("Pathogenic"));
@@ -118,26 +124,26 @@ fn pick_significance_with_brca1_rcvs() {
 #[test]
 fn pick_significance_with_kras_rcvs() {
     let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Uncertain significance".into()),
-            review_status: None,
-            conditions: Some(serde_json::json!({"name": "Colorectal carcinoma"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: Some("Likely pathogenic".into()),
-            review_status: Some("criteria provided, single submitter".into()),
-            conditions: Some(serde_json::json!({"name": "Lung adenocarcinoma"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
+        rcv(serde_json::json!({
+            "clinical_significance": "Uncertain significance",
+            "review_status": null,
+            "conditions": serde_json::json!({"name": "Colorectal carcinoma"}),
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
+        rcv(serde_json::json!({
+            "clinical_significance": "Likely pathogenic",
+            "review_status": "criteria provided, single submitter",
+            "conditions": serde_json::json!({"name": "Lung adenocarcinoma"}),
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
     ];
 
     assert_eq!(
@@ -149,29 +155,29 @@ fn pick_significance_with_kras_rcvs() {
 #[test]
 fn aggregate_clinvar_conditions_counts_reports() {
     let rcvs = vec![
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: None,
-            conditions: Some(serde_json::json!([
+        rcv(serde_json::json!({
+            "clinical_significance": null,
+            "review_status": null,
+            "conditions": serde_json::json!([
                 {"name": "Melanoma"},
                 {"name": "Lung cancer"}
-            ])),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
-        MyVariantClinVarRcv {
-            clinical_significance: None,
-            review_status: None,
-            conditions: Some(serde_json::json!({"name": "Melanoma"})),
-            preferred_name: None,
-            accession: None,
-            version: None,
-            last_evaluated: None,
-            number_submitters: None,
-        },
+            ]),
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
+        rcv(serde_json::json!({
+            "clinical_significance": null,
+            "review_status": null,
+            "conditions": serde_json::json!({"name": "Melanoma"}),
+            "preferred_name": null,
+            "accession": null,
+            "version": null,
+            "last_evaluated": null,
+            "number_submitters": null,
+        })),
     ];
 
     let (names, rows, reports) = aggregate_clinvar_conditions(&rcvs);

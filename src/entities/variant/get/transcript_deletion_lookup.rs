@@ -119,11 +119,10 @@ fn matched_tuples(
         }
     }
     if let Some(clinvar) = &hit.clinvar {
-        for (index, rcv) in clinvar.rcv.iter().enumerate() {
+        for (index, rcv) in clinvar.rcv().iter().enumerate() {
             assertions += 1;
             match rcv
-                .preferred_name
-                .as_deref()
+                .preferred_name()
                 .and_then(|value| rcv_tuple(value, index))
             {
                 Some(tuple) if matches(&tuple, transcript, gene, change) => tuples.push(tuple),
@@ -196,12 +195,8 @@ async fn lookup_source(
     let mut indeterminate = false;
     coding_lookup::scan(client, &query, INCOMPLETE, |hit| {
         if require_alias {
-            match hit
-                .clinvar
-                .as_ref()
-                .and_then(|clinvar| clinvar.hgvs.as_ref())
-            {
-                Some(hgvs) if hgvs.coding_contains(id) => {}
+            match hit.clinvar.as_ref().and_then(|clinvar| clinvar.hgvs()) {
+                Some(hgvs) if hgvs.coding().values().iter().any(|alias| alias == id) => {}
                 Some(_) => return,
                 None => {
                     indeterminate = true;

@@ -775,7 +775,7 @@ async fn clinvar_mcp_fixture(State(state): State<ClinvarMcpFixture>, uri: Uri) -
         return fixture_response(
             StatusCode::OK,
             "application/json",
-            json!({"hits":[hit]}).to_string(),
+            json!({"total":1,"hits":[hit]}).to_string(),
         );
     }
     if request.starts_with("/eutils/efetch.fcgi") {

@@ -2,7 +2,7 @@ use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::entities::variant::VariantProteinAlias;
 use crate::error::BioMcpError;
@@ -52,26 +52,6 @@ pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "cgi,civic"
 );
 pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
-enum OneOrMany<T> {
-    One(T),
-    Many(Vec<T>),
-}
-
-fn de_vec_or_single<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
-where
-    D: Deserializer<'de>,
-    T: Deserialize<'de>,
-{
-    let value = Option::<OneOrMany<T>>::deserialize(deserializer)?;
-    Ok(match value {
-        Some(OneOrMany::One(v)) => vec![v],
-        Some(OneOrMany::Many(v)) => v,
-        None => Vec::new(),
-    })
-}
 
 pub struct MyVariantClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -853,7 +833,12 @@ pub struct MyVariantHit {
     pub id: String,
 
     pub cadd: Option<MyVariantCadd>,
-    pub clinvar: Option<MyVariantClinVar>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantClinVar::deserialize",
+        serialize_with = "biodata::MyVariantClinVar::serialize"
+    )]
+    pub clinvar: Option<biodata::MyVariantClinVarProjection>,
     #[serde(
         default,
         deserialize_with = "biodata::MyVariantDbnsfp::deserialize",
@@ -990,51 +975,6 @@ pub struct MyVariantGnomadAf {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyVariantExac {
     pub af: Option<f64>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantClinVar {
-    pub variant_id: Option<u64>,
-    pub gene: Option<MyVariantClinVarGene>,
-    #[serde(default)]
-    pub hgvs: Option<MyVariantClinVarHgvs>,
-    #[serde(default, deserialize_with = "de_vec_or_single")]
-    pub rcv: Vec<MyVariantClinVarRcv>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantClinVarHgvs {
-    #[serde(default)]
-    pub coding: StringOrVec,
-}
-
-impl MyVariantClinVarHgvs {
-    /// Exact membership in ClinVar's coding alias list confirms a
-    /// transcript-qualified query the alias search itself asked for.
-    pub fn coding_contains(&self, alias: &str) -> bool {
-        match &self.coding {
-            StringOrVec::None => false,
-            StringOrVec::Single(value) => value == alias,
-            StringOrVec::Multiple(values) => values.iter().any(|value| value == alias),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantClinVarGene {
-    pub symbol: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantClinVarRcv {
-    pub accession: Option<String>,
-    pub version: Option<u32>,
-    pub clinical_significance: Option<String>,
-    pub review_status: Option<String>,
-    pub conditions: Option<serde_json::Value>,
-    pub preferred_name: Option<String>,
-    pub last_evaluated: Option<String>,
-    pub number_submitters: Option<u32>,
 }
 
 #[cfg(test)]
