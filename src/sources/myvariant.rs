@@ -851,8 +851,18 @@ pub struct MyVariantHit {
         serialize_with = "biodata::MyVariantDbsnp::serialize"
     )]
     pub dbsnp: Option<biodata::MyVariantDbsnpProjection>,
-    pub gnomad_exome: Option<MyVariantGnomadExome>,
-    pub gnomad: Option<MyVariantGnomad>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantGnomadExome::deserialize",
+        serialize_with = "biodata::MyVariantGnomadExome::serialize"
+    )]
+    pub gnomad_exome: Option<biodata::MyVariantGnomadExomeProjection>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantGnomad::deserialize",
+        serialize_with = "biodata::MyVariantGnomad::serialize"
+    )]
+    pub gnomad: Option<biodata::MyVariantGnomadProjection>,
     pub exac: Option<MyVariantExac>,
     pub exac_nontcga: Option<MyVariantExac>,
     pub cosmic: Option<MyVariantCosmic>,
@@ -934,42 +944,6 @@ pub struct MyVariantCosmic {
     pub tumor_site: StringOrVec,
     #[serde(default)]
     pub mut_nt: StringOrVec,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantGnomadExome {
-    pub af: Option<MyVariantGnomadAf>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantGnomad {
-    pub exomes: Option<MyVariantGnomadExome>,
-    pub genomes: Option<MyVariantGnomadExome>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantGnomadAf {
-    pub af: Option<f64>,
-    pub af_afr: Option<f64>,
-    pub af_eas: Option<f64>,
-    pub af_nfe: Option<f64>,
-    pub af_sas: Option<f64>,
-    pub af_amr: Option<f64>,
-    pub af_asj: Option<f64>,
-    pub af_fin: Option<f64>,
-    pub af_afr_female: Option<f64>,
-    pub af_afr_male: Option<f64>,
-    pub af_amr_female: Option<f64>,
-    pub af_amr_male: Option<f64>,
-    pub af_eas_jpn: Option<f64>,
-    pub af_eas_kor: Option<f64>,
-    pub af_nfe_bgr: Option<f64>,
-    pub af_nfe_est: Option<f64>,
-    pub af_nfe_nwe: Option<f64>,
-    pub af_nfe_onf: Option<f64>,
-    pub af_nfe_seu: Option<f64>,
-    pub af_nfe_swe: Option<f64>,
-    pub af_oth: Option<f64>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

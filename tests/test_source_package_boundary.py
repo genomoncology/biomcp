@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.needs_binary]  # runs cargo; docs-only CI excludes thi
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-BIODATA_REVISION = "0670f232f245a51d387bcc370099ac3ecfe81c74"
+BIODATA_REVISION = "57a5dd48e3c67533e67d9fcffd28c07d854b2631"
 REVIEWED_TOP_LEVEL_DIRECTORIES = {
     ".claude-plugin",
     ".github",

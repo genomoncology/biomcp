@@ -264,8 +264,8 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
     assert!(
         hit.gnomad_exome
             .as_ref()
-            .and_then(|g| g.af.as_ref())
-            .and_then(|a| a.af)
+            .and_then(|g| g.af())
+            .and_then(|a| a.af())
             .is_some()
     );
     assert!(hit.civic.is_some());
@@ -337,17 +337,17 @@ fn gnomad_nested_fields_deserialize() {
     assert_eq!(
         hit.gnomad
             .as_ref()
-            .and_then(|g| g.exomes.as_ref())
-            .and_then(|e| e.af.as_ref())
-            .and_then(|a| a.af),
+            .and_then(|g| g.exomes())
+            .and_then(|e| e.af())
+            .and_then(|a| a.af()),
         Some(0.001)
     );
     assert_eq!(
         hit.gnomad
             .as_ref()
-            .and_then(|g| g.genomes.as_ref())
-            .and_then(|e| e.af.as_ref())
-            .and_then(|a| a.af),
+            .and_then(|g| g.genomes())
+            .and_then(|e| e.af())
+            .and_then(|a| a.af()),
         Some(0.002)
     );
 }

@@ -1076,3 +1076,6 @@ mod dbnsfp_adoption_tests;
 
 #[cfg(test)]
 mod clinvar_adoption_tests;
+
+#[cfg(test)]
+mod gnomad_adoption_tests;

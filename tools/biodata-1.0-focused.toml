@@ -2,6 +2,16 @@ version = 1
 
 [selection]
 rust = [
+  "sources::myvariant::tests::gnomad_adoption::gnomad_hit_encodes_complete_canonical_objects_from_bytes_and_value",
+  "sources::myvariant::tests::gnomad_adoption::gnomad_owned_failures_are_private_through_bytes_get_and_get_all",
+  "entities::variant::search::gnomad_adoption_tests::gnomad_search_selects_objects_before_reading_frequency",
+  "entities::variant::search::gnomad_adoption_tests::gnomad_frequency_alone_promotes_a_later_id_and_preserves_ties",
+  "entities::variant::search::gnomad_adoption_tests::gnomad_exact_search_keeps_selected_frequency_and_page_identity",
+  "entities::variant::search::gnomad_adoption_tests::gnomad_cli_zero_and_typed_mcp_absence_preserve_json_contracts",
+  "entities::variant::get::tests::population_request_requires_a_grch38_genomic_coordinate",
+  "entities::variant::get::tests::population_result_names_the_pinned_dataset_and_keeps_sources_separate",
+  "entities::variant::get::tests::population_status_json_keeps_explicit_null_exome_and_genome_results",
+  "entities::variant::get::transcript_deletion_source_tests::transcript_deletion_population_recovers_source_rsid",
   "entities::article::variant_search::tests::real_car_and_ldh_captures_confirm_tp53_article_identity",
   "entities::article::variant_search::tests::missing_confirmed_record_during_citation_hydration_is_unavailable",
   "entities::article::variant_search::tests::citation_pre_call_stop_is_attributed_to_myvariant",

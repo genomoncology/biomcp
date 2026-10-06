@@ -9,9 +9,10 @@ use crate::entities::variant::{
 };
 use crate::sources::cbioportal::CBioMutationSummary;
 use crate::sources::civic::CivicEvidenceItem;
-use crate::sources::myvariant::{MyVariantGnomadAf, MyVariantHit};
+use crate::sources::myvariant::MyVariantHit;
 use crate::utils::serde::StringOrVec;
 use biodata::MyVariantClinVarRcv;
+use biodata::MyVariantGnomadAf;
 
 fn normalize_gene(gene: &str) -> Option<String> {
     let g = gene.trim();
@@ -148,18 +149,18 @@ fn pick_consequence(hit: &MyVariantHit) -> Option<String> {
 fn best_gnomad_af(hit: &MyVariantHit) -> Option<&MyVariantGnomadAf> {
     hit.gnomad_exome
         .as_ref()
-        .and_then(|v| v.af.as_ref())
+        .and_then(|v| v.af())
         .or_else(|| {
             hit.gnomad
                 .as_ref()
-                .and_then(|g| g.exomes.as_ref())
-                .and_then(|v| v.af.as_ref())
+                .and_then(|g| g.exomes())
+                .and_then(|v| v.af())
         })
         .or_else(|| {
             hit.gnomad
                 .as_ref()
-                .and_then(|g| g.genomes.as_ref())
-                .and_then(|v| v.af.as_ref())
+                .and_then(|g| g.genomes())
+                .and_then(|v| v.af())
         })
 }
 
@@ -964,7 +965,7 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
         .clinvar
         .as_ref()
         .and_then(|c| pick_review_status(c.rcv()).1);
-    let gnomad_af = best_gnomad_af(hit).and_then(|a| a.af);
+    let gnomad_af = best_gnomad_af(hit).and_then(MyVariantGnomadAf::af);
     let revel = hit
         .dbnsfp
         .as_ref()
