@@ -634,6 +634,33 @@ impl BioMcpError {
     }
 
     pub fn public_projection(&self) -> PublicErrorProjection {
+        // The citation-evidence surface reports its own refusal summary and
+        // its own deadline. Both carry only words this codebase composed, so
+        // they can surface verbatim where raw provider text cannot, and
+        // neither fabricates a provider label (ticket 1302).
+        if let Self::Api { api, message, .. } = self.underlying()
+            && api == crate::entities::article::graph::citation_evidence::CITATION_EVIDENCE_API
+        {
+            if let Some(detail) = message.strip_prefix(
+                crate::entities::article::graph::citation_evidence::CITATION_PROVIDERS_REFUSED_MARKER,
+            ) {
+                return PublicErrorProjection {
+                    message: detail.to_string(),
+                    source: None,
+                    recovery: Some(
+                        "Retry the command later; the refusing sources may answer next time.",
+                    ),
+                };
+            }
+            if message == "invocation deadline exceeded" {
+                return PublicErrorProjection {
+                    message: "Article citation evidence exceeded its invocation deadline before any source answered."
+                        .to_string(),
+                    source: None,
+                    recovery: Some("Retry the command; slow sources may answer next time."),
+                };
+            }
+        }
         let context = match self {
             Self::WithSourceContext { context, .. } => Some(*context),
             Self::Api { api, .. } | Self::ApiJson { api, .. } => Some(SourceContext::new(
@@ -1193,6 +1220,63 @@ mod tests {
         assert!(msg.contains("rejected"));
         assert!(msg.contains("access"));
         assert!(msg.contains("https://www.disgenet.com/"));
+    }
+
+    #[test]
+    fn citation_evidence_refusals_name_their_providers_and_reasons() {
+        use crate::entities::article::graph::citation_evidence::{
+            CITATION_EVIDENCE_API, CITATION_PROVIDERS_REFUSED_MARKER,
+        };
+
+        for (detail, expected) in [
+            (
+                "Semantic Scholar rate limited the request; OpenCitations was unavailable.",
+                "Semantic Scholar rate limited the request; OpenCitations was unavailable.",
+            ),
+            (
+                "Semantic Scholar was unavailable; OpenCitations rate limited the request.",
+                "Semantic Scholar was unavailable; OpenCitations rate limited the request.",
+            ),
+        ] {
+            let error = BioMcpError::Api {
+                api: CITATION_EVIDENCE_API.to_string(),
+                message: format!("{CITATION_PROVIDERS_REFUSED_MARKER}{detail}"),
+            };
+            let projection = error.public_projection();
+            assert_eq!(projection.message, expected);
+            // No single provider owns the failure, so none is fabricated.
+            assert_eq!(projection.source, None);
+            assert!(projection.recovery.is_some_and(|r| r.contains("Retry")));
+            assert!(!format!("{projection:?}").contains("BioMCP source"));
+        }
+    }
+
+    #[test]
+    fn citation_evidence_deadline_names_the_command_and_never_a_fake_source() {
+        use crate::entities::article::graph::citation_evidence::CITATION_EVIDENCE_API;
+
+        let error = BioMcpError::Api {
+            api: CITATION_EVIDENCE_API.to_string(),
+            message: "invocation deadline exceeded".to_string(),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "Article citation evidence exceeded its invocation deadline before any source answered."
+        );
+        assert_eq!(projection.source, None);
+        assert!(!format!("{projection:?}").contains("BioMCP source"));
+        // The command-deadline wording is a different surface from the
+        // variant-article deadline, which keeps its own legacy shape.
+        let other = BioMcpError::Api {
+            api: "variant-articles".to_string(),
+            message: "invocation deadline exceeded".to_string(),
+        };
+        assert_ne!(
+            other.public_projection().message,
+            projection.message,
+            "the citation-evidence wording must not leak into other deadlines"
+        );
     }
 
     #[test]
