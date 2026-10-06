@@ -15,7 +15,6 @@ use crate::sources::semantic_scholar::{
     semantic_scholar_refusal,
 };
 
-use super::super::detail::retained::first_europepmc_hit;
 use super::super::detail::{parse_pmcid, parse_pmid};
 use crate::transform::article::{
     JatsCitationExtraction, JatsCitationTargetIds,
@@ -724,55 +723,42 @@ async fn degraded_input_paper(
             Some(doi),
         );
     }
-    let search = if let Some(pmid) = parse_pmid(trimmed) {
-        tokio::time::timeout_at(deadline, europe.search_by_pmid(&pmid.to_string()))
-            .await
+    let identity = if let Some(pmid) = parse_pmid(trimmed) {
+        biodata::Pmid::new(&pmid.to_string())
             .ok()
-            .and_then(|result| result.ok())
+            .map(biodata::PublicationIdentifier::Pmid)
     } else if let Some(pmcid) = parse_pmcid(trimmed) {
-        tokio::time::timeout_at(deadline, europe.search_by_pmcid(&pmcid))
-            .await
+        biodata::Pmcid::new(&pmcid)
             .ok()
-            .and_then(|result| result.ok())
+            .map(biodata::PublicationIdentifier::Pmcid)
     } else {
         None
     };
-    let Some(hit) = search.and_then(first_europepmc_hit) else {
+    let Some(identity) = identity else {
         return (degraded_unresolved_paper(), None);
     };
-    let doi = hit
-        .doi
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .and_then(normalize_doi);
+    let detail = tokio::time::timeout_at(deadline, europe.publication_detail(identity))
+        .await
+        .ok()
+        .and_then(|result| result.ok())
+        .flatten();
+    let Some(detail) = detail else {
+        return (degraded_unresolved_paper(), None);
+    };
+    let article = crate::transform::article::from_europepmc_detail(&detail);
+    let doi = article.doi.as_deref().and_then(normalize_doi);
     (
         super::ArticleRelatedPaper {
             paper_id: None,
-            pmid: hit
-                .pmid
-                .as_deref()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(str::to_string),
+            pmid: article.pmid,
             doi: doi.clone(),
             arxiv_id: None,
-            title: hit
-                .title
+            title: article.title,
+            journal: article.journal,
+            year: article
+                .date
                 .as_deref()
-                .map(str::trim)
-                .unwrap_or_default()
-                .to_string(),
-            journal: hit
-                .journal_title
-                .as_deref()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(str::to_string),
-            year: hit
-                .pub_year
-                .as_deref()
-                .and_then(|value| value.trim().parse::<u32>().ok()),
+                .and_then(|date| date.split('-').next().and_then(|year| year.parse().ok())),
         },
         doi,
     )
