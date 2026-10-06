@@ -24,7 +24,7 @@ async fn cached_opaque_detail_keeps_fallbacks_caps_and_requested_sections() {
         let evidence = json!({"evidenceType":"Predictive","disease":{"displayName":null,"name":"fallback"},"therapies":[{"name":" A "},{"name":" "}],"source":{"sourceType":"PUBMED","citation":"PMID:111"}});
         let mut body = json!({"_id":"chr1:g.101A>T","dbnsfp":{"genename":"GENE"},"cgi":rows,"civic":{"molecularProfiles":[{"name":" "},{"name":" Profile ","evidenceItems":vec![evidence;count]}]}});
         if sections == ["civic"] {
-            body["dbnsfp"]["hgvsp"] = json!("p.A1V");
+            body["snpeff"] = json!({"ann":{"feature_id":"T","genename":"GENE","hgvs_c":"c.1C>T","hgvs_p":"p.A1V"}});
         }
         let requests = Arc::new(Mutex::new(Vec::new()));
         let captured = requests.clone();
