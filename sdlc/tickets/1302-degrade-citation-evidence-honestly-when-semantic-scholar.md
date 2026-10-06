@@ -4,6 +4,15 @@ Filed 2026-10-05 by the BioMCP 0.9 lead, promoting the issue of 2026-10-02 after
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1302-citation-evidence-degradation`, sha `816f1d1e4` plus the review P2 fold, 2026-10-06.
+- Code review: ACCEPT 2026-10-06. The one P2 (the degraded no-edge NotFound shape unpinned) folded as one loopback case before CI. Verified clean: only 429/5xx refusals degrade, transport and decode errors propagate; the fallback cannot fabricate an edge (fail-closed on shape-invalid rows); DOI resolution goes through Europe PMC exact-ID queries; the refused first hop makes exactly one Semantic Scholar request (429 converts before retry middleware); no message names "BioMCP source" or leaks upstream bodies; the error projection case is narrow; source-size repins accurate.
+- Live proof against real providers: a real Semantic Scholar 429 answered from OpenCitations in 2.66 s wall, 0.03 s user CPU (the old binary measured 22.12 s against the same refusal); both-refused pairs answer in 1.24 s naming both providers and reasons.
+- Deferred: degraded results skip the sidecar (no S2 paper IDs to key on; one cheap index request recomputes); the every-provider-refused retry ladder (~8 s wall, no CPU burn) belongs to the retry-policy work under 1299.
+
+## Outcome
+
 ## Outcome
 
 `article citation-evidence` answers from OpenCitations when Semantic Scholar refuses, names the provider it used and the provider that failed, and stops burning tens of seconds of CPU on a refused request.
