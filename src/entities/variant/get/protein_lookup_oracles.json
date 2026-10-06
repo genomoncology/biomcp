@@ -2305,7 +2305,7 @@
         "content": [
           {
             "type": "text",
-            "text": "Error: Invalid argument: Ambiguous protein change 'GENE p.Ala11Val': 2 variants match and none of them carries a ClinVar record that names one; BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr1:g.101A>T (rs101)\n- chr1:g.102A>T (rs102)\nRetry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS."
+            "text": "Error: Invalid argument: Ambiguous protein change 'GENE p.Ala11Val': 2 variants match and none of them carries a ClinVar record that names one; BioMCP refuses rather than return the wrong variant. Candidates: - chr1:g.101A>T (rs101) - chr1:g.102A>T (rs102) Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS."
           }
         ],
         "isError": true
