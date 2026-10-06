@@ -4,6 +4,7 @@ use roxmltree::{Node, NodeType};
 
 use super::super::collapse_whitespace;
 use super::find_child;
+use super::push_word_separated;
 
 pub(super) fn render_references(root: Node<'_, '_>) -> Option<String> {
     let references = reference_nodes(root);
@@ -64,7 +65,32 @@ fn render_reference(ref_node: Node<'_, '_>, ordinal: usize) -> String {
 }
 
 fn render_mixed_citation(node: Node<'_, '_>) -> String {
-    reference_inline_text(node)
+    // Mixed citations keep their printable text inline and move every pub-id
+    // out of the prose as a labeled identifier segment, so `PMID` and `PMCID`
+    // print as separate values instead of being glued to the citation text.
+    let citation = mixed_citation_text(node);
+    let mut parts = Vec::new();
+    if !citation.is_empty() {
+        parts.push(citation);
+    }
+    parts.extend(render_identifier_segment(node));
+    let rendered = join_reference_parts(parts);
+    if rendered.is_empty() {
+        reference_inline_text(node)
+    } else {
+        rendered
+    }
+}
+
+fn mixed_citation_text(node: Node<'_, '_>) -> String {
+    let mut out = String::new();
+    for child in node.children() {
+        if child.is_element() && child.has_tag_name("pub-id") {
+            continue;
+        }
+        append_reference_inline_node(child, &mut out);
+    }
+    collapse_whitespace(&out)
 }
 
 fn render_element_citation(node: Node<'_, '_>) -> String {
@@ -382,7 +408,7 @@ fn append_reference_inline_node(node: Node<'_, '_>, out: &mut String) {
                 append_reference_inline_node(child, out);
             }
         }
-        NodeType::Text => out.push_str(node.text().unwrap_or_default()),
+        NodeType::Text => push_word_separated(out, node.text().unwrap_or_default()),
         _ => {}
     }
 }
@@ -429,8 +455,8 @@ fn append_reference_ext_link(node: Node<'_, '_>, out: &mut String) {
             out.push_str(url);
             out.push(')');
         }
-        (false, None) => out.push_str(&text),
-        (true, Some(url)) => out.push_str(url),
+        (false, None) => push_word_separated(out, &text),
+        (true, Some(url)) => push_word_separated(out, url),
         (true, None) => {}
     }
 }
