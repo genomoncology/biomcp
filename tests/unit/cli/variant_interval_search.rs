@@ -39,6 +39,13 @@ fn plan_value(p: &VariantSearchPlan) -> Value {
                 "gene":i.gene,"protein_change":i.protein_change,"coding_change":i.coding_change,
                 "transcript":i.transcript,"genomic_accession":i.genomic_accession,"genome_build":i.genome_build,
                 "position":i.position,"reference":i.reference,"alternate":i.alternate,"rsid":i.rsid}))}}),
+        VariantSearchPlan::GeneFirstCandidate {
+            gene,
+            condition,
+            hgvsp,
+            consequence,
+        } => json!({"variant":"GeneFirstCandidate","gene":gene,"condition":condition,
+                "hgvsp":hgvsp,"consequence":consequence}),
         VariantSearchPlan::Guidance(g) => json!({"variant":"Guidance","guidance":{
             "query":g.query,"kind":g.kind,"next_commands":g.next_commands}}),
     }
@@ -148,7 +155,7 @@ async fn interval_search_routing_table() {
             crate::entities::variant::parse_variant_id(input["id"].as_str().unwrap())
                 .map(|_| panic!("exact get remains refused"))
         } else {
-            dispatch::resolve_variant_query(
+            query::resolve_variant_query(
                 optional(&input["gene_flag"]),
                 optional(&input["hgvsp_flag"]),
                 optional(&input["consequence_flag"]),
@@ -192,8 +199,8 @@ async fn interval_search_routing_table() {
         "GENE_OTHER NP_1:p.A11del",
         "gene NP_1:p.A11del extra",
     ] {
-        let plan = dispatch::resolve_variant_query(None, None, None, None, vec![source.to_owned()])
-            .unwrap();
+        let plan =
+            query::resolve_variant_query(None, None, None, None, vec![source.to_owned()]).unwrap();
         assert_eq!(
             plan,
             VariantSearchPlan::standard(ResolvedVariantQuery {

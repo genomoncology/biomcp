@@ -2,7 +2,7 @@
 
 Filed 2026-10-05 by the BioMCP 0.9 lead, from the KB lead's message of 2026-10-05, reproduced 2026-10-05.
 
-Status: OPEN.
+Status: complete.
 
 ## Build status
 

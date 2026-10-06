@@ -37,6 +37,7 @@ internal fixture overrides and release/install variables.
 | `BIOMCP_WHO_IVD_DIR` | Local WHO IVD download root |
 | `BIOMCP_FHIR_BASE` | Base URL of the operator's FHIR R4 server for `get patient`; unset means patient commands fail and name this variable |
 | `BIOMCP_CA_BUNDLE` | PEM bundle of extra trusted TLS roots for ordinary provider HTTPS; `SSL_CERT_FILE` is the fallback |
+| `BIOMCP_VARIANT_QUERY_GENE_ROUTING` | Source that recognizes a gene-symbol first token in a free-text `search variant` phrase; `mygene` (default) or `off` |
 | `cache.toml` | Persistent cache defaults under the resolved config root |
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
 
@@ -71,6 +72,16 @@ separate gRPC client does not use `BIOMCP_CA_BUNDLE`; when set,
 `BIOMCP_CA_BUNDLE` into that client requires retained PEM bytes and remains
 future work. BioMCP resolves and parses the ordinary-provider bundle once per
 process, so set it before startup and restart BioMCP after rotating it.
+
+Free-text `search variant "GENE condition"` routes the first token to the gene
+filter only after the `BIOMCP_VARIANT_QUERY_GENE_ROUTING` source confirms it is
+a known gene symbol. The supported default is `mygene`: MyGene's unique
+canonical symbol/alias resolution is the same lookup `discover` already trusts
+for this question, and no offline gene list ships with BioMCP. A refused,
+ambiguous, timed-out, or unavailable lookup keeps the whole phrase as the
+condition search and prints the explicit `-g`/`--condition` working form when
+that search returns zero rows, because refusal beats wrong routing. `off`
+restores the whole-phrase condition search without the routing lookup.
 
 ## Internal and Measurement Controls
 

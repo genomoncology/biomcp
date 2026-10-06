@@ -1,10 +1,12 @@
+pub(super) use super::VariantSearchPlan;
 use super::guidance::variant_guidance_outcome;
-pub(super) use super::{ResolvedVariantQuery, VariantSearchPlan};
+use super::query::{
+    apply_gene_first_routing, confirm_gene_first_candidate, gene_first_working_form,
+    resolve_variant_query,
+};
 use super::{VariantCommand, VariantGetArgs, VariantSearchArgs};
 use crate::cli::CommandOutcome;
-use crate::cli::{
-    PaginationMeta, normalize_cli_query, pagination_footer_offset, search_json_with_meta,
-};
+use crate::cli::{PaginationMeta, pagination_footer_offset, search_json_with_meta};
 use crate::error::BioMcpError;
 
 pub(crate) async fn handle_get(
@@ -214,65 +216,6 @@ pub(crate) async fn handle_command(
     Ok(CommandOutcome::stdout(text))
 }
 
-pub(super) fn parse_simple_gene_change(query: &str) -> Option<(String, String)> {
-    let parts = query.split_whitespace().collect::<Vec<_>>();
-    if parts.len() != 2 {
-        return None;
-    }
-
-    let gene = parts[0].trim();
-    let change = parts[1]
-        .trim()
-        .trim_start_matches("p.")
-        .trim_start_matches("P.");
-    if gene.is_empty() || change.is_empty() {
-        return None;
-    }
-
-    let candidate = format!("{gene} {change}");
-    match crate::entities::variant::parse_variant_id(&candidate).ok()? {
-        crate::entities::variant::VariantIdFormat::GeneProteinChange { gene, change } => {
-            Some((gene, change))
-        }
-        _ => None,
-    }
-}
-
-pub(super) fn parse_gene_c_hgvs(query: &str) -> Option<(String, String)> {
-    let parts = query.split_whitespace().collect::<Vec<_>>();
-    if parts.len() != 2 {
-        return None;
-    }
-
-    let gene = parts[0].trim();
-    let change = parts[1].trim();
-    if gene.is_empty() || change.is_empty() || !crate::sources::is_valid_gene_symbol(gene) {
-        return None;
-    }
-    if !change.starts_with("c.") && !change.starts_with("C.") {
-        return None;
-    }
-    Some((gene.to_string(), format!("c.{}", change[2..].trim())))
-}
-
-pub(super) fn parse_exon_deletion_phrase(query: &str) -> Option<(String, String)> {
-    let parts = query.split_whitespace().collect::<Vec<_>>();
-    if parts.len() != 4 {
-        return None;
-    }
-
-    let gene = parts[0].trim();
-    if !crate::sources::is_valid_gene_symbol(gene)
-        || !parts[1].eq_ignore_ascii_case("exon")
-        || parts[2].parse::<u32>().ok().is_none()
-        || !parts[3].eq_ignore_ascii_case("deletion")
-    {
-        return None;
-    }
-
-    Some((gene.to_string(), "inframe_deletion".to_string()))
-}
-
 #[derive(Debug, Clone)]
 struct VariantSearchRequest {
     gene: Option<String>,
@@ -295,212 +238,6 @@ struct VariantSearchRequest {
     therapy: Option<String>,
     limit: usize,
     offset: usize,
-}
-
-pub(super) fn resolve_variant_query(
-    gene_flag: Option<String>,
-    hgvsp_flag: Option<String>,
-    consequence_flag: Option<String>,
-    condition_flag: Option<String>,
-    positional_tokens: Vec<String>,
-) -> Result<VariantSearchPlan, crate::error::BioMcpError> {
-    let gene_flag = normalize_cli_query(gene_flag);
-    let hgvsp_flag = normalize_cli_query(hgvsp_flag);
-    let consequence_flag = consequence_flag.map(|value| value.trim().to_string());
-    let condition_flag = normalize_cli_query(condition_flag);
-
-    if let Some(plan) = super::interval_search::resolve(
-        &positional_tokens,
-        [&gene_flag, &hgvsp_flag, &consequence_flag, &condition_flag],
-    )? {
-        return Ok(plan);
-    }
-    let positional = super::interval_search::retained_preparation(&positional_tokens);
-
-    let Some(query) = positional else {
-        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-            gene: gene_flag,
-            hgvsp: hgvsp_flag,
-            consequence: consequence_flag,
-            condition: condition_flag,
-            ..Default::default()
-        }));
-    };
-
-    let token_count = query.split_whitespace().count();
-    if token_count <= 1 {
-        if let Ok(crate::entities::variant::VariantIdFormat::RsId(rsid)) =
-            crate::entities::variant::parse_variant_id(&query)
-        {
-            if gene_flag.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "Use either positional QUERY or --gene, not both".into(),
-                ));
-            }
-            return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-                rsid: Some(rsid),
-                hgvsp: hgvsp_flag,
-                consequence: consequence_flag,
-                condition: condition_flag,
-                ..Default::default()
-            }));
-        }
-
-        if let Some(gene) = gene_flag.clone() {
-            if let Some(protein_alias) =
-                crate::entities::variant::parse_variant_protein_alias(&query)
-            {
-                if hgvsp_flag.is_some() {
-                    return Err(crate::error::BioMcpError::InvalidArgument(
-                        "Positional residue alias conflicts with --hgvsp".into(),
-                    ));
-                }
-                return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-                    gene: Some(gene),
-                    protein_alias: Some(protein_alias),
-                    consequence: consequence_flag,
-                    condition: condition_flag,
-                    ..Default::default()
-                }));
-            }
-            if let crate::entities::variant::VariantInputKind::Shorthand(
-                crate::entities::variant::VariantShorthand::ProteinChangeOnly { .. },
-            ) = crate::entities::variant::classify_variant_input(&query)
-            {
-                if hgvsp_flag.is_some() {
-                    return Err(crate::error::BioMcpError::InvalidArgument(
-                        "Positional protein change conflicts with --hgvsp".into(),
-                    ));
-                }
-                return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-                    gene: Some(gene),
-                    hgvsp: Some(query.clone()),
-                    consequence: consequence_flag,
-                    condition: condition_flag,
-                    ..Default::default()
-                }));
-            }
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Use either positional QUERY or --gene, not both".into(),
-            ));
-        }
-
-        if let Some(guidance) = crate::entities::variant::variant_guidance(&query) {
-            return Ok(VariantSearchPlan::Guidance(guidance));
-        }
-        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-            gene: Some(query),
-            hgvsp: hgvsp_flag,
-            consequence: consequence_flag,
-            condition: condition_flag,
-            ..Default::default()
-        }));
-    }
-
-    if let Some((gene, change)) = parse_simple_gene_change(&query) {
-        if gene_flag.is_some() {
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Positional \"GENE CHANGE\" conflicts with --gene".into(),
-            ));
-        }
-        if hgvsp_flag.is_some() {
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Positional \"GENE CHANGE\" conflicts with --hgvsp".into(),
-            ));
-        }
-        let supplied_change = query
-            .split_whitespace()
-            .nth(1)
-            .unwrap_or(&change)
-            .to_string();
-        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-            gene: Some(gene),
-            hgvsp: Some(supplied_change),
-            consequence: consequence_flag,
-            condition: condition_flag,
-            ..Default::default()
-        }));
-    }
-
-    if let crate::entities::variant::VariantInputKind::Shorthand(
-        crate::entities::variant::VariantShorthand::GeneResidueAlias {
-            gene,
-            position,
-            residue,
-            ..
-        },
-    ) = crate::entities::variant::classify_variant_input(&query)
-    {
-        if gene_flag.is_some() {
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Positional residue alias conflicts with --gene".into(),
-            ));
-        }
-        if hgvsp_flag.is_some() {
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Positional residue alias conflicts with --hgvsp".into(),
-            ));
-        }
-        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-            gene: Some(gene),
-            protein_alias: Some(crate::entities::variant::VariantProteinAlias {
-                position,
-                residue,
-            }),
-            consequence: consequence_flag,
-            condition: condition_flag,
-            ..Default::default()
-        }));
-    }
-
-    if let Some((gene, hgvsc)) = parse_gene_c_hgvs(&query) {
-        if gene_flag.is_some() {
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Positional \"GENE c.HGVS\" conflicts with --gene".into(),
-            ));
-        }
-        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-            gene: Some(gene),
-            hgvsp: hgvsp_flag,
-            hgvsc: Some(hgvsc),
-            consequence: consequence_flag,
-            condition: condition_flag,
-            ..Default::default()
-        }));
-    }
-
-    if let Some((gene, consequence)) = parse_exon_deletion_phrase(&query) {
-        if gene_flag.is_some() {
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Positional exon-deletion query conflicts with --gene".into(),
-            ));
-        }
-        if consequence_flag.is_some() {
-            return Err(crate::error::BioMcpError::InvalidArgument(
-                "Positional exon-deletion query conflicts with --consequence".into(),
-            ));
-        }
-        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-            gene: Some(gene),
-            hgvsp: hgvsp_flag,
-            consequence: Some(consequence),
-            condition: condition_flag,
-            ..Default::default()
-        }));
-    }
-
-    if condition_flag.is_some() {
-        return Err(crate::error::BioMcpError::InvalidArgument(
-            "Use either positional QUERY or --condition, not both".into(),
-        ));
-    }
-    Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
-        gene: gene_flag,
-        hgvsp: hgvsp_flag,
-        consequence: consequence_flag,
-        condition: Some(query),
-        ..Default::default()
-    }))
 }
 
 pub(crate) fn render_loaded_card(
@@ -598,11 +335,20 @@ async fn render_variant_search_outcome(
         offset,
     } = request;
 
-    let resolved =
+    let (resolved, gene_first_fallback) =
         match resolve_variant_query(gene, hgvsp, consequence, condition, positional_query)? {
-            VariantSearchPlan::Standard(resolved) => resolved,
+            VariantSearchPlan::Standard(resolved) => (resolved, None),
             VariantSearchPlan::Guidance(guidance) => {
                 return variant_guidance_outcome(&guidance, json_output || guidance_as_json);
+            }
+            VariantSearchPlan::GeneFirstCandidate {
+                gene,
+                condition,
+                hgvsp,
+                consequence,
+            } => {
+                let confirmed = confirm_gene_first_candidate(&gene).await;
+                apply_gene_first_routing(gene, condition, confirmed, hgvsp, consequence)
             }
         };
 
@@ -643,12 +389,19 @@ async fn render_variant_search_outcome(
     let results = page.results;
     let mut pagination = PaginationMeta::offset(offset, limit, results.len(), page.total);
     pagination.has_more = page.has_more.unwrap_or(pagination.has_more);
+    let working_form = gene_first_fallback
+        .as_ref()
+        .filter(|_| results.is_empty())
+        .map(|fallback| gene_first_working_form(&fallback.gene, &fallback.condition));
     if json_output {
-        let next_commands = crate::render::markdown::search_next_commands_variant(
+        let mut next_commands = crate::render::markdown::search_next_commands_variant(
             &results,
             filters.gene.as_deref(),
             filters.condition.as_deref(),
         );
+        if let Some(command) = working_form.as_ref() {
+            next_commands.push(command.clone());
+        }
         let output = search_json_with_meta(results, pagination, next_commands)?;
         return Ok(CommandOutcome::stdout(
             crate::render::json::with_variant_search_resolution(
@@ -679,21 +432,13 @@ async fn render_variant_search_outcome(
         ),
         _ => body,
     };
+    let body = match (working_form, gene_first_fallback.as_ref()) {
+        (Some(command), Some(fallback)) => format!(
+            "{body}\n\nNo variants matched the phrase as a condition. If {} is a gene symbol, \
+             try the working form: {command}",
+            fallback.gene
+        ),
+        _ => body,
+    };
     Ok(CommandOutcome::stdout(body))
-}
-
-pub(super) fn trim_protein_change_prefix(value: &str) -> &str {
-    value
-        .trim()
-        .trim_start_matches("p.")
-        .trim_start_matches("P.")
-}
-
-pub(super) fn normalize_search_hgvsp(value: &str) -> String {
-    let normalized = crate::entities::variant::normalize_protein_change(value)
-        .unwrap_or_else(|| trim_protein_change_prefix(value).to_string());
-    normalized
-        .strip_suffix('*')
-        .map(|prefix| format!("{prefix}X"))
-        .unwrap_or(normalized)
 }

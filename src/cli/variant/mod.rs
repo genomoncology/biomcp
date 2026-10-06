@@ -261,6 +261,18 @@ pub(super) struct ResolvedVariantQuery {
 pub(super) enum VariantSearchPlan {
     Standard(ResolvedVariantQuery),
     Guidance(crate::entities::variant::VariantGuidance),
+    /// A free-text phrase whose first token has the exact-form gene-token
+    /// shape (ticket 1301). The parser does not route it: the caller must
+    /// confirm the token against the gene-symbol oracle first. The carried
+    /// `hgvsp` and `consequence` flags are the normalized leftovers the
+    /// whole-phrase fallthrough would have attached, so neither branch of
+    /// the oracle verdict can drop an explicit filter.
+    GeneFirstCandidate {
+        gene: String,
+        condition: String,
+        hgvsp: Option<String>,
+        consequence: Option<String>,
+    },
 }
 
 impl VariantSearchPlan {
@@ -289,7 +301,14 @@ impl VariantSearchPlan {
         Ok(Self::Standard(query))
     }
 
-    fn standard(mut query: ResolvedVariantQuery) -> Self {
+    fn standard(query: ResolvedVariantQuery) -> Self {
+        Self::Standard(Self::finalize(query))
+    }
+
+    /// Post-process a resolved query the way every standard branch does:
+    /// exact filters claim the search identity and `--hgvsp` takes its
+    /// compact spelling.
+    fn finalize(mut query: ResolvedVariantQuery) -> ResolvedVariantQuery {
         let exact = query.hgvsp.is_some() || query.hgvsc.is_some() || query.rsid.is_some();
         query.requested_identity = exact.then(|| {
             Box::new(
@@ -301,8 +320,8 @@ impl VariantSearchPlan {
                 ),
             )
         });
-        query.hgvsp = query.hgvsp.as_deref().map(dispatch::normalize_search_hgvsp);
-        Self::Standard(query)
+        query.hgvsp = query.hgvsp.as_deref().map(query::normalize_search_hgvsp);
+        query
     }
 }
 
@@ -313,6 +332,7 @@ mod erepo;
 mod guidance;
 mod interval_search;
 mod normalization_json;
+mod query;
 mod trial;
 #[cfg(test)]
 pub(crate) use self::dispatch::render_loaded_card;
