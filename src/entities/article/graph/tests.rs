@@ -2032,6 +2032,70 @@ async fn citation_evidence_reports_an_unaddressable_index_when_inputs_have_no_do
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
+async fn citation_evidence_names_both_providers_when_the_answered_index_lacks_the_edge() {
+    let (_env, _cache, fixture, requests) = degradation_case(
+        "citation-refused-no-edge",
+        S2Reply::Refused("429 Too Many Requests"),
+        // The index answers a parsed reference list whose cited tokens name
+        // another DOI, so the pair is honestly unconfirmed.
+        OpenCitationsReply::Rows(
+            r#"[{"oci":"1-2","citing":"doi:10.1000/other","cited":"omid:br/2 doi:10.1000/other","creation":"2012-07"}]"#
+                .to_string(),
+        ),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap_err();
+
+    match &error {
+        BioMcpError::NotFound {
+            entity,
+            id,
+            suggestion,
+        } => {
+            assert_eq!(entity.as_str(), "directed citation");
+            assert_eq!(id, &format!("{OPEN_CITING_PMID} -> {OPEN_CITED_DOI}"));
+            assert_eq!(
+                suggestion.as_str(),
+                "OpenCitations holds no confirmed edge for this pair, and Semantic Scholar rate limited the request.\nRetry later for Semantic Scholar citation contexts."
+            );
+        }
+        other => panic!("expected the directed not-found shape, got {other:?}"),
+    }
+    // The public shape keeps naming both providers with their reasons and
+    // never the generic placeholder.
+    let projection = error.public_projection();
+    assert!(
+        projection
+            .message
+            .contains("OpenCitations holds no confirmed edge")
+    );
+    assert!(
+        projection
+            .message
+            .contains("Semantic Scholar rate limited the request")
+    );
+    assert!(!format!("{projection:?}").contains("BioMCP source"));
+    assert!(error.is_not_found());
+    // The no-edge outcome came from an answered index, not a refusal: the
+    // pair degraded after one refused seed and one answered index request.
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("s2:seed").count(), 1, "{logged}");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
 async fn citation_evidence_degrades_to_the_index_when_the_reference_walk_is_refused() {
     use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
 

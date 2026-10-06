@@ -71,12 +71,12 @@
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 2093,
+      "baseline_lines": 2157,
       "floor_lines": 998,
       "authorized_increase": {
         "ticket": "1246, 1302",
-        "delta": 1095,
-        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, and fail-fast tests.",
+        "delta": 1159,
+        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, answered-index-no-edge, and fail-fast tests.",
         "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
       }
     },
