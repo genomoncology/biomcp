@@ -85,7 +85,7 @@ fn article_annotation_get_command(
     match (bucket, annotation.namespace.as_deref()) {
         (ArticleAnnotationBucket::Disease, Some("MESH"))
         | (ArticleAnnotationBucket::Disease, Some("OMIM")) => {
-            Some(format!("biomcp get disease {identifier}"))
+            Some(format!("biomcp get disease {}", quote_arg(identifier)))
         }
         (ArticleAnnotationBucket::Mutation, Some("rsID"))
             if matches!(

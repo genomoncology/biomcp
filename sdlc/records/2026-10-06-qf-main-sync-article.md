@@ -53,3 +53,13 @@ Scoped formatting, forward whitespace and the existing source-size check pass. T
 ## Remaining work
 
 Root must review the final merge candidate before integrating it. The unchanged website generator revision mismatch requires separate disposition. Shared-model admission of newer provider annotation metadata remains outside this merge. The private handoff retains literal commands, full logs, compilation artifacts, raw article fields, original failed attempts and all measured walls.
+
+## Review correction: quote disease follow-up identifiers
+
+Root's fresh review of 35c46d1f found one P2 defect. The disease follow-up formatter inserted the provider identifier directly into the command. It now uses the existing quote_arg helper for both MESH and OMIM. Ordinary identifiers keep their existing command spelling. Provider whitespace, a semicolon and command substitution remain inside one quoted argument.
+
+The existing article-entities renderer owner adds one regression claim for that quoted output. Its previous assertions still cover ordinary MESH, OMIM, gene, drug, rsID and HGVS commands. Its two disease setup rows use a local table; the file remains at its existing 1,335-line inventory ceiling. No test file, proof tool, inventory allowance or dependency changed.
+
+The regression failed before the formatter fix: one failing test, exit 101, wall 1.572 seconds. Red offline compilation passed in 76.243 seconds. Green offline compilation passed in 62.689 seconds. Both compilations use the existing dedicated target, two jobs, no default features and the locked graph. The affected article renderer owner passed all 23 tests in 1.648 seconds. The related-article follow-up owner passed one test in 0.007 seconds. No selected test was ignored. Scoped formatting and forward whitespace pass. These walls include subprocess startup; libtest reported 0.02 seconds and 0.00 seconds for the two successful runtime checks.
+
+Root owns finding closure and dedicated-line landing. The previous broader integration evidence and website revision exception remain as recorded. The later eight-commit maintenance batch through ddc631fd is outside this correction.

@@ -36,7 +36,7 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
 
 #[test]
 fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
-    let annotations = ArticleAnnotations {
+    let mut annotations = ArticleAnnotations {
         genes: vec![AnnotationCount {
             text: "KRAS".to_string(),
             count: 12,
@@ -44,22 +44,19 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
             identifier: Some("3845".to_string()),
             ..Default::default()
         }],
-        diseases: vec![
-            AnnotationCount {
-                text: "NSCLC".to_string(),
-                count: 16,
-                namespace: Some("MESH".to_string()),
-                identifier: Some("MESH:D002289".to_string()),
-                ..Default::default()
-            },
-            AnnotationCount {
-                text: "melanoma".to_string(),
-                count: 1,
-                namespace: Some("OMIM".to_string()),
-                identifier: Some("OMIM:155601".to_string()),
-                ..Default::default()
-            },
-        ],
+        diseases: [
+            ("NSCLC", 16, "MESH", "MESH:D002289"),
+            ("melanoma", 1, "OMIM", "OMIM:155601"),
+        ]
+        .into_iter()
+        .map(|(text, count, namespace, identifier)| AnnotationCount {
+            text: text.into(),
+            count,
+            namespace: Some(namespace.into()),
+            identifier: Some(identifier.into()),
+            ..Default::default()
+        })
+        .collect(),
         chemicals: vec![AnnotationCount {
             text: "vemurafenib".to_string(),
             count: 3,
@@ -86,11 +83,8 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
     };
     let markdown =
         article_entities_markdown("30738221", Some(&annotations), Some(10)).expect("markdown");
-
-    // Disease MeSH and OMIM identifiers open the record directly.
     assert!(markdown.contains("`biomcp get disease MESH:D002289`"));
     assert!(markdown.contains("`biomcp get disease OMIM:155601`"));
-    // Variant rsIDs and accepted HGVS expressions resolve exactly.
     assert!(markdown.contains("`biomcp get variant rs121913530`"));
     assert!(markdown.contains("`biomcp get variant \"NM_004333.6:c.1799T>A\"`"));
     // `get gene` takes symbols, not NCBI Gene identifiers, so the row keeps
@@ -100,6 +94,12 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
     assert!(!markdown.contains("get gene 3845"));
     assert!(!markdown.contains("get drug MESH:D087240"));
     assert!(!markdown.contains("get disease NSCLC"));
+    annotations.diseases[0].identifier =
+        Some("MESH:D002289; printf injected $(printf substitution)".into());
+    let markdown = article_entities_markdown("30738221", Some(&annotations), Some(10)).unwrap();
+    assert!(markdown.contains(
+        r#"`biomcp get disease "MESH:D002289; printf injected \$(printf substitution)"`"#
+    ));
 }
 
 #[test]
