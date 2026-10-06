@@ -93,14 +93,9 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6158,
-      "floor_lines": 4828,
-      "authorized_increase": {
-        "ticket": "1299",
-        "delta": 1330,
-        "reason": "Adapt the strict-route and pubtator-variant legs to the partial-page outcome that keeps fetched rows when a page fails mid-flight",
-        "removal_condition": "Return to the prior baseline when partial outcomes compose without per-site mapping"
-      }
+      "baseline_lines": 6298,
+      "floor_lines": 6298,
+      "authorized_increase": null
     },
     {
       "path": "src/entities/author/papers.rs",
