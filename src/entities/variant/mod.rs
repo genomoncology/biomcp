@@ -52,7 +52,7 @@ pub(crate) use self::resolution::{
     VariantProviderValidation, VariantProviderValidationStatus, VariantResolutionStatus,
     VariantSearchResolution, coding_change_segment, compare_variant_identity, gnomad_variant_slug,
     is_exact_gene_token, is_rsid, normalize_genomic_coordinate, normalize_protein_change,
-    protein_change_segment, protein_changes_equivalent,
+    normalize_protein_substitution, protein_change_segment, protein_changes_equivalent,
 };
 #[cfg(test)]
 pub(crate) use self::search::VariantFilterEvaluationStatus;
@@ -994,6 +994,7 @@ pub struct GwasSearchFilters {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VariantIdFormat {
     RsId(String),
+    ClinvarVariationId(u64),
     HgvsGenomic(String),
     GeneProteinChange { gene: String, change: String },
 }

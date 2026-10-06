@@ -1263,6 +1263,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/trial-numeric-filters.md",
     "spec/entity/trial-documents.md",
     "spec/entity/variant.md",
+    "spec/entity/variant-input-forms.md",
     "spec/entity/variant-gene-first-routing.md",
     "spec/entity/clingen-erepo.md",
     "spec/entity/clingen-cspec.md",

@@ -105,6 +105,115 @@ fn identity_hit(
     .expect("valid MyVariant hit")
 }
 
+async fn transcript_alias_fixture_server(
+    with_exact_alias: bool,
+) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind transcript alias fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock requests")
+                    .push(request.clone());
+                let hit = if with_exact_alias {
+                    r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_000249.4:c.678-14_678-3del","LRG_216t1:c.678-14_678-3del12"]}}}"#
+                } else {
+                    r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_001258271.2:c.678-14_678-3del"]}}}"#
+                };
+                let body = if request.starts_with("GET /v1/query?") {
+                    format!(r#"{{"total":1,"hits":[{hit}]}}"#)
+                } else if request.starts_with("GET /v1/variant/") {
+                    hit.to_string()
+                } else {
+                    // Mutalyzer, VariantValidator, and CAR all refuse the
+                    // intronic deletion range, so the alias search is the only
+                    // resolution route left.
+                    r#"{"code":422,"success":false,"error":"unsupported"}"#.to_string()
+                };
+                let status = if request.starts_with("GET /v1/") {
+                    "200 OK"
+                } else {
+                    "422 Unprocessable Entity"
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn transcript_hgvs_alias_resolves_intronic_deletion_when_normalizers_refuse() {
+    let (base, requests, server) = transcript_alias_fixture_server(true).await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_MUTALYZER_BASE_URL", &format!("{base}/api"));
+    env.set("BIOMCP_VARIANTVALIDATOR_BASE_URL", &base);
+    env.set("BIOMCP_CLINGEN_CAR_BASE", &base);
+    env.set("BIOMCP_CACHE_MODE", "off");
+
+    let (variant, id_format, _) = resolve_base_with_hit("NM_000249.4:c.678-14_678-3del", None)
+        .await
+        .expect("intronic deletion resolves");
+    server.abort();
+
+    assert!(matches!(id_format, VariantIdFormat::HgvsGenomic(_)));
+    assert_eq!(variant.id, "chr3:g.37055906_37055917del");
+    assert_eq!(variant.gene, "MLH1");
+    let requests = requests.lock().expect("lock requests").join("\n");
+    assert!(
+        requests.contains("clinvar.hgvs.coding"),
+        "the ClinVar coding alias search must run: {requests}"
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn transcript_hgvs_alias_refuses_hits_without_the_exact_coding_alias() {
+    let (base, requests, server) = transcript_alias_fixture_server(false).await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_MUTALYZER_BASE_URL", &format!("{base}/api"));
+    env.set("BIOMCP_VARIANTVALIDATOR_BASE_URL", &base);
+    env.set("BIOMCP_CLINGEN_CAR_BASE", &base);
+    env.set("BIOMCP_CACHE_MODE", "off");
+
+    let error = resolve_base_with_hit("NM_000249.4:c.678-14_678-3del", None)
+        .await
+        .expect_err("a different transcript's alias must not resolve");
+    server.abort();
+
+    let message = error.to_string();
+    assert!(message.contains("not found"));
+    assert!(message.contains("biomcp get variant 577152"));
+    let requests = requests.lock().expect("lock requests").join("\n");
+    assert!(
+        !requests.contains("GET /v1/variant/"),
+        "an unconfirmed hit must not be fetched: {requests}"
+    );
+}
+
 #[test]
 fn exact_helper_candidate_selection_rejects_conflicts_and_missing_evidence() {
     let requested = super::super::RequestedVariantIdentity::for_search(

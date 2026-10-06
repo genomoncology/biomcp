@@ -422,7 +422,7 @@ pub(super) fn trim_protein_change_prefix(value: &str) -> &str {
 }
 
 pub(super) fn normalize_search_hgvsp(value: &str) -> String {
-    let normalized = crate::entities::variant::normalize_protein_change(value)
+    let normalized = crate::entities::variant::normalize_protein_substitution(value)
         .unwrap_or_else(|| trim_protein_change_prefix(value).to_string());
     normalized
         .strip_suffix('*')

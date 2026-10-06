@@ -20,7 +20,7 @@ const MYVARIANT_BASE_ENV: &str = "BIOMCP_MYVARIANT_BASE";
 
 pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "_id,cadd.phred,cadd.consequence,",
-    "clinvar.gene.symbol,clinvar.rcv.accession,clinvar.rcv.version,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.rcv.preferred_name,clinvar.rcv.last_evaluated,clinvar.rcv.number_submitters,clinvar.variant_id,",
+    "clinvar.gene.symbol,clinvar.rcv.accession,clinvar.rcv.version,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.rcv.preferred_name,clinvar.rcv.last_evaluated,clinvar.rcv.number_submitters,clinvar.variant_id,clinvar.hgvs.coding,",
     "snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,",
     "dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,",
     "dbnsfp.sift.pred,dbnsfp.sift.score,",
@@ -1428,8 +1428,28 @@ pub struct MyVariantGerp {
 pub struct MyVariantClinVar {
     pub variant_id: Option<u64>,
     pub gene: Option<MyVariantClinVarGene>,
+    #[serde(default)]
+    pub hgvs: Option<MyVariantClinVarHgvs>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
     pub rcv: Vec<MyVariantClinVarRcv>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MyVariantClinVarHgvs {
+    #[serde(default)]
+    pub coding: StringOrVec,
+}
+
+impl MyVariantClinVarHgvs {
+    /// Exact membership in ClinVar's coding alias list confirms a
+    /// transcript-qualified query the alias search itself asked for.
+    pub fn coding_contains(&self, alias: &str) -> bool {
+        match &self.coding {
+            StringOrVec::None => false,
+            StringOrVec::Single(value) => value == alias,
+            StringOrVec::Multiple(values) => values.iter().any(|value| value == alias),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

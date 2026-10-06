@@ -29,7 +29,7 @@ start_fixture_supervisor "variant-identity" "$cache_dir" "$fixture_root" "spec-v
   python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 import json
 import sys
 
@@ -147,6 +147,53 @@ CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/MYD88": (ROOT / "testdata/sources/cancerhotspots/by_gene_myd88_20260805.json").read_bytes(),
     "/api/hotspots/single/byGene/NOTAREALGENE664": (ROOT / "testdata/sources/cancerhotspots/by_gene_empty_20260805.json").read_bytes(),
 }
+# Ticket 1292: recorded transcript-normalization and ClinVar-alias responses
+# for the get-variant input-form table. Mutalyzer refuses the intronic
+# deletion range (HTTP 422), so the ClinVar coding-alias search carries it.
+MUTALYZER_NORMALIZE_RESPONSES = {
+    "NM_000249.4:c.678-14_678-3del": (
+        422,
+        (ROOT / "testdata/sources/mutalyzer/normalize_nm_000249.4_c.678-14_678-3del_20261006.json").read_bytes(),
+    ),
+    "NM_177438.3:c.4449G>A": (
+        200,
+        (ROOT / "testdata/sources/mutalyzer/normalize_nm_177438.3_c.4449G_to_A_20261006.json").read_bytes(),
+    ),
+}
+VARIANTVALIDATOR_NORMALIZE_RESPONSES = {
+    "NM_000249.4:c.678-14_678-3del": (
+        200,
+        (ROOT / "testdata/sources/variantvalidator/normalize_nm_000249.4_c.678-14_678-3del_20261006.json").read_bytes(),
+    ),
+    "NM_177438.3:c.4449G>A": (
+        200,
+        (ROOT / "testdata/sources/variantvalidator/normalize_nm_177438.3_c.4449G_to_A_20261006.json").read_bytes(),
+    ),
+}
+CAR_ALLELE_RESPONSES = {
+    "NM_000249.4:c.678-14_678-3del": (
+        200,
+        (ROOT / "testdata/sources/clingen_allele_registry/allele_nm_000249.4_c.678-14_678-3del_20261006.json").read_bytes(),
+    ),
+    "NM_177438.3:c.4449G>A": (
+        200,
+        (ROOT / "testdata/sources/clingen_allele_registry/allele_nm_177438.3_c.4449G_to_A_20261006.json").read_bytes(),
+    ),
+}
+CLINVAR_CODING_ALIAS_RESPONSES = {
+    'clinvar.hgvs.coding:"NM_000249.4\\:c.678\\-14_678\\-3del"': (
+        ROOT / "testdata/sources/myvariant/query_clinvar_coding_nm_000249.4_c.678-14_678-3del_20261006.json"
+    ).read_bytes(),
+    'clinvar.hgvs.coding:"NM_177438.3\\:c.4449G>A"': (
+        ROOT / "testdata/sources/myvariant/query_clinvar_coding_nm_177438.3_c.4449G_to_A_20261006.json"
+    ).read_bytes(),
+    "clinvar.variant_id:577152": (
+        ROOT / "testdata/sources/myvariant/query_clinvar_variant_id_577152_20261006.json"
+    ).read_bytes(),
+    'dbnsfp.genename:EGFR AND dbnsfp.hgvsp:"p.E746_A750del"': (
+        ROOT / "testdata/sources/myvariant/query_egfr_e746_a750del_20261006.json"
+    ).read_bytes(),
+}
 
 
 def send_json(handler, status, payload):
@@ -174,6 +221,35 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/healthz":
             send_json(self, 200, {"status": "ok"})
+            return
+        if parsed.path.startswith("/api/normalize/"):
+            description = unquote(parsed.path[len("/api/normalize/") :])
+            if description in MUTALYZER_NORMALIZE_RESPONSES:
+                status, body = MUTALYZER_NORMALIZE_RESPONSES[description]
+                send_json(self, status, body)
+                return
+            send_json(self, 400, {"error": "unexpected fixture normalize request"})
+            return
+        if (
+            parsed.path.startswith("/VariantValidator/variantvalidator/GRCh38/")
+            and parsed.path.endswith("/all")
+        ):
+            description = unquote(parsed.path).split("/GRCh38/", 1)[1][
+                : -len("/all")
+            ]
+            if description in VARIANTVALIDATOR_NORMALIZE_RESPONSES:
+                status, body = VARIANTVALIDATOR_NORMALIZE_RESPONSES[description]
+                send_json(self, status, body)
+                return
+            send_json(self, 400, {"error": "unexpected fixture validate request"})
+            return
+        if parsed.path == "/allele":
+            hgvs = parse_qs(parsed.query).get("hgvs", [""])[0]
+            if hgvs in CAR_ALLELE_RESPONSES:
+                status, body = CAR_ALLELE_RESPONSES[hgvs]
+                send_json(self, status, body)
+                return
+            send_json(self, 400, {"error": "unexpected fixture allele request"})
             return
         if parsed.path == "/efetch.fcgi":
             params = parse_qs(parsed.query)
@@ -241,6 +317,9 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
+            if query in CLINVAR_CODING_ALIAS_RESPONSES:
+                send_json(self, 200, CLINVAR_CODING_ALIAS_RESPONSES[query])
+                return
             expected_proteins = ('dbnsfp.hgvsp:"p.M1783I"', 'dbnsfp.hgvsp:"p.M16I"')
             if query == "dbnsfp.genename:H3\\-3A":
                 send_json(self, 200, {"total": 0, "hits": []})
@@ -431,6 +510,9 @@ PY
   printf 'export BIOMCP_GNOMAD_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CANCERHOTSPOTS_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CLINVAR_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_MUTALYZER_BASE_URL=%q\n' "$base_url/api"
+  printf 'export BIOMCP_VARIANTVALIDATOR_BASE_URL=%q\n' "$base_url"
+  printf 'export BIOMCP_CLINGEN_CAR_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"

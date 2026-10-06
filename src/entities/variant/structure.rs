@@ -262,6 +262,7 @@ fn display_variant(id: &str, variant: &Variant, id_format: &VariantIdFormat) -> 
 fn input_kind_label(id_format: &VariantIdFormat) -> &'static str {
     match id_format {
         VariantIdFormat::RsId(_) => "rsid",
+        VariantIdFormat::ClinvarVariationId(_) => "clinvar_variation_id",
         VariantIdFormat::HgvsGenomic(_) => "hgvs_genomic",
         VariantIdFormat::GeneProteinChange { .. } => "gene_protein_change",
     }
