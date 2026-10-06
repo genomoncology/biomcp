@@ -110,7 +110,7 @@ async fn complete_hit_normalization_selects_confirmed_citations_in_both_orders()
                     )
                 };
                 let loser = if winner == "111" { "222" } else { "111" };
-                let mut hits = vec![
+                let mut hits = [
                     hit("rs101", a, winner),
                     hit("rs101", z, loser),
                     hit("rs000", r#""0""#, "333"),
