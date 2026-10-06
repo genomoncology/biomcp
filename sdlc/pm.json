@@ -217,8 +217,7 @@
     },
     {
       "name": "1.0",
-      "targetRef": "biodata/biomcp-1.0",
-      "state": "active"
+      "state": "settled"
     }
   ]
 }

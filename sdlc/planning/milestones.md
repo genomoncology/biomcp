@@ -2,7 +2,7 @@
 
 Status: accepted 2026-10-06 on Ian's direction. Ian can overturn any milestone, criterion, or placement.
 
-Two lines share the biomcp numbering remote. 0.9.2 is this team's active line: the 0.9 branch queue (1290 through 1304 and follow-ups) lands on main toward a 0.9.2 tag whose timing is Ian's call. 1.0 is the biodata team's line; its work lives on biodata/* and ticket/20xx branches of the shared remote and in the biodata repo, and this team does not touch it. With two milestones declared, every new ticket names its milestone; 0.9 tickets are the default expectation here, and any 1.0 ticket belongs to the other team's records.
+Two lines share the biomcp numbering remote. 0.9.2 is this team's active line: the 0.9 branch queue (1290 through 1306 and follow-ups) lands on main toward a 0.9.2 tag whose timing is Ian's call. 1.0 is the other team's line; its work lives in their branches, their tickets, and their repo, and this team does not touch it. With two milestones declared, every new ticket names its milestone; 0.9 tickets are the default expectation here, and any 1.0 ticket belongs to the other team's records.
 
 ## 0.9.2
 
@@ -12,4 +12,4 @@ Exit criteria: 1298 and 1294 land after the KB lead's QA; 1299, 1302, 1304, and 
 
 ## 1.0
 
-Owned by the biodata team. Tracked in their records, not here.
+Owned by the other team. Tracked in their records, not here.
