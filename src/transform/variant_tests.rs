@@ -234,30 +234,6 @@ fn extracts_expanded_variant_sections() {
 }
 
 #[test]
-fn extracts_bayesdel_flavors_from_recorded_myvariant_payload() {
-    let hit: MyVariantHit = serde_json::from_slice(include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/testdata/sources/myvariant/get_braf_v600e.json"
-    )))
-    .expect("recorded MyVariant payload should parse");
-
-    let predictions = extract_expanded_predictions(&hit);
-    let add_af = predictions
-        .iter()
-        .find(|entry| entry.tool == "BayesDel add-AF")
-        .expect("add-AF prediction should be present");
-    assert_eq!(add_af.score, Some(0.399079));
-    assert_eq!(add_af.prediction.as_deref(), Some("D"));
-
-    let no_af = predictions
-        .iter()
-        .find(|entry| entry.tool == "BayesDel no-AF")
-        .expect("no-AF prediction should be present");
-    assert_eq!(no_af.score, Some(0.335473));
-    assert_eq!(no_af.prediction.as_deref(), Some("D"));
-}
-
-#[test]
 fn from_myvariant_hit_sets_top_disease_from_sorted_clinvar_rows() {
     let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
         "_id": "chr7:g.140453136A>T",

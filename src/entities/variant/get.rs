@@ -909,7 +909,6 @@ fn cancerhotspots_outcome(
         SectionOutcome::empty("cancerhotspots.org")
     }
 }
-
 #[cfg(test)]
 fn apply_cancerhotspots_result(
     variant: &mut Variant,
@@ -1436,12 +1435,9 @@ pub async fn get_with_workflow_signals(
 
     Ok((variant, signals))
 }
-
-#[cfg(test)]
-mod protein_change_tests;
-
-#[cfg(test)]
-pub(super) mod tests;
-
 #[cfg(test)]
 mod dbnsfp_transport_tests;
+#[cfg(test)]
+mod protein_change_tests;
+#[cfg(test)]
+pub(super) mod tests;

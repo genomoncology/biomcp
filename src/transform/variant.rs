@@ -166,17 +166,8 @@ fn first_score(value: Option<&biodata::MyVariantDbnsfpNumber>) -> Option<f64> {
     value.and_then(biodata::MyVariantDbnsfpNumber::first)
 }
 
-fn first_nonempty_dbnsfp(values: &biodata::MyVariantDbnsfpText) -> Option<String> {
-    values
-        .first()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .map(str::to_string)
-}
-
-fn first_nonempty(values: &StringOrVec) -> Option<String> {
-    values
-        .first()
+fn first_nonempty(value: Option<&str>) -> Option<String> {
+    value
         .map(str::trim)
         .filter(|v| !v.is_empty())
         .map(str::to_string)
@@ -273,7 +264,7 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
             dbnsfp
                 .alphamissense()
                 .and_then(|v| v.pred())
-                .and_then(first_nonempty_dbnsfp),
+                .and_then(|value| first_nonempty(value.first())),
             "alphamissense",
         ),
     );
@@ -285,7 +276,7 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
             dbnsfp
                 .clinpred()
                 .and_then(|v| v.pred())
-                .and_then(first_nonempty_dbnsfp),
+                .and_then(|value| first_nonempty(value.first())),
             "clinpred",
         ),
     );
@@ -307,7 +298,7 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
             dbnsfp
                 .metarnn()
                 .and_then(|v| v.pred())
-                .and_then(first_nonempty_dbnsfp),
+                .and_then(|value| first_nonempty(value.first())),
             "metarnn",
         ),
     );
@@ -323,7 +314,7 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
                 .bayesdel()
                 .and_then(|v| v.add_af())
                 .and_then(|v| v.pred())
-                .and_then(first_nonempty_dbnsfp),
+                .and_then(|value| first_nonempty(value.first())),
             "bayesdel_add_af",
         ),
     );
@@ -339,7 +330,7 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
                 .bayesdel()
                 .and_then(|v| v.no_af())
                 .and_then(|v| v.pred())
-                .and_then(first_nonempty_dbnsfp),
+                .and_then(|value| first_nonempty(value.first())),
             "bayesdel_no_af",
         ),
     );
@@ -352,8 +343,8 @@ fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
 
     let context = VariantCosmicContext {
         mut_freq: cosmic.mut_freq,
-        tumor_site: first_nonempty(&cosmic.tumor_site),
-        mut_nt: first_nonempty(&cosmic.mut_nt),
+        tumor_site: first_nonempty(cosmic.tumor_site.first()),
+        mut_nt: first_nonempty(cosmic.mut_nt.first()),
     };
 
     if context.mut_freq.is_none() && context.tumor_site.is_none() && context.mut_nt.is_none() {

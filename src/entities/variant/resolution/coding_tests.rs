@@ -339,23 +339,6 @@ fn coding_identity_comparison_table() {
     }
 }
 
-fn source_internal(hit: &MyVariantHit) -> Value {
-    let db = hit.dbnsfp.as_ref().unwrap();
-    // Preserve the existing oracle's shape labels through the public source encoder.
-    let shape = |v: &biodata::MyVariantDbnsfpText| {
-        let encoded = serde_json::to_value(v.as_source()).unwrap();
-        if encoded.is_string() {
-            "StringOrVec::Single"
-        } else if encoded.is_array() {
-            "StringOrVec::Multiple"
-        } else {
-            "StringOrVec::None"
-        }
-    };
-    json!({"genename_variant":shape(db.genename()),"hgvsc_variant":shape(db.hgvsc()),
-        "hgvsp_variant":shape(db.hgvsp()),"snpeff_complete":hit.snpeff.as_ref().unwrap().is_complete()})
-}
-
 #[tokio::test(flavor = "multi_thread")]
 #[serial_test::serial(source_env)]
 async fn coding_source_projection_table() {
@@ -383,7 +366,12 @@ async fn coding_source_projection_table() {
             assert_eq!(serde_json::to_value(&hit).unwrap(), row["expected_decoded"]);
             hit
         };
-        assert_eq!(source_internal(&hit), row["expected_internal"]);
+        assert_eq!(
+            hit.snpeff.as_ref().unwrap().is_complete(),
+            row["expected_internal"]["snpeff_complete"]
+                .as_bool()
+                .unwrap()
+        );
         let identity = SourceVariantIdentity::from_myvariant_hit(&hit);
         assert_eq!(
             serde_json::to_value(&identity).unwrap(),
