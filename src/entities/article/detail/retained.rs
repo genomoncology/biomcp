@@ -16,6 +16,7 @@ pub(in crate::entities::article) fn first_europepmc_hit(
         .and_then(|list| list.result.into_iter().next())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(in crate::entities::article) async fn resolve_article_from_pmid_with_context(
     pmid: u32,
     not_found_id: &str,
@@ -24,6 +25,7 @@ pub(in crate::entities::article) async fn resolve_article_from_pmid_with_context
     europe: &EuropePmcClient,
     europe_hint: Option<&EuropePmcResult>,
     execution: Option<&VariantArticleExecutionContext>,
+    include_annotation_positions: bool,
 ) -> Result<Article, BioMcpError> {
     let Some(execution) = execution else {
         return resolve_article_from_pmid(
@@ -33,6 +35,7 @@ pub(in crate::entities::article) async fn resolve_article_from_pmid_with_context
             pubtator,
             europe,
             None,
+            include_annotation_positions,
         )
         .await;
     };
@@ -68,7 +71,7 @@ pub(in crate::entities::article) async fn resolve_variant_article_from_pmid(
             };
             let mut article = transform::article::retained_from_pubtator_document(&doc);
             unit.commit("ok", 1, || {
-                article.annotations = transform::article::retained_extract_annotations(&doc);
+                article.annotations = transform::article::retained_extract_annotations(&doc, false);
             });
             if let Some(hit) = europe_hint {
                 transform::article::retained_merge_europepmc_metadata(&mut article, hit);

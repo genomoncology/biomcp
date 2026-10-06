@@ -194,7 +194,10 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
             if plain_article_search_deadline_elapsed(execution)
                 && super::search::is_search_deadline_error(&err)
             {
-                return Some(article_search_deadline_status(ArticleSource::SemanticScholar, "initialization"));
+                return Some(article_search_deadline_status(
+                    ArticleSource::SemanticScholar,
+                    "initialization",
+                ));
             }
             return Some(ArticleSourceStatus {
                 source: ArticleSource::SemanticScholar,
@@ -363,7 +366,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
             if plain_article_search_deadline_elapsed(execution)
                 && super::search::is_search_deadline_error(&err)
             {
-                return vec![article_search_deadline_status(ArticleSource::PubTator, "initialization")];
+                return vec![article_search_deadline_status(
+                    ArticleSource::PubTator,
+                    "initialization",
+                )];
             }
             return Vec::new();
         }
@@ -382,7 +388,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
             if plain_article_search_deadline_elapsed(execution)
                 && super::search::is_search_deadline_error(&err)
             {
-                return vec![article_search_deadline_status(ArticleSource::EuropePmc, "initialization")];
+                return vec![article_search_deadline_status(
+                    ArticleSource::EuropePmc,
+                    "initialization",
+                )];
             }
             return Vec::new();
         }
@@ -404,7 +413,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         }
         let lookup_id = rows[row_idx].pmid.clone();
         let result = resolve_article_from_pmid_with_context(
-            pmid, &lookup_id, &lookup_id, &pubtator, &europe, None, execution,
+            pmid, &lookup_id, &lookup_id, &pubtator, &europe, None, execution, false,
         )
         .await;
         match result {

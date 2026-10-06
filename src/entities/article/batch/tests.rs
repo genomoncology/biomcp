@@ -35,31 +35,38 @@ fn article_batch_item_projection_keeps_requested_id_year_and_top_entities() {
                 AnnotationCount {
                     text: "BRAF".to_string(),
                     count: 4,
+                    ..Default::default()
                 },
                 AnnotationCount {
                     text: "NRAS".to_string(),
                     count: 3,
+                    ..Default::default()
                 },
                 AnnotationCount {
                     text: "MAP2K1".to_string(),
                     count: 2,
+                    ..Default::default()
                 },
                 AnnotationCount {
                     text: "PTEN".to_string(),
                     count: 1,
+                    ..Default::default()
                 },
             ],
             diseases: vec![AnnotationCount {
                 text: "melanoma".to_string(),
                 count: 2,
+                ..Default::default()
             }],
             chemicals: vec![AnnotationCount {
                 text: "vemurafenib".to_string(),
                 count: 2,
+                ..Default::default()
             }],
             mutations: vec![AnnotationCount {
                 text: "V600E".to_string(),
                 count: 3,
+                ..Default::default()
             }],
         }),
         indexing: None,

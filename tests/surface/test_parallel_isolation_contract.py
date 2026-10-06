@@ -1276,6 +1276,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/surface/cli-contract-ratchet.md",
     "spec/surface/build-profile.md",
     "spec/surface/trial-retirement.md",
+    "spec/entity/article-entities.md",
 )
 
 

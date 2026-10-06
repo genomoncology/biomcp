@@ -82,19 +82,24 @@
     },
     {
       "path": "src/entities/article/identity_verification.rs",
-      "baseline_lines": 1398,
+      "baseline_lines": 1404,
       "floor_lines": 1398,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1296",
+        "delta": 6,
+        "reason": "PubTatorAnnotation and PubTatorAnnotationInfons gained locations and rsID fields, so the verification fixture literal must name them.",
+        "removal_condition": "Fold the fixture literal into a shared builder when the identity verification tests grow another provider-shape field."
+      }
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1406,
+      "baseline_lines": 1428,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144, 1293",
-        "delta": 92,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract. Maintenance reconciliation adds 21 total lines for the article search diagnostics record.",
-        "removal_condition": "Extract article graph result types when the article graph contract is next decomposed."
+        "ticket": "1144, 1293, 1296",
+        "delta": 114,
+        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
+        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
       }
     },
     {
@@ -323,13 +328,13 @@
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1262,
+      "baseline_lines": 1335,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1144, 1201",
-        "delta": 55,
-        "reason": "Pin the graph pagination footer and shared continuation command beside the existing article Markdown renderer coverage; ticket 1201 adds the header parameter to every article render context literal.",
-        "removal_condition": "Extract graph renderer tests when the article Markdown renderer tests are next decomposed."
+        "ticket": "1144, 1201, 1296",
+        "delta": 128,
+        "reason": "Pin the graph pagination footer and shared continuation command; ticket 1201 adds the header parameter to every article render context literal; ticket 1296 pins entity rows printing get commands by accepted identifier while gene and chemical rows keep their text searches.",
+        "removal_condition": "Extract graph and entities renderer tests when a package-neutral module split can preserve the exact source package boundary."
       }
     },
     {

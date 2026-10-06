@@ -10,10 +10,12 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
             AnnotationCount {
                 text: "BRAF".to_string(),
                 count: 5,
+                ..Default::default()
             },
             AnnotationCount {
                 text: "serine-threonine protein kinase".to_string(),
                 count: 1,
+                ..Default::default()
             },
         ],
         diseases: Vec::new(),
@@ -21,6 +23,7 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
         mutations: vec![AnnotationCount {
             text: "V600E".to_string(),
             count: 2,
+            ..Default::default()
         }],
     };
     let markdown =
@@ -29,6 +32,74 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
     assert!(markdown.contains("`biomcp search gene -q \"serine-threonine protein kinase\"`"));
     assert!(!markdown.contains("`biomcp get gene serine-threonine protein kinase`"));
     assert!(markdown.contains("`biomcp get variant V600E`"));
+}
+
+#[test]
+fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
+    let annotations = ArticleAnnotations {
+        genes: vec![AnnotationCount {
+            text: "KRAS".to_string(),
+            count: 12,
+            namespace: Some("NCBIGene".to_string()),
+            identifier: Some("3845".to_string()),
+            ..Default::default()
+        }],
+        diseases: vec![
+            AnnotationCount {
+                text: "NSCLC".to_string(),
+                count: 16,
+                namespace: Some("MESH".to_string()),
+                identifier: Some("MESH:D002289".to_string()),
+                ..Default::default()
+            },
+            AnnotationCount {
+                text: "melanoma".to_string(),
+                count: 1,
+                namespace: Some("OMIM".to_string()),
+                identifier: Some("OMIM:155601".to_string()),
+                ..Default::default()
+            },
+        ],
+        chemicals: vec![AnnotationCount {
+            text: "vemurafenib".to_string(),
+            count: 3,
+            namespace: Some("MESH".to_string()),
+            identifier: Some("MESH:D087240".to_string()),
+            ..Default::default()
+        }],
+        mutations: vec![
+            AnnotationCount {
+                text: "G12C".to_string(),
+                count: 1,
+                namespace: Some("rsID".to_string()),
+                identifier: Some("rs121913530".to_string()),
+                ..Default::default()
+            },
+            AnnotationCount {
+                text: "V600E".to_string(),
+                count: 1,
+                namespace: Some("HGVS".to_string()),
+                identifier: Some("NM_004333.6:c.1799T>A".to_string()),
+                ..Default::default()
+            },
+        ],
+    };
+    let markdown =
+        article_entities_markdown("30738221", Some(&annotations), Some(10)).expect("markdown");
+
+    // Disease MeSH and OMIM identifiers open the record directly.
+    assert!(markdown.contains("`biomcp get disease MESH:D002289`"));
+    assert!(markdown.contains("`biomcp get disease OMIM:155601`"));
+    // Variant rsIDs and accepted HGVS expressions resolve exactly.
+    assert!(markdown.contains("`biomcp get variant rs121913530`"));
+    assert!(markdown.contains("`biomcp get variant \"NM_004333.6:c.1799T>A\"`"));
+    // `get gene` takes symbols, not NCBI Gene identifiers, so the row keeps
+    // its text search; `get drug` takes names, not MeSH identifiers.
+    assert!(markdown.contains("`biomcp search gene -q KRAS`"));
+    assert!(markdown.contains("`biomcp search drug -q vemurafenib`"));
+    assert!(!markdown.contains("get gene 3845"));
+    assert!(!markdown.contains("get drug MESH:D087240"));
+    assert!(!markdown.contains("get disease NSCLC"));
 }
 
 #[test]
@@ -394,10 +465,12 @@ fn article_batch_markdown_renders_compact_rows() {
                 genes: vec![crate::entities::article::AnnotationCount {
                     text: "BRAF".to_string(),
                     count: 4,
+                    ..Default::default()
                 }],
                 diseases: vec![crate::entities::article::AnnotationCount {
                     text: "melanoma".to_string(),
                     count: 2,
+                    ..Default::default()
                 }],
                 chemicals: Vec::new(),
                 mutations: Vec::new(),

@@ -269,6 +269,7 @@ fn markdown_detail_outputs_label_article_and_pathway_sources() {
             genes: vec![AnnotationCount {
                 text: "CFTR".to_string(),
                 count: 1,
+                ..Default::default()
             }],
             diseases: Vec::new(),
             chemicals: Vec::new(),

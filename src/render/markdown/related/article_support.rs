@@ -49,9 +49,13 @@ pub(super) fn exact_variant_article_follow_up(
 
 pub(super) fn article_annotation_command(
     bucket: ArticleAnnotationBucket,
-    text: &str,
+    annotation: &AnnotationCount,
 ) -> Option<String> {
-    let text = text.trim();
+    if let Some(command) = article_annotation_get_command(bucket, annotation) {
+        return Some(command);
+    }
+
+    let text = annotation.text.trim();
     let quoted = quote_arg(text);
     if quoted.is_empty() {
         return None;
@@ -63,6 +67,45 @@ pub(super) fn article_annotation_command(
         ArticleAnnotationBucket::Chemical => format!("biomcp search drug -q {quoted}"),
         ArticleAnnotationBucket::Mutation => format!("biomcp get variant {quoted}"),
     })
+}
+
+/// A `get` command only when BioMCP accepts that identifier: disease MeSH and
+/// OMIM identifiers resolve through the disease crosswalk, and variant rsIDs
+/// or HGVS expressions parse as exact variant input. Gene rows keep the text
+/// search because `get gene` takes symbols, not NCBI Gene identifiers.
+fn article_annotation_get_command(
+    bucket: ArticleAnnotationBucket,
+    annotation: &AnnotationCount,
+) -> Option<String> {
+    let identifier = annotation.identifier.as_deref()?.trim();
+    if identifier.is_empty() {
+        return None;
+    }
+
+    match (bucket, annotation.namespace.as_deref()) {
+        (ArticleAnnotationBucket::Disease, Some("MESH"))
+        | (ArticleAnnotationBucket::Disease, Some("OMIM")) => {
+            Some(format!("biomcp get disease {identifier}"))
+        }
+        (ArticleAnnotationBucket::Mutation, Some("rsID"))
+            if matches!(
+                crate::entities::variant::classify_variant_input(identifier),
+                crate::entities::variant::VariantInputKind::Exact(_)
+            ) =>
+        {
+            Some(format!("biomcp get variant {identifier}"))
+        }
+        (ArticleAnnotationBucket::Mutation, Some("HGVS"))
+            if matches!(
+                crate::entities::variant::classify_variant_input(identifier),
+                crate::entities::variant::VariantInputKind::Exact(_)
+                    | crate::entities::variant::VariantInputKind::TranscriptCodingHgvs(_)
+            ) =>
+        {
+            Some(format!("biomcp get variant {}", quote_arg(identifier)))
+        }
+        _ => None,
+    }
 }
 
 pub(super) fn ranked_article_annotation_commands(
@@ -80,7 +123,7 @@ pub(super) fn ranked_article_annotation_commands(
         .iter()
         .enumerate()
         .filter_map(|(index, row)| {
-            let command = article_annotation_command(bucket, &row.text)?;
+            let command = article_annotation_command(bucket, row)?;
             let normalized_text = normalize_match_text(&row.text);
             let title_hit =
                 !normalized_text.is_empty() && normalized_title.contains(normalized_text.as_str());

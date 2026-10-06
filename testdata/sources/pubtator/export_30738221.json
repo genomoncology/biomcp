@@ -1,0 +1,1889 @@
+{
+  "PubTator3": [
+    {
+      "_id": "30738221|None",
+      "id": "30738221",
+      "infons": {},
+      "passages": [
+        {
+          "infons": {
+            "journal": "J Thorac Oncol. 2019 Jun;14(6):1095-1101. doi: 10.1016/j.jtho.2019.01.011. Epub ",
+            "year": "2019",
+            "type": "title",
+            "authors": "Jeanson A, Tomasini P, Souquet-Bressand M, Brandone N, Boucekine M, Grangeon M, Chaleat S, Khobta N, Milia J, Mhanna L, Greillier L, Biemar J, Nanni I, Ouafik L, Garcia S, Mazieres J, Barlesi F, Mascaux C"
+          },
+          "offset": 0,
+          "text": "Efficacy of Immune Checkpoint Inhibitors in KRAS-Mutant Non-Small Cell Lung Cancer (NSCLC).",
+          "sentences": [],
+          "annotations": [
+            {
+              "id": "3",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 44,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "4",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "Non-Small Cell Lung Cancer",
+              "locations": [
+                {
+                  "offset": 56,
+                  "length": 26
+                }
+              ]
+            },
+            {
+              "id": "5",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 84,
+                  "length": 5
+                }
+              ]
+            }
+          ],
+          "relations": []
+        },
+        {
+          "infons": {
+            "type": "abstract"
+          },
+          "offset": 92,
+          "text": "INTRODUCTION: KRAS mutation is the most frequent molecular alteration found in advanced NSCLC; it is associated with a poor prognosis without available targeted therapy. Treatment options for NSCLC have been recently enriched by the development of immune checkpoint inhibitors (ICIs), and data about its efficacy in patients with KRAS-mutant NSCLC are discordant. This study assessed the routine efficacy of ICIs in advanced KRAS-mutant NSCLC. METHODS: In this retrospective study, clinical data were extracted from the medical records of patients with advanced NSCLC treated with ICIs and with available molecular analysis between April 2013 and June 2017. Analysis of programmed death ligand 1 (PD-L1) expression was performed if exploitable tumor material was available. RESULTS: A total of 282 patients with ICI-treated (in the first line or more) advanced NSCLC (all histological subgroups) who were treated with ICIs (anti-programmed death 1, anti-PD-L1, or anti-cytotoxic T-lymphocyte associated protein 4 antibodies), including 162 (57.4%) with KRAS mutation, 27 (9.6%) with other mutations, and 93 (33%) with a wild-type phenotype, were identified. PD-L1 analysis was available for 128 patients (45.4%), of whom 45.3% and 19.5% had PD-L1 expression of 1% or more and 50%, respectively (49.5% and 21.2%, respectively, in the case of the 85 patients with KRAS-mutant NSCLC). No significant difference was seen in terms of objective response rates, progression-free survival, or overall survival between KRAS-mutant NSCLC and other NSCLC. No significant differences in overall survival or progression-free survival were observed between the major KRAS mutation subtypes (G12A, G12C, G12D, G12V, and G13C). In KRAS-mutant NSCLC, unlike in non-KRAS-mutant NSCLC, the efficacy of ICIs is consistently higher, even though not statistically significant, for patients with PD-L1 expression in 1% or more of tumor cells than for those with PD-L1 expression in less than 1% of tumor cells, and this finding is especially true when PD-L1 expression is high (PD-L1 expression >=50%). CONCLUSION: For patients with KRAS-mutant NSCLC (all mutational subtypes), the efficacy of ICI is similar to that for patients with other types of NSCLC. PD-L1 expression seems to be more relevant for predicting the efficacy of ICIs in KRAS-mutant NSCLC than it is in other types of NSCLC.",
+          "sentences": [],
+          "annotations": [
+            {
+              "id": "59",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 106,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "60",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 180,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "61",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 284,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "62",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 408,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "63",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 422,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "64",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 434,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "65",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 517,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "66",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 529,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "67",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 631,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "68",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 654,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "69",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "programmed death ligand 1",
+              "locations": [
+                {
+                  "offset": 762,
+                  "length": 25
+                }
+              ]
+            },
+            {
+              "id": "70",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 789,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "71",
+              "infons": {
+                "identifier": "MESH:D009369",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D009369"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D009369",
+                "biotype": "disease",
+                "name": "Neoplasms",
+                "accession": "@DISEASE_Neoplasms"
+              },
+              "text": "tumor",
+              "locations": [
+                {
+                  "offset": 836,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "72",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 890,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "73",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 953,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "74",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 1046,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "75",
+              "infons": {
+                "identifier": "1493",
+                "type": "Gene",
+                "ncbi_homologene": "3820",
+                "valid": true,
+                "normalized": [
+                  1493
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 1493,
+                "biotype": "gene",
+                "name": "CTLA4",
+                "accession": "@GENE_CTLA4"
+              },
+              "text": "cytotoxic T-lymphocyte associated protein 4",
+              "locations": [
+                {
+                  "offset": 1061,
+                  "length": 43
+                }
+              ]
+            },
+            {
+              "id": "76",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 1145,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "77",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 1250,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "78",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 1287,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "79",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 1333,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "80",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 1440,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "81",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 1454,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "82",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 1466,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "83",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 1602,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "84",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 1614,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "85",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 1630,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "86",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 1745,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "87",
+              "infons": {
+                "identifier": "tmVar:p|SUB|G|12|A;HGVS:p.G12A;VariantGroup:2;CorrespondingGene:3845;RS#:121913529;CorrespondingSpecies:9606;CA#:135567",
+                "type": "Variant",
+                "valid": true,
+                "subtype": "ProteinMutation",
+                "database": "litvar",
+                "hgvs": "p.G12A",
+                "gene_ids": [
+                  3845
+                ],
+                "gene_id": 3845,
+                "rsids": [
+                  "rs121913529"
+                ],
+                "species_ids": [
+                  9606
+                ],
+                "species_id": 9606,
+                "clingen_id": "CA135567",
+                "rsid": "rs121913529",
+                "normalized": [
+                  "rs121913529##",
+                  "#3845#",
+                  "CA135567#rs121913529##"
+                ],
+                "normalized_id": "rs121913529##",
+                "biotype": "variant",
+                "name": "p.G12A",
+                "accession": "@VARIANT_p.G12D_KRAS_human"
+              },
+              "text": "G12A",
+              "locations": [
+                {
+                  "offset": 1769,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "88",
+              "infons": {
+                "identifier": "tmVar:p|SUB|G|12|C;HGVS:p.G12C;VariantGroup:1;CorrespondingGene:3845;RS#:121913530;CorrespondingSpecies:9606;CA#:122528",
+                "type": "Variant",
+                "valid": true,
+                "subtype": "ProteinMutation",
+                "database": "litvar",
+                "hgvs": "p.G12C",
+                "gene_ids": [
+                  3845
+                ],
+                "gene_id": 3845,
+                "rsids": [
+                  "rs121913530"
+                ],
+                "species_ids": [
+                  9606
+                ],
+                "species_id": 9606,
+                "clingen_id": "CA122528",
+                "rsid": "rs121913530",
+                "normalized": [
+                  "rs121913530##",
+                  "#3845#",
+                  "CA122528#rs121913530##"
+                ],
+                "normalized_id": "rs121913530##",
+                "biotype": "variant",
+                "name": "p.G12C",
+                "accession": "@VARIANT_p.G12C_KRAS_human"
+              },
+              "text": "G12C",
+              "locations": [
+                {
+                  "offset": 1775,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "89",
+              "infons": {
+                "identifier": "tmVar:p|SUB|G|12|D;HGVS:p.G12D;VariantGroup:3;CorrespondingGene:3845;RS#:121913529;CorrespondingSpecies:9606;CA#:122538",
+                "type": "Variant",
+                "valid": true,
+                "subtype": "ProteinMutation",
+                "database": "litvar",
+                "hgvs": "p.G12D",
+                "gene_ids": [
+                  3845
+                ],
+                "gene_id": 3845,
+                "rsids": [
+                  "rs121913529"
+                ],
+                "species_ids": [
+                  9606
+                ],
+                "species_id": 9606,
+                "clingen_id": "CA122538",
+                "rsid": "rs121913529",
+                "normalized": [
+                  "rs121913529##",
+                  "#3845#",
+                  "CA122538#rs121913529##"
+                ],
+                "normalized_id": "rs121913529##",
+                "biotype": "variant",
+                "name": "p.G12D",
+                "accession": "@VARIANT_p.G12D_KRAS_human"
+              },
+              "text": "G12D",
+              "locations": [
+                {
+                  "offset": 1781,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "90",
+              "infons": {
+                "identifier": "tmVar:p|SUB|G|12|V;HGVS:p.G12V;VariantGroup:4;CorrespondingGene:3845;RS#:121913529;CorrespondingSpecies:9606;CA#:122540",
+                "type": "Variant",
+                "valid": true,
+                "subtype": "ProteinMutation",
+                "database": "litvar",
+                "hgvs": "p.G12V",
+                "gene_ids": [
+                  3845
+                ],
+                "gene_id": 3845,
+                "rsids": [
+                  "rs121913529"
+                ],
+                "species_ids": [
+                  9606
+                ],
+                "species_id": 9606,
+                "clingen_id": "CA122540",
+                "rsid": "rs121913529",
+                "normalized": [
+                  "rs121913529##",
+                  "#3845#",
+                  "CA122540#rs121913529##"
+                ],
+                "normalized_id": "rs121913529##",
+                "biotype": "variant",
+                "name": "p.G12V",
+                "accession": "@VARIANT_p.G12D_KRAS_human"
+              },
+              "text": "G12V",
+              "locations": [
+                {
+                  "offset": 1787,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "91",
+              "infons": {
+                "identifier": "tmVar:p|SUB|G|13|C;HGVS:p.G13C;VariantGroup:0;CorrespondingGene:3845;RS#:121913535;CorrespondingSpecies:9606;CA#:122542",
+                "type": "Variant",
+                "valid": true,
+                "subtype": "ProteinMutation",
+                "database": "litvar",
+                "hgvs": "p.G13C",
+                "gene_ids": [
+                  3845
+                ],
+                "gene_id": 3845,
+                "rsids": [
+                  "rs121913535"
+                ],
+                "species_ids": [
+                  9606
+                ],
+                "species_id": 9606,
+                "clingen_id": "CA122542",
+                "rsid": "rs121913535",
+                "normalized": [
+                  "rs121913535##",
+                  "#3845#",
+                  "CA122542#rs121913535##"
+                ],
+                "normalized_id": "rs121913535##",
+                "biotype": "variant",
+                "name": "p.G13C",
+                "accession": "@VARIANT_p.G13C_KRAS_human"
+              },
+              "text": "G13C",
+              "locations": [
+                {
+                  "offset": 1797,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "92",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 1807,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "93",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 1819,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "94",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 1840,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "95",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 1852,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "96",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 1951,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "97",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 1965,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "98",
+              "infons": {
+                "identifier": "MESH:D009369",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D009369"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D009369",
+                "biotype": "disease",
+                "name": "Neoplasms",
+                "accession": "@DISEASE_Neoplasms"
+              },
+              "text": "tumor",
+              "locations": [
+                {
+                  "offset": 1999,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "99",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 2031,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "100",
+              "infons": {
+                "identifier": "MESH:D009369",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D009369"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D009369",
+                "biotype": "disease",
+                "name": "Neoplasms",
+                "accession": "@DISEASE_Neoplasms"
+              },
+              "text": "tumor",
+              "locations": [
+                {
+                  "offset": 2067,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "101",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 2121,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "102",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 2147,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "103",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 2188,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "104",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 2202,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "105",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 2214,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "106",
+              "infons": {
+                "identifier": "9606",
+                "type": "Species",
+                "valid": true,
+                "normalized": [
+                  9606
+                ],
+                "database": "ncbi_taxonomy",
+                "normalized_id": 9606,
+                "biotype": "species",
+                "name": "9606",
+                "accession": null
+              },
+              "text": "patients",
+              "locations": [
+                {
+                  "offset": 2290,
+                  "length": 8
+                }
+              ]
+            },
+            {
+              "id": "107",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 2319,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "108",
+              "infons": {
+                "identifier": "29126",
+                "type": "Gene",
+                "ncbi_homologene": "8560",
+                "valid": true,
+                "normalized": [
+                  29126
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 29126,
+                "biotype": "gene",
+                "name": "CD274",
+                "accession": "@GENE_CD274"
+              },
+              "text": "PD-L1",
+              "locations": [
+                {
+                  "offset": 2326,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "109",
+              "infons": {
+                "identifier": "3845",
+                "type": "Gene",
+                "ncbi_homologene": "37990",
+                "valid": true,
+                "normalized": [
+                  3845
+                ],
+                "database": "ncbi_gene",
+                "normalized_id": 3845,
+                "biotype": "gene",
+                "name": "KRAS",
+                "accession": "@GENE_KRAS"
+              },
+              "text": "KRAS",
+              "locations": [
+                {
+                  "offset": 2408,
+                  "length": 4
+                }
+              ]
+            },
+            {
+              "id": "110",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 2420,
+                  "length": 5
+                }
+              ]
+            },
+            {
+              "id": "111",
+              "infons": {
+                "identifier": "MESH:D002289",
+                "type": "Disease",
+                "valid": true,
+                "normalized": [
+                  "D002289"
+                ],
+                "database": "ncbi_mesh",
+                "normalized_id": "D002289",
+                "biotype": "disease",
+                "name": "Carcinoma Non-Small-Cell Lung",
+                "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+              },
+              "text": "NSCLC",
+              "locations": [
+                {
+                  "offset": 2455,
+                  "length": 5
+                }
+              ]
+            }
+          ],
+          "relations": []
+        }
+      ],
+      "relations": [
+        {
+          "id": "R1",
+          "infons": {
+            "score": "0.9237",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "RS#:121913529;HGVS:p.G12A;CorrespondingGene:3845",
+              "type": "Variant",
+              "valid": true,
+              "subtype": "ProteinMutation",
+              "database": "litvar",
+              "rsids": [
+                "rs121913529"
+              ],
+              "hgvs": "p.G12A",
+              "gene_ids": [
+                3845
+              ],
+              "gene_id": 3845,
+              "rsid": "rs121913529",
+              "normalized": [
+                "rs121913529##",
+                "#3845#"
+              ],
+              "normalized_id": "rs121913529##",
+              "biotype": "variant",
+              "name": "p.G12A",
+              "accession": "@VARIANT_p.G12D_KRAS_human"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "0",
+              "role": "28,31"
+            }
+          ]
+        },
+        {
+          "id": "R2",
+          "infons": {
+            "score": "0.9785",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "RS#:121913529;HGVS:p.G12D;CorrespondingGene:3845",
+              "type": "Variant",
+              "valid": true,
+              "subtype": "ProteinMutation",
+              "database": "litvar",
+              "rsids": [
+                "rs121913529"
+              ],
+              "hgvs": "p.G12D",
+              "gene_ids": [
+                3845
+              ],
+              "gene_id": 3845,
+              "rsid": "rs121913529",
+              "normalized": [
+                "rs121913529##",
+                "#3845#"
+              ],
+              "normalized_id": "rs121913529##",
+              "biotype": "variant",
+              "name": "p.G12D",
+              "accession": "@VARIANT_p.G12D_KRAS_human"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "1",
+              "role": "28,33"
+            }
+          ]
+        },
+        {
+          "id": "R3",
+          "infons": {
+            "score": "0.9838",
+            "role1": {
+              "identifier": "29126",
+              "type": "Gene",
+              "valid": true,
+              "normalized": [
+                29126
+              ],
+              "database": "ncbi_gene",
+              "normalized_id": 29126,
+              "biotype": "gene",
+              "name": "CD274",
+              "accession": "@GENE_CD274"
+            },
+            "role2": {
+              "identifier": "3845",
+              "type": "Gene",
+              "valid": true,
+              "normalized": [
+                3845
+              ],
+              "database": "ncbi_gene",
+              "normalized_id": 3845,
+              "biotype": "gene",
+              "name": "KRAS",
+              "accession": "@GENE_KRAS"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "2",
+              "role": "18,20"
+            }
+          ]
+        },
+        {
+          "id": "R4",
+          "infons": {
+            "score": "0.9237",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "RS#:121913535;HGVS:p.G13C;CorrespondingGene:3845",
+              "type": "Variant",
+              "valid": true,
+              "subtype": "ProteinMutation",
+              "database": "litvar",
+              "rsids": [
+                "rs121913535"
+              ],
+              "hgvs": "p.G13C",
+              "gene_ids": [
+                3845
+              ],
+              "gene_id": 3845,
+              "rsid": "rs121913535",
+              "normalized": [
+                "rs121913535##",
+                "#3845#"
+              ],
+              "normalized_id": "rs121913535##",
+              "biotype": "variant",
+              "name": "p.G13C",
+              "accession": "@VARIANT_p.G13C_KRAS_human"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "3",
+              "role": "28,35"
+            }
+          ]
+        },
+        {
+          "id": "R5",
+          "infons": {
+            "score": "0.9997",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "3845",
+              "type": "Gene",
+              "valid": true,
+              "normalized": [
+                3845
+              ],
+              "database": "ncbi_gene",
+              "normalized_id": 3845,
+              "biotype": "gene",
+              "name": "KRAS",
+              "accession": "@GENE_KRAS"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "4",
+              "role": "1,0"
+            }
+          ]
+        },
+        {
+          "id": "R6",
+          "infons": {
+            "score": "0.7075",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "RS#:121913530;HGVS:p.G12C;CorrespondingGene:3845",
+              "type": "Variant",
+              "valid": true,
+              "subtype": "ProteinMutation",
+              "database": "litvar",
+              "rsids": [
+                "rs121913530"
+              ],
+              "hgvs": "p.G12C",
+              "gene_ids": [
+                3845
+              ],
+              "gene_id": 3845,
+              "rsid": "rs121913530",
+              "normalized": [
+                "rs121913530##",
+                "#3845#"
+              ],
+              "normalized_id": "rs121913530##",
+              "biotype": "variant",
+              "name": "p.G12C",
+              "accession": "@VARIANT_p.G12C_KRAS_human"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "5",
+              "role": "28,32"
+            }
+          ]
+        },
+        {
+          "id": "R7",
+          "infons": {
+            "score": "0.9991",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "29126",
+              "type": "Gene",
+              "valid": true,
+              "normalized": [
+                29126
+              ],
+              "database": "ncbi_gene",
+              "normalized_id": 29126,
+              "biotype": "gene",
+              "name": "CD274",
+              "accession": "@GENE_CD274"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "6",
+              "role": "17,18"
+            }
+          ]
+        },
+        {
+          "id": "R8",
+          "infons": {
+            "score": "0.9846",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "RS#:121913529;HGVS:p.G12V;CorrespondingGene:3845",
+              "type": "Variant",
+              "valid": true,
+              "subtype": "ProteinMutation",
+              "database": "litvar",
+              "rsids": [
+                "rs121913529"
+              ],
+              "hgvs": "p.G12V",
+              "gene_ids": [
+                3845
+              ],
+              "gene_id": 3845,
+              "rsid": "rs121913529",
+              "normalized": [
+                "rs121913529##",
+                "#3845#"
+              ],
+              "normalized_id": "rs121913529##",
+              "biotype": "variant",
+              "name": "p.G12V",
+              "accession": "@VARIANT_p.G12D_KRAS_human"
+            },
+            "type": "Association"
+          },
+          "nodes": [
+            {
+              "refid": "7",
+              "role": "28,34"
+            }
+          ]
+        },
+        {
+          "id": "R9",
+          "infons": {
+            "score": "0.9237",
+            "role1": {
+              "identifier": "MESH:D002289",
+              "type": "Disease",
+              "valid": true,
+              "normalized": [
+                "D002289"
+              ],
+              "database": "ncbi_mesh",
+              "normalized_id": "D002289",
+              "biotype": "disease",
+              "name": "Carcinoma Non-Small-Cell Lung",
+              "accession": "@DISEASE_Carcinoma_Non_Small_Cell_Lung"
+            },
+            "role2": {
+              "identifier": "3845",
+              "type": "Gene",
+              "valid": true,
+              "normalized": [
+                3845
+              ],
+              "database": "ncbi_gene",
+              "normalized_id": 3845,
+              "biotype": "gene",
+              "name": "KRAS",
+              "accession": "@GENE_KRAS"
+            },
+            "type": "Association"
+          },
+          "nodes": []
+        }
+      ],
+      "pmid": 30738221,
+      "pmcid": null,
+      "meta": {},
+      "date": "2019-06-01T00:00:00Z",
+      "journal": "J Thorac Oncol",
+      "authors": [
+        "Jeanson A",
+        "Tomasini P",
+        "Souquet-Bressand M",
+        "Brandone N",
+        "Boucekine M",
+        "Grangeon M",
+        "Chaleat S",
+        "Khobta N",
+        "Milia J",
+        "Mhanna L",
+        "Greillier L",
+        "Biemar J",
+        "Nanni I",
+        "Ouafik L",
+        "Garcia S",
+        "Mazières J",
+        "Barlesi F",
+        "Mascaux C"
+      ],
+      "relations_display": [
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@VARIANT_p.G12D_KRAS_human"
+        },
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@VARIANT_p.G12D_KRAS_human"
+        },
+        {
+          "name": "associate|@GENE_CD274|@GENE_KRAS"
+        },
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@VARIANT_p.G13C_KRAS_human"
+        },
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@GENE_KRAS"
+        },
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@VARIANT_p.G12C_KRAS_human"
+        },
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@GENE_CD274"
+        },
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@VARIANT_p.G12D_KRAS_human"
+        },
+        {
+          "name": "associate|@DISEASE_Carcinoma_Non_Small_Cell_Lung|@GENE_KRAS"
+        }
+      ]
+    }
+  ]
+}

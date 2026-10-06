@@ -94,7 +94,7 @@ async fn rejected_admitted_detail_is_terminal_after_one_pubtator_request() {
     let pubtator = PubTatorClient::new().unwrap();
     let europe = EuropePmcClient::new().unwrap();
 
-    let error = get_article_base_with_clients("7", &pubtator, &europe)
+    let error = get_article_base_with_clients("7", &pubtator, &europe, false)
         .await
         .expect_err("mismatched admitted record must fail");
 
@@ -133,7 +133,7 @@ async fn empty_admitted_response_is_original_not_found_without_europepmc() {
     let pubtator = PubTatorClient::new().unwrap();
     let europe = EuropePmcClient::new().unwrap();
 
-    let error = get_article_base_with_clients("7", &pubtator, &europe)
+    let error = get_article_base_with_clients("7", &pubtator, &europe, false)
         .await
         .expect_err("empty admitted response");
 
@@ -177,7 +177,7 @@ async fn actual_pubtator_http_404_retains_europepmc_fallback() {
     let pubtator = PubTatorClient::new().unwrap();
     let europe = EuropePmcClient::new().unwrap();
 
-    let article = get_article_base_with_clients("7", &pubtator, &europe)
+    let article = get_article_base_with_clients("7", &pubtator, &europe, false)
         .await
         .expect("HTTP 404 fallback");
 
@@ -248,7 +248,7 @@ async fn admitted_detail_preserves_shared_text_then_assembles_product_fields() {
     let pubtator = PubTatorClient::new().unwrap();
     let europe = EuropePmcClient::new().unwrap();
 
-    let article = get_article_base_with_clients("7", &pubtator, &europe)
+    let article = get_article_base_with_clients("7", &pubtator, &europe, false)
         .await
         .expect("admitted detail");
 

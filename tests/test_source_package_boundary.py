@@ -72,6 +72,7 @@ REQUIRED_ROOT_ENTRIES = {
 REQUIRED_PACKAGE_MEMBERS = {
     "src/cli/variant/query.rs",
     "spec/entity/variant-gene-first-routing.md",
+    "spec/entity/article-entities.md",
     "src/entities/article/search/deadline.rs",
     "src/entities/article/search/tests/deadline.rs",
     "src/cli/article/tests/diagnostics.rs",

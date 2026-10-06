@@ -34,7 +34,7 @@ different provider surface.
 | `get article <id> annotations` | PubTator entity annotations for a paper | PubTator3-only section |
 | `get article <id> indexing` | Associated citation authors/affiliations/ORCID and structured MeSH headings | Opt-in PubMed citation XML; explicit status separates available-empty from unavailable; included by `all` |
 | `get article <id> fulltext` | Open-access full-text handoff with saved Markdown path and rendered references when available | Uses Europe PMC, NCBI E-utilities, PMC OA, PMC HTML, and opt-in Semantic Scholar PDF fallbacks; NCBI ID Converter bridges PMID/DOI identifiers to PMCID before the PMCID-dependent source attempts |
-| `article entities <pmid>` | Entity-grouped follow-up view for a PMID | Derived from PubTator3 annotation output |
+| `article entities <pmid>` | Entity-grouped follow-up view for a PMID with each annotation's identifier and namespace | Derived from PubTator3 annotation output; `--full` adds passage positions in JSON |
 
 ## Example commands
 
@@ -64,7 +64,7 @@ flags.
 biomcp article entities 22663011
 ```
 
-Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections.
+Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections. JSON rows carry each annotation's identifier and namespace, such as `NCBIGene 3845` for KRAS or `MESH:D002289` for NSCLC, and rows print `get disease MESH:...` or `get variant rs...` commands where BioMCP accepts the identifier. Add `--full` for passage positions in JSON.
 
 ```bash
 biomcp get article 27083046 fulltext

@@ -96,6 +96,72 @@ fn parses_real_export_capture_and_retains_disease_normalized_id() {
 }
 
 #[test]
+fn parses_30738221_capture_with_locations_and_variant_rsids() {
+    let resp: PubTatorExportResponse = decode_json(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
+        StatusCode::OK,
+        Some(&json_ct()),
+        fixture!("export_30738221.json"),
+        true,
+    )
+    .unwrap();
+
+    let document = resp.documents.first().expect("captured document");
+    assert_eq!(document.pmid, Some(30738221));
+
+    let annotations: Vec<_> = document
+        .passages
+        .iter()
+        .flat_map(|passage| &passage.annotations)
+        .collect();
+    assert!(annotations.len() > 20, "capture is missing annotation rows");
+
+    let kras = annotations
+        .iter()
+        .find(|annotation| {
+            annotation.text.as_deref() == Some("KRAS")
+                && annotation
+                    .infons
+                    .as_ref()
+                    .and_then(|infons| infons.identifier.as_deref())
+                    == Some("3845")
+        })
+        .expect("captured KRAS gene annotation");
+    let location = kras
+        .locations
+        .first()
+        .expect("KRAS annotation carries a location");
+    assert!(location.length == 4);
+    assert!(location.offset > 0);
+
+    let g12c = annotations
+        .iter()
+        .find(|annotation| annotation.text.as_deref() == Some("G12C"))
+        .expect("captured G12C variant annotation");
+    let infons = g12c.infons.as_ref().expect("variant infons");
+    assert_eq!(infons.rsid.as_deref(), Some("rs121913530"));
+    assert_eq!(
+        infons.rsids.as_deref(),
+        Some(&["rs121913530".to_string()][..])
+    );
+    assert_eq!(infons.hgvs.as_deref(), Some("p.G12C"));
+    assert!(!g12c.locations.is_empty());
+
+    let nsclc = annotations
+        .iter()
+        .find(|annotation| {
+            annotation.text.as_deref() == Some("NSCLC")
+                && annotation
+                    .infons
+                    .as_ref()
+                    .and_then(|infons| infons.identifier.as_deref())
+                    == Some("MESH:D002289")
+        })
+        .expect("captured NSCLC disease annotation");
+    assert!(!nsclc.locations.is_empty());
+}
+
+#[test]
 fn parses_autocomplete_response_fixture() {
     let resp: Vec<PubTatorAutocompleteResult> = decode_json(
         crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),

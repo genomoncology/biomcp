@@ -231,15 +231,16 @@ fn search_next_commands_drug_who_vaccine_only_stays_list_only() {
 
 #[test]
 fn search_next_commands_recalls_are_list_only() {
-    let related = search_next_commands_recalls(&[crate::entities::adverse_event::RecallSearchResult {
-        recall_number: "F-0001-2026".to_string(),
-        classification: "Class I".to_string(),
-        product_description: "Infusion pump".to_string(),
-        reason_for_recall: "Sterility".to_string(),
-        status: "Ongoing".to_string(),
-        distribution_pattern: None,
-        recall_initiation_date: None,
-    }]);
+    let related =
+        search_next_commands_recalls(&[crate::entities::adverse_event::RecallSearchResult {
+            recall_number: "F-0001-2026".to_string(),
+            classification: "Class I".to_string(),
+            product_description: "Infusion pump".to_string(),
+            reason_for_recall: "Sterility".to_string(),
+            status: "Ongoing".to_string(),
+            distribution_pattern: None,
+            recall_initiation_date: None,
+        }]);
 
     assert_eq!(related, vec!["biomcp list adverse-event".to_string()]);
 }
@@ -331,15 +332,16 @@ fn related_variant_pathogenic_keeps_drug_target_without_vus_literature_pivot() {
 #[test]
 fn related_article_uses_article_entities_helper_command() {
     let article = Article {
-        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(crate::entities::article::ARTICLE_OUTCOME_KEYS),
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        ),
         pmid: Some("22663011".to_string()),
         pmcid: None,
         doi: None,
         title: "Improved survival with MEK inhibition in BRAF-mutated melanoma.".to_string(),
         authors: Vec::new(),
         author_count: 0,
-        author_completeness:
-            crate::entities::article::ArticleAuthorCompleteness::Unavailable,
+        author_completeness: crate::entities::article::ArticleAuthorCompleteness::Unavailable,
         author_source: crate::entities::article::ArticleSource::PubTator,
         journal: None,
         date: None,
@@ -352,7 +354,7 @@ fn related_article_uses_article_entities_helper_command() {
         full_text_source: None,
         full_text_manifest: None,
         full_text_coverage: None,
-            not_included: None,
+        not_included: None,
         europepmc_license: None,
         europepmc_retracted: None,
         annotations: Some(ArticleAnnotations {
@@ -360,33 +362,40 @@ fn related_article_uses_article_entities_helper_command() {
                 AnnotationCount {
                     text: "serine-threonine protein kinase".to_string(),
                     count: 7,
+                    ..Default::default()
                 },
                 AnnotationCount {
                     text: "BRAF".to_string(),
                     count: 5,
+                    ..Default::default()
                 },
                 AnnotationCount {
                     text: "MEK".to_string(),
                     count: 3,
+                    ..Default::default()
                 },
                 AnnotationCount {
                     text: "B-RAF".to_string(),
                     count: 1,
+                    ..Default::default()
                 },
             ],
             diseases: vec![
                 AnnotationCount {
                     text: "melanoma".to_string(),
                     count: 2,
+                    ..Default::default()
                 },
                 AnnotationCount {
                     text: "metastatic melanoma".to_string(),
                     count: 1,
+                    ..Default::default()
                 },
             ],
             chemicals: vec![AnnotationCount {
                 text: "trametinib".to_string(),
                 count: 8,
+                ..Default::default()
             }],
             mutations: Vec::new(),
         }),

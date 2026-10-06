@@ -743,9 +743,9 @@ pub(super) enum ArticleAnnotationBucket {
 
 pub(super) fn article_annotation_command(
     bucket: ArticleAnnotationBucket,
-    text: &str,
+    annotation: &crate::entities::article::AnnotationCount,
 ) -> Option<String> {
-    article_support::article_annotation_command(bucket, text)
+    article_support::article_annotation_command(bucket, annotation)
 }
 
 pub(super) fn trial_results_search_command(trial: &TrialResponse) -> Option<String> {

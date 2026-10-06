@@ -179,7 +179,7 @@ async fn doi_and_pmcid_use_one_bound_detail_with_hint_reuse_and_no_pmid_path() {
     let pubtator = PubTatorClient::new().unwrap();
     let europe = EuropePmcClient::new().unwrap();
 
-    let doi_article = get_article_base_with_clients("10.1/EXAMPLE", &pubtator, &europe)
+    let doi_article = get_article_base_with_clients("10.1/EXAMPLE", &pubtator, &europe, false)
         .await
         .expect("DOI detail");
     assert_eq!(doi_article.title, "PubTator title");
@@ -189,7 +189,7 @@ async fn doi_and_pmcid_use_one_bound_detail_with_hint_reuse_and_no_pmid_path() {
     assert_eq!(doi_article.citation_count, Some(9));
     assert_eq!(doi_article.open_access, Some(true));
 
-    let pmc_article = get_article_base_with_clients("PMC8", &pubtator, &europe)
+    let pmc_article = get_article_base_with_clients("PMC8", &pubtator, &europe, false)
         .await
         .expect("PMCID detail without PMID");
     assert_eq!(pmc_article.title, "No PMID");
@@ -197,13 +197,14 @@ async fn doi_and_pmcid_use_one_bound_detail_with_hint_reuse_and_no_pmid_path() {
     assert_eq!(pmc_article.authors, ["One A", "Two B"]);
     assert_eq!(pmc_article.date.as_deref(), Some("2023"));
 
-    let doi_without_pmid = get_article_base_with_clients("10.1/without-pmid", &pubtator, &europe)
-        .await
-        .expect("DOI detail without PMID");
+    let doi_without_pmid =
+        get_article_base_with_clients("10.1/without-pmid", &pubtator, &europe, false)
+            .await
+            .expect("DOI detail without PMID");
     assert_eq!(doi_without_pmid.title, "DOI without PMID");
     assert_eq!(doi_without_pmid.pmid, None);
 
-    let pmcid_with_pmid = get_article_base_with_clients("PMC9", &pubtator, &europe)
+    let pmcid_with_pmid = get_article_base_with_clients("PMC9", &pubtator, &europe, false)
         .await
         .expect("PMCID detail with PMID");
     assert_eq!(pmcid_with_pmid.title, "PMCID PubTator");
@@ -237,6 +238,7 @@ async fn empty_pmcid_detail_keeps_original_not_found_identity() {
         "pmcid:pmc8",
         &PubTatorClient::new().unwrap(),
         &EuropePmcClient::new().unwrap(),
+        false,
     )
     .await
     .expect_err("empty PMCID detail");
@@ -270,6 +272,7 @@ async fn invalid_old_doi_heuristic_is_rejected_before_http() {
         "10./invalid",
         &PubTatorClient::new().unwrap(),
         &EuropePmcClient::new().unwrap(),
+        false,
     )
     .await
     .expect_err("invalid DOI");
@@ -302,6 +305,7 @@ async fn guarded_legacy_detail_retains_long_abstract_and_license() {
         "PMC9",
         &PubTatorClient::new().unwrap(),
         &EuropePmcClient::new().unwrap(),
+        false,
     )
     .await
     .expect("guarded legacy detail");

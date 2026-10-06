@@ -4,6 +4,13 @@ Proposed 2026-10-04 by the BioMCP 0.9 lead, from historical consumer QA report 0
 
 Status: OPEN.
 
+## Folded scope from 1292's review (2026-10-06)
+
+- Add the missing unit test for the article-search bare-VariationID refusal (src/entities/article/variant_search.rs guard): assert the InvalidArgument message for a ClinvarVariationId input.
+- Decide the EGFR protein-range resolution direction: 1292 parses `EGFR E746_A750del` and refuses with candidates (dbNSFP holds no protein-range alias); this ticket owns whether refusal-with-candidates stays or alias expansion resolves it, under its no-wrong-answers rule.
+
+## Outcome
+
 ## Outcome
 
 A protein-change query such as `DICER1 p.Met1483Ile` resolves to the variant ClinVar means, or says it cannot resolve and lists its candidates. It never silently returns a different transcript's variant.

@@ -117,7 +117,7 @@ mod tests {
         let _ = crate::transform::article::from_pubmed_esummary_entry
             as fn(&ESummaryEntry) -> Option<ArticleSearchResult>;
         let _ = crate::transform::article::retained_extract_annotations
-            as fn(&PubTatorDocument) -> Option<ArticleAnnotations>;
+            as fn(&PubTatorDocument, bool) -> Option<ArticleAnnotations>;
         let _ = crate::transform::article::classify_jats_document
             as fn(&str) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable>;
         let _ = crate::transform::article::classify_html_document
