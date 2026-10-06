@@ -1075,7 +1075,7 @@ pub(crate) fn compare_variant_identity(
     {
         matched_alias.get_or_insert(source.genomic_id.clone());
     }
-    if let Some(value) = requested.rsid() {
+    if let Some(value) = requested.rsid.as_deref() {
         if source.rsids.is_empty() {
             indeterminate = Some("rsid");
         } else if let Some(alias) = source.rsids.iter().find(|v| v.eq_ignore_ascii_case(value)) {
