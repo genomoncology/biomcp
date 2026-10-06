@@ -1,6 +1,6 @@
 # Sync current article maintenance into BioMCP 1.0
 
-Status: built and checked on the isolated merge branch. Root owns fresh read-only code review and the decision to integrate into the dedicated line.
+Status: COMPLETE. Fresh code review accepts64a03c8c46149d7ec8c62b492e359ca26d82ff9b after the quoting correction. Root integrates this result into the dedicated1.0 line.
 
 Merge base: `bddf902d`. Incoming maintenance: `9482051086a825030a68f22ed293c46edd1e8bfc`. The six incoming commits change 42 paths. The variant ticket additions are records only. The source delta carries article entity identifiers, optional passage positions, follow-up commands, and the recorded article-entities specification.
 
@@ -63,3 +63,7 @@ The existing article-entities renderer owner adds one regression claim for that 
 The regression failed before the formatter fix: one failing test, exit 101, wall 1.572 seconds. Red offline compilation passed in 76.243 seconds. Green offline compilation passed in 62.689 seconds. Both compilations use the existing dedicated target, two jobs, no default features and the locked graph. The affected article renderer owner passed all 23 tests in 1.648 seconds. The related-article follow-up owner passed one test in 0.007 seconds. No selected test was ignored. Scoped formatting and forward whitespace pass. These walls include subprocess startup; libtest reported 0.02 seconds and 0.00 seconds for the two successful runtime checks.
 
 Root owns finding closure and dedicated-line landing. The previous broader integration evidence and website revision exception remain as recorded. The later eight-commit maintenance batch through ddc631fd is outside this correction.
+
+Review: accept at64a03c8c46149d7ec8c62b492e359ca26d82ff9b.
+Landed:64a03c8c46149d7ec8c62b492e359ca26d82ff9b.
+The later variant-input maintenance batch remains separate; this landing includes main through94820510.
