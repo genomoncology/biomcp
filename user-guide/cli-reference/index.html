@@ -5482,7 +5482,9 @@ total or an unusable next command.</p>
 </code></pre></div>
 <p>JSON article search rows are compact by default and retain available identifiers,
 triage fields, source, and tri-state retraction status. <code>--full</code> restores
-abstracts, complete source provenance, and ranking diagnostics. <code>--sort date</code>
+abstract snippets, complete source provenance, and ranking diagnostics. Each
+<code>--full</code> row keeps a 240-byte abstract snippet; run <code>biomcp get article &lt;pmid&gt;</code>
+to read the whole abstract. <code>--sort date</code>
 replaces relevance ranking and emits an in-band warning in compact JSON, full
 JSON, and Markdown. Article tables label mixed PMID/PMCID/DOI/arXiv/Semantic
 Scholar values under <code>Identifier</code>.</p>
