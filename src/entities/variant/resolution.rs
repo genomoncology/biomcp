@@ -9,11 +9,21 @@ use std::sync::OnceLock;
 use crate::error::BioMcpError;
 
 use super::{
-    VariantGuidance, VariantGuidanceKind, VariantIdFormat, VariantInputKind, VariantProteinAlias,
-    VariantShorthand, transcript_coding_hgvs_re,
+    VariantGuidance, VariantGuidanceKind, VariantInputKind, VariantProteinAlias, VariantShorthand,
+    transcript_coding_hgvs_re,
 };
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VariantIdFormat {
+    RsId(String),
+    HgvsGenomic(String),
+    GeneProteinChange { gene: String, change: String },
+    GeneCodingChange { gene: String, change: String },
+}
+
 mod coding_alias;
+pub(super) mod coding_get;
+pub(crate) use coding_get::original_input_limit as coding_get_input_limit;
 pub(super) mod genomic_assertion;
 mod genomic_lookup;
 mod interval_comparison;
@@ -173,6 +183,14 @@ fn split_gene_change_tokens(input: &str) -> Option<(&str, &str)> {
 }
 
 pub fn classify_variant_input(input: &str) -> VariantInputKind {
+    if coding_get::selects(input) {
+        return coding_get::prepare(input)
+            .ok()
+            .flatten()
+            .map_or(VariantInputKind::Unsupported, |value| {
+                VariantInputKind::Exact(value.format())
+            });
+    }
     if protein_get::selects(input) {
         return protein_get::prepare(input)
             .ok()
@@ -633,48 +651,6 @@ impl RequestedVariantIdentity {
             coding_change,
             rsid,
             ..Self::default()
-        }
-    }
-
-    pub(crate) fn from_variant_input(input: &str) -> Result<Self, BioMcpError> {
-        let supplied = input.trim();
-        if let Some((gene, coding)) = supplied.split_once(char::is_whitespace)
-            && coding_change_re().is_match(coding.trim())
-        {
-            return Ok(Self {
-                gene: Some(gene.to_string()),
-                coding_change: Some(coding.trim().to_string()),
-                ..Self::default()
-            });
-        }
-        match classify_variant_input(supplied) {
-            VariantInputKind::Exact(VariantIdFormat::RsId(_)) => Ok(Self {
-                rsid: Some(supplied.to_string()),
-                ..Self::default()
-            }),
-            VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(_)) => {
-                let mut identity = Self::default();
-                identity.populate_genomic(supplied);
-                Ok(identity)
-            }
-            VariantInputKind::Exact(VariantIdFormat::GeneProteinChange { gene, .. }) => {
-                let protein_change =
-                    split_gene_change_tokens(supplied).map(|(_, change)| change.to_string());
-                Ok(Self {
-                    gene: Some(gene),
-                    protein_change,
-                    ..Self::default()
-                })
-            }
-            VariantInputKind::TranscriptCodingHgvs(value) => {
-                let (transcript, coding) = value.split_once(':').unwrap_or(("", value.as_str()));
-                Ok(Self {
-                    transcript: (!transcript.is_empty()).then(|| transcript.to_string()),
-                    coding_change: Some(coding.to_string()),
-                    ..Self::default()
-                })
-            }
-            _ => Err(parse_variant_id(supplied).unwrap_err()),
         }
     }
 

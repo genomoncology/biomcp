@@ -1,5 +1,7 @@
 //! Variant detail retrieval, section gating, and enrichment orchestration.
 
+mod coding_lookup;
+use coding_lookup::candidate_matches_requested_identity;
 mod protein_lookup;
 mod rsid_lookup;
 
@@ -176,19 +178,6 @@ fn best_hit(
     hits: &[crate::sources::myvariant::MyVariantHit],
 ) -> Option<&crate::sources::myvariant::MyVariantHit> {
     hits.iter().max_by_key(|h| score_myvariant_hit(h))
-}
-
-fn candidate_matches_requested_identity(
-    requested: &super::RequestedVariantIdentity,
-    hit: &crate::sources::myvariant::MyVariantHit,
-) -> bool {
-    matches!(
-        super::compare_variant_identity(
-            requested,
-            &super::SourceVariantIdentity::from_myvariant_hit(hit)
-        ),
-        super::VariantIdentityComparison::Compatible { .. }
-    )
 }
 
 fn oncokb_alteration_from_variant(
@@ -374,7 +363,13 @@ pub(super) async fn resolve_base_with_hit(
     ),
     BioMcpError,
 > {
+    let coding = super::resolution::coding_get::prepare(id)?;
     super::resolution::protein_get::prepare(id)?;
+    if coding.is_some() && genome_build.is_some() {
+        return Err(BioMcpError::InvalidArgument(
+            "--assembly is only supported for genomic variant IDs".into(),
+        ));
+    }
     let id = id.trim();
     if id.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -382,13 +377,20 @@ pub(super) async fn resolve_base_with_hit(
         ));
     }
 
-    let input_kind = classify_variant_input(id);
+    let input_kind = coding.as_ref().map_or_else(
+        || classify_variant_input(id),
+        |value| VariantInputKind::Exact(value.format()),
+    );
     let normalized_coordinate = super::normalize_genomic_coordinate(id)?;
-    let mut requested = match normalized_coordinate.as_ref() {
-        Some(coordinate) => super::RequestedVariantIdentity::from_variant_input(&coordinate.id)?,
-        None => super::RequestedVariantIdentity::from_variant_input(id)?,
+    let mut requested = match (coding.as_ref(), normalized_coordinate.as_ref()) {
+        (Some(value), _) => value.requested(),
+        (_, Some(coordinate)) => {
+            super::RequestedVariantIdentity::from_variant_input(&coordinate.id)?
+        }
+        _ => super::RequestedVariantIdentity::from_variant_input(id)?,
     };
     let id_format = match (input_kind.clone(), normalized_coordinate.as_ref()) {
+        (VariantInputKind::Exact(format @ VariantIdFormat::GeneCodingChange { .. }), _) => format,
         (_, Some(coordinate)) => VariantIdFormat::HgvsGenomic(coordinate.id.clone()),
         (VariantInputKind::TranscriptCodingHgvs(_), None) => {
             normalize_transcript_hgvs_for_get(id).await?
@@ -509,6 +511,11 @@ pub(super) async fn resolve_base_with_hit(
         }
         VariantIdFormat::RsId(rsid) => (
             rsid_lookup::lookup(&myvariant, id, rsid, &requested).await?,
+            Some(GenomeBuild::Grch37),
+            Vec::new(),
+        ),
+        VariantIdFormat::GeneCodingChange { gene, change } => (
+            coding_lookup::lookup(&myvariant, id, gene, change, &requested).await?,
             Some(GenomeBuild::Grch37),
             Vec::new(),
         ),
@@ -1010,7 +1017,9 @@ fn population_variant_id(variant: &Variant) -> Option<String> {
 fn dbsnp_population_rsid<'a>(variant: &'a Variant, id_format: &VariantIdFormat) -> Option<&'a str> {
     matches!(
         id_format,
-        VariantIdFormat::RsId(_) | VariantIdFormat::GeneProteinChange { .. }
+        VariantIdFormat::RsId(_)
+            | VariantIdFormat::GeneProteinChange { .. }
+            | VariantIdFormat::GeneCodingChange { .. }
     )
     .then(|| variant.rsid.as_deref())
     .flatten()
@@ -1200,9 +1209,11 @@ pub async fn get_with_workflow_signals(
     sections: &[String],
     genome_build: Option<GenomeBuild>,
 ) -> Result<(Variant, VariantWorkflowSignals), BioMcpError> {
+    super::resolution::coding_get::preflight(id)?;
     super::resolution::protein_get::prepare(id)?;
     let section_flags = parse_sections(sections)?;
     if is_gwas_only_request(&section_flags)
+        && !super::resolution::coding_get::selects(id)
         && let VariantIdFormat::RsId(rsid) = parse_variant_id(id)?
     {
         let mut variant = gwas_only_variant_stub(&rsid);

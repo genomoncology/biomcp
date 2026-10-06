@@ -21,6 +21,7 @@ BioMCP supports multiple input forms:
 - VCF-like: `chr10:87925512:G:A`
 - SPDI: `NC_000010.11:87925511:G:A`
 - versioned RefSeq deletion: `NC_000010.11:g.87925512del`
+- gene and coding form: `TP53 c.215C>G`
 - gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`
 
 These exact formats are accepted by `biomcp get variant` and the exact-ID
@@ -39,6 +40,16 @@ Use `biomcp get variant rs101` to retrieve an rsID detail card. BioMCP examines 
 A complete scan with only contradictory rows returns not found. Multiple compatible identities, unusable identity evidence and an incomplete scan produce distinct refusals. Without a reported total, a short page requires another request and only an empty page completes the scan. An empty page below any previously reported total refuses selection. Provider failures remain errors even after a provisional match.
 
 For a refusal, use an exact genomic HGVS ID or search with the rsID. Completion establishes identity within the provider results. It does not establish reference correctness. A unique complete result keeps the existing detail fields and provider default build. The separate GWAS-only route retains its behavior.
+
+## Gene and coding detail lookup
+
+Use `biomcp get variant 'TP53 c.215C>G'` to locate one source record by a written coding alias. The input contains exactly a gene symbol and an accession-free lowercase `c.` fragment. The complete original input must fit 512 UTF-8 bytes. Explicit `--assembly` requires a genomic coordinate.
+
+The checked nucleotide parser admits complete substitutions, deletions, duplications, insertions, delins, inversions and no-change assertions. Supported uncertain locations, offsets, upstream and coding-end markers, and predicted point substitutions retain their written spelling. Decimal padding has identity meaning: `c.0019C>T` does not match `c.19C>T`. Syntax admission does not validate a reference, project coordinates or infer a protein effect.
+
+BioMCP scans at most 1,000 raw rows in 50-row pages before selecting one compatible source identity. Duplicates and contradictory rows count toward that allowance. The largest reported total persists across pages. Without totals, only a terminal empty page completes the scan. Unexamined received rows prevent completion. Ambiguity, incomplete evidence and incomplete selection produce distinct refusals. A complete scan with no compatible identity returns not found. Provider failures remain errors after a provisional match.
+
+The result preserves the source's coherent transcript, coding and protein display tuple. A matching alias locates the record and does not select a transcript. The displayed coding alias can differ from the request. Use `biomcp search variant 'TP53 c.215C>G'` to inspect candidate records or supply an exact rsID or genomic HGVS ID after a refusal. CLI JSON and Markdown, typed MCP `get` and raw MCP commands use the same detail operation.
 
 ## Protein point detail lookup
 

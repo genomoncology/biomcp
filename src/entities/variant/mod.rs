@@ -13,8 +13,8 @@ mod gwas;
 mod normalization;
 mod resolution;
 pub(crate) use resolution::{
-    IntervalSearchAssertion, IntervalSearchDisposition, is_exact_gene_token,
-    protein_interval_search,
+    IntervalSearchAssertion, IntervalSearchDisposition, coding_get_input_limit,
+    is_exact_gene_token, protein_interval_search,
 };
 mod search;
 mod structure;
@@ -40,7 +40,8 @@ pub use self::normalization::{
     VariantNormalizationStatus, normalize_car, normalize_car_batch, normalize_variant,
 };
 pub use self::resolution::{
-    classify_variant_input, parse_variant_id, parse_variant_protein_alias, variant_guidance,
+    VariantIdFormat, classify_variant_input, parse_variant_id, parse_variant_protein_alias,
+    variant_guidance,
 };
 #[allow(unused_imports)]
 pub use self::search::{search, search_page, search_query_summary};
@@ -993,11 +994,4 @@ pub struct GwasSearchFilters {
     pub gene: Option<String>,
     pub trait_query: Option<String>,
     pub p_value: Option<f64>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum VariantIdFormat {
-    RsId(String),
-    HgvsGenomic(String),
-    GeneProteinChange { gene: String, change: String },
 }

@@ -885,18 +885,12 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         .find(|capability| capability.entity == entity)
         .ok_or_else(|| input_error("invalid typed get entity"))?;
     if entity == "variant"
-        && let Some(original) = object.get("id").and_then(Value::as_str)
-        && original.len() > 512
+        && let Some(message) = object
+            .get("id")
+            .and_then(Value::as_str)
+            .and_then(crate::entities::variant::coding_get_input_limit)
     {
-        use crate::entities::variant::{IntervalSearchAssertion, is_exact_gene_token};
-        let mut tokens = original.split_whitespace();
-        if tokens.next().is_some_and(is_exact_gene_token)
-            && tokens.next().is_some_and(IntervalSearchAssertion::selects)
-            && tokens.next().is_none()
-        {
-            let message = "Protein interval lookup exceeds its input limit.";
-            return Err(input_error(message));
-        }
+        return Err(input_error(message));
     }
     let id = checked_text(object.get("id").unwrap_or(&Value::Null), "id", 512)?;
     let allowed_keys = typed_get_allowed_keys(&entity, capability.sections.is_some());

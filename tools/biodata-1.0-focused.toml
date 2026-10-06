@@ -2,6 +2,8 @@ version = 1
 
 [selection]
 rust = [
+  "entities::variant::get::coding_lookup::tests::gene_coding_get_preserves_written_identity_and_complete_source_card",
+  "entities::variant::get::coding_lookup::transport_tests::gene_coding_get_cli_typed_and_raw_preserve_native_contracts",
   "entities::variant::search::exact_scan_tests::outstanding_total_survives_empty_or_omitted_total",
   "entities::variant::search::exact_scan_tests::maximum_total_survives_decrease",
   "entities::variant::search::exact_scan_tests::received_tail_prevents_false_completion",
