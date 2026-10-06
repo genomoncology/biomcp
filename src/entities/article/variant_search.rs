@@ -2198,7 +2198,7 @@ async fn citation_candidates(
             }
         };
         let result = client
-            .get_all(&retained_hit.source().id())
+            .get_all(retained_hit.source().id())
             .await
             .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
         match result {

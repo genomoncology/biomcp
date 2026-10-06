@@ -85,7 +85,9 @@ fn parses_search_response_total_and_hits_from_real_fixture() {
     assert!(!resp.hits.is_empty());
     assert!(resp.hits[0].source().id().starts_with("chr7"));
     assert_eq!(
-        resp.hits[0].source().dbnsfp()
+        resp.hits[0]
+            .source()
+            .dbnsfp()
             .and_then(|d| d.genename().first()),
         Some("BRAF")
     );
@@ -102,10 +104,13 @@ fn parses_receipted_braf_filter_searches() {
     )
     .unwrap();
     assert!(missense.hits.iter().any(|hit| {
-        hit.source().dbnsfp()
+        hit.source()
+            .dbnsfp()
             .and_then(|dbnsfp| dbnsfp.genename().first())
             == Some("BRAF")
-            && hit.source().cadd()
+            && hit
+                .source()
+                .cadd()
                 .and_then(biodata::MyVariantCaddProjection::consequence)
                 .and_then(biodata::MyVariantCaddConsequence::first)
                 == Some("NON_SYNONYMOUS")
@@ -120,10 +125,13 @@ fn parses_receipted_braf_filter_searches() {
     )
     .unwrap();
     assert!(revel.hits.iter().any(|hit| {
-        hit.source().dbnsfp()
+        hit.source()
+            .dbnsfp()
             .and_then(|dbnsfp| dbnsfp.genename().first())
             == Some("BRAF")
-            && hit.source().dbnsfp()
+            && hit
+                .source()
+                .dbnsfp()
                 .and_then(|dbnsfp| dbnsfp.revel())
                 .and_then(|revel| revel.score())
                 .and_then(biodata::MyVariantDbnsfpNumber::first)
@@ -155,7 +163,8 @@ fn parses_receipted_variant_identity_searches() {
         .unwrap();
 
         assert!(response.hits.iter().any(|hit| {
-            hit.source().dbnsfp()
+            hit.source()
+                .dbnsfp()
                 .and_then(|dbnsfp| dbnsfp.genename().first())
                 == Some(gene)
                 && hit.source().dbnsfp().is_some_and(|dbnsfp| {
@@ -182,7 +191,8 @@ fn parses_receipted_braf_get_hit() {
 
     assert_eq!(hit.source().id(), "chr7:g.140453136A>T");
     assert_eq!(
-        hit.source().dbnsfp()
+        hit.source()
+            .dbnsfp()
             .and_then(|dbnsfp| dbnsfp.genename().first()),
         Some("BRAF")
     );
@@ -208,16 +218,20 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
 
     assert_eq!(hit.source().id(), "chr7:g.140453136A>T");
     assert_eq!(
-        hit.source().cadd()
+        hit.source()
+            .cadd()
             .and_then(biodata::MyVariantCaddProjection::phred),
         Some(32.0)
     );
     assert_eq!(
-        hit.source().dbsnp().and_then(|d| d.rsid().map(str::to_owned)),
+        hit.source()
+            .dbsnp()
+            .and_then(|d| d.rsid().map(str::to_owned)),
         Some("rs113488022".into())
     );
     assert_eq!(
-        hit.source().dbnsfp()
+        hit.source()
+            .dbnsfp()
             .and_then(|d| d.revel())
             .and_then(|r| r.score())
             .and_then(biodata::MyVariantDbnsfpNumber::first),
@@ -249,12 +263,14 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
         Some(13961)
     );
     assert!(
-        hit.source().clinvar()
+        hit.source()
+            .clinvar()
             .map(|c| !c.rcv().is_empty())
             .unwrap_or(false)
     );
     assert!(
-        hit.source().gnomad_exome()
+        hit.source()
+            .gnomad_exome()
             .and_then(|g| g.af())
             .and_then(|a| a.af())
             .is_some()

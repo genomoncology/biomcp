@@ -439,7 +439,9 @@ mod clinvar {
         timeout: Duration,
     ) {
         let fallback = indirect_clinvar_record(hit);
-        let variation_id = hit.source().clinvar()
+        let variation_id = hit
+            .source()
+            .clinvar()
             .and_then(|clinvar| clinvar.variant_id());
         super::get::strip_clinvar_details(variant);
         let Some(variation_id) = variation_id else {

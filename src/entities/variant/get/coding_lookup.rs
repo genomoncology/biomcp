@@ -39,8 +39,12 @@ pub(super) async fn lookup(
                 let mut coding = source.coding_changes.clone();
                 protein.sort();
                 coding.sort();
-                if seen.insert((hit.source().id().to_owned(), source.normalized_key(), protein, coding))
-                    && selected.is_none()
+                if seen.insert((
+                    hit.source().id().to_owned(),
+                    source.normalized_key(),
+                    protein,
+                    coding,
+                )) && selected.is_none()
                 {
                     selected = Some(hit);
                 }
@@ -87,8 +91,12 @@ pub(super) async fn lookup_exact(
                 let mut coding = source.coding_changes.clone();
                 protein.sort();
                 coding.sort();
-                if seen.insert((hit.source().id().to_owned(), source.normalized_key(), protein, coding))
-                    && selected.is_none()
+                if seen.insert((
+                    hit.source().id().to_owned(),
+                    source.normalized_key(),
+                    protein,
+                    coding,
+                )) && selected.is_none()
                 {
                     selected = Some(hit);
                 }

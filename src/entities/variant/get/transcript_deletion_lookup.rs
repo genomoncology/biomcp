@@ -213,7 +213,10 @@ async fn lookup_source(
             if let Some(prior) = proteins.get(hit.source().id()) {
                 indeterminate |= prior != &(tuple.gene.clone(), tuple.protein.clone());
             } else {
-                proteins.insert(hit.source().id().to_owned(), (tuple.gene.clone(), tuple.protein.clone()));
+                proteins.insert(
+                    hit.source().id().to_owned(),
+                    (tuple.gene.clone(), tuple.protein.clone()),
+                );
             }
         }
         let source = SourceVariantIdentity::from_myvariant_hit(&hit);
@@ -221,8 +224,12 @@ async fn lookup_source(
         let mut coding = source.coding_changes.clone();
         protein.sort();
         coding.sort();
-        if seen.insert((hit.source().id().to_owned(), source.normalized_key(), protein, coding))
-            && selected.is_none()
+        if seen.insert((
+            hit.source().id().to_owned(),
+            source.normalized_key(),
+            protein,
+            coding,
+        )) && selected.is_none()
         {
             // RCV and snpEff are complete assertions. Do not combine their fields.
             let tuple = tuples.into_iter().min_by_key(|tuple| match tuple.location {

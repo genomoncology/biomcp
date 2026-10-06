@@ -863,11 +863,15 @@ impl OpaqueView {
         Ok(Some(Self { value, normalized }))
     }
 
-    fn from_source(raw: Option<&serde_json::value::RawValue>) -> Result<Option<Self>, serde_json::Error> {
+    fn from_source(
+        raw: Option<&serde_json::value::RawValue>,
+    ) -> Result<Option<Self>, serde_json::Error> {
         raw.map(|raw| {
             let value = serde_json::from_str(raw.get()).map_err(|_| invalid_hit())?;
             Self::from_value(value)
-        }).transpose().map(Option::flatten)
+        })
+        .transpose()
+        .map(Option::flatten)
     }
 }
 
@@ -903,7 +907,8 @@ impl MyVariantHit {
             value.into_deserializer(),
             cgi.as_ref().map(|view| view.normalized.clone()),
             civic.as_ref().map(|view| view.normalized.clone()),
-        ).map_err(|_| invalid_hit())?;
+        )
+        .map_err(|_| invalid_hit())?;
         Ok(Self { source, cgi, civic })
     }
 }
@@ -922,10 +927,13 @@ impl<'de> Deserialize<'de> for MyVariantHit {
 
 impl Serialize for MyVariantHit {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.source.as_normalized_source(biodata::MyVariantHitNormalizedOpaque::new(
-            self.cgi.as_ref().map(|view| view.normalized.as_ref()),
-            self.civic.as_ref().map(|view| view.normalized.as_ref()),
-        )).map_err(|_| serde::ser::Error::custom("invalid_structure"))?.serialize(serializer)
+        self.source
+            .as_normalized_source(biodata::MyVariantHitNormalizedOpaque::new(
+                self.cgi.as_ref().map(|view| view.normalized.as_ref()),
+                self.civic.as_ref().map(|view| view.normalized.as_ref()),
+            ))
+            .map_err(|_| serde::ser::Error::custom("invalid_structure"))?
+            .serialize(serializer)
     }
 }
 

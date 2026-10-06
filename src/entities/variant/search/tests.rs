@@ -179,7 +179,14 @@ fn exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match() {
         assert_eq!(requested.human_label(), observations["human_label"]);
         let mut seen = HashSet::new();
         let mut retained = Vec::new();
-        let hits: Vec<MyVariantHit> = case["hits"].as_array().unwrap().iter().cloned().map(MyVariantHit::from_value).collect::<Result<_, _>>().unwrap();
+        let hits: Vec<MyVariantHit> = case["hits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .cloned()
+            .map(MyVariantHit::from_value)
+            .collect::<Result<_, _>>()
+            .unwrap();
         assert!(!retain_compatible_hits(
             &requested,
             hits,
@@ -401,7 +408,9 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
         "_id":"x", "snpeff":{"ann":{"feature_id":"t"}}
     }))
     .unwrap()
-    .source().snpeff().cloned();
+    .source()
+    .snpeff()
+    .cloned();
     over.push(one_byte);
     let page = finalize_exact_page(&requested, over, 0, 50, false, true);
     assert!(page.results.iter().all(|row| {
@@ -691,15 +700,16 @@ fn article_provider_aggregation_marks_distinct_compatible_and_indeterminate_sets
         Some("ATM"),
         Some("NM_000051.4:c.1066-6T>G"),
     );
-    let compatible_with_rsid: MyVariantHit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
-        "_id": "GRCh38:NC_000011.10:g.108248927T>G",
-        "dbnsfp": {
-            "genename": "ATM",
-            "hgvsc": "NM_000051.4:c.1066-6T>G"
-        },
-        "dbsnp": {"rsid": "rs605"}
-    }))
-    .expect("valid MyVariant hit");
+    let compatible_with_rsid: MyVariantHit =
+        crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
+            "_id": "GRCh38:NC_000011.10:g.108248927T>G",
+            "dbnsfp": {
+                "genename": "ATM",
+                "hgvsc": "NM_000051.4:c.1066-6T>G"
+            },
+            "dbsnp": {"rsid": "rs605"}
+        }))
+        .expect("valid MyVariant hit");
     let multiple = article_resolution_context(
         requested.clone(),
         scan(

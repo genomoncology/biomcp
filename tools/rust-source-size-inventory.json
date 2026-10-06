@@ -126,12 +126,12 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6157,
+      "baseline_lines": 6160,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, biodata-0698",
-        "delta": 1329,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration.",
+        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, biodata-0698, biodata-0706",
+        "delta": 1332,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration. Approved 0706 registers the complete-hit citation leaf.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },

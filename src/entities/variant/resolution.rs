@@ -851,7 +851,9 @@ pub(crate) struct SourceVariantIdentity {
 
 impl SourceVariantIdentity {
     pub(crate) fn from_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> Self {
-        let (genes, protein_changes, coding_changes) = hit.source().dbnsfp()
+        let (genes, protein_changes, coding_changes) = hit
+            .source()
+            .dbnsfp()
             .map(|db| {
                 (
                     db.genename().values().to_vec(),
@@ -860,7 +862,9 @@ impl SourceVariantIdentity {
                 )
             })
             .unwrap_or_default();
-        let rsids = hit.source().dbsnp()
+        let rsids = hit
+            .source()
+            .dbsnp()
             .and_then(|db| db.rsid().map(str::to_owned))
             .into_iter()
             .collect();

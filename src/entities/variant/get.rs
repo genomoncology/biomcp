@@ -155,16 +155,18 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
 }
 
 /// A resolved protein change uses the ClinVar record for the hit's genomic variant.
-fn hit_carries_clinvar_record(hit: &crate::sources::myvariant::MyVariantHit) -> bool {
-    hit.source().clinvar()
+fn hit_carries_clinvar_record(hit: &biodata::MyVariantHitProjection) -> bool {
+    hit.clinvar()
         .is_some_and(|clinvar| clinvar.variant_id().is_some() || !clinvar.rcv().is_empty())
 }
 
-fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> String {
-    let clinvar_id = hit.source().clinvar()
+fn protein_change_candidate(hit: &biodata::MyVariantHitProjection) -> String {
+    let clinvar_id = hit
+        .clinvar()
         .and_then(|clinvar| clinvar.variant_id())
         .map(|variant_id| format!("ClinVar VariationID {variant_id}"));
-    let rsid = hit.source().dbsnp()
+    let rsid = hit
+        .dbsnp()
         .and_then(|dbsnp| dbsnp.rsid().map(str::to_owned))
         .filter(|rsid| !rsid.trim().is_empty());
     let details = [clinvar_id, rsid]
@@ -173,9 +175,9 @@ fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> St
         .collect::<Vec<_>>()
         .join("; ");
     if details.is_empty() {
-        hit.source().id().trim().to_string()
+        hit.id().trim().to_string()
     } else {
-        format!("{} ({details})", hit.source().id().trim())
+        format!("{} ({details})", hit.id().trim())
     }
 }
 
@@ -204,12 +206,12 @@ fn resolve_protein_change_hit(
     }
     let clinvar_named = hits
         .iter()
-        .filter(|hit| hit_carries_clinvar_record(hit))
+        .filter(|hit| hit_carries_clinvar_record(hit.source()))
         .count();
     if clinvar_named == 1 {
         let index = hits
             .iter()
-            .position(hit_carries_clinvar_record)
+            .position(|hit| hit_carries_clinvar_record(hit.source()))
             .expect("one ClinVar-named hit");
         return Ok(hits.swap_remove(index));
     }
@@ -220,7 +222,7 @@ fn resolve_protein_change_hit(
     };
     let candidates = hits
         .iter()
-        .map(|hit| format!("- {}\n", protein_change_candidate(hit)))
+        .map(|hit| format!("- {}\n", protein_change_candidate(hit.source())))
         .collect::<String>();
     Err(BioMcpError::InvalidArgument(format!(
         "Ambiguous protein change '{id}': {count} variants match and {reason}; \
@@ -383,8 +385,8 @@ fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
 /// hit carries the exact coding alias the search asked for. Identity
 /// comparison alone cannot confirm it: dbNSFP aliases arrive without
 /// transcript prefixes, so an unconfirmed hit stays refused.
-fn hit_confirms_transcript_alias(hit: &crate::sources::myvariant::MyVariantHit, id: &str) -> bool {
-    hit.source().clinvar()
+fn hit_confirms_transcript_alias(hit: &biodata::MyVariantHitProjection, id: &str) -> bool {
+    hit.clinvar()
         .and_then(|clinvar| clinvar.hgvs())
         .is_some_and(|hgvs| hgvs.coding().values().iter().any(|alias| alias == id))
 }
@@ -589,7 +591,7 @@ pub(super) async fn resolve_base_with_hit(
                     let transcript_input =
                         matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_));
                     let alias_confirmed =
-                        transcript_input && hit_confirms_transcript_alias(&hit, id);
+                        transcript_input && hit_confirms_transcript_alias(hit.source(), id);
                     if transcript_input {
                         selected_tuple = Some(transcript_deletion_lookup::alias_tuple(&hit, id)?);
                     }

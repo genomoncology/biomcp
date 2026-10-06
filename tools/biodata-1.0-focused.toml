@@ -2,6 +2,13 @@ version = 1
 
 [selection]
 rust = [
+  "entities::article::variant_search::hit_adoption_tests::complete_hit_normalization_selects_confirmed_citations_in_both_orders",
+  "entities::article::variant_search::hit_adoption_tests::opaque_civic_presence_controls_hydration_and_citation_provenance",
+  "entities::variant::get::hit_adoption_tests::cached_opaque_detail_keeps_fallbacks_caps_and_requested_sections",
+  "sources::myvariant::tests::hit_adoption::callable_hits_keep_stored_numeric_precision_and_independent_depth",
+  "sources::myvariant::tests::hit_adoption::complete_hit_owned_errors_remain_private_in_callable_clients",
+  "sources::myvariant::tests::hit_adoption::shared_hit_keeps_original_fragments_and_normalizes_product_once",
+  "sources::myvariant::tests::hit_adoption::value_first_opaque_positions_keep_arity_and_independent_presence",
   "sources::myvariant::tests::cosmic_adoption::cosmic_preserves_complete_hit_order_presence_and_carriers",
   "sources::myvariant::tests::cosmic_adoption::cosmic_callable_clients_preserve_rows_masks_and_canonical_hits",
   "sources::myvariant::tests::cosmic_adoption::cosmic_owned_failures_are_private_through_search_get_and_get_all",

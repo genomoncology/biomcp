@@ -227,7 +227,9 @@ async fn cosmic_callable_clients_preserve_rows_masks_and_canonical_hits() {
         assert_eq!(hits.len(), 2);
         assert_eq!(hits[1].source().cosmic().unwrap().mut_freq(), Some(2.83));
         assert_eq!(
-            hits[1].source().cosmic()
+            hits[1]
+                .source()
+                .cosmic()
                 .unwrap()
                 .cosmic_id()
                 .unwrap()

@@ -4,7 +4,8 @@ use super::*;
 
 fn rcv(value: serde_json::Value) -> MyVariantClinVarRcv {
     let hit: MyVariantHit =
-        MyVariantHit::from_value(serde_json::json!({"_id":"test", "clinvar":{"rcv":value}})).unwrap();
+        MyVariantHit::from_value(serde_json::json!({"_id":"test", "clinvar":{"rcv":value}}))
+            .unwrap();
     hit.source().clinvar().unwrap().rcv()[0].clone()
 }
 
