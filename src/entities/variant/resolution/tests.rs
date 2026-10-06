@@ -82,6 +82,18 @@ fn parse_variant_id_examples() {
         VariantIdFormat::RsId(v) => assert_eq!(v, "rs113488022"),
         _ => panic!("expected rsid"),
     }
+    match parse_variant_id("577152").unwrap() {
+        VariantIdFormat::ClinvarVariationId(variation_id) => {
+            assert_eq!(variation_id, 577152);
+        }
+        _ => panic!("expected clinvar variation id"),
+    }
+    for malformed in ["0", "01", "1755396.1", "577152 clinvar"] {
+        assert!(
+            parse_variant_id(malformed).is_err(),
+            "refuse malformed variation id {malformed}"
+        );
+    }
     match parse_variant_id("chr7:g.140453136A>T").unwrap() {
         VariantIdFormat::HgvsGenomic(v) => assert_eq!(v, "chr7:g.140453136A>T"),
         _ => panic!("expected hgvs"),
@@ -193,6 +205,50 @@ fn parse_variant_id_accepts_prefixed_short_gene_protein_change() {
 }
 
 #[test]
+fn parse_variant_id_accepts_gene_protein_range_deletions() {
+    match parse_variant_id("EGFR E746_A750del").unwrap() {
+        VariantIdFormat::GeneProteinChange { gene, change } => {
+            assert_eq!(gene, "EGFR");
+            assert_eq!(change, "E746_A750del");
+        }
+        _ => panic!("expected gene+protein range deletion"),
+    }
+    match parse_variant_id("EGFR p.Glu746_Ala750del").unwrap() {
+        VariantIdFormat::GeneProteinChange { gene, change } => {
+            assert_eq!(gene, "EGFR");
+            assert_eq!(change, "E746_A750del");
+        }
+        _ => panic!("expected long-form range deletion"),
+    }
+    assert!(parse_variant_id("EGFR E746_A750dup").is_err());
+    assert!(parse_variant_id("EGFR E746del").is_err());
+}
+
+#[test]
+fn protein_range_deletions_normalize_across_one_and_three_letter_spellings() {
+    for alias in [
+        "E746_A750del",
+        "p.E746_A750del",
+        "p.Glu746_Ala750del",
+        "NP_005219.2:p.Glu746_Ala750del",
+    ] {
+        assert_eq!(
+            normalize_protein_change(alias).as_deref(),
+            Some("E746_A750del"),
+            "alias {alias}"
+        );
+    }
+    assert_ne!(
+        normalize_protein_change("E746_A751del"),
+        normalize_protein_change("p.Glu746_Ala750del")
+    );
+    assert!(protein_changes_equivalent(
+        "E746_A750del",
+        "NP_005219.2:p.Glu746_Ala750del"
+    ));
+}
+
+#[test]
 fn classify_variant_input_detects_search_only_shorthand() {
     match classify_variant_input("PTPN22 620W") {
         VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias {
@@ -273,6 +329,46 @@ fn parse_variant_id_suggests_search_for_complex_alteration_text() {
     };
     assert!(message.contains("search phrase or alteration description"));
     assert!(message.contains("biomcp search variant \"EGFR Exon 19 Deletion\""));
+}
+
+#[test]
+fn clinvar_style_names_refuse_with_the_colon_working_form() {
+    let colon_form = parse_variant_id("NM_000249.4(MLH1):c.678-14_678-3del")
+        .unwrap_err()
+        .to_string();
+    assert!(colon_form.contains("ClinVar-style name"));
+    assert!(colon_form.contains("Working form: biomcp get variant NM_000249.4:c.678-14_678-3del"));
+    assert!(colon_form.contains("ClinVar VariationID"));
+
+    let space_form = parse_variant_id("NM_177438.3(DICER1) c.4449G>A")
+        .unwrap_err()
+        .to_string();
+    assert!(space_form.contains("Working form: biomcp get variant NM_177438.3:c.4449G>A"));
+
+    assert!(parse_variant_id("NM_177438.3(DICER1) p.Met1483Ile").is_err());
+    assert!(parse_variant_id("NM_000249.4(MLH1):not-a-change").is_err());
+}
+
+#[test]
+fn variant_identity_inputs_refuse_transcript_anchor_half_parses() {
+    for clinvar_style in [
+        "NM_177438.3(DICER1) c.4449G>A",
+        "NM_000249.4 c.678-14_678-3del",
+    ] {
+        assert!(
+            RequestedVariantIdentity::from_variant_input(clinvar_style).is_err(),
+            "refuse half-parse of {clinvar_style}"
+        );
+    }
+    let kept = RequestedVariantIdentity::from_variant_input("CHEK2 c.1100del")
+        .expect("gene plus coding stays accepted");
+    assert_eq!(kept.gene.as_deref(), Some("CHEK2"));
+    assert_eq!(kept.coding_change.as_deref(), Some("c.1100del"));
+
+    let variation_id = RequestedVariantIdentity::from_variant_input("577152")
+        .expect("clinvar variation id identity");
+    assert_eq!(variation_id.clinvar_variation_id, Some(577152));
+    assert_eq!(variation_id.human_label(), "ClinVar VariationID 577152");
 }
 
 #[test]
@@ -412,6 +508,7 @@ fn identity_comparison_preserves_provider_alias_and_checks_every_known_field() {
         protein_change: Some("p.Val600Glu".into()),
         coding_change: Some("c.1799T>A".into()),
         transcript: Some("NM_004333.6".into()),
+        clinvar_variation_id: Some(12304),
         genomic_accession: Some("chr7".into()),
         genome_build: Some("GRCh38".into()),
         position: Some(140453136),

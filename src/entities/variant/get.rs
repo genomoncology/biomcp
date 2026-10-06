@@ -339,6 +339,68 @@ fn transcript_hgvs_clinvar_query(id: &str) -> String {
     )
 }
 
+fn transcript_hgvs_not_found_suggestion(id: &str) -> String {
+    format!(
+        "Try first: biomcp variant normalize all {id}; the ClinVar VariationID (e.g. biomcp get variant 577152) or rsID (e.g. biomcp get variant rs113488022) also resolves directly"
+    )
+}
+
+/// A ClinVar alias hit confirms the transcript-qualified query only when the
+/// hit carries the exact coding alias the search asked for. Identity
+/// comparison alone cannot confirm it: dbNSFP aliases arrive without
+/// transcript prefixes, so an unconfirmed hit stays refused.
+fn hit_confirms_transcript_alias(hit: &crate::sources::myvariant::MyVariantHit, id: &str) -> bool {
+    hit.clinvar
+        .as_ref()
+        .and_then(|clinvar| clinvar.hgvs.as_ref())
+        .is_some_and(|hgvs| hgvs.coding_contains(id))
+}
+
+async fn transcript_hgvs_clinvar_alias_hit(
+    myvariant: &MyVariantClient,
+    id: &str,
+) -> Result<Option<crate::sources::myvariant::MyVariantHit>, BioMcpError> {
+    let q = transcript_hgvs_clinvar_query(id);
+    let resp = myvariant
+        .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
+        .await?;
+    Ok(best_hit(
+        &resp
+            .hits
+            .into_iter()
+            .filter(|hit| hit_confirms_transcript_alias(hit, id))
+            .collect::<Vec<_>>(),
+    )
+    .cloned())
+}
+
+async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
+    match normalize_transcript_hgvs_for_get(id).await {
+        Ok(format) => Ok(format),
+        // Transcript normalization services refuse intronic deletion ranges
+        // and other aliases they cannot place; ClinVar's own coding alias list
+        // still names them, so the alias search resolves what normalization
+        // cannot (ticket 1292).
+        Err(_) => {
+            let myvariant = MyVariantClient::new()?;
+            transcript_hgvs_clinvar_alias_hit(&myvariant, id)
+                .await?
+                .filter(|hit| {
+                    matches!(
+                        parse_variant_id(hit.id.trim()),
+                        Ok(VariantIdFormat::HgvsGenomic(_))
+                    )
+                })
+                .map(|hit| VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()))
+                .ok_or_else(|| BioMcpError::NotFound {
+                    entity: "variant".into(),
+                    id: id.to_string(),
+                    suggestion: transcript_hgvs_not_found_suggestion(id),
+                })
+        }
+    }
+}
+
 async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     let response = normalize_variant("all", id)
         .await
@@ -389,7 +451,7 @@ pub(super) async fn resolve_base_with_hit(
     let id_format = match (input_kind.clone(), normalized_coordinate.as_ref()) {
         (_, Some(coordinate)) => VariantIdFormat::HgvsGenomic(coordinate.id.clone()),
         (VariantInputKind::TranscriptCodingHgvs(_), None) => {
-            normalize_transcript_hgvs_for_get(id).await?
+            resolve_transcript_hgvs_for_get(id).await?
         }
         _ => parse_variant_id(id)?,
     };
@@ -464,28 +526,15 @@ pub(super) async fn resolve_base_with_hit(
                 if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_))
                     && direct.is_err()
                 {
-                    let q = transcript_hgvs_clinvar_query(id);
-                    let resp = myvariant
-                        .query_with_fields(
-                            &q,
-                            10,
-                            0,
-                            crate::sources::myvariant::MYVARIANT_FIELDS_GET,
-                        )
-                        .await?;
-                    let compatible_hits = resp
-                        .hits
-                        .into_iter()
-                        .filter(&compatible)
-                        .collect::<Vec<_>>();
+                    let alias_hit = transcript_hgvs_clinvar_alias_hit(&myvariant, id)
+                        .await?
+                        .ok_or_else(|| BioMcpError::NotFound {
+                            entity: "variant".into(),
+                            id: id.to_string(),
+                            suggestion: transcript_hgvs_not_found_suggestion(id),
+                        })?;
                     (
-                        best_hit(&compatible_hits).cloned().ok_or_else(|| {
-                            BioMcpError::NotFound {
-                                entity: "variant".into(),
-                                id: id.to_string(),
-                                suggestion: format!("Try first: biomcp variant normalize all {id}"),
-                            }
-                        })?,
+                        alias_hit,
                         effective_build.or(Some(GenomeBuild::Grch37)),
                         Vec::new(),
                     )
@@ -494,16 +543,42 @@ pub(super) async fn resolve_base_with_hit(
                         Some(build) => build_aware_not_found(hgvs, build, error),
                         None => error,
                     })?;
-                    if !compatible(&hit) {
+                    let transcript_input =
+                        matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_));
+                    let alias_confirmed =
+                        transcript_input && hit_confirms_transcript_alias(&hit, id);
+                    if !compatible(&hit) && !alias_confirmed {
+                        let suggestion = if transcript_input {
+                            transcript_hgvs_not_found_suggestion(id)
+                        } else {
+                            format!("Try searching: biomcp search variant -g \"{id}\"")
+                        };
                         return Err(BioMcpError::NotFound {
                             entity: "variant".into(),
                             id: id.to_string(),
-                            suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
+                            suggestion,
                         });
                     }
                     (hit, effective_build, Vec::new())
                 }
             }
+        }
+        VariantIdFormat::ClinvarVariationId(variation_id) => {
+            let q = format!("clinvar.variant_id:{variation_id}");
+            let resp = myvariant
+                .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
+                .await?;
+            (
+                best_hit(&resp.hits)
+                    .cloned()
+                    .ok_or_else(|| BioMcpError::NotFound {
+                        entity: "variant".into(),
+                        id: format!("ClinVar VariationID {variation_id}"),
+                        suggestion: "Try searching: biomcp search variant".into(),
+                    })?,
+                Some(GenomeBuild::Grch37),
+                Vec::new(),
+            )
         }
         VariantIdFormat::RsId(rsid) => {
             let q = format!("dbsnp.rsid:{rsid}");
