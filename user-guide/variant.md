@@ -38,6 +38,14 @@ to restore GRCh37 preference; an explicit `--assembly` always wins. If the same
 spelling identifies different records, BioMCP returns the preferred record and
 reports the other identity in `build_candidates` JSON and a Markdown warning.
 
+A gene-protein form names a protein change, and the same change can sit on
+several genomic variants. When exactly one matching variant carries the
+ClinVar record for that change, `get variant` resolves to it; when several
+variants match and none or several carry ClinVar records, it refuses with the
+candidates and a working input form instead of guessing. Retry with one of the
+listed genomic HGVS, rsID, ClinVar VariationID, or transcript-qualified HGVS
+spellings.
+
 ## ClinGen Allele Registry normalization
 
 Use CAR for a source-provided CAid and bounded alias collections for versioned RefSeq

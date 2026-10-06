@@ -4607,6 +4607,13 @@ and GRCh38, preferring GRCh38. Set <code>BIOMCP_DEFAULT_ASSEMBLY=grch37</code> (
 to restore GRCh37 preference; an explicit <code>--assembly</code> always wins. If the same
 spelling identifies different records, BioMCP returns the preferred record and
 reports the other identity in <code>build_candidates</code> JSON and a Markdown warning.</p>
+<p>A gene-protein form names a protein change, and the same change can sit on
+several genomic variants. When exactly one matching variant carries the
+ClinVar record for that change, <code>get variant</code> resolves to it; when several
+variants match and none or several carry ClinVar records, it refuses with the
+candidates and a working input form instead of guessing. Retry with one of the
+listed genomic HGVS, rsID, ClinVar VariationID, or transcript-qualified HGVS
+spellings.</p>
 <h2 id="clingen-allele-registry-normalization">ClinGen Allele Registry normalization<a class="headerlink" href="#clingen-allele-registry-normalization" title="Permanent link">&para;</a></h2>
 <p>Use CAR for a source-provided CAid and bounded alias collections for versioned RefSeq
 transcript coding (<code>NM_...:c.</code>) or genomic (<code>NC_...:g.</code>) HGVS values. It is a
