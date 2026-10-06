@@ -42,6 +42,18 @@ success or aborting dependent searches. GitHub issue #288.
    failure names the file and says headers did not match, never a generic
    retry message.
 
+## Reporter follow-up evidence (2026-10-06, issue #288)
+
+The reporter independently captured the current header rows and confirmed
+the absent `Basis of Alternative Listing` column. One new fact: the
+vaccines first column ships a trailing space inside the quotes
+(`"Date of Prequalification "`, verified with cat -A, not a rendering
+artifact), so a raw-string comparison can never match that column even
+after the casing fix. The validator must trim each header cell before
+the case-insensitive comparison, the recorded vaccines capture must
+preserve the raw trailing space byte, and the test must pin the
+trim-then-compare behavior against it.
+
 ## Keeps
 
 - `--region us` and `--region eu` behavior stays unchanged.
