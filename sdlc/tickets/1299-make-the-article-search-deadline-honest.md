@@ -5,6 +5,15 @@ Filed 2026-10-05 by the BioMCP 0.9 lead, from experiment 439; replaces two P2 is
 Status: OPEN.
 Milestone: 0.9.2
 
+## Build status
+
+- Built on branch `tickets/1299-honest-search-deadline`, sha `921f17c75` plus the review fold, 2026-10-06.
+- Code review: ACCEPT 2026-10-06. One P2 folded (the three strict provider legs now mark the route incomplete on a degraded partial, like the annotation leg). Two P2s confirmed as intended: single-backend partial rows on any mid-flight page error matches the ticket's Change 1 wording (the federated path already behaves that way), and the OLS construction deadline measured from construction start stays bounded by OLS4_TIMEOUT and degrades safely.
+- Verified on main: all four pinned causes reproduced (pagination discard, generic error in two shapes, 40-second construction hang under a held epoch lock by strace); the post-deadline CPU spin from experiment 439 did not reproduce on current main and is pinned by wall-time bounds instead of a claimed fix. A sixth construction site beyond the ticket's list (the OLS4 exact-keyword lookup in the discover path) was found and fixed the same way.
+- Deferred: the plain path's high lock-free floor; spin isolation if it resurfaces live; the strict legs' per-source degradation text (the failed request still records on the provider unit).
+
+## Outcome
+
 ## Outcome
 
 An article search that hits its deadline returns the rows that already answered, from every backend plan, exits near the deadline, and names the deadline in its error. Holding the cache epoch lock cannot push an invocation past its deadline.
