@@ -3,7 +3,6 @@
 mod coding_lookup;
 mod transcript_deletion_lookup;
 use coding_lookup::candidate_matches_requested_identity;
-use transcript_deletion_lookup::query as transcript_hgvs_clinvar_query;
 mod protein_lookup;
 mod rsid_lookup;
 use std::time::Duration;
@@ -314,59 +313,6 @@ fn hit_confirms_transcript_alias(hit: &crate::sources::myvariant::MyVariantHit, 
         .is_some_and(|hgvs| hgvs.coding_contains(id))
 }
 
-async fn transcript_hgvs_clinvar_alias_hit(
-    myvariant: &MyVariantClient,
-    id: &str,
-) -> Result<Option<crate::sources::myvariant::MyVariantHit>, BioMcpError> {
-    let q = transcript_hgvs_clinvar_query(id);
-    coding_lookup::lookup_exact(myvariant, &q, |hit| {
-        use super::VariantIdentityComparison;
-        match hit
-            .clinvar
-            .as_ref()
-            .and_then(|clinvar| clinvar.hgvs.as_ref())
-        {
-            Some(hgvs) if hgvs.coding_contains(id) => VariantIdentityComparison::Compatible {
-                matched_alias: id.into(),
-            },
-            Some(_) => VariantIdentityComparison::Contradictory {
-                field: "transcript_coding_alias",
-            },
-            None => VariantIdentityComparison::Indeterminate {
-                field: "transcript_coding_alias",
-            },
-        }
-    })
-    .await
-}
-
-async fn resolve_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
-    match normalize_transcript_hgvs_for_get(id).await {
-        Ok(format) => Ok(format),
-        // Transcript normalization services refuse intronic deletion ranges
-        // and other aliases they cannot place; ClinVar's own coding alias list
-        // still names them, so the alias search resolves what normalization
-        // cannot (ticket 1292).
-        Err(_) => {
-            let myvariant = MyVariantClient::new()?;
-            transcript_hgvs_clinvar_alias_hit(&myvariant, id)
-                .await?
-                .filter(|hit| {
-                    matches!(
-                        parse_variant_id(hit.id.trim()),
-                        Ok(VariantIdFormat::HgvsGenomic(_))
-                    )
-                })
-                .map(|hit| VariantIdFormat::HgvsGenomic(hit.id.trim().to_string()))
-                .ok_or_else(|| BioMcpError::NotFound {
-                    entity: "variant".into(),
-                    id: id.to_string(),
-                    suggestion: transcript_hgvs_not_found_suggestion(id),
-                })
-        }
-    }
-}
-
 async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     let response = normalize_variant("all", id)
         .await
@@ -434,11 +380,39 @@ pub(super) async fn resolve_base_with_hit(
         }
         _ => super::RequestedVariantIdentity::from_variant_input(id)?,
     };
+    let mut resolved_alias = None;
+    let mut selected_tuple = None;
     let id_format = match (input_kind.clone(), normalized_coordinate.as_ref()) {
         (VariantInputKind::Exact(format @ VariantIdFormat::GeneCodingChange { .. }), _) => format,
         (_, Some(coordinate)) => VariantIdFormat::HgvsGenomic(coordinate.id.clone()),
         (VariantInputKind::TranscriptCodingHgvs(_), None) => {
-            resolve_transcript_hgvs_for_get(id).await?
+            match normalize_transcript_hgvs_for_get(id).await {
+                Ok(format) => format,
+                Err(_) => {
+                    let (hit, tuple) =
+                        transcript_deletion_lookup::lookup_alias(&MyVariantClient::new()?, id)
+                            .await
+                            .map_err(|error| {
+                                if error.is_not_found() {
+                                    BioMcpError::NotFound {
+                                        entity: "variant".into(),
+                                        id: id.into(),
+                                        suggestion: transcript_hgvs_not_found_suggestion(id),
+                                    }
+                                } else {
+                                    error
+                                }
+                            })?;
+                    let format = parse_variant_id(hit.id.trim())?;
+                    if !matches!(format, VariantIdFormat::HgvsGenomic(_)) {
+                        return Err(BioMcpError::InvalidArgument(
+                            "Transcript lookup lacks a genomic identity.".into(),
+                        ));
+                    }
+                    resolved_alias = Some((hit, tuple));
+                    format
+                }
+            }
         }
         _ => parse_variant_id(id)?,
     };
@@ -465,7 +439,10 @@ pub(super) async fn resolve_base_with_hit(
     let myvariant = MyVariantClient::new()?;
     let (hit, answering_build, build_candidates) = match &id_format {
         VariantIdFormat::HgvsGenomic(hgvs) => {
-            if normalized_coordinate
+            if let Some((hit, tuple)) = resolved_alias {
+                selected_tuple = Some(tuple);
+                (hit, Some(GenomeBuild::Grch37), Vec::new())
+            } else if normalized_coordinate
                 .as_ref()
                 .is_some_and(|coordinate| coordinate.requires_comparison)
             {
@@ -513,18 +490,21 @@ pub(super) async fn resolve_base_with_hit(
                 if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_))
                     && direct.is_err()
                 {
-                    let alias_hit = transcript_hgvs_clinvar_alias_hit(&myvariant, id)
-                        .await?
-                        .ok_or_else(|| BioMcpError::NotFound {
-                            entity: "variant".into(),
-                            id: id.to_string(),
-                            suggestion: transcript_hgvs_not_found_suggestion(id),
+                    let (hit, tuple) = transcript_deletion_lookup::lookup_alias(&myvariant, id)
+                        .await
+                        .map_err(|error| {
+                            if error.is_not_found() {
+                                BioMcpError::NotFound {
+                                    entity: "variant".into(),
+                                    id: id.into(),
+                                    suggestion: transcript_hgvs_not_found_suggestion(id),
+                                }
+                            } else {
+                                error
+                            }
                         })?;
-                    (
-                        alias_hit,
-                        effective_build.or(Some(GenomeBuild::Grch37)),
-                        Vec::new(),
-                    )
+                    selected_tuple = Some(tuple);
+                    (hit, Some(GenomeBuild::Grch37), Vec::new())
                 } else {
                     let hit = direct.map_err(|error| match effective_build {
                         Some(build) => build_aware_not_found(hgvs, build, error),
@@ -534,6 +514,9 @@ pub(super) async fn resolve_base_with_hit(
                         matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_));
                     let alias_confirmed =
                         transcript_input && hit_confirms_transcript_alias(&hit, id);
+                    if transcript_input {
+                        selected_tuple = Some(transcript_deletion_lookup::alias_tuple(&hit, id)?);
+                    }
                     if !compatible(&hit) && !alias_confirmed {
                         let suggestion = if transcript_input {
                             transcript_hgvs_not_found_suggestion(id)
@@ -591,7 +574,16 @@ pub(super) async fn resolve_base_with_hit(
         ),
     };
 
-    let mut variant = transform::variant::from_myvariant_hit(&hit);
+    let mut variant = match selected_tuple {
+        Some(tuple) => transform::variant::from_myvariant_hit_with_tuple(
+            &hit,
+            &tuple.gene,
+            &tuple.transcript,
+            &tuple.coding,
+            tuple.protein.as_deref(),
+        ),
+        None => transform::variant::from_myvariant_hit(&hit),
+    };
     variant.genome_build = answering_build;
     variant.genome_build_provenance = (answering_build == Some(GenomeBuild::Grch37)
         && effective_build.is_none()

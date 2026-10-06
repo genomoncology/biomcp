@@ -129,7 +129,7 @@ async fn transcript_alias_fixture_server(
                     .expect("lock requests")
                     .push(request.clone());
                 let hit = if with_exact_alias {
-                    r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_000249.4:c.678-14_678-3del","LRG_216t1:c.678-14_678-3del12"]}}}"#
+                    r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"rcv":{"preferred_name":"NM_000249.4(MLH1):c.678-14_678-3del"},"hgvs":{"coding":["NM_000249.4:c.678-14_678-3del","LRG_216t1:c.678-14_678-3del12"]}}}"#
                 } else {
                     r#"{"_id":"chr3:g.37055906_37055917del","clinvar":{"gene":{"symbol":"MLH1"},"variant_id":1755396,"hgvs":{"coding":["NM_001258271.2:c.678-14_678-3del"]}}}"#
                 };
@@ -562,7 +562,7 @@ fn known_build_not_found_names_the_build_and_upstream_status() {
 #[test]
 fn transcript_hgvs_fallback_queries_clinvar_coding_identity() {
     assert_eq!(
-        transcript_hgvs_clinvar_query("NM_004333.6:c.1799T>A"),
+        transcript_deletion_lookup::query("NM_004333.6:c.1799T>A"),
         "clinvar.hgvs.coding:\"NM_004333.6\\:c.1799T>A\""
     );
 }

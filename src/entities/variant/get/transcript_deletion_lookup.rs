@@ -97,14 +97,16 @@ fn snpeff_tuple(
         protein: ann.hgvs_p.clone(),
     })
 }
-fn matches(tuple: &MatchedTuple, requested: &TranscriptDeletion<'_>) -> bool {
-    tuple.transcript == requested.transcript
-        && tuple.gene == requested.gene
-        && tuple.coding == requested.change
+fn matches(tuple: &MatchedTuple, transcript: &str, gene: Option<&str>, change: &str) -> bool {
+    tuple.transcript == transcript
+        && gene.is_none_or(|gene| tuple.gene == gene)
+        && tuple.coding == change
 }
 fn matched_tuples(
     hit: &MyVariantHit,
-    requested: &TranscriptDeletion<'_>,
+    transcript: &str,
+    gene: Option<&str>,
+    change: &str,
 ) -> (Vec<MatchedTuple>, bool) {
     let mut tuples = Vec::new();
     let mut incomplete = hit.snpeff.as_ref().is_some_and(|s| !s.complete);
@@ -113,7 +115,7 @@ fn matched_tuples(
         for (index, ann) in snpeff.ann.iter().enumerate() {
             assertions += 1;
             match snpeff_tuple(ann, index) {
-                Some(tuple) if matches(&tuple, requested) => tuples.push(tuple),
+                Some(tuple) if matches(&tuple, transcript, gene, change) => tuples.push(tuple),
                 Some(_) => {}
                 None => incomplete = true,
             }
@@ -127,7 +129,7 @@ fn matched_tuples(
                 .as_deref()
                 .and_then(|value| rcv_tuple(value, index))
             {
-                Some(tuple) if matches(&tuple, requested) => tuples.push(tuple),
+                Some(tuple) if matches(&tuple, transcript, gene, change) => tuples.push(tuple),
                 Some(_) => {}
                 None => incomplete = true,
             }
@@ -140,22 +142,86 @@ pub(super) async fn lookup(
     id: &str,
     requested: &TranscriptDeletion<'_>,
 ) -> Result<(MyVariantHit, MatchedTuple), BioMcpError> {
-    let query = query(&format!("{}:{}", requested.transcript, requested.change));
+    lookup_source(
+        client,
+        id,
+        requested.transcript,
+        Some(requested.gene),
+        requested.change,
+        false,
+    )
+    .await
+}
+
+pub(super) async fn lookup_alias(
+    client: &MyVariantClient,
+    id: &str,
+) -> Result<(MyVariantHit, MatchedTuple), BioMcpError> {
+    let (transcript, change) = id
+        .split_once(':')
+        .ok_or_else(|| BioMcpError::InvalidArgument(EVIDENCE.into()))?;
+    lookup_source(client, id, transcript, None, change, true).await
+}
+
+pub(super) fn alias_tuple(hit: &MyVariantHit, id: &str) -> Result<MatchedTuple, BioMcpError> {
+    let (transcript, change) = id
+        .split_once(':')
+        .ok_or_else(|| BioMcpError::InvalidArgument(EVIDENCE.into()))?;
+    let (tuples, incomplete) = matched_tuples(hit, transcript, None, change);
+    let assertions: HashSet<_> = tuples
+        .iter()
+        .map(|tuple| (&tuple.gene, &tuple.protein))
+        .collect();
+    if incomplete || assertions.len() != 1 {
+        return Err(BioMcpError::InvalidArgument(EVIDENCE.into()));
+    }
+    tuples
+        .into_iter()
+        .min_by_key(|tuple| match tuple.location {
+            TupleLocation::Rcv(index) => (0, index),
+            TupleLocation::Snpeff(index) => (1, index),
+        })
+        .ok_or_else(|| BioMcpError::InvalidArgument(EVIDENCE.into()))
+}
+
+async fn lookup_source(
+    client: &MyVariantClient,
+    id: &str,
+    transcript: &str,
+    gene: Option<&str>,
+    change: &str,
+    require_alias: bool,
+) -> Result<(MyVariantHit, MatchedTuple), BioMcpError> {
+    let query = query(&format!("{transcript}:{change}"));
     let mut selected = None;
     let mut seen = HashSet::new();
-    let mut proteins: HashMap<String, Option<String>> = HashMap::new();
+    let mut proteins: HashMap<String, (String, Option<String>)> = HashMap::new();
     let mut indeterminate = false;
     coding_lookup::scan(client, &query, INCOMPLETE, |hit| {
-        let (tuples, incomplete) = matched_tuples(&hit, requested);
+        if require_alias {
+            match hit
+                .clinvar
+                .as_ref()
+                .and_then(|clinvar| clinvar.hgvs.as_ref())
+            {
+                Some(hgvs) if hgvs.coding_contains(id) => {}
+                Some(_) => return,
+                None => {
+                    indeterminate = true;
+                    return;
+                }
+            }
+        }
+        let (tuples, incomplete) = matched_tuples(&hit, transcript, gene, change);
         indeterminate |= incomplete || hit.id.trim().is_empty();
         if tuples.is_empty() || hit.id.trim().is_empty() {
             return;
         }
         for tuple in &tuples {
             if let Some(prior) = proteins.get(&hit.id) {
-                indeterminate |= prior != &tuple.protein;
+                indeterminate |= prior != &(tuple.gene.clone(), tuple.protein.clone());
             } else {
-                proteins.insert(hit.id.clone(), tuple.protein.clone());
+                proteins.insert(hit.id.clone(), (tuple.gene.clone(), tuple.protein.clone()));
             }
         }
         let source = SourceVariantIdentity::from_myvariant_hit(&hit);
