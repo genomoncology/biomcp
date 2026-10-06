@@ -83,7 +83,7 @@ ORCID_ID = "0000-0002-1825-0097"
 ORCID_PERSON_BODY = {
     "path": f"/{ORCID_ID}/person",
     "name": {
-        "visibility": "PUBLIC",
+        "visibility": "public",
         "given-names": {"value": "Josiah"},
         "family-name": {"value": "Carberry"},
     },
@@ -95,7 +95,7 @@ ORCID_WORKS_BODY = {
         {
             "work-summary": [
                 {
-                    "visibility": "PUBLIC",
+                    "visibility": "public",
                     "put-code": 42,
                     "display-index": "2",
                     "title": {"title": {"value": "A claimed work"}},
@@ -121,7 +121,7 @@ ORCID_WORKS_BODY = {
         {
             "work-summary": [
                 {
-                    "visibility": "PUBLIC",
+                    "visibility": "public",
                     "put-code": 43,
                     "display-index": "1",
                     "title": {"title": {"value": "Second claimed work"}},
