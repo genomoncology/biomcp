@@ -4600,7 +4600,12 @@ Some enrichment and higher-rate access paths improve with API keys. For provider
 <h3 id="orcid_access_token"><code>ORCID_ACCESS_TOKEN</code><a class="headerlink" href="#orcid_access_token" title="Permanent link">&para;</a></h3>
 <p>Used by <code>biomcp get author orcid:&lt;id&gt;</code> and <code>biomcp author papers orcid:&lt;id&gt;</code> to
 read the public ORCID record. Obtain a public-read bearer token for the
-<code>/read-public</code> scope from ORCID.</p>
+<code>/read-public</code> scope from ORCID. Percent-encode the scope as <code>%2Fread-public</code>
+when you submit the token form; ORCID rejects the raw slash in the scope
+field.</p>
+<p>Public ORCID records are readable without any token. The token is a quota
+measure: it moves requests from the shared anonymous pool onto a dedicated
+rate limit.</p>
 <p>Provider access: <a href="https://info.orcid.org/documentation/features/public-api/">https://info.orcid.org/documentation/features/public-api/</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ORCID_ACCESS_TOKEN</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>author<span class="w"> </span>orcid:0000-0002-1825-0097
