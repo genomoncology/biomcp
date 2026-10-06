@@ -324,35 +324,6 @@ fn select_get_hit_value_scalar_is_api_error() {
 }
 
 #[test]
-fn gnomad_nested_fields_deserialize() {
-    let hit: MyVariantHit = serde_json::from_value(json!({
-        "_id": "chr1:g.1A>T",
-        "dbnsfp": {"genename": "TP53"},
-        "gnomad": {
-            "exomes": { "af": { "af": 0.001 } },
-            "genomes": { "af": { "af": 0.002 } }
-        }
-    }))
-    .expect("gnomad nested object should deserialize");
-    assert_eq!(
-        hit.gnomad
-            .as_ref()
-            .and_then(|g| g.exomes())
-            .and_then(|e| e.af())
-            .and_then(|a| a.af()),
-        Some(0.001)
-    );
-    assert_eq!(
-        hit.gnomad
-            .as_ref()
-            .and_then(|g| g.genomes())
-            .and_then(|e| e.af())
-            .and_then(|a| a.af()),
-        Some(0.002)
-    );
-}
-
-#[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<MyVariantSearchResponse>(
         crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),

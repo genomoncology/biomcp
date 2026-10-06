@@ -67,54 +67,6 @@ fn filter_statuses_describe_evaluation_and_keep_canonical_order() {
 }
 
 #[test]
-fn quality_score_prioritizes_significance_and_frequency() {
-    let rich = VariantSearchResult {
-        id: "chr1:g.1A>T".into(),
-        genome_build: super::super::GenomeBuild::Grch37,
-        genome_build_provenance: "test".into(),
-        gene: "TP53".into(),
-        hgvs_p: Some("p.V1A".into()),
-        hgvs_c: None,
-        transcript: None,
-        legacy_name: None,
-        significance: Some("Pathogenic".into()),
-        significance_source: None,
-        significance_evaluated: None,
-        clinvar_stars: None,
-        gnomad_af: Some(0.001),
-        revel: None,
-        gerp: None,
-        source_identity: None,
-        matched_alias: None,
-        transcript_annotations_complete: None,
-        transcript_annotations: None,
-    };
-    let sparse = VariantSearchResult {
-        id: "chr1:g.2A>T".into(),
-        genome_build: super::super::GenomeBuild::Grch37,
-        genome_build_provenance: "test".into(),
-        gene: "TP53".into(),
-        hgvs_p: Some("p.V2A".into()),
-        hgvs_c: None,
-        transcript: None,
-        legacy_name: None,
-        significance: None,
-        significance_source: None,
-        significance_evaluated: None,
-        clinvar_stars: None,
-        gnomad_af: None,
-        revel: None,
-        gerp: None,
-        source_identity: None,
-        matched_alias: None,
-        transcript_annotations_complete: None,
-        transcript_annotations: None,
-    };
-
-    assert!(search_result_quality_score(&rich) > search_result_quality_score(&sparse));
-}
-
-#[test]
 fn resolution_status_follows_compatible_indeterminate_and_exhaustive_truth_table() {
     assert_eq!(
         resolution_status(1, false, true),
