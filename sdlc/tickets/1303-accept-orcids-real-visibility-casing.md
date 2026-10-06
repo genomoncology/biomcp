@@ -1,6 +1,6 @@
 # 1303 — Accept ORCID's real visibility casing in get author
 
-Status: OPEN.
+Status: complete.
 
 ## Build status
 
