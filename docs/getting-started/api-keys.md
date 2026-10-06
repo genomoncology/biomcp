@@ -22,7 +22,13 @@ biomcp get variant "chr7:g.140453136A>T" predict
 
 Used by `biomcp get author orcid:<id>` and `biomcp author papers orcid:<id>` to
 read the public ORCID record. Obtain a public-read bearer token for the
-`/read-public` scope from ORCID.
+`/read-public` scope from ORCID. Percent-encode the scope as `%2Fread-public`
+when you submit the token form; ORCID rejects the raw slash in the scope
+field.
+
+Public ORCID records are readable without any token. The token is a quota
+measure: it moves requests from the shared anonymous pool onto a dedicated
+rate limit.
 
 Provider access: <https://info.orcid.org/documentation/features/public-api/>
 
