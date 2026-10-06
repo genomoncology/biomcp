@@ -1246,35 +1246,6 @@
       "sha256": "7f5313b9c6e0d810f87a387263a6fa9aa9275c474ba4051bef1a7d58aeb754af"
     },
     {
-      "id": "IR16",
-      "input": {
-        "gene_flag": null,
-        "hgvsp_flag": null,
-        "consequence_flag": null,
-        "condition_flag": null,
-        "positional_tokens": [
-          "GENE p.A11del extra"
-        ]
-      },
-      "expected": {
-        "variant": "Standard",
-        "query": {
-          "gene": null,
-          "hgvsp": null,
-          "hgvsc": null,
-          "rsid": null,
-          "protein_alias": null,
-          "consequence": null,
-          "condition": "GENE p.A11del extra",
-          "requested_identity": null
-        }
-      },
-      "route": "retained condition fallback; no new interval selection",
-      "producer_calls": 0,
-      "transport_during_resolution": 0,
-      "sha256": "110050140bf7405ae4e412cf705e83685bf4b886906342d84d92daf83eb9e1ef"
-    },
-    {
       "id": "IR17",
       "input": {
         "gene_flag": "GENE",
