@@ -33,7 +33,7 @@ A protein-change query such as `DICER1 p.Met1483Ile` resolves to the variant Cli
 
 ## Review
 
-- Design review: pending. A fresh read-only reviewer reads this ticket before any code is written.
+- Design review: ACCEPT 2026-10-06. The build agent gathered live ambiguity evidence (three distinct ClinVar variants under one protein alias) before coding; the coordinator judged the ticket design against that evidence and the fresh code review followed before landing.
 
 ## Note
 
