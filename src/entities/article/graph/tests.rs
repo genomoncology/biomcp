@@ -1754,7 +1754,7 @@ enum S2Reply {
 /// One Europe PMC search hit naming the citing fixture paper.
 fn europepmc_citing_hit() -> String {
     format!(
-        "{{\"hitCount\":1,\"resultList\":{{\"result\":[{{\"id\":\"1\",\"source\":\"MED\",\
+        "{{\"hitCount\":1,\"resultList\":{{\"result\":[{{\"id\":\"{OPEN_CITING_PMID}\",\"source\":\"MED\",\
 \"pmid\":\"{OPEN_CITING_PMID}\",\"title\":\"Citing fixture\",\
 \"doi\":\"{OPEN_CITING_DOI}\",\"journalTitle\":\"Fixture Journal\",\"pubYear\":\"2012\"}}]}}}}"
     )
