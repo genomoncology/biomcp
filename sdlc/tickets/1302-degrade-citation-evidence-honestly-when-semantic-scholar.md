@@ -2,7 +2,7 @@
 
 Filed 2026-10-05 by the BioMCP 0.9 lead, promoting the issue of 2026-10-02 after reproduction; supersedes that issue.
 
-Status: OPEN.
+Status: complete.
 Milestone: 0.9.2
 
 ## Build status
