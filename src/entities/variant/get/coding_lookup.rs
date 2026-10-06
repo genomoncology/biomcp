@@ -27,53 +27,29 @@ pub(super) async fn lookup(
     let mut seen = HashSet::new();
     let mut selected = None;
     let mut indeterminate = false;
-    let mut examined = 0;
-    let mut known_total: Option<usize> = None;
-    let mut complete = false;
-    while examined < CANDIDATE_LIMIT {
-        let response = client
-            .query_with_fields(&query, PAGE_SIZE, examined, MYVARIANT_FIELDS_GET)
-            .await
-            .map_err(source_error)?;
-        if let Some(total) = response.total {
-            known_total = Some(known_total.map_or(total, |prior| prior.max(total)));
+    scan(client, &query, INCOMPLETE, |hit| {
+        let source = SourceVariantIdentity::from_myvariant_hit(&hit);
+        if hit.id.trim().is_empty() {
+            indeterminate = true;
+            return;
         }
-        let count = response.hits.len();
-        let page_start = examined;
-        for hit in response.hits.into_iter().take(CANDIDATE_LIMIT - examined) {
-            examined += 1;
-            let source = SourceVariantIdentity::from_myvariant_hit(&hit);
-            if hit.id.trim().is_empty() {
-                indeterminate = true;
-                continue;
-            }
-            match compare_variant_identity(requested, &source) {
-                VariantIdentityComparison::Compatible { .. } => {
-                    let mut protein = source.protein_changes.clone();
-                    let mut coding = source.coding_changes.clone();
-                    protein.sort();
-                    coding.sort();
-                    if seen.insert((hit.id.clone(), source.normalized_key(), protein, coding))
-                        && selected.is_none()
-                    {
-                        selected = Some(hit);
-                    }
+        match compare_variant_identity(requested, &source) {
+            VariantIdentityComparison::Compatible { .. } => {
+                let mut protein = source.protein_changes.clone();
+                let mut coding = source.coding_changes.clone();
+                protein.sort();
+                coding.sort();
+                if seen.insert((hit.id.clone(), source.normalized_key(), protein, coding))
+                    && selected.is_none()
+                {
+                    selected = Some(hit);
                 }
-                VariantIdentityComparison::Indeterminate { .. } => indeterminate = true,
-                VariantIdentityComparison::Contradictory { .. } => {}
             }
+            VariantIdentityComparison::Indeterminate { .. } => indeterminate = true,
+            VariantIdentityComparison::Contradictory { .. } => {}
         }
-        if count > examined - page_start {
-            break;
-        }
-        complete = known_total.map_or(count == 0, |total| examined >= total);
-        if complete || count == 0 {
-            break;
-        }
-    }
-    if !complete {
-        return Err(BioMcpError::InvalidArgument(INCOMPLETE.into()));
-    }
+    })
+    .await?;
     if seen.len() > 1 {
         return Err(BioMcpError::InvalidArgument(AMBIGUOUS.into()));
     }
@@ -135,3 +111,41 @@ mod tests;
 #[cfg(test)]
 #[path = "coding_lookup_transport_tests.rs"]
 mod transport_tests;
+
+// Both consumers count every raw row and require the same bounded complete scan.
+pub(super) async fn scan(
+    client: &MyVariantClient,
+    query: &str,
+    incomplete: &'static str,
+    mut visit: impl FnMut(MyVariantHit),
+) -> Result<(), BioMcpError> {
+    let mut examined = 0;
+    let mut known_total: Option<usize> = None;
+    let mut complete = false;
+    while examined < CANDIDATE_LIMIT {
+        let response = client
+            .query_with_fields(query, PAGE_SIZE, examined, MYVARIANT_FIELDS_GET)
+            .await
+            .map_err(source_error)?;
+        if let Some(total) = response.total {
+            known_total = Some(known_total.map_or(total, |prior| prior.max(total)));
+        }
+        let count = response.hits.len();
+        let page_start = examined;
+        for hit in response.hits.into_iter().take(CANDIDATE_LIMIT - examined) {
+            examined += 1;
+            visit(hit);
+        }
+        if count > examined - page_start {
+            break;
+        }
+        complete = known_total.map_or(count == 0, |total| examined >= total);
+        if complete || count == 0 {
+            break;
+        }
+    }
+    if !complete {
+        return Err(BioMcpError::InvalidArgument(incomplete.into()));
+    }
+    Ok(())
+}

@@ -15,14 +15,26 @@ use super::{
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VariantIdFormat {
+    TranscriptGeneDeletion {
+        transcript: String,
+        gene: String,
+        change: String,
+    },
     RsId(String),
     HgvsGenomic(String),
-    GeneProteinChange { gene: String, change: String },
-    GeneCodingChange { gene: String, change: String },
+    GeneProteinChange {
+        gene: String,
+        change: String,
+    },
+    GeneCodingChange {
+        gene: String,
+        change: String,
+    },
 }
 
 mod coding_alias;
 pub(super) mod coding_get;
+pub(super) mod transcript_deletion_get;
 pub(crate) use coding_get::original_input_limit as coding_get_input_limit;
 pub(super) mod genomic_assertion;
 mod genomic_lookup;
@@ -32,6 +44,7 @@ pub(crate) use interval_search::{
     IntervalSearchAssertion, IntervalSearchDisposition, protein_interval_search,
 };
 mod point_alias;
+pub(super) use point_alias::complete_source_protein_point;
 pub(super) mod protein_get;
 pub(super) use coding_alias::coding_changes_equivalent;
 use coding_alias::coding_key;
@@ -183,6 +196,14 @@ fn split_gene_change_tokens(input: &str) -> Option<(&str, &str)> {
 }
 
 pub fn classify_variant_input(input: &str) -> VariantInputKind {
+    if transcript_deletion_get::selects(input) {
+        return transcript_deletion_get::prepare(input)
+            .ok()
+            .flatten()
+            .map_or(VariantInputKind::Unsupported, |value| {
+                VariantInputKind::Exact(value.format())
+            });
+    }
     if coding_get::selects(input) {
         return coding_get::prepare(input)
             .ok()

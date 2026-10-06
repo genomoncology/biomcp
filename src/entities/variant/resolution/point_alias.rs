@@ -300,3 +300,13 @@ fn checked_reference<'a>(
         None => Ok(None),
     }
 }
+
+/// Validate one untouched source assertion without compatibility preparation.
+pub(in crate::entities::variant) fn complete_source_protein_point(value: &str) -> bool {
+    let envelope = parse_hgvs_protein_point_21_1_4(value);
+    envelope
+        .disposition()
+        .parsed()
+        .is_some_and(|parsed| parsed.reference().is_none())
+        && envelope.render_source() == value
+}

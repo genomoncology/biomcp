@@ -1,10 +1,11 @@
 //! Variant detail retrieval, section gating, and enrichment orchestration.
 
 mod coding_lookup;
+mod transcript_deletion_lookup;
 use coding_lookup::candidate_matches_requested_identity;
+use transcript_deletion_lookup::query as transcript_hgvs_clinvar_query;
 mod protein_lookup;
 mod rsid_lookup;
-
 use std::time::Duration;
 
 use crate::entities::section_outcome::SectionOutcome;
@@ -322,13 +323,6 @@ pub(crate) fn normalized_get_variant_id(
         .ok_or_else(|| transcript_hgvs_normalization_error(&response.input, Some(response)))
 }
 
-fn transcript_hgvs_clinvar_query(id: &str) -> String {
-    format!(
-        "clinvar.hgvs.coding:\"{}\"",
-        MyVariantClient::escape_query_value(id)
-    )
-}
-
 async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     let response = normalize_variant("all", id)
         .await
@@ -363,6 +357,9 @@ pub(super) async fn resolve_base_with_hit(
     ),
     BioMcpError,
 > {
+    if let Some(result) = transcript_deletion_lookup::resolve(id, genome_build).await? {
+        return Ok(result);
+    }
     let coding = super::resolution::coding_get::prepare(id)?;
     super::resolution::protein_get::prepare(id)?;
     if coding.is_some() && genome_build.is_some() {
@@ -514,6 +511,11 @@ pub(super) async fn resolve_base_with_hit(
             Some(GenomeBuild::Grch37),
             Vec::new(),
         ),
+        VariantIdFormat::TranscriptGeneDeletion { .. } => {
+            return Err(BioMcpError::InvalidArgument(
+                "Transcript gene deletion lookup could not prepare its request.".into(),
+            ));
+        }
         VariantIdFormat::GeneCodingChange { gene, change } => (
             coding_lookup::lookup(&myvariant, id, gene, change, &requested).await?,
             Some(GenomeBuild::Grch37),
@@ -1020,6 +1022,7 @@ fn dbsnp_population_rsid<'a>(variant: &'a Variant, id_format: &VariantIdFormat) 
         VariantIdFormat::RsId(_)
             | VariantIdFormat::GeneProteinChange { .. }
             | VariantIdFormat::GeneCodingChange { .. }
+            | VariantIdFormat::TranscriptGeneDeletion { .. }
     )
     .then(|| variant.rsid.as_deref())
     .flatten()
@@ -1209,10 +1212,12 @@ pub async fn get_with_workflow_signals(
     sections: &[String],
     genome_build: Option<GenomeBuild>,
 ) -> Result<(Variant, VariantWorkflowSignals), BioMcpError> {
+    super::resolution::transcript_deletion_get::preflight(id)?;
     super::resolution::coding_get::preflight(id)?;
     super::resolution::protein_get::prepare(id)?;
     let section_flags = parse_sections(sections)?;
     if is_gwas_only_request(&section_flags)
+        && !super::resolution::transcript_deletion_get::selects(id)
         && !super::resolution::coding_get::selects(id)
         && let VariantIdFormat::RsId(rsid) = parse_variant_id(id)?
     {

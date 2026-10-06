@@ -52,6 +52,9 @@ pub(crate) fn original_input_limit(input: &str) -> Option<&'static str> {
     if input.len() <= 512 {
         return None;
     }
+    if super::transcript_deletion_get::selects(input) {
+        return Some(super::transcript_deletion_get::LIMIT);
+    }
     if selects(input) {
         return Some(LIMIT);
     }
@@ -88,7 +91,7 @@ pub(in crate::entities::variant) fn prepare(
         || parsed.reference().is_some()
         || parsed.location().is_none()
         || parsed.edit().is_none()
-        || envelope.render_source().as_deref() != Some(change)
+        || envelope.render_source() != Some(change)
         || parsed.render_constructed() != change
     {
         return Err(invalid());
@@ -102,6 +105,11 @@ pub(in crate::entities::variant) fn prepare(
 
 impl RequestedVariantIdentity {
     pub(crate) fn from_variant_input(input: &str) -> Result<Self, BioMcpError> {
+        if super::transcript_deletion_get::selects(input) {
+            return Err(BioMcpError::InvalidArgument(
+                super::transcript_deletion_get::ARTICLES.into(),
+            ));
+        }
         let supplied = input.trim();
         if let Some((gene, coding)) = supplied.split_once(char::is_whitespace)
             && coding_change_re().is_match(coding.trim())
@@ -147,7 +155,16 @@ impl RequestedVariantIdentity {
                     ..Self::default()
                 })
             }
-            _ => Err(parse_variant_id(supplied).unwrap_err()),
+            VariantInputKind::Exact(VariantIdFormat::TranscriptGeneDeletion { .. }) => {
+                Err(BioMcpError::InvalidArgument(super::transcript_deletion_get::ARTICLES.into()))
+            }
+            _ => match parse_variant_id(supplied) {
+                Err(error) => Err(error),
+                Ok(_) => Err(BioMcpError::InvalidArgument(
+                    "This coding form is not supported for variant articles. Use get variant for coding detail."
+                        .into(),
+                )),
+            },
         }
     }
 }

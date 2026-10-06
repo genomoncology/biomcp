@@ -261,6 +261,7 @@ fn display_variant(id: &str, variant: &Variant, id_format: &VariantIdFormat) -> 
 
 fn input_kind_label(id_format: &VariantIdFormat) -> &'static str {
     match id_format {
+        VariantIdFormat::TranscriptGeneDeletion { .. } => "transcript_gene_deletion",
         VariantIdFormat::GeneCodingChange { .. } => "gene_coding_change",
         VariantIdFormat::RsId(_) => "rsid",
         VariantIdFormat::HgvsGenomic(_) => "hgvs_genomic",

@@ -41,6 +41,23 @@ A complete scan with only contradictory rows returns not found. Multiple compati
 
 For a refusal, use an exact genomic HGVS ID or search with the rsID. Completion establishes identity within the provider results. It does not establish reference correctness. A unique complete result keeps the existing detail fields and provider default build. The separate GWAS-only route retains its behavior.
 
+## Transcript and gene deletion detail
+
+Quote the complete identifier for `get variant`:
+
+```bash
+biomcp get variant 'NM_012345.7(TP53):c.17_18del' --json
+biomcp get variant 'NM_012345.7(TP53) c.17_18del'
+```
+
+These examples use invented identifiers. The wrapper requires a versioned `NM_` transcript, an exact uppercase gene and a complete coding deletion. Written offsets, uncertainty, decimal spelling and stated deleted sequence remain unchanged. The original input must fit within 512 UTF-8 bytes before trimming. Other decorated edits, predicted deletions and an assembly option are refused. The wrapper is unavailable for variant articles. An unquoted spaced form makes the coding fragment a section argument.
+
+BioMCP queries the exact transcript and coding spelling. It selects a complete ClinVar preferred-name assertion or a single complete snpEff annotation with the same transcript version, gene and coding change. The detail card uses that whole assertion. A missing protein stays absent. Another transcript version cannot supply it. Independent annotations remain source facts and do not establish equivalence.
+
+Selection requires a complete bounded scan of at most 1,000 raw rows in 50-row pages. Duplicate rows still count. Conflicting matched protein assertions, including absent versus present protein, refuse selection before deduplication. Multiple identities, incomplete evidence and an incomplete scan have distinct refusals. Provider failures remain errors after a provisional match. Population and other optional sections keep their existing behavior.
+
+Accepted syntax and an exact source assertion do not establish reference validity, biological effects or live source qualification.
+
 ## Gene and coding detail lookup
 
 Use `biomcp get variant 'TP53 c.215C>G'` to locate one source record by a written coding alias. The input contains exactly a gene symbol and an accession-free lowercase `c.` fragment. The complete original input must fit 512 UTF-8 bytes. Explicit `--assembly` requires a genomic coordinate.
