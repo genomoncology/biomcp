@@ -59,13 +59,24 @@
       "authorized_increase": null
     },
     {
+      "path": "src/entities/article/graph/citation_evidence.rs",
+      "baseline_lines": 1209,
+      "floor_lines": 859,
+      "authorized_increase": {
+        "ticket": "1302",
+        "delta": 350,
+        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes.",
+        "removal_condition": "Extract the degraded confirmation phase and the refusal vocabulary when the citation-evidence module is next decomposed."
+      }
+    },
+    {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 1733,
+      "baseline_lines": 2093,
       "floor_lines": 998,
       "authorized_increase": {
-        "ticket": "1246",
-        "delta": 735,
-        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests.",
+        "ticket": "1246, 1302",
+        "delta": 1095,
+        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, and fail-fast tests.",
         "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
       }
     },
@@ -260,12 +271,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1256,
+      "baseline_lines": 1345,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1256",
-        "delta": 134,
-        "reason": "The DDInter HTML-download projection arm and its test.",
+        "ticket": "1256, 1302",
+        "delta": 223,
+        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
       }
     },
@@ -460,12 +471,12 @@
     },
     {
       "path": "src/sources/semantic_scholar.rs",
-      "baseline_lines": 1003,
+      "baseline_lines": 1048,
       "floor_lines": 959,
       "authorized_increase": {
-        "ticket": "1143",
-        "delta": 44,
-        "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned.",
+        "ticket": "1143, 1302",
+        "delta": 89,
+        "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier.",
         "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
       }
     },
