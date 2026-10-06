@@ -9,6 +9,14 @@ Status: OPEN.
 - Add the missing unit test for the article-search bare-VariationID refusal (src/entities/article/variant_search.rs guard): assert the InvalidArgument message for a ClinvarVariationId input.
 - Decide the EGFR protein-range resolution direction: 1292 parses `EGFR E746_A750del` and refuses with candidates (dbNSFP holds no protein-range alias); this ticket owns whether refusal-with-candidates stays or alias expansion resolves it, under its no-wrong-answers rule.
 
+## Build status
+
+- Built on branch `tickets/1297-protein-change-refusal`, sha `31518f8b8`, 2026-10-06.
+- Code review: ACCEPT 2026-10-06, no blocking findings. Three P2 notes resolved at merge: the 577152 proof row comes from 1292 on main and was verified to survive the merge; the size-5 refusal wording cap is recorded as a follow-up; the conflict inventory gained capture-receipts.json and the variant-identity fixture.
+- Rule: one compatible hit resolves (documented single-hit rule, identical to main's behavior); multiple hits resolve only when exactly one carries a ClinVar record; every other case refuses naming every candidate and the working input forms. Live evidence corrected the ticket: VariationID 577152 is the C>T variant on GRCh37 and dbNSFP merged a second transcript spelling onto it, so the original wrong-transcript annotation was stale; the defect (resolving the ClinVar-less C>A first) was real either way.
+- EGFR direction decided: refusal-with-candidates stays. The p.Glu746_Ala750del alias names three distinct ClinVar variants (a delins and two dels), and dbNSFP holds no protein-range alias; expansion could answer a del with a delins.
+- Folded scope delivered: the article-search bare-VariationID refusal test pins the refusal fires before any provider call, worded to survive 1292's merge (verified: it did).
+
 ## Outcome
 
 ## Outcome
