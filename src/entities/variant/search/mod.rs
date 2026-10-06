@@ -10,6 +10,7 @@ use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 mod diagnostics;
+mod exact_scan;
 pub(crate) use diagnostics::SearchDiagnostic;
 use diagnostics::{classify_provider_zero, search_params};
 
@@ -802,53 +803,12 @@ async fn search_page_with_execution(
         });
     };
 
-    const SOURCE_PAGE: usize = 50;
-    const MAX_CANDIDATES: usize = 1_000;
-    let mut provider_offset = 0;
-    let mut retained = Vec::new();
-    let mut seen = HashSet::new();
-    let mut saw_indeterminate = false;
-    let mut exhaustive = false;
-    let mut diagnostics = Vec::new();
-    while provider_offset < MAX_CANDIDATES {
-        let started = execution.and_then(|execution| execution.reserve("resolution"));
-        if let Some(execution) = execution
-            && started.is_none()
-        {
-            execution.record_not_attempted("resolution", "myvariant");
-            break;
-        }
-        let result = client
-            .search(&params_at(SOURCE_PAGE, provider_offset))
-            .await;
-        if let (Some(execution), Some(started)) = (execution, started) {
-            match &result {
-                Ok(_) => execution.record("resolution", "myvariant", started, "ok", 1),
-                Err(error) => execution.record_error("resolution", "myvariant", started, error),
-            }
-        }
-        let initial = result?;
-        let (resp, classified) = if provider_offset == 0 && initial.total == Some(0) {
-            classify_provider_zero(&client, filters, initial, SOURCE_PAGE, provider_offset).await?
-        } else {
-            (initial, Vec::new())
-        };
-        diagnostics.extend(classified);
-        let provider_total = resp.total;
-        let hit_count = resp.hits.len();
-        let examined_count = hit_count.min(MAX_CANDIDATES - provider_offset);
-        saw_indeterminate |= retain_compatible_hits(
-            requested,
-            resp.hits.into_iter().take(examined_count),
-            &mut seen,
-            &mut retained,
-        );
-        provider_offset += examined_count;
-        if candidate_scan_exhaustive(provider_total, provider_offset, hit_count) {
-            exhaustive = true;
-            break;
-        }
-    }
+    let exact_scan::ExactScan {
+        retained,
+        saw_indeterminate,
+        exhaustive,
+        diagnostics,
+    } = exact_scan::scan(&client, filters, requested, execution).await?;
     let mut page = finalize_exact_page(
         requested,
         retained,
@@ -1111,3 +1071,8 @@ fn compare_search_results(a: &VariantSearchResult, b: &VariantSearchResult) -> s
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod exact_scan_tests;
+#[cfg(test)]
+mod exact_scan_transport_tests;

@@ -2,6 +2,15 @@ version = 1
 
 [selection]
 rust = [
+  "entities::variant::search::exact_scan_tests::outstanding_total_survives_empty_or_omitted_total",
+  "entities::variant::search::exact_scan_tests::maximum_total_survives_decrease",
+  "entities::variant::search::exact_scan_tests::received_tail_prevents_false_completion",
+  "entities::variant::search::exact_scan_tests::completion_controls_count_raw_rows_and_keep_unknown_totals",
+  "entities::variant::search::exact_scan_tests::filtering_and_offsets_preserve_exact_page_truth",
+  "entities::variant::search::exact_scan_tests::exact_families_preserve_requests_and_source_spellings",
+  "entities::variant::search::exact_scan_tests::broad_search_and_limit_validation_keep_their_boundaries",
+  "entities::variant::search::exact_scan_tests::later_source_failure_returns_sanitized_error",
+  "entities::variant::search::exact_scan_transport_tests::incomplete_search_cli_json_typed_json_and_raw_markdown",
   "entities::variant::get::protein_lookup::tests::interval_edits_reach_detail_with_written_source_and_two_query_styles",
   "entities::variant::get::protein_lookup::tests::interval_get_finishes_scan_before_resolving_identity",
   "entities::variant::get::protein_lookup::tests::interval_get_refuses_invalid_inputs_and_original_or_rendered_limits_without_requests",
