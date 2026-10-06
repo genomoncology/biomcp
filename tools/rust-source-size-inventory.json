@@ -271,11 +271,11 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1345,
+      "baseline_lines": 1340,
       "floor_lines": 1122,
       "authorized_increase": {
         "ticket": "1256, 1302",
-        "delta": 223,
+        "delta": 218,
         "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
       }
