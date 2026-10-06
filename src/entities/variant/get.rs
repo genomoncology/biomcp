@@ -154,9 +154,7 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
     Ok(out)
 }
 
-/// A hit carries the ClinVar record for its own genomic variant. A protein
-/// change that resolves to such a hit resolves to the variant ClinVar
-/// cataloged, not a different transcript's spelling of the same alias.
+/// A resolved protein change uses the ClinVar record for the hit's genomic variant.
 fn hit_carries_clinvar_record(hit: &crate::sources::myvariant::MyVariantHit) -> bool {
     hit.clinvar
         .as_ref()
@@ -620,7 +618,11 @@ pub(super) async fn resolve_base_with_hit(
         VariantIdFormat::ClinvarVariationId(variation_id) => {
             let q = format!("clinvar.variant_id:{variation_id}");
             let hit = coding_lookup::lookup_exact(&myvariant, &q, |hit| {
-                match hit.clinvar.as_ref().and_then(|clinvar| clinvar.variant_id()) {
+                match hit
+                    .clinvar
+                    .as_ref()
+                    .and_then(|clinvar| clinvar.variant_id())
+                {
                     Some(actual) if actual == *variation_id => {
                         super::VariantIdentityComparison::Compatible {
                             matched_alias: variation_id.to_string(),
@@ -1435,6 +1437,8 @@ pub async fn get_with_workflow_signals(
 
     Ok((variant, signals))
 }
+#[cfg(test)]
+mod clinvar_adoption_transport_tests;
 #[cfg(test)]
 mod dbnsfp_transport_tests;
 #[cfg(test)]

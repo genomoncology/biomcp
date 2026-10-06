@@ -195,11 +195,7 @@ async fn lookup_source(
     let mut indeterminate = false;
     coding_lookup::scan(client, &query, INCOMPLETE, |hit| {
         if require_alias {
-            match hit
-                .clinvar
-                .as_ref()
-                .and_then(|clinvar| clinvar.hgvs())
-            {
+            match hit.clinvar.as_ref().and_then(|clinvar| clinvar.hgvs()) {
                 Some(hgvs) if hgvs.coding().values().iter().any(|alias| alias == id) => {}
                 Some(_) => return,
                 None => {

@@ -31,7 +31,10 @@ fn clinvar_embedding_preserves_complete_hit_and_private_observations() {
                     "preferred_name":"opaque name","last_evaluated":"opaque date","number_submitters":0}]}});
         assert_eq!(serde_json::to_value(hit).unwrap(), expected);
     }
-    for input in [json!({"_id":"safe-id"}), json!({"_id":"safe-id","clinvar":null})] {
+    for input in [
+        json!({"_id":"safe-id"}),
+        json!({"_id":"safe-id","clinvar":null}),
+    ] {
         let hit: MyVariantHit = serde_json::from_value(input).unwrap();
         assert!(hit.clinvar.is_none());
         assert_eq!(serde_json::to_value(hit).unwrap()["clinvar"], Value::Null);
@@ -39,9 +42,12 @@ fn clinvar_embedding_preserves_complete_hit_and_private_observations() {
     let error = crate::sources::decode_json::<MyVariantHit>(
         crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
         reqwest::StatusCode::OK,
-        Some(&reqwest::header::HeaderValue::from_static("application/json")),
+        Some(&reqwest::header::HeaderValue::from_static(
+            "application/json",
+        )),
         br#"{"_id":"safe-id","clinvar":{"variant_id":"private-clinvar-marker"}}"#,
         true,
-    ).unwrap_err();
+    )
+    .unwrap_err();
     assert!(!error.to_string().contains("private-clinvar-marker"));
 }

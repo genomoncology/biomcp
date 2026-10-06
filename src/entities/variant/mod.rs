@@ -383,10 +383,7 @@ mod clinvar {
                     record_status: None,
                     number_submitters: rcv.number_submitters(),
                     submission_count: None,
-                    conditions: indirect_conditions(
-                        rcv.conditions(),
-                        rcv.preferred_name(),
-                    ),
+                    conditions: indirect_conditions(rcv.conditions(), rcv.preferred_name()),
                 })
             })
             .collect::<Vec<_>>();
@@ -442,7 +439,10 @@ mod clinvar {
         timeout: Duration,
     ) {
         let fallback = indirect_clinvar_record(hit);
-        let variation_id = hit.clinvar.as_ref().and_then(|clinvar| clinvar.variant_id());
+        let variation_id = hit
+            .clinvar
+            .as_ref()
+            .and_then(|clinvar| clinvar.variant_id());
         super::get::strip_clinvar_details(variant);
         let Some(variation_id) = variation_id else {
             variant

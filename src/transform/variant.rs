@@ -10,8 +10,8 @@ use crate::entities::variant::{
 use crate::sources::cbioportal::CBioMutationSummary;
 use crate::sources::civic::CivicEvidenceItem;
 use crate::sources::myvariant::{MyVariantGnomadAf, MyVariantHit};
-use biodata::MyVariantClinVarRcv;
 use crate::utils::serde::StringOrVec;
+use biodata::MyVariantClinVarRcv;
 
 fn normalize_gene(gene: &str) -> Option<String> {
     let g = gene.trim();
@@ -951,7 +951,10 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let hgvs_p = annotation.as_ref().and_then(|value| value.protein.clone());
     let legacy_name = legacy_name(&gene, hgvs_p.as_deref());
 
-    let significance = hit.clinvar.as_ref().and_then(|c| pick_significance(c.rcv()));
+    let significance = hit
+        .clinvar
+        .as_ref()
+        .and_then(|c| pick_significance(c.rcv()));
     let significance_source = significance.as_ref().map(|_| "MyVariant.info".to_string());
     let significance_evaluated = hit
         .clinvar
