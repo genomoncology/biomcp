@@ -2,6 +2,24 @@ version = 1
 
 [selection]
 rust = [
+  "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_34_cli_json",
+  "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_35_cli_split_section",
+  "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_36_cli_markdown",
+  "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_37_typed_json",
+  "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_38_typed_original_limit",
+  "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_39_raw_json",
+  "entities::variant::get::transcript_deletion_lookup::transport_tests::transcript_deletion_40_raw_ambiguity",
+  "sources::myvariant::tests::parsing::snpeff_embedding_preserves_siblings_encoding_and_private_debug",
+  "entities::variant::search::tests::exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match",
+  "entities::variant::search::tests::split_snpeff_fields_do_not_inherit_dbnsfp_match_role",
+  "entities::variant::search::tests::matched_role_requires_one_complete_transcript_specific_tuple",
+  "entities::variant::search::tests::transcript_annotation_page_budget_is_all_or_nothing_at_256_kib",
+  "entities::variant::search::tests::malformed_snpeff_isolated_from_exact_broad_and_get_siblings",
+  "entities::variant::search::tests::incomplete_annotations_refuse_exact_metadata_and_keep_broad_get_siblings",
+  "entities::variant::search::tests::absent_and_null_annotation_sets_are_exact_empty_complete",
+  "entities::variant::search::tests::interval_annotation_comparison_table",
+  "transform::variant::tests::transcript_annotation_never_zips_independent_dbnsfp_arrays",
+
   "entities::variant::get::coding_lookup::tests::gene_coding_get_preserves_written_identity_and_complete_source_card",
   "entities::variant::get::coding_lookup::transport_tests::gene_coding_get_cli_typed_and_raw_preserve_native_contracts",
   "entities::variant::search::exact_scan_tests::outstanding_total_survives_empty_or_omitted_total",

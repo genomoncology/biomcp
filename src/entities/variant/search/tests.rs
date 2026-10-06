@@ -378,12 +378,11 @@ fn matched_role_requires_one_complete_transcript_specific_tuple() {
             .iter()
             .zip(expected.as_array().unwrap())
         {
-            let annotation = MyVariantSnpeffAnnotation {
-                feature_id: annotation["feature_id"].as_str().map(str::to_owned),
-                genename: annotation["genename"].as_str().map(str::to_owned),
-                hgvs_c: annotation["hgvs_c"].as_str().map(str::to_owned),
-                hgvs_p: annotation["hgvs_p"].as_str().map(str::to_owned),
-            };
+            let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+                "_id":"x", "snpeff":{"ann":annotation}
+            }))
+            .unwrap();
+            let annotation = &hit.snpeff.as_ref().unwrap().annotations()[0];
             assert_eq!(
                 annotation_matches_request(&annotation, &requested),
                 expected.as_bool().unwrap(),
@@ -399,12 +398,14 @@ fn matched_role_requires_one_complete_transcript_specific_tuple() {
 #[test]
 fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
     fn retained(id: usize, annotations: usize, field_len: usize) -> RetainedVariant {
-        let annotation = || MyVariantSnpeffAnnotation {
-            feature_id: Some("t".repeat(field_len)),
-            genename: Some("g".repeat(field_len)),
-            hgvs_c: Some("c".repeat(field_len)),
-            hgvs_p: Some("p".repeat(field_len)),
-        };
+        let annotation = serde_json::json!({
+            "feature_id":"t".repeat(field_len), "genename":"g".repeat(field_len),
+            "hgvs_c":"c".repeat(field_len), "hgvs_p":"p".repeat(field_len)
+        });
+        let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+            "_id":"x", "snpeff":{"ann":vec![annotation; annotations]}
+        }))
+        .unwrap();
         RetainedVariant {
             row: VariantSearchResult {
                 id: format!("chr1:g.{id}A>G"),
@@ -427,10 +428,7 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
                 transcript_annotations_complete: None,
                 transcript_annotations: None,
             },
-            snpeff: Some(MyVariantSnpeff {
-                ann: (0..annotations).map(|_| annotation()).collect(),
-                complete: true,
-            }),
+            snpeff: hit.snpeff,
             displayed_snpeff_index: None,
         }
     }
@@ -447,17 +445,11 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
 
     let mut over = (0..8).map(|id| retained(id, 32, 256)).collect::<Vec<_>>();
     let mut one_byte = retained(9, 0, 0);
-    one_byte
-        .snpeff
-        .as_mut()
-        .unwrap()
-        .ann
-        .push(MyVariantSnpeffAnnotation {
-            feature_id: Some("t".into()),
-            genename: None,
-            hgvs_c: None,
-            hgvs_p: None,
-        });
+    one_byte.snpeff = serde_json::from_value::<MyVariantHit>(serde_json::json!({
+        "_id":"x", "snpeff":{"ann":{"feature_id":"t"}}
+    }))
+    .unwrap()
+    .snpeff;
     over.push(one_byte);
     let page = finalize_exact_page(&requested, over, 0, 50, false, true);
     assert!(page.results.iter().all(|row| {
@@ -529,18 +521,8 @@ fn malformed_snpeff_isolated_from_exact_broad_and_get_siblings() {
 }
 
 #[test]
-fn every_snpeff_failure_bound_is_empty_false_across_exact_and_safe_for_broad_get() {
-    let annotations = (0..33)
-        .map(|index| serde_json::json!({"feature_id":format!("NM_{index}"), "genename":"HSD17B4"}))
-        .collect::<Vec<_>>();
-    let malformed = vec![
-        serde_json::json!(7),
-        serde_json::json!({"ann":"bad"}),
-        serde_json::json!({"ann":[null]}),
-        serde_json::json!({"ann":[{"feature_id":7}]}),
-        serde_json::json!({"ann":annotations}),
-        serde_json::json!({"ann":{"feature_id":"x".repeat(257)}}),
-    ];
+fn incomplete_annotations_refuse_exact_metadata_and_keep_broad_get_siblings() {
+    let malformed = [serde_json::json!({"ann":{"feature_id":7}})];
     let requested = RequestedVariantIdentity::for_search(
         Some("HSD17B4".into()),
         Some("H540R".into()),

@@ -273,28 +273,31 @@ fn interval_identity_comparison_table() {
 }
 
 pub(crate) fn annotation_table<T>(
-    matches: impl Fn(&crate::sources::myvariant::MyVariantSnpeffAnnotation, &RequestedVariantIdentity) -> bool,
+    matches: impl Fn(&biodata::MyVariantSnpEffAnnotation, &RequestedVariantIdentity) -> bool,
     retain: impl Fn(&RequestedVariantIdentity, crate::sources::myvariant::MyVariantHit, &mut std::collections::HashSet<String>, &mut Vec<T>) -> bool,
     finalize: impl Fn(&RequestedVariantIdentity, Vec<T>, usize, usize, bool, bool) -> crate::entities::variant::search::VariantSearchPage,
 ) {
-    use crate::sources::myvariant::MyVariantSnpeffAnnotation;
     for i in 0..16 {
         let pair = match i { 0..=3 => [0,2,4,5][i], 8..=15 => i + 32, _ => 0 };
         let mut requested = request(PAIRS[pair].0);
-        let mut annotation = MyVariantSnpeffAnnotation {
-            genename: Some("EGFR".into()), feature_id: Some("NM_1".into()),
-            hgvs_c: Some("c.1A>T".into()), hgvs_p: Some(format!("NP_1:{}", PAIRS[pair].1)),
-        };
+        let mut annotation = json!({
+            "genename":"EGFR", "feature_id":"NM_1",
+            "hgvs_c":"c.1A>T", "hgvs_p":format!("NP_1:{}", PAIRS[pair].1)
+        });
         match i {
-            4 => annotation.genename = Some("OTHER".into()),
+            4 => annotation["genename"] = json!("OTHER"),
             5 => requested.transcript = Some("NM_2".into()),
             6 => requested.coding_change = Some("c.2A>T".into()),
-            7 => annotation.hgvs_p = None,
+            7 => annotation["hgvs_p"] = json!(null),
             _ => {}
         }
-        let before = (requested.clone(), serde_json::to_value(&annotation).unwrap());
-        assert_eq!(matches(&annotation, &requested), i < 4, "A{}", if i < 8 { i + 1 } else { i + 2 });
-        assert_eq!((requested, serde_json::to_value(&annotation).unwrap()), before);
+        let hit: crate::sources::myvariant::MyVariantHit = serde_json::from_value(json!({
+            "_id":"x", "snpeff":{"ann":annotation}
+        })).unwrap();
+        let annotation = &hit.snpeff.as_ref().unwrap().annotations()[0];
+        let before = requested.clone();
+        assert_eq!(matches(annotation, &requested), i < 4, "A{}", if i < 8 { i + 1 } else { i + 2 });
+        assert_eq!(requested, before);
     }
     for (protein, count) in [("NP_005219.2:p.E746_A750del", 1), ("NP_005219.2:p.E746_S750del", 0), ("NP_005219.2:p.E746_A0750del", 0)] {
         let requested = request("p.Glu746_Ala750del");

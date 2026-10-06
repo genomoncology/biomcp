@@ -78,18 +78,13 @@ pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usi
         .as_ref()
         .and_then(|value| value.transcript.as_deref())
         .map(accession_stem);
-    let annotations = &hit.snpeff.as_ref()?.ann;
+    let annotations = hit.snpeff.as_ref()?.annotations();
     annotations
         .iter()
         .enumerate()
-        .filter(|ann| {
-            ann.1
-                .hgvs_c
-                .as_deref()
-                .is_some_and(|value| !value.trim().is_empty())
-        })
+        .filter(|ann| ann.1.hgvs_c().is_some_and(|value| !value.trim().is_empty()))
         .min_by_key(|ann| {
-            let feature = ann.1.feature_id.as_deref().unwrap_or_default();
+            let feature = ann.1.feature_id().unwrap_or_default();
             if preferred_stem.is_some_and(|preferred| accession_stem(feature) == preferred) {
                 0
             } else if feature.starts_with("NM_") {
@@ -105,13 +100,13 @@ fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotati
     let selected = hit
         .snpeff
         .as_ref()?
-        .ann
+        .annotations()
         .get(selected_snpeff_annotation_index(hit)?)?;
     Some(TranscriptAnnotation {
-        gene: selected.genename.clone(),
-        transcript: selected.feature_id.clone(),
-        coding: selected.hgvs_c.clone(),
-        protein: selected.hgvs_p.clone(),
+        gene: selected.genename().map(str::to_owned),
+        transcript: selected.feature_id().map(str::to_owned),
+        coding: selected.hgvs_c().map(str::to_owned),
+        protein: selected.hgvs_p().map(str::to_owned),
     })
 }
 

@@ -2,9 +2,7 @@
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
-use crate::sources::myvariant::{
-    MyVariantClient, MyVariantHit, MyVariantSnpeff, MyVariantSnpeffAnnotation, VariantSearchParams,
-};
+use crate::sources::myvariant::{MyVariantClient, MyVariantHit, VariantSearchParams};
 use crate::transform;
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
@@ -27,7 +25,7 @@ const MAX_TRANSCRIPT_ANNOTATION_PAGE_BYTES: usize = 256 * 1024;
 #[derive(Clone)]
 struct RetainedVariant {
     row: VariantSearchResult,
-    snpeff: Option<MyVariantSnpeff>,
+    snpeff: Option<biodata::MyVariantSnpEffProjection>,
     displayed_snpeff_index: Option<usize>,
 }
 
@@ -882,8 +880,8 @@ fn finalize_exact_page(
     let page_annotation_bytes = selected
         .iter()
         .filter_map(|item| item.snpeff.as_ref())
-        .filter(|snpeff| snpeff.complete)
-        .flat_map(|snpeff| &snpeff.ann)
+        .filter(|snpeff| snpeff.is_complete())
+        .flat_map(|snpeff| snpeff.annotations())
         .flat_map(annotation_identity_fields)
         .map(str::len)
         .sum::<usize>();
@@ -908,20 +906,20 @@ fn finalize_exact_page(
 }
 
 fn annotation_identity_fields(
-    annotation: &MyVariantSnpeffAnnotation,
+    annotation: &biodata::MyVariantSnpEffAnnotation,
 ) -> impl Iterator<Item = &str> {
     [
-        annotation.genename.as_deref(),
-        annotation.feature_id.as_deref(),
-        annotation.hgvs_c.as_deref(),
-        annotation.hgvs_p.as_deref(),
+        annotation.genename(),
+        annotation.feature_id(),
+        annotation.hgvs_c(),
+        annotation.hgvs_p(),
     ]
     .into_iter()
     .flatten()
 }
 
 fn annotation_matches_request(
-    annotation: &MyVariantSnpeffAnnotation,
+    annotation: &biodata::MyVariantSnpEffAnnotation,
     requested: &RequestedVariantIdentity,
 ) -> bool {
     if requested.protein_change.is_none() && requested.coding_change.is_none() {
@@ -929,32 +927,28 @@ fn annotation_matches_request(
     }
     if let Some(gene) = requested.gene.as_deref()
         && !annotation
-            .genename
-            .as_deref()
+            .genename()
             .is_some_and(|value| value.eq_ignore_ascii_case(gene))
     {
         return false;
     }
     if let Some(protein) = requested.protein_change.as_deref()
         && !annotation
-            .hgvs_p
-            .as_deref()
+            .hgvs_p()
             .is_some_and(|supplied| super::protein_changes_equivalent(supplied, protein))
     {
         return false;
     }
     if let Some(coding) = requested.coding_change.as_deref()
         && !annotation
-            .hgvs_c
-            .as_deref()
+            .hgvs_c()
             .is_some_and(|value| super::resolution::coding_changes_equivalent(value, coding))
     {
         return false;
     }
     if let Some(transcript) = requested.transcript.as_deref()
         && !annotation
-            .feature_id
-            .as_deref()
+            .feature_id()
             .is_some_and(|value| value.eq_ignore_ascii_case(transcript))
     {
         return false;
@@ -972,31 +966,31 @@ fn finalize_transcript_annotations(
         item.row.transcript_annotations = Some(Vec::new());
         return item.row;
     };
-    if !page_complete || !snpeff.complete {
+    if !page_complete || !snpeff.is_complete() {
         item.row.transcript_annotations_complete = Some(false);
         item.row.transcript_annotations = Some(Vec::new());
         return item.row;
     }
 
     let mut annotations: Vec<VariantTranscriptAnnotation> = Vec::new();
-    for (index, annotation) in snpeff.ann.into_iter().enumerate() {
+    for (index, annotation) in snpeff.annotations().iter().enumerate() {
         let displayed = item.displayed_snpeff_index == Some(index);
-        let matched = annotation_matches_request(&annotation, requested);
+        let matched = annotation_matches_request(annotation, requested);
         let duplicate = annotations.iter_mut().find(|existing| {
-            existing.gene == annotation.genename
-                && existing.transcript == annotation.feature_id
-                && existing.hgvs_c == annotation.hgvs_c
-                && existing.hgvs_p == annotation.hgvs_p
+            existing.gene.as_deref() == annotation.genename()
+                && existing.transcript.as_deref() == annotation.feature_id()
+                && existing.hgvs_c.as_deref() == annotation.hgvs_c()
+                && existing.hgvs_p.as_deref() == annotation.hgvs_p()
         });
         let roles = match duplicate {
             Some(existing) => &mut existing.roles,
             None => {
                 annotations.push(VariantTranscriptAnnotation {
                     source: "myvariant.info/snpeff.ann".into(),
-                    gene: annotation.genename,
-                    transcript: annotation.feature_id,
-                    hgvs_c: annotation.hgvs_c,
-                    hgvs_p: annotation.hgvs_p,
+                    gene: annotation.genename().map(str::to_owned),
+                    transcript: annotation.feature_id().map(str::to_owned),
+                    hgvs_c: annotation.hgvs_c().map(str::to_owned),
+                    hgvs_p: annotation.hgvs_p().map(str::to_owned),
                     roles: Vec::new(),
                 });
                 &mut annotations.last_mut().expect("just pushed").roles

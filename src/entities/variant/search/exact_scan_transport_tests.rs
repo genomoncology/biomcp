@@ -1,5 +1,5 @@
 //! Distinct actual CLI and native MCP output composition claims.
-use super::exact_scan_tests::{fixture, hit, ledger};
+use super::exact_scan_tests::{fixture, ledger};
 use biomcp_mcp_contract_client::{ContractHarness, first_text};
 use rmcp::{ServiceExt, model::CallToolRequestParams};
 use serde_json::{Value, json};
@@ -15,6 +15,16 @@ fn json_page(value: &Value) {
         value["pagination"],
         json!({"offset":0,"limit":1,"returned":1,"total":null,"has_more":true,"next_page_token":null})
     );
+    assert_eq!(value["results"][0]["transcript"], "NM_004333.6");
+    assert_eq!(value["results"][0]["hgvs_c"], "c.1799T>A");
+    assert_eq!(value["results"][0]["transcript_annotations_complete"], true);
+    assert_eq!(
+        value["results"][0]["transcript_annotations"],
+        json!([{
+            "source":"myvariant.info/snpeff.ann", "gene":"BRAF", "transcript":"NM_004333.6",
+            "hgvs_c":"c.1799T>A", "hgvs_p":"p.Val600Glu", "roles":["displayed","matched"]
+        }])
+    );
     assert!(value["requested_variant"].is_object());
     assert!(value["filter_evaluation"].is_object());
     assert_eq!(value["diagnostics"], json!([]));
@@ -29,7 +39,11 @@ async fn incomplete_search_cli_json_typed_json_and_raw_markdown() {
     );
     for channel in ["cli", "typed", "raw"] {
         let (fixture, requests) = fixture(vec![
-            json!({"total":2,"hits":[hit()]}),
+            json!({"total":2,"hits":[{
+                "_id":"chr7:g.101A>T", "dbnsfp":{"genename":"BRAF","hgvsp":"p.Val600Glu"},
+                "snpeff":{"ann":{"feature_id":"NM_004333.6", "genename":"BRAF",
+                    "hgvs_c":"c.1799T>A", "hgvs_p":"p.Val600Glu"}}
+            }]}),
             json!({"total":2,"hits":[]}),
         ])
         .await;
@@ -106,7 +120,10 @@ async fn incomplete_search_cli_json_typed_json_and_raw_markdown() {
                     text.contains("Showing 1 results (total unknown). Use --offset 1 for more."),
                     "{text}"
                 );
-                assert!(text.contains("chr7:g.101A>T"));
+                assert!(
+                    text.contains("| BRAF | NM_004333.6 | c.1799T>A | p.Val600Glu |"),
+                    "{text}"
+                );
             }
             client.cancel().await.unwrap();
             assert_eq!(

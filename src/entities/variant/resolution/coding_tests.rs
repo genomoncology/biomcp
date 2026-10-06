@@ -348,7 +348,7 @@ fn source_internal(hit: &MyVariantHit) -> Value {
         StringOrVec::None => "StringOrVec::None",
     };
     json!({"genename_variant":shape(&db.genename),"hgvsc_variant":shape(&db.hgvsc),
-        "hgvsp_variant":shape(&db.hgvsp),"snpeff_complete":hit.snpeff.as_ref().unwrap().complete})
+        "hgvsp_variant":shape(&db.hgvsp),"snpeff_complete":hit.snpeff.as_ref().unwrap().is_complete()})
 }
 
 #[tokio::test(flavor = "multi_thread")]

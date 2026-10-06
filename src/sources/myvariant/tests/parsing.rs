@@ -6,14 +6,13 @@ use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::myvariant::{
     FloatOrVec, MyVariantClient, MyVariantClinVar, MyVariantHit, MyVariantSearchResponse,
-    reset_snpeff_projection_counts, snpeff_projection_counts,
 };
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 use serde_json::json;
 
 #[test]
-fn snpeff_annotation_projection_isolated_and_bounded() {
+fn snpeff_embedding_preserves_siblings_encoding_and_private_debug() {
     let exact = |ann: serde_json::Value| {
         serde_json::from_value::<MyVariantHit>(json!({
             "_id": "chr5:g.118860951A>G",
@@ -30,89 +29,34 @@ fn snpeff_annotation_projection_isolated_and_bounded() {
         "hgvs_c": " c.1619A>G ",
         "hgvs_p": " p.His540Arg "
     }));
-    let snpeff = valid.snpeff.as_ref().expect("present projection");
-    assert!(snpeff.complete);
-    assert_eq!(snpeff.ann.len(), 1);
-    assert_eq!(snpeff.ann[0].feature_id.as_deref(), Some("NM_001199291.2"));
-
-    for malformed in [json!("bad"), json!([{"feature_id": 7}]), json!([null])] {
-        let hit = exact(malformed);
-        let snpeff = hit.snpeff.as_ref().expect("malformed projection state");
-        assert!(!snpeff.complete);
-        assert!(snpeff.ann.is_empty());
-        assert!(hit.clinvar.is_some());
-        assert!(hit.dbnsfp.is_some());
-    }
-
-    let annotations = (0..33)
-        .map(|index| json!({"feature_id": format!("NM_{index:09}.1")}))
-        .collect::<Vec<_>>();
-    let at_count = exact(json!(annotations[..32]));
-    let snpeff = at_count.snpeff.as_ref().expect("at-count state");
-    assert!(snpeff.complete);
-    assert_eq!(snpeff.ann.len(), 32);
-    let over_count = exact(json!(annotations));
-    let snpeff = over_count.snpeff.as_ref().expect("over-count state");
-    assert!(!snpeff.complete);
-    assert!(snpeff.ann.is_empty());
-
-    let at_field = exact(json!({"hgvs_p": "x".repeat(256)}));
-    assert!(at_field.snpeff.as_ref().unwrap().complete);
+    assert!(!format!("{:?}", valid.snpeff).contains("NM_001199291.2"));
     assert_eq!(
-        at_field.snpeff.as_ref().unwrap().ann[0]
-            .hgvs_p
-            .as_ref()
-            .unwrap()
-            .len(),
-        256
+        serde_json::to_value(&valid).unwrap()["snpeff"],
+        json!({"ann":[{
+            "feature_id":"NM_001199291.2", "genename":"HSD17B4",
+            "hgvs_c":"c.1619A>G", "hgvs_p":"p.His540Arg"
+        }]})
     );
-    let over_field = exact(json!({"hgvs_p": "x".repeat(257)}));
-    let snpeff = over_field.snpeff.as_ref().expect("over-field state");
-    assert!(!snpeff.complete);
-    assert!(snpeff.ann.is_empty());
+    let partial = exact(json!({"feature_id":"NM_001199291.2"}));
+    assert_eq!(
+        serde_json::to_value(&partial).unwrap()["snpeff"],
+        json!({"ann":[{
+            "feature_id":"NM_001199291.2", "genename":null, "hgvs_c":null, "hgvs_p":null
+        }]})
+    );
+    let malformed = exact(json!([{"feature_id":7}]));
+    assert_eq!(
+        serde_json::to_value(&malformed).unwrap()["snpeff"],
+        json!({"ann":[]})
+    );
+    assert!(malformed.clinvar.is_some());
+    assert!(malformed.dbnsfp.is_some());
 
     for value in [json!({"_id":"x"}), json!({"_id":"x", "snpeff":null})] {
         let hit: MyVariantHit = serde_json::from_value(value).unwrap();
-        assert!(
-            hit.snpeff
-                .as_ref()
-                .is_none_or(|snpeff| snpeff.complete && snpeff.ann.is_empty())
-        );
+        assert!(hit.snpeff.is_none());
+        assert_eq!(serde_json::to_value(&hit).unwrap()["snpeff"], json!(null));
     }
-    for value in [
-        json!({"_id":"x", "snpeff":{}}),
-        json!({"_id":"x", "snpeff":{"ann":null}}),
-    ] {
-        let hit: MyVariantHit = serde_json::from_value(value).unwrap();
-        let snpeff = hit.snpeff.expect("present SnpEff object");
-        assert!(snpeff.complete);
-        assert!(snpeff.ann.is_empty());
-    }
-    let malformed_root: MyVariantHit = serde_json::from_value(json!({
-        "_id":"x", "dbnsfp":{"genename":"SAFE"}, "snpeff":7
-    }))
-    .unwrap();
-    assert!(!malformed_root.snpeff.unwrap().complete);
-}
-
-#[test]
-fn snpeff_long_tail_is_drained_without_projecting_tail_objects_or_strings() {
-    let annotations = (0..10_000)
-        .map(|index| {
-            json!({
-                "feature_id": format!("NM_{index:09}.1"),
-                "genename": "HSD17B4",
-                "hgvs_c": format!("c.{index}A>G"),
-                "hgvs_p": format!("p.His{index}Arg")
-            })
-        })
-        .collect::<Vec<_>>();
-    let bytes = serde_json::to_vec(&json!({"_id":"x", "snpeff":{"ann":annotations}})).unwrap();
-    assert!(bytes.len() < 8 * 1024 * 1024);
-    reset_snpeff_projection_counts();
-    let hit: MyVariantHit = serde_json::from_slice(&bytes).unwrap();
-    assert!(!hit.snpeff.unwrap().complete);
-    assert_eq!(snpeff_projection_counts(), (32, 128));
 }
 
 macro_rules! fixture {

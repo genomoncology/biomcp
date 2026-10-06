@@ -67,13 +67,10 @@ fn rcv_tuple(value: &str, index: usize) -> Option<MatchedTuple> {
         protein,
     })
 }
-fn snpeff_tuple(
-    ann: &crate::sources::myvariant::MyVariantSnpeffAnnotation,
-    index: usize,
-) -> Option<MatchedTuple> {
-    let transcript = ann.feature_id.as_deref()?;
-    let gene = ann.genename.as_deref()?;
-    let coding = ann.hgvs_c.as_deref()?;
+fn snpeff_tuple(ann: &biodata::MyVariantSnpEffAnnotation, index: usize) -> Option<MatchedTuple> {
+    let transcript = ann.feature_id()?;
+    let gene = ann.genename()?;
+    let coding = ann.hgvs_c()?;
     let coding = if let Some((prefix, change)) = coding.split_once(':') {
         if prefix != transcript {
             return None;
@@ -85,7 +82,7 @@ fn snpeff_tuple(
     if !versioned_transcript(transcript)
         || !crate::entities::variant::is_exact_gene_token(gene)
         || !coding_valid(coding)
-        || ann.hgvs_p.as_deref().is_some_and(|p| !protein_valid(p))
+        || ann.hgvs_p().is_some_and(|p| !protein_valid(p))
     {
         return None;
     }
@@ -94,7 +91,7 @@ fn snpeff_tuple(
         transcript: transcript.into(),
         gene: gene.into(),
         coding: coding.into(),
-        protein: ann.hgvs_p.clone(),
+        protein: ann.hgvs_p().map(str::to_owned),
     })
 }
 fn matches(tuple: &MatchedTuple, transcript: &str, gene: Option<&str>, change: &str) -> bool {
@@ -109,10 +106,10 @@ fn matched_tuples(
     change: &str,
 ) -> (Vec<MatchedTuple>, bool) {
     let mut tuples = Vec::new();
-    let mut incomplete = hit.snpeff.as_ref().is_some_and(|s| !s.complete);
+    let mut incomplete = hit.snpeff.as_ref().is_some_and(|s| !s.is_complete());
     let mut assertions = 0;
     if let Some(snpeff) = &hit.snpeff {
-        for (index, ann) in snpeff.ann.iter().enumerate() {
+        for (index, ann) in snpeff.annotations().iter().enumerate() {
             assertions += 1;
             match snpeff_tuple(ann, index) {
                 Some(tuple) if matches(&tuple, transcript, gene, change) => tuples.push(tuple),
