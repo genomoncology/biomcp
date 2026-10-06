@@ -10,9 +10,17 @@ use crate::sources::provider_url_policy::ProviderUrlPolicy;
 use crate::sources::{RequestBody, RequestPlan, request_from_plan};
 
 const SEMANTIC_SCHOLAR_BASE: &str = "https://api.semanticscholar.org";
-const SEMANTIC_SCHOLAR_API: &str = "semantic_scholar";
+pub(crate) const SEMANTIC_SCHOLAR_API: &str = "semantic_scholar";
 const SEMANTIC_SCHOLAR_BASE_ENV: &str = "BIOMCP_S2_BASE";
 const SEMANTIC_SCHOLAR_DOCS_URL: &str = "https://www.semanticscholar.org/product/api";
+/// The refusal shapes this client emits for its own upstream answers. Both
+/// construction sites start their messages with exactly this text, so the
+/// degradation consumers can classify a refusal without echoing upstream
+/// bodies (ticket 1302).
+pub(crate) const SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX: &str =
+    "Rate limited by Semantic Scholar. Set S2_API_KEY for a dedicated rate limit.";
+pub(crate) const SEMANTIC_SCHOLAR_UNAVAILABLE_PREFIX: &str =
+    "Semantic Scholar source unavailable: upstream HTTP ";
 const GRAPH_PAPER_FIELDS: &str = "paperId,externalIds,title,venue,year,tldr,citationCount,influentialCitationCount,referenceCount,isOpenAccess,openAccessPdf";
 const ARTICLE_AUTHOR_FIELDS: &str =
     "paperId,externalIds,title,venue,year,authors.authorId,authors.name,authors.affiliations";
@@ -187,7 +195,7 @@ impl SemanticScholarClient {
                 return Err(BioMcpError::Api {
                     api: SEMANTIC_SCHOLAR_API.to_string(),
                     message: format!(
-                        "Rate limited by Semantic Scholar. Set S2_API_KEY for a dedicated rate limit. See {SEMANTIC_SCHOLAR_DOCS_URL}"
+                        "{SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX} See {SEMANTIC_SCHOLAR_DOCS_URL}"
                     ),
                 }
                 .with_source_context(crate::error::SourceContext::new(
@@ -230,14 +238,14 @@ impl SemanticScholarClient {
             return Err(BioMcpError::Api {
                 api: SEMANTIC_SCHOLAR_API.to_string(),
                 message: format!(
-                    "Rate limited by Semantic Scholar. Set S2_API_KEY for a dedicated rate limit. See {SEMANTIC_SCHOLAR_DOCS_URL}"
+                    "{SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX} See {SEMANTIC_SCHOLAR_DOCS_URL}"
                 ),
             });
         }
         if !status.is_success() {
             return Err(BioMcpError::Api {
                 api: SEMANTIC_SCHOLAR_API.to_string(),
-                message: format!("Semantic Scholar source unavailable: upstream HTTP {status}"),
+                message: format!("{SEMANTIC_SCHOLAR_UNAVAILABLE_PREFIX}{status}"),
             });
         }
         crate::sources::decode_json(
@@ -247,6 +255,43 @@ impl SemanticScholarClient {
             bytes,
             false,
         )
+    }
+}
+
+/// Why Semantic Scholar refused a request. A refusal is Semantic Scholar's
+/// own answer saying no: HTTP 429, or a 5xx upstream failure. Transport and
+/// decode failures are not refusals and stay unclassified.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum SemanticScholarRefusal {
+    RateLimited,
+    Unavailable,
+}
+
+/// Classifies an error from this client as a Semantic Scholar refusal. The
+/// message prefixes this module itself writes are the classification key, so
+/// no upstream body text reaches the decision (ticket 1302).
+pub(crate) fn semantic_scholar_refusal(error: &BioMcpError) -> Option<SemanticScholarRefusal> {
+    let mut current = error;
+    loop {
+        match current {
+            BioMcpError::WithSourceContext { source, .. } => current = source,
+            BioMcpError::Api { api, message } if api == SEMANTIC_SCHOLAR_API => {
+                if message.starts_with(SEMANTIC_SCHOLAR_RATE_LIMITED_PREFIX) {
+                    return Some(SemanticScholarRefusal::RateLimited);
+                }
+                let status = message
+                    .strip_prefix(SEMANTIC_SCHOLAR_UNAVAILABLE_PREFIX)?
+                    .split_whitespace()
+                    .next()
+                    .and_then(|code| code.parse::<u16>().ok())?;
+                return match status {
+                    429 => Some(SemanticScholarRefusal::RateLimited),
+                    500..=599 => Some(SemanticScholarRefusal::Unavailable),
+                    _ => None,
+                };
+            }
+            _ => return None,
+        }
     }
 }
 

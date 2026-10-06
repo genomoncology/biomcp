@@ -1309,7 +1309,7 @@ mod orcid_works_tests {
     }
 
     /// Ticket 1142: identifiers that exist only in excluded locations —
-    /// group level, a PRIVATE summary, or a nonselected PUBLIC summary —
+    /// group level, a private summary, or a nonselected public summary —
     /// never reach the projected paper, its commands, or its evidence.
     #[test]
     fn excluded_location_identifiers_never_reach_the_projected_paper() {
@@ -1320,17 +1320,17 @@ mod orcid_works_tests {
                     {"external-id-type": "pmid", "external-id-value": "9991", "external-id-relationship": "SELF"}
                 ]},
                 "work-summary": [
-                    {"visibility": "PRIVATE", "put-code": 91, "display-index": "50",
+                    {"visibility": "private", "put-code": 91, "display-index": "50",
                      "title": {"title": {"value": "Private summary"}},
                      "external-ids": {"external-id": [
                         {"external-id-type": "pmid", "external-id-value": "9992", "external-id-relationship": "SELF"}
                      ]}},
-                    {"visibility": "PUBLIC", "put-code": 92, "display-index": "1",
+                    {"visibility": "public", "put-code": 92, "display-index": "1",
                      "title": {"title": {"value": "Public but not selected"}},
                      "external-ids": {"external-id": [
                         {"external-id-type": "pmid", "external-id-value": "9993", "external-id-relationship": "SELF"}
                      ]}},
-                    {"visibility": "PUBLIC", "put-code": 42, "display-index": "2",
+                    {"visibility": "public", "put-code": 42, "display-index": "2",
                      "title": {"title": {"value": "Selected representative"}},
                      "external-ids": {"external-id": [
                         {"external-id-type": "pmid", "external-id-value": "42", "external-id-relationship": "SELF"}

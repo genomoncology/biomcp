@@ -8,10 +8,11 @@ pub(super) async fn read_limited_source_body_classifies_chunk_failures_as_retrya
     let server = tokio::spawn(async move {
         let (mut stream, _) = listener.accept().await.expect("accept request");
         let mut request = [0; 1024];
-        stream
+        let bytes_read = stream
             .read(&mut request)
             .await
             .expect("read fixture request");
+        assert!(bytes_read > 0, "fixture request must not be empty");
         stream
             .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\nshort")
             .await

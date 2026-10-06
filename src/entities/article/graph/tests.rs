@@ -915,6 +915,14 @@ async fn citation_evidence_returns_the_bounded_error_when_the_graph_deadline_exp
         format!("{error:?}").contains("bounded deadline"),
         "expected bounded deadline error, got {error:?}"
     );
+    // The bounded outcome names the provider it belongs to, never the
+    // generic placeholder (ticket 1302).
+    let projection = error.public_projection();
+    assert_eq!(projection.source, Some("Semantic Scholar"));
+    assert_eq!(
+        projection.message,
+        "Source unavailable: Semantic Scholar is not available."
+    );
     let requests = requests.lock().unwrap().join("\n");
     assert_eq!(requests.matches("/references").count(), 0, "{requests}");
 }
@@ -1729,6 +1737,422 @@ async fn citation_evidence_marks_the_index_unavailable_when_the_deadline_leaves_
     );
     let logged = requests.lock().unwrap().join("\n");
     assert!(!logged.contains("opencitations:"), "{logged}");
+}
+
+// Ticket 1302: honest degradation when Semantic Scholar refuses.
+
+/// How the fixture answers Semantic Scholar.
+#[derive(Clone)]
+enum S2Reply {
+    /// Singleton seed rows answer; every reference-walk request answers the
+    /// configured refusal status.
+    SeedsWithWalkRefused(&'static str),
+    /// Every Semantic Scholar request answers the configured refusal status.
+    Refused(&'static str),
+}
+
+/// One Europe PMC search hit naming the citing fixture paper.
+fn europepmc_citing_hit() -> String {
+    format!(
+        "{{\"hitCount\":1,\"resultList\":{{\"result\":[{{\"id\":\"1\",\"source\":\"MED\",\
+\"pmid\":\"{OPEN_CITING_PMID}\",\"title\":\"Citing fixture\",\
+\"doi\":\"{OPEN_CITING_DOI}\",\"journalTitle\":\"Fixture Journal\",\"pubYear\":\"2012\"}}]}}}}"
+    )
+}
+
+/// The degradation fixture: Semantic Scholar answers per `s2`, Europe PMC
+/// resolves the citing PMID to its DOI, and the OpenCitations route answers
+/// the configured reply. Every provider base points at the loopback server.
+async fn spawn_degradation_fixture(
+    s2: S2Reply,
+    opencitations: OpenCitationsReply,
+) -> (TestHttpFixture, Arc<Mutex<Vec<String>>>) {
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let logged = requests.clone();
+    let s2_reply = move |status: &'static str| {
+        TestHttpReply::Bytes(test_http_response(status, "application/json", b"{}"))
+    };
+    let fixture = super::super::test_support::TestHttpFixture::spawn(move |request| {
+        let mut parts = request.splitn(2, ' ');
+        let method = parts.next().unwrap_or_default();
+        let target = parts
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .next()
+            .unwrap_or_default();
+        if method == "POST" {
+            logged.lock().unwrap().push("s2:seed".to_string());
+            match &s2 {
+                S2Reply::Refused(status) => s2_reply(status),
+                S2Reply::SeedsWithWalkRefused(_) => {
+                    let row = if request.contains(OPEN_CITING_PMID)
+                        || request.contains(OPEN_CITING_DOI)
+                    {
+                        format!(
+                            "[{{\"paperId\":\"{OPEN_CITING_PID}\",\"title\":\"Citing\",\
+\"externalIds\":{{\"PubMed\":\"{OPEN_CITING_PMID}\",\"DOI\":\"{OPEN_CITING_DOI}\"}}}}]"
+                        )
+                    } else {
+                        format!(
+                            "[{{\"paperId\":\"{OPEN_CITED_PID}\",\"title\":\"Cited\",\
+\"externalIds\":{{\"DOI\":\"{OPEN_CITED_DOI}\"}}}}]"
+                        )
+                    };
+                    TestHttpReply::Bytes(test_http_response(
+                        "200 OK",
+                        "application/json",
+                        row.as_bytes(),
+                    ))
+                }
+            }
+        } else if target.contains("/references/doi:") {
+            logged
+                .lock()
+                .unwrap()
+                .push(format!("opencitations:{target}"));
+            match &opencitations {
+                OpenCitationsReply::Rows(body) => TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    body.as_bytes(),
+                )),
+                OpenCitationsReply::Status(status, body) => TestHttpReply::Bytes(
+                    test_http_response(status, "application/json", body.as_bytes()),
+                ),
+            }
+        } else if target.contains("/search") {
+            logged.lock().unwrap().push("europe:search".to_string());
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                europepmc_citing_hit().as_bytes(),
+            ))
+        } else if target.contains("/references") {
+            logged.lock().unwrap().push("s2:graph".to_string());
+            match &s2 {
+                S2Reply::Refused(status) => s2_reply(status),
+                S2Reply::SeedsWithWalkRefused(status) => s2_reply(status),
+            }
+        } else {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                b"{\"offset\":0,\"next\":null,\"data\":[]}",
+            ))
+        }
+    })
+    .await;
+    (fixture, requests)
+}
+
+/// The ready degradation case: fresh environment, every provider pointed at
+/// the fixture, and the citation-evidence sidecar cache empty.
+async fn degradation_case(
+    label: &str,
+    s2: S2Reply,
+    opencitations: OpenCitationsReply,
+) -> (
+    TestEnv,
+    crate::test_support::TempDirGuard,
+    TestHttpFixture,
+    Arc<Mutex<Vec<String>>>,
+) {
+    let mut env = TestEnv::new();
+    let cache = crate::test_support::TempDirGuard::new(label);
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let (fixture, requests) = spawn_degradation_fixture(s2, opencitations).await;
+    point_providers_at(&mut env, &fixture);
+    (env, cache, fixture, requests)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refused() {
+    use crate::entities::article::graph::citation_evidence::{
+        CitationEvidenceConfirmation, CitationEvidenceStatus,
+    };
+
+    let (_env, _cache, fixture, requests) = degradation_case(
+        "citation-refused-seed",
+        S2Reply::Refused("429 Too Many Requests"),
+        OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    // The refused invocation must answer, not spin: one Semantic Scholar
+    // request, one Europe PMC resolution, one index request, all loopback.
+    // The clock bound is the ticket's fail-fast pin: a refused first hop
+    // answers within seconds instead of burning the command budget
+    // (ticket 1302).
+    let started = std::time::Instant::now();
+    let result = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap();
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed <= std::time::Duration::from_secs(5),
+        "a refused first hop must fail fast, took {elapsed:?}"
+    );
+
+    assert_eq!(
+        result.status,
+        CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
+    );
+    assert_eq!(result.source.as_deref(), Some("opencitations"));
+    assert!(result.provider_contexts.is_empty());
+    assert!(result.passages.is_empty());
+    // The citing side resolves through Europe PMC; the cited side is a DOI.
+    assert_eq!(result.citing.pmid.as_deref(), Some(OPEN_CITING_PMID));
+    assert_eq!(result.citing.doi.as_deref(), Some(OPEN_CITING_DOI));
+    assert_eq!(result.citing.title, "Citing fixture");
+    assert_eq!(result.citing.journal.as_deref(), Some("Fixture Journal"));
+    assert_eq!(result.citing.year, Some(2012));
+    assert_eq!(result.cited.doi.as_deref(), Some(OPEN_CITED_DOI));
+    assert_eq!(
+        result.confirmation,
+        Some(CitationEvidenceConfirmation {
+            source: "opencitations".to_string(),
+            oci: "061502131318-062102119315".to_string(),
+            citing: format!("doi:{OPEN_CITING_DOI}"),
+            cited: format!("doi:{OPEN_CITED_DOI}"),
+            creation: Some("2012-07-12".to_string()),
+            evidence_url: format!(
+                "https://api.opencitations.net/index/v2/references/doi:{OPEN_CITING_DOI}"
+            ),
+        })
+    );
+    assert_eq!(
+        result
+            ._meta
+            .source_status
+            .iter()
+            .map(|row| (row.source.as_str(), row.status.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            ("semantic_scholar", "rate_limited"),
+            ("europe_pmc_jats", "not_requested"),
+            ("opencitations", "available"),
+        ]
+    );
+    assert_eq!(
+        result
+            ._meta
+            .evidence_urls
+            .iter()
+            .map(|row| row.source.as_str())
+            .collect::<Vec<_>>(),
+        ["opencitations"]
+    );
+    // Fail fast: exactly one Semantic Scholar seed request, and the refused
+    // provider is never asked for a second seed or a reference walk.
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("s2:seed").count(), 1, "{logged}");
+    assert!(!logged.contains("s2:graph"), "{logged}");
+    assert_eq!(logged.matches("europe:search").count(), 1, "{logged}");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_names_both_providers_and_reasons_when_both_refuse() {
+    let (_env, _cache, fixture, requests) = degradation_case(
+        "citation-both-refused",
+        S2Reply::Refused("429 Too Many Requests"),
+        OpenCitationsReply::Status("500 Internal Server Error", "upstream detail".to_string()),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap_err();
+
+    let projection = error.public_projection();
+    assert_eq!(
+        projection.message,
+        "Semantic Scholar rate limited the request; OpenCitations was unavailable."
+    );
+    assert_eq!(projection.source, None);
+    assert!(projection.recovery.is_some());
+    assert!(!format!("{projection:?}").contains("BioMCP source"));
+    // The refusal summary never carries upstream body text.
+    assert!(!projection.message.contains("upstream detail"));
+    // Both providers were asked before the summary was written.
+    let logged = requests.lock().unwrap().join("\n");
+    assert!(logged.contains("opencitations:"), "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_reports_an_unaddressable_index_when_inputs_have_no_doi() {
+    let (_env, _cache, fixture, _requests) = degradation_case(
+        "citation-no-addressable-doi",
+        S2Reply::Refused("429 Too Many Requests"),
+        OpenCitationsReply::Rows("[]".to_string()),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    // ArXiv identifiers cannot address an OpenCitations reference list, so
+    // the refusal summary says so instead of querying a provider blindly.
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence("arXiv:2401.01234", "arXiv:2402.01234", false),
+    )
+    .await
+    .unwrap_err();
+    let projection = error.public_projection();
+    assert_eq!(
+        projection.message,
+        "Semantic Scholar rate limited the request; OpenCitations had no DOI to query."
+    );
+    assert_eq!(projection.source, None);
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_names_both_providers_when_the_answered_index_lacks_the_edge() {
+    let (_env, _cache, fixture, requests) = degradation_case(
+        "citation-refused-no-edge",
+        S2Reply::Refused("429 Too Many Requests"),
+        // The index answers a parsed reference list whose cited tokens name
+        // another DOI, so the pair is honestly unconfirmed.
+        OpenCitationsReply::Rows(
+            r#"[{"oci":"1-2","citing":"doi:10.1000/other","cited":"omid:br/2 doi:10.1000/other","creation":"2012-07"}]"#
+                .to_string(),
+        ),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap_err();
+
+    match &error {
+        BioMcpError::NotFound {
+            entity,
+            id,
+            suggestion,
+        } => {
+            assert_eq!(entity.as_str(), "directed citation");
+            assert_eq!(id, &format!("{OPEN_CITING_PMID} -> {OPEN_CITED_DOI}"));
+            assert_eq!(
+                suggestion.as_str(),
+                "OpenCitations holds no confirmed edge for this pair, and Semantic Scholar rate limited the request.\nRetry later for Semantic Scholar citation contexts."
+            );
+        }
+        other => panic!("expected the directed not-found shape, got {other:?}"),
+    }
+    // The public shape keeps naming both providers with their reasons and
+    // never the generic placeholder.
+    let projection = error.public_projection();
+    assert!(
+        projection
+            .message
+            .contains("OpenCitations holds no confirmed edge")
+    );
+    assert!(
+        projection
+            .message
+            .contains("Semantic Scholar rate limited the request")
+    );
+    assert!(!format!("{projection:?}").contains("BioMCP source"));
+    assert!(error.is_not_found());
+    // The no-edge outcome came from an answered index, not a refusal: the
+    // pair degraded after one refused seed and one answered index request.
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("s2:seed").count(), 1, "{logged}");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_degrades_to_the_index_when_the_reference_walk_is_refused() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    // 429 degrades as rate limited; a 5xx upstream failure degrades as
+    // unavailable. Both carry the pair the seeds already resolved.
+    for (status, expected) in [
+        ("429 Too Many Requests", "rate_limited"),
+        ("503 Service Unavailable", "unavailable"),
+    ] {
+        let (_env, _cache, fixture, requests) = degradation_case(
+            "citation-refused-walk",
+            S2Reply::SeedsWithWalkRefused(status),
+            OpenCitationsReply::Rows(opencitations_row("061502131318-062102119315", "2012-07-12")),
+        )
+        .await;
+        let client =
+            crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+                &fixture.base,
+                |_, _| {},
+                |_, _| {},
+            )
+            .unwrap();
+        let result = crate::sources::semantic_scholar::with_test_client(
+            client,
+            citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            result.status,
+            CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
+        );
+        assert_eq!(result.source.as_deref(), Some("opencitations"));
+        // The resolved pair keeps what Semantic Scholar answered before it
+        // refused the walk.
+        assert_eq!(result.citing.title, "Citing");
+        assert_eq!(result.citing.doi.as_deref(), Some(OPEN_CITING_DOI));
+        assert_eq!(result.cited.doi.as_deref(), Some(OPEN_CITED_DOI));
+        assert_eq!(
+            result
+                ._meta
+                .source_status
+                .iter()
+                .map(|row| (row.source.as_str(), row.status.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                ("semantic_scholar", expected),
+                ("europe_pmc_jats", "not_requested"),
+                ("opencitations", "available"),
+            ]
+        );
+        let logged = requests.lock().unwrap().join("\n");
+        assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
+        assert!(logged.contains("s2:graph"), "{logged}");
+        assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+        assert!(!logged.contains("europe:search"), "{logged}");
+    }
 }
 
 #[tokio::test]
