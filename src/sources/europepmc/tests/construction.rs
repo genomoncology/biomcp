@@ -7,37 +7,43 @@ use crate::sources::europepmc::{EuropePmcClient, EuropePmcSearchRequestPlan, Eur
 
 #[test]
 fn search_query_plan_sets_keyword_shape_and_date_sort() {
-    let plan =
-        EuropePmcClient::search_query_plan(" alternative microexon ", 2, 25, EuropePmcSort::Date)
-            .unwrap();
+    let plan = EuropePmcClient::search_query_plan(
+        " alternative microexon ",
+        "AoIIQLQe",
+        25,
+        EuropePmcSort::Date,
+    )
+    .unwrap();
 
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "search");
     assert_eq!(plan.query_value("query"), Some("alternative microexon"));
     assert_eq!(plan.query_value("format"), Some("json"));
-    assert_eq!(plan.query_value("page"), Some("2"));
+    assert_eq!(plan.query_value("cursorMark"), Some("AoIIQLQe"));
+    assert_eq!(plan.query_value("page"), None);
     assert_eq!(plan.query_value("pageSize"), Some("25"));
     assert_eq!(plan.query_value("sort"), Some("P_PDATE_D desc"));
 }
 
 #[test]
 fn search_query_plan_sets_citation_sort() {
-    let plan = EuropePmcClient::search_query_plan("BRAF", 1, 5, EuropePmcSort::Citations).unwrap();
+    let plan =
+        EuropePmcClient::search_query_plan("BRAF", "*", 5, EuropePmcSort::Citations).unwrap();
     assert_eq!(plan.query_value("sort"), Some("CITED desc"));
 }
 
 #[test]
 fn search_query_plan_validates_query_and_paging() {
     assert!(matches!(
-        EuropePmcClient::search_query_plan("   ", 1, 5, EuropePmcSort::Relevance),
+        EuropePmcClient::search_query_plan("   ", "*", 5, EuropePmcSort::Relevance),
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        EuropePmcClient::search_query_plan("BRAF", 0, 5, EuropePmcSort::Relevance),
+        EuropePmcClient::search_query_plan("BRAF", "  ", 5, EuropePmcSort::Relevance),
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        EuropePmcClient::search_query_plan("BRAF", 1, 101, EuropePmcSort::Relevance),
+        EuropePmcClient::search_query_plan("BRAF", "*", 101, EuropePmcSort::Relevance),
         Err(BioMcpError::InvalidArgument(_))
     ));
 }
@@ -46,7 +52,7 @@ fn search_query_plan_validates_query_and_paging() {
 fn legacy_request_plan_keeps_article_contract_shape() {
     let client = EuropePmcClient::new().unwrap();
     let plan: EuropePmcSearchRequestPlan = client
-        .search_query_request_plan("alternative microexon", 2, 25, EuropePmcSort::Date)
+        .search_query_request_plan("alternative microexon", "AoIIQLQe", 25, EuropePmcSort::Date)
         .expect("EuropePmcSearchRequestPlan");
 
     assert_eq!(plan.method, "GET");
@@ -55,7 +61,10 @@ fn legacy_request_plan_keeps_article_contract_shape() {
         plan.query_params
             .contains(&("query", "alternative microexon".to_string()))
     );
-    assert!(plan.query_params.contains(&("page", "2".to_string())));
+    assert!(
+        plan.query_params
+            .contains(&("cursorMark", "AoIIQLQe".to_string()))
+    );
     assert!(plan.query_params.contains(&("pageSize", "25".to_string())));
     assert!(
         plan.query_params

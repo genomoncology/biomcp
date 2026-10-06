@@ -190,7 +190,9 @@ default: available PMID/PMCID/DOI/arXiv/Semantic Scholar identifiers, title,
 journal, date, citation count, primary source, and tri-state retraction state.
 Use `biomcp --json search article -g BRAF --limit 5 --full` to restore detailed
 rows with `matched_sources`, `ranking`, `first_index_date`, influential counts,
-scores, and abstract snippets.
+scores, and abstract snippets. Every search row, compact or `--full`, keeps a
+240-byte abstract snippet; `biomcp get article <pmid>` returns the whole
+abstract.
 
 `--sort date` replaces relevance ranking rather than refining it. Compact JSON,
 `--full` JSON, and Markdown all emit an in-band warning when date sort is used.

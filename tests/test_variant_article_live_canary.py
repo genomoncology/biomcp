@@ -497,6 +497,7 @@ def test_seven_variant_corpus_canary_is_routine_and_credential_free() -> None:
 def test_seven_variant_corpus_canary_rejects_unknown_routes() -> None:
     script = CANARY.read_text(encoding="utf-8")
 
-    assert 'body = route_bodies.get(self.path)' in script
+    assert 'body = route_bodies.get("/search?" + canonical_query("https://x" + self.path))' in script
     assert 'self.send_response(404)' in script
     assert 'unknown == ["/unknown-corpus-route"]' in script
+    assert 'if key not in ("page", "cursorMark")' in script

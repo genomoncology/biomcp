@@ -73,21 +73,6 @@ pub fn article_search_fallback_title(text: &str) -> String {
     truncate_title(text)
 }
 
-pub fn truncate_abstract(text: &str) -> String {
-    const MAX_ABSTRACT_BYTES: usize = 1500;
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return String::new();
-    }
-    if trimmed.len() <= MAX_ABSTRACT_BYTES {
-        return trimmed.to_string();
-    }
-
-    let short = truncate_utf8(trimmed, MAX_ABSTRACT_BYTES, "...");
-    let total = trimmed.chars().count();
-    format!("{short}\n\n(truncated, {total} chars total)")
-}
-
 pub fn article_search_abstract_snippet(text: &str) -> Option<String> {
     const MAX_ABSTRACT_BYTES: usize = 240;
     let cleaned = clean_abstract(text);

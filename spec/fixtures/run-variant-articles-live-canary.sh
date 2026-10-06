@@ -32,6 +32,20 @@ receipt_by_path = {
     if row.get("classification") == "real_and_receipted" and row.get("receipt")
 }
 
+def canonical_query(safe_request):
+    # Europe PMC page 1 and the first cursorMark page return the same rows;
+    # ticket 1298 moved the request from page= to cursorMark=, so routing
+    # normalizes only the paging parameter and keeps every capture byte and
+    # receipt untouched.
+    parsed = urllib.parse.urlsplit(safe_request)
+    params = [
+        (key, value)
+        for key, value in urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+        if key not in ("page", "cursorMark")
+    ]
+    return urllib.parse.urlencode(params)
+
+
 decoded = {}
 route_bodies = {}
 for row in mapping["landmarks"]:
@@ -46,19 +60,21 @@ for row in mapping["landmarks"]:
         pmids = set(payload.get("esearchresult", {}).get("idlist", []))
     else:
         pmids = {str(value["pmid"]) for value in payload["resultList"]["result"] if value.get("pmid")}
-        parsed = urllib.parse.urlsplit(row["safe_request"])
-        route_bodies["/search?" + parsed.query] = body
+        route_bodies["/search?" + canonical_query(row["safe_request"])] = body
     decoded[(row["variant"], row["landmark_pmid"])] = row["landmark_pmid"] in pmids
     assert decoded[(row["variant"], row["landmark_pmid"])] is row["present"]
 
 requests = []
+canonical_requests = set()
 unknown = []
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_):
         pass
     def do_GET(self):
         requests.append(self.path)
-        body = route_bodies.get(self.path)
+        if self.path.startswith("/search"):
+            canonical_requests.add("/search?" + canonical_query("https://x" + self.path))
+        body = route_bodies.get("/search?" + canonical_query("https://x" + self.path))
         if body is None:
             unknown.append(self.path)
             body = b'{"error":"unknown captured route"}'
@@ -106,7 +122,7 @@ for safe_request in sorted({
     )
     payload = json.loads(json_run.stdout) if json_run.returncode == 0 else {}
     found = {str(row.get("pmid")) for row in payload.get("results", []) if row.get("pmid")}
-    target = "/search?" + parsed.query
+    target = "/search?" + canonical_query(safe_request)
     seen_requests.add(target)
     cli_checks.append(
         json_run.returncode == 0
@@ -147,7 +163,7 @@ gates = {
         for row in mapping["landmarks"]
     ),
     "production_cli_consumed_exact_europepmc_captures": (
-        all(cli_checks) and seen_requests <= set(requests)
+        all(cli_checks) and seen_requests <= canonical_requests
     ),
     "compact_json_and_markdown_rendering_preserve_landmarks": all(cli_checks),
     "strict_unknown_route_rejected": strict_unknown_rejected and unknown == ["/unknown-corpus-route"],

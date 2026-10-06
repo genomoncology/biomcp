@@ -278,7 +278,9 @@ biomcp --json search article -g BRAF --limit 5 --full
 
 JSON article search rows are compact by default and retain available identifiers,
 triage fields, source, and tri-state retraction status. `--full` restores
-abstracts, complete source provenance, and ranking diagnostics. `--sort date`
+abstract snippets, complete source provenance, and ranking diagnostics. Each
+`--full` row keeps a 240-byte abstract snippet; run `biomcp get article <pmid>`
+to read the whole abstract. `--sort date`
 replaces relevance ranking and emits an in-band warning in compact JSON, full
 JSON, and Markdown. Article tables label mixed PMID/PMCID/DOI/arXiv/Semantic
 Scholar values under `Identifier`.

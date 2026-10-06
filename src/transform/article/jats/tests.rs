@@ -436,3 +436,135 @@ fn entity_bearing_jats_is_not_rendered_through_fallback() {
 
 // --- Ticket 1145: citation-evidence extractor ---
 mod citation_evidence;
+
+#[test]
+fn real_pmc6172658_capture_separates_names_and_reference_identifiers() {
+    let response = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/ncbi_efetch/pmc6172658.xml"
+    ));
+    let xml = crate::sources::ncbi_efetch::normalize_article_xml(response)
+        .unwrap()
+        .unwrap();
+    let out = extract_text_from_xml(&xml);
+
+    // Adjacent `surname`/`given-names` elements joined without a source space.
+    assert!(out.contains("Jemal A, Center MM, DeSantis C, Ward EM"));
+    assert!(!out.contains("JemalA"));
+
+    // `pub-id` values print as labeled segments, not glued citation prose.
+    assert!(out.contains("1893–907. PMID: 20647400."));
+    assert!(!out.contains("907.PMID"));
+    assert!(out.contains(". PMCID: PMC4580552. PMID: 24777111"));
+    assert!(!out.contains("PMC4580552PMID"));
+
+    // Source-text defects stay as they are; BioMCP does not rewrite prose.
+    assert!(out.contains("recurrencescore"));
+
+    assert_eq!(out.matches("merged-cell layout may be lossy").count(), 3);
+}
+
+#[test]
+fn extract_text_from_jats_separates_words_only_at_unmarked_boundaries() {
+    let cases: [(&str, &str); 4] = [
+        (
+            // Adjacent inline elements with no source space gain one.
+            r#"<p>When all <named-content content-type="gene">recurrence</named-content>score cohorts</p>"#,
+            "When all recurrence score cohorts",
+        ),
+        (
+            // Markup markers keep attached runs attached.
+            r#"<p>B-RAF<sup>V600E</sup> remains one token</p>"#,
+            "B-RAF^V600E^ remains one token",
+        ),
+        (
+            // Table footnote symbols stay glued to their units.
+            r#"<p>Tumor size in cm<xref rid="TFN3" ref-type="table-fn">‡</xref></p>"#,
+            "Tumor size in cm‡",
+        ),
+        (
+            // A bare ext-link URL separates from the preceding word.
+            r#"<p xmlns:xlink="http://www.w3.org/1999/xlink">Data at<ext-link xlink:href="https://example.org/data"/></p>"#,
+            "Data at https://example.org/data",
+        ),
+    ];
+
+    for (fragment, expected) in cases {
+        let xml = format!("<article><body>{fragment}</body></article>");
+        let out = extract_text_from_xml(&xml);
+        assert!(out.contains(expected), "missing {expected:?} in {out:?}");
+    }
+}
+
+#[test]
+fn extract_text_from_jats_labels_mixed_citation_pub_ids_as_separate_values() {
+    let xml = r#"
+<article xmlns:xlink="http://www.w3.org/1999/xlink">
+  <front>
+    <article-meta>
+      <title-group><article-title>Labeled identifier article</article-title></title-group>
+    </article-meta>
+  </front>
+  <back>
+    <ref-list>
+      <ref id="r1">
+        <label>1.</label>
+        <mixed-citation publication-type="journal">
+          <name name-style="western"><surname>Jemal</surname><given-names>A</given-names></name>. <article-title>Global patterns of cancer incidence</article-title>. <source>Cancer Epidemiol Biomarkers Prev</source> <year>2010</year>; <volume>19</volume>: <fpage>1893</fpage>–<lpage>907</lpage>.<pub-id pub-id-type="pmid">20647400</pub-id><pub-id pub-id-type="doi" assigning-authority="pmc">10.1158/1055-9965.EPI-10-0437</pub-id>
+        </mixed-citation>
+      </ref>
+      <ref id="r2">
+        <label>2.</label>
+        <mixed-citation publication-type="journal">
+          <name name-style="western"><surname>Howlader</surname><given-names>N</given-names></name>. <source>J Natl Cancer Inst</source> <year>2014</year>; <volume>106</volume>(<issue>5</issue>):<comment>dju055.</comment><pub-id pub-id-type="doi">10.1093/jnci/dju055</pub-id><pub-id pub-id-type="pmcid">PMC4580552</pub-id><pub-id pub-id-type="pmid">24777111</pub-id>
+        </mixed-citation>
+      </ref>
+    </ref-list>
+  </back>
+</article>
+"#;
+
+    let out = extract_text_from_xml(xml);
+    assert!(out.contains(
+        "1. [1.] Jemal A. Global patterns of cancer incidence. Cancer Epidemiol Biomarkers Prev 2010; 19: 1893–907. PMID: 20647400. [10.1158/1055-9965.EPI-10-0437](https://doi.org/10.1158/1055-9965.EPI-10-0437)"
+    ));
+    assert!(out.contains(
+        "2. [2.] Howlader N. J Natl Cancer Inst 2014; 106(5):dju055. [10.1093/jnci/dju055](https://doi.org/10.1093/jnci/dju055). PMCID: PMC4580552. PMID: 24777111"
+    ));
+    assert!(!out.contains("907.PMID"));
+    assert!(!out.contains("dju055.PMCID"));
+}
+
+#[test]
+fn extract_text_from_jats_renders_ragged_tables_as_raw_rows() {
+    let xml = r#"
+<article>
+  <front>
+    <article-meta>
+      <title-group><article-title>Ragged table article</article-title></title-group>
+    </article-meta>
+  </front>
+  <body>
+    <table-wrap>
+      <label>Table 5</label>
+      <caption><title>Rows of uneven width</title></caption>
+      <table>
+        <tbody>
+          <tr><th>Group</th><th>Median</th><th>Range</th></tr>
+          <tr><td>A</td><td>7.1</td></tr>
+          <tr><td>B</td><td>8.2</td><td>3–12</td></tr>
+        </tbody>
+      </table>
+    </table-wrap>
+  </body>
+</article>
+"#;
+
+    let out = extract_text_from_xml(xml);
+    assert!(out.contains("**Table 5.** Rows of uneven width"));
+    assert!(out.contains("*[Ragged table: 3 rows of uneven width. Raw source rows follow.]*"));
+    assert!(out.contains("Row 1: Group | Median | Range"));
+    assert!(out.contains("Row 2: A | 7.1"));
+    assert!(out.contains("Row 3: B | 8.2 | 3–12"));
+    assert!(!out.contains("merged-cell layout may be lossy"));
+}

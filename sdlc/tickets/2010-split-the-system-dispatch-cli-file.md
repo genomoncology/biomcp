@@ -1,6 +1,6 @@
 # 2010 — Split the system dispatch CLI file
 
-Status: OPEN.
+Status: complete. Absorbed by ticket 1304, whose line-cap fold split the who-sync reporting into src/cli/system/who_sync.rs and moved its tests to tests/who_sync.rs; both parents under the cap and the allowlist empty again.
 Milestone: 0.9.2
 
 ## Outcome
