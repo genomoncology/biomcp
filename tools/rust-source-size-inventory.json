@@ -115,12 +115,12 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6153,
+      "baseline_lines": 6157,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006",
-        "delta": 1325,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression.",
+        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, biodata-0698",
+        "delta": 1329,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },
@@ -238,12 +238,12 @@
     },
     {
       "path": "src/entities/variant/get/tests.rs",
-      "baseline_lines": 1363,
+      "baseline_lines": 1366,
       "floor_lines": 911,
       "authorized_increase": {
-        "ticket": "1290, qf-maintenance-20261003, qf-main-sync-variant-inputs-20261006",
-        "delta": 452,
-        "reason": "Root maintenance source-preparation authority owns the 108 added total lines above the accepted development baseline. Retain the accepted genomic prediction preparation assertions and all incoming record-level ClinVar headline disagreement, missing-classification and agreement assertions. Retain incoming exact-alias success and wrong-transcript refusal fixture cases. Review finding 1: refuse transcript assembly before transport and verify that caller boundary. Review finding 2: complete bounded ClinVar scans and one caller table for both routes. Review finding 3: project the exact complete source tuple through the retained transcript lookup owner. Review finding 4: confirm requested numeric ClinVar evidence in each candidate and one getter regression table.",
+        "ticket": "1290, qf-maintenance-20261003, qf-main-sync-variant-inputs-20261006, biodata-0698",
+        "delta": 455,
+        "reason": "Root maintenance source-preparation authority owns the 108 added total lines above the accepted development baseline. Retain the accepted genomic prediction preparation assertions and all incoming record-level ClinVar headline disagreement, missing-classification and agreement assertions. Retain incoming exact-alias success and wrong-transcript refusal fixture cases. Review finding 1: refuse transcript assembly before transport and verify that caller boundary. Review finding 2: complete bounded ClinVar scans and one caller table for both routes. Review finding 3: project the exact complete source tuple through the retained transcript lookup owner. Review finding 4: confirm requested numeric ClinVar evidence in each candidate and one getter regression table. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration.",
         "removal_condition": "Split the getter tests when the variant workflow is next decomposed, retaining both genomic and ClinVar headline proofs. Remove this entry when the file reaches at most 1000 total lines."
       }
     },

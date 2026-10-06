@@ -2,6 +2,15 @@ version = 1
 
 [selection]
 rust = [
+  "entities::article::variant_search::tests::real_car_and_ldh_captures_confirm_tp53_article_identity",
+  "entities::article::variant_search::tests::missing_confirmed_record_during_citation_hydration_is_unavailable",
+  "entities::article::variant_search::tests::citation_pre_call_stop_is_attributed_to_myvariant",
+  "render::markdown::evidence::tests::variant_evidence_urls_include_dbsnp_and_cosmic",
+  "entities::variant::get::protein_change_tests::protein_change_resolution_prefers_the_clinvar_named_hit_over_first_match",
+  "entities::variant::get::protein_change_tests::protein_change_resolution_keeps_a_single_matching_hit",
+  "entities::variant::get::protein_change_tests::protein_change_resolution_refuses_when_no_clinvar_record_names_one",
+  "entities::variant::get::protein_change_tests::protein_change_resolution_refuses_conflicting_clinvar_records",
+  "entities::variant::get::protein_change_tests::protein_change_resolution_without_matching_hits_keeps_the_search_suggestion",
   "sources::myvariant::tests::dbsnp_adoption::dbsnp_positional_embedding_encodes_canonical_object",
   "sources::myvariant::tests::dbsnp_adoption::dbsnp_embedding_keeps_debug_and_outer_errors_private",
   "entities::variant::get::tests::dbsnp_adoption_tests::dbsnp_detail_trims_card_but_keeps_nonblank_ambiguity_text",
