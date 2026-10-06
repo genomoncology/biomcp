@@ -52,20 +52,22 @@ fn native_card() -> Value {
 
 fn ledger(requests: &Arc<Mutex<Vec<String>>>) {
     let log = requests.lock().unwrap();
-    assert_eq!(log.len(), 1, "{log:?}");
-    let words: Vec<_> = log[0].lines().next().unwrap().split_whitespace().collect();
-    assert_eq!((words[0], words[2]), ("GET", "HTTP/1.1"));
-    let url = reqwest::Url::parse(&format!("http://localhost{}", words[1])).unwrap();
-    assert_eq!(url.path(), "/variant/chr7:g.140453136A%3ET");
-    let literal = include_str!("../resolution/point_oracles/GET_FIELDS.txt").trim_end();
-    assert_eq!(
-        url.query_pairs().into_owned().collect::<Vec<_>>(),
-        [
-            ("fields".into(), literal.into()),
-            ("assembly".into(), "hg38".into())
-        ]
-    );
-    assert_eq!(log[0].split_once("\r\n\r\n").unwrap().1, "");
+    assert_eq!(log.len(), 2, "{log:?}");
+    for (request, assembly) in log.iter().zip(["hg38", "hg19"]) {
+        let words: Vec<_> = request.lines().next().unwrap().split_whitespace().collect();
+        assert_eq!((words[0], words[2]), ("GET", "HTTP/1.1"));
+        let url = reqwest::Url::parse(&format!("http://localhost{}", words[1])).unwrap();
+        assert_eq!(url.path(), "/variant/chr7:g.140453136A%3ET");
+        let literal = include_str!("../resolution/point_oracles/GET_FIELDS.txt").trim_end();
+        assert_eq!(
+            url.query_pairs().into_owned().collect::<Vec<_>>(),
+            [
+                ("fields".into(), literal.into()),
+                ("assembly".into(), assembly.into())
+            ]
+        );
+        assert_eq!(request.split_once("\r\n\r\n").unwrap().1, "");
+    }
 }
 
 #[tokio::test(flavor = "multi_thread")]
