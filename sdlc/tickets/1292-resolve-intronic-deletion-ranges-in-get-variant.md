@@ -4,6 +4,14 @@ Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1292-intronic-deletion-ranges`, sha `4f6af54b6`, 2026-10-06.
+- Code review: ACCEPT 2026-10-06, no blocking findings. Four P2 report-only notes: no unit test pins the article-search bare-VariationID refusal (guard verified in code; the test moves to 1297's scope, same file cluster); one duplicate ClinVar alias query on the transcript fallthrough (bounded, one extra call); over-length transcript input reaches one bounded provider query before refusing cleanly; and `search variant 'EGFR E746_A750del'` now routes to the exact gene+hgvsp filter where 1301's oracle previously made it a gene+condition candidate (the exact filter is an honest empty on the recorded capture).
+- Root causes beyond triage, recorded in sdlc/records/1292-intronic-deletion-ranges-build.md: the transcript alias fallback existed but its identity filter dropped every ClinVar-only hit (NM_004333.6:c.1799T>A was not_found on main), and Mutalyzer 422s on intronic ranges.
+- Resolutions proven live and from recorded captures: NM_000249.4:c.678-14_678-3del to chr3:g.37055906_37055917del (MLH1); both colon transcript forms; VariationID 577152; protein-range forms parse with exact spelling preserved. ClinVar-style parenthesized names keep refusing with a printed working form.
+- Full Rust suite 3938 green at the code commit; spec page 14/14 standalone and 20/20 combined; registrations bumped (lifecycle 30 to 31, package 1387 to 1388).
+
 ## Outcome
 
 `get variant` accepts transcript-qualified deletion ranges with intronic offsets and a ClinVar VariationID, or refuses with a message that prints a working input form.
