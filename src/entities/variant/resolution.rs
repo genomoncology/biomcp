@@ -289,7 +289,7 @@ fn parse_gene_residue_alias(query: &str) -> Option<(String, VariantProteinAlias)
     ))
 }
 
-fn is_exact_gene_token(token: &str) -> bool {
+pub(crate) fn is_exact_gene_token(token: &str) -> bool {
     let mut chars = token.chars();
     matches!(chars.next(), Some(first) if first.is_ascii_uppercase())
         && chars.clone().next().is_some()

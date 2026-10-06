@@ -83,6 +83,24 @@ H3F3A_POSITION_HITS = [
     }
     for position in (19, 28, 37, 57)
 ]
+# Ticket 1301: recorded shape for a gene-and-condition search whose free-text
+# form now routes the gene-symbol first token. Three rows, same as the
+# explicit -g/--condition form.
+SCN5A_BRUGADA_HITS = [
+    {
+        "_id": f"chr3:g.{position}G>A",
+        "dbnsfp": {"genename": "SCN5A", "hgvsp": change},
+    }
+    for position, change in (
+        (38592622, "p.R1193Q"),
+        (38618015, "p.R2255W"),
+        (38553661, "p.R367H"),
+    )
+]
+BRUGADA_CONDITION_HIT = {
+    "_id": "chr12:g.50879715G>A",
+    "dbnsfp": {"genename": "PKP2", "hgvsp": "p.Q63K"},
+}
 HSD17B4_TRANSCRIPT_HIT = {
     "_id": "chr5:g.118860951A>G",
     "dbnsfp": {
@@ -263,6 +281,17 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == "dbnsfp.genename:NOTAREALGENE1091":
                 send_json(self, 200, {"total": 0, "hits": []})
+                return
+            # Ticket 1301: routed gene-and-condition search and the condition
+            # searches a refused or non-gene phrase falls back to.
+            if query == 'dbnsfp.genename:SCN5A AND clinvar.rcv.conditions.name:"Brugada"':
+                send_json(self, 200, {"total": 3, "hits": SCN5A_BRUGADA_HITS})
+                return
+            if query == 'clinvar.rcv.conditions.name:"BRUGADA syndrome"':
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
+            if query == 'clinvar.rcv.conditions.name:"brugada syndrome"':
+                send_json(self, 200, {"total": 1, "hits": [BRUGADA_CONDITION_HIT]})
                 return
             if query == "dbnsfp.genename:H3F3A AND cadd.phred:[99 TO *]":
                 send_json(self, 200, {"total": 0, "hits": []})

@@ -5,7 +5,12 @@ mod articles;
 #[path = "variant/parsing.rs"]
 mod parsing;
 
-use super::dispatch::{VariantSearchPlan, parse_simple_gene_change, resolve_variant_query};
+use super::VariantSearchPlan;
+use super::query::{
+    VariantQueryGeneRouting, apply_gene_first_routing, confirm_gene_first_candidate,
+    gene_first_working_form, parse_simple_gene_change, resolve_variant_query,
+    split_gene_first_candidate,
+};
 
 use crate::cli::{Cli, Commands, GetEntity, OutputStream, VariantCommand, run_outcome};
 use crate::entities::variant as entity;
@@ -346,6 +351,288 @@ fn resolve_variant_query_maps_exon_deletion_phrase_to_gene_and_consequence() {
     assert!(resolved.hgvsc.is_none());
     assert!(resolved.rsid.is_none());
     assert!(resolved.condition.is_none());
+}
+
+#[test]
+fn split_gene_first_candidate_accepts_symbol_shaped_first_tokens() {
+    let cases = [
+        ("SCN5A Brugada", Some(("SCN5A", "Brugada"))),
+        ("TP53 osteosarcoma", Some(("TP53", "osteosarcoma"))),
+        (
+            "BRCA1 hereditary breast cancer",
+            Some(("BRCA1", "hereditary breast cancer")),
+        ),
+        (
+            "SCN5A   Brugada  syndrome",
+            Some(("SCN5A", "Brugada syndrome")),
+        ),
+        // Single tokens keep the existing gene-only routing.
+        ("SCN5A", None),
+        // Lowercase words are not gene-shaped.
+        ("Lung cancer", None),
+        // Hyphenated symbols fall outside the exact-form token shape.
+        ("H3-3A glioma", None),
+        ("", None),
+    ];
+    for (query, expected) in cases {
+        assert_eq!(
+            split_gene_first_candidate(query),
+            expected.map(|(gene, condition)| (gene.to_string(), condition.to_string())),
+            "query: {query:?}"
+        );
+    }
+}
+
+#[test]
+fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
+    let (resolved, fallback) = apply_gene_first_routing(
+        "SCN5A".into(),
+        "Brugada syndrome".into(),
+        Some("SCN5A".into()),
+        None,
+        None,
+    );
+    assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
+    assert_eq!(resolved.condition.as_deref(), Some("Brugada syndrome"));
+    assert!(fallback.is_none());
+
+    // An uppercase non-gene first token such as BRUGADA is refused by the
+    // oracle, so the whole phrase keeps the condition routing.
+    let (resolved, fallback) =
+        apply_gene_first_routing("BRUGADA".into(), "syndrome".into(), None, None, None);
+    assert_eq!(resolved.gene, None);
+    assert_eq!(resolved.condition.as_deref(), Some("BRUGADA syndrome"));
+    assert!(fallback.is_some());
+
+    // A confirmed alias routes under its canonical symbol.
+    let (resolved, fallback) = apply_gene_first_routing(
+        "ERBB1".into(),
+        "glioblastoma".into(),
+        Some("EGFR".into()),
+        None,
+        None,
+    );
+    assert_eq!(resolved.gene.as_deref(), Some("EGFR"));
+    assert_eq!(resolved.condition.as_deref(), Some("glioblastoma"));
+    assert!(fallback.is_none());
+}
+
+#[test]
+fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
+    // Confirmed path: the phrase routes gene-first and the explicit
+    // consequence filter survives beside it.
+    let (resolved, fallback) = apply_gene_first_routing(
+        "SCN5A".into(),
+        "Brugada".into(),
+        Some("SCN5A".into()),
+        None,
+        Some("missense_variant".into()),
+    );
+    assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
+    assert_eq!(resolved.condition.as_deref(), Some("Brugada"));
+    assert_eq!(resolved.consequence.as_deref(), Some("missense_variant"));
+    assert!(fallback.is_none());
+
+    // Refused path: the whole phrase stays the condition and the explicit
+    // hgvsp filter survives, normalized exactly as the standard path does.
+    let (resolved, fallback) = apply_gene_first_routing(
+        "BRUGADA".into(),
+        "syndrome".into(),
+        None,
+        Some("p.Val600Glu".into()),
+        None,
+    );
+    assert_eq!(resolved.gene, None);
+    assert_eq!(resolved.condition.as_deref(), Some("BRUGADA syndrome"));
+    assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+    // The standard path keeps the raw long form on the requested identity
+    // while the filter takes the compact spelling.
+    assert_eq!(
+        resolved
+            .requested_identity
+            .and_then(|identity| identity.protein_change),
+        Some("p.Val600Glu".into())
+    );
+    assert!(fallback.is_some());
+}
+
+#[test]
+fn gene_first_working_form_quotes_multi_word_conditions() {
+    assert_eq!(
+        gene_first_working_form("SCN5A", "Brugada syndrome"),
+        "biomcp search variant -g SCN5A --condition \"Brugada syndrome\""
+    );
+}
+
+#[test]
+fn variant_query_gene_routing_preference_defaults_to_mygene() {
+    let cases = [
+        (None, VariantQueryGeneRouting::Mygene),
+        (Some(""), VariantQueryGeneRouting::Mygene),
+        (Some("mygene"), VariantQueryGeneRouting::Mygene),
+        (Some("MYGENE"), VariantQueryGeneRouting::Mygene),
+        (Some("off"), VariantQueryGeneRouting::Off),
+        (Some("bogus"), VariantQueryGeneRouting::Mygene),
+    ];
+    for (value, expected) in cases {
+        assert_eq!(
+            VariantQueryGeneRouting::from_env_value(value),
+            expected,
+            "value: {value:?}"
+        );
+    }
+}
+
+/// Restores routing-related environment variables after one test; every
+/// setter shares the `variant_routing_env` serial group.
+struct RoutingEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl RoutingEnvRestore {
+    fn set(values: &[(&'static str, &str)]) -> Self {
+        let prior = values
+            .iter()
+            .map(|(name, _)| (*name, std::env::var_os(name)))
+            .collect::<Vec<_>>();
+        // SAFETY: these tests share the variant_routing_env serial group, and
+        // the guard restores every value before releasing that group.
+        unsafe {
+            for (name, value) in values {
+                std::env::set_var(name, value);
+            }
+        }
+        Self(prior)
+    }
+}
+
+impl Drop for RoutingEnvRestore {
+    fn drop(&mut self) {
+        // SAFETY: see RoutingEnvRestore::set.
+        unsafe {
+            for (name, value) in self.0.iter() {
+                match value {
+                    Some(value) => std::env::set_var(name, value),
+                    None => std::env::remove_var(name),
+                }
+            }
+        }
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(variant_routing_env)]
+async fn gene_routing_preference_off_skips_the_mygene_request() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind local mygene listener");
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let connections = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let counter = std::sync::Arc::clone(&connections);
+    let server = tokio::spawn(async move {
+        while let Ok((stream, _)) = listener.accept().await {
+            drop(stream);
+            counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }
+    });
+    let _env = RoutingEnvRestore::set(&[
+        ("BIOMCP_MYGENE_BASE", &base),
+        ("BIOMCP_VARIANT_QUERY_GENE_ROUTING", "off"),
+    ]);
+    let confirmed = confirm_gene_first_candidate("SCN5A").await;
+    server.abort();
+    assert_eq!(confirmed, None);
+    assert_eq!(
+        connections.load(std::sync::atomic::Ordering::SeqCst),
+        0,
+        "preference off must not contact MyGene at all"
+    );
+}
+
+#[test]
+fn resolve_variant_query_offers_gene_first_candidate_for_free_text_phrases() {
+    let resolved = resolve_variant_query(
+        None,
+        None,
+        None,
+        None,
+        vec!["SCN5A".into(), "Brugada".into()],
+    )
+    .unwrap();
+    assert_eq!(
+        resolved,
+        VariantSearchPlan::GeneFirstCandidate {
+            gene: "SCN5A".into(),
+            condition: "Brugada".into(),
+            hgvsp: None,
+            consequence: None,
+        }
+    );
+
+    // Explicit flags ride on the candidate so neither oracle branch can
+    // drop them.
+    let resolved = resolve_variant_query(
+        None,
+        Some("  p.Val600Glu  ".into()),
+        Some("missense_variant".into()),
+        None,
+        vec!["SCN5A".into(), "Brugada".into()],
+    )
+    .unwrap();
+    assert_eq!(
+        resolved,
+        VariantSearchPlan::GeneFirstCandidate {
+            gene: "SCN5A".into(),
+            condition: "Brugada".into(),
+            hgvsp: Some("p.Val600Glu".into()),
+            consequence: Some("missense_variant".into()),
+        }
+    );
+}
+
+#[test]
+fn resolve_variant_query_keeps_non_gene_phrases_as_conditions() {
+    let resolved = resolve_variant_query(
+        None,
+        None,
+        None,
+        None,
+        vec!["melanoma".into(), "treatment".into()],
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.gene, None);
+    assert_eq!(resolved.condition.as_deref(), Some("melanoma treatment"));
+}
+
+#[test]
+fn resolve_variant_query_keeps_explicit_gene_flag_routing() {
+    let resolved = resolve_variant_query(
+        Some("BRAF".into()),
+        None,
+        None,
+        None,
+        vec!["SCN5A".into(), "Brugada".into()],
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
+    assert_eq!(resolved.condition.as_deref(), Some("SCN5A Brugada"));
+}
+
+#[test]
+fn resolve_variant_query_still_rejects_condition_flag_with_positional_phrase() {
+    let error = resolve_variant_query(
+        None,
+        None,
+        None,
+        Some("Brugada".into()),
+        vec!["SCN5A".into(), "Brugada".into()],
+    )
+    .unwrap_err();
+    assert!(format!("{error}").contains("not both"));
 }
 
 #[test]

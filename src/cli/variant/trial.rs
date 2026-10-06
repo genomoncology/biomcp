@@ -8,7 +8,7 @@ pub(super) async fn variant_trial_mutation_query(id: &str) -> String {
         crate::entities::variant::parse_variant_id(id)
     {
         let normalized = crate::entities::variant::normalize_protein_change(&change)
-            .unwrap_or_else(|| super::dispatch::trim_protein_change_prefix(&change).to_string());
+            .unwrap_or_else(|| super::query::trim_protein_change_prefix(&change).to_string());
         if !normalized.is_empty() {
             return format!("{gene} {normalized}");
         }
@@ -20,9 +20,8 @@ pub(super) async fn variant_trial_mutation_query(id: &str) -> String {
             .hgvs_p
             .as_deref()
             .map(|value| {
-                crate::entities::variant::normalize_protein_change(value).unwrap_or_else(|| {
-                    super::dispatch::trim_protein_change_prefix(value).to_string()
-                })
+                crate::entities::variant::normalize_protein_change(value)
+                    .unwrap_or_else(|| super::query::trim_protein_change_prefix(value).to_string())
             })
             .unwrap_or_default();
         if !gene.is_empty() && !protein.is_empty() {
