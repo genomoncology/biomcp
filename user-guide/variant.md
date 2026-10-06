@@ -8,6 +8,7 @@ and optional predictive and population-genetics sections.
 BioMCP supports multiple input forms:
 
 - rsID: `rs113488022`
+- ClinVar VariationID: `577152`
 - HGVS genomic: `chr7:g.140453136A>T`
 - exact-copy repeat: `chr19:g.11106928AAG[1]`
 - range deletion: `chr2:g.47641567_47641569del`
@@ -21,7 +22,12 @@ BioMCP supports multiple input forms:
 - VCF-like: `chr10:87925512:G:A`
 - SPDI: `NC_000010.11:87925511:G:A`
 - versioned RefSeq deletion: `NC_000010.11:g.87925512del`
-- gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`
+- transcript coding HGVS: `NM_000249.4:c.678-14_678-3del` (intronic offsets resolve through ClinVar's coding aliases when normalization services refuse)
+- gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`, `EGFR E746_A750del`
+
+ClinVar-style names that keep the gene in parentheses, such as
+`NM_000249.4(MLH1):c.678-14_678-3del`, are refused with the colon working form
+printed in the message; BioMCP never half-parses them.
 
 These exact formats are accepted by `biomcp get variant` and the exact-ID
 helper commands. Use `--assembly hg19` or `--assembly hg38` to declare the

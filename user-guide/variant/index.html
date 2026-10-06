@@ -4579,6 +4579,7 @@ and optional predictive and population-genetics sections.</p>
 <p>BioMCP supports multiple input forms:</p>
 <ul>
 <li>rsID: <code>rs113488022</code></li>
+<li>ClinVar VariationID: <code>577152</code></li>
 <li>HGVS genomic: <code>chr7:g.140453136A&gt;T</code></li>
 <li>exact-copy repeat: <code>chr19:g.11106928AAG[1]</code></li>
 <li>range deletion: <code>chr2:g.47641567_47641569del</code></li>
@@ -4592,8 +4593,12 @@ and optional predictive and population-genetics sections.</p>
 <li>VCF-like: <code>chr10:87925512:G:A</code></li>
 <li>SPDI: <code>NC_000010.11:87925511:G:A</code></li>
 <li>versioned RefSeq deletion: <code>NC_000010.11:g.87925512del</code></li>
-<li>gene-protein form: <code>BRAF V600E</code>, <code>BRAF p.Val600Glu</code></li>
+<li>transcript coding HGVS: <code>NM_000249.4:c.678-14_678-3del</code> (intronic offsets resolve through ClinVar's coding aliases when normalization services refuse)</li>
+<li>gene-protein form: <code>BRAF V600E</code>, <code>BRAF p.Val600Glu</code>, <code>EGFR E746_A750del</code></li>
 </ul>
+<p>ClinVar-style names that keep the gene in parentheses, such as
+<code>NM_000249.4(MLH1):c.678-14_678-3del</code>, are refused with the colon working form
+printed in the message; BioMCP never half-parses them.</p>
 <p>These exact formats are accepted by <code>biomcp get variant</code> and the exact-ID
 helper commands. Use <code>--assembly hg19</code> or <code>--assembly hg38</code> to declare the
 build for a chromosome-prefixed coordinate; build-qualified and versioned RefSeq
