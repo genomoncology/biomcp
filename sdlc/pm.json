@@ -6,10 +6,6 @@
   },
   "evidenceFromTicketNumber": 2009,
   "landedProofFromTicketNumber": 1,
-  "ownedElsewhere": [
-    "sdlc/tickets/1*.md",
-    "sdlc/records/1*.md"
-  ],
   "mailroom": {
     "repo": "sdlc",
     "name": "biomcp"
@@ -30,11 +26,6 @@
   ],
   "releaseMilestones": [
     {
-      "name": "0.9.2",
-      "targetRef": "main",
-      "state": "active"
-    },
-    {
       "name": "1.0",
       "targetRef": "biodata/biomcp-1.0",
       "state": "active"
@@ -46,7 +37,6 @@
   "milestones": {
     "file": "planning/milestones.md",
     "values": [
-      "0.9.2",
       "1.0"
     ]
   }
