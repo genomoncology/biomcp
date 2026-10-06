@@ -515,6 +515,9 @@ pub struct ArticleOmittedCoverage {
 pub struct ArticleGetOptions {
     pub allow_pdf: bool,
     pub include_asset_summary: bool,
+    /// Collect PubTator passage positions for each annotation row.
+    /// Off by default: every other consumer keeps the compact shape.
+    pub include_annotation_positions: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -614,10 +617,29 @@ pub struct ArticleAnnotations {
     pub mutations: Vec<AnnotationCount>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AnnotationCount {
     pub text: String,
     pub count: u32,
+    /// Identifier namespace PubTator3 assigns, for example `NCBIGene`,
+    /// `MESH`, `OMIM`, `rsID`, or `HGVS`. Absent when the mention carries
+    /// no usable identifier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    /// Identifier exactly as PubTator3 gives it, for example `3845`,
+    /// `MESH:D002289`, or `rs121913529`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identifier: Option<String>,
+    /// Mention spans as document-global character offsets. Present only when
+    /// the caller asked for positions.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub positions: Vec<AnnotationPosition>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AnnotationPosition {
+    pub offset: u64,
+    pub length: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

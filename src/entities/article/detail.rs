@@ -287,6 +287,7 @@ pub(super) async fn resolve_article_from_pmid(
     pubtator: &PubTatorClient,
     europe: &EuropePmcClient,
     europe_hint: Option<&EuropePmcResult>,
+    include_annotation_positions: bool,
 ) -> Result<Article, BioMcpError> {
     resolve_article_from_pmid_with_context(
         pmid,
@@ -296,10 +297,12 @@ pub(super) async fn resolve_article_from_pmid(
         europe,
         europe_hint,
         None,
+        include_annotation_positions,
     )
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) async fn resolve_article_from_pmid_with_context(
     pmid: u32,
     not_found_id: &str,
@@ -308,6 +311,7 @@ pub(super) async fn resolve_article_from_pmid_with_context(
     europe: &EuropePmcClient,
     europe_hint: Option<&EuropePmcResult>,
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    include_annotation_positions: bool,
 ) -> Result<Article, BioMcpError> {
     if let Some(execution) = execution {
         return resolve_variant_article_from_pmid(
@@ -349,7 +353,8 @@ pub(super) async fn resolve_article_from_pmid_with_context(
             {
                 transform::article::merge_europepmc_metadata(&mut article, &hit);
             }
-            article.annotations = transform::article::extract_annotations(&doc);
+            article.annotations =
+                transform::article::extract_annotations(&doc, include_annotation_positions);
             Ok(article)
         }
         Err(err) => {
@@ -410,7 +415,7 @@ pub(super) async fn resolve_variant_article_from_pmid(
             };
             let mut article = transform::article::from_pubtator_document(&doc);
             unit.commit("ok", 1, || {
-                article.annotations = transform::article::extract_annotations(&doc);
+                article.annotations = transform::article::extract_annotations(&doc, false);
             });
             if let Some(hit) = europe_hint {
                 transform::article::merge_europepmc_metadata(&mut article, hit);
@@ -497,6 +502,7 @@ pub(super) async fn get_article_base_with_clients(
     id: &str,
     pubtator: &PubTatorClient,
     europe: &EuropePmcClient,
+    include_annotation_positions: bool,
 ) -> Result<Article, BioMcpError> {
     let id = id.trim();
     if id.is_empty() {
@@ -510,7 +516,16 @@ pub(super) async fn get_article_base_with_clients(
 
     match parse_article_id(id) {
         ArticleIdType::Pmid(pmid) => {
-            resolve_article_from_pmid(pmid, id, id, pubtator, europe, None).await
+            resolve_article_from_pmid(
+                pmid,
+                id,
+                id,
+                pubtator,
+                europe,
+                None,
+                include_annotation_positions,
+            )
+            .await
         }
         ArticleIdType::Doi(doi) => {
             let search = europe.search_by_doi(&doi).await?;
@@ -520,7 +535,16 @@ pub(super) async fn get_article_base_with_clients(
             let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&doi, id))?;
 
             if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
-                resolve_article_from_pmid(pmid, &doi, id, pubtator, europe, Some(&hit)).await
+                resolve_article_from_pmid(
+                    pmid,
+                    &doi,
+                    id,
+                    pubtator,
+                    europe,
+                    Some(&hit),
+                    include_annotation_positions,
+                )
+                .await
             } else {
                 Ok(transform::article::from_europepmc_result(&hit))
             }
@@ -533,7 +557,16 @@ pub(super) async fn get_article_base_with_clients(
             let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&pmcid, id))?;
 
             if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
-                resolve_article_from_pmid(pmid, &pmcid, id, pubtator, europe, Some(&hit)).await
+                resolve_article_from_pmid(
+                    pmid,
+                    &pmcid,
+                    id,
+                    pubtator,
+                    europe,
+                    Some(&hit),
+                    include_annotation_positions,
+                )
+                .await
             } else {
                 Ok(transform::article::from_europepmc_result(&hit))
             }
@@ -542,10 +575,13 @@ pub(super) async fn get_article_base_with_clients(
     }
 }
 
-pub(super) async fn get_article_base(id: &str) -> Result<Article, BioMcpError> {
+pub(super) async fn get_article_base(
+    id: &str,
+    include_annotation_positions: bool,
+) -> Result<Article, BioMcpError> {
     let pubtator = PubTatorClient::new()?;
     let europe = EuropePmcClient::new()?;
-    get_article_base_with_clients(id, &pubtator, &europe).await
+    get_article_base_with_clients(id, &pubtator, &europe, include_annotation_positions).await
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -732,7 +768,7 @@ pub async fn get(
         ));
     }
     let section_only = is_section_only_request(sections, section_flags.include_all);
-    let mut article = get_article_base(id).await?;
+    let mut article = get_article_base(id, options.include_annotation_positions).await?;
 
     if section_flags.include_indexing {
         enrich_article_with_indexing(&mut article).await;

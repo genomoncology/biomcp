@@ -391,33 +391,40 @@ fn related_article_uses_article_entities_helper_command() {
                 AnnotationCount {
                     text: "serine-threonine protein kinase".to_string(),
                     count: 7,
+                ..Default::default()
                 },
                 AnnotationCount {
                     text: "BRAF".to_string(),
                     count: 5,
+                ..Default::default()
                 },
                 AnnotationCount {
                     text: "MEK".to_string(),
                     count: 3,
+                ..Default::default()
                 },
                 AnnotationCount {
                     text: "B-RAF".to_string(),
                     count: 1,
+                ..Default::default()
                 },
             ],
             diseases: vec![
                 AnnotationCount {
                     text: "melanoma".to_string(),
                     count: 2,
+                ..Default::default()
                 },
                 AnnotationCount {
                     text: "metastatic melanoma".to_string(),
                     count: 1,
+                ..Default::default()
                 },
             ],
             chemicals: vec![AnnotationCount {
                 text: "trametinib".to_string(),
                 count: 8,
+            ..Default::default()
             }],
             mutations: Vec::new(),
         }),

@@ -377,6 +377,16 @@ pub struct PubTatorAnnotation {
     pub id: Option<String>,
     pub text: Option<String>,
     pub infons: Option<PubTatorAnnotationInfons>,
+    #[serde(default)]
+    pub locations: Vec<PubTatorLocation>,
+}
+
+/// One mention span. PubTator3 offsets are document-global character offsets,
+/// not passage-local offsets.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PubTatorLocation {
+    pub offset: u64,
+    pub length: u64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -410,6 +420,8 @@ pub struct PubTatorAnnotationInfons {
     pub hgvs: Option<String>,
     pub gene_id: Option<u64>,
     pub gene_ids: Option<Vec<u64>>,
+    pub rsid: Option<String>,
+    pub rsids: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

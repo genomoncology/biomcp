@@ -98,6 +98,7 @@ def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None
         "pmc_oa/pmc3040717.1.json",
         "pmc_oa/pmc3040717.1.xml",
         "pubtator/export_20516115.json",
+        "pubtator/export_30738221.json",
         "semantic_scholar/pmid20516115-batch.json",
         "semantic_scholar/pmid20516115-citations.json",
         "semantic_scholar/pmid20516115-recommendations.json",

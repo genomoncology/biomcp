@@ -210,10 +210,10 @@ pub fn article_entities_markdown(
         command: String,
     }
 
-    fn row(text: &str, count: u32, command: String) -> EntityRow {
+    fn row(annotation: &AnnotationCount, command: String) -> EntityRow {
         EntityRow {
-            text: text.to_string(),
-            count,
+            text: annotation.text.trim().to_string(),
+            count: annotation.count,
             command,
         }
     }
@@ -223,36 +223,29 @@ pub fn article_entities_markdown(
             ann.genes
                 .iter()
                 .filter_map(|g| {
-                    let text = g.text.trim();
-                    let command = article_annotation_command(ArticleAnnotationBucket::Gene, text)?;
-                    Some(row(text, g.count, command))
+                    let command = article_annotation_command(ArticleAnnotationBucket::Gene, g)?;
+                    Some(row(g, command))
                 })
                 .collect::<Vec<_>>(),
             ann.diseases
                 .iter()
                 .filter_map(|d| {
-                    let text = d.text.trim();
-                    let command =
-                        article_annotation_command(ArticleAnnotationBucket::Disease, text)?;
-                    Some(row(text, d.count, command))
+                    let command = article_annotation_command(ArticleAnnotationBucket::Disease, d)?;
+                    Some(row(d, command))
                 })
                 .collect::<Vec<_>>(),
             ann.chemicals
                 .iter()
                 .filter_map(|c| {
-                    let text = c.text.trim();
-                    let command =
-                        article_annotation_command(ArticleAnnotationBucket::Chemical, text)?;
-                    Some(row(text, c.count, command))
+                    let command = article_annotation_command(ArticleAnnotationBucket::Chemical, c)?;
+                    Some(row(c, command))
                 })
                 .collect::<Vec<_>>(),
             ann.mutations
                 .iter()
                 .filter_map(|m| {
-                    let text = m.text.trim();
-                    let command =
-                        article_annotation_command(ArticleAnnotationBucket::Mutation, text)?;
-                    Some(row(text, m.count, command))
+                    let command = article_annotation_command(ArticleAnnotationBucket::Mutation, m)?;
+                    Some(row(m, command))
                 })
                 .collect::<Vec<_>>(),
         )

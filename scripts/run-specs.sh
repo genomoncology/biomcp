@@ -44,6 +44,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/cli-contract-ratchet.md
   spec/surface/build-profile.md
   spec/surface/trial-retirement.md
+  spec/entity/article-entities.md
 )
 
 SPEC_STATIC_PATHS=(
@@ -114,7 +115,7 @@ partition_paths() {
     case "$path" in
       # These pages share one article server and its mutable request log, so
       # Mustmatch retains their declared order in one serial invocation.
-      spec/entity/article.md|spec/entity/author.md|spec/surface/mcp.md) ARTICLE_MD_PATHS+=("$path") ;;
+      spec/entity/article.md|spec/entity/author.md|spec/surface/mcp.md|spec/entity/article-entities.md) ARTICLE_MD_PATHS+=("$path") ;;
       # This page owns a separate setup/cleanup subshell and generated inputs.
       spec/entity/section-outcomes.md) SECTION_OUTCOME_MD_PATHS+=("$path") ;;
       *.md) MD_PATHS+=("$path") ;;

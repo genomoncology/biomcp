@@ -370,7 +370,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         }
         let lookup_id = rows[row_idx].pmid.clone();
         let result = resolve_article_from_pmid_with_context(
-            pmid, &lookup_id, &lookup_id, &pubtator, &europe, None, execution,
+            pmid, &lookup_id, &lookup_id, &pubtator, &europe, None, execution, false,
         )
         .await;
         match result {

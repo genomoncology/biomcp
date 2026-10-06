@@ -376,40 +376,48 @@ fn truncate_article_annotations_applies_limit_per_bucket() {
             crate::entities::article::AnnotationCount {
                 text: "BRAF".into(),
                 count: 2,
+                ..Default::default()
             },
             crate::entities::article::AnnotationCount {
                 text: "TP53".into(),
                 count: 1,
+                ..Default::default()
             },
         ],
         diseases: vec![
             crate::entities::article::AnnotationCount {
                 text: "melanoma".into(),
                 count: 2,
+                ..Default::default()
             },
             crate::entities::article::AnnotationCount {
                 text: "glioma".into(),
                 count: 1,
+                ..Default::default()
             },
         ],
         chemicals: vec![
             crate::entities::article::AnnotationCount {
                 text: "vemurafenib".into(),
                 count: 1,
+                ..Default::default()
             },
             crate::entities::article::AnnotationCount {
                 text: "dabrafenib".into(),
                 count: 1,
+                ..Default::default()
             },
         ],
         mutations: vec![
             crate::entities::article::AnnotationCount {
                 text: "V600E".into(),
                 count: 1,
+                ..Default::default()
             },
             crate::entities::article::AnnotationCount {
                 text: "L858R".into(),
                 count: 1,
+                ..Default::default()
             },
         ],
     };
