@@ -62,20 +62,18 @@ fn card(mode: &str, name: &str) -> Value {
 
 fn native_card(mode: &str, name: &str) -> Value {
     let mut card = card(mode, name);
-    let mut sources = json!([{"key":"identity","label":"Identity","outcome":"data","sources":["MyVariant.info","ClinVar"]}]);
+    let mut sources = json!([{"key":"identity","label":"Identity","outcome":"data","sources":["MyVariant.info","ClinVar"]}, {"key":"expanded_predictions","label":"Expanded Predictions","outcome":"data","sources":["MyVariant.info"]}]);
     if mode != "default" {
         sources.as_array_mut().unwrap().push(json!({"key":"clinvar","label":"ClinVar",
             "outcome":card["section_outcomes"]["clinvar"]["outcome"],"sources":card["section_outcomes"]["clinvar"]["sources"]}));
     }
     card["_meta"] = json!({"evidence_urls":[],"next_commands":["biomcp get gene BRAF","biomcp search drug --target BRAF",
         "biomcp variant trials \"chr7:g.140453136A>T\"","biomcp variant articles \"chr7:g.140453136A>T\""],"section_sources":sources});
-    if mode != "missing" {
-        card["_meta"]["workflow"] = json!("variant-pathogenicity");
-        card["_meta"]["workflow_rationale"] = json!(
-            "Start with ClinVar, prediction, and population context, then widen to cancer evidence, trials, and literature."
-        );
-        card["_meta"]["workflow_playbook"] = json!("biomcp skill variant-pathogenicity");
-    }
+    card["_meta"]["workflow"] = json!("variant-pathogenicity");
+    card["_meta"]["workflow_rationale"] = json!(
+        "Start with ClinVar, prediction, and population context, then widen to cancer evidence, trials, and literature."
+    );
+    card["_meta"]["workflow_playbook"] = json!("biomcp skill variant-pathogenicity");
     card
 }
 

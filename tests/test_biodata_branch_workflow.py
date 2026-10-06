@@ -70,7 +70,7 @@ def _load_mutation(tmp_path: Path, text: str) -> FocusedSelection:
 
 def test_manifest_is_the_only_focused_selection_source() -> None:
     selection = load_selection(MANIFEST)
-    assert len(selection.rust) == 508
+    assert len(selection.rust) == 549
     assert len(selection.python) == 15
     runner = RUNNER.read_text(encoding="utf-8")
     assert runner.count("biodata-1.0-focused.toml") == 1
