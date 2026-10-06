@@ -10,7 +10,6 @@ use crate::error::BioMcpError;
 mod filter_conflicts;
 mod filter_keys;
 use crate::sources::{RequestPlan, is_valid_gene_symbol, request_from_plan};
-use crate::utils::serde::StringOrVec;
 use filter_conflicts::validate_missing_filter_conflicts;
 use filter_keys::normalize_filter_key;
 
@@ -880,7 +879,12 @@ pub struct MyVariantHit {
         serialize_with = "biodata::MyVariantExac::serialize"
     )]
     pub exac_nontcga: Option<biodata::MyVariantExacProjection>,
-    pub cosmic: Option<MyVariantCosmic>,
+    #[serde(
+        default,
+        deserialize_with = "biodata::MyVariantCosmic::deserialize",
+        serialize_with = "biodata::MyVariantCosmic::serialize"
+    )]
+    pub cosmic: Option<biodata::MyVariantCosmicProjection>,
     pub cgi: Option<serde_json::Value>,
     pub civic: Option<serde_json::Value>,
     #[serde(
@@ -942,17 +946,6 @@ fn serialize_snpeff<S: serde::Serializer>(
         }
     }
     projection.as_ref().map(Encode).serialize(serializer)
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct MyVariantCosmic {
-    #[serde(default)]
-    pub cosmic_id: StringOrVec,
-    pub mut_freq: Option<f64>,
-    #[serde(default)]
-    pub tumor_site: StringOrVec,
-    #[serde(default)]
-    pub mut_nt: StringOrVec,
 }
 
 #[cfg(test)]

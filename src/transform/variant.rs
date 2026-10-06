@@ -343,9 +343,17 @@ fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
     let cosmic = hit.cosmic.as_ref()?;
 
     let context = VariantCosmicContext {
-        mut_freq: cosmic.mut_freq,
-        tumor_site: first_nonempty(cosmic.tumor_site.first()),
-        mut_nt: first_nonempty(cosmic.mut_nt.first()),
+        mut_freq: cosmic.mut_freq(),
+        tumor_site: first_nonempty(
+            cosmic
+                .tumor_site()
+                .and_then(biodata::MyVariantCosmicText::first),
+        ),
+        mut_nt: first_nonempty(
+            cosmic
+                .mut_nt()
+                .and_then(biodata::MyVariantCosmicText::first),
+        ),
     };
 
     if context.mut_freq.is_none() && context.tumor_site.is_none() && context.mut_nt.is_none() {
@@ -823,9 +831,9 @@ fn from_myvariant_annotation(
     let cosmic_id = hit
         .cosmic
         .as_ref()
-        .map(|c| c.cosmic_id.clone().into_vec())
-        .unwrap_or_default()
+        .and_then(biodata::MyVariantCosmicProjection::cosmic_id)
         .into_iter()
+        .flat_map(biodata::MyVariantCosmicText::values)
         .map(|s| s.trim().to_string())
         .find(|s| !s.is_empty());
 

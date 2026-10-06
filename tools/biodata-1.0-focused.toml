@@ -2,6 +2,10 @@ version = 1
 
 [selection]
 rust = [
+  "sources::myvariant::tests::cosmic_adoption::cosmic_preserves_complete_hit_order_presence_and_carriers",
+  "sources::myvariant::tests::cosmic_adoption::cosmic_callable_clients_preserve_rows_masks_and_canonical_hits",
+  "sources::myvariant::tests::cosmic_adoption::cosmic_owned_failures_are_private_through_search_get_and_get_all",
+  "entities::variant::get::cadd_adoption_tests::cosmic_adoption_tests::cosmic_callable_detail_preserves_id_context_and_section_policy",
   "sources::myvariant::tests::exac_adoption::exac_pair_preserves_complete_hit_order_and_independent_presence",
   "sources::myvariant::tests::exac_adoption::exac_pair_callable_clients_preserve_rows_masks_and_canonical_hits",
   "sources::myvariant::tests::exac_adoption::exac_pair_owned_failures_are_private_through_search_get_and_get_all",

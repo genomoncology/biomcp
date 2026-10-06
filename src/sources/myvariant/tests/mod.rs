@@ -19,4 +19,5 @@ mod gnomad_adoption;
 
 mod cadd_adoption;
 
+mod cosmic_adoption;
 mod exac_adoption;

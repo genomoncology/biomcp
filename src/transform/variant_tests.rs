@@ -227,7 +227,6 @@ fn extracts_expanded_variant_sections() {
     assert!(variant.conservation.is_some());
     assert!(!variant.expanded_predictions.is_empty());
     assert!(variant.population.is_none());
-    assert!(variant.cosmic_context.is_some());
     assert_eq!(variant.cgi_associations.len(), 1);
     assert_eq!(
         variant

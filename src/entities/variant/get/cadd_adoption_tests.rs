@@ -108,3 +108,6 @@ async fn cadd_callable_detail_preserves_scores_first_selection_and_public_omissi
         }
     }
 }
+
+#[path = "cosmic_adoption_tests.rs"]
+mod cosmic_adoption_tests;
