@@ -650,7 +650,7 @@ impl BioMcpError {
             }
             if message == "invocation deadline exceeded" {
                 return PublicErrorProjection {
-                    message: "Article citation evidence exceeded its invocation deadline before any source answered."
+                    message: "Article citation evidence exceeded its invocation deadline."
                         .to_string(),
                     source: None,
                     recovery: Some("Retry the command; slow sources may answer next time."),
@@ -1252,7 +1252,7 @@ mod tests {
         let projection = error.public_projection();
         assert_eq!(
             projection.message,
-            "Article citation evidence exceeded its invocation deadline before any source answered."
+            "Article citation evidence exceeded its invocation deadline."
         );
         assert_eq!(projection.source, None);
         assert!(!format!("{projection:?}").contains("BioMCP source"));

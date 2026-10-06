@@ -211,6 +211,12 @@ async fn citation_evidence_deadline_bounds_late_jats_workers_under_one_permit() 
         1,
         "the late worker never re-ran"
     );
+    for error in [&first_error, &second_error] {
+        assert_eq!(
+            error.public_projection().message,
+            "Article citation evidence exceeded its invocation deadline."
+        );
+    }
 }
 
 #[tokio::test]

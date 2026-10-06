@@ -71,23 +71,23 @@
     },
     {
       "path": "src/entities/article/graph/citation_evidence.rs",
-      "baseline_lines": 1196,
+      "baseline_lines": 1209,
       "floor_lines": 859,
       "authorized_increase": {
         "ticket": "1302",
-        "delta": 337,
-        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes. The dedicated branch resolves degraded PMID and PMCID inputs through the adopted BioData Europe PMC detail plan and article transform.",
+        "delta": 350,
+        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes. The dedicated branch resolves degraded PMID and PMCID inputs through the adopted BioData Europe PMC detail plan and article transform. Preserve answered citing seeds across second-seed refusals and verify truthful deadline projections.",
         "removal_condition": "Extract the degraded confirmation phase and the refusal vocabulary when the citation-evidence module is next decomposed."
       }
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 2226,
+      "baseline_lines": 2298,
       "floor_lines": 998,
       "authorized_increase": {
         "ticket": "1200, biodata-0152, 1302",
-        "delta": 1228,
-        "reason": "Ticket 1200's OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases (734 lines) beside the existing citation-evidence composition tests; BioData ticket 0152 later adds the retained Europe PMC PMCID first-row seed proof (70 lines). Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs.",
+        "delta": 1300,
+        "reason": "Ticket 1200's OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases (734 lines) beside the existing citation-evidence composition tests; BioData ticket 0152 later adds the retained Europe PMC PMCID first-row seed proof (70 lines). Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs. Preserve answered citing seeds across second-seed refusals and verify truthful deadline projections.",
         "removal_condition": "Move the OpenCitations confirmation-phase tests and the retained Europe PMC PMCID first-row seed proof to dedicated citation test submodules when the article test modules are next reorganized."
       }
     },

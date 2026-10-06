@@ -1749,6 +1749,8 @@ enum S2Reply {
     SeedsWithWalkRefused(&'static str),
     /// Every Semantic Scholar request answers the configured refusal status.
     Refused(&'static str),
+    /// The citing seed answers, then the cited seed refuses.
+    CitingSeedWithCitedRefused(&'static str),
 }
 
 /// One Europe PMC search hit naming the citing fixture paper.
@@ -1785,8 +1787,12 @@ async fn spawn_degradation_fixture(
             logged.lock().unwrap().push("s2:seed".to_string());
             match &s2 {
                 S2Reply::Refused(status) => s2_reply(status),
-                S2Reply::SeedsWithWalkRefused(_) => {
-                    let row = if request.contains(OPEN_CITING_PMID)
+                S2Reply::CitingSeedWithCitedRefused(status) if request.contains(OPEN_CITED_DOI) => {
+                    s2_reply(status)
+                }
+                S2Reply::SeedsWithWalkRefused(_) | S2Reply::CitingSeedWithCitedRefused(_) => {
+                    let row = if matches!(s2, S2Reply::CitingSeedWithCitedRefused(_))
+                        || request.contains(OPEN_CITING_PMID)
                         || request.contains(OPEN_CITING_DOI)
                     {
                         format!(
@@ -1832,7 +1838,8 @@ async fn spawn_degradation_fixture(
             logged.lock().unwrap().push("s2:graph".to_string());
             match &s2 {
                 S2Reply::Refused(status) => s2_reply(status),
-                S2Reply::SeedsWithWalkRefused(status) => s2_reply(status),
+                S2Reply::SeedsWithWalkRefused(status)
+                | S2Reply::CitingSeedWithCitedRefused(status) => s2_reply(status),
             }
         } else {
             TestHttpReply::Bytes(test_http_response(
@@ -1959,6 +1966,71 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
     assert!(!logged.contains("s2:graph"), "{logged}");
     assert_eq!(logged.matches("europe:search").count(), 1, "{logged}");
     assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_keeps_the_answered_seed_when_the_second_seed_refuses() {
+    use crate::entities::article::graph::citation_evidence::CitationEvidenceStatus;
+
+    for status in ["429 Too Many Requests", "503 Service Unavailable"] {
+        for citing_id in [OPEN_CITING_PID, "arXiv:2401.01234", OPEN_CITING_PMID] {
+            let (_env, _cache, fixture, requests) = degradation_case(
+                "citation-second-seed-refused",
+                S2Reply::CitingSeedWithCitedRefused(status),
+                OpenCitationsReply::Rows(opencitations_row(
+                    "061502131318-062102119315",
+                    "2012-07-12",
+                )),
+            )
+            .await;
+            let client = SemanticScholarClient::new_with_cache_observers(
+                &fixture.base,
+                |_, _| {},
+                |_, _| {},
+            )
+            .unwrap();
+            let result = crate::sources::semantic_scholar::with_test_client(
+                client,
+                citation_evidence(citing_id, OPEN_CITED_DOI, false),
+            )
+            .await
+            .expect("the answered citing DOI must survive the second refusal");
+
+            assert_eq!(result.citing.paper_id.as_deref(), Some(OPEN_CITING_PID));
+            assert_eq!(result.citing.doi.as_deref(), Some(OPEN_CITING_DOI));
+            assert_eq!(result.citing.title, "Citing");
+            assert_eq!(result.cited.doi.as_deref(), Some(OPEN_CITED_DOI));
+            assert_eq!(
+                result.status,
+                CitationEvidenceStatus::ReferenceConfirmedWithoutPassage
+            );
+            let confirmation = result
+                .confirmation
+                .expect("the index confirms the directed edge");
+            assert_eq!(confirmation.citing, format!("doi:{OPEN_CITING_DOI}"));
+            assert_eq!(confirmation.cited, format!("doi:{OPEN_CITED_DOI}"));
+            assert!(result.passages.is_empty());
+            assert!(result.provider_contexts.is_empty());
+            assert_eq!(result.source.as_deref(), Some("opencitations"));
+            assert_eq!(
+                result._meta.source_status[0].status,
+                if status.starts_with("429") {
+                    "rate_limited"
+                } else {
+                    "unavailable"
+                }
+            );
+            let logged = requests.lock().unwrap().join("\n");
+            assert_eq!(logged.matches("s2:seed").count(), 2, "{logged}");
+            assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
+            assert!(
+                !logged.contains("europe:search"),
+                "do not re-resolve an answered seed: {logged}"
+            );
+            assert!(!logged.contains("s2:graph"), "{logged}");
+        }
+    }
 }
 
 #[tokio::test]

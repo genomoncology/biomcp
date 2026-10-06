@@ -971,7 +971,20 @@ pub async fn citation_evidence(
     let (cited, cited_paper) = match citation_seed(cited_id, &client, &europe, deadline).await? {
         SeedOutcome::Resolved(pair) => *pair,
         SeedOutcome::Refused(state) => {
-            return degraded_from_inputs(citing_id, cited_id, state, &europe, deadline).await;
+            let (cited, cited_doi) = degraded_input_paper(cited_id, &europe, deadline).await;
+            return degraded_confirmation(
+                &DegradedPair {
+                    citing,
+                    cited,
+                    citing_id: citing_id.trim().to_string(),
+                    cited_id: cited_id.trim().to_string(),
+                    citing_doi: external_doi(&citing_paper),
+                    cited_doi,
+                },
+                state,
+                deadline,
+            )
+            .await;
         }
     };
     let citing_pid = valid_paper_id(citing.paper_id.as_deref())
