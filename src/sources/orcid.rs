@@ -424,7 +424,13 @@ impl OrcidPersonResponse {
     /// error when no usable public name exists.
     pub(crate) fn public_display_name(&self) -> Result<String, BioMcpError> {
         let name = self.name.as_ref().ok_or_else(contract)?;
-        if name.visibility() != Some("PUBLIC") {
+        // ORCID documents lowercase visibility values and its v3.0 API sends
+        // "public"; the comparison is case-insensitive so both spellings of
+        // the same value pass and every other value still refuses.
+        if !name
+            .visibility()
+            .is_some_and(|value| value.eq_ignore_ascii_case("public"))
+        {
             return Err(contract());
         }
         fn field(value: &Option<OrcidTextValue>) -> Option<&str> {

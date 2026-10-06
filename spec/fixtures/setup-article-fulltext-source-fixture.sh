@@ -235,12 +235,12 @@ AUTHOR_ENTITY_PAPERS = {
         "authors": [{**AUTHOR_FORBIDDEN, "authorId": "1716151", "name": "A. Butte"}],
     }],
 }
-ORCID_FORBIDDEN = {"email": "private-orcid@example.invalid", "biography": {"visibility": "PRIVATE", "content": "private-orcid-biography-sentinel"}, "researcher-urls": {"researcher-url": [{"url-name": "homepage", "url": {"value": "https://private.example.invalid/orcid"}}]}}
+ORCID_FORBIDDEN = {"email": "private-orcid@example.invalid", "biography": {"visibility": "private", "content": "private-orcid-biography-sentinel"}, "researcher-urls": {"researcher-url": [{"url-name": "homepage", "url": {"value": "https://private.example.invalid/orcid"}}]}}
 ORCID_PERSON_BODY = {
     "path": "/0000-0002-1825-0097/person",
     **ORCID_FORBIDDEN,
     "name": {
-        "visibility": "PUBLIC",
+        "visibility": "public",
         "given-names": {"value": "Josiah"},
         "family-name": {"value": "Carberry"},
     },

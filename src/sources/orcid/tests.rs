@@ -50,7 +50,7 @@ fn token_classification_matches_the_frozen_three_states() {
 #[test]
 fn person_path_and_public_name_precedence() {
     let response: OrcidPersonResponse = serde_json::from_str(
-        r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"PUBLIC","given-names":{"value":" Josiah "},"family-name":{"value":"Carberry"}}}"#,
+        r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"public","given-names":{"value":" Josiah "},"family-name":{"value":"Carberry"}}}"#,
     )
     .unwrap();
     let response = response.validate("0000-0002-1825-0097").unwrap();
@@ -58,6 +58,42 @@ fn person_path_and_public_name_precedence() {
     let wrong: OrcidPersonResponse =
         serde_json::from_str(r#"{"path":"/other/person","name":null}"#).unwrap();
     assert!(wrong.validate("0000-0002-1825-0097").is_err());
+}
+
+#[test]
+fn person_name_visibility_accepts_both_spellings_of_public_and_refuses_the_rest() {
+    // ORCID's v3.0 API sends lowercase "public" (the recorded demo capture
+    // in testdata/sources/orcid/); the uppercase spelling names the same
+    // value. Every nonpublic value, and an absent visibility, still refuse
+    // the projection.
+    let body = |visibility: &str| {
+        format!(
+            r#"{{"path":"/0000-0002-1825-0097/person","name":{{"visibility":"{visibility}","given-names":{{"value":"Josiah"}},"family-name":{{"value":"Carberry"}}}}}}"#
+        )
+    };
+    for visibility in ["public", "PUBLIC"] {
+        let response: OrcidPersonResponse = serde_json::from_str(&body(visibility)).unwrap();
+        let response = response.validate("0000-0002-1825-0097").unwrap();
+        assert_eq!(
+            response.public_display_name().expect(visibility),
+            "Josiah Carberry"
+        );
+    }
+    for visibility in ["limited", "private"] {
+        let response: OrcidPersonResponse = serde_json::from_str(&body(visibility)).unwrap();
+        let response = response.validate("0000-0002-1825-0097").unwrap();
+        assert!(
+            response.public_display_name().is_err(),
+            "{visibility} must refuse the projection"
+        );
+    }
+    let absent = r#"{"path":"/0000-0002-1825-0097/person","name":{"given-names":{"value":"Josiah"},"family-name":{"value":"Carberry"}}}"#;
+    let response: OrcidPersonResponse = serde_json::from_str(absent).unwrap();
+    let response = response.validate("0000-0002-1825-0097").unwrap();
+    assert!(
+        response.public_display_name().is_err(),
+        "absent visibility must refuse the projection"
+    );
 }
 
 #[test]
@@ -116,7 +152,7 @@ mod closing {
 
     fn person_body() -> String {
         format!(
-            r#"{{"path":"/{VALID_ID}/person","name":{{"visibility":"PUBLIC","given-names":{{"value":"Josiah"}},"family-name":{{"value":"Carberry"}}}}}}"#
+            r#"{{"path":"/{VALID_ID}/person","name":{{"visibility":"public","given-names":{{"value":"Josiah"}},"family-name":{{"value":"Carberry"}}}}}}"#
         )
     }
 
