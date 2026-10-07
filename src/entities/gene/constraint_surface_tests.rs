@@ -150,7 +150,7 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
                 if label == "timeout" { return TestHttpReply::Hold(Arc::clone(&hold)); }
                 (if label == "http" { "400 Bad Request" } else { "200 OK" }, body.as_slice())
             } else if request.starts_with("GET /query?") {
-                ("200 OK", br#"{"hits":[{"symbol":"TP53","name":"tumor protein p53","entrezgene":7157,"ensembl":{"gene":"ENSG00000141510"}}]}"#.as_slice())
+                ("200 OK", br#"{"total":1,"hits":[{"symbol":"TP53","name":"tumor protein p53","entrezgene":7157,"ensembl":{"gene":"ENSG00000141510"}}]}"#.as_slice())
             } else if request.starts_with("POST /graphql") {
                 ("200 OK", br#"{"data":{"search":{"hits":[]},"target":{"associatedDiseases":{"rows":[]},"knownDrugs":{"rows":[]}}}}"#.as_slice())
             } else if request.starts_with("POST /addList") {
