@@ -74,9 +74,9 @@ full-feature-check` for all shipped features and the AlphaGenome behavior tests.
 
 ## BioData 1.0 migration verification
 
-BioMCP keeps the repository-owned `tools/check-biodata-1.0` focused runner on the dedicated `biodata/biomcp-1.0` branch. BioMCP does not host an automatic branch workflow for this migration. After each reviewed BioData migration ticket, push the exact dedicated-branch revision. The agent that lands the ticket then dispatches BioData's verification workflow on GitHub with that revision and records the run (Ian, 2026-09-23). The hosted workflow requires the supplied revision to equal the public branch tip, derives the exact BioData dependency from BioMCP, prepares dependencies without credentials, and runs the focused build and tests offline. The final live provider smoke remains a separate human-only action. Do not replace this focused check with routine broad BioMCP gates.
+Run the repository-owned focused migration checks on M5 at the reviewed revision and exact BioData pin. Record affected behavior checks and inherited findings. Do not dispatch hosted verification for the 1.0 migration. Live-provider smoke remains separate. Keep routine checks focused on the changed behavior.
 
-Tickets filed only on the `biodata/biomcp-1.0` branch take numbers from 2001 up. Main keeps the 1000s, so merging main never brings in a second ticket with the same number.
+BioMCP ticket numbers use one global repository sequence. Create every new ticket with `pm ticket new` and keep its allocated number. This checkout declares only active milestone `1.0` targeting `biodata/biomcp-1.0`. Use component `backend` for integration work. Never infer a release from a ticket number or reserve a branch-specific range.
 
 ## Skill rail
 
