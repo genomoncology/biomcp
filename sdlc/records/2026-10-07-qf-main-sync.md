@@ -1,6 +1,6 @@
 # Integrate main article maintenance into 1.0
 
-October 7, 2026. Status: build and affected verification complete; fresh Root review and landing pending. This Quick Fix changes only the delegated maintenance integration. Root owns ticket 2015 and the paired library design.
+October 7, 2026. Status: COMPLETE. Root adopted fresh CODE ACCEPT at7d8e318b326339ff872f7f52e4ec306d5ea865ea and fast-forwarded the dedicated1.0 target. Affected checks below cover the unchanged runtime source. This Quick Fix changes only the delegated maintenance integration. Root owns ticket 2015 and the paired library design.
 
 The isolated branch `ticket/qf-main-sync-20261007` starts at `d6aa002f2b5ea02f83aee7adab87216c44e911b5`. Normal merge `8e5bb8e2375ba29b4a2ffc56729434e72eee12ee` incorporates main `37631c3574703755bf742e1e8459bc0d77522220` after previously adopted `3ad939f0`. A fresh pre-review fetch still returns that exact main revision. Normal merge `78636261ae05b82c779ebafa835f0e4a70968219` preserves Root's docs-only `2ce670be57bb64e192fc50412cad601a00e03f48`. Both merges preserve ancestry. Root's original checkout receives no edits from this assignment.
 
@@ -37,3 +37,9 @@ The first combined deadline process was stopped after failures and a stalled pag
 Compilation reports two dead-code warnings in unchanged `src/entities/mod.rs`. Python reports its inherited unknown `asyncio_mode` configuration warning. Historical Darwin lifecycle limitations and publication-site dependency expectations remain deferred as recorded in the October 6 maintenance records; those suites were not rerun or claimed here.
 
 Local receipts retain commands, exits, timings and raw logs under the `biomcp-maintenance-20261007-` temporary-file prefix. The `closure.json`, `final.json`, `python.json`, `pmcid.json` and `size.json` receipts identify the effective results. No logs, build output, worktrees or branches were deleted. Commits and branch pushes carry `[skip ci]`. SSH port 22 succeeded; port 443 fallback was unnecessary. No hooks were bypassed. Root must review the exact final candidate and owns target landing.
+
+## Landing
+
+Review: accept at7d8e318b326339ff872f7f52e4ec306d5ea865ea on October7.
+Landed: 7d8e318b326339ff872f7f52e4ec306d5ea865ea
+Target: biodata/biomcp-1.0. Root preserved2ce670be design metadata and confirmed clean integration. pm land-check on the Quick Fix branch returned no matching ticket; the workspace Quick Fix flow omits a ticket. Manual fresh review and recorded affected checks supply this landing. No hosted job or whole-suite acceptance is claimed.
