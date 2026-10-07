@@ -1,6 +1,6 @@
 # 2019 — Changelog gate counts Land commits
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
@@ -38,3 +38,14 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   remaining Changes items — status-complete counting and ci-classify
   CHANGELOG routing — which stay on this ticket and are being finished
   on the lane before landing.
+
+## Landing
+
+- Landed 2026-10-07 as merge ad39a9c5d. Process deviation, recorded
+  honestly: the merge reached main through the coordinator's
+  grammar-fix push (50c19bb35) before a green merged-tree run existed
+  — the first landcheck run failed on the coordinator's own
+  out-of-grammar review lines, and the fix push carried the merge
+  with it. The verifying run then executed on the exact main tip
+  (tickets/landcheck-2019 at 50c19bb35): completed, success. Every
+  later landing runs its merged-tree CI before main moves.
