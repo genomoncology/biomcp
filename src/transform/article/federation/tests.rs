@@ -400,7 +400,9 @@ fn detail_articles_keep_whole_abstracts_while_search_rows_keep_snippets() {
     }))
     .expect("valid PubTator document");
     assert_eq!(
-        retained_from_pubtator_document(&doc).abstract_text.as_deref(),
+        retained_from_pubtator_document(&doc)
+            .abstract_text
+            .as_deref(),
         Some(long_abstract.as_str())
     );
 
