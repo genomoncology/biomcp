@@ -30,6 +30,7 @@ fn related_drug_suggests_review_when_label_and_indications_are_sparse() {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
+        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,

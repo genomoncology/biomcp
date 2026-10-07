@@ -69,6 +69,7 @@ fn card() -> Drug {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
+        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,

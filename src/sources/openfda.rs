@@ -130,6 +130,39 @@ impl OpenFdaClient {
         ))
     }
 
+    /// The sparse-metadata fallback: openFDA full-text search for the name.
+    ///
+    /// Some current SPL records carry no populated `openfda.generic_name` or
+    /// `brand_name`, so the field-scoped plan misses them while a quoted
+    /// full-text phrase finds them. Results are unsorted so provider
+    /// relevance ranking decides which record is the top match; callers must
+    /// confirm any result's own identity before using it.
+    pub(crate) fn label_fulltext_search_plan(
+        drug_name: &str,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let drug_name = drug_name.trim();
+        if drug_name.is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "Drug name is required. Example: biomcp get drug vemurafenib label".into(),
+            ));
+        }
+        if drug_name.len() > 256 {
+            return Err(BioMcpError::InvalidArgument(
+                "Drug name is too long.".into(),
+            ));
+        }
+
+        let escaped = Self::escape_query_value(drug_name);
+        let q = format!("\"{escaped}\"");
+        Ok(with_api_key(
+            RequestPlan::get("drug/label.json")
+                .query("search", q)
+                .query("limit", "100"),
+            api_key,
+        ))
+    }
+
     pub(crate) fn drugsfda_search_plan(
         query: &str,
         limit: usize,
@@ -364,6 +397,15 @@ impl OpenFdaClient {
         drug_name: &str,
     ) -> Result<Option<serde_json::Value>, BioMcpError> {
         let plan = Self::label_search_plan(drug_name, self.api_key.as_deref())?;
+        self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .await
+    }
+
+    pub async fn label_fulltext_search(
+        &self,
+        drug_name: &str,
+    ) -> Result<Option<serde_json::Value>, BioMcpError> {
+        let plan = Self::label_fulltext_search_plan(drug_name, self.api_key.as_deref())?;
         self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
             .await
     }

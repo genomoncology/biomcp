@@ -16,8 +16,9 @@ use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
 
 use super::label::{
-    extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
-    extract_label_warnings_text,
+    LABEL_UNAVAILABLE_MESSAGE, NO_LABEL_TEXT_NOTE, NO_SPL_RECORD_NOTE, extract_inline_label,
+    extract_label_boxed_warning, extract_label_set_id, extract_label_warnings_text,
+    lookup_label_response,
 };
 use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
@@ -559,7 +560,7 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
         return Ok(resolution);
     }
 
-    let lookup = resolve_drug_base(requested_name, false, false)
+    let lookup = resolve_drug_base(requested_name, false)
         .await
         .map(|resolved| TrialAliasLookup {
             canonical_name: resolved.drug.name,
@@ -597,7 +598,6 @@ pub(crate) async fn resolve_trial_canonical_name(name: &str) -> Result<String, B
 pub(super) async fn resolve_drug_base(
     name: &str,
     fetch_label_response: bool,
-    label_required: bool,
 ) -> Result<ResolvedDrugBase, BioMcpError> {
     let name = name.trim();
     if name.is_empty() {
@@ -695,22 +695,15 @@ pub(super) async fn resolve_drug_base(
     let mut label_response_opt: Option<serde_json::Value> = None;
     let mut label_attempt_failed = false;
     if fetch_label_response {
+        // A failed label fetch degrades the label section to an unavailable
+        // outcome instead of failing the card; sparse-metadata misses resolve
+        // through the guarded full-text fallback inside `lookup_label_response`.
         match OpenFdaClient::new() {
-            Ok(client) => match client.label_search(&drug.name).await {
+            Ok(client) => match lookup_label_response(&client, &drug.name).await {
                 Ok(v) => label_response_opt = v,
-                Err(err) => {
-                    if label_required {
-                        return Err(err);
-                    }
-                    label_attempt_failed = true;
-                }
+                Err(_) => label_attempt_failed = true,
             },
-            Err(err) => {
-                if label_required {
-                    return Err(err);
-                }
-                label_attempt_failed = true;
-            }
+            Err(_) => label_attempt_failed = true,
         }
     }
 
@@ -752,6 +745,25 @@ async fn populate_common_sections(
     } else {
         None
     };
+
+    if section_flags.include_label {
+        let outcome = if label_attempt_failed {
+            drug.label_note = None;
+            SectionOutcome::unavailable(LABEL_UNAVAILABLE_MESSAGE)
+        } else if drug.label.is_some() {
+            drug.label_note = None;
+            SectionOutcome::data("OpenFDA label")
+        } else if label_response.is_some() {
+            drug.label_note = Some(NO_LABEL_TEXT_NOTE.to_string());
+            SectionOutcome::empty("OpenFDA label")
+        } else {
+            drug.label_note = Some(NO_SPL_RECORD_NOTE.to_string());
+            SectionOutcome::empty("OpenFDA label")
+        };
+        drug.section_outcomes.complete("label", outcome);
+    } else {
+        drug.label_note = None;
+    }
 
     if section_flags.include_interactions {
         super::interactions::populate_card_interactions(
@@ -993,8 +1005,7 @@ async fn get_with_region_owned(
         || section_flags.include_interactions
         || (region.includes_us() && section_flags.include_safety);
 
-    let mut resolved =
-        resolve_drug_base(&name, fetch_label_response, section_flags.include_label).await?;
+    let mut resolved = resolve_drug_base(&name, fetch_label_response).await?;
     populate_common_sections(
         &name,
         &mut resolved.drug,

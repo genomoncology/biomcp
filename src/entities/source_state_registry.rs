@@ -299,6 +299,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
     ),
     state(
         "drug",
+        "label",
+        "FDA Label",
+        &["OpenFDA label"],
+        Aggregation::Fallback,
+    ),
+    state(
+        "drug",
         "safety",
         "Safety",
         &["OpenFDA FAERS", "OpenFDA label", "EMA"],
@@ -661,7 +668,7 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         Some("structures"),
     ),
     selector("protein", "all", SelectorClass::Aggregate, None),
-    selector("drug", "label", SelectorClass::Local, None),
+    selector("drug", "label", SelectorClass::Canonical, Some("label")),
     selector("drug", "regulatory", SelectorClass::Aggregate, None),
     selector("drug", "safety", SelectorClass::Canonical, Some("safety")),
     selector("drug", "shortage", SelectorClass::Local, None),

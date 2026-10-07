@@ -41,6 +41,7 @@ fn warning_drug() -> Drug {
             warnings: Some("Immune-mediated adverse reactions.".to_string()),
             dosage: None,
         }),
+        label_note: None,
         label_set_id: Some("warning-set-123".to_string()),
         shortage: None,
         approvals: None,

@@ -138,7 +138,7 @@ async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn required_label_failures_make_zero_ddinter_ready_calls() {
+async fn label_fetch_failures_settle_as_unavailable_outcomes() {
     let (base, server) = required_label_failure_server().await;
     let root = crate::test_support::TempDirGuard::new("required-label-ddinter-counter");
     let missing_ddinter = root.path().join("missing-ddinter");
@@ -155,28 +155,30 @@ async fn required_label_failures_make_zero_ddinter_ready_calls() {
         missing_ddinter.to_str().expect("UTF-8 fixture path"),
     );
 
-    crate::sources::ddinter::reset_ready_call_count();
-    assert!(
-        crate::sources::ddinter::DdinterClient::ready()
-            .await
-            .is_err()
-    );
-    assert_eq!(crate::sources::ddinter::ready_call_count(), 1);
-
-    crate::sources::ddinter::reset_ready_call_count();
+    // Ticket 1300: a requested label section whose fetch failed settles as
+    // an unavailable outcome instead of aborting the card, and the provider's
+    // error detail never leaks into the settled result.
     for sections in [
         vec!["label".to_string(), "interactions".to_string()],
         vec!["all".to_string()],
     ] {
-        let error = super::get("fixture-drug", &sections)
+        let drug = super::get("fixture-drug", &sections)
             .await
-            .expect_err("required OpenFDA label failure must abort the card");
-        assert!(error.to_string().contains("OpenFDA"), "{error}");
+            .unwrap_or_else(|error| panic!("label fetch failure must settle: {error}"));
+        let outcome = drug
+            .section_outcomes
+            .get("label")
+            .expect("label outcome completed");
         assert_eq!(
-            crate::sources::ddinter::ready_call_count(),
-            0,
-            "{sections:?}"
+            outcome.outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Unavailable
         );
+        assert_eq!(
+            outcome.message(),
+            Some("OpenFDA label evidence is temporarily unavailable.")
+        );
+        assert!(drug.label.is_none(), "{sections:?}");
+        assert!(drug.label_note.is_none(), "{sections:?}");
     }
     server.abort();
 }

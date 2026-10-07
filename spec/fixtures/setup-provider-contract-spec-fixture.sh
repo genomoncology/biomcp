@@ -111,6 +111,10 @@ MYCHEM = {
     "warfarin": fixture("mychem/query_warfarin_get_20260811.json"),
     "daraxonrasib": fixture("mychem/query_daraxonrasib_get_20260811.json"),
     "dabigatran": fixture("mychem/query_dabigatran_get_20260811.json"),
+    "osimertinib": fixture("mychem/query_osimertinib_get_20261007.json"),
+    "gefitinib": fixture("mychem/query_gefitinib_get_20261007.json"),
+    "mobocertinib": fixture("mychem/query_mobocertinib_get_20261007.json"),
+    "adavosertib": fixture("mychem/query_adavosertib_get_20261007.json"),
 }
 MYGENE = {
     "(symbol:BRAF OR alias:BRAF)": fixture("mygene/search_braf_20260811.json"),
@@ -256,6 +260,13 @@ GENCC_ODC1 = fixture("gencc/submissions-new-odc1.csv")
 GENCC_ETAG = '"6ebdbf28b305e99e349ed827a219214b"'
 GENCC_LAST_MODIFIED = "Sun, 06 Sep 2026 06:00:29 GMT"
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
+OPENFDA_LABEL_GEFITINIB = fixture("openfda/label_gefitinib_20261007.json")
+OPENFDA_LABEL_OSIMERTINIB_FULLTEXT = fixture(
+    "openfda/label_osimertinib_fulltext_20261007.json"
+)
+OPENFDA_LABEL_MOBOCERTINIB_FULLTEXT = fixture(
+    "openfda/label_mobocertinib_fulltext_20261007.json"
+)
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
 OPENFDA_DEVICE_510K = fixture("openfda/device_510k_brca1_20260811.json")
 OPENFDA_DEVICE_PMA = fixture("openfda/device_pma_brca1_20260811.json")
@@ -509,8 +520,27 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/openfda/drug/label.json":
             search = parse_qs(parsed.query).get("search", [""])[0].lower()
+            # Ticket 1300: the full-text fallback is a bare quoted phrase with
+            # no field prefix, while the narrow lookup scopes openFDA fields.
+            if search.startswith('\"'):
+                term = search.strip('\\"')
+                if term == "osimertinib":
+                    send(self, 200, OPENFDA_LABEL_OSIMERTINIB_FULLTEXT)
+                    return
+                if term == "mobocertinib":
+                    send(self, 200, OPENFDA_LABEL_MOBOCERTINIB_FULLTEXT)
+                    return
+                # adavosertib and every other drug fall through: openFDA has
+                # no full-text match either, so the default 404 stays honest.
             if "keytruda" in search or "pembrolizumab" in search:
                 send(self, 200, OPENFDA_LABEL)
+                return
+            if "gefitinib" in search:
+                send(self, 200, OPENFDA_LABEL_GEFITINIB)
+                return
+            if "osimertinib" in search or "mobocertinib" in search:
+                # The field-scoped lookup misses their sparse-metadata records.
+                send(self, 404, b'{"error":{"code":"NOT_FOUND","message":"No matches found!"}}')
                 return
         if parsed.path == "/openfda/drug/drugsfda.json":
             send(self, 200, OPENFDA_DRUGSFDA)

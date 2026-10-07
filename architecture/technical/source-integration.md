@@ -522,6 +522,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | protein | complexes | canonical | additive | Complex Portal | `complexes` outcome and provenance projection |
 | protein | structures | canonical | additive | PDBe | `structures` outcome and provenance projection |
 | drug | approvals | canonical | additive | OpenFDA Drugs@FDA | `approvals` outcome and provenance projection |
+| drug | label | canonical | fallback | OpenFDA label | `label` outcome and provenance projection |
 | drug | safety | canonical | additive | OpenFDA FAERS / OpenFDA label / EMA | `safety` outcome and provenance projection |
 | drug | targets | canonical | additive | Guide to PHARMACOLOGY / ChEMBL / Open Targets | `targets` outcome and provenance projection |
 | drug | indications | canonical | additive | DrugCentral / Open Targets | `indications` outcome and provenance projection |

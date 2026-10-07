@@ -6,8 +6,16 @@ use std::sync::OnceLock;
 use regex::Regex;
 
 use super::{DrugLabel, DrugLabelIndication};
+use crate::error::BioMcpError;
+use crate::sources::openfda::OpenFdaClient;
 
 const LABEL_MAX_CHARS: usize = 2000;
+
+pub(super) const LABEL_UNAVAILABLE_MESSAGE: &str =
+    "OpenFDA label evidence is temporarily unavailable.";
+pub(super) const NO_SPL_RECORD_NOTE: &str = "No openFDA SPL label record matched this drug.";
+pub(super) const NO_LABEL_TEXT_NOTE: &str =
+    "The matched openFDA SPL record carries no label section text.";
 
 fn label_text(value: Option<&serde_json::Value>) -> Option<String> {
     let value = value?;
@@ -52,6 +60,23 @@ fn truncate_with_note(value: &str, max_chars: usize, label_set_id: Option<&str>)
     match full_label {
         Some(url) => format!("{truncated}\n\n(truncated, {total} chars total; full label: {url})"),
         None => format!("{truncated}\n\n(truncated, {total} chars total)"),
+    }
+}
+
+/// The Markdown view of a label: whole sections stay in JSON, while readable
+/// output keeps a capped short form that points to the rest of the label.
+pub(crate) fn markdown_label_view(label: &DrugLabel, label_set_id: Option<&str>) -> DrugLabel {
+    let shorten = |value: &Option<String>| {
+        value
+            .as_deref()
+            .map(|text| truncate_with_note(text, LABEL_MAX_CHARS, label_set_id))
+    };
+    DrugLabel {
+        indication_summary: label.indication_summary.clone(),
+        indications: shorten(&label.indications),
+        boxed_warning: shorten(&label.boxed_warning),
+        warnings: shorten(&label.warnings),
+        dosage: shorten(&label.dosage),
     }
 }
 
@@ -372,37 +397,17 @@ pub(super) fn extract_inline_label(
         .and_then(|v| v.first())?;
 
     let indication_summary = extract_label_indication_summary(label_response);
-    let label_set_id = label_set_id_from_result(top);
-    let raw_indications = label_text(top.get("indications_and_usage")).map(|v| {
-        truncate_with_note(
-            &normalize_label_whitespace(&v),
-            LABEL_MAX_CHARS,
-            label_set_id,
-        )
-    });
-    let boxed_warning = label_text(top.get("boxed_warning")).map(|v| {
-        truncate_with_note(
-            &normalize_label_whitespace(&v),
-            LABEL_MAX_CHARS,
-            label_set_id,
-        )
-    });
+    // JSON carries whole label sections; Markdown applies its own cap through
+    // `markdown_label_view` at render time.
+    let raw_indications =
+        label_text(top.get("indications_and_usage")).map(|v| normalize_label_whitespace(&v));
+    let boxed_warning =
+        label_text(top.get("boxed_warning")).map(|v| normalize_label_whitespace(&v));
     let raw_warnings = label_text(top.get("warnings_and_cautions"))
         .or_else(|| label_text(top.get("warnings")))
-        .map(|v| {
-            truncate_with_note(
-                &normalize_label_whitespace(&v),
-                LABEL_MAX_CHARS,
-                label_set_id,
-            )
-        });
-    let raw_dosage = label_text(top.get("dosage_and_administration")).map(|v| {
-        truncate_with_note(
-            &normalize_label_whitespace(&v),
-            LABEL_MAX_CHARS,
-            label_set_id,
-        )
-    });
+        .map(|v| normalize_label_whitespace(&v));
+    let raw_dosage =
+        label_text(top.get("dosage_and_administration")).map(|v| normalize_label_whitespace(&v));
 
     let indications = if raw_mode || indication_summary.is_empty() {
         raw_indications
@@ -545,6 +550,120 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
         }
     }
     out
+}
+
+/// Lowercased alphanumeric tokens, so hyphenated and punctuated identity
+/// names compare by word rather than by raw substring.
+fn identity_tokens(value: &str) -> Vec<String> {
+    value
+        .split(|ch: char| !ch.is_ascii_alphanumeric())
+        .filter(|token| !token.is_empty())
+        .map(str::to_ascii_lowercase)
+        .collect()
+}
+
+fn result_identity_values(result: &serde_json::Value) -> Vec<String> {
+    let mut out = Vec::new();
+    for key in ["generic_name", "brand_name", "substance_name"] {
+        out.extend(extract_openfda_values_from_result(result, key));
+    }
+    if let Some(ingredients) = result.get("active_ingredients").and_then(|v| v.as_array()) {
+        for ingredient in ingredients {
+            if let Some(name) = ingredient.get("name").and_then(|v| v.as_str()) {
+                out.push(name.to_string());
+            }
+        }
+    }
+    if let Some(elements) = result
+        .get("spl_product_data_elements")
+        .and_then(|v| v.as_array())
+    {
+        for element in elements {
+            if let Some(text) = element.as_str() {
+                out.push(text.to_string());
+            }
+        }
+    }
+    out
+}
+
+/// Whether a full-text result is the requested drug's own record.
+///
+/// A full-text search for one drug routinely ranks other drugs' labels first
+/// because their section text mentions the queried name (a full-text
+/// "osimertinib" search returns amivantamab's label first). A result only
+/// counts when the requested name matches the record's own identity: the
+/// active ingredient, the openFDA generic/brand/substance names, or the SPL
+/// product data elements line.
+pub(super) fn label_result_matches_identity(result: &serde_json::Value, name: &str) -> bool {
+    let name_tokens = identity_tokens(name);
+    if name_tokens.is_empty() {
+        return false;
+    }
+    let identity = result_identity_values(result)
+        .iter()
+        .flat_map(|value| identity_tokens(value))
+        .collect::<Vec<_>>();
+    identity
+        .windows(name_tokens.len())
+        .any(|window| window == name_tokens.as_slice())
+}
+
+fn label_response_has_result(response: &serde_json::Value) -> bool {
+    response
+        .get("results")
+        .and_then(|v| v.as_array())
+        .is_some_and(|results| !results.is_empty())
+}
+
+/// Keep only full-text results whose own identity matches the drug name.
+pub(super) fn filter_label_response_to_identity(
+    response: &serde_json::Value,
+    name: &str,
+) -> Option<serde_json::Value> {
+    let results = response.get("results")?.as_array()?;
+    let matching = results
+        .iter()
+        .filter(|result| label_result_matches_identity(result, name))
+        .cloned()
+        .collect::<Vec<_>>();
+    if matching.is_empty() {
+        return None;
+    }
+    let mut filtered = response.clone();
+    if let Some(counts) = filtered
+        .get_mut("meta")
+        .and_then(|v| v.get_mut("results"))
+        .and_then(|v| v.as_object_mut())
+    {
+        counts.insert(
+            "total".to_string(),
+            serde_json::Value::from(matching.len() as u64),
+        );
+    }
+    filtered["results"] = serde_json::Value::Array(matching);
+    Some(filtered)
+}
+
+/// Field-scoped label lookup with the sparse-metadata full-text fallback.
+///
+/// When the `openfda.generic_name`/`brand_name` query returns no match, fall
+/// back to a full-text search for the name and keep only results whose own
+/// identity matches. `Ok(None)` means openFDA answered and no SPL record for
+/// the drug exists; fetch errors surface as `Err`.
+pub(super) async fn lookup_label_response(
+    client: &OpenFdaClient,
+    name: &str,
+) -> Result<Option<serde_json::Value>, BioMcpError> {
+    if let Some(response) = client.label_search(name).await?
+        && label_response_has_result(&response)
+    {
+        return Ok(Some(response));
+    }
+    let Some(fulltext) = client.label_fulltext_search(name).await? else {
+        return Ok(None);
+    };
+    Ok(filter_label_response_to_identity(&fulltext, name))
 }
 
 #[cfg(test)]

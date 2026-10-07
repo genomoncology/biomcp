@@ -66,6 +66,24 @@ fn label_search_plan_escapes_drug_name_and_sorts() {
 }
 
 #[test]
+fn label_fulltext_search_plan_quotes_a_phrase_across_all_fields() {
+    let plan = OpenFdaClient::label_fulltext_search_plan("osimertinib", Some("test-key"))
+        .expect("fulltext label plan");
+
+    assert_eq!(plan.path, "drug/label.json");
+    assert_eq!(plan.query_value("search"), Some("\"osimertinib\""));
+    assert_eq!(plan.query_value("limit"), Some("100"));
+    assert_eq!(plan.query_value("sort"), None);
+    assert_eq!(plan.query_value("api_key"), Some("test-key"));
+
+    let escaped = OpenFdaClient::label_fulltext_search_plan(r#"PD-1 "drug""#, None)
+        .expect("escaped fulltext plan");
+    assert_eq!(escaped.query_value("search"), Some(r#""PD\-1 \"drug\"""#));
+
+    assert!(OpenFdaClient::label_fulltext_search_plan(" ", None).is_err());
+}
+
+#[test]
 fn drug_and_device_plans_set_expected_paths() {
     let drugs = OpenFdaClient::drugsfda_search_plan("openfda.brand_name:test", 3, 0, None)
         .expect("drugsfda plan");
