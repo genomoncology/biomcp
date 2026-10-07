@@ -45,7 +45,13 @@ fn check(text: &str, json_mode: bool, state: &str) {
     } else {
         assert!(text.contains("P15056") && text.contains("1ABC"), "{text}");
         if state == "data" {
-            assert!(text.contains("Protein kinase"), "{text}");
+            assert!(text.contains("## Domains (InterPro)"), "{text}");
+            assert!(
+                text.contains(
+                    "- Protein kinase (IPR000719) 457-717\n- InterPro domain (IPR000719) 600-600"
+                ),
+                "{text}"
+            );
             assert!(
                 !text.contains("IPR_OVER_CAP") && !text.contains("IPR_NO_OVERLAP"),
                 "{text}"

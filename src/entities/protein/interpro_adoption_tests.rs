@@ -119,7 +119,8 @@ fn check(text: &str, json_mode: bool, state: &str) {
     } else {
         assert!(text.contains("P15056"), "{text}");
         if state == "data" {
-            assert!(text.contains("Protein kinase"), "{text}");
+            assert!(text.contains("## Domains (InterPro)"), "{text}");
+            assert!(text.contains("| IPR000719 | Protein kinase | domain |\n| IPR000719 | - | - |\n| IPR_NO_OVERLAP | - | - |"), "{text}");
             assert!(!text.contains("IPR_OVER_CAP"), "{text}");
         }
         if state == "unavailable" {
