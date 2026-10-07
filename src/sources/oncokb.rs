@@ -1,9 +1,8 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
+use biodata::OncoKBAnnotationProjection;
 use reqwest::StatusCode;
-use serde::Deserialize;
-use serde::de::DeserializeOwned;
 use tracing::debug;
 
 use crate::error::BioMcpError;
@@ -77,24 +76,33 @@ impl OncoKBClient {
             .header("Authorization", format!("Bearer {}", token.trim())))
     }
 
-    pub(crate) fn decode_json_response<T: DeserializeOwned>(
+    pub(crate) fn decode_json_response(
         status: StatusCode,
         bytes: &[u8],
-    ) -> Result<T, BioMcpError> {
-        crate::sources::decode_json(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::ONCOKB),
-            status,
-            None,
-            bytes,
-            false,
-        )
+    ) -> Result<OncoKBAnnotationProjection, BioMcpError> {
+        let context = crate::error::SourceContext::retry(crate::error::SourceProvider::ONCOKB);
+        if !status.is_success() {
+            let excerpt = crate::sources::body_excerpt(bytes);
+            return Err(BioMcpError::Api {
+                api: context.provider().label().to_string(),
+                message: format!("HTTP {status}: {excerpt}"),
+            }
+            .with_source_context(context));
+        }
+        OncoKBAnnotationProjection::decode_json(bytes).map_err(|_| {
+            BioMcpError::ApiJson {
+                api: context.provider().label().to_string(),
+                source: <serde_json::Error as serde::de::Error>::custom("Invalid OncoKB response."),
+            }
+            .with_source_context(context)
+        })
     }
 
-    async fn get_json<T: DeserializeOwned>(
+    async fn get_json(
         &self,
         req: reqwest_middleware::RequestBuilder,
         authenticated: bool,
-    ) -> Result<T, BioMcpError> {
+    ) -> Result<OncoKBAnnotationProjection, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, authenticated)
             .send_with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::ONCOKB,
@@ -117,7 +125,7 @@ impl OncoKBClient {
         &self,
         gene: &str,
         alteration: &str,
-    ) -> Result<OncoKBAnnotation, BioMcpError> {
+    ) -> Result<OncoKBAnnotationProjection, BioMcpError> {
         let token = self.require_token()?;
         let plan = Self::annotate_by_protein_change_plan(gene, alteration, token)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
@@ -129,7 +137,7 @@ impl OncoKBClient {
         &self,
         gene: &str,
         alteration: &str,
-    ) -> Result<OncoKBAnnotation, BioMcpError> {
+    ) -> Result<OncoKBAnnotationProjection, BioMcpError> {
         let gene = gene.trim();
         let alteration = alteration.trim();
         if gene.is_empty() || alteration.is_empty() {
@@ -175,44 +183,6 @@ pub(crate) fn protein_change_attempts(alteration: &str) -> Vec<String> {
         push_attempt(format!("p.{alteration}"));
     }
     attempts
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OncoKBAnnotation {
-    pub oncogenic: Option<String>,
-    pub mutation_effect: Option<OncoKBMutationEffect>,
-    pub highest_sensitive_level: Option<String>,
-    pub highest_resistance_level: Option<String>,
-    #[serde(default)]
-    pub treatments: Vec<OncoKBTreatment>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OncoKBMutationEffect {
-    pub known_effect: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OncoKBTreatment {
-    pub level: Option<String>,
-    #[serde(default)]
-    pub drugs: Vec<OncoKBDrug>,
-    pub cancer_type: Option<OncoKBCancerType>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OncoKBDrug {
-    pub drug_name: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OncoKBCancerType {
-    pub name: Option<String>,
 }
 
 #[cfg(test)]

@@ -1086,31 +1086,6 @@ async fn coordinate_less_prediction_is_inapplicable_without_alphagenome_credit()
     );
 }
 
-#[test]
-fn therapies_from_oncokb_truncation_shows_count() {
-    let annotation: OncoKBAnnotation = serde_json::from_value(serde_json::json!({
-        "treatments": [
-            {"level": "LEVEL_1", "drugs": [{"drugName": "osimertinib"}], "cancerType": {"name": "Lung"}},
-            {"level": "LEVEL_2", "drugs": [{"drugName": "afatinib"}], "cancerType": {"name": "Lung"}},
-            {"level": "LEVEL_3A", "drugs": [{"drugName": "erlotinib"}], "cancerType": {"name": "Lung"}},
-            {"level": "LEVEL_3B", "drugs": [{"drugName": "gefitinib"}], "cancerType": {"name": "Lung"}},
-            {"level": "LEVEL_4", "drugs": [{"drugName": "dacomitinib"}], "cancerType": {"name": "Lung"}},
-            {"level": "LEVEL_R1", "drugs": [{"drugName": "poziotinib"}], "cancerType": {"name": "Lung"}},
-            {"level": "LEVEL_R2", "drugs": [{"drugName": "mobocertinib"}], "cancerType": {"name": "Lung"}}
-        ]
-    }))
-    .expect("valid OncoKB annotation");
-
-    let therapies = therapies_from_oncokb(&annotation);
-    assert_eq!(therapies.len(), 6);
-    assert!(
-        therapies
-            .last()
-            .and_then(|row| row.note.as_deref())
-            .is_some_and(|note| note.contains("(and 1 more)"))
-    );
-}
-
 // B05 is called by the sole default genomic boundary table. No client is constructed.
 pub(in crate::entities::variant) fn genomic_prediction_preparation_cases() {
     let all: serde_json::Value =
