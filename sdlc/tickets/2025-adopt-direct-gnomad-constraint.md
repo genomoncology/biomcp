@@ -1,15 +1,15 @@
 # 2025 — Adopt the complete direct gnomAD gene constraint record
 
-Status: OPEN.
-Owner: Root; assigned Codex design writer.
-Phase: DESIGN. Fresh paired review pending. Root releases BUILD separately.
+Status: IN PROGRESS.
+Owner: Root; assigned consumer builder.
+Phase: BUILD complete. Root released the Gibbs-accepted paired design at `b6e6908134bd18c2de190936f82917fb9295b7ec`. Fresh Root CODE review and landing remain pending.
 Component: backend
 
 Milestone: 1.0
 
 ## Outcome
 
-Transfer every selected direct gene constraint field through BioData0712, shared runtime storage and borrowed encoding into existing native, CLI and MCP callers. Retire the local value models after adoption. The [paired consumer design](../planning/direct-gnomad-constraint-2025/design.md) specifies retained policy, behavior owners and later file claims. This ticket authorizes design preparation only.
+Transfer every selected direct gene constraint field through BioData0712, shared runtime storage and borrowed encoding into existing native, CLI and MCP callers. Retire the local value models after adoption. The [paired consumer design](../planning/direct-gnomad-constraint-2025/design.md) specifies retained policy, behavior owners and later file claims. Root authorized this finite BUILD on October 7, 2026.
 
 ## Evidence
 
@@ -22,3 +22,7 @@ Transfer every selected direct gene constraint field through BioData0712, shared
 ## Review
 
 Global number reserved by `pm ticket new` in an isolated 1.0 checkout. Producer0712 uses its own allocated ticket and branch. Push DESIGN with `[skip ci]`; Root assigns fresh paired review and supplies BUILD authority after acceptance. No implementation or independent ACCEPT is claimed.
+
+## BUILD release
+
+Use qualified BioData `543bf8c304c3965af6a1c92076c9e63d02bd2998` version `0.0.39`, with producer CODE ACCEPT `46e8c9a33d9ebece7dd63c45fb23634144521b38`. Root landed and pushed the producer. Consumer starts from the dedicated base with population2015 and maintenance37631c35. Preserve fixture bytes and pending provider receipts. Root owns fresh CODE review, reconciliation and landing; another agent owns cleanup. [Build record](../records/2025-adopt-direct-gnomad-constraint.md) records the actual checks and inherited findings.
