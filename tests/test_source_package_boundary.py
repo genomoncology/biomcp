@@ -70,6 +70,8 @@ REQUIRED_ROOT_ENTRIES = {
     "uv.lock",
 }
 REQUIRED_PACKAGE_MEMBERS = {
+    "src/entities/article/backends/provider_unit.rs",
+    "src/entities/article/search/status.rs",
     "spec/entity/article-text-fidelity.md",
     "spec/entity/variant-input-forms.md",
     "spec/entity/variant-protein-change-resolution.md",

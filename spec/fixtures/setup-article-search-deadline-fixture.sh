@@ -61,9 +61,47 @@ class Handler(BaseHTTPRequestHandler):
 
         # Europe PMC search outlasts the whole-search deadline: the reply is
         # gated on an event nothing ever sets, so the hold carries no clock
-        # assumption and dies with the fixture process at cleanup.
+        # assumption and dies with the fixture process at cleanup. The
+        # "pagebound" marker answers page one fast and holds every later
+        # page, so a single-backend plan expires mid-pagination with rows
+        # already fetched (ticket 1299). The "silence" marker makes every
+        # other source fail fast so nothing answers and the terminal
+        # deadline error is the only output.
         if path == "/search" and "query" in query:
+            search = query.get("query", [""])[0]
+            if "pagebound" in search:
+                # Ticket 1298 moved the wire from page= to cursorMark=, so
+                # the first cursor page is the fast one and every later
+                # cursor is held past the deadline.
+                cursor = query.get("cursorMark", ["*"])[0]
+                if cursor == "*":
+                    self.send_json({
+                        "version": "6.9",
+                        "hitCount": 200,
+                        "nextCursorMark": "CUR2",
+                        "request": {"query": search},
+                        "resultList": {"result": [
+                            {
+                                "id": f"4180001{i:02d}",
+                                "pmid": str(41800100 + i),
+                                "title": f"deadline single-source first cursor row {i}",
+                                "journalTitle": "Fixture Journal",
+                                "firstPublicationDate": "2026-01-01",
+                                "citedByCount": 0,
+                                "isOpenAccess": "N",
+                            }
+                            for i in range(25)
+                        ]},
+                    })
+                    return
             threading.Event().wait()
+            return
+
+        wants_silence = any("silence" in value[0] for value in query.values() if value)
+        if wants_silence:
+            self.send_response(503)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
             return
 
         # PubTator3 search returns one usable row, then an empty page.

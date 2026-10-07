@@ -285,13 +285,16 @@ enum IndexRefusal {
     RateLimited,
     Unavailable,
     NoAddressableDoi,
+    /// The index answered with a matching row whose OCI failed the accepted
+    /// shape, so the phase cannot publish the edge (ticket 1306).
+    MalformedOci,
 }
 
 impl IndexRefusal {
     fn status(self) -> &'static str {
         match self {
             Self::RateLimited => "rate_limited",
-            Self::Unavailable | Self::NoAddressableDoi => "unavailable",
+            Self::Unavailable | Self::NoAddressableDoi | Self::MalformedOci => "unavailable",
         }
     }
 
@@ -300,6 +303,7 @@ impl IndexRefusal {
             Self::RateLimited => "rate limited the request",
             Self::Unavailable => "was unavailable",
             Self::NoAddressableDoi => "had no DOI to query",
+            Self::MalformedOci => "returned a malformed citation identifier",
         }
     }
 }
@@ -700,14 +704,15 @@ fn confirmation_from_edge(
 }
 
 /// One side of a degraded pair: the paper this command can name without
-/// Semantic Scholar, and the normalized DOI the index can be asked. A DOI
-/// input needs no hop; a PMID or PMCID resolves through Europe PMC; anything
-/// else leaves the side without an addressable DOI.
+/// Semantic Scholar, the normalized DOI the index can be asked, and whether
+/// a Europe PMC search ran to resolve it. A DOI input needs no hop; a PMID
+/// or PMCID resolves through Europe PMC; anything else leaves the side
+/// without an addressable DOI.
 async fn degraded_input_paper(
     id: &str,
     europe: &EuropePmcClient,
     deadline: tokio::time::Instant,
-) -> (super::ArticleRelatedPaper, Option<String>) {
+) -> (super::ArticleRelatedPaper, Option<String>, bool) {
     let trimmed = id.trim();
     if let Some(doi) = normalize_doi(trimmed) {
         return (
@@ -721,6 +726,7 @@ async fn degraded_input_paper(
                 year: None,
             },
             Some(doi),
+            false,
         );
     }
     let identity = if let Some(pmid) = parse_pmid(trimmed) {
@@ -735,15 +741,16 @@ async fn degraded_input_paper(
         None
     };
     let Some(identity) = identity else {
-        return (degraded_unresolved_paper(), None);
+        return (degraded_unresolved_paper(), None, false);
     };
+    let europe_searched = true;
     let detail = tokio::time::timeout_at(deadline, europe.publication_detail(identity))
         .await
         .ok()
         .and_then(|result| result.ok())
         .flatten();
     let Some(detail) = detail else {
-        return (degraded_unresolved_paper(), None);
+        return (degraded_unresolved_paper(), None, europe_searched);
     };
     let article = crate::transform::article::from_europepmc_detail(&detail);
     let doi = article.doi.as_deref().and_then(normalize_doi);
@@ -761,6 +768,7 @@ async fn degraded_input_paper(
                 .and_then(|date| date.split('-').next().and_then(|year| year.parse().ok())),
         },
         doi,
+        europe_searched,
     )
 }
 
@@ -780,8 +788,9 @@ fn degraded_unresolved_paper() -> super::ArticleRelatedPaper {
 }
 
 /// A degraded invocation's resolved pair: the papers this command can name
-/// without Semantic Scholar, the input spellings for its messages, and each
-/// side's normalized DOI for the index request.
+/// without Semantic Scholar, the input spellings for its messages, each
+/// side's normalized DOI for the index request, and whether a Europe PMC
+/// search ran to resolve either side's DOI.
 struct DegradedPair {
     citing: super::ArticleRelatedPaper,
     cited: super::ArticleRelatedPaper,
@@ -789,6 +798,7 @@ struct DegradedPair {
     cited_id: String,
     citing_doi: Option<String>,
     cited_doi: Option<String>,
+    europe_searched: bool,
 }
 
 /// The OpenCitations-first phase for an invocation Semantic Scholar refused:
@@ -828,7 +838,16 @@ async fn degraded_confirmation(
                                 },
                                 CitationEvidenceSourceStatus {
                                     source: EUROPE_PMC_JATS_SOURCE.to_string(),
-                                    status: "not_requested".to_string(),
+                                    // The row names the phase that ran: a
+                                    // Europe PMC search for DOI resolution,
+                                    // or no Europe PMC request at all
+                                    // (ticket 1306).
+                                    status: if pair.europe_searched {
+                                        "searched_for_doi_resolution"
+                                    } else {
+                                        "not_requested"
+                                    }
+                                    .to_string(),
                                 },
                                 CitationEvidenceSourceStatus {
                                     source: OPENCITATIONS_SOURCE.to_string(),
@@ -845,8 +864,9 @@ async fn degraded_confirmation(
                 }
                 // A matching row with a shape-invalid OCI fails closed, so
                 // the degraded invocation reports the refusal instead of
-                // publishing provider text.
-                None => Err(providers_refused_error(s2, IndexRefusal::Unavailable)),
+                // publishing provider text; the wording names the malformed
+                // row, never provider unavailability (ticket 1306).
+                None => Err(providers_refused_error(s2, IndexRefusal::MalformedOci)),
             },
             None => Err(BioMcpError::NotFound {
                 entity: "directed citation".into(),
@@ -871,8 +891,9 @@ async fn degraded_from_inputs(
     europe: &EuropePmcClient,
     deadline: tokio::time::Instant,
 ) -> Result<ArticleCitationEvidenceResult, BioMcpError> {
-    let (citing, citing_doi) = degraded_input_paper(citing_id, europe, deadline).await;
-    let (cited, cited_doi) = degraded_input_paper(cited_id, europe, deadline).await;
+    let (citing, citing_doi, citing_searched) =
+        degraded_input_paper(citing_id, europe, deadline).await;
+    let (cited, cited_doi, cited_searched) = degraded_input_paper(cited_id, europe, deadline).await;
     degraded_confirmation(
         &DegradedPair {
             citing,
@@ -881,6 +902,37 @@ async fn degraded_from_inputs(
             cited_id: cited_id.trim().to_string(),
             citing_doi,
             cited_doi,
+            europe_searched: citing_searched || cited_searched,
+        },
+        s2,
+        deadline,
+    )
+    .await
+}
+
+/// A degraded invocation whose citing seed resolved and whose cited seed
+/// refused: the citing side keeps the first seed's resolved paper and DOI,
+/// and only the cited side resolves through Europe PMC (ticket 1306).
+async fn degraded_after_citing_seed(
+    citing: super::ArticleRelatedPaper,
+    citing_paper: &SemanticScholarPaper,
+    citing_id: &str,
+    cited_id: &str,
+    s2: SemanticScholarState,
+    europe: &EuropePmcClient,
+    deadline: tokio::time::Instant,
+) -> Result<ArticleCitationEvidenceResult, BioMcpError> {
+    let (cited, cited_doi, europe_searched) =
+        degraded_input_paper(cited_id, europe, deadline).await;
+    degraded_confirmation(
+        &DegradedPair {
+            citing,
+            cited,
+            citing_id: citing_id.trim().to_string(),
+            cited_id: cited_id.trim().to_string(),
+            citing_doi: external_doi(citing_paper),
+            cited_doi,
+            europe_searched,
         },
         s2,
         deadline,
@@ -970,18 +1022,15 @@ pub async fn citation_evidence(
     };
     let (cited, cited_paper) = match citation_seed(cited_id, &client, &europe, deadline).await? {
         SeedOutcome::Resolved(pair) => *pair,
+        // The citing seed stays resolved; only the cited side degrades.
         SeedOutcome::Refused(state) => {
-            let (cited, cited_doi) = degraded_input_paper(cited_id, &europe, deadline).await;
-            return degraded_confirmation(
-                &DegradedPair {
-                    citing,
-                    cited,
-                    citing_id: citing_id.trim().to_string(),
-                    cited_id: cited_id.trim().to_string(),
-                    citing_doi: external_doi(&citing_paper),
-                    cited_doi,
-                },
+            return degraded_after_citing_seed(
+                citing,
+                &citing_paper,
+                citing_id,
+                cited_id,
                 state,
+                &europe,
                 deadline,
             )
             .await;
@@ -1031,6 +1080,9 @@ pub async fn citation_evidence(
                             cited_id: cited_id.trim().to_string(),
                             citing_doi: external_doi(&citing_paper),
                             cited_doi: external_doi(&cited_paper),
+                            // Both seeds resolved this pair, so no degraded
+                            // Europe PMC search ran.
+                            europe_searched: false,
                         },
                         SemanticScholarState::from_refusal(refusal),
                         deadline,

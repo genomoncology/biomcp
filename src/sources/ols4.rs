@@ -38,6 +38,15 @@ impl OlsClient {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        Ok(Self {
+            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            base: crate::sources::env_base(OLS4_BASE, OLS4_BASE_ENV),
+        })
+    }
+
     #[cfg(test)]
     pub(crate) fn new_for_test(base: String) -> Result<Self, BioMcpError> {
         Ok(Self {

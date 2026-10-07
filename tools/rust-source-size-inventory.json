@@ -54,12 +54,12 @@
     },
     {
       "path": "src/entities/article/backends.rs",
-      "baseline_lines": 1047,
+      "baseline_lines": 1008,
       "floor_lines": 975,
       "authorized_increase": {
-        "ticket": "qf-maintenance-20261003, 2013",
-        "delta": 72,
-        "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. Ticket 2013 carries the exact donor cursor change with 15 additional lines and retains the dedicated request wrapper.",
+        "ticket": "qf-maintenance-20261003, 2013, qf-main-sync-20261007",
+        "delta": 33,
+        "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. Ticket 2013 carries the exact donor cursor change with 15 additional lines and retains the dedicated request wrapper. Retain plain Semantic Scholar deadline refusal through the donor provider-unit extraction.",
         "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
       }
     },
@@ -71,23 +71,23 @@
     },
     {
       "path": "src/entities/article/graph/citation_evidence.rs",
-      "baseline_lines": 1209,
+      "baseline_lines": 1261,
       "floor_lines": 859,
       "authorized_increase": {
-        "ticket": "1302",
-        "delta": 350,
-        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes. The dedicated branch resolves degraded PMID and PMCID inputs through the adopted BioData Europe PMC detail plan and article transform. Preserve answered citing seeds across second-seed refusals and verify truthful deadline projections.",
+        "ticket": "1302, qf-main-sync-20261007",
+        "delta": 402,
+        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes. The dedicated branch resolves degraded PMID and PMCID inputs through the adopted BioData Europe PMC detail plan and article transform. Preserve answered citing seeds across second-seed refusals and verify truthful deadline projections. Incorporate reviewed main 37631c35 through the retained shared model boundary; this allowance matches the actual integrated source.",
         "removal_condition": "Extract the degraded confirmation phase and the refusal vocabulary when the citation-evidence module is next decomposed."
       }
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 2309,
+      "baseline_lines": 2345,
       "floor_lines": 998,
       "authorized_increase": {
-        "ticket": "1200, biodata-0152, 1302",
-        "delta": 1311,
-        "reason": "Ticket 1200's OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases (734 lines) beside the existing citation-evidence composition tests; BioData ticket 0152 later adds the retained Europe PMC PMCID first-row seed proof (70 lines). Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs. Preserve answered citing seeds across second-seed refusals and verify truthful deadline projections.",
+        "ticket": "1200, biodata-0152, 1302, qf-main-sync-20261007",
+        "delta": 1347,
+        "reason": "Ticket 1200's OpenCitations confirmation phase adds its loopback fixture and the wire, composition, and hostile proof cases (734 lines) beside the existing citation-evidence composition tests; BioData ticket 0152 later adds the retained Europe PMC PMCID first-row seed proof (70 lines). Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs. Preserve answered citing seeds across second-seed refusals and verify truthful deadline projections. Incorporate reviewed main 37631c35 through the retained shared model boundary; this allowance matches the actual integrated source.",
         "removal_condition": "Move the OpenCitations confirmation-phase tests and the retained Europe PMC PMCID first-row seed proof to dedicated citation test submodules when the article test modules are next reorganized."
       }
     },
@@ -104,34 +104,23 @@
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1428,
+      "baseline_lines": 1432,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144, 1293, 1296",
-        "delta": 114,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
-        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
-      }
-    },
-    {
-      "path": "src/entities/article/search.rs",
-      "baseline_lines": 1009,
-      "floor_lines": 969,
-      "authorized_increase": {
-        "ticket": "qf-maintenance-20261003",
-        "delta": 40,
-        "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions.",
-        "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
+        "ticket": "1144, 1293, 1296 | 1299 | 1144, 1293, 1296",
+        "delta": 118,
+        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them. | Re-export the article-search deadline budget and error text for the exact-keyword lookup and the public error projection | Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
+        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary. | Return to the prior baseline when the deadline seam moves to the sources layer | Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
       }
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6163,
+      "baseline_lines": 6313,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, biodata-0698, 2011, 2012",
-        "delta": 1335,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration. Approved 2011 registers the complete-hit citation leaf. Ticket 2012 adds exactly three lines to register the cached evidence behavior leaf.",
+        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, biodata-0698, 2011, 2012, qf-main-sync-20261007",
+        "delta": 1485,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration. Approved 2011 registers the complete-hit citation leaf. Ticket 2012 adds exactly three lines to register the cached evidence behavior leaf. Incorporate reviewed main 37631c35 through the retained shared model boundary; this allowance matches the actual integrated source.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },
@@ -148,13 +137,13 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4053,
+      "baseline_lines": 4060,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "1243",
-        "delta": 359,
-        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
-        "removal_condition": "None; the boxing is the point."
+        "ticket": "1243 | 1299 | 1243",
+        "delta": 366,
+        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it | Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
+        "removal_condition": "None; the boxing is the point. | Return to the prior baseline when the OLS client gains an unconditional deadline constructor | None; the boxing is the point."
       }
     },
     {
@@ -282,12 +271,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1371,
+      "baseline_lines": 1418,
       "floor_lines": 1109,
       "authorized_increase": {
-        "ticket": "biodata-0203, 1302, 1304",
-        "delta": 262,
-        "reason": "The FHIR error projection on the dedicated branch combines with main source and output error corrections. Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs. Ticket 1304 adds the WHO header-mismatch projection and its test.",
+        "ticket": "biodata-0203, 1302, 1304, qf-main-sync-20261007",
+        "delta": 309,
+        "reason": "The FHIR error projection on the dedicated branch combines with main source and output error corrections. Ticket 1302 adds citation refusal degradation and its provider, no-edge and fail-fast proofs. Ticket 1304 adds the WHO header-mismatch projection and its test. Incorporate reviewed main 37631c35 through the retained shared model boundary; this allowance matches the actual integrated source.",
         "removal_condition": "Split the combined responsibility when this module is next reorganized; keep both behavior proofs."
       }
     },
@@ -474,9 +463,9 @@
       "baseline_lines": 1048,
       "floor_lines": 959,
       "authorized_increase": {
-        "ticket": "1143, 1302",
+        "ticket": "1143, 1302 | 1143 | 1143, 1302",
         "delta": 89,
-        "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier.",
+        "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier. | The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. | The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier.",
         "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
       }
     },
@@ -485,10 +474,10 @@
       "baseline_lines": 1229,
       "floor_lines": 1117,
       "authorized_increase": {
-        "ticket": "1196, 1304",
+        "ticket": "1196, 1304 | 1196 | 1196, 1304",
         "delta": 112,
-        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches.",
-        "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed."
+        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches.",
+        "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed."
       }
     },
     {

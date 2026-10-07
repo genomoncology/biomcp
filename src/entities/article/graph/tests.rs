@@ -1954,7 +1954,9 @@ async fn citation_evidence_answers_from_opencitations_when_the_seed_hop_is_refus
             .collect::<Vec<_>>(),
         [
             ("semantic_scholar", "rate_limited"),
-            ("europe_pmc_jats", "not_requested"),
+            // The citing PMID resolved through a Europe PMC search, so the
+            // row names that phase instead of claiming no request (1306).
+            ("europe_pmc_jats", "searched_for_doi_resolution"),
             ("opencitations", "available"),
         ]
     );
@@ -2306,4 +2308,38 @@ async fn pmcid_seed_resolves_through_the_retained_europepmc_first_row() {
         targets.iter().all(|target| target.contains("pageSize=1")),
         "{targets:?}"
     );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn citation_evidence_names_a_malformed_identifier_when_the_matched_row_fails_the_shape() {
+    let (_env, _cache, fixture, requests) = degradation_case(
+        "citation-refused-malformed-oci",
+        S2Reply::Refused("429 Too Many Requests"),
+        OpenCitationsReply::Rows(opencitations_row("1|2\\\"`$;&", "2012-07-12")),
+    )
+    .await;
+    let client = crate::sources::semantic_scholar::SemanticScholarClient::new_with_cache_observers(
+        &fixture.base,
+        |_, _| {},
+        |_, _| {},
+    )
+    .unwrap();
+    let error = crate::sources::semantic_scholar::with_test_client(
+        client,
+        citation_evidence(OPEN_CITING_PMID, OPEN_CITED_DOI, false),
+    )
+    .await
+    .unwrap_err();
+
+    // The summary names the malformed row, never provider unavailability:
+    // the index answered and matched the pair (1306).
+    let projection = error.public_projection();
+    assert_eq!(
+        projection.message,
+        "Semantic Scholar rate limited the request; OpenCitations returned a malformed citation identifier."
+    );
+    assert!(!projection.message.contains("was unavailable"));
+    let logged = requests.lock().unwrap().join("\n");
+    assert_eq!(logged.matches("opencitations:").count(), 1, "{logged}");
 }

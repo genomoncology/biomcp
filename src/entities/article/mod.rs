@@ -31,6 +31,10 @@ pub(crate) use self::planner::{
 };
 #[allow(unused_imports)]
 pub(crate) use self::ranking::{article_effective_ranking_mode, article_relevance_ranking_policy};
+pub(crate) use self::search::article_search_deadline_budget;
+pub(crate) use self::search::{
+    ARTICLE_SEARCH_DEADLINE_REASON_PREFIX, ARTICLE_SEARCH_DEADLINE_SUGGESTION,
+};
 pub use self::search::{search, search_page, validate_search_page_request};
 #[allow(unused_imports)]
 pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};

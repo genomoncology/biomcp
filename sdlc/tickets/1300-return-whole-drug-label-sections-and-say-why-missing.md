@@ -4,6 +4,14 @@ Filed 2026-10-05 by the BioMCP 0.9 lead, from the KB lead's EGFR-wiki message of
 
 Status: OPEN.
 
+## Build status
+
+- Built on branch `tickets/1300-drug-label-sections`, sha `149cee54b`, 2026-10-07. Two review cycles. Cycle 1: FIX, one P1 (raw label+safety dedup compared whole label warnings against capped safety warnings, printing over-cap warnings twice). Cycle 2: ACCEPT — the dedup compares the Markdown projection on both sides, pinned by an over-cap test that fails on the old code; verified against the branch's own gefitinib capture.
+- The wrong-drug trap is closed structurally: a guarded full-text fallback fires only on a narrow no-match, an identity word-sequence filter rejects records that merely mention the requested drug (the amivantamab and itraconazole captures pin it), fetch errors stay errors, and Ok(None) means openFDA answered with no record of this drug. Four honest label states with retry; whole sections in JSON with the cap moved to the Markdown view; the required-label abort became a settling unavailable outcome per the ticket's Changes item 2.
+- Deferred: SPL section-name mapping across versions; safety and interactions keep their own caps; the fallback is get-path only; a record past the full-text limit of 100 reports no SPL match.
+
+## Outcome
+
 ## Outcome
 
 `get drug NAME label -j` returns whole label sections in JSON, and when a drug has no label it says why in the section outcome, in line with the four section states. An agent never sees a silent `label: null`.

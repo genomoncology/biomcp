@@ -55,8 +55,14 @@ fn semantic_scholar_status_tracker_keeps_batch_failure_non_fatal() {
 
 #[test]
 fn federated_collection_keeps_available_rows_when_semantic_scholar_is_unavailable() {
-    let pubtator_page = SearchPage::offset(vec![row("22663011", ArticleSource::PubTator)], Some(1));
-    let europe_page = SearchPage::offset(Vec::new(), Some(0));
+    let pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(vec![row("22663011", ArticleSource::PubTator)], Some(1)),
+        degradation: None,
+    };
+    let europe_page = PartialSearchPage {
+        page: SearchPage::offset(Vec::new(), Some(0)),
+        degradation: None,
+    };
     let semantic_status = ArticleSourceStatus {
         source: ArticleSource::SemanticScholar,
         enabled: true,

@@ -1,9 +1,6 @@
 use super::*;
 
-fn failed_leg(
-    source: ArticleSource,
-    message: &str,
-) -> FederatedSourceOutcome<SearchPage<ArticleSearchResult>> {
+fn failed_leg(source: ArticleSource, message: &str) -> FederatedSourceOutcome<PartialSearchPage> {
     FederatedSourceOutcome::Unavailable {
         error: Some(BioMcpError::InvalidArgument(message.to_string())),
         status: source_degraded_status(
@@ -13,7 +10,7 @@ fn failed_leg(
     }
 }
 
-fn timed_out_leg(source: ArticleSource) -> FederatedSourceOutcome<SearchPage<ArticleSearchResult>> {
+fn timed_out_leg(source: ArticleSource) -> FederatedSourceOutcome<PartialSearchPage> {
     FederatedSourceOutcome::Unavailable {
         error: None,
         status: timed_out_source_status(source),
@@ -23,14 +20,14 @@ fn timed_out_leg(source: ArticleSource) -> FederatedSourceOutcome<SearchPage<Art
 #[test]
 fn both_available_sources_survive_in_source_order_without_degradation() {
     let collected = collect_type_capable_article_rows(
-        FederatedSourceOutcome::Available(SearchPage::offset(
-            vec![row("europe", ArticleSource::EuropePmc)],
-            Some(1),
-        )),
-        FederatedSourceOutcome::Available(SearchPage::offset(
-            vec![row("pubmed", ArticleSource::PubMed)],
-            Some(1),
-        )),
+        FederatedSourceOutcome::Available(PartialSearchPage {
+            page: SearchPage::offset(vec![row("europe", ArticleSource::EuropePmc)], Some(1)),
+            degradation: None,
+        }),
+        FederatedSourceOutcome::Available(PartialSearchPage {
+            page: SearchPage::offset(vec![row("pubmed", ArticleSource::PubMed)], Some(1)),
+            degradation: None,
+        }),
     )
     .expect("available capable sources should be collected");
 
@@ -43,10 +40,10 @@ fn both_available_sources_survive_in_source_order_without_degradation() {
 #[test]
 fn europe_pmc_rows_and_total_survive_pubmed_failure() {
     let collected = collect_type_capable_article_rows(
-        FederatedSourceOutcome::Available(SearchPage::offset(
-            vec![row("europe", ArticleSource::EuropePmc)],
-            Some(7),
-        )),
+        FederatedSourceOutcome::Available(PartialSearchPage {
+            page: SearchPage::offset(vec![row("europe", ArticleSource::EuropePmc)], Some(7)),
+            degradation: None,
+        }),
         failed_leg(ArticleSource::PubMed, "pubmed failed"),
     )
     .expect("Europe PMC rows should survive PubMed failure");
@@ -62,10 +59,10 @@ fn europe_pmc_rows_and_total_survive_pubmed_failure() {
 fn pubmed_rows_and_total_survive_europe_pmc_failure() {
     let collected = collect_type_capable_article_rows(
         failed_leg(ArticleSource::EuropePmc, "europe failed"),
-        FederatedSourceOutcome::Available(SearchPage::offset(
-            vec![row("pubmed", ArticleSource::PubMed)],
-            Some(9),
-        )),
+        FederatedSourceOutcome::Available(PartialSearchPage {
+            page: SearchPage::offset(vec![row("pubmed", ArticleSource::PubMed)], Some(9)),
+            degradation: None,
+        }),
     )
     .expect("PubMed rows should survive Europe PMC failure");
 
