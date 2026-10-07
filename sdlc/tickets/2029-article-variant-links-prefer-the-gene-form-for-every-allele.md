@@ -67,6 +67,7 @@ names the allele the row mentions.
   under one rsID: the two writings count as one change, so the rows keep
   their rsID links. This guards `distinct_change_key` against the raw-HGVS
   shortcut the evidence bullet records.
+<<<<<<< HEAD
 ## Build status
 
 - Built on branch `tickets/2029-article-variant-links-prefer-the-gene-form`,
@@ -83,3 +84,22 @@ names the allele the row mentions.
   (a comment narrower than the code; a missing named pin for the
   no-rsID + gene path) folded in 476da62c5 with the annotations scope
   green on the build host.
+=======
+
+- Scoped verification at cf7280710: `cargo fmt --check` clean;
+  `cargo clippy --no-default-features --lib --tests -- -D warnings` clean;
+  `cargo nextest run --no-default-features --locked -E 'test(article) or
+  test(pubtator)'` 702 passed, 0 failed; `mustmatch test
+  spec/entity/article-entities.md --lang bash --timeout 180` passed all 20
+  blocks under the article and variant-identity fixtures after
+  `make prepare-spec`, including the each-row proof that all five KRAS
+  gene-plus-protein commands and the rs121913529 control open their own
+  variants; `tools/check-source-capture-receipts.py --root testdata/sources`
+  audits 321 files with the two new KRAS captures receipted.
+
+- The probe tests fail on 2018's landed commit: with this branch's
+  `annotations/tests.rs` applied over `6b504219e`,
+  `single_mention_allele_of_a_multi_allele_rsid_carries_the_gene_form` and
+  `rows_with_gene_and_change_prefer_the_gene_qualified_form` fail, and
+  `one_allele_written_two_ways_stays_one_rsid_change` passes, as it should —
+  2018 already collapses the two writings to one change.
