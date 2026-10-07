@@ -189,10 +189,10 @@
     "review-fixes-for-1251-and-1252.md"
   ],
   "forbiddenNames": [
-    "biomcp-thinkthen-kb",
-    "thinkthen-qa",
-    "beatles-bench",
-    "factory2"
+    "YmlvbWNwLXRoaW5rdGhlbi1rYg==",
+    "dGhpbmt0aGVuLXFh",
+    "YmVhdGxlcy1iZW5jaA==",
+    "ZmFjdG9yeTI="
   ],
   "mailroom": {
     "repo": "sdlc",

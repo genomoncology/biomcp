@@ -73,9 +73,38 @@ def _text(data: bytes) -> str | None:
         return None
 
 
-def _forbidden_text(text: str) -> bool:
+def declared_names(root: Path) -> tuple[str, ...]:
+    """Private project names `sdlc/pm.json` declares as forbidden.
+
+    This repository is public, so pm.json carries the names base64-encoded,
+    the same convention the coupling receipts use. A declared value that
+    does not decode is matched literally, so a plaintext declaration still
+    guards. An absent or malformed config declares nothing.
+    """
+    try:
+        declared = json.loads((root / "sdlc" / "pm.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ()
+    entries = declared.get("forbiddenNames") if isinstance(declared, dict) else None
+    if not isinstance(entries, list):
+        return ()
+    names: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, str) or not entry:
+            continue
+        try:
+            name = base64.b64decode(entry.encode("ascii"), validate=True).decode(
+                "utf-8"
+            )
+        except (UnicodeError, ValueError):
+            name = entry
+        names.append(name.casefold())
+    return tuple(names)
+
+
+def _forbidden_text(text: str, private: tuple[str, ...] = ()) -> bool:
     folded = text.casefold()
-    if any(value in folded for value in FORBIDDEN):
+    if any(value in folded for value in FORBIDDEN + private):
         return True
     if any(
         f"{subject} {mechanism}" in folded
@@ -160,13 +189,13 @@ def _toml_sections(text: str) -> Iterator[tuple[bool, str, str]]:
         yield is_array, header.strip(), text[end:body_end]
 
 
-def _matches(data: bytes) -> bool:
+def _matches(data: bytes, private: tuple[str, ...] = ()) -> bool:
     text = _text(data)
-    return text is not None and _forbidden_text(text)
+    return text is not None and _forbidden_text(text, private)
 
 
-def _path_matches(path: str) -> bool:
-    return _forbidden_text(path)
+def _path_matches(path: str, private: tuple[str, ...] = ()) -> bool:
+    return _forbidden_text(path, private)
 
 
 def _allowlist(path: Path = INVENTORY) -> dict[str, object]:
@@ -237,13 +266,20 @@ def closure_diff_is_block_only(before: bytes, after: bytes) -> bool:
     )
 
 
-def scan_files(root: Path, names: list[str], inventory: Path = INVENTORY) -> list[str]:
+def scan_files(
+    root: Path,
+    names: list[str],
+    inventory: Path = INVENTORY,
+    private: tuple[str, ...] | None = None,
+) -> list[str]:
+    if private is None:
+        private = declared_names(root)
     allowed = _allowlist(inventory)
     violations: list[str] = []
     seen_allowed: set[str] = set()
     for name in names:
         data = (root / name).read_bytes()
-        if not (_path_matches(name) or _matches(data)):
+        if not (_path_matches(name, private) or _matches(data, private)):
             continue
         if _entry_allows(name, data, allowed.get(name)):
             seen_allowed.add(name)
@@ -254,15 +290,15 @@ def scan_files(root: Path, names: list[str], inventory: Path = INVENTORY) -> lis
     return sorted(violations)
 
 
-def scan_archive(path: Path) -> list[str]:
+def scan_archive(path: Path, private: tuple[str, ...] = ()) -> list[str]:
     violations: list[str] = []
     with tarfile.open(path, "r:gz") as archive:
         for member in archive.getmembers():
             if not member.isfile():
                 continue
             source = archive.extractfile(member)
-            if _path_matches(member.name) or (
-                source is not None and _matches(source.read())
+            if _path_matches(member.name, private) or (
+                source is not None and _matches(source.read(), private)
             ):
                 violations.append(member.name)
     return sorted(violations)
@@ -288,10 +324,11 @@ def main() -> int:
     parser.add_argument("--archive", type=Path)
     parser.add_argument("--inventory", type=Path, default=INVENTORY)
     args = parser.parse_args()
+    private = declared_names(ROOT)
     violations = (
-        scan_archive(args.archive)
+        scan_archive(args.archive, private)
         if args.archive
-        else scan_files(args.root, tracked(args.root), args.inventory)
+        else scan_files(args.root, tracked(args.root), args.inventory, private)
     )
     if violations:
         print("forbidden coupling:\n" + "\n".join(violations))

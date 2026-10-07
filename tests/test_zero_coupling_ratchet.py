@@ -459,3 +459,54 @@ def test_archive_scan_rejects_forbidden_member_name_with_clean_contents(
 def test_repository_historical_inventory_is_exact_and_current() -> None:
     checker = _module()
     assert checker.scan_files(ROOT, checker.tracked(ROOT)) == []
+
+
+PRIVATE_NAME = "acme" + "-kb"
+
+
+def _pm_json(root: Path, names: list[str]) -> None:
+    (root / "sdlc").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc" / "pm.json").write_text(
+        json.dumps({"forbiddenNames": names}), encoding="utf-8"
+    )
+
+
+def test_pm_json_declares_private_names_encoded_and_they_flag_plants(
+    tmp_path: Path,
+) -> None:
+    checker = _module()
+    assert checker.declared_names(tmp_path) == ()
+    _pm_json(tmp_path, [base64.b64encode(PRIVATE_NAME.encode()).decode()])
+    assert checker.declared_names(tmp_path) == (PRIVATE_NAME,)
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    planted = "sdlc/records/note.md"
+    path = tmp_path / planted
+    path.parent.mkdir(parents=True)
+    path.write_text(f"the plan lives in {PRIVATE_NAME}\n", encoding="utf-8")
+    named = "docs/" + PRIVATE_NAME + ".md"
+    (tmp_path / named).parent.mkdir(parents=True)
+    (tmp_path / named).write_text("clean contents\n", encoding="utf-8")
+    assert checker.scan_files(tmp_path, [planted, named], inventory) == [
+        named,
+        planted,
+    ]
+
+
+def test_plaintext_pm_name_declaration_still_flags(tmp_path: Path) -> None:
+    checker = _module()
+    _pm_json(tmp_path, [PRIVATE_NAME])
+    assert checker.declared_names(tmp_path) == (PRIVATE_NAME,)
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    planted = "sdlc/records/note.md"
+    path = tmp_path / planted
+    path.parent.mkdir(parents=True)
+    path.write_text(f"see {PRIVATE_NAME}\n", encoding="utf-8")
+    assert checker.scan_files(tmp_path, [planted], inventory) == [planted]
+
+
+def test_repository_declares_private_names_the_tree_is_clean_of() -> None:
+    checker = _module()
+    names = checker.declared_names(ROOT)
+    assert names, "pm.json must declare forbidden names"
+    raw = (ROOT / "sdlc" / "pm.json").read_text(encoding="utf-8").casefold()
+    assert not any(name in raw for name in names), "names must stay encoded"
