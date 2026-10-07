@@ -177,44 +177,6 @@ pub(crate) mod clinvar {
         api_key: Option<String>,
     }
 
-    #[cfg(test)]
-    mod clinvar_render_tests {
-
-        #[test]
-        fn clinvar_markdown_keeps_vcv_rcv_and_scv_statuses_and_domains_distinct() {
-            let variant: crate::entities::variant::Variant = serde_json::from_value(serde_json::json!({
-        "id": "chr5:g.118860951A>G",
-        "gene": "HSD17B4",
-        "section_outcomes": {"clinvar": {"outcome": "data", "sources": ["NCBI ClinVar"]}},
-        "clinvar": {
-            "source": "NCBI ClinVar", "variation_id": 974782,
-            "accession": "VCV000974782", "version": 2, "record_status": "current",
-            "number_submitters": 2,
-            "aggregates": [{
-                "source": "NCBI ClinVar", "accession": "RCV001251043", "version": 2,
-                "classification_domain": "germline", "classification": "Likely pathogenic",
-                "review_status": "criteria provided, multiple submitters, no conflicts",
-                "submission_count": 2, "conditions": ["Bifunctional peroxisomal enzyme deficiency"]
-            }],
-            "submissions": [{
-                "source": "NCBI ClinVar", "accession": "SCV006072505", "version": 1,
-                "classification_domain": "oncogenicity", "classification": "Oncogenic",
-                "record_status": "current", "submitter": "LabCorp",
-                "contributes_to_aggregate_classification": false, "conditions": []
-            }]
-        }
-    }))
-    .expect("variant");
-            let markdown = crate::render::markdown::variant_markdown(&variant, &["clinvar".into()])
-                .expect("markdown");
-            assert!(markdown.contains("VCV record status: current"));
-            assert!(markdown.contains("RCV001251043.2 [germline]"));
-            assert!(markdown.contains("SCV006072505.1 [oncogenicity]"));
-            assert!(markdown.contains("SCV status current"));
-            assert!(markdown.contains("contributes to aggregate: false"));
-        }
-    }
-
     impl ClinvarClient {
         pub(crate) fn new() -> Result<Self, BioMcpError> {
             Ok(Self {

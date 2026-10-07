@@ -464,17 +464,6 @@
       }
     },
     {
-      "path": "src/sources/ncbi_efetch.rs",
-      "baseline_lines": 1281,
-      "floor_lines": 1000,
-      "authorized_increase": {
-        "ticket": "1154, 1290",
-        "delta": 281,
-        "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client. Maintenance reconciliation adds 64 total lines for bounded record-level germline classification decoding and its assertions.",
-        "removal_condition": "Split the ClinVar transport, parser, and tests when the NCBI EFetch client is next decomposed."
-      }
-    },
-    {
       "path": "src/sources/opentargets.rs",
       "baseline_lines": 2088,
       "floor_lines": 2088,

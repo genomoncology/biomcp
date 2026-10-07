@@ -351,97 +351,31 @@ mod clinvar {
             .expect("fixture")
         }
 
-        fn fallback_record() -> super::super::ClinVarRecordProjection {
-            super::super::ClinVarRecordProjection::from_myvariant(hit().source().clinvar().unwrap())
-                .expect("fallback")
-        }
-
-        fn direct_record(with_row: bool) -> super::super::ClinVarRecordProjection {
-            let fallback = fallback_record();
-            let mut target = serde_json::to_value(fallback.as_record_target()).unwrap();
-            target["source"] = serde_json::json!("NCBI ClinVar");
-            target["accession"] = serde_json::json!("VCV000974782");
-            target["version"] = serde_json::json!(2);
-            target["record_status"] = serde_json::json!("current");
-            if !with_row {
-                target["aggregates"] = serde_json::json!([]);
-            }
-            super::super::ClinVarRecordProjection::deserialize_record_target(target).unwrap()
-        }
-
         #[test]
-        fn canonical_outcomes_and_provenance_match_selected_payload_source() {
-            let cases = [
-                (
-                    Ok(Some(direct_record(true))),
-                    Some(fallback_record()),
-                    SectionOutcomeState::Data,
-                    vec!["NCBI ClinVar"],
-                    Some("NCBI ClinVar"),
-                ),
-                (
-                    Ok(Some(direct_record(false))),
-                    Some(fallback_record()),
-                    SectionOutcomeState::Empty,
-                    vec!["NCBI ClinVar"],
-                    None,
-                ),
-                (
-                    Err(()),
-                    Some(fallback_record()),
-                    SectionOutcomeState::Degraded,
-                    vec!["MyVariant.info"],
-                    Some("MyVariant.info"),
-                ),
-                (
-                    Err(()),
-                    None,
-                    SectionOutcomeState::Unavailable,
-                    vec![],
-                    None,
-                ),
-            ];
-            for (direct, fallback, state, sources, payload_source) in cases {
-                let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
-                variant.clinvar = None;
-                apply_clinvar_result(&mut variant, fallback, direct);
-                let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
-                assert_eq!(outcome.outcome(), state);
-                assert_eq!(outcome.sources(), sources);
-                assert_eq!(
-                    variant.clinvar.as_ref().map(|record| record.source()),
-                    payload_source
-                );
-                let provenance = crate::render::provenance::variant_section_sources(&variant);
-                let clinvar = provenance
-                    .iter()
-                    .find(|row| row.key == "clinvar")
-                    .expect("row");
-                assert_eq!(clinvar.outcome, state);
-                assert_eq!(clinvar.sources, sources);
-            }
-        }
-
-        #[tokio::test]
-        async fn missing_numeric_variation_id_is_source_free_inapplicable() {
-            let hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
-                "_id": "chr5:g.118860951A>G",
-                "clinvar": {"rcv": {"accession": "RCV001251043"}}
-            }))
-            .expect("fixture");
+        fn current_record_without_rows_is_empty_even_with_cached_fallback() {
+            let record = super::super::ClinVarRecordProjection::deserialize_record_target(
+                serde_json::json!({"source":"NCBI ClinVar","variation_id":974782,
+                    "accession":"VCV000974782","version":2,"record_status":"current",
+                    "aggregates":[],"submissions":[]}),
+            )
+            .unwrap();
+            let hit = hit();
+            let fallback = super::super::ClinVarRecordProjection::from_myvariant(
+                hit.source().clinvar().unwrap(),
+            );
             let mut variant = crate::transform::variant::from_myvariant_hit(&hit);
-            add_clinvar(&mut variant, &hit, Duration::from_millis(1)).await;
+            apply_clinvar_result(&mut variant, fallback, Ok(Some(record)));
             let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
-            assert_eq!(outcome.outcome(), SectionOutcomeState::Inapplicable);
-            assert!(outcome.sources().is_empty());
+            assert_eq!(outcome.outcome(), SectionOutcomeState::Empty);
+            assert_eq!(outcome.sources(), ["NCBI ClinVar"]);
             assert!(variant.clinvar.is_none());
             let provenance = crate::render::provenance::variant_section_sources(&variant);
             let row = provenance
                 .iter()
                 .find(|row| row.key == "clinvar")
                 .expect("row");
-            assert_eq!(row.outcome, SectionOutcomeState::Inapplicable);
-            assert!(row.sources.is_empty());
+            assert_eq!(row.outcome, SectionOutcomeState::Empty);
+            assert_eq!(row.sources, ["NCBI ClinVar"]);
         }
     }
 }

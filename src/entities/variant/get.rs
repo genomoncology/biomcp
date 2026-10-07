@@ -1429,21 +1429,19 @@ pub async fn get_with_workflow_signals(
     Ok((variant, signals))
 }
 #[cfg(test)]
+mod cadd_adoption_tests;
+#[cfg(test)]
 mod clinvar_adoption_transport_tests;
 #[cfg(test)]
 mod dbnsfp_transport_tests;
 #[cfg(test)]
 mod direct_clinvar_record_transport_tests;
 #[cfg(test)]
+mod hit_adoption_tests;
+#[cfg(test)]
 mod protein_change_tests;
 #[cfg(test)]
 pub(super) mod tests;
-
-#[cfg(test)]
-mod cadd_adoption_tests;
-
-#[cfg(test)]
-mod hit_adoption_tests;
 
 #[cfg(test)]
 mod cached_evidence_transport_tests;

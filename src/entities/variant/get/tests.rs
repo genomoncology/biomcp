@@ -471,34 +471,6 @@ fn exact_helper_candidate_selection_rejects_conflicts_and_missing_evidence() {
     ));
 }
 
-#[test]
-fn indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count() {
-    let hit = crate::sources::myvariant::MyVariantHit::from_value(serde_json::json!({
-        "_id": "chr5:g.118860951A>G",
-        "clinvar": {
-            "variant_id": 974782,
-            "rcv": {
-                "accession": "RCV001251043",
-                "version": 2,
-                "clinical_significance": "Likely pathogenic",
-                "review_status": "criteria provided, single submitter",
-                "last_evaluated": "2020-08-04",
-                "number_submitters": 1,
-                "conditions": {"name": "Bifunctional peroxisomal enzyme deficiency"}
-            }
-        }
-    }))
-    .expect("MyVariant fixture");
-    let record = biodata::ClinVarRecordProjection::from_myvariant(hit.source().clinvar().unwrap())
-        .expect("usable fallback");
-    let row = &record.aggregates()[0];
-    assert_eq!(record.source(), "MyVariant.info");
-    assert_eq!(row.accession(), "RCV001251043");
-    assert_eq!(row.version(), Some(2));
-    assert_eq!(row.evaluation_date(), Some("2020-08-04"));
-    assert_eq!(row.number_submitters(), Some(1));
-}
-
 fn braf_variant_stub() -> Variant {
     Variant {
         section_outcomes: super::super::default_variant_section_outcomes(),

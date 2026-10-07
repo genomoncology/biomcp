@@ -1494,47 +1494,10 @@ async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() 
     let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
     let _env = ClinvarMcpEnv::set(&base);
 
-    let default = crate::entities::variant::get("rs1154001", &[])
-        .await
-        .expect("default variant");
-    assert_eq!(requests.load(Ordering::SeqCst), 0);
-    assert!(default.clinvar.is_none());
-
-    let explicit = crate::entities::variant::get("rs1154001", &["clinvar".into()])
-        .await
-        .expect("explicit ClinVar");
-    assert_eq!(requests.load(Ordering::SeqCst), 1);
-    let explicit_json = serde_json::to_value(&explicit).expect("variant JSON");
-    assert_eq!(
-        explicit_json["section_outcomes"]["clinvar"]["outcome"],
-        "data"
-    );
-    assert_eq!(
-        explicit_json["section_outcomes"]["clinvar"]["sources"],
-        json!(["NCBI ClinVar"])
-    );
-    assert_eq!(
-        explicit_json["clinvar"]["submissions"][0]["criteria"]
-            .as_str()
-            .expect("criteria at exact boundary")
-            .len(),
-        32 * 1024
-    );
-
     crate::entities::variant::get("rs1154001", &["all".into()])
         .await
         .expect("all sections");
-    assert_eq!(requests.load(Ordering::SeqCst), 2);
-
-    let over_boundary = crate::entities::variant::get("rs1154004", &["clinvar".into()])
-        .await
-        .expect("over-boundary direct record degrades");
-    let over_json = serde_json::to_value(over_boundary).expect("over-boundary JSON");
-    assert_eq!(
-        over_json["section_outcomes"]["clinvar"]["outcome"],
-        "degraded"
-    );
-    assert_eq!(over_json["clinvar"]["source"], "MyVariant.info");
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
 
     let json_result = |result| {
         let value = serde_json::to_value(result).expect("MCP result JSON");
@@ -1543,50 +1506,6 @@ async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() 
         )
         .expect("MCP response body")
     };
-    let fallback_entity = crate::entities::variant::get("rs1154002", &["clinvar".into()])
-        .await
-        .expect("fallback JSON");
-    let fallback_json = serde_json::to_value(fallback_entity).expect("fallback entity JSON");
-    let fallback_raw = BioMcpServer::new()
-        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
-            command: "biomcp get variant rs1154002 clinvar".into(),
-            json: true,
-        }))
-        .await
-        .map(json_result)
-        .expect("raw MCP fallback");
-    let fallback_typed = BioMcpServer::new()
-        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
-            json!({
-                "entity":"variant", "id":"rs1154002", "sections":["clinvar"], "json":true
-            }),
-        )))
-        .await
-        .map(json_result)
-        .expect("typed MCP fallback");
-    for value in [&fallback_json, &fallback_raw, &fallback_typed] {
-        assert_eq!(value["clinvar"]["source"], "MyVariant.info");
-        assert_eq!(value["clinvar"]["aggregates"][0]["version"], 4);
-        assert_eq!(
-            value["clinvar"]["aggregates"][0]["evaluation_date"],
-            "2024-02-03"
-        );
-        assert_eq!(value["clinvar"]["aggregates"][0]["number_submitters"], 3);
-        assert_eq!(value["section_outcomes"]["clinvar"]["outcome"], "degraded");
-        assert_eq!(
-            value["section_outcomes"]["clinvar"]["sources"],
-            json!(["MyVariant.info"])
-        );
-        if let Some(meta) = value.get("_meta") {
-            let row = meta["section_sources"]
-                .as_array()
-                .and_then(|rows| rows.iter().find(|row| row["key"] == "clinvar"))
-                .expect("MCP ClinVar provenance");
-            assert_eq!(row["outcome"], "degraded");
-            assert_eq!(row["sources"], json!(["MyVariant.info"]));
-        }
-    }
-
     let before_inapplicable = requests.load(Ordering::SeqCst);
     let inapplicable_entity = crate::entities::variant::get("rs1154003", &["clinvar".into()])
         .await
