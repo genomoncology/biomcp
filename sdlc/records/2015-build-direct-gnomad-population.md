@@ -46,6 +46,8 @@ The exact-pin boundary checker passes. Changed Rust files pass rustfmt with `ski
 
 Inherited findings remain visible: `test_forged_offline_marker_fails_in_the_normal_namespace` fails on Darwin as recorded by 2014; this attempt reproduced that same diagnostic assertion failure. Strict Clippy remains unpassed from the inherited 2014 results (10 library and 18 library-test errors on unchanged diagnostic owners). Clippy was not rerun for this focused build. Cargo still reports unchanged dead-code warnings, including SearchPage fields/cursor methods. The minimal cached pytest environment retains its unknown `asyncio_mode` warning. No warning suppression, gate acceptance or Linux isolation qualification is claimed.
 
+PM status reports a clean worktree and 206 existing record findings. Its unchanged ticket 2015 Risk line is one finding. No finding names the new build record; this build does not repair repository-wide record debt.
+
 Preparation/invocation failures supplied no acceptance evidence: the first offline dependency-cache lookup, Python executables without tomllib or pytest, and a short unqualified exact test selector that discovered zero tests. Each was corrected before the stated passes. Local logs use the `biomcp2015-` prefix under `/private/tmp`; the red, implementation/owner/final compile, CLI, native, source, channel, boundary and pin-selection logs preserve output and measured costs. They are scratch evidence; this repository record owns the conclusions.
 
 ## Exact changed files
