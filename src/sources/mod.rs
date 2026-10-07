@@ -1536,6 +1536,9 @@ pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
     if let Some(client) = cached_http_client() {
         return Ok(client);
     }
+    // Unreachable in production (the slot was just written and nothing
+    // clears it); a test-only reset seam can clear it concurrently, so
+    // the arm stays as the honest failure shape rather than an unwrap.
     Err(BioMcpError::Api {
         api: "http-client".into(),
         message: "Shared HTTP client initialization race".into(),
@@ -1566,6 +1569,9 @@ pub(crate) async fn shared_client_with_deadline(
     if let Some(client) = cached_http_client() {
         return Ok(client);
     }
+    // Unreachable in production (the slot was just written and nothing
+    // clears it); a test-only reset seam can clear it concurrently, so
+    // the arm stays as the honest failure shape rather than an unwrap.
     Err(BioMcpError::Api {
         api: "http-client".into(),
         message: "Shared HTTP client initialization race".into(),
