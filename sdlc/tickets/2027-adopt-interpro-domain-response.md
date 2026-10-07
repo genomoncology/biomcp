@@ -22,3 +22,5 @@ Use producer0715 through both `entities::protein::get` and `entities::variant::s
 ## Review
 
 Root assigns a fresh read-only review of the exact pair and releases BUILD separately. No implementation or independent acceptance is claimed. Root reconciles maintenance before consumer BUILD/review without rebasing the dedicated line. M5 is authorized; newer host strategies do not override the no-hosted-jobs boundary. Another agent owns cleanup.
+
+DESIGN review correction: the same caller cases extend through existing CLI/MCP harnesses and JSON/Markdown outputs. Assert omission/order/source attribution, failures and serialized recovery. No duplicate decoder matrix or new framework is proposed. Root obtains closure of this named public-output gap before BUILD release.
