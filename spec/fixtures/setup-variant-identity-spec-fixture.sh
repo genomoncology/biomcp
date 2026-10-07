@@ -32,6 +32,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 import json
 import sys
+import time
 
 ROOT = Path(sys.argv[1])
 READY = Path(sys.argv[2])
@@ -78,6 +79,26 @@ KRAS_G12D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12d_2026100
 KRAS_G12V_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12v_20261007.json").read_bytes()
 RS121913529_RESPONSE = (ROOT / "testdata/sources/myvariant/query_rsid_rs121913529_20261007.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
+# Ticket 1291: NCBI never answers inside the optional-enrichment deadline
+# for this VariationID, so the ClinVar section must name the timeout and
+# label the served MyVariant.info copy as degraded with its newest
+# evaluation date.
+CLINVAR_TIMEOUT_HIT = {
+    "_id": "chr17:g.7676154G>A",
+    "dbnsfp": {"genename": "TP53", "hgvsp": "p.R273H"},
+    "clinvar": {
+        "gene": {"symbol": "TP53"},
+        "variant_id": 1290630,
+        "rcv": [{
+            "accession": "RCV000030704",
+            "clinical_significance": "Pathogenic",
+            "last_evaluated": "2021-03-11",
+            "number_submitters": 3,
+            "preferred_name": "NM_000546.6(TP53):c.818G>A (p.Arg273His)",
+            "review_status": "reviewed by expert panel",
+        }],
+    },
+}
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
     "dbnsfp": {
@@ -266,6 +287,12 @@ class Handler(BaseHTTPRequestHandler):
             if params.get("db") == ["clinvar"] and params.get("id") == ["428884"]:
                 send_xml(self, 200, CLINVAR_428884_XML)
                 return
+            if params.get("db") == ["clinvar"] and params.get("id") == ["1290630"]:
+                # Ticket 1291: the optional-enrichment deadline fires before
+                # this recorded-slow NCBI answer lands.
+                time.sleep(20)
+                send_xml(self, 200, CLINVAR_428884_XML)
+                return
             send_json(self, 404, {"error": "fixture efetch record not found"})
             return
         if parsed.path == "/v1/variant/chr7:g.140753336A%3ET":
@@ -422,6 +449,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.G105S"' in query:
                 send_json(self, 200, TP53_G105S_RESPONSE)
+                return
+            if "dbnsfp.genename:TP53" in query and 'dbnsfp.hgvsp:"p.R273H"' in query:
+                send_json(self, 200, {"total": 1, "hits": [CLINVAR_TIMEOUT_HIT]})
                 return
             if query == 'dbnsfp.genename:DICER1 AND dbnsfp.hgvsp:"p.M1483I"':
                 send_json(self, 200, json.loads(DICER1_M1483I_RESPONSE))
