@@ -14,7 +14,14 @@ first try.
 Tickets 1292, 1297, 1301, 1302, and 1303 each recorded a deferred
 CHANGELOG bullet in their build status. The release gate enforces
 coverage at tag time (tools/check-changelog-coverage.py, Unreleased
-section convention).
+section convention). Amendment 2026-10-07, from the lane's live gate
+run: the gate counts every ticket merged since v0.9.1, not only the
+deferred ones, so the bullet set is widened to the truthful full set —
+code bullets for 1290, 1293, 1294, 1295, 1296, 1298, and 1304 from
+their land commits, and one Internal bullet covering 1287, 1288, and
+1289 (sweep, issue filing and diagnosis, planning; no user-visible
+change). The original evidence undercounted; the lane decision record
+is in the build report.
 
 ## Change detail
 
