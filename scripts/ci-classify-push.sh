@@ -43,7 +43,12 @@ while IFS= read -r path; do
     # into the binary (src/cli/chart.rs) and tests/benchmark_cli_
     # structure.rs reads README.md and every docs/**/*.md, so any of
     # them can change Rust-verified behavior (2026-09-30 review).
-    sdlc/*|notes/*|CHANGELOG.md|AGENTS.md|.github/*.md) ;;
+    # CHANGELOG.md is NOT docs-only either: tests/test_docs_changelog_
+    # refresh.py is marked needs_binary, so the repository-contracts
+    # lane ("not needs_binary") skips it and only the canonical lane
+    # runs it — a changelog-only push must classify as full CI
+    # (2026-10-07 review, finding 4).
+    sdlc/*|notes/*|AGENTS.md|.github/*.md) ;;
     *) docs_only=false; break ;;
   esac
 done < <(git diff --name-only "$before" "$after")

@@ -55,10 +55,18 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
     assert "git merge-base" in classify
     assert "sdlc/*|notes/*" in classify
     allow_list = classify.split("case")[1].split("esac")[0]
+    stripped = allow_list.replace("sdlc/*|notes/*|AGENTS.md|.github/*.md)", "")
     for executable in ("docs/*", "README.md|", "|README"):
-        assert executable not in allow_list.replace("sdlc/*|notes/*|CHANGELOG.md|AGENTS.md|.github/*.md)", ""), (
+        assert executable not in stripped, (
             "docs/ and README.md are read by Rust tests and compiled in; they must run full CI"
         )
+    # CHANGELOG.md left the allow list: the changelog refresh test is
+    # needs_binary, so only the canonical lane runs it and a
+    # changelog-only push must classify as full CI.
+    assert "CHANGELOG.md" not in allow_list, (
+        "CHANGELOG.md is read by tests/test_docs_changelog_refresh.py; "
+        "a changelog-only push must run the lane that carries it"
+    )
 
 
 def test_every_rust_job_waits_on_the_changes_job() -> None:
