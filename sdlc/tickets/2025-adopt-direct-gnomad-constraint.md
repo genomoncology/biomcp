@@ -26,3 +26,7 @@ Global number reserved by `pm ticket new` in an isolated 1.0 checkout. Producer0
 ## BUILD release
 
 Use qualified BioData `543bf8c304c3965af6a1c92076c9e63d02bd2998` version `0.0.39`, with producer CODE ACCEPT `46e8c9a33d9ebece7dd63c45fb23634144521b38`. Root landed and pushed the producer. Consumer starts from the dedicated base with population2015 and maintenance37631c35. Preserve fixture bytes and pending provider receipts. Root owns fresh CODE review, reconciliation and landing; another agent owns cleanup. [Build record](../records/2025-adopt-direct-gnomad-constraint.md) records the actual checks and inherited findings.
+
+## What the build taught us
+
+Complete shared constraint storage and borrowed flattened encoding preserve the product contract through both retrieval strategies and CLI/MCP output. Source transcript normalization remains separate from literal target restoration. Fresh CODE review ACCEPTED1b94ae4148f760a5ecefde5ea011046551d76acf with no product findings.13 affected Rust and147 Python checks passed; inherited unrelated gate findings and pending provider receipts remain explicit.
