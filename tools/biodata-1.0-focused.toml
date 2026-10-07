@@ -2,6 +2,14 @@ version = 1
 
 [selection]
 rust = [
+  "sources::oncokb::tests::construction::annotate_plan_sets_query_and_auth_header",
+  "sources::oncokb::tests::construction::annotate_plan_requires_gene_and_alteration",
+  "sources::oncokb::tests::construction::annotate_plan_requires_api_key",
+  "sources::oncokb::tests::construction::protein_change_attempts_try_original_and_prefixed_forms_without_duplicates",
+  "sources::oncokb::tests::parsing::decode_json_response_maps_http_errors_with_excerpt",
+  "sources::oncokb::tests::parsing::decode_json_response_maps_invalid_json",
+  "render::markdown::variant::tests::variant_oncokb_markdown",
+
   "entities::protein::interpro_adoption_tests::interpro_protein_reaches_native_cli_and_typed_raw_mcp",
   "entities::protein::interpro_adoption_tests::interpro_original_byte_errors_are_private",
   "entities::variant::structure::interpro_adoption_tests::interpro_structure_reaches_native_cli_and_raw_mcp",
@@ -664,6 +672,7 @@ rust = [
   "sources::tests::read_limited_source_body_with_limit_accepts_body_within_limit",
 ]
 python = [
+  "tests/test_oncokb_response_adoption.py",
   "tests/test_biodata_boundary.py",
   "tests/test_source_package_boundary.py",
   "tests/test_ctgov_trial_search_detail_reuse.py",

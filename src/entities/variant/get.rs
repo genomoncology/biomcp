@@ -2,7 +2,7 @@
 
 mod coding_lookup;
 mod transcript_deletion_lookup;
-use biodata::ClinVarRecordProjection;
+use biodata::{ClinVarRecordProjection, OncoKBAnnotationProjection};
 use coding_lookup::candidate_matches_requested_identity;
 mod protein_lookup;
 mod rsid_lookup;
@@ -20,7 +20,7 @@ use crate::sources::gnomad::{GnomadClient, GnomadVariantPopulation};
 #[cfg(feature = "alphagenome")]
 use crate::sources::mygene::MyGeneClient;
 use crate::sources::myvariant::MyVariantClient;
-use crate::sources::oncokb::{OncoKBAnnotation, OncoKBClient};
+use crate::sources::oncokb::OncoKBClient;
 use crate::transform;
 
 use super::gwas::add_gwas_section;
@@ -250,22 +250,21 @@ fn oncokb_alteration_from_variant(
     }
 }
 
-fn therapies_from_oncokb(annotation: &OncoKBAnnotation) -> Vec<TreatmentImplication> {
+fn therapies_from_oncokb(annotation: &OncoKBAnnotationProjection) -> Vec<TreatmentImplication> {
     let mut implications: Vec<TreatmentImplication> = Vec::new();
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
 
-    for treatment in &annotation.treatments {
+    for treatment in annotation.treatments() {
         let level = treatment
-            .level
-            .as_deref()
+            .level()
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .map(transform::variant::normalize_oncokb_level)
             .unwrap_or_else(|| "Unknown".to_string());
         let mut drugs = treatment
-            .drugs
+            .drugs()
             .iter()
-            .filter_map(|d| d.drug_name.as_deref())
+            .filter_map(|d| d.drug_name())
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .map(str::to_string)
@@ -273,9 +272,8 @@ fn therapies_from_oncokb(annotation: &OncoKBAnnotation) -> Vec<TreatmentImplicat
         drugs.sort();
         drugs.dedup();
         let cancer_type = treatment
-            .cancer_type
-            .as_ref()
-            .and_then(|c| c.name.as_deref())
+            .cancer_type()
+            .and_then(|c| c.name())
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .map(str::to_string);
@@ -718,27 +716,23 @@ pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
     let client = OncoKBClient::new()?;
     let annotation = client.annotate_best_effort(gene, &alteration).await?;
     let oncogenic = annotation
-        .oncogenic
-        .as_deref()
+        .oncogenic()
         .map(str::trim)
         .filter(|v| !v.is_empty())
         .map(str::to_string);
     let level = annotation
-        .highest_sensitive_level
-        .as_deref()
+        .highest_sensitive_level()
         .map(transform::variant::normalize_oncokb_level)
         .filter(|v| !v.is_empty())
         .or_else(|| {
             annotation
-                .highest_resistance_level
-                .as_deref()
+                .highest_resistance_level()
                 .map(transform::variant::normalize_oncokb_level)
                 .filter(|v| !v.is_empty())
         });
     let effect = annotation
-        .mutation_effect
-        .as_ref()
-        .and_then(|m| m.known_effect.as_deref())
+        .mutation_effect()
+        .and_then(|m| m.known_effect())
         .map(str::trim)
         .filter(|v| !v.is_empty())
         .map(str::to_string);
