@@ -9,3 +9,5 @@ Qualified CLI build43.66s and library-test compilation54.10s passed. All18 affec
 Producer Linux lint21.559s/test129.138s passed on reviewed product bytes. Corrected package-list ordering passed the ordinary spec35.794s. Only that affected gate repeated. Handoff /private/tmp/biomcp2012-cached-evidence-consumer-handoff-20261006.md and review /private/tmp/biomcp2012-cached-evidence-code-review-20261006.md retain exact evidence.
 
 PM allocated global2012 and stamped active milestone1.0. No ticket was renumbered. The checkout still declares only its own active release; backend identifies this component. The0.9 working checkout was not edited. No hosted job, live provider or production mutation ran. Final response ownership and other providers remain separate work.
+
+Root removed the clean completed consumer worktree and merged branch after confirming all commits on the pushed1.0 line. The exact completed reservation was released. Source remains recoverable from Git. Shared build cache, handoffs and logs remain; the local size-check result was preserved at /private/tmp/biomcp2012-preserved-local-size-results-20261006 before removal.
