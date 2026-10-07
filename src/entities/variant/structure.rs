@@ -6,7 +6,7 @@ use tracing::warn;
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
-use crate::sources::cancerhotspots::{CancerHotspotRecurrence, CancerHotspotsClient};
+use crate::sources::cancerhotspots::{CancerHotspotSection, CancerHotspotsClient};
 use crate::sources::interpro::InterProClient;
 use crate::sources::myvariant::MyVariantHit;
 use crate::sources::uniprot::{UniProtClient, UniProtRecord};
@@ -40,7 +40,7 @@ pub struct VariantStructureResult {
     #[serde(default)]
     pub domains: Vec<VariantStructureDomain>,
     pub structures: VariantStructureReferences,
-    pub cancerhotspots: Option<CancerHotspotRecurrence>,
+    pub cancerhotspots: Option<CancerHotspotSection>,
     #[serde(
         default = "default_variant_structure_lookup_outcomes",
         deserialize_with = "deserialize_variant_structure_lookup_outcomes"
@@ -198,8 +198,8 @@ fn apply_domains_result(
 }
 
 fn apply_cancerhotspots_result(
-    result: Result<Option<CancerHotspotRecurrence>, BioMcpError>,
-) -> (Option<CancerHotspotRecurrence>, SectionOutcome) {
+    result: Result<Option<CancerHotspotSection>, BioMcpError>,
+) -> (Option<CancerHotspotSection>, SectionOutcome) {
     match result {
         Ok(None) => (
             None,
@@ -208,9 +208,9 @@ fn apply_cancerhotspots_result(
             ),
         ),
         Ok(Some(recurrence)) => {
-            let outcome = if recurrence.position_count.is_some()
-                || recurrence.same_aa_count.is_some()
-                || recurrence.matched_transcript.is_some()
+            let outcome = if recurrence.recurrence().position_count().is_some()
+                || recurrence.recurrence().same_aa_count().is_some()
+                || recurrence.recurrence().matched_transcript().is_some()
             {
                 SectionOutcome::data("cancerhotspots.org")
             } else {
@@ -228,14 +228,13 @@ fn apply_cancerhotspots_result(
 async fn cancerhotspots(
     gene: &str,
     change: Option<&str>,
-) -> Result<Option<CancerHotspotRecurrence>, BioMcpError> {
+) -> Result<Option<CancerHotspotSection>, BioMcpError> {
     let Some(normalized_change) = change.and_then(super::normalize_protein_change) else {
         return Ok(None);
     };
-    let rows = CancerHotspotsClient::new()?.by_gene(gene).await?;
-    Ok(Some(crate::sources::cancerhotspots::recurrence_for_change(
-        &rows,
-        &normalized_change,
+    let response = CancerHotspotsClient::new()?.by_gene(gene).await?;
+    Ok(Some(CancerHotspotSection::new(
+        response.recurrence_for_change(&normalized_change),
     )))
 }
 
@@ -489,48 +488,9 @@ mod tests {
             assert_eq!(!outcome.sources().is_empty(), credited);
         }
     }
-
-    #[test]
-    fn cancerhotspots_result_matrix_classifies_contact_and_applicability() {
-        let recurrence = |position_count| CancerHotspotRecurrence {
-            source: "cancerhotspots.org".into(),
-            position_count,
-            same_aa_count: None,
-            matched_transcript: None,
-        };
-        let cases = [
-            (Ok(None), SectionOutcomeState::Inapplicable, false, false),
-            (
-                Ok(Some(recurrence(None))),
-                SectionOutcomeState::Empty,
-                true,
-                true,
-            ),
-            (
-                Ok(Some(recurrence(Some(12)))),
-                SectionOutcomeState::Data,
-                true,
-                true,
-            ),
-            (
-                Err(BioMcpError::Api {
-                    api: "cancerhotspots.org".into(),
-                    message: "fixture failure".into(),
-                }),
-                SectionOutcomeState::Unavailable,
-                false,
-                false,
-            ),
-        ];
-
-        for (result, expected_state, recurrence_present, credited) in cases {
-            let (result_recurrence, outcome) = apply_cancerhotspots_result(result);
-            assert_eq!(outcome.outcome(), expected_state);
-            assert_eq!(result_recurrence.is_some(), recurrence_present);
-            assert_eq!(!outcome.sources().is_empty(), credited);
-        }
-    }
 }
 
+#[cfg(test)]
+mod cancerhotspots_transport_tests;
 #[cfg(test)]
 mod dbnsfp_adoption_tests;

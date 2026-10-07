@@ -600,10 +600,10 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
         Some(SectionOutcomeState::Data | SectionOutcomeState::Empty) => {
             if let Some(recurrence) = result.cancerhotspots.as_ref() {
                 out.push_str(&format!("Source: {}\n", recurrence.source));
-                if let Some(count) = recurrence.position_count {
+                if let Some(count) = recurrence.recurrence().position_count() {
                     out.push_str(&format!("Position count: {count}\n"));
                 }
-                if let Some(count) = recurrence.same_aa_count {
+                if let Some(count) = recurrence.recurrence().same_aa_count() {
                     out.push_str(&format!("Same amino-acid count: {count}\n"));
                 }
                 if hotspots_outcome

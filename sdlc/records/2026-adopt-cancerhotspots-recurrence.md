@@ -1,0 +1,15 @@
+# Adopt shared Cancer Hotspots recurrence in both callers
+
+Status: BUILD candidate. Root fresh CODE review and final focused qualification pending.
+
+The consumer merged dedicated target `582bbd492e64d0227517dcaef828425ab84b2e10` at `692bf15f`. Root reports that target incorporates maintenance `1c774def`. The consumer pins landed BioData0714 `edd138da0ba104039885fe213107003dfb626246`, version `0.0.41`, in Cargo and the existing boundary constants. HTTPS authentication failed. Fetching the exact landed producer Git object into Cargo's cache enabled locked offline preparation. No dependency path or floating revision was introduced.
+
+Both detail and structure callers consume `CancerHotspotsResponse` from untouched HTTP bytes and retain `CancerHotspotRecurrenceProjection` directly. `CancerHotspotSection` holds only required source metadata and one private shared recurrence. Borrowed flattened serialization and shared target restoration preserve the existing JSON shape. Structure Markdown and both classifiers borrow shared getters. The opaque source position stays inside BioData and receives no application interpretation. Normalization, request routing, transport, caches, limits and timeout policies keep their existing implementations.
+
+The new real-client privacy test failed on the old decoder because Debug exposed a malformed selected field value. Shared admission now maps to the static application message `Invalid Cancer Hotspots response.` without retaining a cause. Existing HTTP and content-type diagnostics retain their separate policy. Caller failure outputs retain their existing public messages and omit provider credit.
+
+The first locked offline binary build passed in 29.31 wall seconds. The caller and retained source/renderer batch passed 17 tests in 12.66 seconds after 45.23 seconds of compilation; the full command took 59.42 seconds. Native detail and structure, CLI JSON/Markdown, typed/raw get MCP and raw structure MCP passed. The data/empty/failure tables preserve companion enrichment and structure/domain context, literal counts and transcript, section outcomes, source credit and exact route/count. Detail default and inapplicable requests make no Hotspots call. The held detail source exercises the existing eight-second timeout. Actual product restoration preserves required source, explicit nulls, omitted sections and literal whitespace transcript.
+
+After those owners passed, the source parsing file retired seven displaced mapping tests. Three get helper tests and the structure helper matrix retired. The mixed-provider preflight test retains its other provider claims and removes its duplicated Hotspots case. The local row, recurrence fields, selection helpers and get test-only result helper retired. Existing HTTP, route and renderer owners remain.
+
+Final focused checks, exact candidate, changed-file list, measured costs and inherited limitations follow after qualification. Root owns review, dedicated 1.0 landing and paired closure. Cleanup belongs to the separate owner; source, build output and local logs remain.

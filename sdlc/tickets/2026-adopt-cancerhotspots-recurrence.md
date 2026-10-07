@@ -1,8 +1,8 @@
 # 2026 — Adopt shared Cancer Hotspots responses and recurrence
 
 Status: OPEN.
-Owner: Root; assigned design writer.
-Phase: DESIGN accepted; BUILD waits for producer0713 landing and Root release.
+Owner: Root; assigned consumer builder.
+Phase: BUILD candidate; Root fresh CODE review and focused qualification pending.
 Milestone: 1.0
 Component: backend
 
@@ -23,3 +23,7 @@ Replace the local Cancer Hotspots response decoder, recurrence mapper and author
 PM allocated2026 in the global repository sequence and stamped active1.0. Backend names this component. This design writer claims only this ticket and its linked design. Root assigns fresh paired DESIGN review of both exact candidates before any BUILD release. Cost of delay: replacing both finite active callers now advances1.0; a broad source audit or completed-slice redesign does not.
 
 Review: fresh paired DESIGN ACCEPT at BioData1e7c6172 and BioMCPd191a20b. Root adopts the nonblocking correction that removes dedicated benchmark ceremony. Functional contracts remain unchanged. Build follows producer0713 landing and then-current main.
+
+## BUILD release
+
+Root released BUILD on October 7 after BioData0714 landed at `edd138da0ba104039885fe213107003dfb626246`, version `0.0.41`. This branch merged dedicated target `582bbd492e64d0227517dcaef828425ab84b2e10` at `692bf15f`; the target incorporates maintenance `1c774def`. Both callers use the shared original-byte response and immutable recurrence. New caller owners passed before the source mapping claims retired. Root owns fresh review, dedicated 1.0 landing and paired closure. The ticket remains open until that outcome.

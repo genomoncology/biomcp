@@ -872,10 +872,9 @@ async fn add_cancerhotspots(variant: &mut Variant, id_format: &VariantIdFormat) 
 
     let cancerhotspots_fut = async {
         let client = CancerHotspotsClient::new()?;
-        let rows = client.by_gene(gene).await?;
-        Ok::<_, BioMcpError>(crate::sources::cancerhotspots::recurrence_for_change(
-            &rows,
-            &normalized_change,
+        let response = client.by_gene(gene).await?;
+        Ok::<_, BioMcpError>(crate::sources::cancerhotspots::CancerHotspotSection::new(
+            response.recurrence_for_change(&normalized_change),
         ))
     };
 
@@ -893,31 +892,17 @@ async fn add_cancerhotspots(variant: &mut Variant, id_format: &VariantIdFormat) 
 }
 
 fn cancerhotspots_outcome(
-    recurrence: &crate::sources::cancerhotspots::CancerHotspotRecurrence,
+    recurrence: &crate::sources::cancerhotspots::CancerHotspotSection,
 ) -> SectionOutcome {
-    if recurrence.position_count.is_some()
-        || recurrence.same_aa_count.is_some()
-        || recurrence.matched_transcript.is_some()
+    if recurrence.recurrence().position_count().is_some()
+        || recurrence.recurrence().same_aa_count().is_some()
+        || recurrence.recurrence().matched_transcript().is_some()
     {
         SectionOutcome::data("cancerhotspots.org")
     } else {
         SectionOutcome::empty("cancerhotspots.org")
     }
 }
-#[cfg(test)]
-fn apply_cancerhotspots_result(
-    variant: &mut Variant,
-    result: Result<crate::sources::cancerhotspots::CancerHotspotRecurrence, BioMcpError>,
-) -> Result<(), BioMcpError> {
-    match result {
-        Ok(recurrence) => {
-            variant.cancerhotspots = Some(recurrence);
-            Ok(())
-        }
-        Err(err) => Err(err),
-    }
-}
-
 async fn add_cbioportal(variant: &mut Variant) {
     let gene = variant.gene.trim();
     if gene.is_empty() {
@@ -1443,5 +1428,7 @@ pub(super) mod tests;
 
 #[cfg(test)]
 mod cached_evidence_transport_tests;
+#[cfg(test)]
+pub(crate) mod cancerhotspots_transport_tests;
 #[cfg(test)]
 mod direct_gnomad_population_transport_tests;
