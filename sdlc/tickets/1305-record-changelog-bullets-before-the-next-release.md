@@ -31,11 +31,32 @@ is in the build report.
 
 ## Keeps
 
-- No behavior changes; docs-only ticket.
+- No behavior changes. The branch also generalizes one assertion in
+  tests/test_docs_changelog_refresh.py so the suite accepts the
+  returning Unreleased section, so the branch is not strictly
+  docs-only and CI runs the full suite on it; the merge bar is the
+  branch's finished-green full run.
 
 ## Proof
 
 The coverage check passes with every landed ticket named.
+
+## Build status
+
+- Built on branch `tickets/1305-changelog-bullets`, commits 361340002,
+  4eef81a8a, fdc996c2d, plus the internal-bullet fold ba7abe31e,
+  2026-10-07.
+- Code review: FIX 2026-10-07 (fresh reviewer, fix round). P1: the
+  branch is not docs-only (it carries the test generalization from the
+  first commit) and the fix report's docs-only classification claim was
+  false — confirmed by diff against base 739447590d; the merge bar is
+  the full green run, recorded above in Keeps. P2: no bullet named
+  1305 itself, which the gate demands once 1305 lands as a Land commit
+  (ticket 2019's fixed gate) — folded as the internal-bullet clause in
+  ba7abe31e. All bullet truthfulness findings verified correct: 1299,
+  1306 against their landing merges; 1300 and 1291 against their branch
+  tips with re-read obligations at their final tips. The 1293 bullet's
+  honest joint credit confirmed.
 
 ## Priority note
 
