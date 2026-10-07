@@ -21,3 +21,17 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: prefer the allele-specific identifier PubTator returns (ClinGen allele ID or gene plus HGVS) over the rsID. Fall back to a search command when no allele-specific form exists.
 - Proof: the spec page checks the G12A, G12D and G12V commands and each opens its own variant; a test fails on `37631c357`.
 - Defers: nothing.
+
+## Build status
+
+- Built on branch `tickets/2018-article-entity-variant-links-name-one-allele`,
+  commit 3c94532ae, 2026-10-07, after one timeout revival with a
+  checkpoint (nothing lost).
+- Code review: ACCEPT 2026-10-07. Verified statically: the qualified
+  rsID-first fix (multi-allele rsIDs alone take the gene-qualified
+  HGVS path, admitted only through the classifier); the renderer
+  unchanged; the spec replay routing to recorded bytes with
+  deterministic best-hit scoring; receipts and the digest repin
+  honest; the 1345 repin the only inventory delta; deferrals
+  truthful. One report-only P2: docs/sources/pubmed.md under-describes
+  the new variant-row command forms (docs pass later).

@@ -4,7 +4,7 @@ Status: OPEN.
 Milestone: 1.0
 Component: backend
 Owner: Root owns the consumer queue and paired producer0716. A fresh builder will own only2028 after producer acceptance.
-Phase: DESIGN contract accepted; consumer BUILD waits for accepted producer pin.
+Phase: Consumer BUILD released against accepted producerc46b3e6cfaf9659a8add076734b44afb4bccd002, BioData0.0.43.
 
 ## Outcome
 
@@ -23,3 +23,7 @@ Reuse existing source parsing, authentication/request construction, helper trunc
 Root reconciles maintenance before consumer BUILD and exact CODE review, obtains fresh read-only review, verifies relevant checks, lands on biodata/biomcp-1.0 and pushes. Whole pair completes when the accepted producer is pinned, the actual helper preserves reviewed outputs, and displaced schema ownership is retired. Producer API alone does not close either outcome. BUILD waits for the exact accepted producer pin, not whole-pair COMPLETE; Root releases it explicitly.
 
 Reviews: accept
+
+## BUILD release
+
+Fresh Medium CODE review accepted producerbd6d0ae76609fe2afb55d6f7fc019013a5a54a82. Producer landedc46b3e6cfaf9659a8add076734b44afb4bccd002 and is pushed. Admission, lint, package spec and ordinarytest passed. The test run spans only an inventory correction, with unchanged runtime/tests, as its owning record states. Root reconciles current maintenancec3b339c9 before this consumer build. A fresh builder owns only2028 in the existing ticket worktree. Root owns independent CODE review and paired landing. Cargo uses the declared exact Git pin through its existing host cache; no path patch or source-policy change.

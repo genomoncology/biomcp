@@ -91,27 +91,73 @@ def test_docs_only_push_classifies_true(scratch_repo: Path) -> None:
     assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=true"
 
 
-@pytest.mark.parametrize("path", [
-    "README.md", "docs/reference/source-licensing.md", "docs/charts/bar.md",
-])
-def test_readme_and_docs_pages_run_full_ci(scratch_repo: Path, path: str) -> None:
-    """Each page starts from a fresh baseline so another path cannot mask it."""
-    sha = _commit(scratch_repo, {path: "changed"}, "docs page")
-    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false", path
+def test_changelog_only_push_runs_full_ci(scratch_repo: Path) -> None:
+    """CHANGELOG.md is not docs-only: the changelog refresh test is
+    marked needs_binary, so only the canonical lane runs it, and a
+    changelog-only push must reach that lane (2026-10-07 review,
+    finding 4).
+    """
+    sha = _commit(scratch_repo, {"CHANGELOG.md": "# Changelog\n\n## Unreleased\n"}, "bullets")
+    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false"
+
+
+def test_changelog_alongside_docs_still_runs_full_ci(scratch_repo: Path) -> None:
+    sha = _commit(
+        scratch_repo,
+        {"CHANGELOG.md": "# Changelog\n", "sdlc/tickets/x.md": "x"},
+        "bullets and ticket",
+    )
+    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "README.md",
+        "docs/reference/source-licensing.md",
+        "docs/charts/bar.md",
+        "docs/user-guide/cli-reference.md",
+        "skills/oncology-treatment.md",
+        "spec/surface/mcp.md",
+        "src/cli/list_reference.md",
+    ],
+)
+def test_each_executable_markdown_path_runs_full_ci_alone(
+    tmp_path: Path, path: str
+) -> None:
+    """Each executable-markdown path gets its own fresh repo (the
+    second go-request review found the shared-repo form let README's
+    earlier commit mask the other paths: the merge-base diff kept
+    README in every later case).
+    """
+    import os
+
+    git_env = {
+        **os.environ,
+        "GIT_AUTHOR_NAME": "t",
+        "GIT_AUTHOR_EMAIL": "t@t",
+        "GIT_COMMITTER_NAME": "t",
+        "GIT_COMMITTER_EMAIL": "t@t",
+    }
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True, env=git_env)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "empty", "--allow-empty"], check=True, env=git_env)
+    subprocess.run(["git", "-C", str(repo), "update-ref", "refs/remotes/origin/main", "HEAD"], check=True, env=git_env)
+    target = repo / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("changed", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, env=git_env)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "one path"], check=True, env=git_env)
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    assert _run_script(repo, "origin/main", sha) == "docs_only=false", path
 
 
 def test_source_change_classifies_false_even_with_markdown(scratch_repo: Path) -> None:
     sha = _commit(scratch_repo, {"src/foo.md": "x", "sdlc/x.md": "y"}, "mixed")
     assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false"
-
-
-@pytest.mark.parametrize("path", [
-    "spec/contract.md", "skills/skill.md", "src/cli/list_reference.md",
-    "docs/user-guide/cli-reference.md",
-])
-def test_executable_markdown_never_counts_as_docs(scratch_repo: Path, path: str) -> None:
-    sha = _commit(scratch_repo, {path: "x"}, "spec change")
-    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false", path
 
 
 def test_empty_diff_and_missing_base_fail_closed(scratch_repo: Path) -> None:
