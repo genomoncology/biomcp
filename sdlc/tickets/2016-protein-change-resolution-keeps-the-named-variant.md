@@ -128,3 +128,34 @@ refuses with candidates where the 1297 rule could resolve through a
 bare ClinVar variant id — the exact wrong-answer channel this ticket
 closes. Unique-hit queries are unaffected. No recorded case exercises
 the shape; the narrowing is strictly conservative.
+
+## Fix round (2026-10-07, finding 13)
+
+Second-review finding 13: `src/transform/variant.rs` took the first NM_
+transcript in the SnpEff list as canonical, which for BRCA1 is NM_007300,
+21 residues higher than MANE Select NM_007294 past the isoform insert; and a
+resolved hit whose protein change does not spell the request answered with
+no word about numbering (`TP53 R116Q` resolving to `p.Arg248Gln` silently).
+
+MyVariant.info's SnpEff and dbNSFP sections carry no MANE status (checked
+against the recorded captures and the live provider with `fields=all`), so
+the MANE marker in this data is the transcript ClinVar's preferred names
+use: ClinVar names a variant on the gene's MANE Select transcript when one
+exists. The headline selection now prefers, in order: the hit's own
+ClinVar-preferred transcript; the query response's agreed ClinVar-preferred
+stem (so a ClinVar-less hit in a multi-hit response headlines the same MANE
+transcript — the recorded A314T answer moves from NM_007300.3 to
+NM_007294.3); then the first NM_ (yesterday's rule) when the response marks
+no stem. When the resolved change does not spell the request and the request
+named residues, the answer carries one line, `protein_numbering_note`,
+naming the transcript and spelling that matched.
+
+New recorded captures (production query shape): `query_tp53_r116q_20261007.json`
+(ClinVar 12356, headline `p.Arg248Gln` on NM_000546.5, note),
+`query_brca1_a1844t_20261007.json` (the long isoform's spelling past the
+insert; the answer pins to MANE `p.Ala1823Thr` on NM_007294.3, note), and
+`query_brca1_i1568n_20261007.json` (ClinVar-less; no marker in the response,
+first-NM_ fallback `p.Ile1589Asn` on NM_007300.3, note). The spec page adds
+a numbering table on these rows, and unit tests cover the cohort rule past
+the insert (composed from the recorded I1568N and ClinVar 55588 hits) and
+the marker-less fallback.
