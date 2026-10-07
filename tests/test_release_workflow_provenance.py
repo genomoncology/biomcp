@@ -287,14 +287,17 @@ ALLOWED_STEP_IFS = {
     # Steps of the three pipeline jobs plus version-check's gate
     # steps, pinned 2026-09-27 (ticket 1258). Update a hash only in
     # the same commit as the deliberate workflow edit it records.
+    # The two pypi-build build steps were re-pinned 2026-10-08
+    # (ticket 2024): both now route through tools/with-build-identity
+    # so the shipped wheels report their commit.
 PINNED_STEPS: dict[tuple[str, str], str] = {
     ("pypi-build", "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683"): "435261111ae8c13c6efd4c0122d30af2df68e5cbc57a7e92ccd1568897ae4024",
     ("pypi-build", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "004630710366bff7851b00b676ce5044490a91b7220ce97a1f1e48fa16679424",
     ("pypi-build", "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c"): "e5cf6427d1b42e2b776f2589adc36320874f109751f02494b68ee9068c79b0d5",
     ("pypi-build", "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b"): "4e605dbe89d4dcacdf70d170853634c9f4c518e1a41f5d2c5e2bd27cf4c89e7c",
     ("pypi-build", "Install pinned maturin"): "996e8a6336fff6d3d0b3a74230bb8b24021e34e7d06390412ac88bd2308173e0",
-    ("pypi-build", "Build wheels"): "a6e876869ef10c81eb4b505376e37e1a370b4ca36b809a68bc6ea20d52b87d3e",
-    ("pypi-build", "Build wheels inside the manylinux 2_28 container"): "21a93b7950bc2976defc9c23424265ac57d9cd4c2daf4a40940ad5ee683a8563",
+    ("pypi-build", "Build wheels"): "cbb986dad5ba25475c9731e0d012cfff7c3cefdbb280bd480e9024e51e6c3337",
+    ("pypi-build", "Build wheels inside the manylinux 2_28 container"): "d04d98be4ff1c1caee89a3337461678427197f11d91b9a36c4b8006413578b9b",
     ("pypi-build", "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"): "b9b6cca0e685928f03d3f444bac8c0825b2ee3510663d6503c24525218de1e23",
     ("wheel-smoke", "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"): "53e861877de3017c6e648667b07f052d923c6c50c065f7b9b60d72589c0887e0",
     ("wheel-smoke", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"): "7da61a5393486e202557314e916ce6b47390f55bd62478135e9c7911337da88e",
@@ -358,6 +361,10 @@ PINNED_JOB_STEP_LISTS: dict[str, list[str]] = {
     ],
     "build": [
         "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+        # Ticket 2024: the interpreter for tools/with-build-identity,
+        # which the host build steps run under so the shipped
+        # binaries report their commit.
+        "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
         "dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
         "arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b",
         "Build release binary",
@@ -697,6 +704,58 @@ def test_pipeline_jobs_contract() -> None:
     _assert_no_defaults_shell(parsed)
     _assert_step_hashes(parsed)
     _assert_release_locked_builds(parsed)
+    _assert_build_identity_routing(parsed)
+
+
+def _assert_build_identity_routing(parsed: dict) -> None:
+    """Ticket 2024: released binaries must report their commit. The
+    0.9.1 wheels and tarballs shipped "git unknown, build unknown"
+    because the release workflow called cargo and maturin directly.
+    Host build steps run under tools/with-build-identity; the
+    manylinux container legs resolve the identity on the host (the
+    container has no git checkout of its own) and the container
+    build inherits it through --env-file.
+    """
+    for job in ("build", "pypi-build"):
+        for index, step in enumerate(parsed["jobs"][job]["steps"]):
+            run = str(step.get("run", ""))
+            where = f"{job} step {index}"
+            if "docker run" in run:
+                assert "tools/with-build-identity env" in run, (
+                    f"{where}: the container build must resolve the identity "
+                    "through tools/with-build-identity on the host checkout"
+                )
+                assert "grep '^BIOMCP_BUILD_'" in run, (
+                    f"{where}: the identity hand-off must select the "
+                    "BIOMCP_BUILD_ variables"
+                )
+                assert "--env-file" in run, (
+                    f"{where}: the container build must inherit the identity "
+                    "through --env-file; docker starts the command so "
+                    "actionlint keeps checking the container script"
+                )
+                continue
+            for line in run.splitlines():
+                if re.search(r"\b(?:cargo|maturin) build\b", line):
+                    assert "with-build-identity" in line, (
+                        f"{where}: {line.strip()[:60]} must run under "
+                        "tools/with-build-identity or the shipped binary "
+                        'prints "git unknown, build unknown"'
+                    )
+
+
+def test_build_identity_routing_assertion_catches_a_direct_build() -> None:
+    """Red proof: dropping the with-build-identity routing from a
+    host build step (the 0.9.1 shape) fails the routing contract."""
+    import copy
+
+    parsed = _load_release_pipeline()
+    planted = copy.deepcopy(parsed)
+    step = _step_by_name(planted, "pypi-build", "Build wheels")
+    step["run"] = step["run"].replace("tools/with-build-identity ", "")
+    assert "maturin build" in step["run"] and "with-build-identity" not in step["run"]
+    with pytest.raises(AssertionError, match="with-build-identity"):
+        _assert_build_identity_routing(planted)
 
 
 def _assert_release_locked_builds(parsed: dict) -> None:

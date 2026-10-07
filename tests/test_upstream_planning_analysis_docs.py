@@ -1233,6 +1233,11 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^spec:\n"
         r"\t\$\(MAKE\) prepare-spec\n"
+        # Ticket 2024: the spec pages shell out to the project's Python
+        # environment (jsonschema at spec/entity/gene.md:408) and the
+        # parallel-isolation contracts resolve pytest, so the sync must
+        # happen before the run enters the offline namespace.
+        r"\t\$\(MAKE\) sync-python-dev\n"
         r'\ttools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_FEATURE_ON_BIN="\$\(if \$\(filter release,\$\(SPEC_PROFILE\)\),\$\(SPEC_BIN\),\)" bash scripts/run-specs\.sh spec$',
         makefile,
         flags=re.MULTILINE,
