@@ -1,6 +1,6 @@
 # 2024 — Pin release runners before Ubuntu 26
 
-Status: complete.
+Status: OPEN (reopened 2026-10-07 by the second review).
 
 Milestone: 0.9.2
 
@@ -41,3 +41,21 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   the wheel proof predating the final amend (mechanism unchanged), and
   the container branch lacking its own red test (the real-file
   assertion still catches a dropped --env-file).
+
+## Reopening (second review, 2026-10-07)
+
+Landed early as f6eca26b3 on a green main-merged branch CI
+(407940cad) to clear the October 19 date risk; the second review then
+found the Windows defect below, so the ticket reopens for the fix,
+which lands before the 0.9.2 tag.
+
+- tools/with-build-identity hands off with os.execvpe, which on
+  Windows exits 0 at once while cargo keeps running — the step passes
+  with no binary. Replace with subprocess.run, pass the exit code
+  through, and prove it on a Windows job.
+- The release matrix still uses macos-latest and windows-latest while
+  the Outcome says every job. Pin them, or narrow the Outcome with a
+  recorded reason.
+- The review's "no green CI run" names run 37658260567, the branch's
+  base-stale run; the main-merged run at 407940cad is green. Recorded
+  here so the record carries both.
