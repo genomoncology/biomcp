@@ -74,9 +74,14 @@ fn fixture_reply(
     }
     let body = if target.starts_with("/search/") && target.contains("text=") {
         br#"{"results":[{"_id":"pt-418","pmid":41800001,"title":"deadline fixture PubTator row","journal":"Fixture Journal","date":"2026-01-01","score":42.0}],"count":1,"total_pages":1,"current":1,"page_size":25,"facets":{}}"#.as_slice()
-    } else if target.ends_with("/esearch.fcgi") {
+    } else if target.split('?').next().unwrap().ends_with("/esearch.fcgi") {
         br#"{"esearchresult":{"count":"1","idlist":["41800002"]}}"#.as_slice()
-    } else if target.ends_with("/esummary.fcgi") {
+    } else if target
+        .split('?')
+        .next()
+        .unwrap()
+        .ends_with("/esummary.fcgi")
+    {
         br#"{"result":{"uids":["41800002"],"41800002":{"uid":"41800002","title":"deadline fixture PubMed row","sortpubdate":"2026/01/02 00:00","pubdate":"2026 Jan 2","fulljournalname":"Fixture Journal","source":"Fixture Journal"}}}"#
             .as_slice()
     } else if target.starts_with("/graph/v1/paper/batch") {
