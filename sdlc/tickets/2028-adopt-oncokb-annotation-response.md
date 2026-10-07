@@ -30,4 +30,6 @@ Fresh Medium CODE review accepted producerbd6d0ae76609fe2afb55d6f7fc019013a5a54a
 
 ## Consumer CODE candidate
 
-The builder adopted the exact released0.0.43 Git pin in the assigned worktree. The actual helper owners passed before local schema and redundant test retirement. Runtime, retirement and focused registrations are ready for Root's fresh CODE review. The [build record](../records/2028-adopt-oncokb-annotation-response.md) records red evidence, preserved behavior and pending affected checks. Root retains landing and pair ownership.
+The builder adopted the exact released0.0.43 Git pin in the assigned worktree. The actual helper owners passed before local schema and redundant test retirement. Runtime, retirement and focused registrations are ready for Root's fresh CODE review. Eleven affected Rust checks and154 distinct Python checks pass. The record separates the inherited Darwin isolation and workflow Ruff findings. The [build record](../records/2028-adopt-oncokb-annotation-response.md) records red evidence, preserved behavior and final affected checks. Root retains landing and pair ownership.
+
+The runtime CODE and registration correction are pushed. GitHub server errors block the final local qualification receipt push. Root receives that concrete delivery blocker in the owning build record.

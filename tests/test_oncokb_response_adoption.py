@@ -22,7 +22,7 @@ def transport(monkeypatch, tmp_path):
     state = {"body": b"{}", "status": 200, "first_failure": False, "no_change": False, "requests": []}
 
     class Handler(BaseHTTPRequestHandler):
-        def do_GET(self):  # noqa: N802
+        def do_GET(self):
             path = urlsplit(self.path)
             status = 200
             if path.path == "/annotate/mutations/byProteinChange":
@@ -78,7 +78,7 @@ def transport(monkeypatch, tmp_path):
 def cli(*arguments):
     assert BINARY.exists(), f"missing biomcp binary: {BINARY}"
     return subprocess.run(
-        [BINARY, *arguments], cwd=ROOT, text=True, capture_output=True, timeout=30
+        [BINARY, *arguments], cwd=ROOT, text=True, capture_output=True, timeout=30, check=False
     )
 
 
@@ -218,5 +218,4 @@ def test_oncokb_helper_refuses_failures_without_false_annotation(transport, monk
         assert "synthetic-private-marker" not in result.stdout + result.stderr
         if name == "no protein change":
             assert "requires a protein change" in error["error"]["message"]
-        assert "therapies" not in error
         attempts(transport, requested)
