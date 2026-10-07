@@ -39,12 +39,14 @@ spelling identifies different records, BioMCP returns the preferred record and
 reports the other identity in `build_candidates` JSON and a Markdown warning.
 
 A gene-protein form names a protein change, and the same change can sit on
-several genomic variants. When exactly one matching variant carries the
-ClinVar record for that change, `get variant` resolves to it; when several
-variants match and none or several carry ClinVar records, it refuses with the
-candidates and a working input form instead of guessing. Retry with one of the
-listed genomic HGVS, rsID, ClinVar VariationID, or transcript-qualified HGVS
-spellings.
+several genomic variants; provider alias lists even carry other isoforms'
+spellings on different variants. `get variant` counts a hit as a match only
+when the transcript BioMCP headlines for it spells the requested change.
+When exactly one matching variant carries the ClinVar record for that
+change, `get variant` resolves to it; when several variants match and none
+or several carry ClinVar records, it refuses with the candidates and a
+working input form instead of guessing. Retry with one of the listed genomic
+HGVS, rsID, ClinVar VariationID, or transcript-qualified HGVS spellings.
 
 ## ClinGen Allele Registry normalization
 

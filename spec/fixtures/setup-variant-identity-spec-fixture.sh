@@ -77,6 +77,11 @@ KRAS_G12A_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12a_2026100
 KRAS_G12D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12d_20261007.json").read_bytes()
 KRAS_G12V_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12v_20261007.json").read_bytes()
 RS121913529_RESPONSE = (ROOT / "testdata/sources/myvariant/query_rsid_rs121913529_20261007.json").read_bytes()
+# Ticket 2016: recorded gene+protein queries where the alias also names a
+# ClinVar-recorded lookalike on another isoform. The named change must win.
+TP53_C124Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_c124y_20261007.json").read_bytes()
+BRCA1_A314T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_a314t_20261007.json").read_bytes()
+BRCA1_C61G_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_c61g_20261007.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
@@ -440,6 +445,15 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == "dbsnp.rsid:rs121913529":
                 send_json(self, 200, RS121913529_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.C124Y"':
+                send_json(self, 200, json.loads(TP53_C124Y_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.A314T"':
+                send_json(self, 200, json.loads(BRCA1_A314T_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.C61G"':
+                send_json(self, 200, json.loads(BRCA1_C61G_RESPONSE))
                 return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return

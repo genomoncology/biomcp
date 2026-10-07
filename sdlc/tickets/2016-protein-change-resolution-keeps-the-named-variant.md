@@ -8,6 +8,53 @@ Milestone: 0.9.2
 
 `biomcp get variant '<GENE> <protein change>'` returns the variant whose protein change in the standard numbering matches the query. The 1297 rule ("pick the one matching hit that has a ClinVar record") no longer overrides a correct first hit with a different variant.
 
+## Root cause
+
+Recorded 2026-10-07 against MyVariant.info with the production query shape; both suspected halves are real and compound.
+
+1. The gene+protein arm matches hits through dbNSFP's merged `dbnsfp.hgvsp`
+   alias list, which carries other isoforms' protein names on other genomic
+   variants. `TP53 C124Y` queries `dbnsfp.hgvsp:"p.C124Y"`; MyVariant returns
+   `chr17:g.7579316C>T` (canonical `NM_000546.5:c.371G>A p.Cys124Tyr`, no
+   ClinVar record) and `chr17:g.7578526C>T` (canonical `c.404G>A
+   p.Cys135Tyr`, ClinVar 141762), whose alias list includes `p.C124Y` through
+   a shorter isoform. `compare_variant_identity` sees only the alias list, so
+   both hits are "compatible": the isoform-alias match accepts a different
+   protein's change.
+2. `resolve_protein_change_hit` (`src/entities/variant/get.rs`) then applies
+   the 1297 rule — exactly one hit carries a ClinVar record, so it wins — and
+   never checks that the ClinVar record's own transcript names the requested
+   change. The ClinVar-recorded lookalike outranks the exact named change.
+   `BRCA1 A314T` is the same shape: `chr17:g.41246608C>T`
+   (`NM_007300.3:c.940G>A p.Ala314Thr`, no ClinVar record) loses to
+   `chr17:g.41199660C>T` (ClinVar 55588, `p.Ala1823Thr`).
+
+`BRCA1 C61G` shows the same hole from the refusal side: both alias hits
+(`chr17:g.41197805A>C`, canonical `p.Cys1828Gly`; `chr17:g.41258504A>C`,
+canonical `NM_007294.4:c.181T>G p.Cys61Gly`) carry ClinVar records (409329,
+17661), so the conflicting-records branch refuses even though exactly one
+hit names `C61G` on its canonical transcript.
+
+## Success criteria
+
+1. A hit counts as a match only when the transcript BioMCP headlines for it —
+   the ClinVar-named or canonical SnpEff annotation — spells the requested
+   protein change. ClinVar presence breaks ties among those named matches
+   only. A named match outranks a merely ClinVar-recorded lookalike.
+2. `get variant 'TP53 C124Y'` returns `chr17:g.7579316C>T`
+   (`p.Cys124Tyr`), not the ClinVar 141762 `p.Cys135Tyr` lookalike.
+3. `get variant 'BRCA1 A314T'` returns `chr17:g.41246608C>T`
+   (`p.Ala314Thr`), not ClinVar 55588 `p.Ala1823Thr`.
+4. `get variant 'BRCA1 C61G'` returns `chr17:g.41258504A>C` (ClinVar 17661,
+   `p.Cys61Gly`) — the canonical spelling resolves instead of refusing.
+5. The 1297 behavior holds on its recorded cases: `DICER1 p.Met1483Ile`
+   still resolves to `chr14:g.95562808C>T` (577152), and `EGFR M766I`
+   still refuses with the same three candidates and message.
+6. A unique provider hit still resolves; true ambiguity still refuses with
+candidates and a working input form.
+
+Each criterion 2 to 5 fails on `37631c357`.
+
 ## Evidence
 
 Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 2). The reviewer ran a release build of main at `37631c357` against MyVariant.info and compared with 0.8.25.

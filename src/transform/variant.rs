@@ -119,6 +119,15 @@ fn paired_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
     select_transcript_annotation(hit).or_else(|| clinvar_preferred_annotation(hit))
 }
 
+/// The protein change on the transcript BioMCP headlines for a hit: the
+/// ClinVar-named or canonical SnpEff annotation. dbNSFP's merged alias list
+/// (`dbnsfp.hgvsp`) carries other isoforms' spellings on other genomic
+/// variants, so only this value confirms a gene+protein query names the hit
+/// (ticket 2016).
+pub(crate) fn canonical_protein_change(hit: &MyVariantHit) -> Option<String> {
+    paired_annotation(hit).and_then(|annotation| annotation.protein)
+}
+
 fn legacy_name(gene: &str, protein: Option<&str>) -> Option<String> {
     let gene = gene.trim();
     let normalized = normalize_protein_change(protein?)?;

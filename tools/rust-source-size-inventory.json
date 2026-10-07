@@ -227,12 +227,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1452,
+      "baseline_lines": 1489,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297",
-        "delta": 324,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback.",
+        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016",
+        "delta": 361,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its canonical or ClinVar-named transcript spells the change; ClinVar breaks ties among those matches only.",
         "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms."
       }
     },
@@ -526,12 +526,12 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1424,
+      "baseline_lines": 1433,
       "floor_lines": 1335,
       "authorized_increase": {
-        "ticket": "1154, 1155, 1290",
-        "delta": 89,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner.",
+        "ticket": "1154, 1155, 1290, 2016",
+        "delta": 98,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: expose the canonical protein change a gene+protein query must match.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }

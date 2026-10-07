@@ -28,6 +28,7 @@ use super::{
     ResolvedPopulationCoordinate, TreatmentImplication, Variant, VariantCivicSection,
     VariantIdFormat, VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
     VariantOncoKbResult, classify_variant_input, gnomad_variant_slug, normalize_variant,
+    protein_changes_equivalent,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -211,11 +212,16 @@ fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> St
 
 /// A gene+protein query names a protein change, not a genomic variant: the
 /// same alias can sit on several genomic variants (`DICER1 p.Met1483Ile`
-/// spans three alternate bases at chr14:g.95562808). Taking the first
-/// matching hit silently returns whichever variant the provider ranked
-/// first. Resolve only when one hit matches, or when exactly one matching
-/// hit carries the ClinVar record for that protein change; otherwise refuse
-/// with every candidate and a working input form (ticket 1297).
+/// spans three alternate bases at chr14:g.95562808), and dbNSFP merges other
+/// isoforms' protein names onto other variants, so the alias search also
+/// returns lookalikes (`TP53 C124Y` matches the `p.Cys135Tyr` variant
+/// chr17:g.7578526C>T through a shorter isoform). A hit carries the query
+/// only when the transcript BioMCP headlines for it — the ClinVar-named or
+/// canonical SnpEff annotation — spells the requested change; ClinVar
+/// presence breaks ties among those hits (ticket 1297) but never outranks
+/// the named change itself (ticket 2016). Resolve a single provider hit, a
+/// single carrying hit, or the one ClinVar record names among the true
+/// matches; otherwise refuse with every candidate and a working input form.
 fn resolve_protein_change_hit(
     id: &str,
     gene: &str,
@@ -232,14 +238,42 @@ fn resolve_protein_change_hit(
     if hits.len() == 1 {
         return Ok(hits.into_iter().next().expect("one compatible hit"));
     }
-    let clinvar_named = hits
+    let named = hits
         .iter()
-        .filter(|hit| hit_carries_clinvar_record(hit))
+        .enumerate()
+        .filter(|(_, hit)| hit_names_requested_change(hit, change))
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    if named.len() == 1 {
+        return Ok(hits.swap_remove(named[0]));
+    }
+    let refusal = |count: usize, reason: &str, candidates: &str| {
+        BioMcpError::InvalidArgument(format!(
+            "Ambiguous protein change '{id}': {count} variants match and {reason}; \
+BioMCP refuses rather than return the wrong variant.\n\
+Candidates:\n{candidates}\
+Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS.",
+        ))
+    };
+    if named.is_empty() {
+        let candidates = hits
+            .iter()
+            .map(|hit| format!("- {}\n", protein_change_candidate(hit)))
+            .collect::<String>();
+        return Err(refusal(
+            hits.len(),
+            "none of them names that change on its canonical (or ClinVar-named) transcript",
+            &candidates,
+        ));
+    }
+    let clinvar_named = named
+        .iter()
+        .filter(|index| hit_carries_clinvar_record(&hits[**index]))
         .count();
     if clinvar_named == 1 {
-        let index = hits
-            .iter()
-            .position(hit_carries_clinvar_record)
+        let index = named
+            .into_iter()
+            .find(|index| hit_carries_clinvar_record(&hits[*index]))
             .expect("one ClinVar-named hit");
         return Ok(hits.swap_remove(index));
     }
@@ -248,17 +282,20 @@ fn resolve_protein_change_hit(
     } else {
         format!("{clinvar_named} of them carry conflicting ClinVar records")
     };
-    let candidates = hits
+    let candidates = named
         .iter()
-        .map(|hit| format!("- {}\n", protein_change_candidate(hit)))
+        .map(|index| format!("- {}\n", protein_change_candidate(&hits[*index])))
         .collect::<String>();
-    Err(BioMcpError::InvalidArgument(format!(
-        "Ambiguous protein change '{id}': {count} variants match and {reason}; \
-BioMCP refuses rather than return the wrong variant.\n\
-Candidates:\n{candidates}\
-Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS.",
-        count = hits.len(),
-    )))
+    Err(refusal(named.len(), &reason, &candidates))
+}
+
+/// The requested protein change confirms a hit only when the transcript
+/// BioMCP headlines for it spells that change. The dbNSFP alias list that
+/// matched the query merges every isoform's name, so it cannot tell the
+/// named variant from a lookalike.
+fn hit_names_requested_change(hit: &crate::sources::myvariant::MyVariantHit, change: &str) -> bool {
+    transform::variant::canonical_protein_change(hit)
+        .is_some_and(|protein| protein_changes_equivalent(change, &protein))
 }
 
 fn candidate_matches_requested_identity(
