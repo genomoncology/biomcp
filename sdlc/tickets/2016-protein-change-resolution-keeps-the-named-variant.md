@@ -72,6 +72,17 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Proof: outside-in tests for TP53 C124Y, BRCA1 A314T, BRCA1 C61G, DICER1 and EGFR, from recorded MyVariant responses. Each fails on `37631c357`.
 - Defers: a full transcript-aware resolver.
 
+## Build outcome (2026-10-07)
+
+Branch `tickets/2016-protein-change-resolution-keeps-the-named-variant` from
+main `bc8b1808b`. Record: `sdlc/records/2016-protein-change-resolution-keeps-the-named-variant.md`.
+All six success criteria hold: the recorded TP53 C124Y, BRCA1 A314T, and
+BRCA1 C61G responses resolve to the named/canonical variant in unit tests
+and in the spec table; the DICER1 577152 answer and the byte-identical EGFR
+M766I three-candidate refusal stay green; a unique provider hit still
+resolves. Deferred: the 1.0 shared HGVS parser remains the full
+transcript-aware resolver; a CHANGELOG bullet is owed via ticket 1305.
+
 ## Build status
 
 - Built on branch `tickets/2016-protein-change-resolution-keeps-the-named-variant`,
