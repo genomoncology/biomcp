@@ -4,7 +4,7 @@ Status: OPEN.
 Milestone: 1.0
 Component: backend
 Owner: Root owns the repository queue and producer0715; Codex owns consumer2027 BUILD.
-Phase: BUILD released by Ian after Root accepted the paired design and landed producer0715 locally.
+Phase: CODE qualified at ef17e572; Root started fresh Medium review and owns dedicated 1.0 landing and paired closure.
 Risk: Cap ordering, first overlapping fragment and failure classification affect existing public answers.
 
 ## Outcome
@@ -28,3 +28,7 @@ DESIGN review correction: the same caller cases extend through existing CLI/MCP 
 ## BUILD release
 
 Ian released consumer BUILD against accepted design `475bcfb20eb468059daea5ff8dd0e53769f1d18f` and paired producer design `e031a07cc72091e6cfe519f71497321048ef692b`. Root owns producer0715, repository queues, fresh review, landing, push and paired closure. The consumer builder owns only2027. Producer LAND is `29e01881b24604a3d0ea079b79b0e60c2f506964`, BioData0.0.42. Sartre accepted corrected CODE `61bb5da2de09ee9652a968a067c3062055cefc87`. Its six public cases, lint and spec passed. The original whole test receipt applies to `ec60c80ae1b4271d153253ab53fe2e31d11d1d93`. The builder merged dedicated target `b46064c42cf94a9b4142f0922a49e0893d0a127d` without rebasing. GitHub internal server failures do not block authorized local implementation. Cargo uses the declared Git source and immutable full producer revision through the existing host Git cache. No source policy exception applies. Cleanup belongs to another agent.
+
+## CODE handoff
+
+Checked consumer candidate: `ef17e572ec5f5f812e71e46799bdd191c9b5a3b5`. Exact producer pin: `29e01881b24604a3d0ea079b79b0e60c2f506964`. All12 affected Rust checks and147 Python checks passed. The established Linux-only check is explicitly deselected on Darwin. Four affected ratchet audits passed. The [build record](../records/2027-adopt-interpro-domain-response.md) gives exact costs, retired claims, cache state and inherited findings. Runtime code is unchanged from early candidate `51c81ac0`; subsequent commits strengthen caller proof, register checks and retire the displaced parser claim. All candidate fixes are pushed. Root reports fresh Medium CODE review has started on the checked retirement candidate. This ticket stays OPEN until Root accepts, lands and records paired closure.
