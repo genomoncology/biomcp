@@ -3,6 +3,14 @@
 Status: OPEN.
 Milestone: 0.9.2
 
+## Build status
+
+- Built on branch `tickets/1306-1302-review-carryovers`, sha `b835fc9ab`, 2026-10-07.
+- Code review: ACCEPT 2026-10-07, no blocking findings. Two report-only P2s recorded: a PMCID seed's resolution search can still leave the degraded row reading not_requested (needs a flag from the shared resolver; deferred), and MalformedOci's status mapping is currently unreachable (harmless exhaustiveness).
+- The citing seed is reused on the second-seed refusal (one fewer Europe PMC call, the richer seed record kept); the malformed-OCI wording no longer claims unavailability; the status row names the DOI-resolution phase per path. Tests fail on the old code on independent assertions.
+
+## Outcome
+
 ## Outcome
 
 Three honesty-polish items the 1302 review recorded but left out of the

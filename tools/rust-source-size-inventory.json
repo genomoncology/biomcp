@@ -271,12 +271,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1340,
+      "baseline_lines": 1381,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1256, 1302",
-        "delta": 218,
-        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests.",
+        "ticket": "1256, 1302, 1304",
+        "delta": 259,
+        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests. Ticket 1304: the WHO Prequalification header-mismatch projection arm and its test.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
       }
     },
@@ -493,13 +493,13 @@
     },
     {
       "path": "src/sources/who_pq.rs",
-      "baseline_lines": 1123,
+      "baseline_lines": 1229,
       "floor_lines": 1117,
       "authorized_increase": {
-        "ticket": "1196",
-        "delta": 6,
-        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value.",
-        "removal_condition": "Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed."
+        "ticket": "1196, 1304",
+        "delta": 112,
+        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches.",
+        "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed."
       }
     },
     {

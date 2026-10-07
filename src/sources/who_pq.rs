@@ -37,6 +37,16 @@ const WHO_PQ_MAX_BODY_BYTES: usize = 4 * 1024 * 1024;
 const WHO_PQ_API_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
 const WHO_VACCINES_MAX_BODY_BYTES: usize = 2 * 1024 * 1024;
 
+// Header sets re-derived 2026-10-06 from the recorded WHO Prequalification
+// export captures in testdata/sources/who-pq (receipts in
+// testdata/sources/capture-receipts.json). The exports ship title-case
+// headers, the finished-pharma export no longer carries a "Basis of
+// Alternative Listing" column, and the API export's applicant column is
+// "Applicant" (issue #288). Validation compares case-insensitively on
+// trimmed header text, and the vaccines export's first header cell carries
+// a trailing space inside the quotes. Columns the exports dropped or
+// renamed stay readable when a pre-1304 cache still carries them, so a
+// fresh-enough local cache keeps parsing after the upgrade (review fold).
 const REQUIRED_HEADERS: &[&str] = &[
     "WHO REFERENCE NUMBER",
     "INN, DOSAGE FORM AND STRENGTH",
@@ -45,7 +55,6 @@ const REQUIRED_HEADERS: &[&str] = &[
     "APPLICANT",
     "DOSAGE FORM",
     "BASIS OF LISTING",
-    "BASIS OF ALTERNATIVE LISTING",
     "DATE OF PREQUALIFICATION",
 ];
 
@@ -54,10 +63,15 @@ const API_REQUIRED_HEADERS: &[&str] = &[
     "INN",
     "GRADE",
     "THERAPEUTIC AREA",
-    "APPLICANT ORGANIZATION",
     "DATE OF PREQUALIFICATION",
     "CONFIRMATION OF PREQUALIFICATION DOCUMENT DATE",
 ];
+
+// The API export renamed its applicant column to "Applicant"; caches the
+// pre-1304 binary downloaded carry "Applicant Organization", because the
+// old validator never accepted the renamed export. Either spelling
+// validates, and the row read takes whichever is present.
+const API_APPLICANT_HEADERS: &[&str] = &["APPLICANT", "APPLICANT ORGANIZATION"];
 
 const VACCINE_REQUIRED_HEADERS: &[&str] = &[
     "DATE OF PREQUALIFICATION",
@@ -68,6 +82,13 @@ const VACCINE_REQUIRED_HEADERS: &[&str] = &[
     "MANUFACTURER",
     "RESPONSIBLE NRA",
 ];
+
+/// Message prefix marking WHO Prequalification validation failures. Only
+/// these render with their file and column detail (error.rs); download
+/// failures keep the generic API line so no upstream body text leaks
+/// (ticket 1304, mirroring the DDInter markers).
+pub(crate) const WHO_PQ_HEADER_MISMATCH_MARKER: &str =
+    "WHO Prequalification export headers did not match: ";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum WhoPqSyncMode {
@@ -127,6 +148,31 @@ pub(crate) struct WhoPqClient {
     root: PathBuf,
 }
 
+/// Per-file outcome of one WHO Prequalification sync run. `refreshed` and
+/// `failed` name the local export files in the order the run attempted them.
+#[derive(Debug, Default)]
+pub(crate) struct WhoPqSyncReport {
+    pub(crate) refreshed: Vec<&'static str>,
+    pub(crate) failed: Vec<&'static str>,
+    pub(crate) changed: bool,
+}
+
+impl WhoPqSyncReport {
+    /// One-line outcome used for the stderr summary and the missing-files
+    /// error detail. The sync loop attempts every export, so at least one
+    /// part is always present.
+    pub(crate) fn summary_line(&self) -> String {
+        let mut parts = Vec::new();
+        if !self.refreshed.is_empty() {
+            parts.push(format!("refreshed {}", self.refreshed.join(", ")));
+        }
+        if !self.failed.is_empty() {
+            parts.push(format!("failed {}", self.failed.join(", ")));
+        }
+        format!("WHO Prequalification sync outcome: {}.", parts.join("; "))
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SyncState {
     Fresh,
@@ -182,7 +228,7 @@ impl WhoPqClient {
         Ok(Self { root })
     }
 
-    pub(crate) async fn sync(mode: WhoPqSyncMode) -> Result<bool, BioMcpError> {
+    pub(crate) async fn sync(mode: WhoPqSyncMode) -> Result<WhoPqSyncReport, BioMcpError> {
         let root = resolve_who_pq_root();
         sync_who_pq_root(&root, mode).await
     }
@@ -267,7 +313,7 @@ impl WhoPqClient {
     fn read_export_rows(
         &self,
         file_name: &str,
-        parser: fn(&str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
+        parser: fn(&str, &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
     ) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
         let path = self.root.join(file_name);
         let payload =
@@ -279,7 +325,7 @@ impl WhoPqClient {
                 ),
                 suggestion: who_preseed_suggestion(&self.root),
             })?;
-        parser(&payload)
+        parser(file_name, &payload)
     }
 }
 
@@ -326,7 +372,38 @@ fn clean_csv_field(
         .unwrap_or_default()
 }
 
-fn parse_who_pq_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
+/// Reads the first candidate column that carries text, for columns whose
+/// spelling moved between export generations (e.g. the API applicant
+/// column).
+fn clean_csv_field_any(
+    record: &csv::StringRecord,
+    headers: &HashMap<String, usize>,
+    candidates: &[&str],
+) -> String {
+    candidates
+        .iter()
+        .find_map(|header| {
+            headers
+                .get(*header)
+                .and_then(|idx| record.get(*idx))
+                .and_then(clean_text)
+        })
+        .unwrap_or_default()
+}
+
+fn missing_header_error(file_name: &str, required: &str) -> BioMcpError {
+    BioMcpError::Api {
+        api: WHO_PQ_API.to_string(),
+        message: format!(
+            "{WHO_PQ_HEADER_MISMATCH_MARKER}{file_name}: missing required column {required}"
+        ),
+    }
+}
+
+fn parse_who_pq_csv(
+    file_name: &str,
+    payload: &str,
+) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
     let mut reader = csv::ReaderBuilder::new()
         .flexible(true)
         .from_reader(payload.as_bytes());
@@ -337,10 +414,7 @@ fn parse_who_pq_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, BioM
     let header_map = header_map(headers);
     for required in REQUIRED_HEADERS {
         if !header_map.contains_key(*required) {
-            return Err(BioMcpError::Api {
-                api: WHO_PQ_API.to_string(),
-                message: format!("WHO Prequalification CSV is missing required column: {required}"),
-            });
+            return Err(missing_header_error(file_name, required));
         }
     }
 
@@ -413,7 +487,10 @@ fn parse_who_pq_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, BioM
     Ok(out)
 }
 
-fn parse_who_api_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
+fn parse_who_api_csv(
+    file_name: &str,
+    payload: &str,
+) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
     let mut reader = csv::ReaderBuilder::new()
         .flexible(true)
         .from_reader(payload.as_bytes());
@@ -424,11 +501,17 @@ fn parse_who_api_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, Bio
     let header_map = header_map(headers);
     for required in API_REQUIRED_HEADERS {
         if !header_map.contains_key(*required) {
-            return Err(BioMcpError::Api {
-                api: WHO_PQ_API.to_string(),
-                message: format!("WHO API CSV is missing required column: {required}"),
-            });
+            return Err(missing_header_error(file_name, required));
         }
+    }
+    if !API_APPLICANT_HEADERS
+        .iter()
+        .any(|header| header_map.contains_key(*header))
+    {
+        return Err(missing_header_error(
+            file_name,
+            "APPLICANT or APPLICANT ORGANIZATION",
+        ));
     }
 
     let mut out = Vec::new();
@@ -444,7 +527,7 @@ fn parse_who_api_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, Bio
             inn: clean_csv_field(&record, &header_map, "INN"),
             grade: clean_csv_field(&record, &header_map, "GRADE"),
             therapeutic_area: clean_csv_field(&record, &header_map, "THERAPEUTIC AREA"),
-            applicant: clean_csv_field(&record, &header_map, "APPLICANT ORGANIZATION"),
+            applicant: clean_csv_field_any(&record, &header_map, API_APPLICANT_HEADERS),
             prequalification_date: clean_csv_field(
                 &record,
                 &header_map,
@@ -494,7 +577,10 @@ fn parse_who_api_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, Bio
     Ok(out)
 }
 
-fn parse_who_vaccines_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
+fn parse_who_vaccines_csv(
+    file_name: &str,
+    payload: &str,
+) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
     let mut reader = csv::ReaderBuilder::new()
         .flexible(true)
         .from_reader(payload.as_bytes());
@@ -505,10 +591,7 @@ fn parse_who_vaccines_csv(payload: &str) -> Result<Vec<WhoPrequalificationEntry>
     let header_map = header_map(headers);
     for required in VACCINE_REQUIRED_HEADERS {
         if !header_map.contains_key(*required) {
-            return Err(BioMcpError::Api {
-                api: WHO_PQ_API.to_string(),
-                message: format!("WHO vaccine CSV is missing required column: {required}"),
-            });
+            return Err(missing_header_error(file_name, required));
         }
     }
 
@@ -935,16 +1018,24 @@ fn who_pq_sync_error(root: &Path, detail: impl Into<String>) -> BioMcpError {
     }
 }
 
-async fn sync_who_pq_root(root: &Path, mode: WhoPqSyncMode) -> Result<bool, BioMcpError> {
+async fn sync_who_pq_root(
+    root: &Path,
+    mode: WhoPqSyncMode,
+) -> Result<WhoPqSyncReport, BioMcpError> {
     let before = crate::utils::download::bundle_fingerprint(root);
-    sync_who_pq_root_inner(root, mode).await?;
-    Ok(before != crate::utils::download::bundle_fingerprint(root))
+    let mut report = sync_who_pq_root_inner(root, mode).await?;
+    report.changed = before != crate::utils::download::bundle_fingerprint(root);
+    Ok(report)
 }
 
-async fn sync_who_pq_root_inner(root: &Path, mode: WhoPqSyncMode) -> Result<(), BioMcpError> {
+async fn sync_who_pq_root_inner(
+    root: &Path,
+    mode: WhoPqSyncMode,
+) -> Result<WhoPqSyncReport, BioMcpError> {
+    let mut report = WhoPqSyncReport::default();
     let state = sync_state(root, mode);
     if matches!(state, SyncState::Fresh) {
-        return Ok(());
+        return Ok(report);
     }
 
     tokio::fs::create_dir_all(root).await?;
@@ -958,20 +1049,22 @@ async fn sync_who_pq_root_inner(root: &Path, mode: WhoPqSyncMode) -> Result<(), 
             WHO_PQ_CSV_FILE,
             who_pq_export_url(),
             WHO_PQ_MAX_BODY_BYTES,
-            parse_who_pq_csv as fn(&str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
+            parse_who_pq_csv
+                as fn(&str, &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
         ),
         (
             WHO_PQ_API_CSV_FILE,
             who_pq_api_export_url(),
             WHO_PQ_API_MAX_BODY_BYTES,
-            parse_who_api_csv as fn(&str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
+            parse_who_api_csv
+                as fn(&str, &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
         ),
         (
             WHO_VACCINES_CSV_FILE,
             who_vaccines_export_url(),
             WHO_VACCINES_MAX_BODY_BYTES,
             parse_who_vaccines_csv
-                as fn(&str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
+                as fn(&str, &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
         ),
     ] {
         let path = root.join(file_name);
@@ -980,24 +1073,31 @@ async fn sync_who_pq_root_inner(root: &Path, mode: WhoPqSyncMode) -> Result<(), 
         {
             if has_readable_local_file(&path) {
                 write_stderr_line(&format!(
-                    "Warning: WHO Prequalification refresh failed for {}: {err}. Using existing data.",
-                    file_name
+                    "Warning: WHO Prequalification refresh failed for {file_name}: {err}. Using existing data.",
                 ))?;
             } else {
-                return Err(who_pq_sync_error(root, err.to_string()));
+                write_stderr_line(&format!(
+                    "Warning: WHO Prequalification refresh failed for {file_name}: {err}.",
+                ))?;
             }
+            report.failed.push(file_name);
+        } else {
+            report.refreshed.push(file_name);
         }
     }
 
+    write_stderr_line(&report.summary_line())?;
+
     let missing = who_pq_missing_files(root, WHO_PQ_REQUIRED_FILES);
     if missing.is_empty() {
-        return Ok(());
+        return Ok(report);
     }
 
     Err(who_pq_sync_error(
         root,
         format!(
-            "Missing required WHO Prequalification file(s): {}",
+            "{} Missing required WHO Prequalification file(s) after the run: {}",
+            report.summary_line(),
             missing.join(", ")
         ),
     ))
@@ -1009,7 +1109,7 @@ async fn sync_export(
     export_url: &str,
     max_body_bytes: usize,
     mode: WhoPqSyncMode,
-    parser: fn(&str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
+    parser: fn(&str, &str) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError>,
 ) -> Result<(), BioMcpError> {
     let client = crate::sources::shared_client()?;
     let mut request = client.get(export_url).with_extension(CacheMode::NoStore);
@@ -1055,7 +1155,13 @@ async fn sync_export(
             message: format!("{file_name} was not valid UTF-8: {source}"),
         })
         .map_err(|error| error.with_source_context(context))?;
-    parser(payload).map_err(|error| error.with_source_context(context))?;
+    // A validation failure means the export changed shape, so the recovery is
+    // reviewing the source, not retrying the same download (ticket 1304).
+    let validation_context = crate::error::SourceContext::new(
+        crate::error::SourceProvider::WHO_PREQUALIFICATION,
+        crate::error::RecoveryAction::ReviewSourceConfiguration,
+    );
+    parser(file_name, payload).map_err(|error| error.with_source_context(validation_context))?;
 
     let path = root.join(file_name);
     if let Ok(existing) = tokio::fs::read(&path).await
