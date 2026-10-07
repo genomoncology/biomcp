@@ -1,13 +1,14 @@
 # 2014 — Adopt the shared direct ClinVar record
 
-Status: OPEN.
-Draft classification: pending Root.
+Status: COMPLETE.
+Landed: 685e24cd73ec6ea39bc290b1c4a73cecc8e527dc.
+Classification: Root approved the accepted paired DESIGN and released BUILD.
 
 Milestone: 1.0
 Component: backend
 Owner: Root.
 Prepared and signed: delegated GPT-6.1 SOL consumer ticket preparer, October 6, 2026.
-Phase: ticket preparation only. Root classification and subsequent BUILD release remain pending.
+Phase: COMPLETE. Root qualified the exact pair and accepted fresh CODE review. See [completion record](../records/2014-adopt-direct-clinvar-record.md).
 Risk: High. Shared direct and cached records must preserve separate admission, source attribution, section outcomes and output compatibility.
 
 ## Outcome
@@ -18,19 +19,19 @@ This serves the ideal-state 1.0 backend move: BioData owns pure source parsing a
 
 ## Evidence
 
-- Starts from: dedicated consumer `b70aa501ade1a3ad52fdf78b4067a8cdb50b0ed8`, with locked BioData `33b8ff13f1f445eadbfa10fb433852f5b77b4a1d`. [2012 cached adoption](../records/2012-adopt-cached-variant-evidence.md) and [2013 maintenance incorporation](../records/2013-incorporate-main-maintenance-build.md) are complete. The accepted paired [BioData 0710 ticket](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/tickets/0710-design-direct-clinvar-record.md), [design](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/planning/direct-clinvar-record-0710/design.md), [cases](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/planning/direct-clinvar-record-0710/cases.md) and [file claims](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/planning/direct-clinvar-record-0710/file-claims.md) define the unchanged contract. The October 6 narrow repair confirmation accepts DESIGN `2d96b0059702c09a8938672cc12dc9025c3dd89a`. It supplies contract review evidence, not Root acceptance of this consumer draft. Prior producer records 0667/0669 and experiments 674/703 establish package availability, real execution and independent expected literals as distinct proof. Existing consumer records 1154/1243 and the retained XML fixture establish direct behavior and pre-parse depth protection. No new experiment is needed.
+- Starts from: dedicated consumer `b70aa501ade1a3ad52fdf78b4067a8cdb50b0ed8`, with locked BioData `33b8ff13f1f445eadbfa10fb433852f5b77b4a1d`. [2012 cached adoption](../records/2012-adopt-cached-variant-evidence.md) and [2013 maintenance incorporation](../records/2013-incorporate-main-maintenance-build.md) are complete. The accepted paired [BioData 0710 ticket](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/tickets/0710-design-direct-clinvar-record.md), [design](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/planning/direct-clinvar-record-0710/design.md), [cases](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/planning/direct-clinvar-record-0710/cases.md) and [file claims](https://github.com/genomoncology/biodata/blob/2d96b0059702c09a8938672cc12dc9025c3dd89a/sdlc/planning/direct-clinvar-record-0710/file-claims.md) define the unchanged contract. The October 6 narrow repair confirmation accepts DESIGN `2d96b0059702c09a8938672cc12dc9025c3dd89a`. Root used this contract review evidence to approve consumer BUILD. Prior producer records 0667/0669 and experiments 674/703 establish package availability, real execution and independent expected literals as distinct proof. Existing consumer records 1154/1243 and the retained XML fixture establish direct behavior and pre-parse depth protection. No new experiment is needed.
 - Keeps: successful direct empty or absent records without cached fallback; cached fallback only on direct failure; unavailable without usable cache; missing numeric ID inapplicable without fetching; default unrequested null with no direct call; all-selection behavior; NCBI versus MyVariant source provenance and private errors. Preserve supported VCV/RCV/SCV metadata, current noncontributing submissions, row order, assertion-linked conditions, citation/criteria/comment text, classification levels, headline/date/review policy, finite JSON field order, omission/default/null behavior and Markdown distinctions.
 - Changes: exact qualified BioData dependency pin, shared immutable record storage, thin optional target Serde bridge, ClinvarClient byte-parser delegation, finite cached conversion delegation and shared getter/borrowed target use by current policies and renderer. Retire displaced local ownership only after replacement owners pass.
-- Proof: reuse the repaired paired cases table and existing actual-caller owners below. Add only the missing positive complete-record channel claim in `direct_clinvar_record_transport_tests.rs`. Later BUILD grows that missing behavior red-green through the actual client, records the exact producer/consumer pair and performs focused local verification. Preparation validates only records, config and Git; it runs no product checks.
+- Proof: reuse the repaired paired cases table and existing actual-caller owners below. Add only the missing positive complete-record channel claim in `direct_clinvar_record_transport_tests.rs`. BUILD added the missing owner, observed a shared-type compile failure, integrated the exact pair and verified affected callers. The completion record states the limits of that red evidence.
 - Defers: whole Variant/VariantSearchResult ownership, other enrichment families, normalization providers, clinical interpretation, new provider support, raw XML archival, new fixtures or provider acquisition, release and publication. Completed whole-hit and cached evidence migrations stay complete. No broad donor audit, producer semantic matrix, new proof system or new ticket is in scope.
 
 ## Prerequisite and authority
 
-Producer pin: PENDING. The existing locked `33b8ff13f1f445eadbfa10fb433852f5b77b4a1d` is the starting pin, not the new direct-record pin. BUILD requires Root acceptance of a qualified exact producer revision exposing the reviewed API and target, plus Root classification of this ticket and explicit BUILD release. Record that exact revision before changing Cargo files. Never infer it from the design SHA, a moving producer branch or a current producer tip.
+Producer pin: qualified BioData `dbbaa1aedbd16c5e51e022197792dc35bb8132bc`, version `0.0.37`. Root released BUILD after producer Linux qualification. Both Cargo files retain this exact pin. Fresh CODE review accepted consumer `685e24cd73ec6ea39bc290b1c4a73cecc8e527dc` after actual caller proof and guarded retirement.
 
-This ticket does not depend on BioData 0710 COMPLETE. The paired 0710 outcome includes this consumer adoption. A Root-accepted qualified producer pin unlocks consumer BUILD; accepted consumer proof then contributes to paired completion. This avoids a circular completion dependency.
+Paired 0710 completion includes this consumer adoption. Root authorizes both completion records and landing. The producer lands first; this consumer lands only on dedicated `biodata/biomcp-1.0`. Keep global number 2014, milestone 1.0, component backend and the sole active configuration.
 
-Root owns maintenance reconciliation under BioData ADR 0029 before BUILD and again before CODE review. Ticket 2013 already records the incorporated maintenance baseline `3ad939f047c04a6bc4d659d963483729b52dfd7b`. Classify any later delta before incorporating it. Preparation performs no merge or product edit. Paired DESIGN ACCEPT may supply review evidence while the contract stays unchanged. Root decides this draft's classification and any additional review. No new acceptance is asserted here.
+Maintenance baseline `3ad939f047c04a6bc4d659d963483729b52dfd7b` was incorporated through ticket 2013 and verified current at CODE review. It is an ancestor of the accepted consumer. No later donor delta entered this change.
 
 ## Proposed BUILD file claims
 
@@ -64,10 +65,8 @@ Retire overlapping assertions only after their named owners pass. In typed_get, 
 
 The producer public owner must preserve displaced source mapping, identity/status, numeric/Boolean refusal, duplicate-ID, hostile XML, projected-text/preflight and list/text/node claims before local decoder tests retire. Retire `get/tests.rs::indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count` only after public cached conversion and the existing channel owner preserve every assertion. Keep mod.rs policy cases for states without wider coverage. Remove only redundant constructor/builder scaffolding; preserve each remaining unique policy claim.
 
-## Later proof and finish line
+## Completion and remaining limits
 
-After Root releases BUILD, write the missing actual-caller behavior first and observe a failure for its named reason. Implement the reviewed API integration, run the smallest affected offline selection on M5 and keep one owner per claim. Producer qualification supplies its separate package/API, parser/generated-depth, privacy and finite-target checks. Do not recreate them in the consumer.
+The shared parser, native record storage, cached conversion, borrowing getters and separate Markdown target now serve actual callers. The five local authoritative structs and both displaced conversion algorithms are retired after replacement proof. Fresh CODE review accepted the exact consumer and qualified producer pair. The completion record records the affected checks and inherited Darwin isolation and Clippy limitations. No whole consumer gate or release qualification is claimed.
 
-Root qualifies the exact consumer revision and locked producer pin with affected transport, section, headline, renderer, CLI/MCP, recorded spec and package/privacy checks. Use the existing focused migration selection and add only the new owner if required. Retain 2012/2013 inherited Darwin isolation, Clippy and source-size findings as evidence; a changed pair still needs its own affected proof. No prior exception automatically accepts a new defect. No whole consumer gate, hosted job, provider request or release qualification is claimed.
-
-Finish after fresh CODE review, qualified exact-pair behavior, verified actual-client delegation, shared record storage and renderer target use, retirement of the five authoritative structs and both displaced projection algorithms, and one completion record. Root owns record acceptance, paired reconciliation and later landing. Preparation stops at the pushed draft and receipt; main, the existing consumer checkout and the producer remain untouched.
+Root authorizes metadata completion and landing without repeated checks or product edits. Keep both worktrees, branches, reservations and the current consumer executable. Whole response ownership, other providers and release remain deferred.
