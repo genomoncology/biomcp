@@ -180,9 +180,12 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
         for (key, value) in &envs {
             env.set(key, value);
         }
-        let default = get_with_report("TP53", &GeneGetOptions::default())
-            .await
-            .unwrap();
+        let default = crate::sources::with_no_cache_flag(
+            true,
+            get_with_report("TP53", &GeneGetOptions::default()),
+        )
+        .await
+        .unwrap();
         assert!(default.gene.constraint.is_none());
         assert!(
             !requests
@@ -198,7 +201,10 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
                 .with_optional_timeout(Duration::from_millis(100));
             assert!(should_use_parallel_top(&options.sections));
             let before = requests.lock().unwrap().len();
-            let result = get_with_report("TP53", &options).await.unwrap();
+            let result =
+                crate::sources::with_no_cache_flag(true, get_with_report("TP53", &options))
+                    .await
+                    .unwrap();
             assert_eq!(result.timing.strategy, strategy.as_str());
             assert!(
                 result
@@ -210,7 +216,8 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
             assert!(
                 requests.lock().unwrap()[before..]
                     .iter()
-                    .any(|r| r.starts_with("POST /gnomad"))
+                    .any(|r| r.starts_with("POST /gnomad")),
+                "{label}: {strategy:?}"
             );
             let record: &biodata::GnomadGeneConstraintProjection =
                 &result.gene.constraint.as_ref().unwrap().record;
