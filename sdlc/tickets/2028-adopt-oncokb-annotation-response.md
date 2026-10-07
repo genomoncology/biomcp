@@ -5,7 +5,6 @@ Milestone: 1.0
 Component: backend
 Owner: Root owns the consumer queue and paired producer0716. A fresh builder will own only2028 after producer acceptance.
 Phase: DESIGN contract accepted; consumer BUILD waits for accepted producer pin.
-Depends on: biodata/0716
 
 ## Outcome
 
@@ -13,7 +12,7 @@ Use the shared direct OncoKB response in the actual variant helper. Preserve CLI
 
 ## Reviewed contract
 
-The producer0716 [brief](../../../../biodata/sdlc/planning/0716-oncokb-annotation-response.md) holds the unchanged paired contract. Fresh Medium design review accepted78c0fd8c650b490c2bff698bde45bf9ea74574d9 after correcting positional defaults and ignored numeric admission. This ticket assigns its existing consumer contract; it introduces no API or scope change. Base: e9007e1def8f6206ddf1a72948ab4cdf3c8b702f.
+The producer0716 [brief](../../../../repos/biodata/sdlc/planning/0716-oncokb-annotation-response.md) holds the unchanged paired contract. Fresh Medium design review accepted78c0fd8c650b490c2bff698bde45bf9ea74574d9 after correcting positional defaults and ignored numeric admission. This ticket assigns its existing consumer contract; it introduces no API or scope change. Base: e9007e1def8f6206ddf1a72948ab4cdf3c8b702f.
 
 Changes: `src/sources/oncokb.rs`, `src/sources/oncokb/tests/parsing.rs`, `src/entities/variant/get.rs`, `src/entities/variant/get/tests.rs`, `tests/test_oncokb_response_adoption.py`, `tests/test-file-caps.json`, `Cargo.toml`, `Cargo.lock`, `tools/biodata-1.0-focused.toml`, `tools/rust-source-size-inventory.json`, `tools/check-biodata-boundary.py`, `tests/test_biodata_boundary.py`, `tests/test_source_package_boundary.py`, `tests/test_biodata_branch_workflow.py`, this ticket and its owning record.
 
