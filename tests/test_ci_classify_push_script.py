@@ -91,6 +91,25 @@ def test_docs_only_push_classifies_true(scratch_repo: Path) -> None:
     assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=true"
 
 
+def test_changelog_only_push_runs_full_ci(scratch_repo: Path) -> None:
+    """CHANGELOG.md is not docs-only: the changelog refresh test is
+    marked needs_binary, so only the canonical lane runs it, and a
+    changelog-only push must reach that lane (2026-10-07 review,
+    finding 4).
+    """
+    sha = _commit(scratch_repo, {"CHANGELOG.md": "# Changelog\n\n## Unreleased\n"}, "bullets")
+    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false"
+
+
+def test_changelog_alongside_docs_still_runs_full_ci(scratch_repo: Path) -> None:
+    sha = _commit(
+        scratch_repo,
+        {"CHANGELOG.md": "# Changelog\n", "sdlc/tickets/x.md": "x"},
+        "bullets and ticket",
+    )
+    assert _run_script(scratch_repo, "origin/main", sha) == "docs_only=false"
+
+
 @pytest.mark.parametrize(
     "path",
     [

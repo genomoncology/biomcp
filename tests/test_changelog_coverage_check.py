@@ -55,13 +55,20 @@ def _run(
     changelog: str,
     subjects: list[str],
     records: list[str] | None = None,
+    tickets: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    """Ticket files map path to the file's content at the tag; they
+    reach the gate through the `diff` name list and the `git show
+    tag:path` body, the two calls the status source makes."""
     _fake_git(
         tmp_path,
         {
             "tag": ["v0.9.0", "v0.9.1"],
             "log": subjects,
-            "diff": records or [],
+            "diff": list(records or []) + list(tickets or {}),
+            "show": {
+                f"v0.9.1:{path}": content for path, content in (tickets or {}).items()
+            },
         },
     )
     path = tmp_path / "CHANGELOG.md"
@@ -196,6 +203,185 @@ def test_union_passes_when_both_have_bullets(tmp_path: Path) -> None:
         changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n- Widened the ticket scan. (1996)\n",
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_land_subject_ticket_requires_a_bullet(tmp_path: Path) -> None:
+    # Tickets land on main as "Land NNNN: ..." subjects; the gate
+    # must count them, not only old-pattern merge subjects.
+    result = _run(
+        tmp_path,
+        subjects=["Land 1299: make the article search deadline honest"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "1299" in result.stderr
+
+
+def test_land_subject_passes_with_a_described_bullet(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Land 1299: make the article search deadline honest"],
+        changelog="# C\n\n## Unreleased\n\n- Made the article search deadline honest. (1299)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_both_landing_shapes_demand_their_bullets(tmp_path: Path) -> None:
+    # A range with both landing shapes must demand a bullet for each:
+    # covering the old-pattern merge does not cover the Land subject.
+    result = _run(
+        tmp_path,
+        subjects=[
+            "Land 1306: fold the 1302 review carryovers",
+            "Merge branch 'tickets/1234-gate'",
+        ],
+        changelog="# C\n\n## Unreleased\n\n- Folded the review carryovers. (1306)\n",
+    )
+    assert result.returncode == 1
+    assert "1234" in result.stderr
+
+
+def test_both_landing_shapes_pass_with_both_bullets(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=[
+            "Land 1306: fold the 1302 review carryovers",
+            "Merge branch 'tickets/1234-gate'",
+        ],
+        changelog="# C\n\n## Unreleased\n\n- Folded the review carryovers. (1306)\n- Reworked the gates. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_land_subject_text_does_not_count_other_tickets(tmp_path: Path) -> None:
+    # "Land 1306: fold the 1302 review carryovers" names 1302 in its
+    # text; only the ticket in the Land prefix lands a ticket.
+    result = _run(
+        tmp_path,
+        subjects=["Land 1306: fold the 1302 review carryovers"],
+        changelog="# C\n\n## Unreleased\n\n- Folded the carryovers. (1306)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_same_ticket_across_shapes_counts_once(tmp_path: Path) -> None:
+    # One ticket arriving as a merge subject and again as a record
+    # file is one ticket: a single described bullet covers it.
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        records=["sdlc/records/1234-gate-build.md"],
+        changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "covers all 1 tickets" in result.stdout
+
+
+def test_same_ticket_across_all_three_shapes_counts_once(tmp_path: Path) -> None:
+    # Land subject, record file and a complete ticket status in one
+    # range: still one ticket, one bullet.
+    result = _run(
+        tmp_path,
+        subjects=["Land 1234: rework the gates"],
+        records=["sdlc/records/1234-gate-build.md"],
+        tickets={"sdlc/tickets/1234-rework-the-gates.md": "Status: complete.\n"},
+        changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "covers all 1 tickets" in result.stdout
+
+
+def test_completed_status_ticket_demands_a_bullet(tmp_path: Path) -> None:
+    # A ticket file added in the range whose status reads complete
+    # demands a bullet with no Land subject and no record: 2010
+    # closed this way after its work landed as plain commits.
+    result = _run(
+        tmp_path,
+        subjects=["Some plain commit"],
+        tickets={"sdlc/tickets/1998-status-only.md": "Status: complete.\n"},
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "1998" in result.stderr
+
+
+def test_completed_status_ticket_passes_with_a_described_bullet(
+    tmp_path: Path,
+) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Some plain commit"],
+        tickets={"sdlc/tickets/1998-status-only.md": "Status: complete.\n"},
+        changelog="# C\n\n## Unreleased\n\n- Closed the status-only ticket. (1998)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_open_status_ticket_demands_nothing(tmp_path: Path) -> None:
+    # A filed ticket still OPEN at the tag has not landed; it must
+    # not demand a bullet.
+    result = _run(
+        tmp_path,
+        subjects=["Some plain commit"],
+        tickets={"sdlc/tickets/1998-still-open.md": "Status: OPEN.\n"},
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_status_token_matches_pm_ticket_grammar() -> None:
+    # pm reads the first Status line in the first 25 lines, strips
+    # emphasis, cuts at the first sentence terminator and lowercases;
+    # real tickets spell completion with trailing text and capitals.
+    assert _MODULE.status_token("Status: complete.\n") == "complete"
+    assert _MODULE.status_token("Status: COMPLETE. Built 2026-10-06.\n") == "complete"
+    assert (
+        _MODULE.status_token("Status: complete. Absorbed by ticket 1304, split.\n")
+        == "complete"
+    )
+    assert _MODULE.status_token("Status: **COMPLETE**.\n") == "complete"
+    assert _MODULE.status_token("Status: OPEN.\n") == "open"
+    assert _MODULE.status_token("Status: deferred\n") == "deferred"
+    assert _MODULE.status_token("Status: complete. Cap 726.0 lines.\n") == "complete"
+    assert _MODULE.status_token("""# 1998 — a ticket
+
+Filed once.
+
+Status: complete.\n""") == "complete"
+    assert _MODULE.status_token("no status line at all\n") == ""
+
+
+def test_completed_status_discovery_uses_real_git_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The status scan runs `git show tag:path` against a real
+    repository, not a canned response."""
+    import subprocess
+
+    def git(*args: str, cwd: Path) -> None:
+        subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+    repo = tmp_path / "repo"
+    (repo / "sdlc" / "tickets").mkdir(parents=True)
+    (repo / "CHANGELOG.md").write_text("# Changelog\n", encoding="utf-8")
+    git("init", "-q", cwd=repo)
+    git("config", "user.email", "t@example.com", cwd=repo)
+    git("config", "user.name", "t", cwd=repo)
+    git("add", "-A", cwd=repo)
+    git("commit", "-q", "-m", "base", cwd=repo)
+    git("tag", "v0.9.0", cwd=repo)
+    (repo / "sdlc" / "tickets" / "1997-real-history.md").write_text(
+        "# 1997\n\nStatus: COMPLETE. Built from history.\n", encoding="utf-8"
+    )
+    (repo / "sdlc" / "tickets" / "1996-real-history.md").write_text(
+        "# 1996\n\nStatus: OPEN.\n", encoding="utf-8"
+    )
+    git("add", "-A", cwd=repo)
+    git("commit", "-q", "-m", "file tickets", cwd=repo)
+    git("tag", "v0.9.1", cwd=repo)
+
+    monkeypatch.chdir(repo)
+    assert _MODULE.completed_status_tickets("v0.9.0", "v0.9.1") == {"1997"}
 
 
 def test_record_discovery_uses_real_git_history(
