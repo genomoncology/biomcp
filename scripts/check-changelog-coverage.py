@@ -15,6 +15,10 @@ MERGE_TICKET = re.compile(r"^Merge .*\btickets/([0-9]+)-")
 # the leading number counts, so a Land subject that mentions another
 # ticket in its text does not pull that ticket in.
 LAND_TICKET = re.compile(r"^Land ([0-9]+):")
+# Ticket files only: sdlc/tickets/NNNN-*.md. The archive/ and
+# drafts/ subdirectories hold dead tickets and never count.
+TICKET_FILE = re.compile(r"^sdlc/tickets/([0-9]+)-")
+STATUS_LINE = re.compile(r"^Status:\s*(.+)$", re.IGNORECASE)
 # Ticket-numbered records only. A date-shaped name (dddd-dd-dd-*)
 # is a dated note, never a ticket record, whatever the year; any
 # other four-digit number with any slug (digit-start and
@@ -71,12 +75,59 @@ def record_tickets(previous: str, tag: str) -> set[str]:
     }
 
 
+def status_token(content: str) -> str:
+    """The status token pm reads from a ticket file.
+
+    Mirrors pm's grammar: the first `Status:` line within the first
+    25 lines, emphasis stripped, cut at the first sentence terminator
+    (a period between digits is a decimal, not a terminator), trimmed
+    and lowercased. Real tickets spell completion "complete.",
+    "COMPLETE. Built ..." and "complete. Absorbed by ticket ...".
+    """
+    for line in content.splitlines()[:25]:
+        match = STATUS_LINE.match(line)
+        if match is None:
+            continue
+        raw = match.group(1).strip().replace("*", "")
+        for index, char in enumerate(raw):
+            if char in ".,;:":
+                before = raw[index - 1] if index else ""
+                after = raw[index + 1] if index + 1 < len(raw) else ""
+                if not (char == "." and before.isdigit() and after.isdigit()):
+                    return raw[:index].strip().lower()
+        return raw.strip().lower()
+    return ""
+
+
+def completed_status_tickets(previous: str, tag: str) -> set[str]:
+    names = run_git(
+        "diff", "--name-only", "--diff-filter=A", previous, tag, "--", "sdlc/tickets/"
+    ).splitlines()
+    found: set[str] = set()
+    for name in names:
+        match = TICKET_FILE.match(name)
+        if match is None:
+            continue
+        # The status is read at the tag, not at the add commit: a
+        # ticket filed mid-cycle and closed later counts once it
+        # reads complete at the release.
+        if status_token(run_git("show", f"{tag}:{name}")) == "complete":
+            found.add(match.group(1))
+    return found
+
+
 def merged_tickets(previous: str, tag: str) -> set[str]:
-    # No single source is complete: a landing can be a Land subject, an
-    # old-pattern merge subject, or a record file, and a record can lag
-    # a landing while a subject can be rewritten or absent. Fail closed
-    # on the union, one ticket once across every shape.
-    return landing_subject_tickets(previous, tag) | record_tickets(previous, tag)
+    # No single source is complete: a landing can be a Land subject,
+    # an old-pattern merge subject, or a record file, and a ticket can
+    # close with none of them when its work lands as plain commits
+    # (2010, absorbed by 1304). A record can lag a landing while a
+    # subject can be rewritten or absent. Fail closed on the union,
+    # one ticket once across every shape.
+    return (
+        landing_subject_tickets(previous, tag)
+        | record_tickets(previous, tag)
+        | completed_status_tickets(previous, tag)
+    )
 
 
 def section_text(path: Path, tag: str) -> tuple[str, str]:
