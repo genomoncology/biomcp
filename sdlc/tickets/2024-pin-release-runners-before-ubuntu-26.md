@@ -21,3 +21,23 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: pin the four jobs to `ubuntu-24.04`; build release binaries through `tools/with-build-identity`; make `spec` depend on `sync-python-dev`.
 - Proof: a workflow test fails on any `ubuntu-latest`; a wheel built by the workflow's command prints a commit; `make spec` in a fresh worktree runs `gene.md:408`.
 - Defers: a rehearsal. The release-path change is small and the next real run verifies it under checklist section 4.
+
+## Build status
+
+- Built on branch `tickets/2024-pin-release-runners-before-ubuntu-26`,
+  commit c037bddb3, 2026-10-07, after one timeout revival with a
+  checkpoint (nothing lost).
+- Code review: ACCEPT 2026-10-07. Verified: all four ubuntu-latest
+  jobs pinned with job order and steps unchanged; build identity routed
+  through with-build-identity on host legs and inherited via
+  --env-file on manylinux legs with actionlint checking preserved; the
+  ubuntu-latest ban reads whole workflow text with a planted-label red
+  proof; make spec syncs Python with a coherent red-first fresh-worktree
+  proof; the wheel prints its commit. Scope clarification recorded from
+  the review: the outcome line's "every workflow job" means every
+  Ubuntu job — macos-latest and windows-latest stay on matrix legs by
+  the documented cross-compile choice, and finding 15 scoped this
+  ticket to the Ubuntu 26 move. Three report-only P2s: that wording,
+  the wheel proof predating the final amend (mechanism unchanged), and
+  the container branch lacking its own red test (the real-file
+  assertion still catches a dropped --env-file).
