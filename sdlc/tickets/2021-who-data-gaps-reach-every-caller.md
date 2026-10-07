@@ -78,3 +78,6 @@ column — never the generic #288 line.
   is gone (network access and BIOMCP_WHO_DIR named); the failed-export
   fixture hermetic with the drift guard; inventory repins exact. One
   P2 (temp-dir leaks in the two new spec blocks) folded in eb889a407.
+  A review minor note folded into this record: the mcp.md degrade block
+  makes three forced-degrade searches (CLI JSON, raw MCP JSON, raw MCP
+  Markdown), not two.
