@@ -32,20 +32,23 @@ article fixture.
       {"text":"Non-Small Cell Lung Cancer","count":1,"namespace":"MESH","identifier":"MESH:D002289"}
     ] and (.annotations.mutations | map({text, namespace, identifier}) == [
       {"text":"G12A","namespace":"HGVS","identifier":"KRAS p.G12A"},
-      {"text":"G12C","namespace":"rsID","identifier":"rs121913530"},
+      {"text":"G12C","namespace":"HGVS","identifier":"KRAS p.G12C"},
       {"text":"G12D","namespace":"HGVS","identifier":"KRAS p.G12D"},
       {"text":"G12V","namespace":"HGVS","identifier":"KRAS p.G12V"},
-      {"text":"G13C","namespace":"rsID","identifier":"rs121913535"}
+      {"text":"G13C","namespace":"HGVS","identifier":"KRAS p.G13C"}
     ])' \
   | mustmatch 'true'
 ```
 
 `PD-L1` and `programmed death ligand 1` are two mention groups for one NCBI
 Gene identifier; both rows survive with `text` and `count` keeping their
-meaning. The variant rows never carry the tmVar composite string. rs121913529
-names three KRAS codon-12 alleles, so the G12A, G12D and G12V rows carry the
-gene-plus-HGVS form that names one allele; rs121913530 and rs121913535 name
-exactly one allele each, so those rows keep the rsID PubTator3 normalizes to.
+meaning. The variant rows never carry the tmVar composite string. Every
+variant row in this capture carries a gene annotation and a protein change,
+so all five rows carry the gene-plus-HGVS form that names one allele: one
+rsID can name several alleles (rs121913529 names three KRAS codon-12
+alleles), the article may mention only one of them, and BioMCP has no
+offline rsID-to-alleles table, so the row's own gene-plus-change pair is the
+form that always names the row's allele.
 
 ## Compact JSON Omits Passage Positions
 
@@ -88,36 +91,37 @@ symbols, not NCBI Gene identifiers.
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
-  | mustmatch '/\| G12C \| 1 \| `biomcp get variant rs121913530` \|/'
-```
-
-```bash
-../../tools/biomcp-ci article entities 30738221 \
-  | mustmatch '/\| G13C \| 1 \| `biomcp get variant rs121913535` \|/'
-```
-
-```bash
-../../tools/biomcp-ci article entities 30738221 \
   | mustmatch '/\| KRAS \| 12 \| `biomcp search gene -q KRAS` \|/'
 ```
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
-  | mustmatch not '/get gene 3845|get variant G12C|get variant p\.G12C/'
+  | mustmatch not '/get gene 3845|get variant G12C|get variant p\.G12C|get variant rs121913530|get variant rs121913535/'
 ```
 
-## Multi-Allele rsID Rows Name Their Allele
+## Variant Rows Name Their Allele
 
 rs121913529 names a KRAS codon-12 position, not one allele. The recorded
 MyVariant response for that rsID carries three hits (G12A, G12D and G12V), and
 `get variant rs121913529` opens G12D, so a row that mentions G12A or G12V
-must not link through it. Those rows print the gene-plus-protein command and
-each opens its own variant. The G12C and G13C rows keep their rsID commands
-above because rs121913530 and rs121913535 name exactly one allele.
+must not link through it. Every variant row of this capture carries a gene
+annotation and a protein change, so every variant row prints the
+gene-plus-protein command, which names the row's own allele whatever else the
+article mentions. The G12C and G13C rows changed from their rsID commands in
+ticket 2029: their rsIDs (rs121913530, rs121913535) each name one allele, but
+a document that mentions only one allele of a multi-allele rsID shows the
+same single-change shape, and BioMCP has no offline rsID-to-alleles table to
+tell the two apart. Each gene-plus-protein command opens the same variant its
+rsID opens, so the change is to the command's form, not the variant it opens.
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
   | mustmatch '/\| G12A \| 1 \| `biomcp get variant "KRAS p.G12A"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 30738221 \
+  | mustmatch '/\| G12C \| 1 \| `biomcp get variant "KRAS p.G12C"` \|/'
 ```
 
 ```bash
@@ -132,20 +136,28 @@ above because rs121913530 and rs121913535 name exactly one allele.
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
+  | mustmatch '/\| G13C \| 1 \| `biomcp get variant "KRAS p.G13C"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 30738221 \
   | mustmatch not '/get variant rs121913529/'
 ```
 
 Each command opens its own variant through the recorded MyVariant gene+protein
-responses of the routine variant-identity fixture.
+responses of the routine variant-identity fixture. The rsID control row shows
+what `rs121913529` alone opens: G12D, not the allele every other row names.
 
 | query | id | protein |
 |---|---|---|
 | KRAS p.G12A | chr12:g.25398284C>G | p.Gly12Ala |
+| KRAS p.G12C | chr12:g.25398285C>A | p.Gly12Cys |
 | KRAS p.G12D | chr12:g.25398284C>T | p.Gly12Asp |
 | KRAS p.G12V | chr12:g.25398284C>A | p.Gly12Val |
+| KRAS p.G13C | chr12:g.25398282C>A | p.Gly13Cys |
 | rs121913529 | chr12:g.25398284C>T | p.Gly12Asp |
 
-```bash each_row="Multi-Allele rsID Rows Name Their Allele"
+```bash each_row="Variant Rows Name Their Allele"
 biomcp --json --no-cache get variant '{{query}}' \
   | jq -c '{id: .id, protein: .hgvs_p}' \
   | mustmatch like '{"id":"{{id}}","protein":"{{protein}}"}'
