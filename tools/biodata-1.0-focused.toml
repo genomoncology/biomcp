@@ -633,6 +633,13 @@ rust = [
   "sources::mychem::consumer_tests::display_selection_and_product_table",
   "sources::mychem::consumer_tests::original_byte_identity_and_companion_table",
   "sources::mychem::consumer_tests::request_profile_and_validation_table",
+  "entities::gene::constraint_surface_tests::flattened_gene_constraint_preserves_literal_target_and_omission",
+  "entities::gene::constraint_surface_tests::direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels",
+  "entities::gene::tests::gnomad_constraint_without_metrics_is_healthy_empty",
+  "render::markdown::gene::tests::gene_markdown_section_only_shows_constraint_section",
+  "sources::gnomad::tests::parsing::gene_constraint_returns_none_for_gene_not_found",
+  "sources::gnomad::tests::parsing::gene_constraint_propagates_non_not_found_graphql_errors",
+  "sources::gnomad::tests::parsing::decode_json_response_maps_http_and_content_type_errors",
 ]
 python = [
   "tests/test_biodata_boundary.py",
