@@ -104,9 +104,14 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6298,
+      "baseline_lines": 6303,
       "floor_lines": 6298,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1299",
+        "delta": 5,
+        "reason": "cursorMark fixture adaptation in the strict-leg deadline test after ticket 1298 changed the Europe PMC wire",
+        "removal_condition": "the deadline fixtures move to recorded captures"
+      }
     },
     {
       "path": "src/entities/author/papers.rs",

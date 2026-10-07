@@ -249,7 +249,10 @@ PubMed-only search runs under a 3000 ms forced deadline, and the invocation
 still exits at the deadline naming the deadline in its error.
 ( HOLD_EPOCH_LOCK=1 bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
     --source pubmed -k "deadline-bound federation" --limit 3; exit 0 ) \
-article search deadline exceeded after 3s'
+  | mustmatch like '"code": "source_unavailable"
+article search deadline exceeded after 3s
+Retry with a narrower query or a single --source'
+
 ## Europe PMC Pages Follow The Cursor
 Europe PMC ignores the `page` parameter, so the Europe PMC backend pages
 with `cursorMark`: the first request starts at `*`, later requests follow
@@ -258,6 +261,8 @@ cursor, an empty page, or every hit fetched. `--offset` is served by walking
 and discarding rows inside the fetched pages. The fixture serves three pages
 by cursor — two full pages and one exhausted page with no `nextCursorMark` —
 and records every request it receives.
+
+```bash run id=europepmc-cursor-pages exit=0
 bash ../fixtures/run-europepmc-cursor-search.sh ../.. \
   | mustmatch like '"limit50_rows": 50
 "limit50_search_requests": 2
