@@ -525,7 +525,37 @@ const TOTAL_RETRY_SLEEP_BUDGET: Duration = Duration::from_secs(15);
 pub(crate) const DEFAULT_MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const BIOTHINGS_MAX_RESULT_WINDOW: usize = 10_000;
 
-static HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
+// A RwLock rather than a OnceLock so tests can clear the slot and rerun
+// construction paths regardless of the tests that ran before them in the
+// same process (ticket 2023); production still builds the client once.
+static HTTP_CLIENT: std::sync::RwLock<Option<ClientWithMiddleware>> = std::sync::RwLock::new(None);
+
+fn cached_http_client() -> Option<ClientWithMiddleware> {
+    HTTP_CLIENT
+        .read()
+        .expect("shared HTTP client lock poisoned")
+        .clone()
+}
+
+fn remember_http_client(client: ClientWithMiddleware) {
+    let mut slot = HTTP_CLIENT
+        .write()
+        .expect("shared HTTP client lock poisoned");
+    if slot.is_none() {
+        *slot = Some(client);
+    }
+}
+
+/// Forget the shared client so the next call rebuilds it: a test that
+/// exercises construction (for example under a held cache epoch lock) must
+/// not depend on an earlier test having built the client in this process.
+/// Callers must serialize with the other shared-client tests.
+#[cfg(test)]
+pub(crate) fn reset_shared_http_client_for_tests() {
+    *HTTP_CLIENT
+        .write()
+        .expect("shared HTTP client lock poisoned") = None;
+}
 
 tokio::task_local! {
     static NO_CACHE: bool;
@@ -1495,27 +1525,28 @@ pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
     if is_no_cache_enabled() {
         return build_uncached_http_client(SharedHttpClientKind::Default, None);
     }
-    if let Some(client) = HTTP_CLIENT.get() {
-        return Ok(client.clone());
+    if let Some(client) = cached_http_client() {
+        return Ok(client);
     }
 
     let client = build_http_client(SharedHttpClientKind::Default)?;
 
     ensure_variant_article_time()?;
-    match HTTP_CLIENT.set(client.clone()) {
-        Ok(()) => Ok(client),
-        Err(_) => HTTP_CLIENT.get().cloned().ok_or_else(|| BioMcpError::Api {
-            api: "http-client".into(),
-            message: "Shared HTTP client initialization race".into(),
-        }),
+    remember_http_client(client.clone());
+    if let Some(client) = cached_http_client() {
+        return Ok(client);
     }
+    Err(BioMcpError::Api {
+        api: "http-client".into(),
+        message: "Shared HTTP client initialization race".into(),
+    })
 }
 
 pub(crate) async fn shared_client_with_deadline(
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
-    if let Some(client) = HTTP_CLIENT.get() {
-        return Ok(client.clone());
+    if let Some(client) = cached_http_client() {
+        return Ok(client);
     }
     if is_no_cache_enabled() {
         let client = build_uncached_http_client(SharedHttpClientKind::Default, None)?;
@@ -1531,13 +1562,14 @@ pub(crate) async fn shared_client_with_deadline(
         deadline,
     )
     .await?;
-    match HTTP_CLIENT.set(client.clone()) {
-        Ok(()) => Ok(client),
-        Err(_) => HTTP_CLIENT.get().cloned().ok_or_else(|| BioMcpError::Api {
-            api: "http-client".into(),
-            message: "Shared HTTP client initialization race".into(),
-        }),
+    remember_http_client(client.clone());
+    if let Some(client) = cached_http_client() {
+        return Ok(client);
     }
+    Err(BioMcpError::Api {
+        api: "http-client".into(),
+        message: "Shared HTTP client initialization race".into(),
+    })
 }
 
 pub(crate) fn semantic_scholar_provider_client(

@@ -515,8 +515,8 @@ fn collect_federated_article_rows(
                 status: pubtator_status,
             },
             FederatedSourceOutcome::Unavailable {
+                error: europe_error,
                 status: europe_status,
-                ..
             },
         ) => {
             source_status.extend([pubtator_status, europe_status]);
@@ -526,15 +526,23 @@ fn collect_federated_article_rows(
             if let Some(degradation) = pubmed_degradation {
                 source_status.push(degradation);
             }
+            // A fast non-retryable failure must not hide the deadline: when
+            // either primary died on the invocation deadline, that error
+            // explains the invocation and carries the deadline translation
+            // through `search_page` (ticket 2023).
+            let primary_error = match (error, europe_error) {
+                (Some(err), _) if is_search_deadline_error(&err) => Some(err),
+                (_, Some(err)) if is_search_deadline_error(&err) => Some(err),
+                (error, _) => error,
+            }
+            .unwrap_or_else(|| unavailable_source_error(ArticleSource::PubTator));
             Ok(FederatedArticleRows {
                 rows,
                 source_status,
                 semantic_scholar_status,
                 truncated_sources: Vec::new(),
                 timings: Vec::new(),
-                primary_error: Some(
-                    error.unwrap_or_else(|| unavailable_source_error(ArticleSource::PubTator)),
-                ),
+                primary_error: Some(primary_error),
             })
         }
     }
@@ -888,6 +896,15 @@ async fn search_page_dispatch(
     plan: BackendPlan,
     enrichment_sources: &[ArticleSource],
 ) -> Result<ArticleSearchPage, BioMcpError> {
+    // Every sort and plan shares one window: the date and citations arms
+    // walk provider pages to serve a deep offset, so an unbounded request
+    // burns up to MAX_PAGE_FETCHES pages per source and still reports
+    // `has_more` (ticket 2023).
+    if limit.saturating_add(offset) > MAX_FEDERATED_FETCH_RESULTS {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--offset + --limit must be <= {MAX_FEDERATED_FETCH_RESULTS} for article search"
+        )));
+    }
     if plan == BackendPlan::TypeCapable {
         return search_type_capable_page(filters, limit, offset, enrichment_sources).await;
     }

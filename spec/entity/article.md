@@ -259,7 +259,8 @@ with `cursorMark`: the first request starts at `*`, later requests follow
 `nextCursorMark`, and the walk stops on the limit, an absent or repeated
 cursor, an empty page, or every hit fetched. `--offset` is served by walking
 and discarding rows inside the fetched pages. The fixture serves three pages
-by cursor — two full pages and one exhausted page with no `nextCursorMark` —
+by cursor — two full pages and a final page that still has rows but omits
+`nextCursorMark`, so the third request stops on the absent cursor itself —
 and records every request it receives.
 
 ```bash run id=europepmc-cursor-pages exit=0
@@ -271,7 +272,7 @@ bash ../fixtures/run-europepmc-cursor-search.sh ../.. \
 "limit50_distinct_pmids": 50
 "short_rows": 40
 "short_search_requests": 2
-"exhaustion_rows": 40
+"exhaustion_rows": 45
 "exhaustion_search_requests": 3
 "offset25_first_pmid": "41800126"'
 ```

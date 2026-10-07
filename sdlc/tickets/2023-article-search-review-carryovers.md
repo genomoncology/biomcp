@@ -24,6 +24,54 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Proof: each item has a test that fails on `37631c357` and passes under plain `cargo test` as well as nextest.
 - Defers: nothing.
 
+## Root cause
+
+1. Only the relevance arms call the shared `limit.saturating_add(offset) >
+   MAX_FEDERATED_FETCH_RESULTS` guard (`search.rs`). The non-relevance
+   dispatch in `search_page_dispatch` passes raw `limit` and `offset` to
+   `search_europepmc_page` and `search_pubtator_page`, so a date or
+   citations sort with a deep offset walks up to fifty provider pages,
+   discards every row against the offset, and reports `has_more: true`.
+2. `collect_federated_article_rows` takes the PubTator leg's error whenever
+   both primaries fail. A non-retryable PubTator failure settles before the
+   deadline, so its plain error wins even when Europe PMC failed on the
+   deadline. The 503 fixture only passes today because retries on a 503
+   outlast the deadline and turn PubTator's own error into a deadline error.
+3. The shared HTTP client latches in a process-global `OnceLock`, so
+   `construction_under_a_held_epoch_lock_honors_the_deadline` only exercises
+   construction when it runs first in its process: nextest gives each test a
+   fresh process, plain `cargo test` does not. The same test's PubMed rows
+   are also fictional: the fixture matches `ends_with("/esearch.fcgi")`
+   against a target that always carries the query string, so the PubMed leg
+   reads a 404 and the surviving-row assertions pass on a Semantic Scholar
+   row.
+4. The cursor fixture's exhausted third page carries no rows, so the
+   empty-page stop ends the walk before the absent-cursor stop can matter;
+   the absent-cursor stop in `backends.rs` has no proof that runs without
+   the empty-page stop also firing.
+5. `push_word_separated` inserts a boundary space at every unmarked
+   element edge. Small caps, styled content, monospace and footnote
+   markers wrap fragments of one word (`T<sc>able</sc>`, `PD<sc>L1</sc>`),
+   so the renderer splits those words in two.
+
+## Success criteria
+
+1. `search_page` refuses `--offset + --limit` above 1250 with
+   `InvalidArgument` on every sort and every backend plan, before any
+   provider request.
+2. When both primaries fail, the terminal error names the deadline whenever
+   either primary's error is a deadline error, including when PubTator fails
+   fast with a non-retryable status.
+3. The held-epoch-lock test passes identically under plain `cargo test` and
+   nextest regardless of test order, and the deadline fixture's PubMed route
+   answers esearch and esummary so a PubMed row actually reaches the
+   assertions that claim one.
+4. A cursor fixture whose last page has rows and no `nextCursorMark` stops
+   the walk on the absent cursor, and a test fails when both cursor stops
+   are removed.
+5. Words wrapped in small caps, styled content, monospace and footnote
+   markers render unsplit, while the surname/given-names boundary space
+   and the marker-attached runs keep their behavior.
 ## Build status
 
 - Built on branch `tickets/2023-article-search-review-carryovers`,
