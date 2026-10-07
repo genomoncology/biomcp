@@ -51,6 +51,7 @@ fn check_output(
             let constraint = sources.iter().find(|source| source["key"] == "constraint");
             assert!(constraint.is_some(), "{text}");
             if let Some(source) = constraint {
+                assert_eq!(source["outcome"], state);
                 assert_eq!(
                     source["sources"],
                     if state == "unavailable" {
@@ -224,6 +225,50 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
             );
         }
         let client = harness.spawn_stdio_client(&envs).await.unwrap();
+        if label == "data" {
+            let before = requests.lock().unwrap().len();
+            let output = tokio::process::Command::new(&harness.biomcp_bin)
+                .args(["--json", "--no-cache", "get", "gene", "TP53"])
+                .envs(envs.iter().cloned())
+                .output()
+                .await
+                .unwrap();
+            assert!(output.status.success());
+            let mut texts = vec![String::from_utf8(output.stdout).unwrap()];
+            for tool in ["get", "biomcp"] {
+                let arguments = if tool == "get" {
+                    json!({"entity":"gene","id":"TP53","json":true})
+                } else {
+                    json!({"command":"biomcp --no-cache get gene TP53","json":true})
+                };
+                let result = client
+                    .peer()
+                    .call_tool(
+                        CallToolRequestParams::new(tool)
+                            .with_arguments(arguments.as_object().unwrap().clone()),
+                    )
+                    .await
+                    .unwrap();
+                assert!(!result.is_error.unwrap_or_default());
+                texts.push(first_text(&result.content).to_owned());
+            }
+            for text in texts {
+                let card: Value = serde_json::from_str(&text).unwrap();
+                assert!(card.get("constraint").is_none());
+                assert!(
+                    !card["_meta"]["section_sources"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|source| source["key"] == "constraint")
+                );
+            }
+            assert!(
+                !requests.lock().unwrap()[before..]
+                    .iter()
+                    .any(|request| request.starts_with("POST /gnomad"))
+            );
+        }
         for json_mode in [true, false] {
             let mut args = vec!["--no-cache", "get", "gene", "TP53", "constraint"];
             if json_mode {
