@@ -119,3 +119,12 @@ transcript-aware resolver; a CHANGELOG bullet is owed via ticket 1305.
   it over for the first time); no other changes in the commit
   (git show --stat confirms one file, the inventory). The lane head is
   d6801ed8b.
+
+## Behavior note (review fold, 2026-10-07)
+
+Among several hits where none can prove it names the requested change
+(no SnpEff canonical and no ClinVar-named annotation), BioMCP now
+refuses with candidates where the 1297 rule could resolve through a
+bare ClinVar variant id — the exact wrong-answer channel this ticket
+closes. Unique-hit queries are unaffected. No recorded case exercises
+the shape; the narrowing is strictly conservative.
