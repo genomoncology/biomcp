@@ -198,6 +198,78 @@ def test_union_passes_when_both_have_bullets(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
 
 
+def test_land_subject_ticket_requires_a_bullet(tmp_path: Path) -> None:
+    # Tickets land on main as "Land NNNN: ..." subjects; the gate
+    # must count them, not only old-pattern merge subjects.
+    result = _run(
+        tmp_path,
+        subjects=["Land 1299: make the article search deadline honest"],
+        changelog="# C\n\n## Unreleased\n\n- Something else entirely. (1234)\n",
+    )
+    assert result.returncode == 1
+    assert "1299" in result.stderr
+
+
+def test_land_subject_passes_with_a_described_bullet(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=["Land 1299: make the article search deadline honest"],
+        changelog="# C\n\n## Unreleased\n\n- Made the article search deadline honest. (1299)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_both_landing_shapes_demand_their_bullets(tmp_path: Path) -> None:
+    # A range with both landing shapes must demand a bullet for each:
+    # covering the old-pattern merge does not cover the Land subject.
+    result = _run(
+        tmp_path,
+        subjects=[
+            "Land 1306: fold the 1302 review carryovers",
+            "Merge branch 'tickets/1234-gate'",
+        ],
+        changelog="# C\n\n## Unreleased\n\n- Folded the review carryovers. (1306)\n",
+    )
+    assert result.returncode == 1
+    assert "1234" in result.stderr
+
+
+def test_both_landing_shapes_pass_with_both_bullets(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        subjects=[
+            "Land 1306: fold the 1302 review carryovers",
+            "Merge branch 'tickets/1234-gate'",
+        ],
+        changelog="# C\n\n## Unreleased\n\n- Folded the review carryovers. (1306)\n- Reworked the gates. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_land_subject_text_does_not_count_other_tickets(tmp_path: Path) -> None:
+    # "Land 1306: fold the 1302 review carryovers" names 1302 in its
+    # text; only the ticket in the Land prefix lands a ticket.
+    result = _run(
+        tmp_path,
+        subjects=["Land 1306: fold the 1302 review carryovers"],
+        changelog="# C\n\n## Unreleased\n\n- Folded the carryovers. (1306)\n",
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_same_ticket_across_shapes_counts_once(tmp_path: Path) -> None:
+    # One ticket arriving as a merge subject and again as a record
+    # file is one ticket: a single described bullet covers it.
+    result = _run(
+        tmp_path,
+        subjects=["Merge branch 'tickets/1234-gate'"],
+        records=["sdlc/records/1234-gate-build.md"],
+        changelog="# C\n\n## Unreleased\n\n- Reworked the gates. (1234)\n",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "covers all 1 tickets" in result.stdout
+
+
 def test_record_discovery_uses_real_git_history(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

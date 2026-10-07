@@ -10,6 +10,11 @@ import subprocess
 import sys
 
 MERGE_TICKET = re.compile(r"^Merge .*\btickets/([0-9]+)-")
+# Landings pushed straight to main carry the ticket in the subject
+# itself: "Land 1299: make the article search deadline honest". Only
+# the leading number counts, so a Land subject that mentions another
+# ticket in its text does not pull that ticket in.
+LAND_TICKET = re.compile(r"^Land ([0-9]+):")
 # Ticket-numbered records only. A date-shaped name (dddd-dd-dd-*)
 # is a dated note, never a ticket record, whatever the year; any
 # other four-digit number with any slug (digit-start and
@@ -45,10 +50,13 @@ def previous_tag(tag: str) -> str | None:
     return max(older, key=version_key) if older else None
 
 
-def merge_subject_tickets(previous: str, tag: str) -> set[str]:
+def landing_subject_tickets(previous: str, tag: str) -> set[str]:
     subjects = run_git("log", "--format=%s", f"{previous}..{tag}").splitlines()
     return {
-        match.group(1) for subject in subjects if (match := MERGE_TICKET.match(subject))
+        match.group(1)
+        for subject in subjects
+        for match in (MERGE_TICKET.match(subject), LAND_TICKET.match(subject))
+        if match is not None
     }
 
 
@@ -64,9 +72,11 @@ def record_tickets(previous: str, tag: str) -> set[str]:
 
 
 def merged_tickets(previous: str, tag: str) -> set[str]:
-    # Neither source alone is complete: a record can lag a merge, and a
-    # merge subject can be rewritten or absent. Fail closed on the union.
-    return merge_subject_tickets(previous, tag) | record_tickets(previous, tag)
+    # No single source is complete: a landing can be a Land subject, an
+    # old-pattern merge subject, or a record file, and a record can lag
+    # a landing while a subject can be rewritten or absent. Fail closed
+    # on the union, one ticket once across every shape.
+    return landing_subject_tickets(previous, tag) | record_tickets(previous, tag)
 
 
 def section_text(path: Path, tag: str) -> tuple[str, str]:
