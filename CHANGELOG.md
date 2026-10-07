@@ -5,15 +5,19 @@
 ### Fixes
 
 - `get variant` now states the current ClinVar classification in its headline when the `clinvar` section answers from NCBI ClinVar, and the quick default view names its cached copy and prints the command that returns the current classification. (1290)
+- When NCBI ClinVar drops, the degraded ClinVar section now names NCBI ClinVar and the reason it failed (timeout, rate limit, or HTTP error) and dates the MyVariant.info fallback copy by its newest evaluation. (1291)
 - `get variant` now resolves transcript deletion ranges with intronic offsets and bare ClinVar VariationIDs, with the ClinVar alias fallback answering only on an exact transcript match. (1292)
-- Article search now finishes within its 60-second deadline and returns the rows that already answered, with each slow source named as degraded. (1293)
+- Article search now finishes within its 60-second deadline and returns the rows that already answered, with each silent or slow source named as degraded. (1293, 1299)
 - `get article` and batch detail now return whole abstracts instead of a 1,500-byte cap while search rows keep a named 240-byte snippet, and full text renders reference identifiers, clean PMC HTML, and ragged tables instead of dropping them. (1294)
 - `search disease` now finds the parent disease for common abbreviations such as NSCLC and DLBCL by matching the exact synonym fields MyDisease holds. (1295)
 - A protein-change query with several compatible hits now resolves only when exactly one carries a ClinVar record, and every other ambiguous case refuses naming every candidate and the working input forms. (1297)
 - Europe PMC searches now return distinct rows for every requested page through cursorMark paging, where the ignored page parameter collapsed every search to its first page. (1298)
+- A search that hits its deadline mid-pagination now keeps the rows it already fetched and names the silent source as degraded, exits at the deadline instead of outliving it, names the deadline in its error instead of a generic I/O failure, and no longer stalls construction on the cache lock past the deadline. (1299)
+- `get drug NAME label` now returns whole label sections in JSON while Markdown keeps a capped short form pointing to the full label, says why a label is missing (no SPL record matched, or the matched record carries no section text) instead of a silent null, and resolves sparse-metadata labels such as osimertinib through a guarded full-text search that never returns another drug's label. (1300)
 - Citation evidence now degrades to OpenCitations when Semantic Scholar refuses with a rate limit or a server error, and a live 429 that took twenty-two seconds to fail now returns in under three. (1302)
 - `get author` and `author papers` now read ORCID's lowercase visibility values, so an `orcid:` lookup no longer fails and papers no longer silently return zero works. (1303)
 - `who sync` now accepts the header set the WHO exports ship today, reports the true outcome per file, and exits nonzero when required files are missing. (1304)
+- The degraded citation path now reuses the first seed's resolved record when the second seed refuses, reports a malformed citation identifier as such instead of claiming the index was unavailable, and names the DOI-resolution search in its status row instead of reporting it not requested. (1306)
 
 ### New features
 
