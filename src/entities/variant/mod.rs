@@ -214,7 +214,7 @@ pub struct Variant {
     pub top_disease: Option<ConditionReportCount>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cancerhotspots: Option<crate::sources::cancerhotspots::CancerHotspotRecurrence>,
+    pub cancerhotspots: Option<crate::sources::cancerhotspots::CancerHotspotSection>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cancer_frequencies: Vec<crate::sources::cbioportal::CancerFrequency>,
     #[serde(skip_serializing_if = "Option::is_none")]

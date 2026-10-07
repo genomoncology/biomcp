@@ -974,63 +974,6 @@ fn gwas_only_request_returns_variant_when_gwas_is_unavailable() {
     assert_eq!(variant.supporting_pmids, None);
 }
 
-#[test]
-fn cancerhotspots_enrichment_uses_requested_change_not_resolved_hgvsp() {
-    let rows: Vec<crate::sources::cancerhotspots::CancerHotspotRow> =
-        serde_json::from_value(json!([
-            {
-                "hugoSymbol": "BRAF",
-                "residue": "V600",
-                "tumorCount": 897,
-                "transcriptId": "ENST00000288602",
-                "aminoAcidPosition": 600,
-                "variantAminoAcid": {"E": 833}
-            }
-        ]))
-        .expect("valid Cancer Hotspots rows");
-
-    let recurrence = crate::sources::cancerhotspots::recurrence_for_change(&rows, "V600E");
-    assert_eq!(recurrence.position_count, Some(897));
-    assert_eq!(recurrence.same_aa_count, Some(833));
-}
-
-#[test]
-fn cancerhotspots_checked_absence_is_empty_not_data() {
-    let recurrence = crate::sources::cancerhotspots::CancerHotspotRecurrence {
-        source: "cancerhotspots.org".to_string(),
-        position_count: None,
-        same_aa_count: None,
-        matched_transcript: None,
-    };
-
-    assert_eq!(
-        cancerhotspots_outcome(&recurrence).outcome(),
-        crate::entities::section_outcome::SectionOutcomeState::Empty
-    );
-}
-
-#[test]
-fn cancerhotspots_upstream_failure_omits_recurrence_and_preserves_cbioportal() {
-    let mut variant = braf_variant_stub();
-    variant
-        .cancer_frequencies
-        .push(crate::sources::cbioportal::CancerFrequency {
-            cancer_type: "Melanoma".into(),
-            frequency: 0.5,
-            sample_count: 10,
-        });
-    let err = BioMcpError::Api {
-        api: "cancerhotspots.org".into(),
-        message: "upstream failure".into(),
-    };
-
-    apply_cancerhotspots_result(&mut variant, Err(err))
-        .expect_err("upstream failure should be returned");
-
-    assert!(variant.cancerhotspots.is_none());
-    assert_eq!(variant.cancer_frequencies.len(), 1);
-}
-
 #[tokio::test]
 async fn ticket_589_variant_preflights_are_inapplicable_without_provider_credit() {
     let mut prediction = braf_variant_stub();
@@ -1038,9 +981,6 @@ async fn ticket_589_variant_preflights_are_inapplicable_without_provider_credit(
     add_prediction(&mut prediction)
         .await
         .expect("inapplicable prediction should remain a successful card");
-
-    let mut hotspots = braf_variant_stub();
-    add_cancerhotspots(&mut hotspots, &VariantIdFormat::RsId("rs589000".into())).await;
 
     let mut cbioportal = braf_variant_stub();
     cbioportal.gene.clear();
@@ -1064,7 +1004,6 @@ async fn ticket_589_variant_preflights_are_inapplicable_without_provider_credit(
 
     for (variant, key, provider) in [
         (&prediction, "predict", "AlphaGenome"),
-        (&hotspots, "cancerhotspots", "cancerhotspots.org"),
         (&cbioportal, "cbioportal", "cBioPortal"),
         (&civic, "civic", "CIViC"),
         (&gwas, "gwas", "GWAS Catalog"),

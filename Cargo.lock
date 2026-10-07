@@ -293,8 +293,8 @@ dependencies = [
 
 [[package]]
 name = "biodata"
-version = "0.0.39"
-source = "git+https://github.com/genomoncology/biodata?rev=543bf8c304c3965af6a1c92076c9e63d02bd2998#543bf8c304c3965af6a1c92076c9e63d02bd2998"
+version = "0.0.41"
+source = "git+https://github.com/genomoncology/biodata?rev=edd138da0ba104039885fe213107003dfb626246#edd138da0ba104039885fe213107003dfb626246"
 dependencies = [
  "quick-xml",
  "roxmltree",
