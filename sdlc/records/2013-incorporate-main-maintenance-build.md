@@ -38,3 +38,5 @@ Land 2013 records acceptance and completion through the ticket branch with Ticke
 ## What the build taught us
 
 Ticket 2013 needs the donor changes reconciled through the moved detail owners. Existing finite checks cover the affected runtime behavior. Recorded Darwin limitations and inherited diagnostics remain visible. Reuse these results for the routine landing.
+
+Released build cleanup: after landing d886c911, Root confirmed the dedicated 1.0 checkout was clean and no open file used its target/debug directory. Removed only /Users/ian/workspace/worktrees/biomcp-1.0/target/debug (13 GiB logical build output). Free disk rose from about34 to46 GiB. Sources, records, reports, external logs, other target contents and protected programme executables remain. Cargo regenerates this output; the next build will use a cold debug cache.
