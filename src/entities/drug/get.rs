@@ -16,7 +16,7 @@ use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
 
 use super::label::{
-    FULLTEXT_OVERSIZE_NOTE, LABEL_UNAVAILABLE_MESSAGE, LabelLookup, NO_LABEL_TEXT_NOTE,
+    ELEMENTS_SEARCH_OVERSIZE_NOTE, LABEL_UNAVAILABLE_MESSAGE, LabelLookup, NO_LABEL_TEXT_NOTE,
     NO_SPL_RECORD_NOTE, extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
     extract_label_warnings_text, lookup_label_response,
 };
@@ -260,7 +260,7 @@ pub(super) struct ResolvedDrugBase {
     pub(super) drug: Drug,
     pub(super) label_response: Option<serde_json::Value>,
     pub(super) label_attempt_failed: bool,
-    pub(super) label_fulltext_oversize: bool,
+    pub(super) label_elements_oversize: bool,
     trial_alias_candidates: Vec<TrialAlias>,
     selected_hits: Vec<MyChemHit>,
 }
@@ -695,16 +695,16 @@ pub(super) async fn resolve_drug_base(
 
     let mut label_response_opt: Option<serde_json::Value> = None;
     let mut label_attempt_failed = false;
-    let mut label_fulltext_oversize = false;
+    let mut label_elements_oversize = false;
     if fetch_label_response {
         // A failed label fetch degrades the label section to an unavailable
         // outcome instead of failing the card; sparse-metadata misses resolve
-        // through the guarded full-text fallback inside `lookup_label_response`.
+        // through the guarded identity-field fallback in `lookup_label_response`.
         match OpenFdaClient::new() {
             Ok(client) => match lookup_label_response(&client, &drug.name).await {
                 Ok(LabelLookup::Response(response)) => label_response_opt = Some(response),
                 Ok(LabelLookup::NoSplRecord) => {}
-                Ok(LabelLookup::FulltextTooLarge) => label_fulltext_oversize = true,
+                Ok(LabelLookup::ElementsSearchTooLarge) => label_elements_oversize = true,
                 Err(_) => label_attempt_failed = true,
             },
             Err(_) => label_attempt_failed = true,
@@ -721,7 +721,7 @@ pub(super) async fn resolve_drug_base(
         drug,
         label_response: label_response_opt,
         label_attempt_failed,
-        label_fulltext_oversize,
+        label_elements_oversize,
         trial_alias_candidates,
         selected_hits: selected.into_iter().cloned().collect(),
     })
@@ -732,7 +732,7 @@ async fn populate_common_sections(
     drug: &mut Drug,
     label_response: Option<&serde_json::Value>,
     label_attempt_failed: bool,
-    label_fulltext_oversize: bool,
+    label_elements_oversize: bool,
     section_flags: &DrugSections,
     raw_label: bool,
 ) -> Result<(), BioMcpError> {
@@ -759,8 +759,8 @@ async fn populate_common_sections(
             SectionOutcome::data("OpenFDA label")
         } else if label_response.is_some() {
             SectionOutcome::empty_with_reason("OpenFDA label", NO_LABEL_TEXT_NOTE)
-        } else if label_fulltext_oversize {
-            SectionOutcome::empty_with_reason("OpenFDA label", FULLTEXT_OVERSIZE_NOTE)
+        } else if label_elements_oversize {
+            SectionOutcome::empty_with_reason("OpenFDA label", ELEMENTS_SEARCH_OVERSIZE_NOTE)
         } else {
             SectionOutcome::empty_with_reason("OpenFDA label", NO_SPL_RECORD_NOTE)
         };
@@ -1013,7 +1013,7 @@ async fn get_with_region_owned(
         &mut resolved.drug,
         resolved.label_response.as_ref(),
         resolved.label_attempt_failed,
-        resolved.label_fulltext_oversize,
+        resolved.label_elements_oversize,
         &section_flags,
         raw_label,
     )

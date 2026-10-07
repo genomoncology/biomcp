@@ -2,16 +2,17 @@
 
 `get drug NAME label` must return whole label sections in JSON and say why a
 label is missing, in the four section states. These rows run against recorded
-openFDA responses: the osimertinib and mobocertinib full-text searches whose
-top-ranked rows belong to other drugs, the gefitinib field-scoped match whose
-sections run past the Markdown cap, and the pembrolizumab identity-only record
-whose match carries no section text.
+openFDA responses: the osimertinib and mobocertinib fallback searches whose
+responses carry other drugs' records ahead of the drug's own, the gefitinib
+field-scoped match whose sections run past the Markdown cap, and the
+pembrolizumab identity-only record whose match carries no section text.
 
-## Sparse-metadata labels resolve through the guarded full-text fallback
+## Sparse-metadata labels resolve through the guarded identity-field fallback
 
 Osimertinib's current SPL record carries no populated `openfda.generic_name` or
 `brand_name`, so the field-scoped lookup finds nothing. BioMCP falls back to a
-full-text search and keeps only the record whose own identity matches the drug.
+phrase search of the records' own `spl_product_data_elements` and keeps only
+the record whose own identity matches the drug.
 
 ```bash
 ../../tools/biomcp-ci --json get drug osimertinib label --raw | jq -e '(.section_outcomes.label == {"outcome":"data","sources":["OpenFDA label"]}) and (.label.indications | test("TAGRISSO is a kinase inhibitor")) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"data","sources":["OpenFDA label"]}])' | mustmatch 'true'
@@ -21,23 +22,25 @@ full-text search and keeps only the record whose own identity matches the drug.
 ```
 
 The fallback fires only after the field-scoped miss, and the guarded record is
-chosen from ranked full-text rows. Exactly two openFDA label request shapes
-exist for this drug: the field-scoped narrow lookup and the quoted full-text
-phrase.
+chosen from the ranked rows. Exactly two openFDA label request shapes exist
+for this drug: the field-scoped narrow lookup and the product-data-elements
+phrase, whose small limit keeps the answer far under the body read limit that
+the unfielded full-text phrase breaches.
 
 ```bash
 label_requests=$(grep -F 'GET /openfda/drug/label.json?search=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | grep osimertinib)
 narrow=$(printf '%s\n' "$label_requests" | grep -cF 'openfda.generic_name%3A%22osimertinib%22')
-fulltext=$(printf '%s\n' "$label_requests" | grep -cF 'search=%22osimertinib%22&limit=100')
-printf '%s\n' "$label_requests" | grep -v -F 'openfda.generic_name' | grep -v -F 'search=%22osimertinib%22' | wc -l | mustmatch '0'
-test "$narrow" -gt 0 && test "$narrow" -eq "$fulltext"
-printf 'each field-scoped miss is paired with one full-text fallback\n' \
-  | mustmatch 'each field-scoped miss is paired with one full-text fallback'
+elements=$(printf '%s\n' "$label_requests" | grep -cF 'search=spl_product_data_elements%3A%22osimertinib%22&limit=10')
+printf '%s\n' "$label_requests" | grep -v -F 'openfda.generic_name' | grep -v -F 'spl_product_data_elements' | wc -l | mustmatch '0'
+test "$narrow" -gt 0 && test "$narrow" -eq "$elements"
+printf 'each field-scoped miss is paired with one product-data-elements fallback\n' \
+  | mustmatch 'each field-scoped miss is paired with one product-data-elements fallback'
 ```
 
-Mobocertinib's record is even harder: fourteen itraconazole labels rank ahead of
-the withdrawn EXKIVITY record in the full-text response, and none of those rows
-is mobocertinib. The identity guard must still pick the drug's own label.
+Mobocertinib's record is even harder: fourteen other records rank ahead of
+the withdrawn EXKIVITY record in the recorded fallback response, and none of
+those rows is mobocertinib. The identity guard must still pick the drug's own
+label.
 
 ```bash
 ../../tools/biomcp-ci --json get drug mobocertinib label | jq -e '(.section_outcomes.label.outcome == "data") and (.label.indication_summary[0].name | test("exon 20 insertion")) and ((.label | tostring | test("Sporanox|ITRACONAZOLE"; "i")) | not)' | mustmatch 'true'

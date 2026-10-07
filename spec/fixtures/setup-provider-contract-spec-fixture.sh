@@ -520,18 +520,22 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/openfda/drug/label.json":
             search = parse_qs(parsed.query).get("search", [""])[0].lower()
-            # Ticket 1300: the full-text fallback is a bare quoted phrase with
-            # no field prefix, while the narrow lookup scopes openFDA fields.
-            if search.startswith('\"'):
-                term = search.strip('\\"')
+            # Ticket 1300: the fallback is a phrase search of the records'
+            # own product data elements. The recorded broad full-text
+            # captures replay here so the identity guard still faces other
+            # drugs' records, which the live identity-field query would not
+            # return.
+            if search.startswith('spl_product_data_elements:"'):
+                term = search[len('spl_product_data_elements:"'):].rstrip('"')
                 if term == "osimertinib":
                     send(self, 200, OPENFDA_LABEL_OSIMERTINIB_FULLTEXT)
                     return
                 if term == "mobocertinib":
                     send(self, 200, OPENFDA_LABEL_MOBOCERTINIB_FULLTEXT)
                     return
-                # adavosertib and every other drug fall through: openFDA has
-                # no full-text match either, so the default 404 stays honest.
+                # adavosertib and every other drug fall through: openFDA
+                # has no product-data-elements match either, so the default
+                # 404 stays honest.
             if "keytruda" in search or "pembrolizumab" in search:
                 send(self, 200, OPENFDA_LABEL)
                 return

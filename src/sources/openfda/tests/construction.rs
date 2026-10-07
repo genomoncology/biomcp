@@ -66,21 +66,30 @@ fn label_search_plan_escapes_drug_name_and_sorts() {
 }
 
 #[test]
-fn label_fulltext_search_plan_quotes_a_phrase_across_all_fields() {
-    let plan = OpenFdaClient::label_fulltext_search_plan("osimertinib", Some("test-key"))
-        .expect("fulltext label plan");
+fn label_elements_search_plan_scopes_the_identity_field() {
+    let plan = OpenFdaClient::label_elements_search_plan("osimertinib", Some("test-key"))
+        .expect("elements label plan");
 
     assert_eq!(plan.path, "drug/label.json");
-    assert_eq!(plan.query_value("search"), Some("\"osimertinib\""));
-    assert_eq!(plan.query_value("limit"), Some("100"));
+    assert_eq!(
+        plan.query_value("search"),
+        Some("spl_product_data_elements:\"osimertinib\"")
+    );
+    // Ticket 1300 review: the unfielded full-text phrase answer runs past
+    // the 8 MiB body read limit (a full-text "cisapride" answer is 16.4 MB),
+    // so the fallback queries the identity field with a small limit.
+    assert_eq!(plan.query_value("limit"), Some("10"));
     assert_eq!(plan.query_value("sort"), None);
     assert_eq!(plan.query_value("api_key"), Some("test-key"));
 
-    let escaped = OpenFdaClient::label_fulltext_search_plan(r#"PD-1 "drug""#, None)
-        .expect("escaped fulltext plan");
-    assert_eq!(escaped.query_value("search"), Some(r#""PD\-1 \"drug\"""#));
+    let escaped = OpenFdaClient::label_elements_search_plan(r#"PD-1 "drug""#, None)
+        .expect("escaped elements plan");
+    assert_eq!(
+        escaped.query_value("search"),
+        Some("spl_product_data_elements:\"PD\\-1 \\\"drug\\\"\"")
+    );
 
-    assert!(OpenFdaClient::label_fulltext_search_plan(" ", None).is_err());
+    assert!(OpenFdaClient::label_elements_search_plan(" ", None).is_err());
 }
 
 #[test]

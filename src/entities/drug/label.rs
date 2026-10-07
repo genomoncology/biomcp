@@ -16,7 +16,7 @@ pub(super) const LABEL_UNAVAILABLE_MESSAGE: &str =
 pub(super) const NO_SPL_RECORD_NOTE: &str = "No openFDA SPL label record matched this drug.";
 pub(super) const NO_LABEL_TEXT_NOTE: &str =
     "The matched openFDA SPL record carries no label section text.";
-pub(super) const FULLTEXT_OVERSIZE_NOTE: &str = "The openFDA full-text label search response was too large to read, so no label record could be confirmed.";
+pub(super) const ELEMENTS_SEARCH_OVERSIZE_NOTE: &str = "The openFDA label product-data-elements search response was too large to read, so no label record could be confirmed.";
 
 fn label_text(value: Option<&serde_json::Value>) -> Option<String> {
     let value = value?;
@@ -604,27 +604,65 @@ fn spl_product_data_elements(result: &serde_json::Value) -> Vec<&str> {
     elements.iter().filter_map(|v| v.as_str()).collect()
 }
 
-/// The leading run of an SPL product data element: the product's own names.
+/// The identity token runs of one SPL product data element.
 ///
-/// Each element opens with the brand and the active ingredient, the generic
-/// repeated in several letter cases, and ends with the inactive excipient
-/// list ("TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB MANNITOL ..."). A
-/// token belongs to the run while it is the element's first token or its
-/// case-insensitive form appears more than once in the element; the run ends
-/// at the first single-use token, which is the first inactive ingredient.
-/// Strength and lot codes that trail the names are single-use too.
-fn spl_active_name_run(element: &str) -> Vec<String> {
+/// A real element concatenates one entry per strength, and every entry
+/// opens with the same names ("TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB
+/// MANNITOL ... AZ;40 TAGRISSO ..."), so an inactive excipient repeats
+/// across strengths and raw repetition cannot separate names from
+/// excipients. Entries split where the element's leading two-token name
+/// window recurs, which is each next strength's opening. Within one entry
+/// the identity is the leading name run: the entry's first token, then the
+/// established name's tokens, which the entry spells out and then lists
+/// again whole or componentwise, so the longest prefix of the remaining
+/// tokens that recurs later marks them. The run ends at the first token the
+/// name never repeats, which is the entry's first inactive excipient or
+/// strength code.
+fn spl_element_identity_heads(element: &str) -> Vec<Vec<String>> {
     let tokens = identity_tokens(element);
     if tokens.is_empty() {
         return Vec::new();
     }
-    let mut counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
-    for token in &tokens {
-        *counts.entry(token.as_str()).or_insert(0) += 1;
+    let window = tokens.len().min(2);
+    let mut heads = Vec::new();
+    let mut entry_start = 0;
+    for position in 1..=(tokens.len() - window) {
+        if tokens[position..position + window] == tokens[..window] {
+            heads.push(entry_name_run(&tokens[entry_start..position]));
+            entry_start = position;
+        }
     }
-    let mut run = Vec::new();
-    for (index, token) in tokens.iter().enumerate() {
-        if index > 0 && counts.get(token.as_str()).is_none_or(|count| *count < 2) {
+    heads.push(entry_name_run(&tokens[entry_start..]));
+    heads
+}
+
+/// The leading identity run of one element entry: the first token, then the
+/// recurring established-name tokens, ending at the first token the name
+/// never repeats.
+fn entry_name_run(entry: &[String]) -> Vec<String> {
+    if entry.is_empty() {
+        return Vec::new();
+    }
+    let mut name_end = 1;
+    loop {
+        let end = name_end + 1;
+        if end > entry.len() {
+            break;
+        }
+        let prefix = &entry[1..end];
+        let recurs = entry[end..]
+            .windows(prefix.len())
+            .any(|window| window == prefix);
+        if !recurs {
+            break;
+        }
+        name_end = end;
+    }
+    let name: std::collections::HashSet<&str> =
+        entry[1..name_end].iter().map(String::as_str).collect();
+    let mut run = vec![entry[0].clone()];
+    for token in &entry[1..] {
+        if !name.contains(token.as_str()) {
             break;
         }
         run.push(token.clone());
@@ -632,15 +670,14 @@ fn spl_active_name_run(element: &str) -> Vec<String> {
     run
 }
 
-/// Whether a full-text result is the requested drug's own record.
+/// Whether a broad-search result is the requested drug's own record.
 ///
-/// A full-text search for one drug routinely ranks other drugs' labels first
-/// because their section text mentions the queried name (a full-text
-/// "osimertinib" search returns amivantamab's label first). A result only
-/// counts when the requested name matches the record's own identity fields as
-/// a word sequence within a single field — never a sequence joined across two
-/// fields — or the leading active-name run of an SPL product data element, so
-/// an inactive excipient such as mannitol never identifies a record.
+/// A broad search for one drug routinely ranks other drugs' labels first
+/// because their section text mentions the queried name. A result only
+/// counts when the requested name matches the record's own identity fields
+/// as a word sequence within a single field — never a sequence joined across
+/// two fields — or the per-strength name runs of an SPL product data element,
+/// so an inactive excipient such as mannitol never identifies a record.
 pub(super) fn label_result_matches_identity(result: &serde_json::Value, name: &str) -> bool {
     let name_tokens = identity_tokens(name);
     if name_tokens.is_empty() {
@@ -653,7 +690,7 @@ pub(super) fn label_result_matches_identity(result: &serde_json::Value, name: &s
     identity_runs.extend(
         spl_product_data_elements(result)
             .iter()
-            .map(|element| spl_active_name_run(element)),
+            .flat_map(|element| spl_element_identity_heads(element)),
     );
     identity_runs.into_iter().any(|tokens| {
         tokens
@@ -669,7 +706,7 @@ fn label_response_has_result(response: &serde_json::Value) -> bool {
         .is_some_and(|results| !results.is_empty())
 }
 
-/// Keep only full-text results whose own identity matches the drug name.
+/// Keep only broad-search results whose own identity matches the drug name.
 pub(super) fn filter_label_response_to_identity(
     response: &serde_json::Value,
     name: &str,
@@ -704,10 +741,11 @@ pub(super) enum LabelLookup {
     Response(serde_json::Value),
     /// Both lookups answered and no SPL record for the drug exists.
     NoSplRecord,
-    /// The full-text fallback response exceeded the body read limit. The
-    /// same query would download the same oversize response, so this is a
-    /// confirmed inability to read a match, not a retryable fetch failure.
-    FulltextTooLarge,
+    /// The product-data-elements fallback response exceeded the body read
+    /// limit. The same query would download the same oversize response, so
+    /// this is a confirmed inability to read a match, not a retryable fetch
+    /// failure.
+    ElementsSearchTooLarge,
 }
 
 /// Whether an openFDA error is the response-body read limit, including the
@@ -720,14 +758,14 @@ fn is_body_limit_error(error: &BioMcpError) -> bool {
     }
 }
 
-/// Field-scoped label lookup with the sparse-metadata full-text fallback.
+/// Field-scoped label lookup with the sparse-metadata elements fallback.
 ///
 /// When the `openfda.generic_name`/`brand_name` query returns no match, fall
-/// back to a full-text search for the name and keep only results whose own
-/// identity matches. `NoSplRecord` means openFDA answered and no SPL record
-/// for the drug exists; real fetch errors surface as `Err`, except the
-/// oversize full-text response, which settles as `FulltextTooLarge` because
-/// no retry can succeed.
+/// back to a phrase search of the records' own `spl_product_data_elements`
+/// and keep only results whose own identity matches. `NoSplRecord` means
+/// openFDA answered and no SPL record for the drug exists; real fetch errors
+/// surface as `Err`, except the oversize elements response, which settles as
+/// `ElementsSearchTooLarge` because no retry can succeed.
 pub(super) async fn lookup_label_response(
     client: &OpenFdaClient,
     name: &str,
@@ -737,20 +775,28 @@ pub(super) async fn lookup_label_response(
     {
         return Ok(LabelLookup::Response(response));
     }
-    let fulltext = match client.label_fulltext_search(name).await {
+    let elements = match client.label_elements_search(name).await {
         Ok(Some(response)) => response,
         Ok(None) => return Ok(LabelLookup::NoSplRecord),
         Err(error) => {
             return if is_body_limit_error(&error) {
-                Ok(LabelLookup::FulltextTooLarge)
+                Ok(LabelLookup::ElementsSearchTooLarge)
             } else {
                 Err(error)
             };
         }
     };
-    Ok(filter_label_response_to_identity(&fulltext, name)
+    Ok(filter_label_response_to_identity(&elements, name)
         .map_or(LabelLookup::NoSplRecord, LabelLookup::Response))
 }
+
+/// The withdrawn Propulsid record's product data elements exactly as openFDA
+/// serves them (captured 2026-10-07): three per-strength entries with
+/// differing inactive excipient lists and no populated `openfda` identity
+/// fields. Shared by the identity-guard tests and the fallback fixture
+/// server.
+#[cfg(test)]
+pub(crate) const PROPULSID_ELEMENTS: &str = "Propulsid cisapride cisapride cisapride silicon dioxide lactose monohydrate magnesium stearate cellulose, microcrystalline polysorbate 20 povidone Janssen;P;10 Propulsid cisapride cisapride cisapride silicon dioxide lactose monohydrate magnesium stearate cellulose, microcrystalline polysorbate 20 povidone FD&C Blue No. 2 aluminum oxide Janssen;P;20 Propulsid cisapride cisapride cisapride methylparaben cellulose, microcrystalline carboxymethylcellulose sodium polysorbate 20 propylparaben sodium chloride sorbitol FD&C Red No. 40 water bright pink cherry cream";
 
 #[cfg(test)]
 mod tests;

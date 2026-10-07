@@ -137,16 +137,16 @@ async fn required_label_failure_server() -> (String, tokio::task::JoinHandle<()>
 }
 
 /// A fixture server whose field-scoped label lookup answers with no match
-/// and whose full-text fallback answer the caller selects: a transport
-/// failure status or a body past the read limit.
+/// and whose product-data-elements fallback answer the caller selects: a
+/// transport failure status or a body past the read limit.
 #[derive(Clone, Copy)]
-enum FulltextFallbackAnswer {
+enum ElementsFallbackAnswer {
     Error,
     Oversize,
 }
 
-async fn label_fulltext_failure_server(
-    answer: FulltextFallbackAnswer,
+async fn label_fallback_failure_server(
+    answer: ElementsFallbackAnswer,
 ) -> (String, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -167,15 +167,15 @@ async fn label_fulltext_failure_server(
                         r#"{"total":1,"hits":[{"_id":"fixture-drug","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"fixture-drug","synonyms":[],"drug_interactions":[]}}]}"#.as_bytes().to_vec(),
                     )
                 } else if request.starts_with("GET /drug/label.json?")
-                    && request.contains("limit=100")
+                    && request.contains("spl_product_data_elements")
                 {
                     match answer {
-                        FulltextFallbackAnswer::Error => (
+                        ElementsFallbackAnswer::Error => (
                             "500 Internal Server Error",
                             r#"{"error":"private sentinel"}"#.as_bytes().to_vec(),
                         ),
                         // One byte past the 8 MiB source-body read limit.
-                        FulltextFallbackAnswer::Oversize => {
+                        ElementsFallbackAnswer::Oversize => {
                             ("200 OK", vec![b'x'; 8 * 1024 * 1024 + 1])
                         }
                     }
@@ -220,7 +220,7 @@ async fn label_fulltext_failure_server(
     (base, task)
 }
 
-async fn label_fallback_fixture_drug(base: &str, sections: &[&str]) -> super::Drug {
+async fn label_fallback_fixture_drug(base: &str, name: &str, sections: &[&str]) -> super::Drug {
     let root = crate::test_support::TempDirGuard::new("label-fallback-ddinter-counter");
     let missing_ddinter = root.path().join("missing-ddinter");
     // Point the shared HTTP client's cache walk at the fixture's own tree:
@@ -241,7 +241,7 @@ async fn label_fallback_fixture_drug(base: &str, sections: &[&str]) -> super::Dr
         missing_ddinter.to_str().expect("UTF-8 fixture path"),
     );
     let sections: Vec<String> = sections.iter().map(|value| value.to_string()).collect();
-    super::get("fixture-drug", &sections)
+    super::get(name, &sections)
         .await
         .expect("label fallback fixture settles a card")
 }
@@ -301,13 +301,13 @@ async fn label_fetch_failures_settle_as_unavailable_outcomes() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn label_fulltext_fetch_error_stays_an_error() {
-    let (base, server) = label_fulltext_failure_server(FulltextFallbackAnswer::Error).await;
+async fn label_fallback_fetch_error_stays_an_error() {
+    let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Error).await;
 
     // Ticket 1300 review: the field-scoped miss must fall through to the
-    // full-text fallback, and a real full-text fetch error settles as an
+    // identity-field fallback, and a real fallback fetch error settles as an
     // unavailable outcome — never as a silent no-match empty.
-    let drug = label_fallback_fixture_drug(&base, &["label"]).await;
+    let drug = label_fallback_fixture_drug(&base, "fixture-drug", &["label"]).await;
     let outcome = drug
         .section_outcomes
         .get("label")
@@ -326,13 +326,14 @@ async fn label_fulltext_fetch_error_stays_an_error() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
-async fn label_fulltext_oversize_response_settles_as_no_match_with_reason() {
-    let (base, server) = label_fulltext_failure_server(FulltextFallbackAnswer::Oversize).await;
+async fn label_elements_oversize_response_settles_as_no_match_with_reason() {
+    let (base, server) = label_fallback_failure_server(ElementsFallbackAnswer::Oversize).await;
 
-    // Ticket 1300 review: a full-text fallback response past the body read
-    // limit can never succeed on retry, so it settles as an empty outcome
-    // that names the oversize reason instead of an unavailable retry hint.
-    let drug = label_fallback_fixture_drug(&base, &["label"]).await;
+    // Ticket 1300 second review: an identity-field fallback response past
+    // the body read limit can never succeed on retry, so it settles as an
+    // empty outcome that names the oversize reason instead of an unavailable
+    // retry hint.
+    let drug = label_fallback_fixture_drug(&base, "fixture-drug", &["label"]).await;
     let outcome = drug
         .section_outcomes
         .get("label")
@@ -344,8 +345,155 @@ async fn label_fulltext_oversize_response_settles_as_no_match_with_reason() {
     assert_eq!(
         outcome.message(),
         Some(
-            "The openFDA full-text label search response was too large to read, so no label record could be confirmed."
+            "The openFDA label product-data-elements search response was too large to read, so no label record could be confirmed."
         )
+    );
+    assert!(drug.label.is_none());
+    server.abort();
+}
+
+/// The withdrawn Propulsid record's product data elements, captured from
+/// openFDA 2026-10-07 and shared with the identity-guard tests: three
+/// per-strength entries whose inactive excipients differ, and no populated
+/// `openfda` identity fields. Cisapride's only other label matches are other
+/// drugs' mentions, so the unfielded full-text answer for cisapride is
+/// 16.4 MB and unreadable.
+const PROPULSID_ELEMENTS: &str = super::label::PROPULSID_ELEMENTS;
+
+fn propulsid_label_body() -> String {
+    format!(
+        r#"{{"meta":{{"results":{{"skip":0,"limit":10,"total":1}}}},"results":[{{"set_id":"fdd8f491-28d6-49ae-9935-0224b8815e84","openfda":{{}},"spl_product_data_elements":["{PROPULSID_ELEMENTS}"],"indications_and_usage":["INDICATIONS AND USAGE PROPULSID (cisapride) is indicated for the symptomatic treatment of adult patients with nocturnal heartburn due to gastroesophageal reflux disease."]}},{{"set_id":"another-drug-mentioning-cisapride","openfda":{{"brand_name":["Otherdrug"],"generic_name":["otherdrug"]}},"spl_product_data_elements":["OTHERDRUG otherdrug OTHERDRUG OTHERDRUG STARCH"],"indications_and_usage":["OTHERDRUG interacts with cisapride."]}}]}}"#
+    )
+}
+
+/// A fixture server whose drug resolves as cisapride while both label
+/// lookups answer the caller's selection: the field-scoped search always
+/// misses (the live Propulsid record carries no openfda identity fields) and
+/// the product-data-elements fallback either returns the Propulsid record
+/// alongside another drug's mention or answers with no match.
+#[derive(Clone, Copy)]
+enum ElementsFallbackMatch {
+    Propulsid,
+    NoMatch,
+}
+
+async fn label_elements_match_server(
+    answer: ElementsFallbackMatch,
+) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind label elements fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 32 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]);
+                let (status, body): (&str, Vec<u8>) = if request.starts_with("GET /v1/query?") {
+                    (
+                        "200 OK",
+                        r#"{"total":1,"hits":[{"_id":"fixture-cisapride","_score":10.0,"drugbank":{"id":"DBFIXTURE","name":"cisapride","synonyms":[],"drug_interactions":[]}}]}"#
+                            .as_bytes()
+                            .to_vec(),
+                    )
+                } else if request.starts_with("GET /drug/label.json?")
+                    && request.contains("spl_product_data_elements")
+                {
+                    match answer {
+                        ElementsFallbackMatch::Propulsid => {
+                            ("200 OK", propulsid_label_body().into_bytes())
+                        }
+                        ElementsFallbackMatch::NoMatch => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                                .to_vec(),
+                        ),
+                    }
+                } else if request.starts_with("GET /drug/label.json?") {
+                    (
+                        "404 Not Found",
+                        br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#.to_vec(),
+                    )
+                } else {
+                    (
+                        "404 Not Found",
+                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                    )
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response head");
+                stream
+                    .write_all(&body)
+                    .await
+                    .expect("write fixture response body");
+            });
+        }
+    });
+    (base, task)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn label_elements_fallback_returns_the_own_record_not_an_empty() {
+    let (base, server) = label_elements_match_server(ElementsFallbackMatch::Propulsid).await;
+
+    // Ticket 1300 second review: openFDA holds the withdrawn Propulsid
+    // label, so the identity-field fallback must return it even though its
+    // openfda fields are empty and another drug's mention ranks in the
+    // answer — never settle as an empty outcome for a drug the source has.
+    let drug = label_fallback_fixture_drug(&base, "cisapride", &["label"]).await;
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Data
+    );
+    assert_eq!(outcome.message(), None);
+    let label = drug.label.as_ref().expect("Propulsid label present");
+    assert!(
+        !label.indication_summary.is_empty()
+            || label
+                .indications
+                .as_deref()
+                .is_some_and(|text| text.contains("cisapride")),
+        "the Propulsid record's own indication text reached the card"
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn label_elements_fallback_no_match_settles_as_the_honest_empty() {
+    let (base, server) = label_elements_match_server(ElementsFallbackMatch::NoMatch).await;
+
+    // When the source truly holds no record — terfenadine has no openFDA
+    // SPL record at all — both lookups answer with no match, so the empty
+    // outcome must name the missing record rather than an oversize or
+    // unavailable answer.
+    let drug = label_fallback_fixture_drug(&base, "cisapride", &["label"]).await;
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
+    assert_eq!(
+        outcome.message(),
+        Some("No openFDA SPL label record matched this drug.")
     );
     assert!(drug.label.is_none());
     server.abort();
