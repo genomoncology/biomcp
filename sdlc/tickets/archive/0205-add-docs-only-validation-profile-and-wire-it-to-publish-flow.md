@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/205-add-docs-only-validation-profile-and-wire-it-to-publish-flow
+    ~/workspace/planning/biomcp/artifacts/205-add-docs-only-validation-profile-and-wire-it-to-publish-flow

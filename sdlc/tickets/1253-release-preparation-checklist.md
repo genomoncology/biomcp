@@ -26,7 +26,7 @@ Checklist form (the 2026-09-26 review asked for items that fail the prep if skip
 
 - Close #250 (wheel on older Linux), #282, #284 (tools/list inputSchema missing type — fixed by 1240/1251; close once the released schemas are verified live), #286 (cache-mode test leak, fixed by 1261), and #287 (debug-profile wheels broke skill, chart, and --json ladders; the 0.9.1 wheel job builds --release and the smoke now exercises the asset paths positively) once the artifacts are public and verified.
 - The #283 reporter reply (fix shipped, pointer to the patched artifact) needs Ian's OK before posting.
-- Post-release: sweep the Unreleased residuals from 1241 (Mac real-bundle run) and confirm the M5 checklist issue closes.
+- Post-release: sweep the Unreleased residuals from 1241 (Mac real-bundle run) and confirm the Mac checklist issue closes.
 
 ## Review
 

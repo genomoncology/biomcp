@@ -40,7 +40,7 @@ clone-on-copy, a non-matching variant field, and a size-inventory
 addition for the card tests.
 
 Residuals: the 8 MB cap check against the real bundle and the
-real-bundle run defer to the M5 leg (recorded); no test pins the
+real-bundle run defer to the Mac leg (recorded); no test pins the
 transform population seam itself (the identity contract is pinned
 instead); the combination-product resolution symptom is mitigated
-incidentally and verified honestly at M5.
+incidentally and verified honestly on the Mac host.

@@ -8,4 +8,4 @@ Imported from March ticket 339. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/339-add-executable-spec-coverage-for-ambiguous-research-code-drug-fallback
+Artifacts: ~/workspace/planning/biomcp/artifacts/339-add-executable-spec-coverage-for-ambiguous-research-code-drug-fallback

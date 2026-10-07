@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/297-design-spec-v2-corpus-13-entity-3-surface-specs-biomcp-ci-wrapper-cache-warm-gate
+    ~/workspace/planning/biomcp/artifacts/297-design-spec-v2-corpus-13-entity-3-surface-specs-biomcp-ci-wrapper-cache-warm-gate

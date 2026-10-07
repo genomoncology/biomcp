@@ -8,7 +8,7 @@ Carried over from March ticket 666 when BioMCP moved to the sdlc
 factory. The body below is March's, unchanged; it was already written to
 stand alone. Work products from any earlier attempt:
 
-    /home/ian/workspace/planning/biomcp/artifacts/666-convert-disease-phenotype-and-discover-live-assertions-to-ontology-contracts
+    ~/workspace/planning/biomcp/artifacts/666-convert-disease-phenotype-and-discover-live-assertions-to-ontology-contracts
 ## A note on `.march/` paths below
 
 March gave each run a `.march/` directory inside its worktree for design

@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/041-fix-ci-failures-v0817
+    ~/workspace/planning/biomcp/artifacts/041-fix-ci-failures-v0817
 
 Numbered 0841 rather than 0041: March issued 0041
 to two tickets that both completed, and ticket identity here has to

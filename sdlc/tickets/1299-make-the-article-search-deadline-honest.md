@@ -1,6 +1,6 @@
 # 1299 — make the article search deadline honest end to end
 
-Filed 2026-10-05 by the BioMCP 0.9 lead, from experiment 439; replaces two P2 issues (article client construction outliving the invocation deadline; page-2 deadline expiry discarding completed rows).
+Filed 2026-10-05 from experiment 439; replaces two P2 issues (article client construction outliving the invocation deadline; page-2 deadline expiry discarding completed rows).
 
 Status: complete.
 Milestone: 0.9.2

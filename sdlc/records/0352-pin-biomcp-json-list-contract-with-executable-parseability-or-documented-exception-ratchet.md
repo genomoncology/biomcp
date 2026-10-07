@@ -8,4 +8,4 @@ Imported from March ticket 352. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/352-pin-biomcp-json-list-contract-with-executable-parseability-or-documented-exception-ratchet
+Artifacts: ~/workspace/planning/biomcp/artifacts/352-pin-biomcp-json-list-contract-with-executable-parseability-or-documented-exception-ratchet

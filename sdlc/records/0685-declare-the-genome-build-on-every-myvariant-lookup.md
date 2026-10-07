@@ -8,4 +8,4 @@ Imported from March ticket 685. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/685-declare-the-genome-build-on-every-myvariant-lookup
+Artifacts: ~/workspace/planning/biomcp/artifacts/685-declare-the-genome-build-on-every-myvariant-lookup

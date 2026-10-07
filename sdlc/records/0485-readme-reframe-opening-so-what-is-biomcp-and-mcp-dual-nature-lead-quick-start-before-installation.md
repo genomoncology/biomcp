@@ -8,4 +8,4 @@ Imported from March ticket 485. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/485-readme-reframe-opening-so-what-is-biomcp-and-mcp-dual-nature-lead-quick-start-before-installation
+Artifacts: ~/workspace/planning/biomcp/artifacts/485-readme-reframe-opening-so-what-is-biomcp-and-mcp-dual-nature-lead-quick-start-before-installation

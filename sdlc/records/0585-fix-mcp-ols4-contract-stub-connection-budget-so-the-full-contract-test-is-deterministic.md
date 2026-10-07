@@ -8,4 +8,4 @@ Imported from March ticket 585. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/585-fix-mcp-ols4-contract-stub-connection-budget-so-the-full-contract-test-is-deterministic
+Artifacts: ~/workspace/planning/biomcp/artifacts/585-fix-mcp-ols4-contract-stub-connection-budget-so-the-full-contract-test-is-deterministic

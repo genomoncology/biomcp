@@ -8,4 +8,4 @@ Imported from March ticket 627. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/627-retire-the-routine-clingen-car-spec-and-cover-car-query-construction-with-unit-tests
+Artifacts: ~/workspace/planning/biomcp/artifacts/627-retire-the-routine-clingen-car-spec-and-cover-car-query-construction-with-unit-tests

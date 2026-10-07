@@ -8,4 +8,4 @@ Imported from March ticket 267. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/267-cap-get-disease-diagnostics-pivot-result-size-with-ratchet-spec
+Artifacts: ~/workspace/planning/biomcp/artifacts/267-cap-get-disease-diagnostics-pivot-result-size-with-ratchet-spec

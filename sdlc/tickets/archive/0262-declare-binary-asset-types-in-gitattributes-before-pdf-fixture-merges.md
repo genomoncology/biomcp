@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/262-declare-binary-asset-types-in-gitattributes-before-pdf-fixture-merges
+    ~/workspace/planning/biomcp/artifacts/262-declare-binary-asset-types-in-gitattributes-before-pdf-fixture-merges
 
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the

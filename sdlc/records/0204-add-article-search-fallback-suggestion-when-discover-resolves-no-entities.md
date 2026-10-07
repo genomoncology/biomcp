@@ -8,4 +8,4 @@ Imported from March ticket 204. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/204-add-article-search-fallback-suggestion-when-discover-resolves-no-entities
+Artifacts: ~/workspace/planning/biomcp/artifacts/204-add-article-search-fallback-suggestion-when-discover-resolves-no-entities

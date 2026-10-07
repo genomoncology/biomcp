@@ -8,4 +8,4 @@ Imported from March ticket 227. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/227-pre-release-repo-cleanup-sweep
+Artifacts: ~/workspace/planning/biomcp/artifacts/227-pre-release-repo-cleanup-sweep

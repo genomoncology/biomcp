@@ -8,4 +8,4 @@ Imported from March ticket 336. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/336-add-ols4-disease-discover-parallel-isolation-contract-to-absorb-faq-14
+Artifacts: ~/workspace/planning/biomcp/artifacts/336-add-ols4-disease-discover-parallel-isolation-contract-to-absorb-faq-14

@@ -8,4 +8,4 @@ Imported from March ticket 304. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/304-add-discover-anti-pattern-to-skill-md-single-entity-only-with-counter-examples
+Artifacts: ~/workspace/planning/biomcp/artifacts/304-add-discover-anti-pattern-to-skill-md-single-entity-only-with-counter-examples

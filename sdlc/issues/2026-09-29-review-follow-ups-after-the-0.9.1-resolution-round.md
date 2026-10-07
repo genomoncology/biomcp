@@ -31,7 +31,7 @@ The product fixes hold. The job order, the stdio test, #287's build profile, the
 - The Rust cache runs before checkout in every job (`.github/workflows/ci.yml:30-31`). The logs show no lockfiles considered, a key suffix of `da39a3ee` (the hash of empty input), and the runner's Rust 1.98.1 in the key instead of the pinned 1.93.1. The key never changes with `Cargo.lock`, and checkout likely clears what was restored. Green run times went from 33-35 minutes to 26.8 minutes on the branch and 31.7 on main.
 - The cache action uses the unpinned `@v2` tag, and `e18501b8` exempted it from the pin contract. Nextest installs through `curl | tar` with no checksum.
 - Ticket 1275, which changed CI, says `Code review: n/a`.
-- 62 remote `tickets/*` branches remain, 60 of them merged, including 1261 through 1276. The lander rule says the lander removes its branch.
+- 62 remote `tickets/*` branches remain, 60 of them merged, including 1261 through 1276. The landing rule says the merging agent removes its branch.
 
 ## Release
 
@@ -76,7 +76,7 @@ The cache-before-checkout finding: fixed on the 1278 branch (cache after checkou
 
 Ticket 1275's n/a review: replaced with real read-only review verdicts recorded in the ticket.
 
-The 62 remote branches: deleted in the 1276 round (all merged branches removed; the lander rule now removes each branch at merge).
+The 62 remote branches: deleted in the 1276 round (all merged branches removed; the landing rule now removes each branch at merge).
 
 The 0.8.x no-yank reasons: corrected in the 1263/1264 disposition (kept the decision, removed the two false reasons).
 

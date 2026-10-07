@@ -299,7 +299,7 @@ fn embedded_use_case_anchor_commands_parse() -> Result<(), BioMcpError> {
                 "grep",
                 "cat ",
                 "jq ",
-                "/home/ian/workspace/research/",
+                "/home/user/workspace/research/",
             ] {
                 assert!(
                     !command.contains(forbidden),

@@ -8,4 +8,4 @@ Imported from March ticket 186. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/186-declare-biomcp-validation-profiles-and-standardize-the-local-pre-commit-hook
+Artifacts: ~/workspace/planning/biomcp/artifacts/186-declare-biomcp-validation-profiles-and-standardize-the-local-pre-commit-hook

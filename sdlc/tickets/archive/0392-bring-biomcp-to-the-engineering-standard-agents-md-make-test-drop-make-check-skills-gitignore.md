@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/392-bring-biomcp-to-the-engineering-standard-agents-md-make-test-drop-make-check-skills-gitignore
+    ~/workspace/planning/biomcp/artifacts/392-bring-biomcp-to-the-engineering-standard-agents-md-make-test-drop-make-check-skills-gitignore

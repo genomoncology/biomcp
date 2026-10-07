@@ -8,4 +8,4 @@ Imported from March ticket 276. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/276-fix-spec17-bash-backtick-quoting-so-mustmatch-assertion-runs
+Artifacts: ~/workspace/planning/biomcp/artifacts/276-fix-spec17-bash-backtick-quoting-so-mustmatch-assertion-runs

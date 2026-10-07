@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/294-fix-pre-existing-make-spec-pr-and-make-test-contracts-gate-failures-blocking-287
+    ~/workspace/planning/biomcp/artifacts/294-fix-pre-existing-make-spec-pr-and-make-test-contracts-gate-failures-blocking-287
 
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the

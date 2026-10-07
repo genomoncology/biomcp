@@ -8,4 +8,4 @@ Imported from March ticket 248. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/248-trap-clean-test-scratch-dirs-in-tmp
+Artifacts: ~/workspace/planning/biomcp/artifacts/248-trap-clean-test-scratch-dirs-in-tmp

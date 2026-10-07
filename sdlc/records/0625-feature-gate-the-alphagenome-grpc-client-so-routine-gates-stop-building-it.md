@@ -8,4 +8,4 @@ Imported from March ticket 625. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/625-feature-gate-the-alphagenome-grpc-client-so-routine-gates-stop-building-it
+Artifacts: ~/workspace/planning/biomcp/artifacts/625-feature-gate-the-alphagenome-grpc-client-so-routine-gates-stop-building-it

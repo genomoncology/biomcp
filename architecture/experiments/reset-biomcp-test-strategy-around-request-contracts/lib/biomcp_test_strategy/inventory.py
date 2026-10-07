@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-DEFAULT_MARCH_RUNTIME = Path("/home/ian/workspace/.march-runtime/runs/biomcp/370-add-transcript-hgvs-normalization-proxies")
+DEFAULT_MARCH_RUNTIME = Path("~/workspace/.march-runtime/runs/biomcp/370-add-transcript-hgvs-normalization-proxies")
 
 DEPENDENCY_PATTERNS = {
     "ols4_discover": re.compile(r"OLS4|ols4|discover |discover\\\"|ERBB1|Arnold Chiari|MEF2", re.I),

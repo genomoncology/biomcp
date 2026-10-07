@@ -8,4 +8,4 @@ Imported from March ticket 398. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/398-add-non-pmc-figshare-article-asset-retrieval
+Artifacts: ~/workspace/planning/biomcp/artifacts/398-add-non-pmc-figshare-article-asset-retrieval

@@ -8,7 +8,7 @@ Two lines share the biomcp numbering remote. 0.9.2 is this team's active line: t
 
 Outcome: the 0.9 branch queue landed on main, every external issue answered, the tag cut when Ian says.
 
-Exit criteria: 1298 and 1294 land after the KB lead's QA; 1299, 1302, 1304, and 1291 land through the lane pipeline; issues #288 and #289 stay closed with fixes on main; changelog bullets owed by the landed tickets are written before any tag.
+Exit criteria: 1298 and 1294 land after QA; 1299, 1302, 1304, and 1291 land through the lane pipeline; issues #288 and #289 stay closed with fixes on main; changelog bullets owed by the landed tickets are written before any tag.
 
 ## 1.0
 

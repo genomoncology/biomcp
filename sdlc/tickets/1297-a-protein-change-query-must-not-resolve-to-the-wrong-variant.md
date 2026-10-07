@@ -1,6 +1,6 @@
 # 1297 — a protein-change query must not resolve to the wrong variant
 
-Proposed 2026-10-04 by the BioMCP 0.9 lead, from KB QA ticket 0002.
+Proposed 2026-10-04 from QA ticket 0002.
 
 Status: complete.
 
@@ -25,7 +25,7 @@ A protein-change query such as `DICER1 p.Met1483Ile` resolves to the variant Cli
 
 ## Evidence
 
-- Starts from: KB QA ticket 0002 (landed at e68111b in the KB repository) found that on both 0.9.1 and the 1290 branch, `biomcp get variant 'DICER1 p.Met1483Ile' -j` resolves to chr14:g.95562808C>A, a variant on a different transcript with no ClinVar record, while the question's ClinVar variant is NM_177438.3(DICER1) p.Met1483Ile. A protein-change query can land on the wrong variant silently. Source: KB QA message of 2026-10-04, ask 2.
+- Starts from: QA ticket 0002 (landed at e68111b in the QA repository) found that on both 0.9.1 and the 1290 branch, `biomcp get variant 'DICER1 p.Met1483Ile' -j` resolves to chr14:g.95562808C>A, a variant on a different transcript with no ClinVar record, while the question's ClinVar variant is NM_177438.3(DICER1) p.Met1483Ile. A protein-change query can land on the wrong variant silently. Source: QA message of 2026-10-04, ask 2.
 - Keeps: Every query that resolves unambiguously today keeps its answer.
 - Changes: Reproduce the DICER1 case on main. Then either prefer the transcript ClinVar itself names for a protein-change query, or refuse an ambiguous protein-change query with a message that lists the candidate variants and a working input form (VariationID, rsID or transcript-qualified HGVS).
 - Proof: A spec table of protein-change queries, ambiguous and unambiguous, with the expected resolution or refusal, from recorded responses. The DICER1 case is one row. Validated 2026-10-05 on main: `get variant 'DICER1 p.Met1483Ile' -j` resolves to chr14:g.95562808C>T (wrong transcript), and the correct colon form `NM_177438.3:c.4449G>A` returns `not_found` — so the acceptance rows must include VariationID 577152 resolving correctly, and the protein form either resolving to 577152's variant or refusing with candidates that include it.
@@ -33,7 +33,7 @@ A protein-change query such as `DICER1 p.Met1483Ile` resolves to the variant Cli
 
 ## Review
 
-- Design review: ACCEPT 2026-10-06. The build agent gathered live ambiguity evidence (three distinct ClinVar variants under one protein alias) before coding; the coordinator judged the ticket design against that evidence and the fresh code review followed before landing.
+- Design review: ACCEPT 2026-10-06. The build gathered live ambiguity evidence (three distinct ClinVar variants under one protein alias) before coding; the design was judged against that evidence and the fresh code review followed before landing.
 
 ## Note
 

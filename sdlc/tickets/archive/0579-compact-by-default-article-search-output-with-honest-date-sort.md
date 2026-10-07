@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/579-compact-by-default-article-search-output-with-honest-date-sort
+    ~/workspace/planning/biomcp/artifacts/579-compact-by-default-article-search-output-with-honest-date-sort

@@ -8,4 +8,4 @@ Imported from March ticket 335. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/335-add-benchmark-runtime-wiring-ratchet-so-structure-tests-also-prove-cli-reachability
+Artifacts: ~/workspace/planning/biomcp/artifacts/335-add-benchmark-runtime-wiring-ratchet-so-structure-tests-also-prove-cli-reachability

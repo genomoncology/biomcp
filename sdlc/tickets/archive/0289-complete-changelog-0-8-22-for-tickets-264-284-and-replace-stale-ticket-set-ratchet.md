@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/289-complete-changelog-0-8-22-for-tickets-264-284-and-replace-stale-ticket-set-ratchet
+    ~/workspace/planning/biomcp/artifacts/289-complete-changelog-0-8-22-for-tickets-264-284-and-replace-stale-ticket-set-ratchet

@@ -38,7 +38,7 @@ updated.
 Every open residual from records 1219, 1221, 1222, 1224, 1225, 1226,
 and 1229 has a recorded disposition in the ticket, including the stale
 panic-abort residual (1230 set unwind) and the corrections the review
-caught (the M5 DDInter leg belongs to 1235's record; the step-level-if
+caught (the Mac DDInter leg belongs to 1235's record; the step-level-if
 weakness is documented in the 1229 record).
 
 Evidence: design REJECT with four P1s, revised, re-review ACCEPT; code

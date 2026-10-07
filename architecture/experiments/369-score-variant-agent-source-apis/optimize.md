@@ -37,7 +37,7 @@ Final measured suite after committed optimizations and the Semantic Scholar auth
 
 Validation run:
 - Contract/status jq checks passed.
-- `/home/ian/workspace/scripts/lint-planning.sh biomcp` passed (`all clean`).
+- `~/workspace/scripts/lint-planning.sh biomcp` passed (`all clean`).
 - `cargo test --workspace --all-targets` passed: 1965 unit tests plus integration tests, 0 failures.
 
 ## Total Improvement

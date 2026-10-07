@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/493-rip-out-clinical-features-curated-answer-key-reroute-directly-to-monarch-hpo-backend-no-compat-projection
+    ~/workspace/planning/biomcp/artifacts/493-rip-out-clinical-features-curated-answer-key-reroute-directly-to-monarch-hpo-backend-no-compat-projection

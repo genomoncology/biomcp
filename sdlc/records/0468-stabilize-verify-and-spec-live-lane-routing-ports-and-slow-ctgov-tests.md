@@ -8,4 +8,4 @@ Imported from March ticket 468. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/468-stabilize-verify-and-spec-live-lane-routing-ports-and-slow-ctgov-tests
+Artifacts: ~/workspace/planning/biomcp/artifacts/468-stabilize-verify-and-spec-live-lane-routing-ports-and-slow-ctgov-tests

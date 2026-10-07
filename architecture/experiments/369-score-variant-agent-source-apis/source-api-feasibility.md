@@ -19,7 +19,7 @@ This exploit did not build runtime connectors because the ticket explicitly mark
 - 3–5 ordered follow-up ticket recommendations;
 - reproducible JSON results and regression-control probes in persistent paths.
 
-Persistent artifact directory: `/home/ian/workspace/planning/biomcp/artifacts/369-score-variant-agent-source-apis/`.
+Persistent artifact directory: `~/workspace/planning/biomcp/artifacts/369-score-variant-agent-source-apis/`.
 
 ## Current BioMCP Capability / Gap Evidence
 

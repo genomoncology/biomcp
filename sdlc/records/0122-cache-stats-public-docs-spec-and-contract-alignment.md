@@ -8,4 +8,4 @@ Imported from March ticket 122. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/122-cache-stats-public-docs-spec-and-contract-alignment
+Artifacts: ~/workspace/planning/biomcp/artifacts/122-cache-stats-public-docs-spec-and-contract-alignment

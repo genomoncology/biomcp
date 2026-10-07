@@ -8,4 +8,4 @@ Imported from March ticket 242. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/242-hateoas-cross-entity-suggestions-on-article-search
+Artifacts: ~/workspace/planning/biomcp/artifacts/242-hateoas-cross-entity-suggestions-on-article-search

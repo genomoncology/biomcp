@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/468-stabilize-verify-and-spec-live-lane-routing-ports-and-slow-ctgov-tests
+    ~/workspace/planning/biomcp/artifacts/468-stabilize-verify-and-spec-live-lane-routing-ports-and-slow-ctgov-tests

@@ -8,4 +8,4 @@ Imported from March ticket 265. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/265-relabel-changelog-0-8-21-draft-to-0-8-22-and-add-missing-shipped-entries
+Artifacts: ~/workspace/planning/biomcp/artifacts/265-relabel-changelog-0-8-21-draft-to-0-8-22-and-add-missing-shipped-entries

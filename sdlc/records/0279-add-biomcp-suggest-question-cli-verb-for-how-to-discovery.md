@@ -8,4 +8,4 @@ Imported from March ticket 279. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/279-add-biomcp-suggest-question-cli-verb-for-how-to-discovery
+Artifacts: ~/workspace/planning/biomcp/artifacts/279-add-biomcp-suggest-question-cli-verb-for-how-to-discovery

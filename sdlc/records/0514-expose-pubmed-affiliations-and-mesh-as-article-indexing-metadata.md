@@ -8,4 +8,4 @@ Imported from March ticket 514. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/514-expose-pubmed-affiliations-and-mesh-as-article-indexing-metadata
+Artifacts: ~/workspace/planning/biomcp/artifacts/514-expose-pubmed-affiliations-and-mesh-as-article-indexing-metadata

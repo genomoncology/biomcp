@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/483-drop-release-smoke-sh-from-release-validate-gate-keep-as-operator-tool
+    ~/workspace/planning/biomcp/artifacts/483-drop-release-smoke-sh-from-release-validate-gate-keep-as-operator-tool

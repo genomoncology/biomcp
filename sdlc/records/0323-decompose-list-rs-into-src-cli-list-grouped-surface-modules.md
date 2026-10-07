@@ -8,4 +8,4 @@ Imported from March ticket 323. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/323-decompose-list-rs-into-src-cli-list-grouped-surface-modules
+Artifacts: ~/workspace/planning/biomcp/artifacts/323-decompose-list-rs-into-src-cli-list-grouped-surface-modules

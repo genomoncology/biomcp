@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/186-declare-biomcp-validation-profiles-and-standardize-the-local-pre-commit-hook
+    ~/workspace/planning/biomcp/artifacts/186-declare-biomcp-validation-profiles-and-standardize-the-local-pre-commit-hook

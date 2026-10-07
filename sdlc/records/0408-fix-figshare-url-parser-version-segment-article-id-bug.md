@@ -8,4 +8,4 @@ Imported from March ticket 408. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/408-fix-figshare-url-parser-version-segment-article-id-bug
+Artifacts: ~/workspace/planning/biomcp/artifacts/408-fix-figshare-url-parser-version-segment-article-id-bug

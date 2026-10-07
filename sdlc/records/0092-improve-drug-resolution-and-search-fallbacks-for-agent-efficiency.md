@@ -8,4 +8,4 @@ Imported from March ticket 092. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/092-improve-drug-resolution-and-search-fallbacks-for-agent-efficiency
+Artifacts: ~/workspace/planning/biomcp/artifacts/092-improve-drug-resolution-and-search-fallbacks-for-agent-efficiency

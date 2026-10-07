@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/064-documentation-consistency-audit-40-item-copywriting-fix-pass
+    ~/workspace/planning/biomcp/artifacts/064-documentation-consistency-audit-40-item-copywriting-fix-pass

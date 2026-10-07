@@ -8,4 +8,4 @@ Imported from March ticket 582. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/582-preserve-article-full-text-and-asset-resolver-ladder-outcomes-with-bounds-and-tests
+Artifacts: ~/workspace/planning/biomcp/artifacts/582-preserve-article-full-text-and-asset-resolver-ladder-outcomes-with-bounds-and-tests

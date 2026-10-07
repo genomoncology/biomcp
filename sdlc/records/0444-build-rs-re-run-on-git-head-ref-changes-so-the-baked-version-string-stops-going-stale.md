@@ -8,4 +8,4 @@ Imported from March ticket 444. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/444-build-rs-re-run-on-git-head-ref-changes-so-the-baked-version-string-stops-going-stale
+Artifacts: ~/workspace/planning/biomcp/artifacts/444-build-rs-re-run-on-git-head-ref-changes-so-the-baked-version-string-stops-going-stale

@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/355-replace-update-command-short-literal-and-exact-marker-checks-with-structural-behavioral-ratchets
+    ~/workspace/planning/biomcp/artifacts/355-replace-update-command-short-literal-and-exact-marker-checks-with-structural-behavioral-ratchets

@@ -7,7 +7,7 @@ the branch lead.
 
 ## Prior evidence
 
-The KB QA report showed `biomcp search variant "SCN5A Brugada"` routing
+The QA report showed `biomcp search variant "SCN5A Brugada"` routing
 the whole phrase into the condition filter and returning nothing, while
 the gene and condition were both real. No offline gene-validation oracle
 exists; the admitted in-repo oracle is MyGene's unique canonical

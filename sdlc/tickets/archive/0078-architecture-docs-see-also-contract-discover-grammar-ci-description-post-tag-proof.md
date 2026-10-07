@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/078-architecture-docs-see-also-contract-discover-grammar-ci-description-post-tag-proof
+    ~/workspace/planning/biomcp/artifacts/078-architecture-docs-see-also-contract-discover-grammar-ci-description-post-tag-proof

@@ -8,4 +8,4 @@ Imported from March ticket 436. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/436-actionable-cli-rejection-errors-limit-bounds-multi-word-names-identifier-redirects
+Artifacts: ~/workspace/planning/biomcp/artifacts/436-actionable-cli-rejection-errors-limit-bounds-multi-word-names-identifier-redirects

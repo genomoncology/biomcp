@@ -6,7 +6,7 @@ Resolution: filed as ticket 1298 (page Europe PMC with cursorMark); root cause v
 
 Priority: P1. Every Europe PMC search and every federated article search that includes Europe PMC returns a fraction of its rows and burns its page-fetch budget today, against a live upstream change.
 
-Filed 2026-10-05 by the BioMCP 0.9 lead, from experiment 439 (`~/workspace/experiments/439-reproduce-1293-p2-and-1291-switch/`).
+Filed 2026-10-05 from experiment 439 (`~/workspace/experiments/439-reproduce-1293-p2-and-1291-switch/`).
 
 ## What happens
 

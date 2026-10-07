@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/447-repo-hygiene-remove-leaked-internal-working-docs-retired-validation-profiles-and-the-paper-dir-from-the-public-root
+    ~/workspace/planning/biomcp/artifacts/447-repo-hygiene-remove-leaked-internal-working-docs-retired-validation-profiles-and-the-paper-dir-from-the-public-root
