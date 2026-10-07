@@ -2,7 +2,7 @@
 
 Proposed 2026-10-03 by the BioMCP owner for the next 0.9 release.
 
-Status: OPEN.
+Status: complete.
 Milestone: 0.9.2
 
 ## Build status

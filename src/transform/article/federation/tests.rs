@@ -365,3 +365,56 @@ fn from_pubmed_esummary_entry_prefers_edat_over_lr() {
         Some(NaiveDate::from_ymd_opt(2023, 1, 16).expect("valid date"))
     );
 }
+
+#[test]
+fn detail_articles_keep_whole_abstracts_while_search_rows_keep_snippets() {
+    let long_abstract = format!(
+        "{} tail marker",
+        "Whole abstract evidence sentence.".repeat(70)
+    );
+    assert!(
+        long_abstract.len() > 1500,
+        "fixture must exceed the old cap"
+    );
+
+    let hit: EuropePmcResult = serde_json::from_value(serde_json::json!({
+        "id": "30738221",
+        "pmid": "30738221",
+        "title": "Whole abstract article",
+        "abstractText": long_abstract.clone(),
+    }))
+    .expect("valid Europe PMC hit");
+
+    let article = from_europepmc_result(&hit);
+    assert_eq!(
+        article.abstract_text.as_deref(),
+        Some(long_abstract.as_str())
+    );
+
+    let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
+        "pmid": 30738221,
+        "passages": [
+            {"infons": {"type": "title"}, "text": "Whole abstract article"},
+            {"infons": {"type": "abstract"}, "text": long_abstract.clone()}
+        ]
+    }))
+    .expect("valid PubTator document");
+    assert_eq!(
+        from_pubtator_document(&doc).abstract_text.as_deref(),
+        Some(long_abstract.as_str())
+    );
+
+    let mut without_abstract = article.clone();
+    without_abstract.abstract_text = None;
+    merge_europepmc_metadata(&mut without_abstract, &hit);
+    assert_eq!(
+        without_abstract.abstract_text.as_deref(),
+        Some(long_abstract.as_str())
+    );
+
+    let row = from_europepmc_search_result(&hit).expect("search row");
+    let snippet = row.abstract_snippet.expect("snippet present");
+    assert!(snippet.ends_with("..."));
+    assert!(snippet.len() <= 240 + 3);
+    assert!(!snippet.contains("tail marker"));
+}

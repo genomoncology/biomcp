@@ -114,11 +114,7 @@ fn assert_detail(value: &Value) {
     assert_eq!(value["journal"], "Document Journal");
     assert_eq!(value["author_completeness"], "source_limited");
     assert_eq!(value["authors"], json!(["First Author", "Second Author"]));
-    assert!(
-        value["abstract_text"]
-            .as_str()
-            .is_some_and(|text| text.contains("truncated, 1700 chars total"))
-    );
+    assert_eq!(value["abstract_text"], "A".repeat(1700));
     assert_eq!(
         value["annotations"]["genes"],
         json!([{"text": "BRAF", "count": 1}])
@@ -152,7 +148,7 @@ async fn actual_cli_detail_and_ordered_batches_use_adopted_pubtator() {
     assert!(markdown.status.success());
     let markdown = String::from_utf8_lossy(&markdown.stdout);
     assert!(markdown.contains("Admitted title"));
-    assert!(markdown.contains("truncated, 1700 chars total"));
+    assert!(markdown.contains(&"A".repeat(1700)));
 
     for (mode, ids) in [("compact", "7,8,12"), ("detail", "12,8,7")] {
         let output = run_cli(

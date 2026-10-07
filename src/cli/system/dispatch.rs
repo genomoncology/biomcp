@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use super::{
     ArticleBatchMode, BatchArgs, CvxCommand, DdinterCommand, EmaCommand, EnrichArgs, GtrCommand,
-    VersionArgs, WhoCommand, WhoIvdCommand,
+    VersionArgs, WhoIvdCommand,
 };
 use super::{preflight_batch, settle_batch};
 use crate::cli::CommandOutcome;
@@ -301,19 +301,6 @@ pub(crate) async fn handle_ema(cmd: EmaCommand, json: bool) -> anyhow::Result<Co
     sync_outcome(
         "ema",
         "EMA data synchronized successfully.\n",
-        json,
-        changed,
-    )
-}
-
-pub(crate) async fn handle_who(cmd: WhoCommand, json: bool) -> anyhow::Result<CommandOutcome> {
-    let WhoCommand::Sync = cmd;
-    let changed =
-        crate::sources::who_pq::WhoPqClient::sync(crate::sources::who_pq::WhoPqSyncMode::Force)
-            .await?;
-    sync_outcome(
-        "who",
-        "WHO Prequalification data synchronized successfully.\n",
         json,
         changed,
     )

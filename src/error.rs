@@ -506,6 +506,17 @@ impl BioMcpError {
                         .unwrap_or(message)
                 )
             }
+            // WHO Prequalification validation failures name the export file
+            // and the missing column; every word is composed here, so the
+            // marked message surfaces verbatim instead of the generic API
+            // line (ticket 1304, mirroring the DDInter markers).
+            Self::Api { message, .. }
+                if source == SourceProvider::WHO_PREQUALIFICATION.label()
+                    && message
+                        .starts_with(crate::sources::who_pq::WHO_PQ_HEADER_MISMATCH_MARKER) =>
+            {
+                message.clone()
+            }
             Self::Api { .. } => format!("API request to {source} failed."),
             Self::ApiJson { api, .. } if source == "DDInter" => {
                 format!("DDInter bundle could not be decoded ({api})")
@@ -942,6 +953,36 @@ mod tests {
         let bounded = bounded_external_message(&over);
         assert_eq!(bounded.len(), 512);
         assert!(bounded.is_char_boundary(bounded.len()));
+    }
+
+    #[test]
+    fn who_pq_header_mismatches_render_with_file_and_column_detail() {
+        let marker = crate::sources::who_pq::WHO_PQ_HEADER_MISMATCH_MARKER;
+        let error = BioMcpError::Api {
+            api: "who-prequalification".to_string(),
+            message: format!("{marker}who_pq.csv: missing required column WHO REFERENCE NUMBER"),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "WHO Prequalification export headers did not match: who_pq.csv: missing required column WHO REFERENCE NUMBER"
+        );
+        assert_eq!(projection.source, Some("WHO Prequalification"));
+    }
+
+    #[test]
+    fn who_pq_download_failures_keep_the_generic_line_and_leak_no_body() {
+        let error = BioMcpError::Api {
+            api: "who-prequalification".to_string(),
+            message: "who_pq.csv: HTTP 503 Service Unavailable: upstream outage html".to_string(),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "API request to WHO Prequalification failed."
+        );
+        assert!(!projection.message.contains("503"));
+        assert!(!projection.message.contains("upstream outage html"));
     }
 
     #[test]

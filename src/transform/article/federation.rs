@@ -11,7 +11,6 @@ use crate::sources::pubtator::PubTatorSearchResult;
 
 use super::anchors::{
     article_search_abstract_snippet, clean_abstract, clean_title, normalize_article_search_text,
-    truncate_abstract,
 };
 #[cfg(test)]
 use super::pubtator::retained_from_pubtator_document;
@@ -210,7 +209,6 @@ pub(crate) fn retained_from_europepmc_result(hit: &EuropePmcResult) -> Article {
             .abstract_text
             .as_deref()
             .map(clean_abstract)
-            .map(|text| truncate_abstract(&text))
             .filter(|text| !text.is_empty()),
         full_text_path: None,
         full_text_note: None,
@@ -267,7 +265,6 @@ pub(crate) fn retained_merge_europepmc_metadata(article: &mut Article, hit: &Eur
             .abstract_text
             .as_deref()
             .map(clean_abstract)
-            .map(|text| truncate_abstract(&text))
             .filter(|text| !text.is_empty());
     }
 }

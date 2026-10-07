@@ -212,6 +212,7 @@ pub struct VersionArgs {
 
 mod batch;
 mod dispatch;
+mod who_sync;
 
 pub(crate) struct PreparedBatch<'a> {
     pub(crate) entity: String,
@@ -276,8 +277,9 @@ pub(crate) use self::batch::validate_batch_args;
 pub(crate) use self::batch::{settle_batch, validate_compatibility_article_batch_ids};
 pub(crate) use self::dispatch::{
     handle_batch, handle_cvx, handle_ddinter, handle_ema, handle_enrich, handle_gtr,
-    handle_uninstall, handle_version, handle_who, handle_who_ivd, version_identity_json,
+    handle_uninstall, handle_version, handle_who_ivd, version_identity_json,
 };
+pub(crate) use self::who_sync::handle_who;
 
 #[cfg(test)]
 mod tests;

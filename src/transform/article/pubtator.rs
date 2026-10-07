@@ -3,8 +3,6 @@
 use crate::entities::article::{Article, ArticleAuthorCompleteness, ArticleSource};
 use crate::sources::pubtator::{PubTatorDetail, PubTatorDocument};
 
-use super::anchors::truncate_abstract;
-
 struct PubTatorArticleData<'a> {
     pmid: Option<String>,
     pmcid: Option<&'a str>,
@@ -119,7 +117,7 @@ fn assemble_pubtator_article(data: PubTatorArticleData<'_>) -> Article {
         open_access: None,
         abstract_text: data
             .abstract_text
-            .map(truncate_abstract)
+            .map(str::to_string)
             .filter(|value| !value.is_empty()),
         full_text_path: None,
         full_text_note: None,

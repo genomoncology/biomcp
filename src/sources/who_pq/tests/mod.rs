@@ -2,6 +2,7 @@ use std::path::Path;
 
 mod construction;
 mod parsing;
+mod sync;
 
 fn fixture_csv() -> String {
     std::fs::read_to_string(
