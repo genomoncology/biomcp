@@ -137,13 +137,13 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1122,
+      "baseline_lines": 1133,
       "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1254",
-        "delta": 19,
-        "reason": "Poison-recovery scoping (get.rs) and the shared panic-payload helper (shell.rs).",
-        "removal_condition": "Revisit when the trial-alias cache moves behind a type and the panic arm shrinks."
+        "delta": 30,
+        "ticket": "1254, 1300",
+        "reason": "Poison-recovery scoping plus the guarded label fallback call and the label section outcome completion in the base resolution path.",
+        "removal_condition": "Revisit when the trial-alias cache moves behind a type, the panic arm shrinks, and the label outcome settles in a dedicated section owner module."
       }
     },
     {
@@ -305,13 +305,13 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1590,
+      "baseline_lines": 1592,
       "floor_lines": 1561,
       "authorized_increase": {
-        "ticket": "1241",
-        "delta": 29,
-        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, and bundle-error naming.",
-        "removal_condition": "Shrink when the drug card model is next refactored."
+        "delta": 31,
+        "ticket": "1241, 1300",
+        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, bundle-error naming, and the label_note field on Drug test cards.",
+        "removal_condition": "Shrink when the drug card model is next refactored and the label note moves into the label section payload."
       }
     },
     {
@@ -328,11 +328,11 @@
     {
       "path": "src/render/markdown/drug/tests.rs",
       "floor_lines": 954,
-      "baseline_lines": 1004,
+      "baseline_lines": 1013,
       "authorized_increase": {
-        "ticket": "1254",
-        "delta": 50,
-        "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it.",
+        "delta": 59,
+        "ticket": "1254, 1300",
+        "reason": "The 1237 review set the floor to 954; the 1241 baseline sat above it; the Drug markdown test cards gained the label_note field.",
         "removal_condition": "Shrink when the card fixtures share a builder."
       }
     },
@@ -360,12 +360,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1919,
+      "baseline_lines": 1916,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1256, 1290",
-        "delta": 72,
-        "reason": "The DisGeNET seed contribution to the associated-genes provenance row and the significance provenance fields on test literal construction.",
+        "delta": 69,
+        "ticket": "1256, 1290, 1300",
+        "reason": "The DisGeNET seed contribution, the significance provenance fields, and the label row's move from payload presence to the registered section outcome.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
       }
     },
@@ -516,11 +516,11 @@
     {
       "path": "src/transform/drug.rs",
       "floor_lines": 1000,
-      "baseline_lines": 1062,
+      "baseline_lines": 1063,
       "authorized_increase": {
-        "ticket": "1254",
-        "delta": 62,
-        "reason": "Anchor-only synonym fold plus the end-to-end identity tests.",
+        "delta": 63,
+        "ticket": "1254, 1300",
+        "reason": "Anchor-only synonym fold, the end-to-end identity tests, and the label_note field on the merged drug card.",
         "removal_condition": "Split the merge tests into a dedicated tests submodule."
       }
     },

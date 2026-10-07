@@ -200,19 +200,17 @@ BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json 
 assert_label_fetch_failure_settles() {
   mode=$1; shift
   if test "$mode" = json; then
-    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@")
+    BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@" \
+      | jq -e '(.section_outcomes.label == {"outcome":"unavailable","sources":[],"message":"OpenFDA label evidence is temporarily unavailable."}) and (has("label") | not) and (has("label_note") | not) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"unavailable","sources":[]}])' >/dev/null
   else
-    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" 2>&1)
-  fi
-  status=$?
-  test "$status" -eq 0
-  case "$output" in *SENSITIVE-UPSTREAM-DETAIL*) return 1;; esac
-  if test "$mode" = json; then
-    printf '%s\n' "$output" | jq -e '(.section_outcomes.label == {"outcome":"unavailable","sources":[],"message":"OpenFDA label evidence is temporarily unavailable."}) and (has("label") | not) and (has("label_note") | not) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"unavailable","sources":[]}])' >/dev/null
-  else
-    printf '%s\n' "$output" | mustmatch like '**FDA Label status (OpenFDA label):** unavailable; no conclusion can be drawn — OpenFDA label evidence is temporarily unavailable.
+    BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" \
+      | mustmatch like '**FDA Label status (OpenFDA label):** unavailable; no conclusion can be drawn — OpenFDA label evidence is temporarily unavailable.
 Retry: `biomcp get drug fixture-drug-empty-openfda-fail label`'
   fi
+  BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" 2>&1 \
+    | mustmatch not like 'SENSITIVE-UPSTREAM-DETAIL'
+  BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@" \
+    | mustmatch not like 'SENSITIVE-UPSTREAM-DETAIL'
 }
 assert_label_fetch_failure_settles markdown label interactions
 assert_label_fetch_failure_settles json label interactions
