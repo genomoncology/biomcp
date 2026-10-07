@@ -72,7 +72,38 @@ fn clinvar_preferred_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotati
     })
 }
 
-pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usize> {
+/// The MANE marker this data carries. MyVariant.info's SnpEff and dbNSFP
+/// sections ship no MANE status of their own, but ClinVar names each
+/// variant on the gene's MANE Select transcript when one exists, so the
+/// transcript stem ClinVar's preferred names agree on marks the MANE
+/// transcript for the gene. A cohort whose ClinVar-preferred stems disagree
+/// carries no marker (ticket 2016).
+pub(crate) fn clinvar_mane_transcript_stem(hits: &[MyVariantHit]) -> Option<String> {
+    let mut stem: Option<String> = None;
+    for hit in hits {
+        let Some(annotation) = clinvar_preferred_annotation(hit) else {
+            continue;
+        };
+        let Some(transcript) = annotation.transcript else {
+            continue;
+        };
+        let candidate = accession_stem(&transcript).to_string();
+        match &stem {
+            Some(known) if *known != candidate => return None,
+            _ => stem = Some(candidate),
+        }
+    }
+    stem
+}
+
+/// Rank the SnpEff annotations: the hit's own ClinVar-preferred transcript
+/// first (ClinVar names on MANE Select), then the gene's MANE transcript
+/// stem when the query response marks one, then the first NM_ transcript
+/// (yesterday's rule), then anything else.
+pub(crate) fn selected_snpeff_annotation_index(
+    hit: &MyVariantHit,
+    mane_stem: Option<&str>,
+) -> Option<usize> {
     let clinvar = clinvar_preferred_annotation(hit);
     let preferred_stem = clinvar
         .as_ref()
@@ -92,21 +123,26 @@ pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usi
             let feature = ann.1.feature_id.as_deref().unwrap_or_default();
             if preferred_stem.is_some_and(|preferred| accession_stem(feature) == preferred) {
                 0
-            } else if feature.starts_with("NM_") {
+            } else if mane_stem.is_some_and(|mane| accession_stem(feature) == mane) {
                 1
-            } else {
+            } else if feature.starts_with("NM_") {
                 2
+            } else {
+                3
             }
         })
         .map(|(index, _)| index)
 }
 
-fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
+fn select_transcript_annotation(
+    hit: &MyVariantHit,
+    mane_stem: Option<&str>,
+) -> Option<TranscriptAnnotation> {
     let selected = hit
         .snpeff
         .as_ref()?
         .ann
-        .get(selected_snpeff_annotation_index(hit)?)?;
+        .get(selected_snpeff_annotation_index(hit, mane_stem)?)?;
     Some(TranscriptAnnotation {
         gene: selected.genename.clone(),
         transcript: selected.feature_id.clone(),
@@ -115,17 +151,26 @@ fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotati
     })
 }
 
-fn paired_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
-    select_transcript_annotation(hit).or_else(|| clinvar_preferred_annotation(hit))
+fn paired_annotation(hit: &MyVariantHit, mane_stem: Option<&str>) -> Option<TranscriptAnnotation> {
+    select_transcript_annotation(hit, mane_stem).or_else(|| clinvar_preferred_annotation(hit))
 }
 
 /// The protein change on the transcript BioMCP headlines for a hit: the
-/// ClinVar-named or canonical SnpEff annotation. dbNSFP's merged alias list
-/// (`dbnsfp.hgvsp`) carries other isoforms' spellings on other genomic
+/// ClinVar-named or MANE/first-NM_ SnpEff annotation. dbNSFP's merged alias
+/// list (`dbnsfp.hgvsp`) carries other isoforms' spellings on other genomic
 /// variants, so only this value confirms a gene+protein query names the hit
 /// (ticket 2016).
-pub(crate) fn canonical_protein_change(hit: &MyVariantHit) -> Option<String> {
-    paired_annotation(hit).and_then(|annotation| annotation.protein)
+pub(crate) fn canonical_protein_change(
+    hit: &MyVariantHit,
+    mane_stem: Option<&str>,
+) -> Option<String> {
+    paired_annotation(hit, mane_stem).and_then(|annotation| annotation.protein)
+}
+
+/// The transcript whose numbering the headline protein change uses (ticket
+/// 2016's numbering note).
+pub(crate) fn canonical_transcript(hit: &MyVariantHit, mane_stem: Option<&str>) -> Option<String> {
+    paired_annotation(hit, mane_stem).and_then(|annotation| annotation.transcript)
 }
 
 fn legacy_name(gene: &str, protein: Option<&str>) -> Option<String> {
@@ -790,13 +835,21 @@ pub(crate) fn normalize_oncokb_level(value: &str) -> String {
 }
 
 pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
+    from_myvariant_hit_with_mane(hit, None)
+}
+
+/// Same as [`from_myvariant_hit`], with the gene's MANE transcript stem
+/// (the marker ClinVar's preferred names carry) so a hit without its own
+/// ClinVar record still headlines the MANE transcript when the query
+/// response marks one (ticket 2016).
+pub(crate) fn from_myvariant_hit_with_mane(hit: &MyVariantHit, mane_stem: Option<&str>) -> Variant {
     let mut gene = String::new();
     let mut hgvs_p: Option<String> = None;
     let mut hgvs_c: Option<String> = None;
     let mut sift_pred: Option<String> = None;
     let mut polyphen_pred: Option<String> = None;
 
-    let annotation = paired_annotation(hit);
+    let annotation = paired_annotation(hit, mane_stem);
     if let Some(dbnsfp) = hit.dbnsfp.as_ref() {
         gene = pick_gene(dbnsfp);
 
@@ -917,6 +970,7 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         transcript: annotation
             .as_ref()
             .and_then(|value| value.transcript.clone()),
+        protein_numbering_note: None,
         rsid,
         cosmic_id,
         significance,
@@ -955,7 +1009,7 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
 }
 
 pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
-    let annotation = paired_annotation(hit);
+    let annotation = paired_annotation(hit, None);
     let mut gene = hit.dbnsfp.as_ref().map(pick_gene).unwrap_or_default();
     if gene.is_empty() {
         gene = hit

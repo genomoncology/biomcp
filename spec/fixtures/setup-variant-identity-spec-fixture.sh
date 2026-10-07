@@ -82,6 +82,13 @@ RS121913529_RESPONSE = (ROOT / "testdata/sources/myvariant/query_rsid_rs12191352
 TP53_C124Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_c124y_20261007.json").read_bytes()
 BRCA1_A314T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_a314t_20261007.json").read_bytes()
 BRCA1_C61G_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_c61g_20261007.json").read_bytes()
+# Ticket 2016 fix round: the numbering rows. R116Q resolves on the MANE
+# transcript under another isoform's numbering; A1844T past the BRCA1
+# isoform insert pins the answer to MANE numbering; I1568N's ClinVar-less
+# response carries no MANE marker, so the first-NM_ fallback applies.
+TP53_R116Q_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r116q_20261007.json").read_bytes()
+BRCA1_A1844T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_a1844t_20261007.json").read_bytes()
+BRCA1_I1568N_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_i1568n_20261007.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
@@ -454,6 +461,15 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.C61G"':
                 send_json(self, 200, json.loads(BRCA1_C61G_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.R116Q"':
+                send_json(self, 200, json.loads(TP53_R116Q_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.A1844T"':
+                send_json(self, 200, json.loads(BRCA1_A1844T_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.I1568N"':
+                send_json(self, 200, json.loads(BRCA1_I1568N_RESPONSE))
                 return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return

@@ -10,6 +10,7 @@ rsID: {% if rsid %}{{ rsid }}{% else %}Not reported{% endif %}
 {% if legacy_name %}Legacy Name: {{ legacy_name }}{% endif %}
 {% if hgvs_c %}cDNA: {{ hgvs_c }}{% endif %}
 {% if transcript %}Transcript: {{ transcript }}{% endif %}
+{% if protein_numbering_note %}{{ protein_numbering_note }}{% endif %}
 {% if consequence %}Consequence: {{ consequence }}{% endif %}
 {% if cosmic_id %}COSMIC: {{ cosmic_id }}{% endif %}
 {% if significance %}Significance: {{ significance }}{% if significance_source %} — {{ significance_source }}{% if significance_evaluated %} (evaluated {{ significance_evaluated }}){% endif %}{% endif %}{% endif %}

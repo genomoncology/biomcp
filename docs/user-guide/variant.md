@@ -41,8 +41,12 @@ reports the other identity in `build_candidates` JSON and a Markdown warning.
 A gene-protein form names a protein change, and the same change can sit on
 several genomic variants; provider alias lists even carry other isoforms'
 spellings on different variants. `get variant` counts a hit as a match only
-when the transcript BioMCP headlines for it spells the requested change.
-When exactly one matching variant carries the ClinVar record for that
+when the transcript BioMCP headlines for it spells the requested change, and
+that headline prefers the MANE transcript the response marks (ClinVar names
+variants on MANE Select) over the first NM_ annotation. When the resolved
+change does not spell the request, the answer carries a numbering note
+naming the transcript and spelling that matched. When exactly one matching
+variant carries the ClinVar record for that
 change, `get variant` resolves to it; when several variants match and none
 or several carry ClinVar records, it refuses with the candidates and a
 working input form instead of guessing. Retry with one of the listed genomic

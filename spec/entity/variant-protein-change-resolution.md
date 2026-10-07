@@ -8,7 +8,7 @@ into one alias list, so the same alias sits on several genomic variants
 a shorter isoform). And a ClinVar record names its own genomic variant, which
 may be a different variant than the one the user named. `get variant`
 therefore counts a hit as a match only when the transcript BioMCP headlines
-for it — the ClinVar-named or canonical SnpEff annotation — spells the
+for it — the ClinVar-named or MANE (first-NM_) SnpEff annotation — spells the
 requested change; ClinVar presence breaks ties among those named matches
 (ticket 1297) but never outranks the named change (ticket 2016, where the
 1297 rule returned `p.Cys135Tyr` for `TP53 C124Y` and `p.Ala1823Thr` for
@@ -35,6 +35,38 @@ fixture; the fixture answers only the recorded queries.
 biomcp --json --no-cache get variant '{{query}}' \
   | jq -c 'if .error then {code: .error.code, id: "none", candidates: ([.error.message | scan("- chr[^\\n]+")] | length)} else {code: "ok", id: .id, candidates: 0} end' \
   | mustmatch like '{"code":"{{code}}","id":"{{id}}","candidates":{{candidates}}}'
+```
+
+## Numbering
+
+The headline transcript is the MANE one whenever the response marks it:
+ClinVar names a variant on the gene's MANE Select transcript when one exists,
+so the transcript stem ClinVar's preferred names agree on marks MANE for the
+query, and a hit without its own ClinVar record headlines that transcript
+ahead of the first NM_ in the SnpEff list (BRCA1's NM_007300 leads the SnpEff
+list and numbers residues 21 higher than MANE Select NM_007294 past the
+isoform insert). MyVariant.info's SnpEff and dbNSFP sections carry no MANE
+status of their own, so a response whose ClinVar preferred names disagree,
+or that carries none, falls back to the first NM_. When the resolved hit's
+protein change does not spell the request and the request named residues,
+the answer says which numbering matched (`protein_numbering_note`):
+`TP53 R116Q` resolves to the `p.Arg248Gln` variant through a shorter
+isoform's numbering, and `BRCA1 A1844T` (the long isoform's spelling, past
+the insert) resolves to the MANE spelling `p.Ala1823Thr` — both with the
+note; `BRCA1 I1568N` shows the fallback, answered on NM_007300.3 with the
+note.
+
+| query | id | hgvs_p | transcript | note |
+|---|---|---|---|---|
+| BRCA1 A314T | chr17:g.41246608C>T | p.Ala314Thr | NM_007294.3 | no |
+| TP53 R116Q | chr17:g.7577538C>T | p.Arg248Gln | NM_000546.5 | yes |
+| BRCA1 A1844T | chr17:g.41199660C>T | p.Ala1823Thr | NM_007294.3 | yes |
+| BRCA1 I1568N | chr17:g.41223228A>T | p.Ile1589Asn | NM_007300.3 | yes |
+
+```bash each_row="Variant Protein-Change Numbering"
+biomcp --json --no-cache get variant '{{query}}' \
+  | jq -c '{id: .id, hgvs_p: .hgvs_p, transcript: .transcript, note: (if .protein_numbering_note then "yes" else "no" end)}' \
+  | mustmatch like '{"id":"{{id}}","hgvs_p":"{{hgvs_p}}","transcript":"{{transcript}}","note":"{{note}}"}'
 ```
 
 The recorded `TP53 C124Y` response ranks the ClinVar-less

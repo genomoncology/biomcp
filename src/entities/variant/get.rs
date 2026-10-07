@@ -210,6 +210,15 @@ fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> St
     }
 }
 
+/// The gene+protein arm's per-query transcript facts: the MANE transcript
+/// stem ClinVar's preferred names mark (None when the response carries no
+/// marker), and the numbering note for a hit whose headline protein change
+/// does not spell the request (ticket 2016).
+struct ProteinChangeContext {
+    mane_stem: Option<String>,
+    numbering_note: Option<String>,
+}
+
 /// A gene+protein query names a protein change, not a genomic variant: the
 /// same alias can sit on several genomic variants (`DICER1 p.Met1483Ile`
 /// spans three alternate bases at chr14:g.95562808), and dbNSFP merges other
@@ -217,7 +226,7 @@ fn protein_change_candidate(hit: &crate::sources::myvariant::MyVariantHit) -> St
 /// returns lookalikes (`TP53 C124Y` matches the `p.Cys135Tyr` variant
 /// chr17:g.7578526C>T through a shorter isoform). A hit carries the query
 /// only when the transcript BioMCP headlines for it — the ClinVar-named or
-/// canonical SnpEff annotation — spells the requested change; ClinVar
+/// MANE (first-NM_) SnpEff annotation — spells the requested change; ClinVar
 /// presence breaks ties among those hits (ticket 1297) but never outranks
 /// the named change itself (ticket 2016). Resolve a single provider hit, a
 /// single carrying hit, or the one ClinVar record names among the true
@@ -235,13 +244,17 @@ fn resolve_protein_change_hit(
             suggestion: format!("Try searching: biomcp search variant -g {gene} --hgvsp {change}"),
         });
     }
+    let mane_stem = transform::variant::clinvar_mane_transcript_stem(&hits);
+    let names_change = |hit: &crate::sources::myvariant::MyVariantHit| {
+        hit_names_requested_change(hit, change, mane_stem.as_deref())
+    };
     if hits.len() == 1 {
         return Ok(hits.into_iter().next().expect("one compatible hit"));
     }
     let named = hits
         .iter()
         .enumerate()
-        .filter(|(_, hit)| hit_names_requested_change(hit, change))
+        .filter(|(_, hit)| names_change(hit))
         .map(|(index, _)| index)
         .collect::<Vec<_>>();
     if named.len() == 1 {
@@ -293,9 +306,37 @@ Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, Cl
 /// BioMCP headlines for it spells that change. The dbNSFP alias list that
 /// matched the query merges every isoform's name, so it cannot tell the
 /// named variant from a lookalike.
-fn hit_names_requested_change(hit: &crate::sources::myvariant::MyVariantHit, change: &str) -> bool {
-    transform::variant::canonical_protein_change(hit)
+fn hit_names_requested_change(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_stem: Option<&str>,
+) -> bool {
+    transform::variant::canonical_protein_change(hit, mane_stem)
         .is_some_and(|protein| protein_changes_equivalent(change, &protein))
+}
+
+/// A gene+protein query can resolve to a hit whose headline protein change
+/// does not spell the request (a unique provider hit, or the only named
+/// match): `TP53 R116Q` reaches the `p.Arg248Gln` variant through a shorter
+/// isoform's numbering. The answer must say which numbering matched instead
+/// of silently returning another transcript's spelling (ticket 2016). One
+/// line, in the ticket's voice: name the transcript, its spelling, and that
+/// the request follows another transcript's numbering.
+fn protein_change_numbering_note(
+    hit: &crate::sources::myvariant::MyVariantHit,
+    change: &str,
+    mane_stem: Option<&str>,
+) -> Option<String> {
+    super::normalize_protein_change(change)?;
+    let protein = transform::variant::canonical_protein_change(hit, mane_stem)?;
+    if protein_changes_equivalent(change, &protein) {
+        return None;
+    }
+    let transcript = transform::variant::canonical_transcript(hit, mane_stem)?;
+    Some(format!(
+        "Numbering note: resolved on {transcript} as {protein}; the requested \
+         {change} follows another transcript's numbering."
+    ))
 }
 
 fn candidate_matches_requested_identity(
@@ -597,7 +638,7 @@ pub(super) async fn resolve_base_with_hit(
         candidate_matches_requested_identity(&requested, hit)
     };
     let myvariant = MyVariantClient::new()?;
-    let (hit, answering_build, build_candidates) = match &id_format {
+    let (hit, answering_build, build_candidates, protein_change_context) = match &id_format {
         VariantIdFormat::HgvsGenomic(hgvs) => {
             if normalized_coordinate
                 .as_ref()
@@ -627,12 +668,14 @@ pub(super) async fn resolve_base_with_hit(
                             } else {
                                 Vec::new()
                             };
-                        (preferred_hit, Some(preferred), candidates)
+                        (preferred_hit, Some(preferred), candidates, None)
                     }
                     (Ok(hit), Err(error)) if error.is_not_found() => {
-                        (hit, Some(preferred), Vec::new())
+                        (hit, Some(preferred), Vec::new(), None)
                     }
-                    (Err(error), Ok(hit)) if error.is_not_found() => (hit, Some(other), Vec::new()),
+                    (Err(error), Ok(hit)) if error.is_not_found() => {
+                        (hit, Some(other), Vec::new(), None)
+                    }
                     (Err(first), Err(second)) if first.is_not_found() && second.is_not_found() => {
                         return Err(BioMcpError::NotFound {
                             entity: "variant".into(),
@@ -658,6 +701,7 @@ pub(super) async fn resolve_base_with_hit(
                         alias_hit,
                         effective_build.or(Some(GenomeBuild::Grch37)),
                         Vec::new(),
+                        None,
                     )
                 } else {
                     let hit = direct.map_err(|error| match effective_build {
@@ -680,7 +724,7 @@ pub(super) async fn resolve_base_with_hit(
                             suggestion,
                         });
                     }
-                    (hit, effective_build, Vec::new())
+                    (hit, effective_build, Vec::new(), None)
                 }
             }
         }
@@ -699,6 +743,7 @@ pub(super) async fn resolve_base_with_hit(
                     })?,
                 Some(GenomeBuild::Grch37),
                 Vec::new(),
+                None,
             )
         }
         VariantIdFormat::RsId(rsid) => {
@@ -721,6 +766,7 @@ pub(super) async fn resolve_base_with_hit(
                     })?,
                 Some(GenomeBuild::Grch37),
                 Vec::new(),
+                None,
             )
         }
         VariantIdFormat::GeneProteinChange { gene, change } => {
@@ -737,15 +783,32 @@ pub(super) async fn resolve_base_with_hit(
                 .into_iter()
                 .filter(&compatible)
                 .collect::<Vec<_>>();
+            let mane_stem = transform::variant::clinvar_mane_transcript_stem(&compatible_hits);
+            let hit = resolve_protein_change_hit(id, gene, change, compatible_hits)?;
+            let note = protein_change_numbering_note(&hit, change, mane_stem.as_deref());
             (
-                resolve_protein_change_hit(id, gene, change, compatible_hits)?,
+                hit,
                 Some(GenomeBuild::Grch37),
                 Vec::new(),
+                Some(ProteinChangeContext {
+                    mane_stem,
+                    numbering_note: note,
+                }),
             )
         }
     };
 
-    let mut variant = transform::variant::from_myvariant_hit(&hit);
+    let mut variant = match protein_change_context.as_ref() {
+        Some(context) => {
+            let mut variant = transform::variant::from_myvariant_hit_with_mane(
+                &hit,
+                context.mane_stem.as_deref(),
+            );
+            variant.protein_numbering_note = context.numbering_note.clone();
+            variant
+        }
+        None => transform::variant::from_myvariant_hit(&hit),
+    };
     variant.genome_build = answering_build;
     variant.genome_build_provenance = (answering_build == Some(GenomeBuild::Grch37)
         && effective_build.is_none()
@@ -1100,6 +1163,7 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         legacy_name: None,
         hgvs_c: None,
         transcript: None,
+        protein_numbering_note: None,
         rsid: Some(rsid.to_string()),
         cosmic_id: None,
         significance: None,

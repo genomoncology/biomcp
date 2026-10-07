@@ -227,12 +227,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1489,
+      "baseline_lines": 1553,
       "floor_lines": 1128,
       "authorized_increase": {
         "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016",
-        "delta": 361,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its canonical or ClinVar-named transcript spells the change; ClinVar breaks ties among those matches only.",
+        "delta": 425,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its canonical or ClinVar-named transcript spells the change; ClinVar breaks ties among those matches only. Ticket 2016 fix round: the MANE transcript stem from the query's ClinVar-preferred names, the protein-change numbering note, and the per-query transcript context for the headline selection.",
         "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms."
       }
     },
@@ -526,12 +526,12 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1433,
+      "baseline_lines": 1487,
       "floor_lines": 1335,
       "authorized_increase": {
         "ticket": "1154, 1155, 1290, 2016",
-        "delta": 98,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: expose the canonical protein change a gene+protein query must match.",
+        "delta": 152,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: expose the canonical protein change a gene+protein query must match. Ticket 2016 fix round: the ClinVar-preferred MANE transcript stem helper and the MANE-aware SnpEff annotation ranking.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }
