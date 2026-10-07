@@ -4,14 +4,25 @@
 
 ### Fixes
 
+- `get variant` now states the current ClinVar classification in its headline when the `clinvar` section answers from NCBI ClinVar, and the quick default view names its cached copy and prints the command that returns the current classification. (1290)
 - `get variant` now resolves transcript deletion ranges with intronic offsets and bare ClinVar VariationIDs, with the ClinVar alias fallback answering only on an exact transcript match. (1292)
+- Article search now finishes within its 60-second deadline and returns the rows that already answered, with each slow source named as degraded. (1293)
+- `get article` and batch detail now return whole abstracts instead of a 1,500-byte cap while search rows keep a named 240-byte snippet, and full text renders reference identifiers, clean PMC HTML, and ragged tables instead of dropping them. (1294)
+- `search disease` now finds the parent disease for common abbreviations such as NSCLC and DLBCL by matching the exact synonym fields MyDisease holds. (1295)
 - A protein-change query with several compatible hits now resolves only when exactly one carries a ClinVar record, and every other ambiguous case refuses naming every candidate and the working input forms. (1297)
+- Europe PMC searches now return distinct rows for every requested page through cursorMark paging, where the ignored page parameter collapsed every search to its first page. (1298)
 - Citation evidence now degrades to OpenCitations when Semantic Scholar refuses with a rate limit or a server error, and a live 429 that took twenty-two seconds to fail now returns in under three. (1302)
 - `get author` and `author papers` now read ORCID's lowercase visibility values, so an `orcid:` lookup no longer fails and papers no longer silently return zero works. (1303)
+- `who sync` now accepts the header set the WHO exports ship today, reports the true outcome per file, and exits nonzero when required files are missing. (1304)
 
 ### New features
 
+- Article annotation rows now carry namespace identifiers (NCBIGene for genes, MESH and OMIM for diseases and chemicals, rsID then HGVS for variants), and markdown rows print a `get` command only where the real parsers accept the identifier form. (1296)
 - `search variant` now routes a free-text phrase whose first token is a confirmed gene symbol to that gene filter with the remaining words as the condition, and `BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` restores the whole-phrase search. (1301)
+
+### Internal
+
+- The 0.9.1 post-release sweep, the citation-evidence issue filing with its Semantic Scholar 429 root-cause diagnosis, and the agent-value programme planning recorded no user-visible change. (1287, 1288, 1289)
 
 ## 0.9.1 — 2026-10-01
 
