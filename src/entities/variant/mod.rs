@@ -316,15 +316,89 @@ mod clinvar {
     use std::time::Duration;
 
     use crate::entities::section_outcome::SectionOutcome;
-    use crate::sources::ncbi_efetch::clinvar::ClinvarClient;
+    use crate::error::BioMcpError;
+    use crate::sources::ncbi_efetch::clinvar::{CLINVAR_RATE_LIMIT_MESSAGE, ClinvarClient};
 
-    use super::Variant;
+    use super::{ClinvarRecord, Variant};
 
-    const CLINVAR_DIRECT_FAILURE: &str =
-        "Direct ClinVar retrieval is unavailable; showing MyVariant.info fallback data.";
-    const CLINVAR_UNAVAILABLE: &str = "ClinVar data is temporarily unavailable.";
     const CLINVAR_ID_REQUIRED: &str =
         "Direct ClinVar retrieval requires a resolved numeric Variation ID.";
+
+    /// Why the direct NCBI ClinVar lookup dropped, kept instead of an
+    /// `Err(())` collapse so a degraded section names the source that failed
+    /// and the reason it failed.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub(super) enum ClinvarDirectFailure {
+        Timeout,
+        RateLimited,
+        HttpError,
+    }
+
+    impl ClinvarDirectFailure {
+        fn reason(self) -> &'static str {
+            match self {
+                Self::Timeout => "NCBI ClinVar timed out",
+                Self::RateLimited => "NCBI ClinVar rate limited the request",
+                Self::HttpError => "NCBI ClinVar request failed (HTTP error)",
+            }
+        }
+
+        fn from_error(error: &BioMcpError) -> Self {
+            let mut current = error;
+            while let BioMcpError::WithSourceContext { source, .. } = current {
+                current = source;
+            }
+            match current {
+                BioMcpError::Api { api, message }
+                    if api == "NCBI ClinVar" && message == CLINVAR_RATE_LIMIT_MESSAGE =>
+                {
+                    Self::RateLimited
+                }
+                _ => Self::HttpError,
+            }
+        }
+
+        fn degraded_message(self, fallback: Option<&ClinvarRecord>) -> String {
+            match fallback_evaluation_date(fallback) {
+                Some(date) => format!(
+                    "{}; showing MyVariant.info fallback data (newest evaluation {date}).",
+                    self.reason()
+                ),
+                None => format!("{}; showing MyVariant.info fallback data.", self.reason()),
+            }
+        }
+
+        fn unavailable_message(self) -> &'static str {
+            match self {
+                Self::Timeout => {
+                    "NCBI ClinVar timed out; no MyVariant.info fallback data is available."
+                }
+                Self::RateLimited => {
+                    "NCBI ClinVar rate limited the request; no fallback data is available."
+                }
+                Self::HttpError => {
+                    "NCBI ClinVar request failed (HTTP error); no fallback data is available."
+                }
+            }
+        }
+    }
+
+    /// Newest `last_evaluated` date in the MyVariant.info fallback copy, so a
+    /// degraded label can say how old the fallback data may be. Only strict
+    /// day-shaped dates surface; any other provider spelling is omitted.
+    fn fallback_evaluation_date(record: Option<&ClinvarRecord>) -> Option<&str> {
+        record?
+            .aggregates
+            .iter()
+            .filter_map(|row| row.evaluation_date.as_deref())
+            .filter(|value| {
+                value.len() == 10
+                    && value
+                        .bytes()
+                        .all(|byte| byte.is_ascii_digit() || byte == b'-')
+            })
+            .max()
+    }
 
     fn indirect_conditions(
         value: Option<&serde_json::Value>,
@@ -405,7 +479,7 @@ mod clinvar {
     pub(super) fn apply_clinvar_result(
         variant: &mut Variant,
         fallback: Option<super::ClinvarRecord>,
-        direct: Result<Option<super::ClinvarRecord>, ()>,
+        direct: Result<Option<super::ClinvarRecord>, ClinvarDirectFailure>,
     ) {
         match direct {
             Ok(Some(record)) if !record.aggregates.is_empty() || !record.submissions.is_empty() => {
@@ -418,17 +492,21 @@ mod clinvar {
             Ok(_) => variant
                 .section_outcomes
                 .complete("clinvar", SectionOutcome::empty("NCBI ClinVar")),
-            Err(()) => {
+            Err(failure) => {
                 variant.clinvar = fallback;
                 if variant.clinvar.is_some() {
                     variant.section_outcomes.complete(
                         "clinvar",
-                        SectionOutcome::degraded(["MyVariant.info"], CLINVAR_DIRECT_FAILURE),
+                        SectionOutcome::degraded(
+                            ["MyVariant.info"],
+                            failure.degraded_message(variant.clinvar.as_ref()),
+                        ),
                     );
                 } else {
-                    variant
-                        .section_outcomes
-                        .complete("clinvar", SectionOutcome::unavailable(CLINVAR_UNAVAILABLE));
+                    variant.section_outcomes.complete(
+                        "clinvar",
+                        SectionOutcome::unavailable(failure.unavailable_message()),
+                    );
                 }
             }
         }
@@ -449,13 +527,17 @@ mod clinvar {
             return;
         };
         let direct = async {
-            let client = ClinvarClient::new()?;
-            client.variation(variation_id).await
+            let client =
+                ClinvarClient::new().map_err(|error| ClinvarDirectFailure::from_error(&error))?;
+            client
+                .variation(variation_id)
+                .await
+                .map_err(|error| ClinvarDirectFailure::from_error(&error))
         };
         let result = tokio::time::timeout(timeout, direct)
             .await
-            .map_err(|_| ())
-            .and_then(|result| result.map_err(|_| ()));
+            .map_err(|_| ClinvarDirectFailure::Timeout)
+            .and_then(|result| result);
         apply_clinvar_result(variant, fallback, result);
     }
 
@@ -469,7 +551,8 @@ mod clinvar {
             serde_json::from_value(serde_json::json!({
                 "_id": "chr5:g.118860951A>G",
                 "clinvar": {"variant_id": 974782, "rcv": {
-                    "accession": "RCV001251043", "clinical_significance": "Likely pathogenic"
+                    "accession": "RCV001251043", "clinical_significance": "Likely pathogenic",
+                    "last_evaluated": "2019-04-11"
                 }}
             }))
             .expect("fixture")
@@ -514,14 +597,14 @@ mod clinvar {
                     None,
                 ),
                 (
-                    Err(()),
+                    Err(ClinvarDirectFailure::Timeout),
                     Some(indirect_clinvar_record(&hit()).expect("fallback")),
                     SectionOutcomeState::Degraded,
                     vec!["MyVariant.info"],
                     Some("MyVariant.info"),
                 ),
                 (
-                    Err(()),
+                    Err(ClinvarDirectFailure::Timeout),
                     None,
                     SectionOutcomeState::Unavailable,
                     vec![],
@@ -572,6 +655,119 @@ mod clinvar {
                 .expect("row");
             assert_eq!(row.outcome, SectionOutcomeState::Inapplicable);
             assert!(row.sources.is_empty());
+        }
+
+        #[test]
+        fn degraded_labels_name_the_failed_source_reason_and_fallback_age() {
+            let cases = [
+                (
+                    ClinvarDirectFailure::Timeout,
+                    "NCBI ClinVar timed out; showing MyVariant.info fallback data \
+                     (newest evaluation 2019-04-11).",
+                ),
+                (
+                    ClinvarDirectFailure::RateLimited,
+                    "NCBI ClinVar rate limited the request; showing MyVariant.info \
+                     fallback data (newest evaluation 2019-04-11).",
+                ),
+                (
+                    ClinvarDirectFailure::HttpError,
+                    "NCBI ClinVar request failed (HTTP error); showing MyVariant.info \
+                     fallback data (newest evaluation 2019-04-11).",
+                ),
+            ];
+            for (failure, expected) in cases {
+                let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
+                variant.clinvar = None;
+                apply_clinvar_result(
+                    &mut variant,
+                    Some(indirect_clinvar_record(&hit()).expect("fallback")),
+                    Err(failure),
+                );
+                let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
+                assert_eq!(outcome.outcome(), SectionOutcomeState::Degraded);
+                assert_eq!(outcome.sources(), ["MyVariant.info"]);
+                assert_eq!(outcome.message(), Some(expected));
+            }
+        }
+
+        #[test]
+        fn unavailable_labels_name_the_failed_source_and_reason() {
+            let cases = [
+                (
+                    ClinvarDirectFailure::Timeout,
+                    "NCBI ClinVar timed out; no MyVariant.info fallback data is available.",
+                ),
+                (
+                    ClinvarDirectFailure::RateLimited,
+                    "NCBI ClinVar rate limited the request; no fallback data is available.",
+                ),
+                (
+                    ClinvarDirectFailure::HttpError,
+                    "NCBI ClinVar request failed (HTTP error); no fallback data is available.",
+                ),
+            ];
+            for (failure, expected) in cases {
+                let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
+                variant.clinvar = None;
+                apply_clinvar_result(&mut variant, None, Err(failure));
+                let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
+                assert_eq!(outcome.outcome(), SectionOutcomeState::Unavailable);
+                assert_eq!(outcome.message(), Some(expected));
+            }
+        }
+
+        #[test]
+        fn provider_errors_classify_into_rate_limit_and_http_buckets() {
+            use crate::error::{SourceContext, SourceProvider};
+
+            let rate_limited = BioMcpError::Api {
+                api: "NCBI ClinVar".into(),
+                message: CLINVAR_RATE_LIMIT_MESSAGE.into(),
+            };
+            assert_eq!(
+                ClinvarDirectFailure::from_error(&rate_limited),
+                ClinvarDirectFailure::RateLimited
+            );
+            let wrapped = rate_limited
+                .with_source_context(SourceContext::narrow(SourceProvider::NCBI_EFETCH));
+            assert_eq!(
+                ClinvarDirectFailure::from_error(&wrapped),
+                ClinvarDirectFailure::RateLimited
+            );
+            let other = BioMcpError::Api {
+                api: "NCBI ClinVar".into(),
+                message: "ClinVar record was unavailable".into(),
+            };
+            assert_eq!(
+                ClinvarDirectFailure::from_error(&other),
+                ClinvarDirectFailure::HttpError
+            );
+        }
+
+        #[test]
+        fn fallback_age_is_omitted_without_a_strict_day_shaped_date() {
+            let mut dated = hit();
+            if let Some(rcv) = dated
+                .clinvar
+                .as_mut()
+                .and_then(|clinvar| clinvar.rcv.first_mut())
+            {
+                rcv.last_evaluated = Some("01 Apr 2019".into());
+            }
+            let fallback = indirect_clinvar_record(&dated).expect("fallback");
+            let mut variant = crate::transform::variant::from_myvariant_hit(&dated);
+            variant.clinvar = None;
+            apply_clinvar_result(
+                &mut variant,
+                Some(fallback),
+                Err(ClinvarDirectFailure::Timeout),
+            );
+            let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
+            assert_eq!(
+                outcome.message(),
+                Some("NCBI ClinVar timed out; showing MyVariant.info fallback data.")
+            );
         }
     }
 }

@@ -302,6 +302,9 @@ pub(crate) mod clinvar {
             return Err(provider_error());
         }
         if !status.is_success() {
+            if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                return Err(rate_limit_error());
+            }
             return Err(provider_error());
         }
         let content_type = content_type
@@ -319,6 +322,18 @@ pub(crate) mod clinvar {
         BioMcpError::Api {
             api: "NCBI ClinVar".into(),
             message: "ClinVar record was unavailable".into(),
+        }
+    }
+
+    /// Distinguishes NCBI's rate-limit refusal from other provider failures so
+    /// a degraded section can name why the direct source dropped. The marker
+    /// is shared with the entity-side classifier; keep both uses on this const.
+    pub(crate) const CLINVAR_RATE_LIMIT_MESSAGE: &str = "NCBI ClinVar rate limited the request";
+
+    fn rate_limit_error() -> BioMcpError {
+        BioMcpError::Api {
+            api: "NCBI ClinVar".into(),
+            message: CLINVAR_RATE_LIMIT_MESSAGE.into(),
         }
     }
 
@@ -1241,6 +1256,32 @@ pub(crate) mod clinvar {
                 )
                 .is_err()
             );
+        }
+
+        #[test]
+        fn too_many_requests_is_distinguishable_from_other_http_failures() {
+            let xml = HeaderValue::from_static("application/xml");
+            let rate_limited = decode_response(
+                974782,
+                reqwest::StatusCode::TOO_MANY_REQUESTS,
+                Some(&xml),
+                b"",
+            )
+            .unwrap_err();
+            let other = decode_response(
+                974782,
+                reqwest::StatusCode::SERVICE_UNAVAILABLE,
+                Some(&xml),
+                b"",
+            )
+            .unwrap_err();
+            match (&rate_limited, &other) {
+                (BioMcpError::Api { message, .. }, BioMcpError::Api { message: other, .. }) => {
+                    assert_eq!(message, CLINVAR_RATE_LIMIT_MESSAGE);
+                    assert_ne!(other, CLINVAR_RATE_LIMIT_MESSAGE);
+                }
+                _ => panic!("expected provider Api errors"),
+            }
         }
 
         #[test]

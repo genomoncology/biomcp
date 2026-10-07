@@ -248,6 +248,17 @@
       }
     },
     {
+      "path": "src/entities/variant/mod.rs",
+      "baseline_lines": 1196,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1291",
+        "delta": 196,
+        "reason": "Keep the ClinVar direct-retrieval failure reason instead of collapsing it to Err(()): a classified failure enum (timeout, rate limit, HTTP error) drives reason-bearing degraded and unavailable labels, the degraded label reports the MyVariant.info fallback copy's newest evaluation date, and the module tests cover each reason without adding a package file beyond the fixed source package boundary.",
+        "removal_condition": "Move the ClinVar fallback and outcome labeling into its own module when a package-neutral extraction can preserve the exact source package boundary."
+      }
+    },
+    {
       "path": "src/entities/variant/resolution.rs",
       "baseline_lines": 1407,
       "floor_lines": 1291,
@@ -454,12 +465,12 @@
     },
     {
       "path": "src/sources/ncbi_efetch.rs",
-      "baseline_lines": 1281,
+      "baseline_lines": 1322,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1154, 1290",
-        "delta": 281,
-        "reason": "Keep direct ClinVar transport, bounded typed parsing, record-level germline classification decoding, and adversarial allocation tests beside the existing NCBI EFetch client without adding a package file beyond the fixed 1300-file boundary.",
+        "ticket": "1154, 1290, 1291",
+        "delta": 322,
+        "reason": "Keep direct ClinVar transport, bounded typed parsing, record-level germline classification decoding, and adversarial allocation tests beside the existing NCBI EFetch client without adding a package file beyond the fixed 1300-file boundary. Ticket 1291: the 429 rate-limit refusal decodes to a distinct shared marker error so the degraded ClinVar section can name rate limiting, plus its decode test.",
         "removal_condition": "Split the ClinVar transport, parser, and tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
     },
