@@ -1,6 +1,6 @@
 # Adopt the shared InterPro domain response
 
-Status: CODE qualified. Root started fresh Medium CODE review. Root owns dedicated 1.0 landing, push and paired closure. The builder owns only consumer2027. Another agent owns cleanup.
+Status: COMPLETE. Both consumers use the accepted shared response. Another agent owns cleanup.
 
 ## Authority and exact pair
 
@@ -64,3 +64,7 @@ The first SSH443 push stopped at host-key verification. Reusing GitHub's existin
 Local logs use the `biomcp-2027-` prefix. They retain red, pin resolution, binary build, each test compilation and caller run, final Python, ratchet, Clippy, Ruff and tracked-text outputs. Build artifacts remain in the worktree target. The cleanup owner receives all retained output. No containers, hosted CI, provider requests, production reads, Pi jobs, delegates, shared programme edits, maintenance product edits, source acquisition or deletion ran.
 
 The next action belongs to Root: consume fresh Medium review, resolve any findings through the builder, land the reviewed exact pair on the dedicated1.0 line and record paired closure. Ticket2027 remains OPEN until that action completes.
+
+## Accepted landing
+
+Fresh Medium CODE review accepted ef17e572ec5f5f812e71e46799bdd191c9b5a3b5 with no findings. Landed: 22945b5ee0c31c97c79f6b2511068ca68f8c7dbb on the dedicated1.0 line. Producer0715 and consumer2027 meet the paired outcome. Retained checks and inherited limitations above remain the qualification scope.

@@ -1,10 +1,10 @@
 # 2027 — Adopt the shared InterPro domain response
 
-Status: OPEN.
+Status: COMPLETE.
 Milestone: 1.0
 Component: backend
 Owner: Root owns the repository queue and producer0715; Codex owns consumer2027 BUILD.
-Phase: CODE qualified at ef17e572; Root started fresh Medium review and owns dedicated 1.0 landing and paired closure.
+Phase: Reviewed, checked and landed through both callers.
 Risk: Cap ordering, first overlapping fragment and failure classification affect existing public answers.
 
 ## Outcome
@@ -32,3 +32,9 @@ Ian released consumer BUILD against accepted design `475bcfb20eb468059daea5ff8dd
 ## CODE handoff
 
 Checked consumer candidate: `ef17e572ec5f5f812e71e46799bdd191c9b5a3b5`. Exact producer pin: `29e01881b24604a3d0ea079b79b0e60c2f506964`. All12 affected Rust checks and147 Python checks passed. The established Linux-only check is explicitly deselected on Darwin. Four affected ratchet audits passed. The [build record](../records/2027-adopt-interpro-domain-response.md) gives exact costs, retired claims, cache state and inherited findings. Runtime code is unchanged from early candidate `51c81ac0`; subsequent commits strengthen caller proof, register checks and retire the displaced parser claim. All candidate fixes are pushed. Root reports fresh Medium CODE review has started on the checked retirement candidate. This ticket stays OPEN until Root accepts, lands and records paired closure.
+
+## Landing
+
+Reviews: accept
+Fresh Medium CODE review accepted ef17e572ec5f5f812e71e46799bdd191c9b5a3b5. Twelve affected Rust checks and147 Python checks passed, with one established Darwin deselection. Inherited whole-gate findings stay separate.
+Landed: 22945b5ee0c31c97c79f6b2511068ca68f8c7dbb
