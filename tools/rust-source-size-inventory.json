@@ -249,13 +249,13 @@
     },
     {
       "path": "src/entities/variant/mod.rs",
-      "baseline_lines": 1196,
+      "baseline_lines": 1220,
       "floor_lines": 1000,
       "authorized_increase": {
         "ticket": "1291",
-        "delta": 196,
-        "reason": "Keep the ClinVar direct-retrieval failure reason instead of collapsing it to Err(()): a classified failure enum (timeout, rate limit, HTTP error) drives reason-bearing degraded and unavailable labels, the degraded label reports the MyVariant.info fallback copy's newest evaluation date, and the module tests cover each reason without adding a package file beyond the fixed source package boundary.",
-        "removal_condition": "Move the ClinVar fallback and outcome labeling into its own module when a package-neutral extraction can preserve the exact source package boundary."
+        "delta": 220,
+        "reason": "review fold: the ISO day-shape gate with month and day range checks",
+        "removal_condition": "the shared provider-date parsing module replaces the local gate"
       }
     },
     {
