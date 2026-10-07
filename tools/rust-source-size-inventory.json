@@ -60,23 +60,23 @@
     },
     {
       "path": "src/entities/article/graph/citation_evidence.rs",
-      "baseline_lines": 1209,
+      "baseline_lines": 1278,
       "floor_lines": 859,
       "authorized_increase": {
-        "ticket": "1302",
-        "delta": 350,
-        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes.",
+        "ticket": "1302, 1306",
+        "delta": 419,
+        "reason": "Ticket 1302: the OpenCitations-first degradation after a Semantic Scholar refusal, the refusal classifiers, and the honest provider-and-reason error shapes. Ticket 1306: the second-seed refusal reuses the resolved citing seed, the malformed-OCI refusal wording splits from unavailability, and the status row names the DOI-resolution phase.",
         "removal_condition": "Extract the degraded confirmation phase and the refusal vocabulary when the citation-evidence module is next decomposed."
       }
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 2157,
+      "baseline_lines": 2258,
       "floor_lines": 998,
       "authorized_increase": {
-        "ticket": "1246, 1302",
-        "delta": 1159,
-        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, answered-index-no-edge, and fail-fast tests.",
+        "ticket": "1246, 1302, 1306",
+        "delta": 1260,
+        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, answered-index-no-edge, and fail-fast tests. Ticket 1306: the cited-seed-refused fixture reply, the citing-seed reuse case, the malformed-OCI wording case, and the DOI-resolution status pin.",
         "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
       }
     },
