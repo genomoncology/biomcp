@@ -175,12 +175,11 @@ fn protein_change_resolution_headlines_the_mane_transcript_of_the_query() {
         ),
         brca1_clinvar_55588_hit(),
     ];
+    let mane_stem = transform::variant::clinvar_mane_transcript_stem(&hits);
+    assert_eq!(mane_stem.as_deref(), Some("NM_007294"));
 
     let resolved = resolve_protein_change_hit("BRCA1 A314T", "BRCA1", "A314T", hits)
         .expect("the named hit resolves");
-    let mane_stem =
-        transform::variant::clinvar_mane_transcript_stem(std::slice::from_ref(&resolved));
-    assert_eq!(mane_stem.as_deref(), Some("NM_007294"));
     let variant = transform::variant::from_myvariant_hit_with_mane(&resolved, mane_stem.as_deref());
     assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ala314Thr"));
     assert_eq!(variant.transcript.as_deref(), Some("NM_007294.3"));
@@ -205,12 +204,12 @@ fn protein_change_resolution_resolves_a_past_insert_change_on_mane_numbering() {
         ),
         brca1_clinvar_55588_hit(),
     ];
+    let mane_stem = transform::variant::clinvar_mane_transcript_stem(&hits);
+    assert_eq!(mane_stem.as_deref(), Some("NM_007294"));
 
     let resolved = resolve_protein_change_hit("BRCA1 I1568N", "BRCA1", "I1568N", hits)
         .expect("the MANE-named hit resolves past the insert");
     assert_eq!(resolved.id, "chr17:g.41223228A>T");
-    let mane_stem =
-        transform::variant::clinvar_mane_transcript_stem(std::slice::from_ref(&resolved));
     let variant = transform::variant::from_myvariant_hit_with_mane(&resolved, mane_stem.as_deref());
     assert_eq!(variant.hgvs_p.as_deref(), Some("p.Ile1568Asn"));
     assert_eq!(variant.transcript.as_deref(), Some("NM_007294.3"));
