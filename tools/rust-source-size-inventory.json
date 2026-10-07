@@ -316,12 +316,12 @@
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1335,
+      "baseline_lines": 1345,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1144, 1201, 1296",
-        "delta": 128,
-        "reason": "Pin the graph pagination footer and shared continuation command; ticket 1201 adds the header parameter to every article render context literal; ticket 1296 pins entity rows printing get commands by accepted identifier while gene and chemical rows keep their text searches.",
+        "ticket": "1144, 1201, 1296, 2018",
+        "delta": 138,
+        "reason": "Pin the graph pagination footer and shared continuation command; ticket 1201 adds the header parameter to every article render context literal; ticket 1296 pins entity rows printing get commands by accepted identifier while gene and chemical rows keep their text searches; ticket 2018 pins the multi-allele rsID row printing the gene-qualified protein-change command.",
         "removal_condition": "Extract graph and entities renderer tests when a package-neutral module split can preserve the exact source package boundary."
       }
     },

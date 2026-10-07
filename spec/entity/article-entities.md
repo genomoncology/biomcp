@@ -31,10 +31,10 @@ article fixture.
       {"text":"tumor","count":3,"namespace":"MESH","identifier":"MESH:D009369"},
       {"text":"Non-Small Cell Lung Cancer","count":1,"namespace":"MESH","identifier":"MESH:D002289"}
     ] and (.annotations.mutations | map({text, namespace, identifier}) == [
-      {"text":"G12A","namespace":"rsID","identifier":"rs121913529"},
+      {"text":"G12A","namespace":"HGVS","identifier":"KRAS p.G12A"},
       {"text":"G12C","namespace":"rsID","identifier":"rs121913530"},
-      {"text":"G12D","namespace":"rsID","identifier":"rs121913529"},
-      {"text":"G12V","namespace":"rsID","identifier":"rs121913529"},
+      {"text":"G12D","namespace":"HGVS","identifier":"KRAS p.G12D"},
+      {"text":"G12V","namespace":"HGVS","identifier":"KRAS p.G12V"},
       {"text":"G13C","namespace":"rsID","identifier":"rs121913535"}
     ])' \
   | mustmatch 'true'
@@ -42,8 +42,10 @@ article fixture.
 
 `PD-L1` and `programmed death ligand 1` are two mention groups for one NCBI
 Gene identifier; both rows survive with `text` and `count` keeping their
-meaning. The variant rows carry the rsID PubTator3 normalizes to, never the
-tmVar composite string.
+meaning. The variant rows never carry the tmVar composite string. rs121913529
+names three KRAS codon-12 alleles, so the G12A, G12D and G12V rows carry the
+gene-plus-HGVS form that names one allele; rs121913530 and rs121913535 name
+exactly one allele each, so those rows keep the rsID PubTator3 normalizes to.
 
 ## Compact JSON Omits Passage Positions
 
@@ -70,9 +72,9 @@ provider's document-global character offsets, one span per counted mention.
 ## Rows Print a Get Command by Identifier Where BioMCP Accepts It
 
 Disease MeSH identifiers resolve through the disease crosswalk and variant
-rsIDs parse as exact variant input, so those rows open the record directly.
-Gene rows keep the text search because `get gene` takes symbols, not NCBI
-Gene identifiers.
+rsIDs or gene-plus-HGVS forms parse as exact variant input, so those rows open
+the record directly. Gene rows keep the text search because `get gene` takes
+symbols, not NCBI Gene identifiers.
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
@@ -102,4 +104,49 @@ Gene identifiers.
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \
   | mustmatch not '/get gene 3845|get variant G12C|get variant p\.G12C/'
+```
+
+## Multi-Allele rsID Rows Name Their Allele
+
+rs121913529 names a KRAS codon-12 position, not one allele. The recorded
+MyVariant response for that rsID carries three hits (G12A, G12D and G12V), and
+`get variant rs121913529` opens G12D, so a row that mentions G12A or G12V
+must not link through it. Those rows print the gene-plus-protein command and
+each opens its own variant. The G12C and G13C rows keep their rsID commands
+above because rs121913530 and rs121913535 name exactly one allele.
+
+```bash
+../../tools/biomcp-ci article entities 30738221 \
+  | mustmatch '/\| G12A \| 1 \| `biomcp get variant "KRAS p.G12A"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 30738221 \
+  | mustmatch '/\| G12D \| 1 \| `biomcp get variant "KRAS p.G12D"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 30738221 \
+  | mustmatch '/\| G12V \| 1 \| `biomcp get variant "KRAS p.G12V"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 30738221 \
+  | mustmatch not '/get variant rs121913529/'
+```
+
+Each command opens its own variant through the recorded MyVariant gene+protein
+responses of the routine variant-identity fixture.
+
+| query | id | protein |
+|---|---|---|
+| KRAS p.G12A | chr12:g.25398284C>G | p.Gly12Ala |
+| KRAS p.G12D | chr12:g.25398284C>T | p.Gly12Asp |
+| KRAS p.G12V | chr12:g.25398284C>A | p.Gly12Val |
+| rs121913529 | chr12:g.25398284C>T | p.Gly12Asp |
+
+```bash each_row="Multi-Allele rsID Rows Name Their Allele"
+biomcp --json --no-cache get variant '{{query}}' \
+  | jq -c '{id: .id, protein: .hgvs_p}' \
+  | mustmatch like '{"id":"{{id}}","protein":"{{protein}}"}'
 ```
