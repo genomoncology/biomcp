@@ -545,11 +545,11 @@ pub async fn get_with_structure_limit(
             .domains(&protein.accession, 20)
             .await?;
         Ok(domains
-            .into_iter()
+            .domains(20)
             .map(|d| ProteinDomain {
-                accession: d.accession,
-                name: d.name,
-                domain_type: d.domain_type,
+                accession: d.accession().to_owned(),
+                name: d.name().map(str::to_owned),
+                domain_type: d.domain_type().map(str::to_owned),
             })
             .collect::<Vec<_>>())
     };
@@ -955,3 +955,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+pub(crate) mod interpro_adoption_tests;

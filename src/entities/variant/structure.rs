@@ -129,7 +129,7 @@ pub async fn structure(id: &str) -> Result<VariantStructureResult, BioMcpError> 
             return Ok(None);
         };
         let domains = InterProClient::new()?.domains(&accession, 25).await?;
-        Ok::<_, BioMcpError>(Some(overlapping_domains(domains, Some(position))))
+        Ok::<_, BioMcpError>(Some(overlapping_domains(&domains, Some(position))))
     };
     let hotspots_fut = async { cancerhotspots(gene, hotspot_change.as_deref()).await };
     let (domains_result, hotspots_result) = tokio::join!(domains_fut, hotspots_fut);
@@ -297,22 +297,25 @@ fn structure_references(
 }
 
 fn overlapping_domains(
-    rows: Vec<crate::sources::interpro::InterProDomain>,
+    response: &biodata::InterProResponse,
     residue: Option<u32>,
 ) -> Vec<VariantStructureDomain> {
     let Some(position) = residue else {
         return Vec::new();
     };
-    rows.into_iter()
+    response
+        .domains(25)
         .filter_map(|domain| {
-            domain.ranges.into_iter().find_map(|range| {
-                (range.start <= position && position <= range.end).then(|| VariantStructureDomain {
-                    accession: domain.accession.clone(),
-                    name: domain.name.clone(),
-                    domain_type: domain.domain_type.clone(),
-                    start: range.start,
-                    end: range.end,
-                    source: "InterPro".to_string(),
+            domain.ranges().find_map(|range| {
+                (range.start() <= position && position <= range.end()).then(|| {
+                    VariantStructureDomain {
+                        accession: domain.accession().to_owned(),
+                        name: domain.name().map(str::to_owned),
+                        domain_type: domain.domain_type().map(str::to_owned),
+                        start: range.start(),
+                        end: range.end(),
+                        source: "InterPro".to_string(),
+                    }
                 })
             })
         })
@@ -494,3 +497,6 @@ mod tests {
 mod cancerhotspots_transport_tests;
 #[cfg(test)]
 mod dbnsfp_adoption_tests;
+
+#[cfg(test)]
+mod interpro_adoption_tests;

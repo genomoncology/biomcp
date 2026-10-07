@@ -2,6 +2,14 @@ version = 1
 
 [selection]
 rust = [
+  "entities::protein::interpro_adoption_tests::interpro_protein_reaches_native_cli_and_typed_raw_mcp",
+  "entities::protein::interpro_adoption_tests::interpro_original_byte_errors_are_private",
+  "entities::variant::structure::interpro_adoption_tests::interpro_structure_reaches_native_cli_and_raw_mcp",
+  "sources::interpro::tests::construction::domains_plan_requests_expected_endpoint_and_page_size",
+  "sources::interpro::tests::construction::domains_plan_rejects_empty_accession_and_clamps_limit",
+  "entities::protein::tests::interpro_and_string_failure_state_matrix",
+  "entities::variant::structure::tests::domain_result_matrix_classifies_contact_and_applicability",
+
   "sources::europepmc::tests::construction::search_query_plan_sets_keyword_shape_and_date_sort",
   "sources::europepmc::tests::construction::search_query_plan_sets_citation_sort",
   "sources::europepmc::tests::construction::search_query_plan_validates_query_and_paging",
