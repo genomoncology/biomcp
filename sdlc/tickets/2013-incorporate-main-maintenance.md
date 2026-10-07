@@ -1,11 +1,11 @@
 # 2013 — Incorporate accepted main maintenance into 1.0
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 Component: backend
 Owner: Root.
-Authority signature: Root owns routine incorporation under Ian's October 6 direction. Fresh DESIGN review ACCEPT at 985ac7e80bfff0a7d4a2193cd43532f59eae6ddd released the bounded build. Fresh CODE review remains pending.
+Authority signature: Root owns routine incorporation under Ian's October 6 direction. Fresh DESIGN review ACCEPT at 985ac7e80bfff0a7d4a2193cd43532f59eae6ddd released the bounded build. Fresh CODE review ACCEPT at 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff. Root accepts the recorded inherited findings and authorizes routine landing.
 
 ## Outcome
 
@@ -73,3 +73,13 @@ Fresh ticket review identified the stale AGENTS.md numbering paragraph. Root rep
 ## Build handoff
 
 The exact accepted donor is merged through normal Git history. The candidate also merges dedicated metadata revision 4817445c93c29551e6a66d3a29d897b5aebfe5f2 and retains the completed 2012 cleanup record. Both source histories remain ancestors. The BioData pin and active release declarations remain unchanged. The build record names checked revisions, measured costs and inherited failures. Ticket status stays OPEN pending fresh CODE review and Root landing.
+
+## Acceptance and landing
+
+Review: accept. Fresh CODE ACCEPT at 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff. Root accepts the documented inherited Darwin, Linux isolation, Clippy and source-size findings for this bounded incorporation.
+
+Landed: 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff. This reviewed candidate retains the qualified runtime from 510077760477781ab9b24611656e394984264753. The subsequent Land 2013 commit records completion and acceptance. See the [existing build record](../records/2013-incorporate-main-maintenance-build.md).
+
+## What the build taught us
+
+The moved detail owners needed updated donor callers and whole-abstract expectations. The existing finite behavior checks cover the incorporation. Darwin replay qualifies the runtime behavior but does not qualify the inherited Linux fixture supervisor. Retain the inherited findings and use the recorded results for landing.

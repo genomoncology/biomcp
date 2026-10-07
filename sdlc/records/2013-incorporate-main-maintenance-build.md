@@ -26,3 +26,15 @@ M5 used installed Rust 1.93.1, locked offline Cargo, two jobs, the released shar
 - Standard strict Clippy failed with the inherited 10 library and 18 test diagnostics, 27.13 seconds. Every diagnostic source file is unchanged from the dedicated baseline. No whole lint, test, spec, release or hosted verification pass is claimed.
 
 Each fix was pushed through SSH with [skip ci]. No tool installation, live provider request, CI dispatch, Pi job, nested delegate, other checkout edit, branch resurrection, landing or cleanup occurred. The final handoff names the exact pushed candidate and local receipts for fresh CODE review.
+
+## Acceptance and landing
+
+October 6, 2026. Root accepts fresh CODE review of exact candidate 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff and marks ticket 2013 COMPLETE. Review: accept. Landed: 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff. Qualified runtime revision: 510077760477781ab9b24611656e394984264753. Later candidate changes update test assertions, formatting and this record.
+
+The fresh review confirms both dedicated target 4817445c93c29551e6a66d3a29d897b5aebfe5f2 and exact donor 3ad939f047c04a6bc4d659d963483729b52dfd7b remain ancestors. Root accepts the recorded inherited findings for this bounded change and reuses the existing verification. This acceptance makes no whole-gate or release claim.
+
+Land 2013 records acceptance and completion through the ticket branch with Ticket: 2013 and Review: accept trailers and [skip ci]. The authorized target is biodata/biomcp-1.0. Landing uses SSH and a fast-forward from the exact clean prior target. Worktrees, branches and reservations remain retained under Root's landing instruction. Sole active milestone 1.0, backend component, global allocation and the BioData pin remain as reviewed.
+
+## What the build taught us
+
+Ticket 2013 needs the donor changes reconciled through the moved detail owners. Existing finite checks cover the affected runtime behavior. Recorded Darwin limitations and inherited diagnostics remain visible. Reuse these results for the routine landing.
