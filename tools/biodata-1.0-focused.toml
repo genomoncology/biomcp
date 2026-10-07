@@ -2,6 +2,9 @@ version = 1
 
 [selection]
 rust = [
+  "transform::variant::tests::extracts_expanded_variant_sections",
+  "render::markdown::variant::tests::variant_markdown_default_card_renders_cached_civic_actionability_pointer",
+  "render::markdown::variant::tests::variant_markdown_default_card_renders_bare_civic_pointer_without_cached_evidence",
   "entities::article::variant_search::cached_evidence_tests::cached_source_presence_plans_only_missing_hydration",
   "entities::article::variant_search::cached_evidence_tests::citations_beyond_cached_display_cap_reach_article_route",
   "entities::variant::get::cached_evidence_transport_tests::default_cached_sections_keep_cli_and_mcp_channels",
