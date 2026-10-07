@@ -29,11 +29,11 @@ fn gene_constraint_maps_metrics_and_transcript() {
         .unwrap()
         .expect("gene result");
 
-    assert_eq!(constraint.transcript.as_deref(), Some("ENST00000269305"));
-    assert_eq!(constraint.pli, Some(0.9979));
-    assert_eq!(constraint.loeuf, Some(0.449));
-    assert_eq!(constraint.mis_z, Some(1.1539));
-    assert_eq!(constraint.syn_z, Some(0.9583));
+    assert_eq!(constraint.transcript(), Some("ENST00000269305"));
+    assert_eq!(constraint.pli(), Some(0.9979));
+    assert_eq!(constraint.loeuf(), Some(0.449));
+    assert_eq!(constraint.mis_z(), Some(1.1539));
+    assert_eq!(constraint.syn_z(), Some(0.9583));
 }
 
 #[test]
@@ -42,11 +42,11 @@ fn gene_constraint_returns_some_with_transcript_when_constraint_is_null() {
         .unwrap()
         .expect("gene result");
 
-    assert_eq!(constraint.transcript.as_deref(), Some("ENST00000644876"));
-    assert_eq!(constraint.pli, None);
-    assert_eq!(constraint.loeuf, None);
-    assert_eq!(constraint.mis_z, None);
-    assert_eq!(constraint.syn_z, None);
+    assert_eq!(constraint.transcript(), Some("ENST00000644876"));
+    assert_eq!(constraint.pli(), None);
+    assert_eq!(constraint.loeuf(), None);
+    assert_eq!(constraint.mis_z(), None);
+    assert_eq!(constraint.syn_z(), None);
 }
 
 #[test]

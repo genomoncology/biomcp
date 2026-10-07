@@ -28,11 +28,10 @@ fn gene_markdown_section_only_shows_constraint_section() {
         gencc: None,
         clingen: None,
         constraint: Some(crate::entities::gene::GeneConstraint {
-            pli: None,
-            loeuf: None,
-            mis_z: None,
-            syn_z: None,
-            transcript: Some("ENST00000269305".to_string()),
+            record: biodata::GnomadGeneConstraintProjection::deserialize_constraint_target(
+                &serde_json::json!({"transcript": "ENST00000269305"}),
+            )
+            .unwrap(),
             source: "gnomAD".to_string(),
             source_version: "v4".to_string(),
             reference_genome: "GRCh38".to_string(),
@@ -223,8 +222,7 @@ fn gene_markdown_funding_renders_linked_rows_and_currency() {
     };
 
     let markdown = gene_markdown(&gene, &["funding".to_string()]).expect("funding markdown");
-    let summary =
-        "Showing top 1 unique grants from 176 matching NIH project-year records across FY2022-FY2026.";
+    let summary = "Showing top 1 unique grants from 176 matching NIH project-year records across FY2022-FY2026.";
     let row = "| [Regulation Of Epidermal Differentiation](https://reporter.nih.gov/project-details/10697688) | MORASSO, MARIA | NATIONAL INSTITUTE OF ARTHRITIS AND MUSCULOSKELETAL AND SKIN DISEASES | 2022 | $2,219,287 |";
 
     assert!(markdown.contains("# ERBB2 - funding"));
@@ -345,7 +343,9 @@ fn gene_markdown_pathways_show_source_labels() {
 
 // Ticket 1213: the cell line table, its notes, and the attribution line.
 
-fn cell_lines_page(rows: Vec<crate::entities::gene::cell_lines::GeneCellLineRow>) -> crate::entities::gene::cell_lines::GeneCellLines {
+fn cell_lines_page(
+    rows: Vec<crate::entities::gene::cell_lines::GeneCellLineRow>,
+) -> crate::entities::gene::cell_lines::GeneCellLines {
     crate::entities::gene::cell_lines::GeneCellLines {
         source: "Human Protein Atlas".to_string(),
         gene: "FLT3".to_string(),

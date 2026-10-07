@@ -43,14 +43,7 @@ pub struct GnomadClient {
     base: Cow<'static, str>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct GnomadConstraintData {
-    pub pli: Option<f64>,
-    pub loeuf: Option<f64>,
-    pub mis_z: Option<f64>,
-    pub syn_z: Option<f64>,
-    pub transcript: Option<String>,
-}
+pub use biodata::GnomadGeneConstraintProjection as GnomadConstraintData;
 
 #[derive(Debug, Deserialize)]
 struct GraphQlResponse<T> {
@@ -66,23 +59,19 @@ struct GraphQlError {
 
 #[derive(Debug, Deserialize)]
 struct GeneConstraintResponse {
-    gene: Option<GeneConstraintGene>,
+    #[serde(default, deserialize_with = "deserialize_constraint_gene")]
+    gene: Option<GnomadConstraintData>,
 }
 
-#[derive(Debug, Deserialize)]
-struct GeneConstraintGene {
-    canonical_transcript_id: Option<String>,
-    gnomad_constraint: Option<ConstraintPayload>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ConstraintPayload {
-    #[serde(rename = "pLI", alias = "pli")]
-    pli: Option<f64>,
-    #[serde(rename = "oe_lof_upper")]
-    oe_lof_upper: Option<f64>,
-    mis_z: Option<f64>,
-    syn_z: Option<f64>,
+fn deserialize_constraint_gene<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<GnomadConstraintData>, D::Error> {
+    #[derive(Deserialize)]
+    struct Source(
+        #[serde(deserialize_with = "biodata::GnomadGeneConstraint::deserialize_gene")]
+        GnomadConstraintData,
+    );
+    Option::<Source>::deserialize(deserializer).map(|value| value.map(|source| source.0))
 }
 
 pub use biodata::GnomadVariantPopulationProjection as GnomadVariantPopulation;
@@ -213,34 +202,7 @@ impl GnomadClient {
             });
         }
 
-        let Some(gene) = gene else {
-            return Ok(None);
-        };
-
-        let transcript = gene
-            .canonical_transcript_id
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_string);
-
-        let Some(metrics) = gene.gnomad_constraint else {
-            return Ok(Some(GnomadConstraintData {
-                pli: None,
-                loeuf: None,
-                mis_z: None,
-                syn_z: None,
-                transcript,
-            }));
-        };
-
-        Ok(Some(GnomadConstraintData {
-            pli: metrics.pli,
-            loeuf: metrics.oe_lof_upper,
-            mis_z: metrics.mis_z,
-            syn_z: metrics.syn_z,
-            transcript,
-        }))
+        Ok(gene)
     }
 
     fn parse_variant_population_response(
