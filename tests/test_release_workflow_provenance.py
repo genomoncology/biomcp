@@ -501,6 +501,39 @@ def _step_sha(step: dict) -> str:
     return hashlib.sha256(_canonical_step(step).encode("utf-8")).hexdigest()
 
 EXPECTED_MATRICES = {
+    # Ticket 2024's reopening pinned the moving matrix labels: the
+    # x86_64 macOS legs cross-compile on the macos-15 arm64 image and
+    # the Windows legs run on windows-2022, so no release job depends
+    # on a label GitHub can retarget on its own schedule.
+    "build": [
+        {
+            "os": "ubuntu-24.04",
+            "target": "x86_64-unknown-linux-gnu",
+            "artifact": "biomcp-linux-x86_64.tar.gz",
+            "container": "quay.io/pypa/manylinux_2_28_x86_64",
+        },
+        {
+            "os": "ubuntu-24.04-arm",
+            "target": "aarch64-unknown-linux-gnu",
+            "artifact": "biomcp-linux-arm64.tar.gz",
+            "container": "quay.io/pypa/manylinux_2_28_aarch64",
+        },
+        {
+            "os": "macos-14",
+            "target": "aarch64-apple-darwin",
+            "artifact": "biomcp-darwin-arm64.tar.gz",
+        },
+        {
+            "os": "macos-15",
+            "target": "x86_64-apple-darwin",
+            "artifact": "biomcp-darwin-x86_64.tar.gz",
+        },
+        {
+            "os": "windows-2022",
+            "target": "x86_64-pc-windows-msvc",
+            "artifact": "biomcp-windows-x86_64.zip",
+        },
+    ],
     "pypi-build": [
         {
             "os": "ubuntu-24.04",
@@ -513,8 +546,8 @@ EXPECTED_MATRICES = {
             "container": "quay.io/pypa/manylinux_2_28_aarch64",
         },
         {"os": "macos-14", "target": "aarch64-apple-darwin"},
-        {"os": "macos-latest", "target": "x86_64-apple-darwin"},
-        {"os": "windows-latest", "target": "x86_64-pc-windows-msvc"},
+        {"os": "macos-15", "target": "x86_64-apple-darwin"},
+        {"os": "windows-2022", "target": "x86_64-pc-windows-msvc"},
     ],
     "wheel-smoke": [
         {
@@ -544,7 +577,7 @@ EXPECTED_MATRICES = {
             "python": "bin/python",
         },
         {
-            "os": "windows-latest",
+            "os": "windows-2022",
             "artifact": "wheel-x86_64-pc-windows-msvc",
             "executable": "Scripts/biomcp.exe",
             "python": "Scripts/python.exe",
@@ -1071,6 +1104,14 @@ PIPELINE_MUTATIONS = {
     "arm_smoke_on_an_x86_runner": (
         _retarget_matrix_os(
             "wheel-smoke", "artifact", "wheel-aarch64-unknown-linux-gnu", "ubuntu-24.04"
+        ),
+        "matrix entries must be pinned exactly",
+    ),
+    "windows_build_leg_back_on_the_moving_label": (
+        # Ticket 2024's reopening: windows-latest is a moving label
+        # GitHub retargets on its own schedule; the pin is the fix.
+        _retarget_matrix_os(
+            "pypi-build", "target", "x86_64-pc-windows-msvc", "windows-latest"
         ),
         "matrix entries must be pinned exactly",
     ),

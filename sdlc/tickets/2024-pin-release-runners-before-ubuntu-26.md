@@ -59,3 +59,24 @@ which lands before the 0.9.2 tag.
 - The review's "no green CI run" names run 37658260567, the branch's
   base-stale run; the main-merged run at 407940cad is green. Recorded
   here so the record carries both.
+
+## Fix round (2026-10-07 reopening)
+
+Built on branch `tickets/2024-runner-windows-fix`.
+
+- tools/with-build-identity now runs the child with subprocess.run
+  and exits with the child's code. os.execvpe replaced the wrapper
+  process, which on Windows exited 0 at once while the child kept
+  running. The env export mode is unchanged: the child still runs
+  under the identity environment.
+- The windows-2022 CI job runs the wrapper with a trivial cargo
+  command and fails unless a failing child exits nonzero through the
+  wrapper and a child exit of 42 arrives as 42. The branch CI run is
+  the proof.
+- The macos-latest and windows-latest matrix legs in release.yml are
+  pinned to macos-15 and windows-2022. This supersedes the
+  Ubuntu-only scope clarification above: every workflow job now runs
+  on a pinned image, as the Outcome states.
+- Contract tests pin the wrapper source, the Windows job's wrapper
+  step, and the three pinned matrices, and ban ubuntu-latest,
+  macos-latest and windows-latest from workflow text.

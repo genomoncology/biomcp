@@ -72,7 +72,17 @@ def main() -> None:
     if len(sys.argv) < 2:
         raise SystemExit("usage: tools/with-build-identity <command> [args ...]")
     root = Path.cwd()
-    os.execvpe(sys.argv[1], sys.argv[1:], identity_environment(root))
+    # Run the child to completion and pass its exit code through.
+    # os.execvpe replaced this process, which on Windows exits 0 at
+    # once while the child keeps running, so a build step passed
+    # with no binary (ticket 2024). sys.argv[1:] keeps argv[0] as
+    # the program name; subprocess.run resolves it on PATH.
+    completed = subprocess.run(
+        sys.argv[1:],
+        env=identity_environment(root),
+        check=False,
+    )
+    raise SystemExit(completed.returncode)
 
 
 if __name__ == "__main__":
