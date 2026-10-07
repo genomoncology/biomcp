@@ -125,6 +125,39 @@ MYGENE = {
         "hits": [{"symbol": "SCN5A", "entrezgene": 6331}],
     }).encode("utf-8"),
     "(symbol:BRUGADA OR alias:BRUGADA)": b'{"total":0,"hits":[]}',
+    # Ticket 2022: recorded MyGene shapes for alias-only abbreviations. Each
+    # resolves uniquely through the alias, so official-symbol routing must
+    # refuse them: HCC->HYCC1 (84668), MODY->HNF4A (3172), HHT->ACVRL1 (94).
+    "(symbol:HCC OR alias:HCC)": json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "HYCC1",
+            "alias": ["DRCTNNB1A", "FAM126A", "HCC", "HLD5"],
+            "entrezgene": "84668",
+            "name": "hyccin PI4KA lipid kinase complex subunit 1",
+        }],
+    }).encode("utf-8"),
+    "(symbol:MODY OR alias:MODY)": json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "HNF4A",
+            "alias": ["FRTS4", "HNF4", "HNF4a7", "HNF4a8", "HNF4a9",
+                       "HNF4alpha", "MODY", "MODY1", "NR2A1", "NR2A21",
+                       "TCF", "TCF-14", "TCF14"],
+            "entrezgene": "3172",
+            "name": "hepatocyte nuclear factor 4 alpha",
+        }],
+    }).encode("utf-8"),
+    "(symbol:HHT OR alias:HHT)": json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "ACVRL1",
+            "alias": ["ACVRLK1", "ALK-1", "ALK1", "HHT", "HHT2", "ORW2",
+                       "SKR3", "TSR-I"],
+            "entrezgene": "94",
+            "name": "activin A receptor like type 1",
+        }],
+    }).encode("utf-8"),
     "(symbol:ODC1 OR alias:ODC1)": json.dumps({
         "total": 4,
         "hits": [

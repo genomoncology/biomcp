@@ -7,9 +7,9 @@ mod parsing;
 
 use super::VariantSearchPlan;
 use super::query::{
-    VariantQueryGeneRouting, apply_gene_first_routing, confirm_gene_first_candidate,
+    GeneFirstNote, VariantQueryGeneRouting, apply_gene_first_routing, confirm_gene_first_candidate,
     gene_first_working_form, parse_simple_gene_change, resolve_variant_query,
-    split_gene_first_candidate,
+    split_gene_first_candidate, split_leading_protein_change,
 };
 
 use crate::cli::{Cli, Commands, GetEntity, OutputStream, VariantCommand, run_outcome};
@@ -385,8 +385,9 @@ fn split_gene_first_candidate_accepts_symbol_shaped_first_tokens() {
 
 #[test]
 fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
-    let (resolved, fallback) = apply_gene_first_routing(
+    let (resolved, note) = apply_gene_first_routing(
         "SCN5A".into(),
+        None,
         "Brugada syndrome".into(),
         Some("SCN5A".into()),
         None,
@@ -394,19 +395,36 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
     );
     assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
     assert_eq!(resolved.condition.as_deref(), Some("Brugada syndrome"));
-    assert!(fallback.is_none());
+    // A routed phrase carries its parsed form and working alternative so a
+    // zero-row search can say how it was read (ticket 2022).
+    assert_eq!(
+        note.as_ref(),
+        Some(&GeneFirstNote::Routed {
+            parsed: "gene=SCN5A, condition=Brugada syndrome".into(),
+            working: "biomcp search variant -g SCN5A --condition \"Brugada syndrome\"".into(),
+        })
+    );
 
     // An uppercase non-gene first token such as BRUGADA is refused by the
     // oracle, so the whole phrase keeps the condition routing.
-    let (resolved, fallback) =
-        apply_gene_first_routing("BRUGADA".into(), "syndrome".into(), None, None, None);
+    let (resolved, note) =
+        apply_gene_first_routing("BRUGADA".into(), None, "syndrome".into(), None, None, None);
     assert_eq!(resolved.gene, None);
     assert_eq!(resolved.condition.as_deref(), Some("BRUGADA syndrome"));
-    assert!(fallback.is_some());
+    assert_eq!(
+        note,
+        Some(GeneFirstNote::Refused {
+            gene: "BRUGADA".into(),
+            condition: "syndrome".into(),
+        })
+    );
 
-    // A confirmed alias routes under its canonical symbol.
-    let (resolved, fallback) = apply_gene_first_routing(
-        "ERBB1".into(),
+    // Ticket 2022 keeps one oracle verdict shape: only an official symbol
+    // confirms, and the confirmed symbol equals the routed token. The ERBB1
+    // alias never reaches this branch because the oracle refuses it.
+    let (resolved, _note) = apply_gene_first_routing(
+        "EGFR".into(),
+        None,
         "glioblastoma".into(),
         Some("EGFR".into()),
         None,
@@ -414,15 +432,64 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
     );
     assert_eq!(resolved.gene.as_deref(), Some("EGFR"));
     assert_eq!(resolved.condition.as_deref(), Some("glioblastoma"));
-    assert!(fallback.is_none());
+}
+
+#[test]
+fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
+    let (resolved, note) = apply_gene_first_routing(
+        "BRAF".into(),
+        Some("V600E".into()),
+        "melanoma".into(),
+        Some("BRAF".into()),
+        None,
+        None,
+    );
+    assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
+    assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+    assert_eq!(resolved.condition.as_deref(), Some("melanoma"));
+    // An hgvsp filter claims the search identity, exactly as an explicit
+    // --hgvsp flag does on the standard path.
+    assert!(resolved.requested_identity.is_some());
+    assert_eq!(
+        note.as_ref(),
+        Some(&GeneFirstNote::Routed {
+            parsed: "gene=BRAF, hgvsp=V600E, condition=melanoma".into(),
+            working: "biomcp search variant -g BRAF --hgvsp V600E --condition melanoma".into(),
+        })
+    );
+
+    // The refused branch keeps the whole phrase as the condition, protein
+    // change included, and the explicit hgvsp flag survives.
+    let (resolved, note) = apply_gene_first_routing(
+        "BRUGADA".into(),
+        Some("V600E".into()),
+        "melanoma".into(),
+        None,
+        Some("p.Val600Glu".into()),
+        None,
+    );
+    assert_eq!(resolved.gene, None);
+    assert_eq!(
+        resolved.condition.as_deref(),
+        Some("BRUGADA V600E melanoma")
+    );
+    assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+    assert_eq!(
+        note,
+        Some(GeneFirstNote::Refused {
+            gene: "BRUGADA".into(),
+            condition: "V600E melanoma".into(),
+        })
+    );
 }
 
 #[test]
 fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
     // Confirmed path: the phrase routes gene-first and the explicit
     // consequence filter survives beside it.
-    let (resolved, fallback) = apply_gene_first_routing(
+    let (resolved, note) = apply_gene_first_routing(
         "SCN5A".into(),
+        None,
         "Brugada".into(),
         Some("SCN5A".into()),
         None,
@@ -431,12 +498,13 @@ fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
     assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
     assert_eq!(resolved.condition.as_deref(), Some("Brugada"));
     assert_eq!(resolved.consequence.as_deref(), Some("missense_variant"));
-    assert!(fallback.is_none());
+    assert!(matches!(note.as_ref(), Some(GeneFirstNote::Routed { .. })));
 
     // Refused path: the whole phrase stays the condition and the explicit
     // hgvsp filter survives, normalized exactly as the standard path does.
-    let (resolved, fallback) = apply_gene_first_routing(
+    let (resolved, _note) = apply_gene_first_routing(
         "BRUGADA".into(),
+        None,
         "syndrome".into(),
         None,
         Some("p.Val600Glu".into()),
@@ -453,15 +521,35 @@ fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
             .and_then(|identity| identity.protein_change),
         Some("p.Val600Glu".into())
     );
-    assert!(fallback.is_some());
 }
 
 #[test]
 fn gene_first_working_form_quotes_multi_word_conditions() {
     assert_eq!(
-        gene_first_working_form("SCN5A", "Brugada syndrome"),
+        gene_first_working_form("SCN5A", None, "Brugada syndrome"),
         "biomcp search variant -g SCN5A --condition \"Brugada syndrome\""
     );
+    assert_eq!(
+        gene_first_working_form("BRAF", Some("V600E"), "melanoma"),
+        "biomcp search variant -g BRAF --hgvsp V600E --condition melanoma"
+    );
+}
+
+#[test]
+fn split_leading_protein_change_takes_only_a_leading_change() {
+    assert_eq!(
+        split_leading_protein_change("V600E melanoma"),
+        Some(("V600E".to_string(), "melanoma".to_string()))
+    );
+    assert_eq!(
+        split_leading_protein_change("p.Val600Glu metastatic melanoma"),
+        Some(("V600E".to_string(), "metastatic melanoma".to_string()))
+    );
+    // A condition that merely starts with letters is not a protein change.
+    assert_eq!(split_leading_protein_change("liver cancer"), None);
+    // A remainder that is only the protein change belongs to the exact
+    // "GENE CHANGE" form, not the gene-first split.
+    assert_eq!(split_leading_protein_change("V600E"), None);
 }
 
 #[test]
@@ -561,6 +649,7 @@ fn resolve_variant_query_offers_gene_first_candidate_for_free_text_phrases() {
         resolved,
         VariantSearchPlan::GeneFirstCandidate {
             gene: "SCN5A".into(),
+            protein_change: None,
             condition: "Brugada".into(),
             hgvsp: None,
             consequence: None,
@@ -581,11 +670,46 @@ fn resolve_variant_query_offers_gene_first_candidate_for_free_text_phrases() {
         resolved,
         VariantSearchPlan::GeneFirstCandidate {
             gene: "SCN5A".into(),
+            protein_change: None,
             condition: "Brugada".into(),
             hgvsp: Some("p.Val600Glu".into()),
             consequence: Some("missense_variant".into()),
         }
     );
+}
+
+#[test]
+fn resolve_variant_query_splits_a_protein_change_after_the_gene() {
+    let plan = resolve_variant_query(
+        None,
+        None,
+        None,
+        None,
+        vec!["BRAF".into(), "V600E".into(), "melanoma".into()],
+    )
+    .unwrap();
+    assert_eq!(
+        plan,
+        VariantSearchPlan::GeneFirstCandidate {
+            gene: "BRAF".into(),
+            protein_change: Some("V600E".into()),
+            condition: "melanoma".into(),
+            hgvsp: None,
+            consequence: None,
+        }
+    );
+
+    // The leftover protein change conflicts with an explicit --hgvsp flag,
+    // exactly as the other positional protein-change forms do.
+    let err = resolve_variant_query(
+        None,
+        Some("V600K".into()),
+        None,
+        None,
+        vec!["BRAF".into(), "V600E".into(), "melanoma".into()],
+    )
+    .unwrap_err();
+    assert!(err.to_string().contains("conflicts with --hgvsp"));
 }
 
 #[test]

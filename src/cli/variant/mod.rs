@@ -263,12 +263,15 @@ pub(super) enum VariantSearchPlan {
     Guidance(crate::entities::variant::VariantGuidance),
     /// A free-text phrase whose first token has the exact-form gene-token
     /// shape (ticket 1301). The parser does not route it: the caller must
-    /// confirm the token against the gene-symbol oracle first. The carried
-    /// `hgvsp` and `consequence` flags are the normalized leftovers the
-    /// whole-phrase fallthrough would have attached, so neither branch of
+    /// confirm the token against the gene-symbol oracle first. A remainder
+    /// that starts with a protein change carries it separately (ticket 2022)
+    /// so routing sends it to the hgvsp filter instead of the condition. The
+    /// carried `hgvsp` and `consequence` flags are the normalized leftovers
+    /// the whole-phrase fallthrough would have attached, so neither branch of
     /// the oracle verdict can drop an explicit filter.
     GeneFirstCandidate {
         gene: String,
+        protein_change: Option<String>,
         condition: String,
         hgvsp: Option<String>,
         consequence: Option<String>,

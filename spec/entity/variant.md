@@ -584,15 +584,35 @@ and a compact JSON disease anchor without bloating the default card.
 ### Headline significance names its source
 
 The default card labels the headline significance as derived: the source, the
-cached-copy basis, the newest evaluation date in that copy, and the `clinvar`
-section command all travel with the value. The recorded TP53 c.313G>A
-(VariationID 428884) MyVariant response picks "Pathogenic" from its cached RCV
-list.
+cached-copy basis, the newest evaluation date among the records carrying the
+shown classification, and the `clinvar` section command all travel with the
+value. The recorded TP53 c.313G>A (VariationID 428884) MyVariant response
+picks "Pathogenic" from its cached RCV list.
 
 ```bash
 biomcp --json --no-cache get variant 'TP53 G105S' \
   | jq '{significance, significance_source, significance_evaluated, derived_note: (.significance_note | test("cached ClinVar copy")), names_clinvar_command: (.significance_note | test("clinvar")), clinvar_absent: (has("clinvar") | not)}' \
   | mustmatch like '{"significance":"Pathogenic","significance_source":"MyVariant.info","significance_evaluated":"2023-09-15","derived_note":true,"names_clinvar_command":true,"clinvar_absent":true}'
+```
+
+The headline date belongs to the shown classification (ticket 2022). The
+recorded BRAF V600E responses carry 17 cached RCV rows: their newest date,
+2025-01-23, belongs to an Uncertain significance record (RCV005089260), so
+the Pathogenic headline carries 2023-10-22, the newest date among the
+Pathogenic records (RCV003458334), instead of another record's date. The
+GRCh37 coordinate lookup replays the dated recording; the phrase form follows
+the same transform on the same rows.
+
+```bash
+biomcp --json --no-cache get variant 'chr7:g.140453136A>T' \
+  | jq '{significance, significance_evaluated}' \
+  | mustmatch like '{"significance":"Pathogenic","significance_evaluated":"2023-10-22"}'
+```
+
+```bash
+biomcp --no-cache get variant 'chr7:g.140453136A>T' \
+  | grep '^Significance:' \
+  | mustmatch like 'Significance: Pathogenic — MyVariant.info (evaluated 2023-10-22)'
 ```
 
 ### Record-level classification wins when ClinVar answers

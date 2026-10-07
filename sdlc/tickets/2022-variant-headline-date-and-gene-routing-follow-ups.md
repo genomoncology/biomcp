@@ -22,6 +22,25 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Proof: outside-in tests for BRAF V600E's date, HCC, MODY and 'BRAF V600E melanoma', each failing on `37631c357`.
 - Defers: nothing.
 
+## Root cause
+
+1. `src/transform/variant.rs` `newest_rcv_evaluation_date` takes the newest `last_evaluated` across every RCV row, while `pick_significance` prints the most severe classification. The two helpers answer different questions, so the headline pairs one record's classification with another record's date whenever the newest date belongs to a less severe record.
+2. `src/cli/variant/query.rs` `confirm_gene_first_candidate` resolves the first token through `resolve_unique_canonical_alias`, which accepts the token when it matches a gene's alias OR its official symbol. Alias matches are many-to-one and unreviewed for search routing, so 'HCC' routes to HYCC1 and returns nothing.
+3. `split_gene_first_candidate` routes the whole remainder after the gene to the condition, so 'BRAF V600E melanoma' becomes `condition='V600E melanoma'`. Nothing splits a leading protein change out of the remainder, and a routed zero-row search carries no `GeneFirstFallback`, so no hint prints.
+
+## Success criteria
+
+1. `get variant 'BRAF V600E'` prints the Pathogenic headline with `evaluated 2023-10-22` (the newest date among the Pathogenic records, RCV003458334), not `2025-01-23` (the Uncertain significance record RCV005089260).
+2. The date helper keeps one rule: a record's date counts only when the record carries the shown classification, and only day-shaped `YYYY-MM-DD` values surface, aligned with the 1291 fallback label's day-shape rule so the branches merge into one helper.
+3. `search variant 'HCC liver cancer'`, `'MODY diabetes'` and `'HHT telangiectasias'` do not route an alias first token; each keeps the whole-phrase condition search.
+4. `search variant 'BRAF V600E melanoma'` reads `gene=BRAF, hgvsp=V600E, condition=melanoma`, not `condition='V600E melanoma'`.
+5. A routed search that returns zero rows prints the parsed form and the working alternative; a refused zero-row search keeps the 1301 hint.
+6. The 1301 wins hold: SCN5A routes, BRUGADA refuses with the working-form hint, and `BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` still restores the whole-phrase condition search.
+
+## Decision: MODY and HHT stop routing
+
+Official symbols only means the familiar alias abbreviations stop routing too: 'MODY diabetes' no longer narrows to HNF4A and 'HHT telangiectasias' no longer narrows to ACVRL1; both search the whole phrase as a condition. Recorded reason: alias routing either applies to every alias or needs a curated allow-list, and no admitted source provides one. The HCC failure is the same mechanism as the MODY and HHT shortcuts, so one predictable rule (the token must be the official symbol) replaces alias routing everywhere, matching the outcome. Operators who want the narrow search can still write `biomcp search variant -g HNF4A --condition diabetes`.
+
 ## Build status
 
 - Built on branch `tickets/2022-variant-headline-date-and-gene-routing-follow-ups`,

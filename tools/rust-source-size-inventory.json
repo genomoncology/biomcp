@@ -148,13 +148,13 @@
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3871,
+      "baseline_lines": 3963,
       "floor_lines": 3812,
       "authorized_increase": {
-        "ticket": "1263",
-        "delta": 59,
-        "reason": "The stale-serve spawn-inheritance seam (ClinGen prefetch) and its tests in sources; the prefetch re-scope comment in gene.",
-        "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+        "ticket": "2022",
+        "delta": 151,
+        "reason": "Ticket 2022: the official-symbol resolver variant search gene-first routing confirms against, plus its alias-refusal tests.",
+        "removal_condition": "Drop to the prior floor when the official-symbol resolver moves out of gene.rs or its inline tests move to a shared harness."
       }
     },
     {
@@ -526,13 +526,13 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1424,
+      "baseline_lines": 1496,
       "floor_lines": 1335,
       "authorized_increase": {
-        "ticket": "1154, 1155, 1290",
-        "delta": 89,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner.",
-        "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
+        "ticket": "2022",
+        "delta": 161,
+        "reason": "Ticket 2022: pair the ClinVar headline evaluation date with the shown classification and cover the recorded BRAF V600E rows with unit tests.",
+        "removal_condition": "Drop to the prior floor when the BRAF V600E date tests move out of the transform module."
       }
     }
   ]
