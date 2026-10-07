@@ -132,8 +132,9 @@ fn mutation_identity(
         if !is_protein_hgvs(hgvs) {
             return Some(("HGVS", hgvs.to_string()));
         }
-        // A shared rsID with a protein change reached here because no usable
-        // gene symbol exists, so no typed-back form names the row's allele.
+        // A shared rsID with a protein change reached here because no
+        // gene-qualified exact form exists, so no typed-back form names the
+        // row's allele.
         return None;
     }
     infons

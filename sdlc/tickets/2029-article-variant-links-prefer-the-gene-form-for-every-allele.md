@@ -103,3 +103,11 @@ names the allele the row mentions.
   `rows_with_gene_and_change_prefer_the_gene_qualified_form` fail, and
   `one_allele_written_two_ways_stays_one_rsid_change` passes, as it should —
   2018 already collapses the two writings to one change.
+
+- The two folded P2s in detail: the multi-allele protein branch comment now
+  reads "no gene-qualified exact form exists" (the returned None is also
+  right for a protein change a gene is present for but no exact form
+  classifies from), and the named test
+  `no_rsid_row_with_gene_and_change_gains_the_gene_qualified_form` pins the
+  no-rsID row with a gene and a protein change upgrading from the bare
+  `p.G12A` to the gene-qualified `KRAS p.G12A`.

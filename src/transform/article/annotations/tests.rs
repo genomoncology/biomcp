@@ -475,6 +475,48 @@ fn single_mention_allele_of_a_multi_allele_rsid_carries_the_gene_form() {
 }
 
 #[test]
+fn no_rsid_row_with_gene_and_change_gains_the_gene_qualified_form() {
+    let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
+        "pmid": 10,
+        "passages": [
+            {
+                "infons": {"type": "title"},
+                "text": "KRAS G12A in NSCLC",
+                "annotations": [
+                    {"text": "KRAS", "infons": {"type": "Gene", "identifier": "3845"}},
+                    {
+                        "text": "G12A",
+                        "infons": {
+                            "type": "Variant",
+                            "identifier": "tmVar:p|SUB|G|12|A",
+                            "hgvs": "p.G12A",
+                            "gene_id": 3845
+                        }
+                    }
+                ]
+            }
+        ]
+    }))
+    .expect("valid JSON");
+
+    // The row carries no rsID, so the old rule fell through to the bare
+    // protein change `p.G12A`, which is shorthand, not exact input, and
+    // rendered as the mention-text command. The row-own-data rule upgrades
+    // it to the gene-qualified exact form.
+    let ann = extract_annotations(&doc, false).expect("annotations should exist");
+    assert_eq!(
+        ann.mutations,
+        vec![AnnotationCount {
+            text: "G12A".into(),
+            count: 1,
+            namespace: Some("HGVS".into()),
+            identifier: Some("KRAS p.G12A".into()),
+            ..Default::default()
+        }]
+    );
+}
+
+#[test]
 fn one_allele_written_two_ways_stays_one_rsid_change() {
     let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
         "pmid": 9,
