@@ -1,6 +1,6 @@
 # 2024 — Pin release runners before Ubuntu 26
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
