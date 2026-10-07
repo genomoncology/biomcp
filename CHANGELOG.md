@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- `get variant` now resolves transcript deletion ranges with intronic offsets and bare ClinVar VariationIDs, with the ClinVar alias fallback answering only on an exact transcript match. (1292)
+- A protein-change query with several compatible hits now resolves only when exactly one carries a ClinVar record, and every other ambiguous case refuses naming every candidate and the working input forms. (1297)
+- Citation evidence now degrades to OpenCitations when Semantic Scholar refuses with a rate limit or a server error, and a live 429 that took twenty-two seconds to fail now returns in under three. (1302)
+- `get author` and `author papers` now read ORCID's lowercase visibility values, so an `orcid:` lookup no longer fails and papers no longer silently return zero works. (1303)
+
+### New features
+
+- `search variant` now routes a free-text phrase whose first token is a confirmed gene symbol to that gene filter with the remaining words as the condition, and `BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` restores the whole-phrase search. (1301)
+
 ## 0.9.1 — 2026-10-01
 
 ### Fixes
