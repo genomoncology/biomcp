@@ -1855,7 +1855,12 @@ async fn annotation_candidates(
         )
         .await;
         let page = match page_result {
-            Ok(page) => page,
+            Ok(partial) => {
+                if partial.degradation.is_some() {
+                    incomplete = true;
+                }
+                partial.page
+            }
             Err(_) => {
                 incomplete = true;
                 continue;
@@ -2002,7 +2007,7 @@ async fn strict_provider_candidates(
                 Some(&plan.query),
             )
             .await
-            .map(|page| page.results),
+            .map(|partial| (partial.page.results, partial.degradation.is_some())),
             "europepmc" => search_europepmc_page_with_context(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -2012,7 +2017,7 @@ async fn strict_provider_candidates(
                 Some(&plan.query),
             )
             .await
-            .map(|page| page.results),
+            .map(|partial| (partial.page.results, partial.degradation.is_some())),
             "semanticscholar" => search_semantic_scholar_candidates(
                 &filters,
                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -2031,7 +2036,7 @@ async fn strict_provider_candidates(
                         message: "strict search unavailable".into(),
                     })
                 } else {
-                    Ok(outcome.rows)
+                    Ok((outcome.rows, false))
                 }
             }),
             "pubtator" => {
@@ -2069,10 +2074,10 @@ async fn strict_provider_candidates(
                             )
                         }
                         .await
-                        .map(|page| page.results),
+                        .map(|partial| (partial.page.results, partial.degradation.is_some())),
                         None => {
                             unit.record("ok", 1);
-                            Ok(Vec::new())
+                            Ok((Vec::new(), false))
                         }
                     },
                     Err(error) => {
@@ -2084,7 +2089,13 @@ async fn strict_provider_candidates(
             _ => continue,
         };
         match rows {
-            Ok(rows) if !execution.route_stopped("strict") || stopped_before => {
+            Ok((rows, degraded)) if !execution.route_stopped("strict") || stopped_before => {
+                // A degraded strict leg kept rows a mid-flight failure
+                // truncated: the route still succeeded, but it is incomplete
+                // (ticket 1299 fold).
+                if degraded {
+                    incomplete = true;
+                }
                 succeeded = true;
                 candidates.extend(rows.into_iter().map(|row| {
                     candidate_with_provenance(
@@ -4582,6 +4593,145 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[serial_test::serial(source_env)]
+    #[tokio::test]
+    async fn degraded_strict_leg_partials_mark_the_route_incomplete() {
+        // Strict legs that keep rows a mid-flight failure truncated must also
+        // mark the route incomplete, like the annotation leg does. PubMed
+        // answers one discovery page then fails the second; Europe PMC
+        // answers page one then fails every later page.
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let target = request
+                .split_whitespace()
+                .nth(1)
+                .expect("fixture request line carries a target");
+            if target.starts_with("/entrez/eutils/esearch.fcgi") {
+                if target.contains("retstart=0") {
+                    return TestHttpReply::Bytes(test_http_response(
+                        "200 OK",
+                        "application/json",
+                        br#"{"esearchresult":{"count":"60","idlist":["71000001","71000002","71000003","71000004","71000005","71000006","71000007","71000008","71000009","71000010"]}}"#.as_slice(),
+                    ));
+                }
+                return TestHttpReply::Bytes(test_http_response(
+                    "503 Service Unavailable",
+                    "application/json",
+                    b"{}",
+                ));
+            }
+            if target.starts_with("/entrez/eutils/esummary.fcgi") {
+                let entry = |index: usize| {
+                    let uid = 71_000_000 + index;
+                    format!(
+                        "\"{uid}\":{{\"uid\":\"{uid}\",\"title\":\"strict partial pubmed row {uid}\",\"sortpubdate\":\"2026/01/02 00:00\",\"pubdate\":\"2026 Jan 2\",\"fulljournalname\":\"Fixture Journal\",\"source\":\"Fixture Journal\"}}"
+                    )
+                };
+                let rendered = format!(
+                    "{{\"result\":{{\"uids\":[{}],{}}}}}",
+                    (1..=10)
+                        .map(|index| format!("\"{}\"", 71_000_000 + index))
+                        .collect::<Vec<_>>()
+                        .join(","),
+                    (1..=10)
+                        .map(entry)
+                        .collect::<Vec<_>>()
+                        .join(","),
+                );
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    rendered.as_bytes(),
+                ));
+            }
+            if target.starts_with("/search") && target.contains("query=") {
+                // Ticket 1298 moved the wire from page= to cursorMark=; the
+                // first cursor page answers and every later cursor 503s.
+                let first_cursor = !target.contains("cursorMark=")
+                    || target.contains("cursorMark=*")
+                    || target.contains("cursorMark=%2A");
+                if first_cursor {
+                    return TestHttpReply::Bytes(test_http_response(
+                        "200 OK",
+                        "application/json",
+                        br#"{"version":"6.9","hitCount":60,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"71000020","pmid":"71000020","title":"strict partial europepmc row one","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0},{"id":"71000021","pmid":"71000021","title":"strict partial europepmc row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0},{"id":"71000022","pmid":"71000022","title":"strict partial europepmc row three","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0}]}}"#.as_slice(),
+                    ));
+                }
+                return TestHttpReply::Bytes(test_http_response(
+                    "503 Service Unavailable",
+                    "application/json",
+                    b"{}",
+                ));
+            }
+            if target.starts_with("/graph/v1/paper/search/bulk") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"{"total":1,"data":[{"paperId":"strict-partial-s2","externalIds":{"PubMed":"71000030"},"title":"strict partial semantic scholar row","venue":"Fixture Journal","year":2026,"citationCount":1,"influentialCitationCount":0,"abstract":"strict partial abstract."}]}"#.as_slice(),
+                ));
+            }
+            if target.starts_with("/entity/autocomplete/") {
+                return TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    b"[]",
+                ));
+            }
+            TestHttpReply::Bytes(test_http_response(
+                "404 Not Found",
+                "application/json",
+                b"{}",
+            ))
+        })
+        .await;
+        let cache = crate::test_support::TempDirGuard::new("strict-partial-degradation");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set(
+            "BIOMCP_PUBMED_BASE",
+            format!("{}/entrez/eutils", fixture.base),
+        );
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set("BIOMCP_S2_BASE", &fixture.base);
+        env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+
+        let execution = VariantArticleExecutionContext::single();
+        let (rows, incomplete, succeeded, statuses) = strict_provider_candidates(
+            "BRAF p.V600E",
+            &resolved_context(),
+            VariantArticleStrategy::Union,
+            &["BRAF p.V600E".to_string()],
+            &execution,
+        )
+        .await;
+
+        assert!(succeeded, "the strict route kept its fetched rows");
+        assert!(incomplete, "degraded strict legs mark the route incomplete");
+        let pmids = rows
+            .iter()
+            .map(|candidate| candidate.row.pmid.as_str())
+            .collect::<Vec<_>>();
+        assert!(
+            pmids.contains(&"71000001"),
+            "pubmed partial rows survive: {pmids:?}"
+        );
+        assert!(
+            pmids.contains(&"71000020"),
+            "europepmc partial rows survive: {pmids:?}"
+        );
+        assert!(
+            statuses.iter().any(|status| {
+                matches!(
+                    status.status,
+                    VariantArticleSourceStatusKind::Degraded
+                        | VariantArticleSourceStatusKind::Unavailable
+                        | VariantArticleSourceStatusKind::TimedOut
+                )
+            }),
+            "the truncations surface in the route statuses: {statuses:?}"
+        );
     }
 
     #[test]

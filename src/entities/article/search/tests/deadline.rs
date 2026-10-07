@@ -18,7 +18,47 @@ fn fixture_reply(
         .split_whitespace()
         .nth(1)
         .expect("fixture request line carries a target");
+    let query = target.split_once('?').map(|(_, rest)| rest).unwrap_or("");
+    // Distinct fixture keywords route one server across the deadline
+    // scenarios: "deadline silence" holds or fails every source, and
+    // "pagebound" answers Europe PMC page one and holds every later page.
+    let wants_nothing = query.contains("silence");
+    let wants_single_source_hold = query.contains("pagebound");
     if target.starts_with("/search") && target.contains("query=") {
+        if wants_nothing {
+            return match europepmc_hold {
+                Some(hold) => TestHttpReply::Hold(Arc::clone(hold)),
+                None => TestHttpReply::Bytes(test_http_response(
+                    "503 Service Unavailable",
+                    "application/json",
+                    b"{}",
+                )),
+            };
+        }
+        // Single-source deadline case: the first cursor page answers fast
+        // with distinct rows; every later cursor page is held past the
+        // deadline (ticket 1298 moved the wire from page= to cursorMark=).
+        let first_cursor = !query.contains("cursorMark=")
+            || query
+                .split('&')
+                .any(|pair| pair == "cursorMark=%2A" || pair == "cursorMark=*");
+        if wants_single_source_hold && !first_cursor {
+            return match europepmc_hold {
+                Some(hold) => TestHttpReply::Hold(Arc::clone(hold)),
+                None => TestHttpReply::Bytes(test_http_response(
+                    "200 OK",
+                    "application/json",
+                    br#"{"hitCount":30,"resultList":{"result":[]}}"#,
+                )),
+            };
+        }
+        if wants_single_source_hold {
+            return TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/json",
+                br#"{"hitCount":30,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"41800021","pmid":"41800021","title":"single-source deadline page one row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"},{"id":"41800022","pmid":"41800022","title":"single-source deadline page one row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#, 
+            ));
+        }
         return match europepmc_hold {
             Some(hold) => TestHttpReply::Hold(Arc::clone(hold)),
             None => TestHttpReply::Bytes(test_http_response(
@@ -27,6 +67,13 @@ fn fixture_reply(
                 br#"{"hitCount":1,"resultList":{"result":[{"id":"41800004","pmid":"41800004","title":"deadline fixture Europe PMC row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#,
             )),
         };
+    }
+    if wants_nothing {
+        return TestHttpReply::Bytes(test_http_response(
+            "503 Service Unavailable",
+            "application/json",
+            b"{}",
+        ));
     }
     let body = if target.starts_with("/search/") && target.contains("text=") {
         br#"{"results":[{"_id":"pt-418","pmid":41800001,"title":"deadline fixture PubTator row","journal":"Fixture Journal","date":"2026-01-01","score":42.0}],"count":1,"total_pages":1,"current":1,"page_size":25,"facets":{}}"#.as_slice()
@@ -232,4 +279,179 @@ async fn healthy_federated_search_keeps_output_shape_and_records_timings() {
             "timing recorded for {source:?}"
         );
     }
+}
+
+/// Grace the wall-clock assertions allow on top of the forced budget: covers
+/// scheduler jitter and cache teardown without masking a spin.
+const DEADLINE_WALL_GRACE: std::time::Duration = std::time::Duration::from_millis(2500);
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn single_backend_deadline_keeps_fetched_rows_and_names_the_source() {
+    // Europe PMC page one answers with distinct rows; page two is held. The
+    // deadline fires mid-flight with rows already accumulated.
+    let (_release_tx, hold_rx) = mpsc::channel::<()>();
+    let hold = Arc::new(Mutex::new(hold_rx));
+    let fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, Some(&hold))).await;
+    let cache = TempDirGuard::new("article-search-deadline-single-source");
+    let _env = deadline_env(&fixture, cache.path(), "1500");
+    let mut filters = deadline_filters();
+    filters.keyword = Some("pagebound single source".into());
+
+    let budget = std::time::Duration::from_millis(1500);
+    let started = std::time::Instant::now();
+    let page = tokio::time::timeout(
+        crate::test_support::watchdog(60),
+        search_page(&filters, 10, 0, ArticleSourceFilter::EuropePmc),
+    )
+    .await
+    .expect("single-backend search exceeds its watchdog")
+    .expect("partial rows survive a single-backend deadline");
+
+    // The invocation exits near the deadline; a post-deadline spin or a
+    // locked construction blows this bound.
+    assert!(
+        started.elapsed() <= budget + DEADLINE_WALL_GRACE,
+        "single-backend expiry honors the deadline: {:?} elapsed",
+        started.elapsed()
+    );
+    assert!(
+        page.results
+            .iter()
+            .any(|row| matches!(row.pmid.as_str(), "41800021" | "41800022")),
+        "rows fetched before expiry are kept: {:?}",
+        page.results
+            .iter()
+            .map(|row| row.pmid.as_str())
+            .collect::<Vec<_>>()
+    );
+    let europepmc = page
+        .source_status
+        .iter()
+        .find(|status| status.source == ArticleSource::EuropePmc)
+        .expect("held Europe PMC leg is reported");
+    assert_eq!(europepmc.status, Some(ArticleSourceAvailability::Degraded));
+    assert!(
+        europepmc
+            .message
+            .as_deref()
+            .is_some_and(|message| message.contains("deadline")),
+        "the degradation names the deadline: {europepmc:?}"
+    );
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn deadline_expiry_without_rows_names_the_deadline_error() {
+    // Every source fails or is held, so nothing answers and the terminal
+    // error must name the deadline instead of a generic failure.
+    let (_release_tx, hold_rx) = mpsc::channel::<()>();
+    let hold = Arc::new(Mutex::new(hold_rx));
+    let fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, Some(&hold))).await;
+    let cache = TempDirGuard::new("article-search-deadline-terminal");
+    let _env = deadline_env(&fixture, cache.path(), "1200");
+    let mut filters = deadline_filters();
+    filters.keyword = Some("deadline silence".into());
+
+    let budget = std::time::Duration::from_millis(1200);
+    let started = std::time::Instant::now();
+    let error = tokio::time::timeout(
+        crate::test_support::watchdog(60),
+        search_page(&filters, 5, 0, ArticleSourceFilter::All),
+    )
+    .await
+    .expect("empty search exceeds its watchdog")
+    .expect_err("a search where nothing answered is an error");
+
+    assert!(
+        started.elapsed() <= budget + DEADLINE_WALL_GRACE,
+        "empty expiry honors the deadline: {:?} elapsed",
+        started.elapsed()
+    );
+    let reason = match &error {
+        BioMcpError::SourceUnavailable { reason, .. } => reason.clone(),
+        other => panic!("expected a source-unavailable deadline error, got {other:?}"),
+    };
+    assert!(
+        reason.starts_with(crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX),
+        "the terminal error names the deadline: {reason}"
+    );
+    let projection = error.public_projection();
+    assert!(
+        projection
+            .message
+            .starts_with(crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX),
+        "the public error names the deadline: {}",
+        projection.message
+    );
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
+    // Hold the cache epoch lock so shared-client construction cannot take
+    // it; the invocation must still exit at its deadline (ticket 1299).
+    let fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, None)).await;
+    let cache = TempDirGuard::new("article-search-deadline-epoch-lock");
+    std::fs::create_dir_all(cache.path()).expect("cache root");
+    let lock_path = cache.path().join(".body-limit-cache-v1.lock");
+    let held = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(&lock_path)
+        .expect("epoch lock file");
+    fs2::FileExt::lock_exclusive(&held).expect("hold epoch lock");
+    let _env = deadline_env(&fixture, cache.path(), "1200");
+
+    let budget = std::time::Duration::from_millis(1200);
+    let started = std::time::Instant::now();
+    let result = tokio::time::timeout(
+        crate::test_support::watchdog(60),
+        search_page(&deadline_filters(), 3, 0, ArticleSourceFilter::PubMed),
+    )
+    .await
+    .expect("locked construction exceeds its watchdog");
+
+    assert!(
+        started.elapsed() <= budget + DEADLINE_WALL_GRACE,
+        "construction contention honors the deadline: {:?} elapsed",
+        started.elapsed()
+    );
+    match result {
+        Err(BioMcpError::SourceUnavailable { reason, .. }) => assert!(
+            reason.starts_with(crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX),
+            "the locked-construction error names the deadline: {reason}"
+        ),
+        Ok(page) => panic!(
+            "held epoch lock must not yield a page: {} rows",
+            page.results.len()
+        ),
+        other => panic!("expected a deadline error, got {other:?}"),
+    }
+    fs2::FileExt::unlock(&held).expect("release epoch lock");
+}
+
+#[test]
+fn deadline_recognition_covers_the_io_cancellation_shape() {
+    // The cache layer reports deadline cancellation as a TimedOut io error
+    // with one exact message; recognition must cover it directly and through
+    // the source-context envelope.
+    // The literal is deliberate: recognition is pinned to the exact message
+    // every deadline io producer emits; drift must fail this test.
+    let io_deadline = BioMcpError::Io(std::io::Error::new(
+        std::io::ErrorKind::TimedOut,
+        "variant article invocation deadline exceeded",
+    ));
+    assert!(is_search_deadline_error(&io_deadline));
+    assert!(is_search_deadline_error(&BioMcpError::WithSourceContext {
+        context: crate::error::SourceContext::retry(crate::error::SourceProvider::PUBMED),
+        source: Box::new(io_deadline),
+    }));
+    let other_io = BioMcpError::Io(std::io::Error::new(
+        std::io::ErrorKind::TimedOut,
+        "some other timeout",
+    ));
+    assert!(!is_search_deadline_error(&other_io));
 }

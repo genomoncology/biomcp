@@ -2,20 +2,26 @@ use super::*;
 
 #[test]
 fn merge_federated_pages_dedups_with_pubtator_priority() {
-    let pubtator_page = SearchPage::offset(
-        vec![
-            row("100", ArticleSource::PubTator),
-            row("200", ArticleSource::PubTator),
-        ],
-        Some(2),
-    );
-    let europe_page = SearchPage::offset(
-        vec![
-            row("200", ArticleSource::EuropePmc),
-            row("300", ArticleSource::EuropePmc),
-        ],
-        Some(2),
-    );
+    let pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row("100", ArticleSource::PubTator),
+                row("200", ArticleSource::PubTator),
+            ],
+            Some(2),
+        ),
+        degradation: None,
+    };
+    let europe_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row("200", ArticleSource::EuropePmc),
+                row("300", ArticleSource::EuropePmc),
+            ],
+            Some(2),
+        ),
+        degradation: None,
+    };
 
     let merged = merge_federated_pages(
         Ok(pubtator_page),
@@ -38,8 +44,14 @@ fn merge_federated_pages_dedups_with_pubtator_priority() {
 
 #[test]
 fn merge_federated_pages_records_litsense2_in_matched_sources() {
-    let pubtator_page = SearchPage::offset(vec![row("100", ArticleSource::PubTator)], Some(1));
-    let europe_page = SearchPage::offset(Vec::new(), Some(0));
+    let pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(vec![row("100", ArticleSource::PubTator)], Some(1)),
+        degradation: None,
+    };
+    let europe_page = PartialSearchPage {
+        page: SearchPage::offset(Vec::new(), Some(0)),
+        degradation: None,
+    };
     let litsense2_rows = vec![row("100", ArticleSource::LitSense2)];
 
     let merged = merge_federated_pages(
@@ -64,13 +76,16 @@ fn merge_federated_pages_records_litsense2_in_matched_sources() {
 
 #[test]
 fn merge_federated_pages_returns_surviving_pubtator_leg() {
-    let pubtator_page = SearchPage::offset(
-        vec![
-            row("100", ArticleSource::PubTator),
-            row("200", ArticleSource::PubTator),
-        ],
-        Some(50),
-    );
+    let pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row("100", ArticleSource::PubTator),
+                row("200", ArticleSource::PubTator),
+            ],
+            Some(50),
+        ),
+        degradation: None,
+    };
     let europe_err = BioMcpError::Api {
         api: "europepmc".into(),
         message: "HTTP 500: upstream".into(),
@@ -103,14 +118,17 @@ fn merge_federated_pages_returns_surviving_europe_leg() {
         api: "pubtator3".into(),
         message: "HTTP 500: upstream".into(),
     };
-    let europe_page = SearchPage::offset(
-        vec![
-            row("100", ArticleSource::EuropePmc),
-            row("200", ArticleSource::EuropePmc),
-            row("300", ArticleSource::EuropePmc),
-        ],
-        Some(50),
-    );
+    let europe_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row("100", ArticleSource::EuropePmc),
+                row("200", ArticleSource::EuropePmc),
+                row("300", ArticleSource::EuropePmc),
+            ],
+            Some(50),
+        ),
+        degradation: None,
+    };
 
     let merged = merge_federated_pages(
         Err(pubtator_err),
@@ -139,32 +157,35 @@ fn merge_federated_pages_sorts_surviving_leg_before_offset() {
         api: "pubtator3".into(),
         message: "HTTP 500: upstream".into(),
     };
-    let europe_page = SearchPage::offset(
-        vec![
-            row_with(
-                "100",
-                ArticleSource::EuropePmc,
-                Some("2024-01-01"),
-                Some(1),
-                Some(false),
-            ),
-            row_with(
-                "200",
-                ArticleSource::EuropePmc,
-                Some("2025-01-01"),
-                Some(1),
-                Some(false),
-            ),
-            row_with(
-                "300",
-                ArticleSource::EuropePmc,
-                Some("2023-01-01"),
-                Some(1),
-                Some(false),
-            ),
-        ],
-        Some(3),
-    );
+    let europe_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row_with(
+                    "100",
+                    ArticleSource::EuropePmc,
+                    Some("2024-01-01"),
+                    Some(1),
+                    Some(false),
+                ),
+                row_with(
+                    "200",
+                    ArticleSource::EuropePmc,
+                    Some("2025-01-01"),
+                    Some(1),
+                    Some(false),
+                ),
+                row_with(
+                    "300",
+                    ArticleSource::EuropePmc,
+                    Some("2023-01-01"),
+                    Some(1),
+                    Some(false),
+                ),
+            ],
+            Some(3),
+        ),
+        degradation: None,
+    };
 
     let merged = merge_federated_pages(
         Err(pubtator_err),
@@ -212,23 +233,29 @@ fn merge_federated_pages_returns_first_error_when_both_fail() {
 
 #[test]
 fn federated_offset_applied_after_merge_not_per_leg() {
-    let pubtator_page = SearchPage::offset(
-        vec![
-            row("100", ArticleSource::PubTator),
-            row("200", ArticleSource::PubTator),
-            row("300", ArticleSource::PubTator),
-            row("400", ArticleSource::PubTator),
-            row("500", ArticleSource::PubTator),
-        ],
-        Some(5),
-    );
-    let europe_page = SearchPage::offset(
-        vec![
-            row("600", ArticleSource::EuropePmc),
-            row("700", ArticleSource::EuropePmc),
-        ],
-        Some(2),
-    );
+    let pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row("100", ArticleSource::PubTator),
+                row("200", ArticleSource::PubTator),
+                row("300", ArticleSource::PubTator),
+                row("400", ArticleSource::PubTator),
+                row("500", ArticleSource::PubTator),
+            ],
+            Some(5),
+        ),
+        degradation: None,
+    };
+    let europe_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row("600", ArticleSource::EuropePmc),
+                row("700", ArticleSource::EuropePmc),
+            ],
+            Some(2),
+        ),
+        degradation: None,
+    };
 
     let merged = merge_federated_pages(
         Ok(pubtator_page),
@@ -248,44 +275,50 @@ fn federated_offset_applied_after_merge_not_per_leg() {
 
 #[test]
 fn federated_sort_orders_merged_results_for_citations_and_date() {
-    let citation_pubtator_page = SearchPage::offset(
-        vec![
-            row_with(
-                "100",
-                ArticleSource::PubTator,
-                Some("2025-02-01"),
-                Some(50),
-                Some(false),
-            ),
-            row_with(
-                "200",
-                ArticleSource::PubTator,
-                Some("2024-01-01"),
-                Some(5),
-                Some(false),
-            ),
-        ],
-        Some(2),
-    );
-    let citation_europe_page = SearchPage::offset(
-        vec![
-            row_with(
-                "300",
-                ArticleSource::EuropePmc,
-                Some("2025-03-01"),
-                Some(100),
-                Some(false),
-            ),
-            row_with(
-                "400",
-                ArticleSource::EuropePmc,
-                Some("2024-06-01"),
-                Some(10),
-                Some(false),
-            ),
-        ],
-        Some(2),
-    );
+    let citation_pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row_with(
+                    "100",
+                    ArticleSource::PubTator,
+                    Some("2025-02-01"),
+                    Some(50),
+                    Some(false),
+                ),
+                row_with(
+                    "200",
+                    ArticleSource::PubTator,
+                    Some("2024-01-01"),
+                    Some(5),
+                    Some(false),
+                ),
+            ],
+            Some(2),
+        ),
+        degradation: None,
+    };
+    let citation_europe_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row_with(
+                    "300",
+                    ArticleSource::EuropePmc,
+                    Some("2025-03-01"),
+                    Some(100),
+                    Some(false),
+                ),
+                row_with(
+                    "400",
+                    ArticleSource::EuropePmc,
+                    Some("2024-06-01"),
+                    Some(10),
+                    Some(false),
+                ),
+            ],
+            Some(2),
+        ),
+        degradation: None,
+    };
 
     let citation_merged = merge_federated_pages(
         Ok(citation_pubtator_page),
@@ -308,38 +341,44 @@ fn federated_sort_orders_merged_results_for_citations_and_date() {
         .collect();
     assert_eq!(citation_pmids, vec!["300", "100", "400", "200"]);
 
-    let date_pubtator_page = SearchPage::offset(
-        vec![
-            row_with(
-                "500",
-                ArticleSource::PubTator,
-                Some("2025"),
-                Some(25),
-                Some(false),
-            ),
-            row_with(
-                "600",
-                ArticleSource::PubTator,
-                Some("2024-12-31"),
-                Some(30),
-                Some(false),
-            ),
-        ],
-        Some(2),
-    );
-    let date_europe_page = SearchPage::offset(
-        vec![
-            row_with(
-                "700",
-                ArticleSource::EuropePmc,
-                Some("2025-06-01"),
-                Some(10),
-                Some(false),
-            ),
-            row_with("800", ArticleSource::EuropePmc, None, Some(99), Some(false)),
-        ],
-        Some(2),
-    );
+    let date_pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row_with(
+                    "500",
+                    ArticleSource::PubTator,
+                    Some("2025"),
+                    Some(25),
+                    Some(false),
+                ),
+                row_with(
+                    "600",
+                    ArticleSource::PubTator,
+                    Some("2024-12-31"),
+                    Some(30),
+                    Some(false),
+                ),
+            ],
+            Some(2),
+        ),
+        degradation: None,
+    };
+    let date_europe_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![
+                row_with(
+                    "700",
+                    ArticleSource::EuropePmc,
+                    Some("2025-06-01"),
+                    Some(10),
+                    Some(false),
+                ),
+                row_with("800", ArticleSource::EuropePmc, None, Some(99), Some(false)),
+            ],
+            Some(2),
+        ),
+        degradation: None,
+    };
 
     let date_merged = merge_federated_pages(
         Ok(date_pubtator_page),
@@ -365,26 +404,32 @@ fn federated_sort_orders_merged_results_for_citations_and_date() {
 
 #[test]
 fn merge_federated_pages_preserves_known_retraction_status_from_later_duplicate() {
-    let pubtator_page = SearchPage::offset(
-        vec![row_with(
-            "200",
-            ArticleSource::PubTator,
-            Some("2025-01-01"),
+    let pubtator_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![row_with(
+                "200",
+                ArticleSource::PubTator,
+                Some("2025-01-01"),
+                Some(1),
+                None,
+            )],
             Some(1),
-            None,
-        )],
-        Some(1),
-    );
-    let europe_page = SearchPage::offset(
-        vec![row_with(
-            "200",
-            ArticleSource::EuropePmc,
-            Some("2025-01-01"),
-            Some(10),
-            Some(true),
-        )],
-        Some(1),
-    );
+        ),
+        degradation: None,
+    };
+    let europe_page = PartialSearchPage {
+        page: SearchPage::offset(
+            vec![row_with(
+                "200",
+                ArticleSource::EuropePmc,
+                Some("2025-01-01"),
+                Some(10),
+                Some(true),
+            )],
+            Some(1),
+        ),
+        degradation: None,
+    };
 
     let merged = merge_federated_pages(
         Ok(pubtator_page),

@@ -25,7 +25,7 @@ pub(super) const ARTICLE_SEARCH_DEADLINE: Duration = Duration::from_secs(60);
 /// the citation-graph deadline seam: recorded fixtures run the release-shaped
 /// spec binary (no `debug_assertions`), so the hook is read unconditionally,
 /// exactly like `BIOMCP_TEST_UNPACED_ORIGIN`.
-pub(super) fn article_search_deadline_budget() -> Duration {
+pub(crate) fn article_search_deadline_budget() -> Duration {
     if let Ok(value) = std::env::var("BIOMCP_TEST_ARTICLE_SEARCH_DEADLINE_MS")
         && let Ok(millis) = value.trim().parse::<u64>()
     {
@@ -79,6 +79,25 @@ where
     )
 }
 
+/// Prefix of the terminal deadline error's reason. The public error
+/// projection keys on it to carry the deadline sentence through to users
+/// (ticket 1299).
+pub(crate) const ARTICLE_SEARCH_DEADLINE_REASON_PREFIX: &str = "article search deadline exceeded";
+
+/// Suggestion the deadline error pairs with its reason. The public error
+/// projection reuses this static sentence when it carries the deadline
+/// reason through to users (ticket 1299).
+pub(crate) const ARTICLE_SEARCH_DEADLINE_SUGGESTION: &str =
+    "Retry with a narrower query or a single --source";
+
+/// Whether an io error is the invocation deadline reporting itself: the
+/// cache layer reports deadline cancellation as a `TimedOut` io error with
+/// one exact message, so the kind and message are matched together.
+fn is_deadline_io_error(error: &std::io::Error) -> bool {
+    error.kind() == std::io::ErrorKind::TimedOut
+        && error.to_string() == "variant article invocation deadline exceeded"
+}
+
 /// The terminal error for a search whose invocation deadline expired without
 /// producing a page: unavailable rather than an internal error, so agents see
 /// a retryable surface.
@@ -88,27 +107,36 @@ pub(super) fn article_search_deadline_error(
     BioMcpError::SourceUnavailable {
         source_name: "article search".into(),
         reason: format!(
-            "article search deadline exceeded after {}s",
+            "{ARTICLE_SEARCH_DEADLINE_REASON_PREFIX} after {}s",
             deadline.limit().as_secs()
         ),
-        suggestion: "Retry with a narrower query or a single --source".into(),
+        suggestion: ARTICLE_SEARCH_DEADLINE_SUGGESTION.into(),
     }
 }
 
 /// Whether the propagated error is the invocation deadline itself, unwrapping
 /// the source-context envelope provider sends add on failure.
-pub(super) fn is_search_deadline_error(error: &BioMcpError) -> bool {
+pub(in crate::entities::article) fn is_search_deadline_error(error: &BioMcpError) -> bool {
     let mut current = error;
     loop {
         match current {
             BioMcpError::WithSourceContext { source, .. } => current = source,
             BioMcpError::HttpMiddleware(reqwest_middleware::Error::Middleware(inner)) => {
-                return inner.is::<crate::sources::VariantArticleDeadlineElapsed>();
+                return inner.is::<crate::sources::VariantArticleDeadlineElapsed>()
+                    // The cache layer surfaces deadline cancellation as a
+                    // boxed `TimedOut` io error inside a middleware error.
+                    || inner.chain().any(|cause| {
+                        cause
+                            .downcast_ref::<std::io::Error>()
+                            .is_some_and(is_deadline_io_error)
+                    });
             }
             // `shared_client` fast-fails an exhausted deadline before any send.
             BioMcpError::Api { message, .. } => {
                 return message == "invocation deadline exceeded";
             }
+            // Cache construction reports deadline expiry directly as io.
+            BioMcpError::Io(error) => return is_deadline_io_error(error),
             _ => return false,
         }
     }

@@ -645,6 +645,18 @@ impl BioMcpError {
     }
 
     pub fn public_projection(&self) -> PublicErrorProjection {
+        // The article-search deadline names itself in its reason; carry that
+        // sentence and its suggestion instead of the generic source-down
+        // message, so an expired search says what happened (ticket 1299).
+        if let Self::SourceUnavailable { reason, .. } = self.underlying()
+            && reason.starts_with(crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX)
+        {
+            return PublicErrorProjection {
+                message: reason.clone(),
+                source: None,
+                recovery: Some(crate::entities::article::ARTICLE_SEARCH_DEADLINE_SUGGESTION),
+            };
+        }
         // The citation-evidence surface reports its own refusal summary and
         // its own deadline. Both carry only words this codebase composed, so
         // they can surface verbatim where raw provider text cannot, and
@@ -932,6 +944,41 @@ mod tests {
             .get("http://[::1")
             .build()
             .expect_err("invalid URL should fail")
+    }
+
+    #[test]
+    fn article_search_deadline_projection_names_the_deadline() {
+        let error = BioMcpError::SourceUnavailable {
+            source_name: "article search".to_string(),
+            reason: format!(
+                "{} after 6s",
+                crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX
+            ),
+            suggestion: crate::entities::article::ARTICLE_SEARCH_DEADLINE_SUGGESTION.to_string(),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            format!(
+                "{} after 6s",
+                crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX
+            )
+        );
+        assert_eq!(
+            projection.recovery,
+            Some(crate::entities::article::ARTICLE_SEARCH_DEADLINE_SUGGESTION)
+        );
+
+        // Any other source-unavailable reason keeps the generic safe message.
+        let ordinary = BioMcpError::SourceUnavailable {
+            source_name: "article search".to_string(),
+            reason: "an ordinary internal detail".to_string(),
+            suggestion: "retry later".to_string(),
+        };
+        assert_eq!(
+            ordinary.public_projection().message,
+            "Source unavailable: BioMCP source is not available."
+        );
     }
 
     #[test]
