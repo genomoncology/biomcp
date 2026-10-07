@@ -403,6 +403,65 @@ print("raw diagnostic MCP preserves disease-match provenance")
 PY
 ```
 
+## WHO Degrade Reason Reaches Raw MCP
+
+A drug search that lost its WHO section carries the degrade reason in the JSON
+envelope, so the raw MCP tool returns the same `note` field the CLI prints:
+MCP callers must see why a region is empty, not a silent zero-row bucket
+(tickets 1304 and 2021). The WHO export URLs point at a closed local port so
+the case runs offline.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw MCP carries the WHO degrade reason'
+import json, os, subprocess, tempfile
+
+env = os.environ.copy()
+who_dir = tempfile.mkdtemp()
+env["BIOMCP_WHO_DIR"] = who_dir
+for var in ("BIOMCP_WHO_PQ_URL", "BIOMCP_WHO_PQ_API_URL", "BIOMCP_WHO_VACCINES_URL"):
+    env[var] = "http://127.0.0.1:9/export.csv"
+cli_json = subprocess.run(
+    [env["BIOMCP_BIN"], "--json", "search", "drug", "trastuzumab",
+     "--region", "all", "--limit", "1"],
+    check=True, capture_output=True, text=True, env=env,
+)
+cli_value = json.loads(cli_json.stdout)
+assert "note" in cli_value["regions"]["who"]
+assert "omits the WHO section" in cli_value["regions"]["who"]["note"]
+
+proc = subprocess.Popen(
+    [env["BIOMCP_BIN"], "serve"], stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE, text=True, env=env,
+)
+def call(message):
+    proc.stdin.write(json.dumps(message) + "\n")
+    proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+call({"jsonrpc":"2.0", "id":1, "method":"initialize", "params":{
+    "protocolVersion":"2025-03-26", "capabilities":{},
+    "clientInfo":{"name":"spec", "version":"1"}}})
+proc.stdin.write(json.dumps({"jsonrpc":"2.0", "method":"notifications/initialized", "params":{}}) + "\n")
+proc.stdin.flush()
+raw_json = call({"jsonrpc":"2.0", "id":2, "method":"tools/call", "params":{
+    "name":"biomcp", "arguments":{"command":
+        "biomcp search drug trastuzumab --region all --limit 1", "json":True}}})["result"]
+assert raw_json.get("isError") is False
+raw_value = json.loads(raw_json["content"][0]["text"])
+assert raw_value["regions"]["who"]["note"] == cli_value["regions"]["who"]["note"]
+assert "who_pq.csv" in raw_value["regions"]["who"]["note"]
+raw_markdown = call({"jsonrpc":"2.0", "id":3, "method":"tools/call", "params":{
+    "name":"biomcp", "arguments":{"command":
+        "biomcp search drug trastuzumab --region all --limit 1", "json":False}}})["result"]
+assert raw_markdown.get("isError") is False
+markdown_text = raw_markdown["content"][0]["text"]
+assert "> WHO Prequalification data is unavailable" in markdown_text
+assert "No WHO-prequalified drugs found" not in markdown_text
+proc.terminate()
+proc.wait(timeout=5)
+print("raw MCP carries the WHO degrade reason")
+PY
+```
+
 ## Variant filter evaluation is identical through raw and typed tools
 
 Raw and typed MCP search calls use the same CLI execution and rendering path.

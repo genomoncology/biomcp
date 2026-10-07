@@ -366,6 +366,7 @@ pub fn drug_search_markdown_with_region(
         who_total,
         pagination_footer,
         None,
+        None,
     )
 }
 
@@ -386,6 +387,7 @@ pub fn drug_search_markdown_all_regions(
     who_results: &[WhoPrequalificationSearchResult],
     who_total: Option<usize>,
     footers: &DrugSearchRegionFooters,
+    who_note: Option<&str>,
 ) -> Result<String, BioMcpError> {
     drug_search_markdown_with_region_and_footers(
         query,
@@ -398,6 +400,7 @@ pub fn drug_search_markdown_all_regions(
         who_total,
         "",
         Some(footers),
+        who_note,
     )
 }
 
@@ -413,6 +416,7 @@ fn drug_search_markdown_with_region_and_footers(
     who_total: Option<usize>,
     pagination_footer: &str,
     region_footers: Option<&DrugSearchRegionFooters>,
+    who_note: Option<&str>,
 ) -> Result<String, BioMcpError> {
     match region {
         DrugRegion::Us => {
@@ -610,7 +614,12 @@ fn drug_search_markdown_with_region_and_footers(
             );
 
             out.push_str("\n## WHO (WHO Prequalification)\n\n");
-            if who_results.is_empty() {
+            if let Some(note) = who_note {
+                // A degraded section is not a negative finding: state the
+                // reason instead of printing a bare no-results line the
+                // caller could read as checked-and-absent (ticket 2021).
+                out.push_str(&format!("> {note}\n"));
+            } else if who_results.is_empty() {
                 out.push_str("No WHO-prequalified drugs found\n");
             } else {
                 let _ = writeln!(

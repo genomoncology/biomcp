@@ -657,6 +657,20 @@ impl BioMcpError {
                 recovery: Some(crate::entities::article::ARTICLE_SEARCH_DEADLINE_SUGGESTION),
             };
         }
+        // The WHO Prequalification sync failure names its files, and for a
+        // validation failure the missing column, in its reason; carry that
+        // sentence and its suggestion instead of the generic source-down
+        // message, so a failed export says what happened (ticket 2021,
+        // mirroring the article deadline reason prefix).
+        if let Self::SourceUnavailable { reason, .. } = self.underlying()
+            && reason.starts_with(crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX)
+        {
+            return PublicErrorProjection {
+                message: reason.clone(),
+                source: None,
+                recovery: Some(crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_RECOVERY),
+            };
+        }
         // The citation-evidence surface reports its own refusal summary and
         // its own deadline. Both carry only words this codebase composed, so
         // they can surface verbatim where raw provider text cannot, and

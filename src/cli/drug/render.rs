@@ -104,6 +104,11 @@ pub(super) struct DrugSearchRegionBucket<T: serde::Serialize> {
     results: Vec<DrugSearchView<T>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     continuation_command: Option<String>,
+    /// Why this region's result is empty instead of a true negative, when a
+    /// source failure degraded the section (ticket 2021). The note names the
+    /// source and the reason, the same sentence Markdown and MCP carry.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    note: Option<String>,
 }
 
 #[derive(serde::Serialize)]
@@ -158,6 +163,7 @@ pub(super) fn bucket_from_page<T: serde::Serialize>(
         count,
         results,
         continuation_command,
+        note: None,
     }
 }
 
@@ -185,6 +191,7 @@ fn eu_bucket_from_page(
         count,
         results,
         continuation_command,
+        note: None,
     }
 }
 
@@ -266,19 +273,26 @@ pub(super) fn drug_search_json(
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
             }
         }
-        crate::entities::drug::DrugSearchPageWithRegion::All { us, eu, who } => {
+        crate::entities::drug::DrugSearchPageWithRegion::All {
+            us,
+            eu,
+            who,
+            who_note,
+        } => {
             let next_commands = crate::render::markdown::search_next_commands_drug_regions(
                 requested_name,
                 Some(&us.results),
                 Some(&eu.results),
                 Some(&who.results),
             );
+            let mut who_bucket = bucket_from_page(who, "who", requested_name, offset, limit);
+            who_bucket.note = who_note;
             DrugSearchJsonResponse {
                 region: crate::entities::drug::DrugRegion::All.as_str(),
                 regions: DrugSearchJsonRegions {
                     us: Some(bucket_from_page(us, "us", requested_name, offset, limit)),
                     eu: Some(eu_bucket_from_page(eu, requested_name, offset, limit)),
-                    who: Some(bucket_from_page(who, "who", requested_name, offset, limit)),
+                    who: Some(who_bucket),
                 },
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow),
             }

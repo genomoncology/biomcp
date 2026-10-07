@@ -312,6 +312,37 @@ and WHO views so operators can compare regulatory coverage in one place.
 ../../tools/biomcp-ci search drug trastuzumab --limit 3 | mustmatch '/\|Trastuzumab\|Biotherapeutic Product\|[^|]+\|[^|]+\|[^|]+\|BT-ON[0-9]+\|/'
 ```
 
+## WHO Degrade Reaches Every Caller
+
+A region-less search that lost its WHO section must say so where every caller
+reads it, not only on stderr: the JSON WHO region result carries the degrade
+reason in a `note` field, and the Markdown WHO section states it instead of
+claiming no prequalified drugs (tickets 1304 and 2021). The case forces the
+auto-sync to fail by pointing the export URLs at a closed local port with no
+local data, while the US and EU sections keep answering.
+
+```bash
+who_saved_dir="${BIOMCP_WHO_DIR:-}"
+who_degraded="$(mktemp -d)"
+export BIOMCP_WHO_DIR="$who_degraded"
+export BIOMCP_WHO_PQ_URL="http://127.0.0.1:9/who_pq.csv"
+export BIOMCP_WHO_PQ_API_URL="http://127.0.0.1:9/who_api.csv"
+export BIOMCP_WHO_VACCINES_URL="http://127.0.0.1:9/who_vaccines.csv"
+who_degraded_json="$(../../tools/biomcp-ci --json search drug trastuzumab --region all --limit 1 2>/dev/null)"
+jq -e '.regions.who as $who | ($who.count == 0) and ($who.results == []) and ($who.note | test("omits the WHO section")) and ($who.note | test("who_pq.csv")) and (.regions.eu.results | length >= 1) and (.regions.us.results | length >= 1)' <<<"$who_degraded_json" | mustmatch 'true'
+who_degraded_text="$(../../tools/biomcp-ci search drug trastuzumab --region all --limit 1 2>/dev/null)"
+mustmatch like '## WHO (WHO Prequalification)
+
+> WHO Prequalification data is unavailable' <<<"$who_degraded_text"
+mustmatch not like 'No WHO-prequalified drugs found' <<<"$who_degraded_text"
+if [[ -n "$who_saved_dir" ]]; then
+  export BIOMCP_WHO_DIR="$who_saved_dir"
+else
+  unset BIOMCP_WHO_DIR
+fi
+unset BIOMCP_WHO_PQ_URL BIOMCP_WHO_PQ_API_URL BIOMCP_WHO_VACCINES_URL who_degraded who_degraded_json who_degraded_text who_saved_dir
+```
+
 ## Brand-Name Bridge
 
 Brand-name `get` requests should land on the canonical generic identity, not a

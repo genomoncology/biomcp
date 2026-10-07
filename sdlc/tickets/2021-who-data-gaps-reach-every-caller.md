@@ -10,11 +10,53 @@ When WHO Prequalification data is missing or partly failed, every caller sees it
 
 ## Evidence
 
-Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 10). Ticket 1304 item 4 says a validation failure must never end in a generic message; this finishes it.
+Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-07-review-of-the-work-since-0.9.1.md`, finding 12). Ticket 1304 item 4 says a validation failure must never end in a generic message; this finishes it.
 
 - `src/entities/drug/search.rs:767-794`: with WHO data missing, the warning goes only to stderr. With the finished-product export failing on a fresh data folder, `search drug zidovudine` prints `No WHO-prequalified drugs found`, and the JSON shows `regions.who` as an empty result with no warning. With good data the same search finds 32.
 - `src/sources/who_pq.rs:1099` and `src/cli/system/who_sync.rs:22`: on a header mismatch the command still exits with `Source unavailable: WHO Prequalification is not available.`, the same text as issue #288. The file and column appear only on stderr, and that line has a punctuation slip (`...BASIS OF LISTING Review source configuration and retry..`).
 - A partial failure with older data kept reports `"status":"synchronized"` and exit 0 beside `"failed":["who_pq.csv"]`.
+
+## Diagnosis
+
+Root cause, confirmed in this worktree: the per-file failure detail that 1304
+built stops at three boundaries, and every caller that is not a terminal
+loses it.
+
+1. **The search degrade signal dies at the page type.**
+   `who_ready_for_region` (`src/entities/drug/search.rs`) writes the warning
+to stderr and returns `(None, true)`; the bool is consumed to pick an empty
+WHO page and never crosses `DrugSearchPageWithRegion`, which carries no
+field for it. So the JSON envelope renders `regions.who` as a plain empty
+bucket and the Markdown prints `No WHO-prequalified drugs found` — the same
+bytes as a true negative. The MCP `biomcp` tool returns CLI stdout only, so
+JSON and MCP callers receive no reason at all.
+2. **The `who sync` final error drops its own reason.** `who_pq_sync_error`
+builds a `SourceUnavailable` whose reason names the per-file outcome and
+the missing files, but `BioMcpError::public_projection` collapses every
+`SourceUnavailable` to `Source unavailable: WHO Prequalification is not
+available.` — the generic #288 line. The file and column reach only the
+stderr warning, which also carries a punctuation slip: the per-file error's
+Display ends with the recovery sentence, and the warning format appends
+another period (`... retry..`).
+3. **A partial sync reports success.** When every failed refresh still has
+an older local file, the sync returns `Ok(report)` and
+`who_sync_outcome` hardcodes `"status": "synchronized"` in JSON with exit
+0, beside the `failed` list.
+
+### Success criteria
+
+1. A region-less drug search that lost its WHO rows carries the degrade
+   reason — naming WHO Prequalification and the failing export file — in the
+   JSON envelope's WHO region result, in the Markdown WHO section, and in
+   the MCP tool response (the same field all three read).
+2. `who sync` that cannot produce the data exits nonzero with a final error
+   that names the failing file and, for a validation failure, the missing
+column — never the generic #288 line.
+3. A partial sync says partial: JSON `status: "partial"`, per-file outcomes
+   with reasons, nonzero exit; the text report never claims bare success
+   beside failures.
+4. 1304's spec cases (the WHO region envelope at `spec/entity/drug.md` and
+   the recorded-export sync tests) stay green.
 
 - Starts from: ticket 1304 and issue #288.
 - Keeps: the header normalisation, the per-file results, and searches that degrade instead of aborting.
