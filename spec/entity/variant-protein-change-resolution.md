@@ -37,7 +37,7 @@ biomcp --json --no-cache get variant '{{query}}' \
   | mustmatch like '{"code":"{{code}}","id":"{{id}}","candidates":{{candidates}}}'
 ```
 
-## Numbering
+## Protein-change numbering
 
 The headline transcript is the MANE one whenever the response marks it:
 ClinVar names a variant on the gene's MANE Select transcript when one exists,
@@ -63,7 +63,7 @@ note.
 | BRCA1 A1844T | chr17:g.41199660C>T | p.Ala1823Thr | NM_007294.3 | yes |
 | BRCA1 I1568N | chr17:g.41223228A>T | p.Ile1589Asn | NM_007300.3 | yes |
 
-```bash each_row="Variant Protein-Change Numbering"
+```bash each_row="Protein-change numbering"
 biomcp --json --no-cache get variant '{{query}}' \
   | jq -c '{id: .id, hgvs_p: .hgvs_p, transcript: .transcript, note: (if .protein_numbering_note then "yes" else "no" end)}' \
   | mustmatch like '{"id":"{{id}}","hgvs_p":"{{hgvs_p}}","transcript":"{{transcript}}","note":"{{note}}"}'
