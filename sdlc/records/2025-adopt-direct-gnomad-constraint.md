@@ -69,3 +69,5 @@ PM initially reported 207 existing record findings. Root owns their reconciliati
 - `sdlc/records/2025-adopt-direct-gnomad-constraint.md`
 
 Fresh read-only CODE review ACCEPTED1b94ae4148f760a5ecefde5ea011046551d76acf with no product findings. Root inspected unchanged tested runtime and scoped gates before landing.
+
+Landed: ccec533aaf33f49c45798e3ea211840851ffbb34

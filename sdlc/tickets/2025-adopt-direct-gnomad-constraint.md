@@ -30,3 +30,5 @@ Use qualified BioData `543bf8c304c3965af6a1c92076c9e63d02bd2998` version `0.0.39
 ## What the build taught us
 
 Complete shared constraint storage and borrowed flattened encoding preserve the product contract through both retrieval strategies and CLI/MCP output. Source transcript normalization remains separate from literal target restoration. Fresh CODE review ACCEPTED1b94ae4148f760a5ecefde5ea011046551d76acf with no product findings.13 affected Rust and147 Python checks passed; inherited unrelated gate findings and pending provider receipts remain explicit.
+
+Landed: ccec533aaf33f49c45798e3ea211840851ffbb34
