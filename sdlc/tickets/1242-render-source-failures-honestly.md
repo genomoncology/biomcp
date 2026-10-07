@@ -185,7 +185,7 @@ The per-item state:
   _meta.notes; the age filter now runs before detail verification so
   an over-age unchecked trial cannot mark the count partial (both
   directions tested). Inventory: ctgov/tests.rs grew 71 lines (the
-  review's 59 was the worker's miscount; nothing unaccounted).
+  review's 59 was a miscount; nothing unaccounted).
   see `sdlc/records/1242-render-source-failures-honestly.md`
 
 ### Batch 2 residuals (2026-09-26 review)

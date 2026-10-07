@@ -12,7 +12,7 @@ Article search and search-all now show the age sentence in
 persists responses (`CacheMode::NoStore`, recorded in code after
 earlier cache decode failures), so no stale serve exists to
 describe — the exclusion is recorded in the get-JSON notes issue
-with the code citation, and the worker's original GWAS test was
+with the code citation, and the original GWAS test was
 removed rather than forced green. The ClinGen prefetch — the audit
 found it is the only production fetch running on a bare spawn —
 inherits the command's note collector through a handle taken
