@@ -26,7 +26,8 @@
 
 ### Internal
 
-- The 0.9.1 post-release sweep, the citation-evidence issue filing with its Semantic Scholar 429 root-cause diagnosis, and the agent-value programme planning recorded no user-visible change. (1287, 1288, 1289)
+- The 0.9.1 post-release sweep, the citation-evidence issue filing with its Semantic Scholar 429 root-cause diagnosis, and the agent-value programme planning recorded no user-visible change, and the changelog bullet sweep ahead
+of this release. (1287, 1288, 1289, 1305)
 
 ## 0.9.1 — 2026-10-01
 
