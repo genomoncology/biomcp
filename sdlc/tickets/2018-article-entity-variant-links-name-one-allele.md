@@ -1,6 +1,6 @@
 # 2018 — Article entity variant links name one allele
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
