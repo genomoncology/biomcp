@@ -141,6 +141,67 @@ set -o pipefail
   | mustmatch 'true'
 ```
 
+## Ambiguous Abbreviations Refuse in Get Disease
+
+Ticket 2017. The synonym-field fix from 1295 brought every disease that
+holds an abbreviation into one result set, and `get disease` then picked one
+hit silently: the tie-break favoured records with no label (their ID is the
+shortest fallback name), and the gene section re-resolved the requested
+abbreviation in Open Targets, so `get disease MF` showed the Myotonia
+fluctuans definition with mycosis fungoides genes and `CAD` mixed cold
+agglutinin disease with coronary artery disease genes. `get disease` now
+refuses with every named candidate when several diseases hold the token
+exactly (the ticket 1297 pattern), and two-letter abbreviations such as `MM`
+refuse even when the source holds them on one disease, because a token that
+short cannot name one disease reliably. A single holder of three or more
+letters still resolves, and the card then assembles from that one record
+only. These rows replay recorded MyDisease responses through the routine
+disease fixture.
+
+| query | outcome |
+|---|---|
+| MF | {"code":"invalid_argument","candidates":2} |
+| CAD | {"code":"invalid_argument","candidates":3} |
+| MM | {"code":"invalid_argument","candidates":1} |
+| MDS | {"code":"invalid_argument","candidates":2} |
+| CRC | {"code":"ok","candidates":0,"id":"MONDO:0024331","name":"colorectal carcinoma"} |
+
+```bash each_row="Ambiguous Abbreviations Refuse in Get Disease"
+biomcp --json --no-cache get disease '{{query}}' \
+  | jq -c 'if .error then {code: .error.code, candidates: ([.error.message | scan("- [^\\n]+")] | length)} else {code: "ok", candidates: 0, id: .id, name: .name} end' \
+  | mustmatch like '{{outcome}}'
+```
+
+A refusal names every holder with a working retry form.
+
+```bash run id=ambiguous-abbreviation-cad-refusal exit=2
+../../tools/biomcp-ci --json get disease CAD
+```
+
+```json expect=ambiguous-abbreviation-cad-refusal contains
+{
+  "error": {
+    "code": "invalid_argument",
+    "message": "Invalid argument: Ambiguous disease abbreviation 'CAD': 3 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- coronary artery disease (MONDO:0005010)\n- MONDO:0018922 (no label in the search response)\n- MONDO:0100077 (no label in the search response)\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"CAD\"` to see every match."
+  }
+}
+```
+
+Search keeps surfacing every holder and now breaks exact-abbreviation ties
+by labelled first, then shorter canonical name: `MDS` ranks myelodysplastic
+syndrome above Miller-Dieker lissencephaly, and `CAD` leads with the
+labelled coronary artery disease instead of an unlabelled record.
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json search disease -q MDS --no-fallback --limit 2 \
+  | jq -r '[.results[].name] | join(" | ")' \
+  | mustmatch 'myelodysplastic syndrome | Miller-Dieker lissencephaly syndrome'
+../../tools/biomcp-ci --json search disease -q CAD --no-fallback --limit 1 \
+  | jq -r '.results[0].name' \
+  | mustmatch 'coronary artery disease'
+```
+
 
 ## Genes & Diagnostics
 

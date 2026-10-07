@@ -734,14 +734,10 @@ pub(crate) async fn resolve_disease_hit_by_name(
     name_or_id: &str,
 ) -> Result<MyDiseaseHit, BioMcpError> {
     match resolve_disease_hit_by_name_direct(client, name_or_id).await? {
-        DirectNameResolution::AmbiguousAbbreviation {
-            requested,
-            holders,
-        } => {
+        DirectNameResolution::AmbiguousAbbreviation { requested, holders } => {
             // Several holders explain the refusal on their own; the
             // short-token reason is for the single-holder case like `MM`.
-            let short_token =
-                holders.len() == 1 && is_short_abbreviation_token(&requested);
+            let short_token = holders.len() == 1 && is_short_abbreviation_token(&requested);
             return Err(ambiguous_abbreviation_error(
                 &requested,
                 &holders,

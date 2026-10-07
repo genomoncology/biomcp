@@ -1,6 +1,7 @@
 # 2017 — Ambiguous disease abbreviations refuse in get disease
 
-Status: OPEN.
+Status: OPEN (built; review pending). Build record:
+`sdlc/records/2017-ambiguous-disease-abbreviations-build.md`.
 
 Milestone: 0.9.2
 
@@ -90,6 +91,17 @@ against MyDisease.info; all four review cases confirmed.
    set-equality, HGSC miss, and the four full-name rows) stays green, and
    the 1295 recall win survives because search still surfaces every exact
    holder.
+
+## Build result (2026-10-07)
+
+All five criteria met. `get disease MF/CAD/MM/MDS` refuse with named
+candidates (verified live and from recorded responses), `search disease
+MDS` ranks myelodysplastic syndrome first, `search disease CAD` leads with
+the labelled coronary artery disease, and `CRC/AML/NSCLC/DLBCL` still
+resolve to one coherent record. Two-letter tokens refuse generally, so `HD`
+now refuses too (named in the refusal); that is criterion 3's honest cost.
+The 1295 spec table and CAD set-equality stay green. Deferred stays
+curated abbreviation preferences.
 
 ## Build status
 

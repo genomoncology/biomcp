@@ -108,6 +108,8 @@ EUROPEPMC_FALLBACK_ROWS = [
 ]
 # Ticket 1295: recorded MyDisease responses for common disease abbreviations
 # and their full names. The provider keys match the de-escaped scoped query.
+# Ticket 2017 adds the ambiguous abbreviation responses (MF, MM, MDS) that
+# `get disease` must refuse instead of mixing diseases.
 ABBREVIATION_RESPONSES = [
     ("NSCLC", "mydisease/query_nsclc.json"),
     ("DLBCL", "mydisease/query_dlbcl.json"),
@@ -115,6 +117,9 @@ ABBREVIATION_RESPONSES = [
     ("AML", "mydisease/query_aml.json"),
     ("CAD", "mydisease/query_cad.json"),
     ("HGSC", "mydisease/query_hgsc.json"),
+    ("MF", "mydisease/query_mf.json"),
+    ("MM", "mydisease/query_mm.json"),
+    ("MDS", "mydisease/query_mds.json"),
     ("non-small cell lung carcinoma", "mydisease/query_nsclc_full.json"),
     ("diffuse large B-cell lymphoma", "mydisease/query_dlbcl_full.json"),
     ("colorectal carcinoma", "mydisease/query_crc_full.json"),
@@ -360,6 +365,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/mydisease/disease/MONDO:0011996":
             send_bytes(self, 200, source_bytes("mydisease/get_mondo_0011996.json"))
+            return
+        if parsed.path == "/mydisease/disease/MONDO:0024331":
+            send_bytes(self, 200, source_bytes("mydisease/get_mondo_0024331.json"))
             return
         if parsed.path == "/mydisease/disease/MONDO:0007947":
             send_bytes(self, 200, source_bytes("mydisease/get_mondo_0007947.json"))

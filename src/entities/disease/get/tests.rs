@@ -569,6 +569,8 @@ async fn abbreviation_fixture_server()
                         recorded_mydisease!("query_mm.json")
                     } else if request.contains("MDS") {
                         recorded_mydisease!("query_mds.json")
+                    } else if request.contains("CAD") {
+                        recorded_mydisease!("query_cad.json")
                     } else if request.contains("CRC") {
                         recorded_mydisease!("query_crc.json")
                     } else {
@@ -610,10 +612,7 @@ async fn get_disease_card_or_error(query: &str) -> Result<String, String> {
     server.abort();
     drop(env);
     outcome.map_err(|err| err.to_string()).map(|text| {
-        text + "\n<<requests>>\n" + &requests
-            .lock()
-            .expect("lock fixture requests")
-            .join("\n")
+        text + "\n<<requests>>\n" + &requests.lock().expect("lock fixture requests").join("\n")
     })
 }
 
@@ -623,8 +622,14 @@ async fn get_disease_mf_refuses_instead_of_mixing_two_diseases() {
     let error = get_disease_card_or_error("MF")
         .await
         .expect_err("MF holds on two diseases and must refuse");
-    assert!(error.contains("Ambiguous disease abbreviation 'MF'"), "{error}");
-    assert!(error.contains("mycosis fungoides (MONDO:0009691)"), "{error}");
+    assert!(
+        error.contains("Ambiguous disease abbreviation 'MF'"),
+        "{error}"
+    );
+    assert!(
+        error.contains("mycosis fungoides (MONDO:0009691)"),
+        "{error}"
+    );
     assert!(error.contains("MONDO:0020481"), "{error}");
     assert!(error.contains("search disease"), "{error}");
 }
@@ -650,7 +655,10 @@ async fn get_disease_mm_refuses_even_with_one_source_holder() {
     let error = get_disease_card_or_error("MM")
         .await
         .expect_err("a two-letter abbreviation must not resolve to Miyoshi");
-    assert!(error.contains("Miyoshi muscular dystrophy (MONDO:0009685)"), "{error}");
+    assert!(
+        error.contains("Miyoshi muscular dystrophy (MONDO:0009685)"),
+        "{error}"
+    );
     assert!(
         error.contains("a token this short cannot name one disease reliably"),
         "{error}"
@@ -744,9 +752,15 @@ async fn get_disease_alias_lookup_does_not_feed_the_abbreviation_to_open_targets
     drop(env);
 
     assert!(card.contains("ID: MONDO:0900001"), "{card}");
-    let requests = requests.lock().expect("lock alias fixture requests").join("\n");
+    let requests = requests
+        .lock()
+        .expect("lock alias fixture requests")
+        .join("\n");
+    // The resolution query repeats the token once per Lucene clause; count
+    // requests, not occurrences.
+    let querying_requests = requests.lines().filter(|line| line.contains("ZQX")).count();
     assert!(
-        requests.matches("ZQX").count() == 1,
+        querying_requests == 1,
         "the abbreviation may appear only in the resolution query: {requests}"
     );
 }

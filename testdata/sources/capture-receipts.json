@@ -3206,6 +3206,54 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
       }
+    },
+    {
+      "path": "mydisease/query_mf.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3AMF%5E10+OR+disease_ontology.synonyms.exact%3AMF+OR+mondo.name%3AMF%5E10+OR+mondo.synonym.exact%3AMF%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-07T18:30:00Z",
+        "sha256": "f54369bb4929173e8d01219f64387fcceba43d244b672edc4ad472cb7bef8876",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_mm.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3AMM%5E10+OR+disease_ontology.synonyms.exact%3AMM+OR+mondo.name%3AMM%5E10+OR+mondo.synonym.exact%3AMM%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-07T18:30:00Z",
+        "sha256": "f27f6ffe01129ba13c1cefb908e98b2d9eb0b379313d04cf12e1584e2bd98eea",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/query_mds.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/query?q=%28disease_ontology.name%3AMDS%5E10+OR+disease_ontology.synonyms.exact%3AMDS+OR+mondo.name%3AMDS%5E10+OR+mondo.synonym.exact%3AMDS%29&size=15&from=0&fields=_id%2Cmondo.name%2Cmondo.synonym%2Cdisease_ontology.name%2Cdisease_ontology.synonyms%2Chpo.inheritance.hpo_id%2Chpo.inheritance.hpo_name%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.clinical_course.hpo_name",
+        "captured_at": "2026-10-07T18:30:00Z",
+        "sha256": "8a79fad491ace68c964875096fb1e3bc009e6c7a02231e0d3c48f02caf4aa977",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "mydisease/get_mondo_0024331.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyDisease.info",
+        "request": "https://mydisease.info/v1/disease/MONDO:0024331?fields=_id%2Cmondo.name%2Cmondo.definition%2Cmondo.parents%2Cmondo.synonym%2Cmondo.xrefs%2Cdisease_ontology.name%2Cdisease_ontology.doid%2Cdisease_ontology.def%2Cdisease_ontology.parents%2Cdisease_ontology.synonyms%2Cdisease_ontology.xrefs%2Cumls.mesh%2Cumls.nci%2Cumls.snomed%2Cumls.icd10am%2Cdisgenet.genes_related_to_disease%2Chpo.phenotype_related_to_disease.hpo_id%2Chpo.phenotype_related_to_disease.evidence%2Chpo.phenotype_related_to_disease.hp_freq%2Chpo.inheritance.hpo_id",
+        "captured_at": "2026-10-07T18:30:00Z",
+        "sha256": "d0524858eae17ae5d147e8bd42740a3dbd38e7e81e93b7f30f038f67598a692c",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyDisease.info response through BioMCP's production request path before the stated minimization."
+      }
     }
   ],
   "fixture_key_contract": {
