@@ -1432,6 +1432,8 @@ pub async fn get_with_workflow_signals(
 #[cfg(test)]
 mod clinvar_adoption_transport_tests;
 #[cfg(test)]
+mod direct_clinvar_record_transport_tests;
+#[cfg(test)]
 mod dbnsfp_transport_tests;
 #[cfg(test)]
 mod protein_change_tests;
