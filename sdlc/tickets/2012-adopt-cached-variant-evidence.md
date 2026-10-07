@@ -1,6 +1,6 @@
 # 2012 — Adopt shared cached variant evidence
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 Component: backend
@@ -39,3 +39,7 @@ Affected Python checks report127 passes. The existing forged-offline-marker test
 Strict consumer Clippy reports10 library and18 library-test errors on Rust1.93.1. Every diagnostic belongs to unchanged files, including existing dead code and variant-resolution, source and transport-test lints. No changed-file diagnostic remains. An initial supplemental Clippy command incorrectly applied the producer's unsafe-code prohibition; the corrected consumer command uses its own strict warning policy. Changed Rust formatting and whitespace pass. These results do not claim a whole consumer gate pass.
 
 The four new cases keep separate channel, route-plan and uncapped-citation claims. Existing source, section, hydration, normalization and privacy owners remain. No producer semantic matrix, fixture corpus, runtime hook, new validator or test scaffolding remains. Root owns fresh CODE review, consumer gates, paired recording and landing. Status stays OPEN.
+
+## Completion
+
+Review: accept. Fresh High CODE ACCEPT a871bbc3b8b67cb5f196f33ea4819d5187a921c8. Landed: a871bbc3b8b67cb5f196f33ea4819d5187a921c8. Paired producer33b8ff13f1f445eadbfa10fb433852f5b77b4a1d passed its required Linux checks. See [record](../records/2012-adopt-cached-variant-evidence.md). Root accepts the documented inherited whole-gate findings for this bounded change.
