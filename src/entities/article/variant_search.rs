@@ -4646,11 +4646,16 @@ mod tests {
                 ));
             }
             if target.starts_with("/search") && target.contains("query=") {
-                if target.contains("page=1") {
+                // Ticket 1298 moved the wire from page= to cursorMark=; the
+                // first cursor page answers and every later cursor 503s.
+                let first_cursor = !target.contains("cursorMark=")
+                    || target.contains("cursorMark=*")
+                    || target.contains("cursorMark=%2A");
+                if first_cursor {
                     return TestHttpReply::Bytes(test_http_response(
                         "200 OK",
                         "application/json",
-                        br#"{"version":"6.9","hitCount":60,"resultList":{"result":[{"id":"71000020","pmid":"71000020","title":"strict partial europepmc row one","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0},{"id":"71000021","pmid":"71000021","title":"strict partial europepmc row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0},{"id":"71000022","pmid":"71000022","title":"strict partial europepmc row three","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0}]}}"#.as_slice(),
+                        br#"{"version":"6.9","hitCount":60,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"71000020","pmid":"71000020","title":"strict partial europepmc row one","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0},{"id":"71000021","pmid":"71000021","title":"strict partial europepmc row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0},{"id":"71000022","pmid":"71000022","title":"strict partial europepmc row three","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author","isOpenAccess":"N","citedByCount":0}]}}"#.as_slice(),
                     ));
                 }
                 return TestHttpReply::Bytes(test_http_response(

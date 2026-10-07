@@ -1,6 +1,9 @@
 //! Article HTML-to-markdown extraction and structural classification helpers.
 
+use std::sync::OnceLock;
+
 use readability_rust::Readability;
+use regex::Regex;
 use scraper::{ElementRef, Html, Selector};
 
 use crate::error::BioMcpError;
@@ -248,7 +251,96 @@ pub fn extract_text_from_html(html: &str, base_url: &str) -> Result<String, BioM
         message: format!("HTML to markdown conversion failed: {err}"),
     })?;
 
-    Ok(markdown.trim().to_string())
+    let cleaned = strip_page_viewer_and_lookup_links(&markdown);
+    Ok(prepend_missing_title_and_byline(html, &cleaned)
+        .trim()
+        .to_string())
+}
+
+/// Drops page furniture from provider article pages: figure/table viewer
+/// links, `[Open in a new tab]` lines, and reference lookup URLs such as the
+/// long Google Scholar `scholar_lookup` query strings printed after every
+/// reference entry.
+fn strip_page_viewer_and_lookup_links(markdown: &str) -> String {
+    static NOISE_LINK_RE: OnceLock<Regex> = OnceLock::new();
+    static OPEN_IN_NEW_TAB_RE: OnceLock<Regex> = OnceLock::new();
+    let noise = NOISE_LINK_RE.get_or_init(|| {
+        Regex::new(concat!(
+            // Bracket-wrapped link-bundle entry, e.g. `\[[Google Scholar](…scholar_lookup…)]`.
+            r"(?:\\)?\[(?:\\)?\[[^\]\n]*\]\((?:https://scholar\.google\.com/scholar_lookup|[^)\n]*tileshop)[^)\n]*\)(?:\\)?\]",
+            // Linked image whose target is a figure viewer page.
+            r"|\[!\[[^\]\n]*\]\([^)\n]*\)\]\([^)\n]*tileshop[^)\n]*\)",
+            // Plain link to a viewer or lookup URL.
+            r"|\[[^\]\n]*\]\((?:https://scholar\.google\.com/scholar_lookup|[^)\n]*tileshop)[^)\n]*\)",
+        ))
+        .expect("static noise-link regex")
+    });
+    let open_tab = OPEN_IN_NEW_TAB_RE.get_or_init(|| {
+        Regex::new(r"^\s*\[Open in a new tab\]\([^)\n]*\)\s*$")
+            .expect("static open-in-new-tab regex")
+    });
+
+    let mut kept = Vec::new();
+    for line in markdown.lines() {
+        if open_tab.is_match(line) {
+            continue;
+        }
+        let stripped = noise.replace_all(line, "");
+        if stripped.trim().is_empty() && !line.trim().is_empty() {
+            continue;
+        }
+        kept.push(stripped.trim_end().to_string());
+    }
+    kept.join("\n")
+}
+
+/// Restores the article title and byline that readability strips from provider
+/// pages. The title returns as a level-1 heading only when the converted body
+/// does not already open with it; byline names come from the page's author
+/// spans, deduplicated in document order.
+fn prepend_missing_title_and_byline(html: &str, markdown: &str) -> String {
+    let document = Html::parse_document(html);
+    let Some(root) = select_content_root(&document) else {
+        return markdown.to_string();
+    };
+    let heading = Selector::parse("h1, hgroup h1").expect("static title selector");
+    let Some(title_node) = root.select(&heading).next() else {
+        return markdown.to_string();
+    };
+    let title = collapse_whitespace(&title_node.text().collect::<String>());
+    if title.is_empty() || markdown_has_heading(markdown, &title) {
+        return markdown.to_string();
+    }
+
+    let mut blocks = vec![format!("# {title}")];
+    let names = byline_names(root);
+    if !names.is_empty() {
+        blocks.push(names.join(", "));
+    }
+    format!("{}\n\n{}", blocks.join("\n\n"), markdown)
+}
+
+fn markdown_has_heading(markdown: &str, title: &str) -> bool {
+    markdown.lines().any(|line| {
+        let trimmed = line.trim_start();
+        let Some(rest) = trimmed.strip_prefix('#') else {
+            return false;
+        };
+        let rest = rest.trim_start_matches('#');
+        rest.starts_with(' ') && collapse_whitespace(rest) == title
+    })
+}
+
+fn byline_names(root: ElementRef<'_>) -> Vec<String> {
+    let names = Selector::parse("span.name").expect("static byline selector");
+    let mut seen = Vec::new();
+    for node in root.select(&names) {
+        let name = collapse_whitespace(&node.text().collect::<String>());
+        if !name.is_empty() && !seen.contains(&name) {
+            seen.push(name);
+        }
+    }
+    seen
 }
 
 fn extract_readable_html(html: &str, base_url: &str) -> Result<String, BioMcpError> {
@@ -277,6 +369,13 @@ mod tests {
     const PMC3040717_PAGE: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/pmc_article/pmc3040717.html"
+    ));
+    // Real recorded PMC article page (Blood 2019, PMID 31648294) carrying the
+    // tileshop image viewers, `[Open in a new tab]` links, and reference
+    // `scholar_lookup` URLs named by ticket 1294.
+    const PMC6695558_PAGE: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pmc_article/pmc6695558.html"
     ));
 
     #[test]
@@ -382,6 +481,83 @@ mod tests {
             assert!(
                 classify_html_document(html, "https://example.test/").is_err(),
                 "fixture: {html}"
+            );
+        }
+    }
+
+    #[test]
+    fn stored_pmc_pages_keep_title_and_byline_and_drop_page_furniture() {
+        let cases = [
+            (
+                PMC6695558_PAGE,
+                "https://pmc.ncbi.nlm.nih.gov/articles/PMC6695558/",
+                "# High rate of durable complete remission in follicular lymphoma after CD19 CAR-T cell immunotherapy",
+                "Alexandre V Hirayama, Jordan Gauthier, Kevin A Hay",
+                // New-style PMC page: every blob image sits inside a tileshop
+                // viewer link, so the blobs drop with the viewers.
+                [
+                    "tileshop",
+                    "[Open in a new tab]",
+                    "scholar.google.com/scholar_lookup",
+                    "cdn.ncbi.nlm.nih.gov/pmc/blobs",
+                ]
+                .as_slice(),
+            ),
+            (
+                PMC3040717_PAGE,
+                "https://pmc.ncbi.nlm.nih.gov/articles/PMC3040717/",
+                "# Comprehensive Analysis of Missense Variations in the BRCT Domain of BRCA1 by Structural and Functional Assays",
+                "Megan S Lee, Ruth Green, Sylvia M Marsillac",
+                [
+                    "tileshop",
+                    "[Open in a new tab]",
+                    "scholar.google.com/scholar_lookup",
+                ]
+                .as_slice(),
+            ),
+        ];
+
+        for (page, base_url, title_line, byline_prefix, absent_signals) in cases {
+            let markdown =
+                extract_text_from_html(page, base_url).expect("stored PMC page should convert");
+            assert!(
+                markdown.starts_with(&format!("{title_line}\n\n")),
+                "title must lead the converted page: {}",
+                markdown.lines().next().unwrap_or_default()
+            );
+            assert!(
+                markdown.contains(byline_prefix),
+                "byline must follow the title"
+            );
+            for absent in absent_signals {
+                assert!(
+                    !markdown.contains(absent),
+                    "page furniture leaked: {absent}"
+                );
+            }
+            assert!(
+                markdown.contains("https://doi.org/"),
+                "reference DOI links stay"
+            );
+        }
+    }
+
+    #[test]
+    fn fixture_family_titles_are_kept_exactly_once() {
+        let cases = [
+            (PMC_ARTICLE_PAGE, "# PMC HTML fallback winner"),
+            (NIH_NEWS_RELEASE_PAGE, "# NIH release quality guard"),
+            // readability drops the `<header>` block, so the preprint regains
+            // its title through the same heading restore.
+            (BIORXIV_PREPRINT_PAGE, "# bioRxiv preprint quality guard"),
+        ];
+        for (page, title_line) in cases {
+            let markdown = extract_text_from_html(page, "https://example.test/article")
+                .expect("fixture HTML should convert");
+            assert_eq!(
+                markdown.matches(title_line).count(),
+                1,
+                "title must appear exactly once"
             );
         }
     }

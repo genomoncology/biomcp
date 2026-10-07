@@ -29,10 +29,3 @@ fn normalize_article_search_text_compacts_compound_hyphens() {
         "meta-analysis"
     );
 }
-
-#[test]
-fn truncate_abstract_keeps_full_text_until_limit() {
-    let text = "Sentence one. Sentence two. Sentence three.";
-    let out = truncate_abstract(text);
-    assert_eq!(out, text);
-}

@@ -201,5 +201,23 @@
   "lanesTable": {
     "file": "planning/lanes.md",
     "heading": "Lanes"
-  }
+  },
+  "milestones": {
+    "file": "planning/milestones.md",
+    "values": [
+      "0.9.2",
+      "1.0"
+    ]
+  },
+  "releaseMilestones": [
+    {
+      "name": "0.9.2",
+      "targetRef": "main",
+      "state": "active"
+    },
+    {
+      "name": "1.0",
+      "state": "settled"
+    }
+  ]
 }

@@ -424,7 +424,7 @@ impl OrcidPersonResponse {
     /// error when no usable public name exists.
     pub(crate) fn public_display_name(&self) -> Result<String, BioMcpError> {
         let name = self.name.as_ref().ok_or_else(contract)?;
-        if name.visibility() != Some("PUBLIC") {
+        if !is_public(name.visibility()) {
             return Err(contract());
         }
         fn field(value: &Option<OrcidTextValue>) -> Option<&str> {
@@ -449,6 +449,14 @@ impl OrcidName {
     fn visibility(&self) -> Option<&str> {
         self.visibility.as_deref()
     }
+}
+
+/// True when a visibility value names public data. ORCID documents
+/// lowercase values and its v3.0 API sends "public" on both the person and
+/// works reads; the uppercase spelling names the same value, and every other
+/// value — or an absent one — is not public.
+fn is_public(visibility: Option<&str>) -> bool {
+    visibility.is_some_and(|value| value.eq_ignore_ascii_case("public"))
 }
 
 fn contract() -> BioMcpError {
@@ -543,7 +551,7 @@ impl OrcidWorksResponse {
             }
             let mut public = Vec::new();
             for summary in &group.work_summary {
-                if summary.visibility.as_deref() != Some("PUBLIC") {
+                if !is_public(summary.visibility.as_deref()) {
                     continue;
                 }
                 public.push((summary, validated_summary(summary)?));

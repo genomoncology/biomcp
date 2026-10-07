@@ -3086,6 +3086,78 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes recorded from the public provider response (HTTP 200) with the production query shape the CLI sends (ticket 1297)."
       }
+    },
+    {
+      "path": "orcid/person_0000-0002-1825-0097_20261006.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ORCID",
+        "request": "https://pub.orcid.org/v3.0/0000-0002-1825-0097/person",
+        "captured_at": "2026-10-06T17:04:47Z",
+        "sha256": "b4b378cc553418c4f03a1a1126921489335d6007efa3b280001b5dd686f47ddf",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes recorded from the public ORCID v3.0 person response for ORCID's demonstration record with an anonymous request (Accept: application/vnd.orcid+json, HTTP 200). The demonstration record is the fictitious Josiah Carberry account ORCID publishes, and an anonymous reader receives its public data only. The name carries lowercase visibility values, which is the recorded shape behind ticket 1303."
+      }
+    },
+    {
+      "path": "who-pq/finished-pharmaceutical-products_export_20261006.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "WHO Prequalification",
+        "request": "https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&_format=csv",
+        "captured_at": "2026-10-06T19:41:00Z",
+        "sha256": "db815ff20c4fe2ed45d08687d445ecf3a6bd3e419fb14ae35f62f01a0c95ca3f",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful. The minimized spec fixture spec/fixtures/who-pq/who_pq.csv is derived from this capture.",
+        "provider_origin_statement": "Bytes recorded from the public WHO Prequalification finished-pharmaceutical-products CSV export with an anonymous request (HTTP 200, text/csv). The export ships title-case headers and no longer carries a 'Basis of Alternative Listing' column, which is the recorded shape behind ticket 1304 and issue #288."
+      }
+    },
+    {
+      "path": "who-pq/active-pharmaceutical-ingredients_export_20261006.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "WHO Prequalification",
+        "request": "https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&_format=csv",
+        "captured_at": "2026-10-06T19:41:00Z",
+        "sha256": "19c7ee444d109618014eae7a3ca9f9a46f2de316d495403729fc349f365ed979",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful. The minimized spec fixture spec/fixtures/who-pq/who_api.csv is derived from this capture.",
+        "provider_origin_statement": "Bytes recorded from the public WHO Prequalification active-pharmaceutical-ingredients CSV export with an anonymous request (HTTP 200, text/csv). The applicant header is now 'Applicant' rather than 'Applicant Organization', which is the recorded shape behind ticket 1304 and issue #288."
+      }
+    },
+    {
+      "path": "who-pq/vaccines_prequalified_export_20261006.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "WHO Prequalification",
+        "request": "https://extranet.who.int/prequal/vaccines/prequalified/export",
+        "captured_at": "2026-10-06T19:41:00Z",
+        "sha256": "46c09550c222263518e4712bcdd7536df513eeec844a7d9638d426646e5d440d",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful, including the trailing space inside the first header cell's quotes. The minimized spec fixture spec/fixtures/who-pq/who_vaccines.csv preserves that byte too.",
+        "provider_origin_statement": "Bytes recorded from the public WHO Prequalification vaccines CSV export with an anonymous request (HTTP 200, text/csv). The first header cell ships as 'Date of Prequalification ' with a trailing space inside the quotes, which is the recorded shape behind ticket 1304 and issue #288."
+      }
+    },
+    {
+      "path": "ncbi_efetch/pmc6172658.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI EFetch PMC",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=6172658&rettype=xml",
+        "captured_at": "2026-10-05T18:52:00Z",
+        "sha256": "21981604084d4dddd7b583f0ed5116072ad5fc6bdf8f84acbc6e38b8725da074",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public NCBI EFetch response through BioMCP's production request shape."
+      }
+    },
+    {
+      "path": "pmc_article/pmc6695558.html",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubMed Central article HTML",
+        "request": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6695558/",
+        "captured_at": "2026-10-05T19:57:00Z",
+        "sha256": "a13a086cb3b0f192c5249248fba35c1d17f895b575c27996939ea68b4c3e3bb4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
     }
   ],
   "fixture_key_contract": {

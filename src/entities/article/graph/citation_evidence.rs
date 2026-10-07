@@ -10,8 +10,12 @@ use crate::sources::opencitations::{
     OPENCITATIONS_BASE, OpenCitationsClient, OpenCitationsEdge, normalize_doi, valid_creation,
     valid_oci,
 };
-use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
+use crate::sources::semantic_scholar::{
+    SEMANTIC_SCHOLAR_API, SemanticScholarClient, SemanticScholarPaper, SemanticScholarRefusal,
+    semantic_scholar_refusal,
+};
 
+use super::super::detail::{first_europepmc_hit, parse_pmcid, parse_pmid};
 use crate::transform::article::{
     JatsCitationExtraction, JatsCitationTargetIds,
     extract_citation_evidence as real_jats_extraction,
@@ -196,21 +200,32 @@ pub(crate) struct GraphEdgeMeta {
 
 fn provider_decode_error(message: &str) -> BioMcpError {
     BioMcpError::Api {
-        api: "semantic-scholar".into(),
+        api: SEMANTIC_SCHOLAR_API.to_string(),
         message: message.to_string(),
     }
 }
 
 fn bounded_unavailable_error(message: &str) -> BioMcpError {
-    BioMcpError::Api {
-        api: "semantic-scholar".into(),
-        message: message.to_string(),
+    BioMcpError::SourceUnavailable {
+        source_name: SEMANTIC_SCHOLAR_API.to_string(),
+        reason: message.to_string(),
+        suggestion: "Retry the command later; Semantic Scholar may answer then.".to_string(),
     }
 }
 
+/// The citation-evidence command's own error surface name. It names the
+/// command, never a provider, because the deadline and the refusal summary
+/// belong to the command rather than to one provider (ticket 1302).
+pub(crate) const CITATION_EVIDENCE_API: &str = "article-citation-evidence";
+
+/// The marker prefix carrying the refusal detail this module composes from
+/// its own vocabulary. The public projection echoes the detail verbatim:
+/// every word is a static constant of this module, never upstream text.
+pub(crate) const CITATION_PROVIDERS_REFUSED_MARKER: &str = "citation-evidence providers refused: ";
+
 fn command_deadline_error() -> BioMcpError {
     BioMcpError::Api {
-        api: "article-citation-evidence".into(),
+        api: CITATION_EVIDENCE_API.to_string(),
         message: "invocation deadline exceeded".into(),
     }
 }
@@ -230,6 +245,74 @@ fn valid_paper_id(value: Option<&str>) -> Option<String> {
             !id.is_empty() && id.len() == 40 && id.chars().all(|ch| ch.is_ascii_hexdigit())
         })
         .map(str::to_string)
+}
+
+/// Semantic Scholar's state for one invocation: it answered, or it refused
+/// with a reason the user can act on (ticket 1302).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SemanticScholarState {
+    RateLimited,
+    Unavailable,
+}
+
+impl SemanticScholarState {
+    fn from_refusal(refusal: SemanticScholarRefusal) -> Self {
+        match refusal {
+            SemanticScholarRefusal::RateLimited => Self::RateLimited,
+            SemanticScholarRefusal::Unavailable => Self::Unavailable,
+        }
+    }
+
+    fn status(self) -> &'static str {
+        match self {
+            Self::RateLimited => "rate_limited",
+            Self::Unavailable => "unavailable",
+        }
+    }
+
+    fn word(self) -> &'static str {
+        match self {
+            Self::RateLimited => "rate limited the request",
+            Self::Unavailable => "was unavailable",
+        }
+    }
+}
+
+/// Why the OpenCitations confirmation phase could not answer. The words are
+/// this module's own; they surface in the public refusal summary verbatim.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum IndexRefusal {
+    RateLimited,
+    Unavailable,
+    NoAddressableDoi,
+}
+
+impl IndexRefusal {
+    fn status(self) -> &'static str {
+        match self {
+            Self::RateLimited => "rate_limited",
+            Self::Unavailable | Self::NoAddressableDoi => "unavailable",
+        }
+    }
+
+    fn word(self) -> &'static str {
+        match self {
+            Self::RateLimited => "rate limited the request",
+            Self::Unavailable => "was unavailable",
+            Self::NoAddressableDoi => "had no DOI to query",
+        }
+    }
+}
+
+fn providers_refused_error(s2: SemanticScholarState, index: IndexRefusal) -> BioMcpError {
+    BioMcpError::Api {
+        api: CITATION_EVIDENCE_API.to_string(),
+        message: format!(
+            "{CITATION_PROVIDERS_REFUSED_MARKER}Semantic Scholar {}; OpenCitations {}.",
+            s2.word(),
+            index.word(),
+        ),
+    }
 }
 
 async fn resolve_citation_seed(
@@ -616,25 +699,271 @@ fn confirmation_from_edge(
     })
 }
 
+/// One side of a degraded pair: the paper this command can name without
+/// Semantic Scholar, and the normalized DOI the index can be asked. A DOI
+/// input needs no hop; a PMID or PMCID resolves through Europe PMC; anything
+/// else leaves the side without an addressable DOI.
+async fn degraded_input_paper(
+    id: &str,
+    europe: &EuropePmcClient,
+    deadline: tokio::time::Instant,
+) -> (super::ArticleRelatedPaper, Option<String>) {
+    let trimmed = id.trim();
+    if let Some(doi) = normalize_doi(trimmed) {
+        return (
+            super::ArticleRelatedPaper {
+                paper_id: None,
+                pmid: None,
+                doi: Some(doi.clone()),
+                arxiv_id: None,
+                title: String::new(),
+                journal: None,
+                year: None,
+            },
+            Some(doi),
+        );
+    }
+    let search = if let Some(pmid) = parse_pmid(trimmed) {
+        tokio::time::timeout_at(deadline, europe.search_by_pmid(&pmid.to_string()))
+            .await
+            .ok()
+            .and_then(|result| result.ok())
+    } else if let Some(pmcid) = parse_pmcid(trimmed) {
+        tokio::time::timeout_at(deadline, europe.search_by_pmcid(&pmcid))
+            .await
+            .ok()
+            .and_then(|result| result.ok())
+    } else {
+        None
+    };
+    let Some(hit) = search.and_then(first_europepmc_hit) else {
+        return (degraded_unresolved_paper(), None);
+    };
+    let doi = hit
+        .doi
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .and_then(normalize_doi);
+    (
+        super::ArticleRelatedPaper {
+            paper_id: None,
+            pmid: hit
+                .pmid
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string),
+            doi: doi.clone(),
+            arxiv_id: None,
+            title: hit
+                .title
+                .as_deref()
+                .map(str::trim)
+                .unwrap_or_default()
+                .to_string(),
+            journal: hit
+                .journal_title
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string),
+            year: hit
+                .pub_year
+                .as_deref()
+                .and_then(|value| value.trim().parse::<u32>().ok()),
+        },
+        doi,
+    )
+}
+
+/// The side that carried no identifier the degraded path could resolve. It
+/// never reaches output: a missing DOI ends the invocation with the refusal
+/// summary instead.
+fn degraded_unresolved_paper() -> super::ArticleRelatedPaper {
+    super::ArticleRelatedPaper {
+        paper_id: None,
+        pmid: None,
+        doi: None,
+        arxiv_id: None,
+        title: String::new(),
+        journal: None,
+        year: None,
+    }
+}
+
+/// A degraded invocation's resolved pair: the papers this command can name
+/// without Semantic Scholar, the input spellings for its messages, and each
+/// side's normalized DOI for the index request.
+struct DegradedPair {
+    citing: super::ArticleRelatedPaper,
+    cited: super::ArticleRelatedPaper,
+    citing_id: String,
+    cited_id: String,
+    citing_doi: Option<String>,
+    cited_doi: Option<String>,
+}
+
+/// The OpenCitations-first phase for an invocation Semantic Scholar refused:
+/// answer the edge from the index when it holds it, and otherwise report the
+/// refusal with both providers and their reasons. No Semantic Scholar
+/// request follows the refusal, so a refused first hop costs one request
+/// plus the index lookup (ticket 1302).
+async fn degraded_confirmation(
+    pair: &DegradedPair,
+    s2: SemanticScholarState,
+    deadline: tokio::time::Instant,
+) -> Result<ArticleCitationEvidenceResult, BioMcpError> {
+    let (Some(citing_doi), Some(cited_doi)) = (&pair.citing_doi, &pair.cited_doi) else {
+        return Err(providers_refused_error(s2, IndexRefusal::NoAddressableDoi));
+    };
+    let url = opencitations_references_url(citing_doi);
+    match opencitations_edges(citing_doi, deadline).await {
+        Ok(edges) => match matching_opencitations_edge(&edges, cited_doi) {
+            Some(edge) => match confirmation_from_edge(edge, citing_doi, cited_doi, &url) {
+                Some(confirmation) => {
+                    let status = CitationEvidenceStatus::ReferenceConfirmedWithoutPassage;
+                    Ok(ArticleCitationEvidenceResult {
+                        citing: pair.citing.clone(),
+                        cited: pair.cited.clone(),
+                        message: status.message().to_string(),
+                        source: Some(OPENCITATIONS_SOURCE.to_string()),
+                        provider_contexts: Vec::new(),
+                        passages: Vec::new(),
+                        fulltext_locator: None,
+                        confirmation: Some(confirmation),
+                        status,
+                        _meta: CitationEvidenceMeta {
+                            source_status: vec![
+                                CitationEvidenceSourceStatus {
+                                    source: SEMANTIC_SCHOLAR_SOURCE.to_string(),
+                                    status: s2.status().to_string(),
+                                },
+                                CitationEvidenceSourceStatus {
+                                    source: EUROPE_PMC_JATS_SOURCE.to_string(),
+                                    status: "not_requested".to_string(),
+                                },
+                                CitationEvidenceSourceStatus {
+                                    source: OPENCITATIONS_SOURCE.to_string(),
+                                    status: "available".to_string(),
+                                },
+                            ],
+                            evidence_urls: vec![CitationEvidenceUrl {
+                                source: OPENCITATIONS_SOURCE.to_string(),
+                                url,
+                            }],
+                            next_commands: Vec::new(),
+                        },
+                    })
+                }
+                // A matching row with a shape-invalid OCI fails closed, so
+                // the degraded invocation reports the refusal instead of
+                // publishing provider text.
+                None => Err(providers_refused_error(s2, IndexRefusal::Unavailable)),
+            },
+            None => Err(BioMcpError::NotFound {
+                entity: "directed citation".into(),
+                id: format!("{} -> {}", pair.citing_id, pair.cited_id),
+                suggestion: format!(
+                    "OpenCitations holds no confirmed edge for this pair, and Semantic Scholar {}.\n\
+                     Retry later for Semantic Scholar citation contexts.",
+                    s2.word(),
+                ),
+            }),
+        },
+        Err(refusal) => Err(providers_refused_error(s2, refusal)),
+    }
+}
+
+/// A degraded invocation for inputs whose papers Semantic Scholar never
+/// supplied: resolve each side's DOI without it, then ask the index.
+async fn degraded_from_inputs(
+    citing_id: &str,
+    cited_id: &str,
+    s2: SemanticScholarState,
+    europe: &EuropePmcClient,
+    deadline: tokio::time::Instant,
+) -> Result<ArticleCitationEvidenceResult, BioMcpError> {
+    let (citing, citing_doi) = degraded_input_paper(citing_id, europe, deadline).await;
+    let (cited, cited_doi) = degraded_input_paper(cited_id, europe, deadline).await;
+    degraded_confirmation(
+        &DegradedPair {
+            citing,
+            cited,
+            citing_id: citing_id.trim().to_string(),
+            cited_id: cited_id.trim().to_string(),
+            citing_doi,
+            cited_doi,
+        },
+        s2,
+        deadline,
+    )
+    .await
+}
+
+/// Why an OpenCitations failure counts as a refusal with a reason: only
+/// the provider's own 429 distinguishes itself; every other failure,
+/// including transport errors, is plain unavailability. The key is the
+/// `HTTP {status}` prefix the shared decoder writes from this codebase.
+fn opencitations_refusal(error: &BioMcpError) -> IndexRefusal {
+    let mut current = error;
+    loop {
+        match current {
+            BioMcpError::WithSourceContext { source, .. } => current = source,
+            BioMcpError::Api { message, .. } if message.starts_with("HTTP 429") => {
+                return IndexRefusal::RateLimited;
+            }
+            _ => return IndexRefusal::Unavailable,
+        }
+    }
+}
+
 /// The confirmation phase: at most one request, placed after the full-text
 /// attempt and under the remaining absolute command deadline. Every failure
-/// is bounded unavailability, never a command error, and a deadline with no
-/// room left for the request is unavailability too.
+/// is bounded unavailability with its reason, never a command error, and a
+/// deadline with no room left for the request is unavailability too.
 async fn opencitations_edges(
     citing_doi: &str,
     deadline: tokio::time::Instant,
-) -> Result<Vec<OpenCitationsEdge>, ()> {
+) -> Result<Vec<OpenCitationsEdge>, IndexRefusal> {
     // watchdog: bounded retry poll sits on the compare line
     let timed_out = tokio::time::Instant::now() >= deadline; // watchdog: bounded retry deadline
     if timed_out {
-        return Err(());
+        return Err(IndexRefusal::Unavailable);
     }
     let Ok(client) = OpenCitationsClient::new() else {
-        return Err(());
+        return Err(IndexRefusal::Unavailable);
     };
     match tokio::time::timeout_at(deadline, client.references_by_doi(citing_doi)).await {
         Ok(Ok(edges)) => Ok(edges),
-        Ok(Err(_)) | Err(_) => Err(()),
+        Ok(Err(error)) => Err(opencitations_refusal(&error)),
+        Err(_) => Err(IndexRefusal::Unavailable),
+    }
+}
+
+/// One seed resolution's outcome: the pair Semantic Scholar answered, or
+/// the state of its refusal. A refusal degrades the invocation instead of
+/// failing it, and no second Semantic Scholar request follows (ticket 1302).
+enum SeedOutcome {
+    Resolved(Box<(super::ArticleRelatedPaper, SemanticScholarPaper)>),
+    Refused(SemanticScholarState),
+}
+
+async fn citation_seed(
+    id: &str,
+    client: &SemanticScholarClient,
+    europe: &EuropePmcClient,
+    deadline: tokio::time::Instant,
+) -> Result<SeedOutcome, BioMcpError> {
+    match tokio::time::timeout_at(deadline, resolve_citation_seed(id, client, europe)).await {
+        Ok(Ok(pair)) => Ok(SeedOutcome::Resolved(Box::new(pair))),
+        Ok(Err(error)) => match semantic_scholar_refusal(&error) {
+            Some(refusal) => Ok(SeedOutcome::Refused(SemanticScholarState::from_refusal(
+                refusal,
+            ))),
+            None => Err(error),
+        },
+        Err(_) => Err(command_deadline_error()),
     }
 }
 
@@ -646,20 +975,18 @@ pub async fn citation_evidence(
     let deadline = evidence_deadline();
     let client = SemanticScholarClient::new()?;
     let europe = EuropePmcClient::new()?;
-    let (citing, citing_paper) =
-        match tokio::time::timeout_at(deadline, resolve_citation_seed(citing_id, &client, &europe))
-            .await
-        {
-            Ok(result) => result?,
-            Err(_) => return Err(command_deadline_error()),
-        };
-    let (cited, cited_paper) =
-        match tokio::time::timeout_at(deadline, resolve_citation_seed(cited_id, &client, &europe))
-            .await
-        {
-            Ok(result) => result?,
-            Err(_) => return Err(command_deadline_error()),
-        };
+    let (citing, citing_paper) = match citation_seed(citing_id, &client, &europe, deadline).await? {
+        SeedOutcome::Resolved(pair) => *pair,
+        SeedOutcome::Refused(state) => {
+            return degraded_from_inputs(citing_id, cited_id, state, &europe, deadline).await;
+        }
+    };
+    let (cited, cited_paper) = match citation_seed(cited_id, &client, &europe, deadline).await? {
+        SeedOutcome::Resolved(pair) => *pair,
+        SeedOutcome::Refused(state) => {
+            return degraded_from_inputs(citing_id, cited_id, state, &europe, deadline).await;
+        }
+    };
     let citing_pid = valid_paper_id(citing.paper_id.as_deref())
         .ok_or_else(|| provider_decode_error("citing seed lacks a valid paper ID"))?;
     let cited_pid = valid_paper_id(cited.paper_id.as_deref())
@@ -681,14 +1008,37 @@ pub async fn citation_evidence(
         return Ok(cached);
     }
 
-    let contexts = match directed_edge_contexts(&client, &citing_pid, &cited_pid, deadline).await? {
-        EvidenceGraphOutcome::Matched(contexts) => Some(contexts),
-        EvidenceGraphOutcome::ExhaustedWithoutMatch => {
+    let contexts = match directed_edge_contexts(&client, &citing_pid, &cited_pid, deadline).await {
+        Ok(EvidenceGraphOutcome::Matched(contexts)) => Some(contexts),
+        Ok(EvidenceGraphOutcome::ExhaustedWithoutMatch) => {
             return Err(BioMcpError::NotFound {
                 entity: "directed citation".into(),
                 id: format!("{} -> {}", citing_id.trim(), cited_id.trim()),
                 suggestion: "Semantic Scholar exhausted the directed reference pages without finding this pair.".into(),
             });
+        }
+        // A refusal of the directed walk degrades to the index with the pair
+        // the seeds already resolved; every other walk failure keeps its
+        // bounded outcome unchanged.
+        Err(error) => {
+            return match semantic_scholar_refusal(&error) {
+                Some(refusal) => {
+                    degraded_confirmation(
+                        &DegradedPair {
+                            citing,
+                            cited,
+                            citing_id: citing_id.trim().to_string(),
+                            cited_id: cited_id.trim().to_string(),
+                            citing_doi: external_doi(&citing_paper),
+                            cited_doi: external_doi(&cited_paper),
+                        },
+                        SemanticScholarState::from_refusal(refusal),
+                        deadline,
+                    )
+                    .await
+                }
+                None => Err(error),
+            };
         }
     };
 
@@ -796,7 +1146,7 @@ pub async fn citation_evidence(
                     }
                 }
             }
-            Err(()) => opencitations_status = "unavailable",
+            Err(refusal) => opencitations_status = refusal.status(),
         }
     }
 

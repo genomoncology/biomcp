@@ -3,6 +3,49 @@
 use super::*;
 
 #[test]
+fn all_region_search_degrades_when_who_pq_data_is_absent_but_explicit_who_fails() {
+    let unavailable = || BioMcpError::SourceUnavailable {
+        source_name: "WHO Prequalification".to_string(),
+        reason: "Could not prepare WHO Prequalification data.".to_string(),
+        suggestion: "Run `biomcp who sync`.".to_string(),
+    };
+
+    // Region-less searches keep going with an empty WHO bucket and a
+    // visible warning (ticket 1304, issue #288).
+    let (client, degraded) = who_ready_for_region("imatinib", DrugRegion::All, Err(unavailable()))
+        .expect("all-region search should degrade");
+    assert!(client.is_none());
+    assert!(degraded);
+    let warning = who_pq_degradation_warning(&unavailable());
+    assert!(warning.contains("omits the WHO section"));
+    assert!(warning.contains("biomcp who sync"));
+    assert!(
+        warning.contains("WHO Prequalification"),
+        "the warning should name the missing source: {warning}"
+    );
+    assert_eq!(empty_who_search_page().total, Some(0));
+    assert!(empty_who_search_page().results.is_empty());
+
+    // An explicit `--region who` search still fails loudly instead of
+    // silently returning nothing.
+    assert!(
+        who_ready_for_region("imatinib", DrugRegion::Who, Err(unavailable())).is_err(),
+        "explicit WHO search must not degrade"
+    );
+
+    // A ready client passes through untouched.
+    let root = crate::test_support::TempDirGuard::new("who-degrade-ready");
+    let (client, degraded) = who_ready_for_region(
+        "imatinib",
+        DrugRegion::Who,
+        Ok(crate::sources::who_pq::WhoPqClient::from_root(root.path())),
+    )
+    .expect("ready client should pass through");
+    assert!(client.is_some());
+    assert!(!degraded);
+}
+
+#[test]
 fn explicit_who_vaccine_search_skips_drug_identity_resolution() {
     assert!(!should_resolve_drug_identity(
         DrugRegion::Who,

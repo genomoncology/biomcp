@@ -66,6 +66,18 @@ PMC_OA_3040717_XML = source_bytes("pmc_oa/pmc3040717.1.xml")
 PMC_3040717_HTML = source_bytes("pmc_article/pmc3040717.html")
 NCBI_EFETCH_3040717 = source_bytes("ncbi_efetch/pmc3040717.xml")
 NCBI_EFETCH_6329583 = source_bytes("ncbi_efetch/pmc6329583.xml")
+# Ticket 1294 recorded captures: the receipted TAILORx JATS paper (whole
+# abstract, spaced names, labeled pub-ids) and the receipted PMC HTML page
+# (title, byline, stripped viewer and lookup links).
+NCBI_EFETCH_6172658 = source_bytes("ncbi_efetch/pmc6172658.xml")
+PMC_6695558_HTML = source_bytes("pmc_article/pmc6695558.html")
+PUBTATOR_30738221 = source_bytes("pubtator/export_30738221.json")
+_PUBTATOR_30738221_RECORD = json.loads(PUBTATOR_30738221)["PubTator3"][0]
+PUBTATOR_30738221_ABSTRACT = next(
+    passage["text"]
+    for passage in _PUBTATOR_30738221_RECORD["passages"]
+    if passage.get("infons", {}).get("type") == "abstract"
+)
 SEMANTIC_SCHOLAR_20516115_BATCH = source_bytes("semantic_scholar/pmid20516115-batch.json")
 SEMANTIC_SCHOLAR_20516115_CITATIONS = source_bytes("semantic_scholar/pmid20516115-citations.json")
 SEMANTIC_SCHOLAR_20516115_REFERENCES = source_bytes("semantic_scholar/pmid20516115-references.json")
@@ -178,6 +190,35 @@ CITATION_JATS_PMC12923960 = """<?xml version="1.0" encoding="UTF-8"?>
 
 CITATION_JATS_PMC12923961 = """<?xml version="1.0" encoding="UTF-8"?>
 <article><front><article-meta><article-title>Grouped marker document</article-title></article-meta></front><body><sec><title>Results</title><p>A grouped marker <xref ref-type="bibr" rid="only1 extra9">1,9</xref> never links alone.</p><p>An empty-text marker <xref ref-type="bibr" rid="only1"> </xref> is ineligible here.</p></sec></body><back><ref-list><ref id="only1"><element-citation><pub-id pub-id-type="doi">10.1099/unresolved-fixture</pub-id></element-citation></ref><ref id="extra9"><element-citation><pub-id pub-id-type="doi">10.1093/other.9</pub-id></element-citation></ref></ref-list></back></article>"""
+
+# Ticket 1294: a JATS table whose rows have uneven widths and no merged cells.
+# Both table converters used to drop it silently; the renderer must print the
+# raw-rows banner for it.
+RAGGED_TABLE_XML = """<article>
+  <front>
+    <article-meta>
+      <title-group><article-title>Ragged fixture table article</article-title></title-group>
+    </article-meta>
+  </front>
+  <body>
+    <sec>
+      <title>Results</title>
+      <p>Ragged fixture body text.</p>
+      <table-wrap>
+        <label>Table 1</label>
+        <caption><title>Rows of uneven width</title></caption>
+        <table>
+          <tbody>
+            <tr><th>Group</th><th>Median</th><th>Range</th></tr>
+            <tr><td>A</td><td>7.1</td></tr>
+            <tr><td>B</td><td>8.2</td><td>3-12</td></tr>
+          </tbody>
+        </table>
+      </table-wrap>
+    </sec>
+  </body>
+</article>"""
+
 HTML_FALLBACK = (
     FIXTURE_DIR / "html" / "pmc_article_page.html"
 ).read_text(encoding="utf-8")
@@ -235,12 +276,12 @@ AUTHOR_ENTITY_PAPERS = {
         "authors": [{**AUTHOR_FORBIDDEN, "authorId": "1716151", "name": "A. Butte"}],
     }],
 }
-ORCID_FORBIDDEN = {"email": "private-orcid@example.invalid", "biography": {"visibility": "PRIVATE", "content": "private-orcid-biography-sentinel"}, "researcher-urls": {"researcher-url": [{"url-name": "homepage", "url": {"value": "https://private.example.invalid/orcid"}}]}}
+ORCID_FORBIDDEN = {"email": "private-orcid@example.invalid", "biography": {"visibility": "private", "content": "private-orcid-biography-sentinel"}, "researcher-urls": {"researcher-url": [{"url-name": "homepage", "url": {"value": "https://private.example.invalid/orcid"}}]}}
 ORCID_PERSON_BODY = {
     "path": "/0000-0002-1825-0097/person",
     **ORCID_FORBIDDEN,
     "name": {
-        "visibility": "PUBLIC",
+        "visibility": "public",
         "given-names": {"value": "Josiah"},
         "family-name": {"value": "Carberry"},
     },
@@ -251,7 +292,7 @@ ORCID_WORKS_BODY = {
         {
             "work-summary": [
                 {
-                    "visibility": "PUBLIC",
+                    "visibility": "public",
                     "put-code": 42,
                     "display-index": "2",
                     "title": {"title": {"value": "A claimed work | `with markup` <b>and html</b>"}},
@@ -269,7 +310,7 @@ ORCID_WORKS_BODY = {
         {
             "work-summary": [
                 {
-                    "visibility": "PUBLIC",
+                    "visibility": "public",
                     "put-code": 43,
                     "display-index": "1",
                     "title": {"title": {"value": "Second claimed work"}},
@@ -488,6 +529,36 @@ ARTICLES = {
         "title": "Gene-Specific Criteria for PTEN Variant Curation",
         "abstract": "Captured complex-table article.",
         "paper_id": "paper-30311380",
+    },
+    # Ticket 1294 recorded captures. 29860917 (TAILORx) leaves the base
+    # abstract blank so the recorded NCBI EFetch JATS supplies the whole
+    # abstract; 31648294's full text comes from the recorded PMC HTML page;
+    # 30738221's whole abstract is the recorded PubTator passage (the PMID has
+    # no PMC record, so the EFetch rung cannot serve it); 29860918 carries the
+    # authored ragged-table JATS.
+    "29860917": {
+        "pmcid": "PMC6172658",
+        "title": "Adjuvant Chemotherapy Guided by a 21-Gene Expression Assay in Breast Cancer",
+        "abstract": "",
+        "paper_id": "paper-29860917",
+    },
+    "29860918": {
+        "pmcid": "PMC6172659",
+        "title": "Ragged fixture table article",
+        "abstract": "Ragged fixture abstract.",
+        "paper_id": "paper-29860918",
+    },
+    "30738221": {
+        "pmcid": None,
+        "title": "Efficacy of Immune Checkpoint Inhibitors in KRAS-Mutant Non-Small Cell Lung Cancer (NSCLC).",
+        "abstract": PUBTATOR_30738221_ABSTRACT,
+        "paper_id": "paper-30738221",
+    },
+    "31648294": {
+        "pmcid": "PMC6695558",
+        "title": "High rate of durable complete remission in follicular lymphoma after CD19 CAR-T cell immunotherapy",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-31648294",
     },
     "22663011": {
         "pmcid": "PMC123456",
@@ -864,7 +935,7 @@ class Handler(BaseHTTPRequestHandler):
             decoded_path == "/search"
             and query.get("query") == ["EXT_ID:20516115 AND SRC:MED"]
             and query.get("format") == ["json"]
-            and query.get("page") == ["1"]
+            and query.get("cursorMark") == ["*"]
             and query.get("pageSize") == ["1"]
         ):
             send_bytes(self, 200, EUROPEPMC_20516115, "application/json")
@@ -886,6 +957,10 @@ class Handler(BaseHTTPRequestHandler):
             send_bytes(self, 200, PMC_3040717_HTML, "text/html; charset=utf-8")
             return
 
+        if decoded_path == "/articles/PMC6695558/":
+            send_bytes(self, 200, PMC_6695558_HTML, "text/html; charset=utf-8")
+            return
+
         if (
             decoded_path == "/efetch.fcgi"
             and query.get("db") == ["pmc"]
@@ -893,6 +968,26 @@ class Handler(BaseHTTPRequestHandler):
             and query.get("rettype") == ["xml"]
         ):
             send_bytes(self, 200, NCBI_EFETCH_3040717, "application/xml")
+            return
+
+        if (
+            decoded_path == "/efetch.fcgi"
+            and query.get("db") == ["pmc"]
+            and query.get("id") == ["6172658"]
+            and query.get("rettype") == ["xml"]
+        ):
+            append_request_log("fulltext:xml:ncbi-efetch-pmc6172658")
+            send_bytes(self, 200, NCBI_EFETCH_6172658, "application/xml")
+            return
+
+        if (
+            decoded_path == "/efetch.fcgi"
+            and query.get("db") == ["pmc"]
+            and query.get("id") == ["6172659"]
+            and query.get("rettype") == ["xml"]
+        ):
+            append_request_log("fulltext:xml:ncbi-efetch-pmc6172659")
+            send_text(self, 200, RAGGED_TABLE_XML, "application/xml")
             return
 
         citation_graph_pid = None
@@ -1019,6 +1114,29 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        # Ticket 1294: one keyword row for PMID 30738221 replaying the recorded
+        # PubTator abstract, so the search row's snippet cap is exercised on the
+        # same abstract the whole-abstract case returns in full.
+        if (
+            decoded_path == "/search"
+            and search_query
+            and query.get("format") == ["json"]
+            and any("mutant NSCLC" in value for value in search_query)
+        ):
+            row = ARTICLES["30738221"]
+            send_json(self, 200, {
+                "hitCount": 1,
+                "resultList": {"result": [{
+                    "id": "30738221",
+                    "pmid": "30738221",
+                    "title": row["title"],
+                    "journalTitle": "JCO",
+                    "firstPublicationDate": "2019-02-01",
+                    "abstractText": row["abstract"],
+                }]},
+            })
+            return
+
         if decoded_path == "/esearch.fcgi" and any(
             "Taylor EJ" in value and "[author]" in value.lower()
             for value in query.get("term", [])
@@ -1130,7 +1248,7 @@ class Handler(BaseHTTPRequestHandler):
             decoded_path == "/search"
             and search_query
             and query.get("format") == ["json"]
-            and query.get("page") == ["1"]
+            and query.get("cursorMark") == ["*"]
             and query.get("pageSize") == ["1"]
         ):
             for pmid in ARTICLES:
@@ -1241,7 +1359,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path in {"/PMC6329583/fullTextXML", "/30311380/fullTextXML", "/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/PMC123466/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML", "/22663023/fullTextXML"}:
+        if decoded_path in {"/PMC6329583/fullTextXML", "/30311380/fullTextXML", "/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/PMC123466/fullTextXML", "/PMC6172658/fullTextXML", "/PMC6172659/fullTextXML", "/PMC6695558/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML", "/22663023/fullTextXML"}:
             send_text(self, 404, "not found", "text/plain")
             return
 

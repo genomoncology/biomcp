@@ -508,6 +508,17 @@ impl BioMcpError {
                         .unwrap_or(message)
                 )
             }
+            // WHO Prequalification validation failures name the export file
+            // and the missing column; every word is composed here, so the
+            // marked message surfaces verbatim instead of the generic API
+            // line (ticket 1304, mirroring the DDInter markers).
+            Self::Api { message, .. }
+                if source == SourceProvider::WHO_PREQUALIFICATION.label()
+                    && message
+                        .starts_with(crate::sources::who_pq::WHO_PQ_HEADER_MISMATCH_MARKER) =>
+            {
+                message.clone()
+            }
             Self::Api { .. } => format!("API request to {source} failed."),
             Self::ApiJson { api, .. } if source == "DDInter" => {
                 format!("DDInter bundle could not be decoded ({api})")
@@ -645,6 +656,33 @@ impl BioMcpError {
                 source: None,
                 recovery: Some(crate::entities::article::ARTICLE_SEARCH_DEADLINE_SUGGESTION),
             };
+        }
+        // The citation-evidence surface reports its own refusal summary and
+        // its own deadline. Both carry only words this codebase composed, so
+        // they can surface verbatim where raw provider text cannot, and
+        // neither fabricates a provider label (ticket 1302).
+        if let Self::Api { api, message, .. } = self.underlying()
+            && api == crate::entities::article::graph::citation_evidence::CITATION_EVIDENCE_API
+        {
+            if let Some(detail) = message.strip_prefix(
+                crate::entities::article::graph::citation_evidence::CITATION_PROVIDERS_REFUSED_MARKER,
+            ) {
+                return PublicErrorProjection {
+                    message: detail.to_string(),
+                    source: None,
+                    recovery: Some(
+                        "Retry the command later; the refusing sources may answer next time.",
+                    ),
+                };
+            }
+            if message == "invocation deadline exceeded" {
+                return PublicErrorProjection {
+                    message: "Article citation evidence exceeded its invocation deadline before any source answered."
+                        .to_string(),
+                    source: None,
+                    recovery: Some("Retry the command; slow sources may answer next time."),
+                };
+            }
         }
         let context = match self {
             Self::WithSourceContext { context, .. } => Some(*context),
@@ -973,6 +1011,36 @@ mod tests {
     }
 
     #[test]
+    fn who_pq_header_mismatches_render_with_file_and_column_detail() {
+        let marker = crate::sources::who_pq::WHO_PQ_HEADER_MISMATCH_MARKER;
+        let error = BioMcpError::Api {
+            api: "who-prequalification".to_string(),
+            message: format!("{marker}who_pq.csv: missing required column WHO REFERENCE NUMBER"),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "WHO Prequalification export headers did not match: who_pq.csv: missing required column WHO REFERENCE NUMBER"
+        );
+        assert_eq!(projection.source, Some("WHO Prequalification"));
+    }
+
+    #[test]
+    fn who_pq_download_failures_keep_the_generic_line_and_leak_no_body() {
+        let error = BioMcpError::Api {
+            api: "who-prequalification".to_string(),
+            message: "who_pq.csv: HTTP 503 Service Unavailable: upstream outage html".to_string(),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "API request to WHO Prequalification failed."
+        );
+        assert!(!projection.message.contains("503"));
+        assert!(!projection.message.contains("upstream outage html"));
+    }
+
+    #[test]
     fn ddinter_bundle_read_errors_render_with_their_file_detail() {
         let marker = crate::sources::ddinter::DDINTER_BUNDLE_READ_MARKER;
         let error = BioMcpError::Api {
@@ -1240,6 +1308,63 @@ mod tests {
         assert!(msg.contains("rejected"));
         assert!(msg.contains("access"));
         assert!(msg.contains("https://www.disgenet.com/"));
+    }
+
+    #[test]
+    fn citation_evidence_refusals_name_their_providers_and_reasons() {
+        use crate::entities::article::graph::citation_evidence::{
+            CITATION_EVIDENCE_API, CITATION_PROVIDERS_REFUSED_MARKER,
+        };
+
+        for (detail, expected) in [
+            (
+                "Semantic Scholar rate limited the request; OpenCitations was unavailable.",
+                "Semantic Scholar rate limited the request; OpenCitations was unavailable.",
+            ),
+            (
+                "Semantic Scholar was unavailable; OpenCitations rate limited the request.",
+                "Semantic Scholar was unavailable; OpenCitations rate limited the request.",
+            ),
+        ] {
+            let error = BioMcpError::Api {
+                api: CITATION_EVIDENCE_API.to_string(),
+                message: format!("{CITATION_PROVIDERS_REFUSED_MARKER}{detail}"),
+            };
+            let projection = error.public_projection();
+            assert_eq!(projection.message, expected);
+            // No single provider owns the failure, so none is fabricated.
+            assert_eq!(projection.source, None);
+            assert!(projection.recovery.is_some_and(|r| r.contains("Retry")));
+            assert!(!format!("{projection:?}").contains("BioMCP source"));
+        }
+    }
+
+    #[test]
+    fn citation_evidence_deadline_names_the_command_and_never_a_fake_source() {
+        use crate::entities::article::graph::citation_evidence::CITATION_EVIDENCE_API;
+
+        let error = BioMcpError::Api {
+            api: CITATION_EVIDENCE_API.to_string(),
+            message: "invocation deadline exceeded".to_string(),
+        };
+        let projection = error.public_projection();
+        assert_eq!(
+            projection.message,
+            "Article citation evidence exceeded its invocation deadline before any source answered."
+        );
+        assert_eq!(projection.source, None);
+        assert!(!format!("{projection:?}").contains("BioMCP source"));
+        // The command-deadline wording is a different surface from the
+        // variant-article deadline, which keeps its own legacy shape.
+        let other = BioMcpError::Api {
+            api: "variant-articles".to_string(),
+            message: "invocation deadline exceeded".to_string(),
+        };
+        assert_ne!(
+            other.public_projection().message,
+            projection.message,
+            "the citation-evidence wording must not leak into other deadlines"
+        );
     }
 
     #[test]

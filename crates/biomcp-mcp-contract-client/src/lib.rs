@@ -395,7 +395,9 @@ where
         "typed search schema must publish a flat root: {search_schema}"
     );
     assert_eq!(
-        search_schema["properties"]["entity"]["enum"].as_array().map(Vec::len),
+        search_schema["properties"]["entity"]["enum"]
+            .as_array()
+            .map(Vec::len),
         Some(8),
         "typed search entity enum must carry all eight entities: {search_schema}"
     );
@@ -413,7 +415,9 @@ where
         "typed get schema must publish a flat root: {get_schema}"
     );
     assert_eq!(
-        get_schema["properties"]["entity"]["enum"].as_array().map(Vec::len),
+        get_schema["properties"]["entity"]["enum"]
+            .as_array()
+            .map(Vec::len),
         Some(13),
         "typed get entity enum must carry all thirteen entities: {get_schema}"
     );

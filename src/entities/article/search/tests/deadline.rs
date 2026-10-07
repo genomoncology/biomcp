@@ -35,14 +35,14 @@ fn fixture_reply(
                 )),
             };
         }
-        // Single-source deadline case: page 1 answers fast with distinct
-        // rows; every later page is held past the deadline.
-        let page = query
-            .split('&')
-            .find_map(|pair| pair.strip_prefix("page="))
-            .and_then(|value| value.parse::<usize>().ok())
-            .unwrap_or(1);
-        if wants_single_source_hold && page >= 2 {
+        // Single-source deadline case: the first cursor page answers fast
+        // with distinct rows; every later cursor page is held past the
+        // deadline (ticket 1298 moved the wire from page= to cursorMark=).
+        let first_cursor = !query.contains("cursorMark=")
+            || query
+                .split('&')
+                .any(|pair| pair == "cursorMark=%2A" || pair == "cursorMark=*");
+        if wants_single_source_hold && !first_cursor {
             return match europepmc_hold {
                 Some(hold) => TestHttpReply::Hold(Arc::clone(hold)),
                 None => TestHttpReply::Bytes(test_http_response(
@@ -56,7 +56,7 @@ fn fixture_reply(
             return TestHttpReply::Bytes(test_http_response(
                 "200 OK",
                 "application/json",
-                br#"{"hitCount":30,"resultList":{"result":[{"id":"41800021","pmid":"41800021","title":"single-source deadline page one row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"},{"id":"41800022","pmid":"41800022","title":"single-source deadline page one row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#, 
+                br#"{"hitCount":30,"nextCursorMark":"CUR2","resultList":{"result":[{"id":"41800021","pmid":"41800021","title":"single-source deadline page one row","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"},{"id":"41800022","pmid":"41800022","title":"single-source deadline page one row two","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-02","authorString":"Fixture Author"}]}}"#, 
             ));
         }
         return match europepmc_hold {

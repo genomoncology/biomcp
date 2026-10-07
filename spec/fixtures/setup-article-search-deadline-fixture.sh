@@ -70,17 +70,21 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/search" and "query" in query:
             search = query.get("query", [""])[0]
             if "pagebound" in search:
-                page = int(query.get("page", ["1"])[0])
-                if page < 2:
+                # Ticket 1298 moved the wire from page= to cursorMark=, so
+                # the first cursor page is the fast one and every later
+                # cursor is held past the deadline.
+                cursor = query.get("cursorMark", ["*"])[0]
+                if cursor == "*":
                     self.send_json({
                         "version": "6.9",
                         "hitCount": 200,
+                        "nextCursorMark": "CUR2",
                         "request": {"query": search},
                         "resultList": {"result": [
                             {
-                                "id": f"41800{page:02d}{i:02d}",
-                                "pmid": str(41800000 + page * 100 + i),
-                                "title": f"deadline single-source page one row {i}",
+                                "id": f"4180001{i:02d}",
+                                "pmid": str(41800100 + i),
+                                "title": f"deadline single-source first cursor row {i}",
                                 "journalTitle": "Fixture Journal",
                                 "firstPublicationDate": "2026-01-01",
                                 "citedByCount": 0,

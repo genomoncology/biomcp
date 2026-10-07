@@ -50,7 +50,7 @@ fn token_classification_matches_the_frozen_three_states() {
 #[test]
 fn person_path_and_public_name_precedence() {
     let response: OrcidPersonResponse = serde_json::from_str(
-        r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"PUBLIC","given-names":{"value":" Josiah "},"family-name":{"value":"Carberry"}}}"#,
+        r#"{"path":"/0000-0002-1825-0097/person","name":{"visibility":"public","given-names":{"value":" Josiah "},"family-name":{"value":"Carberry"}}}"#,
     )
     .unwrap();
     let response = response.validate("0000-0002-1825-0097").unwrap();
@@ -61,11 +61,47 @@ fn person_path_and_public_name_precedence() {
 }
 
 #[test]
+fn person_name_visibility_accepts_both_spellings_of_public_and_refuses_the_rest() {
+    // ORCID's v3.0 API sends lowercase "public" (the recorded demo capture
+    // in testdata/sources/orcid/); the uppercase spelling names the same
+    // value. Every nonpublic value, and an absent visibility, still refuse
+    // the projection.
+    let body = |visibility: &str| {
+        format!(
+            r#"{{"path":"/0000-0002-1825-0097/person","name":{{"visibility":"{visibility}","given-names":{{"value":"Josiah"}},"family-name":{{"value":"Carberry"}}}}}}"#
+        )
+    };
+    for visibility in ["public", "PUBLIC"] {
+        let response: OrcidPersonResponse = serde_json::from_str(&body(visibility)).unwrap();
+        let response = response.validate("0000-0002-1825-0097").unwrap();
+        assert_eq!(
+            response.public_display_name().expect(visibility),
+            "Josiah Carberry"
+        );
+    }
+    for visibility in ["limited", "private"] {
+        let response: OrcidPersonResponse = serde_json::from_str(&body(visibility)).unwrap();
+        let response = response.validate("0000-0002-1825-0097").unwrap();
+        assert!(
+            response.public_display_name().is_err(),
+            "{visibility} must refuse the projection"
+        );
+    }
+    let absent = r#"{"path":"/0000-0002-1825-0097/person","name":{"given-names":{"value":"Josiah"},"family-name":{"value":"Carberry"}}}"#;
+    let response: OrcidPersonResponse = serde_json::from_str(absent).unwrap();
+    let response = response.validate("0000-0002-1825-0097").unwrap();
+    assert!(
+        response.public_display_name().is_err(),
+        "absent visibility must refuse the projection"
+    );
+}
+
+#[test]
 fn works_validation_selects_representatives_and_rejects_bad_shapes() {
     let body = r#"{"path":"/i/works","group":[{"work-summary":[
-        {"visibility":"PUBLIC","put-code":7,"display-index":"2","title":{"title":{"value":"Second"}}},
-        {"visibility":"PUBLIC","put-code":9,"display-index":"10","title":{"title":{"value":"First"}}},
-        {"visibility":"PRIVATE","put-code":99,"display-index":"99","title":{"title":{"value":"private"}}}
+        {"visibility":"public","put-code":7,"display-index":"2","title":{"title":{"value":"Second"}}},
+        {"visibility":"public","put-code":9,"display-index":"10","title":{"title":{"value":"First"}}},
+        {"visibility":"private","put-code":99,"display-index":"99","title":{"title":{"value":"private"}}}
     ]}]}"#;
     let response: OrcidWorksResponse = serde_json::from_str(body).unwrap();
     let selected = response.validate("i").unwrap().selected_works().unwrap();
@@ -74,13 +110,13 @@ fn works_validation_selects_representatives_and_rejects_bad_shapes() {
     assert_eq!(selected[0].title, "First");
 
     let zero_code = r#"{"path":"/i/works","group":[{"work-summary":[
-        {"visibility":"PUBLIC","put-code":0,"display-index":"1","title":{"title":{"value":"x"}}}
+        {"visibility":"public","put-code":0,"display-index":"1","title":{"title":{"value":"x"}}}
     ]}]}"#;
     let response: OrcidWorksResponse = serde_json::from_str(zero_code).unwrap();
     assert!(response.validate("i").unwrap().selected_works().is_err());
 
     let leading_zero_index = r#"{"path":"/i/works","group":[{"work-summary":[
-        {"visibility":"PUBLIC","put-code":1,"display-index":"01","title":{"title":{"value":"x"}}}
+        {"visibility":"public","put-code":1,"display-index":"01","title":{"title":{"value":"x"}}}
     ]}]}"#;
     let response: OrcidWorksResponse = serde_json::from_str(leading_zero_index).unwrap();
     assert!(response.validate("i").unwrap().selected_works().is_err());
@@ -116,7 +152,7 @@ mod closing {
 
     fn person_body() -> String {
         format!(
-            r#"{{"path":"/{VALID_ID}/person","name":{{"visibility":"PUBLIC","given-names":{{"value":"Josiah"}},"family-name":{{"value":"Carberry"}}}}}}"#
+            r#"{{"path":"/{VALID_ID}/person","name":{{"visibility":"public","given-names":{{"value":"Josiah"}},"family-name":{{"value":"Carberry"}}}}}}"#
         )
     }
 
@@ -455,14 +491,14 @@ mod closing {
     fn one_and_sixty_four_summaries_are_the_group_bound_edges() {
         for count in [1_usize, 64] {
             let summaries: Vec<_> = (0..count)
-                .map(|index| summary(1000 + index as u64, "1", "Title", None, "PUBLIC"))
+                .map(|index| summary(1000 + index as u64, "1", "Title", None, "public"))
                 .collect();
             let body = works_body(&[serde_json::json!({"work-summary": summaries})]);
             let works = selected(&body).expect("inside the bound");
             assert_eq!(works.len(), 1);
         }
         let summaries: Vec<_> = (0..65)
-            .map(|index| summary(index as u64 + 1, "1", "Title", None, "PUBLIC"))
+            .map(|index| summary(index as u64 + 1, "1", "Title", None, "public"))
             .collect();
         let body = works_body(&[serde_json::json!({"work-summary": summaries})]);
         assert!(
@@ -473,7 +509,7 @@ mod closing {
 
     #[test]
     fn ten_thousand_groups_is_the_hard_bound() {
-        let group = serde_json::json!({"work-summary": [summary(7, "1", "Only", None, "PUBLIC")]});
+        let group = serde_json::json!({"work-summary": [summary(7, "1", "Only", None, "public")]});
         for count in [10_000_usize, 10_001] {
             let body = works_body(&vec![group.clone(); count]);
             let result = selected(&body);
@@ -488,15 +524,15 @@ mod closing {
     #[test]
     fn representative_ties_prefer_the_lowest_put_code_then_original_order() {
         let body = works_body(&[serde_json::json!({"work-summary": [
-            summary(5, "2", "Higher code", None, "PUBLIC"),
-            summary(3, "2", "Lower code wins", None, "PUBLIC")
+            summary(5, "2", "Higher code", None, "public"),
+            summary(3, "2", "Lower code wins", None, "public")
         ]})]);
         let works = selected(&body).expect("valid");
         assert_eq!(works[0].title, "Lower code wins");
 
         let body = works_body(&[serde_json::json!({"work-summary": [
-            summary(7, "2", "First in order wins ties", None, "PUBLIC"),
-            summary(7, "2", "Second", None, "PUBLIC")
+            summary(7, "2", "First in order wins ties", None, "public"),
+            summary(7, "2", "Second", None, "public")
         ]})]);
         let works = selected(&body).expect("valid");
         assert_eq!(works[0].title, "First in order wins ties");
@@ -504,14 +540,48 @@ mod closing {
 
     #[test]
     fn a_present_year_outside_1000_9999_is_a_contract_error() {
-        let mut bad = summary(7, "1", "Bad year", None, "PUBLIC");
+        let mut bad = summary(7, "1", "Bad year", None, "public");
         bad["publication-date"] = serde_json::json!({"year": {"value": "0999"}});
         let body = works_body(&[serde_json::json!({"work-summary": [bad]})]);
         assert!(selected(&body).is_err(), "0999 is outside 1000-9999");
-        let mut good = summary(8, "1", "Good year", None, "PUBLIC");
+        let mut good = summary(8, "1", "Good year", None, "public");
         good["publication-date"] = serde_json::json!({"year": {"value": "2024"}});
         let body = works_body(&[serde_json::json!({"work-summary": [good]})]);
         assert_eq!(selected(&body).expect("valid")[0].year, Some(2024));
+    }
+
+    #[test]
+    fn works_visibility_accepts_both_spellings_of_public_and_filters_the_rest() {
+        // Works summaries carry the same lowercase visibility values as the
+        // person read. Both public spellings select their summary; limited,
+        // private, and an absent visibility stay privacy-filtered.
+        let selected_with = |visibility: Option<&str>| -> Vec<OrcidSelectedWork> {
+            let entry = match visibility {
+                Some(value) => summary(7, "1", "Only", None, value),
+                None => serde_json::json!({
+                    "put-code": 7,
+                    "display-index": "1",
+                    "title": {"title": {"value": "Only"}},
+                }),
+            };
+            let body = works_body(&[serde_json::json!({"work-summary": [entry]})]);
+            selected(&body).expect("valid body")
+        };
+        for visibility in ["public", "PUBLIC"] {
+            let works = selected_with(Some(visibility));
+            assert_eq!(works.len(), 1, "{visibility} selects its summary");
+            assert_eq!(works[0].put_code, 7);
+        }
+        for visibility in ["limited", "private"] {
+            assert!(
+                selected_with(Some(visibility)).is_empty(),
+                "{visibility} must stay privacy-filtered"
+            );
+        }
+        assert!(
+            selected_with(None).is_empty(),
+            "absent visibility must stay privacy-filtered"
+        );
     }
 
     #[test]
@@ -521,17 +591,17 @@ mod closing {
                 {"external-id-type": "pmid", "external-id-value": "9991", "external-id-relationship": "SELF"}
             ]},
             "work-summary": [
-                {"visibility": "PRIVATE", "put-code": 91, "display-index": "50",
+                {"visibility": "private", "put-code": 91, "display-index": "50",
                  "title": {"title": {"value": "Private summary"}},
                  "external-ids": {"external-id": [
                     {"external-id-type": "pmid", "external-id-value": "9992", "external-id-relationship": "SELF"}
                  ]}},
-                {"visibility": "PUBLIC", "put-code": 92, "display-index": "1",
+                {"visibility": "public", "put-code": 92, "display-index": "1",
                  "title": {"title": {"value": "Public but not selected"}},
                  "external-ids": {"external-id": [
                     {"external-id-type": "pmid", "external-id-value": "9993", "external-id-relationship": "SELF"}
                  ]}},
-                summary(42, "2", "Selected representative", Some("42"), "PUBLIC")
+                summary(42, "2", "Selected representative", Some("42"), "public")
             ]
         });
         let body = works_body(&[hostile]);

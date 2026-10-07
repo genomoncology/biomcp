@@ -7,8 +7,6 @@ mod html;
 mod jats;
 mod pdf;
 
-#[allow(unused_imports)]
-pub use self::anchors::truncate_abstract;
 pub use self::anchors::{
     article_search_abstract_snippet, article_search_fallback_title, clean_abstract, clean_title,
     normalize_article_search_text,
@@ -93,7 +91,6 @@ mod tests {
         let _ = crate::transform::article::clean_abstract as fn(&str) -> String;
         let _ = crate::transform::article::normalize_article_search_text as fn(&str) -> String;
         let _ = crate::transform::article::article_search_fallback_title as fn(&str) -> String;
-        let _ = crate::transform::article::truncate_abstract as fn(&str) -> String;
         let _ = crate::transform::article::article_search_abstract_snippet
             as fn(&str) -> Option<String>;
         let _ =
