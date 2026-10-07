@@ -386,17 +386,25 @@ mod clinvar {
     /// Newest `last_evaluated` date in the MyVariant.info fallback copy, so a
     /// degraded label can say how old the fallback data may be. Only strict
     /// day-shaped dates surface; any other provider spelling is omitted.
+    /// ISO day shape only: four digits, a dash, two digits, a dash, two
+    /// digits. Provider spellings like "01 Apr 2019" or reordered forms are
+    /// omitted rather than trusted.
+    fn is_day_shaped(value: &str) -> bool {
+        value.len() == 10
+            && value.as_bytes()[4] == b'-'
+            && value.as_bytes()[7] == b'-'
+            && value
+                .bytes()
+                .enumerate()
+                .all(|(index, byte)| index == 4 || index == 7 || byte.is_ascii_digit())
+    }
+
     fn fallback_evaluation_date(record: Option<&ClinvarRecord>) -> Option<&str> {
         record?
             .aggregates
             .iter()
             .filter_map(|row| row.evaluation_date.as_deref())
-            .filter(|value| {
-                value.len() == 10
-                    && value
-                        .bytes()
-                        .all(|byte| byte.is_ascii_digit() || byte == b'-')
-            })
+            .filter(|value| is_day_shaped(value))
             .max()
     }
 
@@ -743,6 +751,16 @@ mod clinvar {
                 ClinvarDirectFailure::from_error(&other),
                 ClinvarDirectFailure::HttpError
             );
+        }
+
+        #[test]
+        fn day_shaped_gate_accepts_iso_and_refuses_reorder_and_placeholder_forms() {
+            assert!(is_day_shaped("2019-04-01"));
+            assert!(!is_day_shaped("01-04-2019"));
+            assert!(!is_day_shaped("9999-99-99"));
+            assert!(!is_day_shaped("----------"));
+            assert!(!is_day_shaped("2019-4-01"));
+            assert!(!is_day_shaped("01 Apr 2019"));
         }
 
         #[test]
