@@ -42,3 +42,5 @@ The assigned builder implemented shared source decoding, nested product storage 
 ## What the build taught us
 
 The shared source graph can replace the local population models without changing CLI or MCP output. Keep count-derived source frequencies separate from supplied product-target frequencies. Existing unrelated Darwin and lint findings remain visible.
+
+Landed: 8b597fb759da2f4f8d5d0669780c520e905e0718

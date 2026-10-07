@@ -77,3 +77,5 @@ The four extra contract files were named to Root before editing their exact revi
 ## Review and landing
 
 Fresh read-only CODE review ACCEPTED6679eea0659e19a23bcd4b1b82ab06fe7900472d with no product findings. Root rebuilt the final CLI successfully in32.749 seconds on M5, then ran the existing positive native/CLI/typed/raw MCP owner against that binary. Root owns landing; inherited gate findings remain separate.
+
+Landed: 8b597fb759da2f4f8d5d0669780c520e905e0718
