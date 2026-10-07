@@ -21,3 +21,18 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: carry a WHO status note in the region result for Markdown, JSON and MCP; put the failing file and missing column in the final error; report a partial sync as partial with a nonzero exit.
 - Proof: outside-in tests with a recorded export missing one column: the drug search JSON carries the note, `who sync` names the column, and the partial run exits nonzero.
 - Defers: nothing.
+
+## Build status
+
+- Built on branch `tickets/2021-who-data-gaps-reach-every-caller`,
+  commits e5b98f215, e46018510, plus the review fold eb889a407,
+  2026-10-07, after one timeout revival with a checkpoint (nothing
+  lost).
+- Code review: ACCEPT 2026-10-07. Verified: the note crosses the page
+  type into the JSON envelope (clean for true negatives) and raw MCP
+  verbatim; the error projection carries the sync reason and recovery
+  with no doubled period; partial sync reports partial with per-file
+  reasons and exit 1, older files kept; the self-referential sync hint
+  is gone (network access and BIOMCP_WHO_DIR named); the failed-export
+  fixture hermetic with the drift guard; inventory repins exact. One
+  P2 (temp-dir leaks in the two new spec blocks) folded in eb889a407.
