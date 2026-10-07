@@ -140,17 +140,23 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
         ("http", b"PRIVATE-CANARY".to_vec(), "unavailable", None, false),
         ("timeout", b"".to_vec(), "unavailable", None, false),
     ];
-    for (label, body, state, transcript, metrics) in cases {
-        let requests = Arc::new(Mutex::new(Vec::new()));
-        let captured = Arc::clone(&requests);
-        let (release, wait) = std::sync::mpsc::channel();
-        let hold = Arc::new(Mutex::new(wait));
-        let fixture = TestHttpFixture::spawn(move |request| {
+    let response = Arc::new(Mutex::new(("data", Vec::<u8>::new())));
+    let selected = Arc::clone(&response);
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = Arc::clone(&requests);
+    let (release, wait) = std::sync::mpsc::channel();
+    let hold = Arc::new(Mutex::new(wait));
+    let fixture = TestHttpFixture::spawn(move |request| {
             captured.lock().unwrap().push(request.to_owned());
-            let (status, bytes) = if request.starts_with("POST /gnomad") {
-                if label == "timeout" { return TestHttpReply::Hold(Arc::clone(&hold)); }
-                (if label == "http" { "400 Bad Request" } else { "200 OK" }, body.as_slice())
-            } else if request.starts_with("GET /query?") {
+            if request.starts_with("POST /gnomad") {
+                let selected = selected.lock().unwrap();
+                if selected.0 == "timeout" { return TestHttpReply::Hold(Arc::clone(&hold)); }
+                return TestHttpReply::Bytes(test_http_response(
+                    if selected.0 == "http" { "400 Bad Request" } else { "200 OK" },
+                    "application/json", &selected.1,
+                ));
+            }
+            let (status, bytes) = if request.starts_with("GET /query?") {
                 ("200 OK", br#"{"total":1,"hits":[{"symbol":"TP53","name":"tumor protein p53","entrezgene":7157,"ensembl":{"gene":"ENSG00000141510"}}]}"#.as_slice())
             } else if request.starts_with("POST /graphql") {
                 ("200 OK", br#"{"data":{"search":{"hits":[]},"target":{"associatedDiseases":{"rows":[]},"knownDrugs":{"rows":[]}}}}"#.as_slice())
@@ -163,23 +169,27 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
             } else { panic!("unrouted fixture request: {request}") };
             TestHttpReply::Bytes(test_http_response(status, "application/json", bytes))
         }).await;
-        let cache = tempfile::tempdir().unwrap();
-        let envs = [
-            ("BIOMCP_MYGENE_BASE", fixture.base.clone()),
-            ("BIOMCP_OLS4_BASE", fixture.base.clone()),
-            ("BIOMCP_OPENTARGETS_BASE", fixture.base.clone()),
-            ("BIOMCP_ENRICHR_BASE", fixture.base.clone()),
-            ("BIOMCP_GNOMAD_BASE", format!("{}/gnomad", fixture.base)),
-            ("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()),
-            ("BIOMCP_CACHE_MODE", "off".into()),
-            ("BIOMCP_CACHE_DIR", cache.path().display().to_string()),
-            ("BIOMCP_GENE_OPTIONAL_TIMEOUT_MS", "100".into()),
-            ("RUST_LOG", "off,reqwest_retry=error".into()),
-        ];
-        let mut env = TestEnv::new();
-        for (key, value) in &envs {
-            env.set(key, value);
-        }
+    let cache = tempfile::tempdir().unwrap();
+    let envs = [
+        ("BIOMCP_MYGENE_BASE", fixture.base.clone()),
+        ("BIOMCP_OLS4_BASE", fixture.base.clone()),
+        ("BIOMCP_OPENTARGETS_BASE", fixture.base.clone()),
+        ("BIOMCP_ENRICHR_BASE", fixture.base.clone()),
+        ("BIOMCP_GNOMAD_BASE", format!("{}/gnomad", fixture.base)),
+        ("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()),
+        ("BIOMCP_CACHE_MODE", "off".into()),
+        ("BIOMCP_CACHE_DIR", cache.path().display().to_string()),
+        ("BIOMCP_GENE_OPTIONAL_TIMEOUT_MS", "100".into()),
+        ("RUST_LOG", "off,reqwest_retry=error".into()),
+    ];
+    let mut env = TestEnv::new();
+    for (key, value) in &envs {
+        env.set(key, value);
+    }
+    let client = harness.spawn_stdio_client(&envs).await.unwrap();
+    for (label, body, state, transcript, metrics) in cases {
+        *response.lock().unwrap() = (label, body);
+        let before_default = requests.lock().unwrap().len();
         let default = crate::sources::with_no_cache_flag(
             true,
             get_with_report("TP53", &GeneGetOptions::default()),
@@ -188,9 +198,7 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
         .unwrap();
         assert!(default.gene.constraint.is_none());
         assert!(
-            !requests
-                .lock()
-                .unwrap()
+            !requests.lock().unwrap()[before_default..]
                 .iter()
                 .any(|r| r.starts_with("POST /gnomad"))
         );
@@ -231,7 +239,6 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
                 false,
             );
         }
-        let client = harness.spawn_stdio_client(&envs).await.unwrap();
         if label == "data" {
             let before = requests.lock().unwrap().len();
             let output = tokio::process::Command::new(&harness.biomcp_bin)
@@ -321,7 +328,7 @@ async fn direct_constraint_reaches_both_strategies_and_cli_raw_typed_channels() 
                 );
             }
         }
-        client.cancel().await.unwrap();
-        drop(release);
     }
+    client.cancel().await.unwrap();
+    drop(release);
 }
