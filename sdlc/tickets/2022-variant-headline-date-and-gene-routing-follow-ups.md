@@ -1,6 +1,6 @@
 # 2022 — Variant headline date and gene routing follow-ups
 
-Status: OPEN.
+Status: IMPLEMENTED (unreviewed).
 
 Milestone: 0.9.2
 
@@ -41,6 +41,33 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 
 Official symbols only means the familiar alias abbreviations stop routing too: 'MODY diabetes' no longer narrows to HNF4A and 'HHT telangiectasias' no longer narrows to ACVRL1; both search the whole phrase as a condition. Recorded reason: alias routing either applies to every alias or needs a curated allow-list, and no admitted source provides one. The HCC failure is the same mechanism as the MODY and HHT shortcuts, so one predictable rule (the token must be the official symbol) replaces alias routing everywhere, matching the outcome. Operators who want the narrow search can still write `biomcp search variant -g HNF4A --condition diabetes`.
 
+## Implementation
+
+- `src/transform/variant.rs`: `newest_rcv_evaluation_date` now takes the shown classification and counts only records that carry it, so the headline date belongs to the printed term. The 1291-aligned day-shape gate lives in one shared helper, `crate::utils::date::is_day_shaped`, so the transform headline and 1291's fallback label use the same rule and can collapse into one helper at merge.
+- `src/entities/gene.rs`: `resolve_unique_official_symbol` confirms a first token only when it is the gene's official symbol; `resolve_unique_canonical_alias` keeps serving the `discover` path unchanged.
+- `src/cli/variant/query.rs`: `split_leading_protein_change` moves a leading protein change to the hgvsp filter; `GeneFirstNote` replaces `GeneFirstFallback` so both the refused and the routed zero-row case carry their hint.
+- `src/cli/variant/dispatch.rs`: a routed zero-row search prints the parsed form and the working alternative in markdown and pushes the working alternative into JSON `next_commands`.
+- Fixtures: recorded the dated MyVariant GRCh37 BRAF V600E GET (`get_braf_v600e_grch37_20261007.json`, receipted) and the MyGene shapes for HCC (HYCC1), MODY (HNF4A) and HHT (ACVRL1).
+
+## Proof
+
+Red on pristine `37631c357` (built in a disposable clone; the worktree base is byte-identical across every file this ticket touches):
+
+1. BRAF V600E date: `get variant 'chr7:g.140453136A>T'` against the routine fixtures printed `Significance: Pathogenic — MyVariant.info (evaluated 2025-01-23)`, the Uncertain record's date.
+2. HCC: `search variant 'HCC liver cancer'` with live sources printed `Query: gene=HYCC1, condition=liver cancer`, count 0, no hint.
+3. MODY: `search variant 'MODY diabetes'` with live sources printed `Query: gene=HNF4A, condition=diabetes`.
+4. 'BRAF V600E melanoma': `search variant 'BRAF V600E melanoma'` with live sources printed `Query: gene=BRAF, condition=V600E melanoma`.
+
+Green after the fix:
+
+- `spec/entity/variant.md`: 109 passed, 1 skipped (the new BRAF date cases beside the kept TP53 cases).
+- `spec/entity/variant-gene-first-routing.md`: 12 passed (HCC, MODY, HHT refusal rows; the routed zero-row parse and working form; the kept SCN5A/BRUGADA/off cases).
+- `cargo nextest run --no-default-features -p biomcp-cli -E 'test(/variant/) + test(/gene_first/) + package(biomcp-cli) & test(/::date::/)'`: 420 passed.
+- `cargo nextest run --no-default-features -p biomcp-cli -E 'test(/entities::gene::/) + test(/official_symbol/)'`: 81 passed.
+- `make lint`: passes (one capture-receipt entry, one zero-coupling digest repin, two authorized size-baseline increases recorded for this ticket).
+- `make sync-python-dev` ran before every spec run.
+
+Environment note: the full `biomcp-cli` suite currently flakes on cache/network-sensitive tests under this machine's parallel lane load (`stale_json_note_tests`, stale disease cards, one 595 s population timeout). The identical failure set reproduces on pristine `37631c357`, and every flake passes on retry in isolation, so none of it comes from this change.
 ## Build status
 
 - Built on branch `tickets/2022-variant-headline-date-and-gene-routing-follow-ups`,
