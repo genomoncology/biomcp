@@ -73,3 +73,7 @@ Preparation/invocation failures supplied no acceptance evidence: the first offli
 - `sdlc/records/2015-build-direct-gnomad-population.md`
 
 The four extra contract files were named to Root before editing their exact revision/version/count constants. Fresh consumer CODE review must inspect the whole diff from `e45d431e` to this branch tip. Root owns any review fixes assignment, final focused verification, landing and ticket closure. This record makes no CODE acceptance claim.
+
+## Review and landing
+
+Fresh read-only CODE review ACCEPTED6679eea0659e19a23bcd4b1b82ab06fe7900472d with no product findings. Root rebuilt the final CLI successfully in32.749 seconds on M5, then ran the existing positive native/CLI/typed/raw MCP owner against that binary. Root owns landing; inherited gate findings remain separate.

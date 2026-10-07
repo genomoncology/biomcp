@@ -1,12 +1,12 @@
 # 2015 — Adopt the complete direct gnomAD population graph
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 Component: backend
 Owner: Root.
 Prepared and signed: delegated Codex design owner, October 7, 2026.
-Phase: CODE review ready. Root released BUILD after paired DESIGN ACCEPT, accepted producer 0711 and maintenance landing.
+Phase: CODE ACCEPT at6679eea0659e19a23bcd4b1b82ab06fe7900472d. Root completes final channel verification and landing.
 Risk: Response compatibility. Source-derived frequencies and decoded product targets have different construction rules.
 
 ## Outcome
@@ -38,3 +38,7 @@ Root adopted fresh paired DESIGN ACCEPT after the borrowed ancestry-view correct
 ## Consumer build candidate
 
 The assigned builder implemented shared source decoding, nested product storage and borrowed target encoding on this ticket branch. [The build record](../records/2015-build-direct-gnomad-population.md) names the precise files, red evidence, measured focused checks, narrow retirement and inherited findings. The four additional contract files were named to Root before editing their revision/version/count constants. Fresh consumer CODE review remains pending. Root owns landing and ticket completion.
+
+## What the build taught us
+
+The shared source graph can replace the local population models without changing CLI or MCP output. Keep count-derived source frequencies separate from supplied product-target frequencies. Existing unrelated Darwin and lint findings remain visible.
