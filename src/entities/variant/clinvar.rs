@@ -626,7 +626,7 @@ mod tests {
                     }
                     match answer {
                         DirectAnswer::HeldOpen => {
-                            tokio::time::sleep(Duration::from_secs(60)).await;
+                            tokio::time::sleep(Duration::from_secs(60)).await; // watchdog: held-open server leg; the client deadline under test bounds the wait
                         }
                         DirectAnswer::Fast429 { retry_after } => {
                             let headers = match retry_after {
@@ -673,11 +673,11 @@ mod tests {
             cache_dir.path().to_str().expect("utf-8 temp path"),
         );
 
-        let started = Instant::now();
+        let started = Instant::now(); // watchdog: bounds this deadline test to two seconds
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_millis(300)).await;
         assert!(
-            started.elapsed() < Duration::from_secs(2),
+            started.elapsed() < Duration::from_secs(2), // watchdog: bounds the deadline proof to two seconds
             "deadline must bound the wait"
         );
         server.abort();
@@ -722,11 +722,11 @@ mod tests {
             cache_dir.path().to_str().expect("utf-8 temp path"),
         );
 
-        let started = Instant::now();
+        let started = Instant::now(); // watchdog: bounds this deadline test to two seconds
         let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
         add_clinvar(&mut variant, &hit(), Duration::from_millis(300)).await;
         assert!(
-            started.elapsed() < Duration::from_secs(2),
+            started.elapsed() < Duration::from_secs(2), // watchdog: bounds the deadline proof to two seconds
             "deadline must bound the wait"
         );
         server.abort();

@@ -174,9 +174,14 @@
       "count": 0,
       "language": "rust",
       "markers": 1
+    },
+    "src/entities/variant/clinvar.rs": {
+      "count": 0,
+      "language": "rust",
+      "markers": 3
     }
   },
-  "marker_total_ceiling": 43,
+  "marker_total_ceiling": 46,
   "raises": [
     {
       "file": "(global)",
@@ -257,6 +262,22 @@
       "to": 43,
       "reason": "re-pinned down to the tree's true marker count after the both-operator floor rule made several polls exempt; decreases are safe and need no review",
       "ticket": "1269"
+    },
+    {
+      "file": "src/entities/variant/clinvar.rs",
+      "field": "markers",
+      "from": 0,
+      "to": 3,
+      "reason": "the extracted ClinVar module's deadline tests hold three bounded waits: the held-open server leg and two two-second elapsed bounds",
+      "ticket": "1291"
+    },
+    {
+      "file": "(global)",
+      "field": "marker_total_ceiling",
+      "from": 43,
+      "to": 46,
+      "reason": "three bounded deadline-test waits moved with the extracted ClinVar module",
+      "ticket": "1291"
     }
   ]
 }
