@@ -52,7 +52,12 @@ fn check(text: &str, json_mode: bool, state: &str) {
             );
         }
         if state == "unavailable" {
-            assert!(text.contains("unavailable"), "{text}");
+            assert!(
+                text.contains("unavailable")
+                    && text.contains("Retry:")
+                    && text.contains("biomcp variant structure"),
+                "{text}"
+            );
         }
     }
 }

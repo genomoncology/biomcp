@@ -35,7 +35,7 @@ pub(crate) async fn fixture(
             return TestHttpReply::Bytes(test_http_response(status, "application/json", &body));
         }
         let hit = if no_change { json!({"_id":"chr7:g.140453136A>T","dbnsfp":{"genename":"BRAF"}}) }
-        else { json!({"_id":"chr7:g.140453136A>T","dbnsfp":{"genename":"BRAF","hgvsp":"p.Val600Glu"},"snpeff":{"ann":{"genename":"BRAF","feature_id":"NM_004333.6","hgvs_c":"c.1802T>A","hgvs_p":"p.Val601Glu"}}}) };
+        else { json!({"_id":"chr7:g.140453136A>T","dbnsfp":{"genename":"BRAF","hgvsp":["p.Val600Glu","p.Val601Glu"]},"snpeff":{"ann":{"genename":"BRAF","feature_id":"NM_004333.6","hgvs_c":"c.1802T>A","hgvs_p":"p.Val601Glu"}}}) };
         let value = if target.starts_with("/variant/") { hit }
         else if target.starts_with("/query") && target.contains("dbnsfp") { json!({"total":1,"hits":[hit]}) }
         else if target.starts_with("/query") { json!({"total":1,"hits":[{"_id":"673","symbol":"BRAF","uniprot":{"Swiss-Prot":"P15056"}}]}) }
@@ -90,6 +90,15 @@ fn check(text: &str, json_mode: bool, state: &str) {
     if json_mode {
         let card: Value = serde_json::from_str(text).unwrap();
         assert_eq!(card["accession"], "P15056");
+        assert_eq!(card["name"], "BRAF protein");
+        if let Some(rows) = card["_meta"]["section_sources"].as_array() {
+            let domains = rows.iter().find(|row| row["key"] == "domains").unwrap();
+            assert_eq!(domains["outcome"], state);
+            assert_eq!(
+                domains["sources"],
+                card["section_outcomes"]["domains"]["sources"]
+            );
+        }
         assert_eq!(card["section_outcomes"]["domains"]["outcome"], state);
         assert_eq!(
             card["section_outcomes"]["domains"]["sources"],
@@ -114,7 +123,12 @@ fn check(text: &str, json_mode: bool, state: &str) {
             assert!(!text.contains("IPR_OVER_CAP"), "{text}");
         }
         if state == "unavailable" {
-            assert!(text.contains("unavailable"), "{text}");
+            assert!(
+                text.contains("unavailable")
+                    && text.contains("Retry:")
+                    && text.contains("biomcp get protein P15056 domains"),
+                "{text}"
+            );
         }
     }
 }
@@ -163,6 +177,7 @@ async fn interpro_protein_reaches_native_cli_and_typed_raw_mcp() {
                 .await
                 .unwrap();
             assert!(output.status.success(), "{output:?}");
+            assert!(!String::from_utf8_lossy(&output.stderr).contains("private-interpro-marker"));
             check(
                 std::str::from_utf8(&output.stdout).unwrap(),
                 json_mode,
@@ -209,6 +224,16 @@ async fn interpro_original_byte_errors_are_private() {
         .domains("P15056", 20)
         .await
         .unwrap_err();
+    let error_json: Value =
+        serde_json::from_str(&crate::render::json::to_error_json(&error).unwrap()).unwrap();
+    assert_eq!(error_json["error"]["source"], "InterPro");
+    assert!(
+        error_json["error"]["recovery"]
+            .as_str()
+            .unwrap()
+            .to_ascii_lowercase()
+            .contains("retry")
+    );
     assert!(
         !format!(
             "{error} {error:?} {}",

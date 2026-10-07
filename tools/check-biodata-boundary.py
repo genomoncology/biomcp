@@ -19,6 +19,14 @@ VERSION = "0.0.42"
 EXPECTED_DEPENDENCY = {"git": URL, "rev": REVISION}
 DEPENDENCY_TABLES = {"dependencies", "dev-dependencies", "build-dependencies"}
 RETIRED_DECLARATIONS = (
+    "InterProResponse",
+    "InterProResult",
+    "InterProMetadata",
+    "InterProProtein",
+    "InterProLocation",
+    "InterProFragment",
+    "InterProDomain",
+    "InterProRange",
     "MyVariantCosmic",
     "MyVariantExac",
     "MyVariantCadd",
