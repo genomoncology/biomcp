@@ -16,7 +16,7 @@
 - `get drug NAME label` now returns whole label sections in JSON while Markdown keeps a capped short form pointing to the full label, says why a label is missing (no SPL record matched, or the matched record carries no section text) instead of a silent null, and resolves sparse-metadata labels such as osimertinib through a guarded full-text search that never returns another drug's label. (1300)
 - Citation evidence now degrades to OpenCitations when Semantic Scholar refuses with a rate limit or a server error, and a live 429 that took twenty-two seconds to fail now returns in under three. (1302)
 - `get author` and `author papers` now read ORCID's lowercase visibility values, so an `orcid:` lookup no longer fails and papers no longer silently return zero works. (1303)
-- `who sync` now accepts the header set the WHO exports ship today, reports the true outcome per file, and exits nonzero when required files are missing. (1304)
+- `who sync` now accepts the header set the WHO exports ship today, reports the true outcome per file, and exits nonzero when required files are missing. (1304, absorbing 2010)
 - The degraded citation path now reuses the first seed's resolved record when the second seed refuses, reports a malformed citation identifier as such instead of claiming the index was unavailable, and names the DOI-resolution search in its status row instead of reporting it not requested. (1306)
 
 ### New features
