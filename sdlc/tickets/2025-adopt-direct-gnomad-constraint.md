@@ -1,8 +1,8 @@
 # 2025 — Adopt the complete direct gnomAD gene constraint record
 
-Status: IN PROGRESS.
+Status: COMPLETE.
 Owner: Root; assigned consumer builder.
-Phase: BUILD complete. Root released the Gibbs-accepted paired design at `b6e6908134bd18c2de190936f82917fb9295b7ec`. Fresh Root CODE review and landing remain pending.
+Phase: COMPLETE. Fresh CODE review accepted1b94ae4148f760a5ecefde5ea011046551d76acf; reviewed checked runtime is landed on the1.0 line.
 Component: backend
 
 Milestone: 1.0
