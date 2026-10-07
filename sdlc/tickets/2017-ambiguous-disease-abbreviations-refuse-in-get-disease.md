@@ -1,6 +1,7 @@
 # 2017 — Ambiguous disease abbreviations refuse in get disease
 
-Status: OPEN (built; review pending). Build record:
+Status: OPEN (second-review fix round built; fresh review of the head
+follows). Build record:
 `sdlc/records/2017-ambiguous-disease-abbreviations-build.md`.
 
 Milestone: 0.9.2
@@ -120,3 +121,29 @@ curated abbreviation preferences.
   (pre-existing), a pre-existing '/' synonym split in associations,
   and the resolution-layer tie-break carried by outside-in pins
   rather than unit pins.
+
+## Second-review fix round (2026-10-07)
+
+Finding 14 of `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`.
+
+- Non-human records no longer count as holders: MONDO records descended
+  from MONDO:0005583 (`non-human animal disease`) are excluded, so the
+  venom-database myeloma record no longer refuses `get disease myeloma`.
+- A full word is ambiguous only by that name: for a token that is not
+  abbreviation-shaped, only exact-NAME holders count toward the refusal,
+  so `get disease myeloma` resolves to multiple myeloma (MONDO:0009693)
+  while abbreviation holders (MF, CAD, MM, MDS) keep refusing.
+- Refusal candidate lists fill missing labels from the MONDO `label`:
+  `CAD` now names `cold agglutinin disease (MONDO:0018922)` and
+  `congenital alveolar dysplasia (MONDO:0100077)` instead of printing
+  bare IDs.
+- The NCI trial search condition degrade now reaches the response as a
+  page note (`_meta.notes` and the markdown footer, the 2021 pattern)
+  whenever grounding falls back to a plain keyword search, instead of a
+  log line only.
+- Proof: the myeloma resolve and the labelled CAD refusal replay through
+  recorded responses (`query_myeloma.json`, `get_mondo_0009693.json`,
+  re-recorded `query_cad.json`/`query_mf.json` with the widened search
+  fields), holder-rule unit tests pin the non-human exclusion and the
+  full-word rule, and an NCI fixture test pins the degrade note on the
+  page. The five-row spec table gains the myeloma row.

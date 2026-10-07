@@ -135,15 +135,31 @@ fn valid_canonical_id(value: &str) -> Option<String> {
 }
 
 fn exact_hit_matches(query: &str, hit: &MyDiseaseHit) -> bool {
-    let query = match normalized_term(query) {
-        Some(query) => query,
-        None => return false,
-    };
+    exact_term_hold(query, hit).is_some()
+}
+
+/// How a record holds the requested term exactly: as its ontology name or
+/// as an exact synonym. Ticket 2017 counts the two differently for full
+/// words.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ExactTermHold {
+    Name,
+    Synonym,
+}
+
+fn exact_term_hold(query: &str, hit: &MyDiseaseHit) -> Option<ExactTermHold> {
+    let query = normalized_term(query)?;
     let (names, synonyms, _) = provider_terms(hit);
-    names
+    if names
         .into_iter()
-        .chain(synonyms)
         .any(|term| normalized_provider_term(&term).is_some_and(|term| term == query))
+    {
+        return Some(ExactTermHold::Name);
+    }
+    synonyms
+        .into_iter()
+        .any(|term| normalized_provider_term(&term).is_some_and(|term| term == query))
+        .then_some(ExactTermHold::Synonym)
 }
 
 fn detail_terms(
@@ -678,25 +694,80 @@ pub(super) fn rerank_disease_search_hits(
         .collect()
 }
 
-/// Diseases in a candidate set that hold `query` as an exact name or exact
-/// synonym, ordered by ID so refusal messages are stable.
+/// MONDO:0005583 is `non-human animal disease`; every veterinary MONDO
+/// record descends from it, including the venom-database `myeloma` that
+/// once made `get disease myeloma` refuse. BioMCP answers clinicians, so a
+/// non-human record never counts toward disease-name ambiguity (ticket
+/// 2017).
+const NON_HUMAN_ANIMAL_DISEASE_ID: &str = "MONDO:0005583";
+
+fn is_non_human_record(hit: &MyDiseaseHit) -> bool {
+    hit.mondo
+        .as_ref()
+        .and_then(|value| value.get("ancestors"))
+        .and_then(|value| value.as_array())
+        .is_some_and(|values| {
+            values
+                .iter()
+                .any(|value| value.as_str() == Some(NON_HUMAN_ANIMAL_DISEASE_ID))
+        })
+}
+
+/// A token shaped like an abbreviation — one word, all ASCII capitals
+/// (`MF`, `CAD`, `NSCLC`) — is ambiguous when several diseases hold it as
+/// an exact name or synonym. Any other shape is a full word, and a full
+/// word is ambiguous only when several records carry it as their exact
+/// NAME: a record that merely shares the word as a synonym does not stop
+/// `get disease myeloma` from reaching multiple myeloma (ticket 2017).
+fn is_abbreviation_shaped_token(token: &str) -> bool {
+    let token = token.trim();
+    !token.is_empty()
+        && !token.chars().any(char::is_whitespace)
+        && token.chars().all(|ch| ch.is_ascii_uppercase())
+}
+
+/// Diseases in a candidate set that hold `query` as an exact holder,
+/// ordered by ID so refusal messages are stable. Non-human records never
+/// count, and for a full word only exact-NAME holders count.
 fn exact_token_holder_ids<'a>(
     query: &str,
     hits: impl IntoIterator<Item = &'a MyDiseaseHit>,
 ) -> Vec<String> {
+    let abbreviation = is_abbreviation_shaped_token(query);
     let mut holder_ids: Vec<String> = hits
         .into_iter()
-        .filter(|hit| exact_hit_matches(query, hit))
+        .filter(|hit| !is_non_human_record(hit))
+        .filter(|hit| match exact_term_hold(query, hit) {
+            Some(ExactTermHold::Name) => true,
+            Some(ExactTermHold::Synonym) => abbreviation,
+            None => false,
+        })
         .map(|hit| hit.id.clone())
         .collect();
     holder_ids.sort();
     holder_ids
 }
 
+/// A display label for a refusal candidate. MONDO records with no `name`
+/// in the search response still carry the ontology `label`, so the
+/// candidate list names the disease instead of printing a bare ID
+/// (ticket 2017: `CAD` refused listing `MONDO:0018922` with no label).
+fn holder_display_label(hit: &MyDiseaseHit) -> Option<String> {
+    hit_label(hit).or_else(|| {
+        hit.mondo
+            .as_ref()
+            .and_then(|value| value.get("label"))
+            .and_then(|value| value.as_str())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_string())
+    })
+}
+
 fn abbreviation_candidate_lines(holders: &[MyDiseaseHit]) -> String {
     holders
         .iter()
-        .map(|hit| match hit_label(hit) {
+        .map(|hit| match holder_display_label(hit) {
             Some(label) => format!("- {label} ({})\n", hit.id),
             None => format!("- {} (no label in the search response)\n", hit.id),
         })
@@ -708,20 +779,24 @@ fn ambiguous_abbreviation_error(
     holders: &[MyDiseaseHit],
     short_token: bool,
 ) -> BioMcpError {
+    let abbreviation = is_abbreviation_shaped_token(requested);
+    let subject = if abbreviation { "abbreviation" } else { "name" };
     let reason = if short_token {
         format!(
             "the source holds it on {} disease{}, but a token this short cannot name one disease reliably",
             holders.len(),
             if holders.len() == 1 { "" } else { "s" },
         )
-    } else {
+    } else if abbreviation {
         format!(
             "{} diseases hold it as an exact name or synonym",
             holders.len()
         )
+    } else {
+        format!("{} diseases carry it as their exact name", holders.len())
     };
     BioMcpError::InvalidArgument(format!(
-        "Ambiguous disease abbreviation '{requested}': {reason}; \
+        "Ambiguous disease {subject} '{requested}': {reason}; \
 BioMCP refuses rather than return one disease's definition with another's genes.\n\
 Candidates:\n{}\
 Retry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"{requested}\"` to see every match.",

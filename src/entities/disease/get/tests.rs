@@ -573,11 +573,15 @@ async fn abbreviation_fixture_server()
                         recorded_mydisease!("query_cad.json")
                     } else if request.contains("CRC") {
                         recorded_mydisease!("query_crc.json")
+                    } else if request.contains("myeloma") {
+                        recorded_mydisease!("query_myeloma.json")
                     } else {
                         r#"{"total":0,"hits":[]}"#
                     }
                 } else if request.contains("/disease/MONDO:0024331") {
                     recorded_mydisease!("get_mondo_0024331.json")
+                } else if request.contains("/disease/MONDO:0009693") {
+                    recorded_mydisease!("get_mondo_0009693.json")
                 } else {
                     r#"{"total":0,"hits":[]}"#
                 };
@@ -630,7 +634,12 @@ async fn get_disease_mf_refuses_instead_of_mixing_two_diseases() {
         error.contains("mycosis fungoides (MONDO:0009691)"),
         "{error}"
     );
-    assert!(error.contains("MONDO:0020481"), "{error}");
+    // Ticket 2017 fix round: MONDO:0020481 carries no `name` in the search
+    // response, but the ontology `label` names the candidate.
+    assert!(
+        error.contains("myotonia fluctuans (MONDO:0020481)"),
+        "{error}"
+    );
     assert!(error.contains("search disease"), "{error}");
 }
 
@@ -642,11 +651,17 @@ async fn get_disease_cad_refuses_naming_every_exact_holder() {
         .expect_err("CAD holds on three diseases and must refuse");
     for candidate in [
         "coronary artery disease (MONDO:0005010)",
-        "MONDO:0018922",
-        "MONDO:0100077",
+        // Both holders without a search-response `name` carry a MONDO
+        // `label`, so the refusal names the diseases, not bare IDs.
+        "cold agglutinin disease (MONDO:0018922)",
+        "congenital alveolar dysplasia (MONDO:0100077)",
     ] {
         assert!(error.contains(candidate), "missing {candidate}: {error}");
     }
+    assert!(
+        !error.contains("no label in the search response"),
+        "{error}"
+    );
 }
 
 #[tokio::test]
@@ -689,6 +704,22 @@ async fn get_disease_single_holder_abbreviation_still_resolves_one_record() {
         .expect("CRC is held by one disease and must resolve");
     assert!(card.starts_with("# colorectal carcinoma"), "{card}");
     assert!(card.contains("ID: MONDO:0024331"), "{card}");
+}
+
+/// Ticket 2017 fix round: a full word is ambiguous only by that name. The
+/// veterinary myeloma record (MONDO:1013329, a descendant of MONDO:0005583
+/// `non-human animal disease`) holds `myeloma` as an exact synonym, and
+/// multiple myeloma holds it as a synonym too — neither synonym hold can
+/// refuse the lookup, so `get disease myeloma` resolves to the full-name
+/// disease.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn get_disease_full_word_resolves_past_nonhuman_and_synonym_holders() {
+    let card = get_disease_card_or_error("myeloma")
+        .await
+        .expect("a full word whose exact-name holder count is zero must resolve");
+    assert!(card.starts_with("# multiple myeloma"), "{card}");
+    assert!(card.contains("ID: MONDO:0009693"), "{card}");
 }
 
 /// Ticket 2017 structural guard: when a single-holder abbreviation resolves

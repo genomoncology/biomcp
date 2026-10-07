@@ -104,3 +104,57 @@ abbreviation holders surfaced above labelled ones.
   (the stale-serve fallback does not survive this host's connection-refused
   behavior under 20-30 load average). Not caused by this change; recorded,
   not chased.
+
+## Second-review fix round (2026-10-07)
+
+Finding 14 and branch findings 10-12 of
+`sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`.
+
+### Changes
+
+- `src/sources/mydisease.rs`: the search fields gain `mondo.label` and
+  `mondo.ancestors`, so a search response can name a record whose `name`
+  is absent and expose non-human ancestry.
+- `src/entities/disease/resolution.rs`: holder counting excludes records
+  descended from MONDO:0005583 (`non-human animal disease`); a token that
+  is not abbreviation-shaped (a full word) counts only exact-NAME holders
+  toward the refusal; refusal candidate lines fall back to the MONDO
+  `label` before printing an ID-only line; the refusal subject says
+  `name` instead of `abbreviation` for a full word.
+- `src/entities/trial/search/nci.rs`: the condition-grounding degrade to a
+  plain keyword search now carries a page note (the `partial_note` channel
+  that reaches `_meta.notes` and the markdown footer) for all three
+  degrade paths: unresolvable condition, grounding failure, and a
+  resolved disease with no NCI concept ID. The log warning stays.
+- Fixtures: `query_myeloma.json` and `get_mondo_0009693.json` recorded
+  2026-10-07; `query_cad.json` and `query_mf.json` re-recorded for the
+  widened search fields; receipts updated and the zero-coupling digest
+  repinned.
+- Spec: `spec/entity/disease.md` gains the myeloma row (full-word
+  resolve) and the labelled CAD refusal pin; the routine disease fixture
+  serves the new captures.
+
+### Behavior
+
+- `get disease myeloma` resolves to multiple myeloma (MONDO:0009693)
+  instead of refusing as an ambiguous abbreviation.
+- `get disease CAD` refusal candidates read `cold agglutinin disease
+  (MONDO:0018922)` and `congenital alveolar dysplasia (MONDO:0100077)`;
+  no `no label in the search response` line remains for the recorded
+  cases.
+- `search trial -c <condition> --source nci` surfaces the keyword degrade
+  in the response.
+- MF, CAD, MM, MDS, HD refusals and CRC/AML/NSCLC/DLBCL resolves are
+  unchanged.
+
+### Proof
+
+- New Rust tests: holder-rule unit tests (non-human exclusion, full-word
+  name-only counting, abbreviation name+synonym counting, label-filled
+  candidate lines); the myeloma CLI fixture test resolving through the
+  recorded responses; the labelled CAD refusal assertions; the NCI page
+  degrade-note test (grounding failure path) pinning that the request
+  stays a keyword search and the note reaches the page.
+- Verification on the build host through `yr` after the rebase: disease
+  and trial Rust scopes, mustmatch on `spec/entity/disease.md` after
+  `make sync-python-dev`, and `make lint`.

@@ -1,0 +1,735 @@
+{
+ "took": 3,
+ "total": 10,
+ "max_score": 118.70981,
+ "hits": [
+  {
+   "_id": "MONDO:0009693",
+   "_score": 118.70981,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "multiple myeloma",
+    "synonyms": {
+     "exact": [
+      "myeloma"
+     ]
+    }
+   },
+   "hpo": [
+    {
+     "clinical_course": {
+      "hpo_name": "Adult onset"
+     },
+     "inheritance": {
+      "hpo_id": "HP:0001442",
+      "hpo_name": "Typified by somatic mosaicism"
+     },
+     "phenotype_related_to_disease": [
+      {
+       "hpo_id": "HP:0011034"
+      },
+      {
+       "hpo_id": "HP:0031047"
+      },
+      {
+       "hpo_id": "HP:0006775"
+      }
+     ]
+    },
+    {
+     "phenotype_related_to_disease": [
+      {
+       "hpo_id": "HP:0000938"
+      },
+      {
+       "hpo_id": "HP:0002756"
+      },
+      {
+       "hpo_id": "HP:0000100"
+      },
+      {
+       "hpo_id": "HP:0000112"
+      },
+      {
+       "hpo_id": "HP:0000980"
+      },
+      {
+       "hpo_id": "HP:0001903"
+      },
+      {
+       "hpo_id": "HP:0001919"
+      },
+      {
+       "hpo_id": "HP:0002152"
+      },
+      {
+       "hpo_id": "HP:0002653"
+      },
+      {
+       "hpo_id": "HP:0002797"
+      },
+      {
+       "hpo_id": "HP:0003237"
+      },
+      {
+       "hpo_id": "HP:0003259"
+      },
+      {
+       "hpo_id": "HP:0003324"
+      },
+      {
+       "hpo_id": "HP:0004313"
+      },
+      {
+       "hpo_id": "HP:0012378"
+      },
+      {
+       "hpo_id": "HP:0000014"
+      },
+      {
+       "hpo_id": "HP:0000098"
+      },
+      {
+       "hpo_id": "HP:0001824"
+      },
+      {
+       "hpo_id": "HP:0002176"
+      },
+      {
+       "hpo_id": "HP:0002808"
+      },
+      {
+       "hpo_id": "HP:0002953"
+      },
+      {
+       "hpo_id": "HP:0003072"
+      },
+      {
+       "hpo_id": "HP:0003261"
+      },
+      {
+       "hpo_id": "HP:0003401"
+      },
+      {
+       "hpo_id": "HP:0004341"
+      },
+      {
+       "hpo_id": "HP:0009830"
+      },
+      {
+       "hpo_id": "HP:0012185"
+      },
+      {
+       "hpo_id": "HP:0012719"
+      },
+      {
+       "hpo_id": "HP:0001744"
+      },
+      {
+       "hpo_id": "HP:0002202"
+      },
+      {
+       "hpo_id": "HP:0002716"
+      }
+     ]
+    }
+   ],
+   "mondo": {
+    "ancestors": [
+     "MONDO:0002334",
+     "MONDO:0000621",
+     "MONDO:0005062",
+     "MONDO:0004805",
+     "MONDO:0005070",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0005170",
+     "MONDO:0005570",
+     "MONDO:0004959",
+     "MONDO:0023370",
+     "MONDO:0004095",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004992",
+     "MONDO:0004949"
+    ],
+    "label": "plasma cell myeloma",
+    "synonym": {
+     "exact": [
+      "Kahler disease",
+      "Kahler's disease",
+      "medullary plasmacytoma",
+      "Multiple Myeloma",
+      "multiple myeloma",
+      "multiple myeloma, resistance to, Somatic mutation",
+      "multiple myeloma, susceptibility to, Somatic mutation",
+      "multiple myeloma/plasma cell myeloma",
+      "myeloid neoplasm of plasma cell",
+      "myeloma",
+      "myeloma, multiple",
+      "myeloma, plasma cell, malignant",
+      "myelomatosis",
+      "plasma cell myeloid neoplasm",
+      "plasma cell myeloma"
+     ],
+     "related": [
+      "myeloma - multiple"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0005235",
+   "_score": 107.698166,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "smoldering myeloma",
+    "synonyms": {}
+   },
+   "mondo": {
+    "ancestors": [
+     "MONDO:0002334",
+     "MONDO:0000621",
+     "MONDO:0009693",
+     "MONDO:0005062",
+     "MONDO:0004805",
+     "MONDO:0005070",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0005170",
+     "MONDO:0005570",
+     "MONDO:0004959",
+     "MONDO:0023370",
+     "MONDO:0004095",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004992",
+     "MONDO:0004949"
+    ],
+    "label": "smoldering plasma cell myeloma",
+    "synonym": {
+     "exact": [
+      "asymptomatic myeloma",
+      "asymptomatic plasma cell myeloma",
+      "smoldering multiple myeloma",
+      "smoldering Multiple myeloma/plasma cell myeloma",
+      "smoldering myeloma",
+      "smoldering plasma cell myeloma",
+      "smouldering multiple myeloma",
+      "smouldering Multiple myeloma/plasma cell myeloma",
+      "smouldering myeloma"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0004815",
+   "_score": 106.07237,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "osteosclerotic myeloma",
+    "synonyms": {}
+   },
+   "mondo": {
+    "ancestors": [
+     "MONDO:0002334",
+     "MONDO:0000621",
+     "MONDO:0009693",
+     "MONDO:0005062",
+     "MONDO:0004805",
+     "MONDO:0005070",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0005170",
+     "MONDO:0005570",
+     "MONDO:0004959",
+     "MONDO:0023370",
+     "MONDO:0004095",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004992",
+     "MONDO:0004949"
+    ],
+    "label": "osteosclerotic plasma cell myeloma",
+    "synonym": {
+     "exact": [
+      "osteosclerotic multiple myeloma",
+      "osteosclerotic plasma cell myeloma"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0004819",
+   "_score": 97.25743,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "indolent plasma cell myeloma",
+    "synonyms": {
+     "exact": [
+      "indolent myeloma"
+     ]
+    }
+   },
+   "mondo": {
+    "ancestors": [
+     "MONDO:0002334",
+     "MONDO:0000621",
+     "MONDO:0009693",
+     "MONDO:0005062",
+     "MONDO:0004805",
+     "MONDO:0005070",
+     "MONDO:0005235",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0005170",
+     "MONDO:0005570",
+     "MONDO:0004959",
+     "MONDO:0023370",
+     "MONDO:0004095",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004992",
+     "MONDO:0004949"
+    ],
+    "label": "indolent plasma cell myeloma",
+    "synonym": {
+     "exact": [
+      "indolent multiple myeloma",
+      "indolent myeloma"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0004817",
+   "_score": 94.00423,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "non-secretory myeloma",
+    "synonyms": {}
+   },
+   "mondo": {
+    "ancestors": [
+     "MONDO:0002334",
+     "MONDO:0000621",
+     "MONDO:0009693",
+     "MONDO:0005062",
+     "MONDO:0004805",
+     "MONDO:0005070",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0005170",
+     "MONDO:0005570",
+     "MONDO:0004959",
+     "MONDO:0023370",
+     "MONDO:0004095",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004992",
+     "MONDO:0004949"
+    ],
+    "label": "non-secretory plasma cell myeloma",
+    "synonym": {
+     "exact": [
+      "non-secretory multiple myeloma",
+      "non-secretory plasma cell myeloma"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:1013329",
+   "_score": 13.546563,
+   "mondo": {
+    "ancestors": [
+     "MONDO:1011305",
+     "MONDO:0700098",
+     "MONDO:0700106",
+     "MONDO:7770012",
+     "MONDO:0000001",
+     "MONDO:0700102",
+     "MONDO:0005583",
+     "MONDO:1011828",
+     "MONDO:7770014",
+     "MONDO:1011319"
+    ],
+    "label": "plasma cell myeloma, non-human animal",
+    "synonym": {
+     "exact": [
+      "multiple myeloma",
+      "myeloma"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0005615",
+   "_score": 12.195179,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "plasmacytoma",
+    "synonyms": {
+     "exact": [
+      "Myeloma - solitary",
+      "Myeloma, solitary",
+      "Solitary myeloma",
+      "Solitary plasmacytoma"
+     ]
+    }
+   },
+   "mondo": {
+    "ancestors": [
+     "MONDO:0002334",
+     "MONDO:0005062",
+     "MONDO:0004805",
+     "MONDO:0005070",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0005570",
+     "MONDO:0004959",
+     "MONDO:0023370",
+     "MONDO:0004095",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004949"
+    ],
+    "label": "plasmacytoma",
+    "synonym": {
+     "exact": [
+      "plasmacytoma"
+     ],
+     "related": [
+      "anaplastic plasmacytoma",
+      "anaplastic skeletal plasmacytoma (type)",
+      "anaplastic solitary extramedullary plasmacytoma of the cecum (type)",
+      "extramedullary anaplastic plasmacytoma (type)"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0019730",
+   "_score": 8.901417,
+   "mondo": {
+    "ancestors": [
+     "MONDO:0002334",
+     "MONDO:0019463",
+     "MONDO:0004805",
+     "MONDO:0005062",
+     "MONDO:0005070",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0005570",
+     "MONDO:0004959",
+     "MONDO:0023370",
+     "MONDO:0004095",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004949"
+    ],
+    "label": "light chain deposition disease",
+    "synonym": {
+     "exact": [
+      "Bence Jones myeloma",
+      "LCDD",
+      "Light chain disease",
+      "Light chain gammopathy"
+     ],
+     "related": [
+      "Light-chain deposition disease"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0017364",
+   "_score": 7.3154507,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "POEMS syndrome",
+    "synonyms": {}
+   },
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0001063"
+     },
+     {
+      "hpo_id": "HP:0001901"
+     },
+     {
+      "hpo_id": "HP:0002091"
+     },
+     {
+      "hpo_id": "HP:0002747"
+     },
+     {
+      "hpo_id": "HP:0004420"
+     },
+     {
+      "hpo_id": "HP:0004936"
+     },
+     {
+      "hpo_id": "HP:0009125"
+     },
+     {
+      "hpo_id": "HP:0031357"
+     },
+     {
+      "hpo_id": "HP:0100963"
+     },
+     {
+      "hpo_id": "HP:0001271"
+     },
+     {
+      "hpo_id": "HP:0000135"
+     },
+     {
+      "hpo_id": "HP:0000818"
+     },
+     {
+      "hpo_id": "HP:0003271"
+     },
+     {
+      "hpo_id": "HP:0005523"
+     },
+     {
+      "hpo_id": "HP:0010702"
+     },
+     {
+      "hpo_id": "HP:0011122"
+     },
+     {
+      "hpo_id": "HP:0000771"
+     },
+     {
+      "hpo_id": "HP:0000819"
+     },
+     {
+      "hpo_id": "HP:0000821"
+     },
+     {
+      "hpo_id": "HP:0000953"
+     },
+     {
+      "hpo_id": "HP:0000969"
+     },
+     {
+      "hpo_id": "HP:0000998"
+     },
+     {
+      "hpo_id": "HP:0001028"
+     },
+     {
+      "hpo_id": "HP:0001072"
+     },
+     {
+      "hpo_id": "HP:0001085"
+     },
+     {
+      "hpo_id": "HP:0001284"
+     },
+     {
+      "hpo_id": "HP:0001324"
+     },
+     {
+      "hpo_id": "HP:0001541"
+     },
+     {
+      "hpo_id": "HP:0001698"
+     },
+     {
+      "hpo_id": "HP:0001744"
+     },
+     {
+      "hpo_id": "HP:0001820"
+     },
+     {
+      "hpo_id": "HP:0001824"
+     },
+     {
+      "hpo_id": "HP:0001894"
+     },
+     {
+      "hpo_id": "HP:0002092"
+     },
+     {
+      "hpo_id": "HP:0002202"
+     },
+     {
+      "hpo_id": "HP:0002240"
+     },
+     {
+      "hpo_id": "HP:0002694"
+     },
+     {
+      "hpo_id": "HP:0002716"
+     },
+     {
+      "hpo_id": "HP:0004054"
+     },
+     {
+      "hpo_id": "HP:0004576"
+     },
+     {
+      "hpo_id": "HP:0004979"
+     },
+     {
+      "hpo_id": "HP:0008207"
+     },
+     {
+      "hpo_id": "HP:0012378"
+     },
+     {
+      "hpo_id": "HP:0012531"
+     },
+     {
+      "hpo_id": "HP:0031052"
+     },
+     {
+      "hpo_id": "HP:0100639"
+     },
+     {
+      "hpo_id": "HP:0100759"
+     },
+     {
+      "hpo_id": "HP:0100925"
+     },
+     {
+      "hpo_id": "HP:0000870"
+     },
+     {
+      "hpo_id": "HP:0001050"
+     },
+     {
+      "hpo_id": "HP:0003401"
+     }
+    ]
+   },
+   "mondo": {
+    "ancestors": [
+     "MONDO:0700253",
+     "MONDO:0005151",
+     "MONDO:0045054",
+     "MONDO:0004805",
+     "MONDO:0021073",
+     "MONDO:0000001",
+     "MONDO:0045024",
+     "MONDO:0002254",
+     "MONDO:0700096",
+     "MONDO:0005244",
+     "MONDO:0005570",
+     "MONDO:0018215",
+     "MONDO:0700252",
+     "MONDO:0005071",
+     "MONDO:0003620",
+     "MONDO:0015923",
+     "MONDO:0019056",
+     "MONDO:0005046",
+     "MONDO:7770006",
+     "MONDO:7770008"
+    ],
+    "label": "POEMS syndrome",
+    "synonym": {
+     "exact": [
+      "Crow-Fukase syndrome",
+      "osteosclerotic myeloma",
+      "PEP syndrome",
+      "POEMS syndrome",
+      "polyneuropathy-endocrinopathy-plasma cell dyscrasia syndrome",
+      "Takatsuki syndrome"
+     ],
+     "related": [
+      "polyneuropathy organomegaly",
+      "polyneuropathy, organomegaly, endocrinopathy, M protein, and skin changes syndrome"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0044881",
+   "_score": 3.0482206,
+   "mondo": {
+    "ancestors": [
+     "MONDO:0023370",
+     "MONDO:0002334",
+     "MONDO:0005570",
+     "MONDO:0000001",
+     "MONDO:0045024",
+     "MONDO:7770006",
+     "MONDO:7770008",
+     "MONDO:0700096",
+     "MONDO:0005070"
+    ],
+    "label": "hematopoietic and lymphoid cell neoplasm",
+    "synonym": {
+     "exact": [
+      "haematological neoplasm",
+      "haematological tumour",
+      "haematopoietic and lymphoid neoplasms",
+      "haematopoietic cancer",
+      "haematopoietic cell tumour",
+      "haematopoietic malignancy, NOS",
+      "haematopoietic neoplasm",
+      "haematopoietic neoplasms including lymphomas",
+      "haematopoietic tumour",
+      "hematologic cancer",
+      "hematologic malignancy",
+      "hematologic neoplasm",
+      "hematological neoplasm",
+      "hematological tumor",
+      "hematopoietic and lymphoid cell neoplasm",
+      "hematopoietic and lymphoid neoplasms",
+      "hematopoietic cancer",
+      "hematopoietic cell tumor",
+      "hematopoietic malignancy, NOS",
+      "hematopoietic neoplasm",
+      "hematopoietic neoplasms including lymphomas",
+      "hematopoietic tumor",
+      "hematopoietic, Including myeloma",
+      "HEMOLYMPHORETICULAR tumor, malignant",
+      "malignant haematopoietic neoplasm",
+      "malignant hematologic neoplasm",
+      "malignant hematopoietic neoplasm"
+     ]
+    }
+   }
+  }
+ ]
+}

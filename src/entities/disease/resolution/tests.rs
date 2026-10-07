@@ -45,6 +45,94 @@ async fn exact_resolution_fixture(
     )
 }
 
+fn holder_hits() -> Vec<MyDiseaseHit> {
+    vec![
+        // Human record holding the abbreviation `CAD` and the full word
+        // `word` as exact synonyms.
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005000",
+            "disease_ontology": {"name": "human synonym holder", "synonyms": {"exact": ["CAD", "word"]}}
+        }))
+        .expect("human synonym holder"),
+        // Non-human record holding the same tokens as exact synonyms:
+        // descended from MONDO:0005583 (non-human animal disease).
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:1013329",
+            "mondo": {
+                "synonym": {"exact": ["CAD", "word"]},
+                "ancestors": ["MONDO:0005583", "MONDO:0700102"]
+            }
+        }))
+        .expect("non-human synonym holder"),
+        // Exact NAME holder of the full word.
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0006000",
+            "mondo": {"name": "word"}
+        }))
+        .expect("name holder"),
+    ]
+}
+
+#[test]
+fn holder_counting_leaves_nonhuman_records_out() {
+    // `CAD` is an abbreviation-shaped token, so synonym holders count —
+    // but the veterinary record never counts toward the refusal (ticket
+    // 2017: `myeloma` refused because a venom-database record held it).
+    let ids = exact_token_holder_ids("CAD", &holder_hits());
+    assert_eq!(ids, ["MONDO:0005000".to_string()]);
+}
+
+#[test]
+fn full_word_holders_count_only_exact_name_holds() {
+    // `word` is held as an exact NAME by MONDO:0006000, as an exact
+    // synonym by the human MONDO:0005000, and as an exact synonym by the
+    // veterinary record; a full word is ambiguous only by that name, so
+    // only the name holder counts.
+    let ids = exact_token_holder_ids("word", &holder_hits());
+    assert_eq!(ids, ["MONDO:0006000".to_string()]);
+}
+
+#[test]
+fn abbreviation_holders_count_name_and_synonym_holds() {
+    // An abbreviation-shaped token keeps the broader count: name and
+    // synonym holders both count (MF, CAD, MDS), which is what the refusal
+    // table pins.
+    let hits = vec![
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005233",
+            "mondo": {"name": "NSCLC", "synonym": {"exact": ["non-small cell lung carcinoma"]}}
+        }))
+        .expect("name holder"),
+        serde_json::from_value(serde_json::json!({
+            "_id": "MONDO:0005234",
+            "mondo": {"synonym": {"exact": ["NSCLC"]}}
+        }))
+        .expect("synonym holder"),
+    ];
+    let ids = exact_token_holder_ids("NSCLC", &hits);
+    assert_eq!(
+        ids,
+        ["MONDO:0005233".to_string(), "MONDO:0005234".to_string()]
+    );
+}
+
+#[test]
+fn holder_candidate_lines_fill_the_mondo_label() {
+    // A record with no `name` in the search response still names itself
+    // through the ontology `label` (ticket 2017: CAD listed
+    // `MONDO:0018922 (no label in the search response)`).
+    let hit: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+        "_id": "MONDO:0018922",
+        "mondo": {
+            "label": "cold agglutinin disease",
+            "synonym": {"exact": ["CAD"]}
+        }
+    }))
+    .expect("labelled record");
+    let lines = abbreviation_candidate_lines(&[hit]);
+    assert_eq!(lines, "- cold agglutinin disease (MONDO:0018922)\n");
+}
+
 #[test]
 fn normalize_disease_id_basic() {
     assert_eq!(

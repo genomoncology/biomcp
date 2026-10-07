@@ -155,7 +155,13 @@ exactly (the ticket 1297 pattern), and two-letter abbreviations such as `MM`
 refuse even when the source holds them on one disease, because a token that
 short cannot name one disease reliably. A single holder of three or more
 letters still resolves, and the card then assembles from that one record
-only. These rows replay recorded MyDisease responses through the routine
+only. Non-human MONDO records (descendants of `non-human animal disease`,
+MONDO:0005583) never count toward the refusal, and a full word such as
+`myeloma` is ambiguous only when several records carry it as their exact
+NAME — the synonym holders that made `myeloma` refuse were the veterinary
+plasma-cell-myeloma record plus multiple myeloma itself. Candidates name
+themselves through the MONDO `label` when the search response carries no
+`name`. These rows replay recorded MyDisease responses through the routine
 disease fixture.
 
 | query | outcome |
@@ -165,6 +171,7 @@ disease fixture.
 | MM | {"code":"invalid_argument","candidates":1} |
 | MDS | {"code":"invalid_argument","candidates":2} |
 | CRC | {"code":"ok","candidates":0,"id":"MONDO:0024331","name":"colorectal carcinoma"} |
+| myeloma | {"code":"ok","candidates":0,"id":"MONDO:0009693","name":"multiple myeloma"} |
 
 ```bash each_row="Ambiguous Abbreviations Refuse in Get Disease"
 biomcp --json --no-cache get disease '{{query}}' \
@@ -182,7 +189,7 @@ A refusal names every holder with a working retry form.
 {
   "error": {
     "code": "invalid_argument",
-    "message": "Invalid argument: Ambiguous disease abbreviation 'CAD': 3 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- coronary artery disease (MONDO:0005010)\n- MONDO:0018922 (no label in the search response)\n- MONDO:0100077 (no label in the search response)\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"CAD\"` to see every match."
+    "message": "Invalid argument: Ambiguous disease abbreviation 'CAD': 3 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- coronary artery disease (MONDO:0005010)\n- cold agglutinin disease (MONDO:0018922)\n- congenital alveolar dysplasia (MONDO:0100077)\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"CAD\"` to see every match."
   }
 }
 ```

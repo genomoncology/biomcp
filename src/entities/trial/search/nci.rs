@@ -13,31 +13,62 @@ use tracing::warn;
 use super::super::{TrialSearchFilters, TrialSearchResult};
 use super::{NormalizedTrialSearch, nci_biomarker_value, normalized_facility_filter};
 
+/// The NCI condition filter plus the note to surface when grounding
+/// degraded from an NCI concept ID to a plain keyword search. The note
+/// reaches the response (`meta.notes` and the markdown footer), not only a
+/// log line — the ticket 2021 pattern for visible degrades.
+struct NciDiseaseGrounding {
+    filter: NciDiseaseFilter,
+    degrade_note: Option<String>,
+}
+
+fn nci_keyword_degrade_note(condition: &str, reason: &str) -> String {
+    format!(
+        "NCI trial search used a plain keyword search for '{condition}' because {reason}; \
+results may be broader than the requested condition."
+    )
+}
+
 async fn resolve_nci_disease_filter_with_client(
     client: &MyDiseaseClient,
     condition: Option<&str>,
-) -> Result<Option<NciDiseaseFilter>, BioMcpError> {
+) -> Result<Option<NciDiseaseGrounding>, BioMcpError> {
     let Some(condition) = condition.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
 
     match resolve_disease_hit_by_name(client, condition).await {
-        Ok(hit) => Ok(Some(nci_disease_filter_from_hit(condition, hit))),
-        Err(BioMcpError::NotFound { .. }) => {
-            Ok(Some(NciDiseaseFilter::Keyword(condition.to_string())))
-        }
+        Ok(hit) => Ok(Some(nci_disease_grounding_from_hit(condition, hit))),
+        Err(BioMcpError::NotFound { .. }) => Ok(Some(NciDiseaseGrounding {
+            filter: NciDiseaseFilter::Keyword(condition.to_string()),
+            degrade_note: Some(nci_keyword_degrade_note(
+                condition,
+                "it does not ground to a disease concept in MyDisease",
+            )),
+        })),
         Err(err) => {
             warn!(
                 condition,
                 error = %err,
                 "NCI disease grounding failed, falling back to keyword"
             );
-            Ok(Some(NciDiseaseFilter::Keyword(condition.to_string())))
+            let reason_text = err.to_string();
+            let reason = reason_text
+                .lines()
+                .next()
+                .unwrap_or("disease grounding failed");
+            Ok(Some(NciDiseaseGrounding {
+                filter: NciDiseaseFilter::Keyword(condition.to_string()),
+                degrade_note: Some(nci_keyword_degrade_note(
+                    condition,
+                    &format!("disease grounding failed ({reason})"),
+                )),
+            }))
         }
     }
 }
 
-fn nci_disease_filter_from_hit(condition: &str, hit: MyDiseaseHit) -> NciDiseaseFilter {
+fn nci_disease_grounding_from_hit(condition: &str, hit: MyDiseaseHit) -> NciDiseaseGrounding {
     let mut disease = transform::disease::from_mydisease_hit(hit);
     if let Some(nci_id) = disease
         .xrefs
@@ -45,9 +76,18 @@ fn nci_disease_filter_from_hit(condition: &str, hit: MyDiseaseHit) -> NciDisease
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
     {
-        NciDiseaseFilter::ConceptId(nci_id)
+        NciDiseaseGrounding {
+            filter: NciDiseaseFilter::ConceptId(nci_id),
+            degrade_note: None,
+        }
     } else {
-        NciDiseaseFilter::Keyword(condition.to_string())
+        NciDiseaseGrounding {
+            filter: NciDiseaseFilter::Keyword(condition.to_string()),
+            degrade_note: Some(nci_keyword_degrade_note(
+                condition,
+                "the resolved disease carries no NCI concept ID",
+            )),
+        }
     }
 }
 
@@ -59,12 +99,12 @@ pub(super) async fn search_page_with_nci_clients(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
+    let grounding =
+        resolve_nci_disease_filter_with_client(mydisease_client, filters.condition.as_deref())
+            .await?;
+    let degrade_note = grounding.as_ref().and_then(|g| g.degrade_note.clone());
     let params = NciSearchParams {
-        disease: resolve_nci_disease_filter_with_client(
-            mydisease_client,
-            filters.condition.as_deref(),
-        )
-        .await?,
+        disease: grounding.map(|g| g.filter),
         interventions: filters.intervention.clone(),
         sites_org_name: normalized_facility_filter(filters),
         status: nci_status_filter(normalized.normalized_status.as_deref())?,
@@ -76,13 +116,15 @@ pub(super) async fn search_page_with_nci_clients(
     };
 
     let resp = client.search(&params).await?;
-    Ok(SearchPage::offset(
+    let mut page = SearchPage::offset(
         resp.hits()
             .iter()
             .map(transform::trial::from_nci_hit)
             .collect::<Result<Vec<_>, _>>()?,
         resp.total,
-    ))
+    );
+    page.partial_note = degrade_note;
+    Ok(page)
 }
 
 fn nci_status_filter(value: Option<&str>) -> Result<Option<NciStatusFilter>, BioMcpError> {

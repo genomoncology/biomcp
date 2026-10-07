@@ -74,6 +74,30 @@
     ]
    },
    "mondo": {
+    "ancestors": [
+     "MONDO:7770011",
+     "MONDO:0800468",
+     "MONDO:0016120",
+     "MONDO:0003939",
+     "MONDO:0002081",
+     "MONDO:7770009",
+     "MONDO:0100545",
+     "MONDO:0000001",
+     "MONDO:0019119",
+     "MONDO:0002254",
+     "MONDO:0700096",
+     "MONDO:0100546",
+     "MONDO:0020120",
+     "MONDO:0005071",
+     "MONDO:0700223",
+     "MONDO:7770007",
+     "MONDO:0018959",
+     "MONDO:0019056",
+     "MONDO:7770006",
+     "MONDO:7770008",
+     "MONDO:0003847"
+    ],
+    "label": "myotonia fluctuans",
     "synonym": {
      "exact": [
       "exercise-induced delayed-onset myotonia",
@@ -217,6 +241,36 @@
     }
    ],
    "mondo": {
+    "ancestors": [
+     "MONDO:0005093",
+     "MONDO:0002334",
+     "MONDO:0000607",
+     "MONDO:0015816",
+     "MONDO:0002051",
+     "MONDO:0015821",
+     "MONDO:0005062",
+     "MONDO:0015758",
+     "MONDO:0005070",
+     "MONDO:0000653",
+     "MONDO:0015757",
+     "MONDO:0000001",
+     "MONDO:0018908",
+     "MONDO:0005157",
+     "MONDO:0045024",
+     "MONDO:0700096",
+     "MONDO:0015760",
+     "MONDO:0005570",
+     "MONDO:0017207",
+     "MONDO:0018898",
+     "MONDO:0002531",
+     "MONDO:0002898",
+     "MONDO:0023370",
+     "MONDO:7770006",
+     "MONDO:0044881",
+     "MONDO:7770008",
+     "MONDO:0004992"
+    ],
+    "label": "mycosis fungoides",
     "synonym": {
      "exact": [
       "CTCL/ mycosis fungoides",
