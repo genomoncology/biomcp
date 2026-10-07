@@ -25,3 +25,21 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: `get disease` refuses with candidates when more than one record holds the abbreviation; sections assemble from the one resolved record only; labelled records outrank unlabelled ones; abbreviation hits do not outrank name hits in search.
 - Proof: outside-in tests for MF, CAD, MM and MDS from recorded responses, each failing on `37631c357`, plus one single-holder abbreviation that still resolves.
 - Defers: curated abbreviation preferences.
+
+## Build status
+
+- Built on branch `tickets/2017-ambiguous-disease-abbreviations-refuse-in-get-disease`,
+  commits 99bdea36a, 5bb4a1cae, 2026-10-07, after one timeout revival
+  with a checkpoint (nothing lost).
+- Code review: ACCEPT 2026-10-07. Verified: the holder-count rule with
+  the 1297-pattern refusal and the short-token gate; the labelled-first
+  tie-breaks closing the unlabelled-ID path; card identity closed both
+  ways (substitution after enrichment; abbreviation-shaped synonyms
+  never reach Open Targets; the synthetic alias test pins both halves);
+  all four regressions genuinely failing on pristine base; 1295's
+  recall table and CAD set-equality unchanged; the HD cost honestly
+  disclosed; receipts and the digest repin clean. Three report-only
+  notes: holder counting sees the provider's top-15 window
+  (pre-existing), a pre-existing '/' synonym split in associations,
+  and the resolution-layer tie-break carried by outside-in pins
+  rather than unit pins.

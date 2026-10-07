@@ -71,6 +71,12 @@ TP53_G105S_RESPONSE = (ROOT / "testdata/sources/myvariant/search_tp53_g105s_2026
 # genomic variants. Only the DICER1 ClinVar record names one of its three.
 DICER1_M1483I_RESPONSE = (ROOT / "testdata/sources/myvariant/query_dicer1_m1483i_20261006.json").read_bytes()
 EGFR_M766I_RESPONSE = (ROOT / "testdata/sources/myvariant/query_egfr_m766i_20261006.json").read_bytes()
+# Ticket 2018: recorded KRAS codon-12 queries. rs121913529 names three alleles
+# (G12A, G12D, G12V); each gene+protein query names exactly one of them.
+KRAS_G12A_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12a_20261007.json").read_bytes()
+KRAS_G12D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12d_20261007.json").read_bytes()
+KRAS_G12V_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12v_20261007.json").read_bytes()
+RS121913529_RESPONSE = (ROOT / "testdata/sources/myvariant/query_rsid_rs121913529_20261007.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
@@ -422,6 +428,18 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == 'dbnsfp.genename:EGFR AND dbnsfp.hgvsp:"p.M766I"':
                 send_json(self, 200, json.loads(EGFR_M766I_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G12A"':
+                send_json(self, 200, KRAS_G12A_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G12D"':
+                send_json(self, 200, KRAS_G12D_RESPONSE)
+                return
+            if query == 'dbnsfp.genename:KRAS AND dbnsfp.hgvsp:"p.G12V"':
+                send_json(self, 200, KRAS_G12V_RESPONSE)
+                return
+            if query == "dbsnp.rsid:rs121913529":
+                send_json(self, 200, RS121913529_RESPONSE)
                 return
             send_json(self, 400, {"error": "unexpected fixture query"})
             return

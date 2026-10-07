@@ -21,3 +21,18 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: print the newest date among records carrying the shown classification; route on official symbols only; recognise a protein change after the gene; when a routed search returns zero rows, print the parsed form and the working alternative.
 - Proof: outside-in tests for BRAF V600E's date, HCC, MODY and 'BRAF V600E melanoma', each failing on `37631c357`.
 - Defers: nothing.
+
+## Build status
+
+- Built on branch `tickets/2022-variant-headline-date-and-gene-routing-follow-ups`,
+  commits 15225975b, fe6b3ae8f, fold aa8317a4f, 2026-10-07, across two
+  timeout revivals with checkpoints (nothing lost).
+- Code review: REJECT 2026-10-07, findings fixed the same day. The P1
+  (configuration.md still describing alias routing after the change)
+  and two P2s (the contradicting enum doc; the ticket's missing
+  fixture-path reason and wrong Defers) fixed in aa8317a4f, which also
+  adopted the report-only hint wording (drop-or-loosen-a-filter
+  instead of the misleading try-the-working-form).
+- Code re-review (fold delta fe6b3ae8f..aa8317a4f): ACCEPT 2026-10-07.
+  All four folds verified at the named seams with no collateral edits
+  and no stale wording anywhere.

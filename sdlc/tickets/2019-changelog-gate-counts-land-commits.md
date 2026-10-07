@@ -1,6 +1,6 @@
 # 2019 — Changelog gate counts Land commits
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
@@ -27,7 +27,7 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 
 - Built on branch `tickets/2019-changelog-gate-counts-land-commits`,
   commit 99f2f87e5, 2026-10-07.
-- Follow-up review: ACCEPT 2026-10-07 (fresh reviewer, delta 99f2f87e5..3bbc67d48). Verified: the status-complete source matches pm's token grammar exactly (including the decimal-period exception and 2010's real absorbed-status line); archive/ and drafts/ can never match; the six tests cover every claimed behavior; ci-classify routing is enforced end to end by the real behavioral tests; the +1 real-main delta is exactly 2010; no private names. Two report-only P2s: a pre-existing vacuous allow-list pin in test_ci_workflow_contract.py (the behavioral tests carry the enforcement), and the status mirror being narrower than pm's full ticket seam (fail-open only; every live ticket uses the bare form).
+- Code re-review (follow-up delta 99f2f87e5..3bbc67d48): ACCEPT 2026-10-07, fresh reviewer. Verified: the status-complete source matches pm's token grammar exactly (including the decimal-period exception and 2010's real absorbed-status line); archive/ and drafts/ can never match; the six tests cover every claimed behavior; ci-classify routing is enforced end to end by the real behavioral tests; the +1 real-main delta is exactly 2010; no private names. Two report-only P2s: a pre-existing vacuous allow-list pin in test_ci_workflow_contract.py (the behavioral tests carry the enforcement), and the status mirror being narrower than pm's full ticket seam (fail-open only; every live ticket uses the bare form).
 - Code review: ACCEPT 2026-10-07 for the lane's commit (the
   Land-subject union, six new tests — the builder's report said seven,
   six is correct —, real-main proof demanding exactly the 17-ticket
@@ -38,3 +38,14 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   remaining Changes items — status-complete counting and ci-classify
   CHANGELOG routing — which stay on this ticket and are being finished
   on the lane before landing.
+
+## Landing
+
+- Landed 2026-10-07 as merge ad39a9c5d. Process deviation, recorded
+  honestly: the merge reached main through the coordinator's
+  grammar-fix push (50c19bb35) before a green merged-tree run existed
+  — the first landcheck run failed on the coordinator's own
+  out-of-grammar review lines, and the fix push carried the merge
+  with it. The verifying run then executed on the exact main tip
+  (tickets/landcheck-2019 at 50c19bb35): completed, success. Every
+  later landing runs its merged-tree CI before main moves.
