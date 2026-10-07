@@ -385,7 +385,7 @@ fn detail_articles_keep_whole_abstracts_while_search_rows_keep_snippets() {
     }))
     .expect("valid Europe PMC hit");
 
-    let article = from_europepmc_result(&hit);
+    let article = retained_from_europepmc_result(&hit);
     assert_eq!(
         article.abstract_text.as_deref(),
         Some(long_abstract.as_str())
@@ -400,13 +400,13 @@ fn detail_articles_keep_whole_abstracts_while_search_rows_keep_snippets() {
     }))
     .expect("valid PubTator document");
     assert_eq!(
-        from_pubtator_document(&doc).abstract_text.as_deref(),
+        retained_from_pubtator_document(&doc).abstract_text.as_deref(),
         Some(long_abstract.as_str())
     );
 
     let mut without_abstract = article.clone();
     without_abstract.abstract_text = None;
-    merge_europepmc_metadata(&mut without_abstract, &hit);
+    retained_merge_europepmc_metadata(&mut without_abstract, &hit);
     assert_eq!(
         without_abstract.abstract_text.as_deref(),
         Some(long_abstract.as_str())

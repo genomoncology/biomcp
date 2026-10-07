@@ -2,6 +2,24 @@ version = 1
 
 [selection]
 rust = [
+  "sources::europepmc::tests::construction::search_query_plan_sets_keyword_shape_and_date_sort",
+  "sources::europepmc::tests::construction::search_query_plan_sets_citation_sort",
+  "sources::europepmc::tests::construction::search_query_plan_validates_query_and_paging",
+  "sources::europepmc::tests::construction::legacy_request_plan_keeps_article_contract_shape",
+  "sources::europepmc::tests::construction::full_text_xml_plan_builds_id_endpoint_and_normalizes_pmc",
+  "sources::europepmc::tests::construction::supplementary_files_plan_validates_and_normalizes_pmcid",
+  "sources::europepmc::tests::construction::full_text_xml_plan_empty_source_or_id_returns_none",
+  "sources::who_pq::tests::sync::sync_replays_the_recorded_captures_and_reports_every_file_refreshed",
+  "sources::who_pq::tests::sync::sync_attempts_every_file_and_names_the_failing_file_when_required_files_are_missing",
+  "sources::who_pq::tests::sync::summary_line_names_refreshed_and_failed_files",
+  "sources::who_pq::tests::parsing::parsers_require_expected_headers",
+  "sources::who_pq::tests::parsing::vaccines_capture_keeps_the_trailing_space_header_and_trims_to_match",
+  "sources::who_pq::tests::parsing::medicines_captures_ship_title_case_headers_and_parse",
+  "sources::who_pq::tests::parsing::pre_1304_cache_with_alternative_listing_column_still_parses",
+  "sources::who_pq::tests::parsing::pre_1304_cache_with_applicant_organization_column_still_parses",
+  "cli::system::tests::who_sync::who_sync_reports_refreshed_and_failed_files_instead_of_a_bare_success_claim",
+  "entities::drug::search::tests::who::all_region_search_degrades_when_who_pq_data_is_absent_but_explicit_who_fails",
+
   "transform::variant::tests::extracts_expanded_variant_sections",
   "render::markdown::variant::tests::variant_markdown_default_card_renders_cached_civic_actionability_pointer",
   "render::markdown::variant::tests::variant_markdown_default_card_renders_bare_civic_pointer_without_cached_evidence",
