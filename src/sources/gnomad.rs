@@ -85,45 +85,22 @@ struct ConstraintPayload {
     syn_z: Option<f64>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct GnomadVariantPopulation {
-    pub variant_id: String,
-    pub exome: Option<GnomadSequencingPopulation>,
-    pub genome: Option<GnomadSequencingPopulation>,
-}
+pub use biodata::GnomadVariantPopulationProjection as GnomadVariantPopulation;
 
-#[derive(Debug, Clone, Deserialize, serde::Serialize)]
-pub struct GnomadSequencingPopulation {
-    #[serde(default)]
-    pub allele_frequency: Option<f64>,
-    pub ac: u64,
-    pub an: u64,
-    pub homozygote_count: u64,
-    pub hemizygote_count: u64,
-    pub filters: Vec<String>,
-    pub faf95: Option<GnomadFaf95>,
-    pub populations: Vec<GnomadAncestryPopulation>,
-}
-
-#[derive(Debug, Clone, Deserialize, serde::Serialize)]
-pub struct GnomadFaf95 {
-    pub popmax: Option<f64>,
-    pub popmax_population: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, serde::Serialize)]
-pub struct GnomadAncestryPopulation {
-    pub id: String,
-    #[serde(default)]
-    pub allele_frequency: Option<f64>,
-    pub ac: u64,
-    pub an: u64,
-    pub homozygote_count: u64,
-    pub hemizygote_count: u64,
+fn deserialize_population_variant<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<GnomadVariantPopulation>, D::Error> {
+    #[derive(Deserialize)]
+    struct Source(
+        #[serde(deserialize_with = "biodata::GnomadV4Population::deserialize_variant")]
+        GnomadVariantPopulation,
+    );
+    Option::<Source>::deserialize(deserializer).map(|value| value.map(|source| source.0))
 }
 
 #[derive(Debug, Deserialize)]
 struct VariantPopulationResponse {
+    #[serde(default, deserialize_with = "deserialize_population_variant")]
     variant: Option<GnomadVariantPopulation>,
 }
 
@@ -295,19 +272,7 @@ impl GnomadClient {
             });
         }
 
-        let mut variant = resp.data.and_then(|data| data.variant);
-        if let Some(variant) = variant.as_mut() {
-            for sequencing in [&mut variant.exome, &mut variant.genome]
-                .into_iter()
-                .flatten()
-            {
-                sequencing.allele_frequency = frequency(sequencing.ac, sequencing.an);
-                for ancestry in &mut sequencing.populations {
-                    ancestry.allele_frequency = frequency(ancestry.ac, ancestry.an);
-                }
-            }
-        }
-        Ok(variant)
+        Ok(resp.data.and_then(|data| data.variant))
     }
 
     pub async fn gene_constraint(
@@ -349,10 +314,6 @@ impl GnomadClient {
         let response = Self::decode_json_response(status, content_type.as_ref(), &bytes)?;
         Self::parse_variant_population_response(response)
     }
-}
-
-fn frequency(ac: u64, an: u64) -> Option<f64> {
-    (an > 0).then_some(ac as f64 / an as f64)
 }
 
 #[cfg(test)]

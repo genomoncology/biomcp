@@ -6,7 +6,7 @@ Milestone: 1.0
 Component: backend
 Owner: Root.
 Prepared and signed: delegated Codex design owner, October 7, 2026.
-Phase: BUILD. Root adopts fresh paired DESIGN ACCEPT and releases consumer adoption after accepted producer0711 and maintenance landing.
+Phase: CODE review ready. Root released BUILD after paired DESIGN ACCEPT, accepted producer 0711 and maintenance landing.
 Risk: Response compatibility. Source-derived frequencies and decoded product targets have different construction rules.
 
 ## Outcome
@@ -34,3 +34,7 @@ Root's next action is fresh read-only DESIGN review. No builder has started. Kee
 ## Accepted producer and BUILD release
 
 Root adopted fresh paired DESIGN ACCEPT after the borrowed ancestry-view correction. BioData0711 passed fresh CODE review at9169bfe1, with unchanged runtimeef4a5bbe and lint/test/spec passes. Accepted main25f0c7fd3cee947230231aae0e3ed3aa960ecd46 is version0.0.38. Current consumer target9ada31a9 includes reviewed maintenance37631c35. This release authorizes the exact reviewed consumer file claims, outside-in checks and four local model/count-mapper retirement.
+
+## Consumer build candidate
+
+The assigned builder implemented shared source decoding, nested product storage and borrowed target encoding on this ticket branch. [The build record](../records/2015-build-direct-gnomad-population.md) names the precise files, red evidence, measured focused checks, narrow retirement and inherited findings. The four additional contract files were named to Root before editing their revision/version/count constants. Fresh consumer CODE review remains pending. Root owns landing and ticket completion.

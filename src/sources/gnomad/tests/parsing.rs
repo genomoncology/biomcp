@@ -98,37 +98,6 @@ fn parse_population_fixture(bytes: &[u8]) -> Result<Option<GnomadVariantPopulati
 }
 
 #[test]
-fn variant_population_keeps_exome_genome_faf_flags_and_numeric_frequencies_separate() {
-    let population = parse_population_fixture(
-        br#"{
-      "data":{"variant":{"variant_id":"10-112998590-C-T",
-        "exome":{"ac":2,"an":10,"homozygote_count":1,"hemizygote_count":0,
-          "filters":["AC0"],"faf95":{"popmax":0.25,"popmax_population":"nfe"},
-          "populations":[{"id":"nfe","ac":1,"an":4,"homozygote_count":0,"hemizygote_count":0}]},
-        "genome":{"ac":3,"an":20,"homozygote_count":0,"hemizygote_count":1,
-          "filters":["RF"],"faf95":{"popmax":0.2,"popmax_population":"sas"},
-          "populations":[{"id":"sas","ac":3,"an":12,"homozygote_count":0,"hemizygote_count":1}]}
-      }}}
-    "#,
-    )
-    .unwrap()
-    .expect("population result");
-
-    let exome = population.exome.expect("exome");
-    let genome = population.genome.expect("genome");
-    assert_eq!(exome.allele_frequency, Some(0.2));
-    assert_eq!(exome.populations[0].allele_frequency, Some(0.25));
-    assert_eq!(exome.filters, ["AC0"]);
-    assert_eq!(genome.allele_frequency, Some(0.15));
-    assert_eq!(genome.populations[0].allele_frequency, Some(0.25));
-    assert_eq!(genome.filters, ["RF"]);
-    assert_eq!(
-        genome.faf95.unwrap().popmax_population.as_deref(),
-        Some("sas")
-    );
-}
-
-#[test]
 fn variant_population_distinguishes_absence_and_provider_failure() {
     assert!(
         parse_population_fixture(br#"{"data":{"variant":null}}"#)
@@ -154,14 +123,17 @@ fn recorded_v4_population_has_grpmax_and_discordant_exome_genome_filters() {
     let population = parse_population_fixture(fixture!("variant_7_140753125_t_c_v4_20260812.json"))
         .unwrap()
         .expect("recorded population result");
-    let exome = population.exome.expect("exome");
-    let genome = population.genome.expect("genome");
+    let exome = population.exome().expect("exome");
+    let genome = population.genome().expect("genome");
 
-    assert_eq!(exome.filters, ["AC0"]);
-    assert!(genome.filters.is_empty());
-    assert_eq!(genome.allele_frequency, Some(4.0 / 152_302.0));
-    assert_eq!(genome.populations[0].allele_frequency, Some(4.0 / 41_580.0));
-    let faf95 = genome.faf95.expect("genome FAF95");
-    assert_eq!(faf95.popmax, Some(0.00003242));
-    assert_eq!(faf95.popmax_population.as_deref(), Some("afr"));
+    assert_eq!(exome.filters(), ["AC0"]);
+    assert!(genome.filters().is_empty());
+    assert_eq!(genome.allele_frequency(), Some(4.0 / 152_302.0));
+    assert_eq!(
+        genome.populations()[0].allele_frequency(),
+        Some(4.0 / 41_580.0)
+    );
+    let faf95 = genome.faf95().expect("genome FAF95");
+    assert_eq!(faf95.popmax(), Some(0.00003242));
+    assert_eq!(faf95.popmax_population(), Some("afr"));
 }

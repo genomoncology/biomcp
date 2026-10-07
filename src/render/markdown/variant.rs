@@ -107,8 +107,8 @@ pub fn variant_markdown(
         population => &variant.population,
         exome_filters => exome_filters,
         genome_filters => genome_filters,
-        exome_highest_ancestry => exome_highest_ancestry,
-        genome_highest_ancestry => genome_highest_ancestry,
+        exome_highest_ancestry => exome_highest_ancestry.map(biodata::GnomadAncestryPopulationProjection::as_population_target),
+        genome_highest_ancestry => genome_highest_ancestry.map(biodata::GnomadAncestryPopulationProjection::as_population_target),
         cadd_score => &variant.cadd_score,
         sift_pred => &variant.sift_pred,
         polyphen_pred => &variant.polyphen_pred,
@@ -146,33 +146,37 @@ pub fn variant_markdown(
     Ok(append_evidence_urls(body, variant_evidence_urls(variant)))
 }
 
+fn finite_ancestry_frequency(frequency: Option<f64>) -> bool {
+    frequency.is_some_and(f64::is_finite)
+}
+
 fn highest_ancestry_frequency(
-    population: &crate::sources::gnomad::GnomadSequencingPopulation,
-) -> Option<&crate::sources::gnomad::GnomadAncestryPopulation> {
+    population: &biodata::GnomadSequencingPopulationProjection,
+) -> Option<&biodata::GnomadAncestryPopulationProjection> {
     population
-        .populations
+        .populations()
         .iter()
-        .filter(|row| row.allele_frequency.is_some_and(f64::is_finite))
+        .filter(|row| finite_ancestry_frequency(row.allele_frequency()))
         .max_by(|left, right| {
             let frequency_order = left
-                .allele_frequency
+                .allele_frequency()
                 .expect("filtered finite ancestry frequency")
                 .total_cmp(
                     &right
-                        .allele_frequency
+                        .allele_frequency()
                         .expect("filtered finite ancestry frequency"),
                 );
             frequency_order
-                .then_with(|| left.an.cmp(&right.an))
-                .then_with(|| right.id.as_str().cmp(left.id.as_str()))
+                .then_with(|| left.an().cmp(&right.an()))
+                .then_with(|| right.id().cmp(left.id()))
         })
 }
 
 fn expanded_gnomad_filters(
-    population: &crate::sources::gnomad::GnomadSequencingPopulation,
+    population: &biodata::GnomadSequencingPopulationProjection,
 ) -> Vec<String> {
     population
-        .filters
+        .filters()
         .iter()
         .map(|flag| {
             let meaning = match flag.as_str() {
