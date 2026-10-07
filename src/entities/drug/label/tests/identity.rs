@@ -43,6 +43,51 @@ fn identity_guard_accepts_a_sparse_spl_product_data_elements_record() {
 }
 
 #[test]
+fn identity_guard_rejects_inactive_ingredients() {
+    // Ticket 1300 review: mannitol is an inactive excipient listed after the
+    // leading active-name run, so it must never identify the Tagrisso label.
+    assert!(!label_result_matches_identity(&tagrisso_row(), "mannitol"));
+    assert!(!label_result_matches_identity(
+        &tagrisso_row(),
+        "microcrystalline cellulose"
+    ));
+    // The amivantamab row ends its element with inactive excipients too.
+    let amivantamab = amivantamab_row();
+    assert!(!label_result_matches_identity(
+        &amivantamab,
+        "edetate disodium"
+    ));
+    assert!(!label_result_matches_identity(&amivantamab, "histidine"));
+}
+
+#[test]
+fn identity_guard_rejects_token_sequences_joined_across_fields() {
+    // Ticket 1300 review: a name that spans the end of one identity field and
+    // the start of another (substance_name "AMIVANTAMAB" followed by the
+    // element's "Rybrevant") is not the record's own name sequence.
+    assert!(!label_result_matches_identity(
+        &amivantamab_row(),
+        "amivantamab rybrevant"
+    ));
+}
+
+#[test]
+fn identity_guard_reads_the_leading_active_name_run_of_each_element() {
+    // A sparse record whose only identity is the element line still matches
+    // through its leading names, including a brand that appears once.
+    let sporanx = serde_json::json!({
+        "set_id": "sporanx",
+        "spl_product_data_elements": [
+            "SPORANOX ITRACONAZOLE ITRACONAZOLE ITRACONAZOLE GELATIN, UNSPECIFIED SUCROSE"
+        ]
+    });
+    assert!(label_result_matches_identity(&sporanx, "itraconazole"));
+    assert!(label_result_matches_identity(&sporanx, "Sporanox"));
+    assert!(!label_result_matches_identity(&sporanx, "gelatin"));
+    assert!(!label_result_matches_identity(&sporanx, "sucrose"));
+}
+
+#[test]
 fn identity_guard_rejects_labels_that_only_mention_the_drug() {
     // A full-text "osimertinib" search returns amivantamab's label first
     // because its sections mention osimertinib. The record's own identity is

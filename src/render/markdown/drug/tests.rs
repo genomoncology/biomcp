@@ -40,7 +40,6 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -94,7 +93,6 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -218,7 +216,6 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -270,7 +267,6 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -323,7 +319,6 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -376,7 +371,6 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
         top_adverse_events: vec!["Rash".to_string()],
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: Some(vec![crate::entities::drug::DrugShortageEntry {
             status: Some("Current".to_string()),
@@ -513,7 +507,6 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -718,7 +711,6 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         top_adverse_events: vec!["Fatigue".to_string(), "Rash".to_string()],
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -796,7 +788,6 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         top_adverse_events: Vec::new(),
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: None,
         approvals: None,
@@ -1010,4 +1001,5 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
     );
 }
 
+mod label_sections;
 mod label_warnings;

@@ -12,7 +12,9 @@ and `inapplicable`. It is not a separate provider-status vocabulary.
 
 A successful Drugs@FDA lookup can truthfully return no approvals. The empty
 `approvals` array remains compatible, and both the entity and provenance record
-that OpenFDA successfully established the empty result.
+that OpenFDA successfully established the empty result. An empty outcome may
+also carry one bounded reason in its `message` when the zero itself needs
+naming, such as a drug label lookup that matched no SPL record.
 
 ```bash
 ../../tools/biomcp-ci --json get drug fixture-drug approvals \
@@ -201,7 +203,7 @@ assert_label_fetch_failure_settles() {
   mode=$1; shift
   if test "$mode" = json; then
     BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@" \
-      | jq -e '(.section_outcomes.label == {"outcome":"unavailable","sources":[],"message":"OpenFDA label evidence is temporarily unavailable."}) and (has("label") | not) and (has("label_note") | not) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"unavailable","sources":[]}])' >/dev/null
+      | jq -e '(.section_outcomes.label == {"outcome":"unavailable","sources":[],"message":"OpenFDA label evidence is temporarily unavailable."}) and (has("label") | not) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"unavailable","sources":[]}])' >/dev/null
   else
     BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" \
       | mustmatch like '**FDA Label status (OpenFDA label):** unavailable; no conclusion can be drawn — OpenFDA label evidence is temporarily unavailable.

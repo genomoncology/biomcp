@@ -16,6 +16,7 @@ pub(super) const LABEL_UNAVAILABLE_MESSAGE: &str =
 pub(super) const NO_SPL_RECORD_NOTE: &str = "No openFDA SPL label record matched this drug.";
 pub(super) const NO_LABEL_TEXT_NOTE: &str =
     "The matched openFDA SPL record carries no label section text.";
+pub(super) const FULLTEXT_OVERSIZE_NOTE: &str = "The openFDA full-text label search response was too large to read, so no label record could be confirmed.";
 
 fn label_text(value: Option<&serde_json::Value>) -> Option<String> {
     let value = value?;
@@ -78,6 +79,22 @@ pub(crate) fn markdown_label_view(label: &DrugLabel, label_set_id: Option<&str>)
         warnings: shorten(&label.warnings),
         dosage: shorten(&label.dosage),
     }
+}
+
+/// Whether the Markdown view cuts any label section it carries.
+///
+/// The short-form pointer may only print when the output actually omits
+/// content, so a view whose sections all fit the cap points nowhere.
+pub(crate) fn markdown_label_view_truncates(label: &DrugLabel) -> bool {
+    [
+        label.indications.as_deref(),
+        label.boxed_warning.as_deref(),
+        label.warnings.as_deref(),
+        label.dosage.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    .any(|text| text.chars().count() > LABEL_MAX_CHARS)
 }
 
 fn label_subsection_boundary_regex() -> &'static Regex {
@@ -574,17 +591,45 @@ fn result_identity_values(result: &serde_json::Value) -> Vec<String> {
             }
         }
     }
-    if let Some(elements) = result
+    out
+}
+
+fn spl_product_data_elements(result: &serde_json::Value) -> Vec<&str> {
+    let Some(elements) = result
         .get("spl_product_data_elements")
         .and_then(|v| v.as_array())
-    {
-        for element in elements {
-            if let Some(text) = element.as_str() {
-                out.push(text.to_string());
-            }
-        }
+    else {
+        return Vec::new();
+    };
+    elements.iter().filter_map(|v| v.as_str()).collect()
+}
+
+/// The leading run of an SPL product data element: the product's own names.
+///
+/// Each element opens with the brand and the active ingredient, the generic
+/// repeated in several letter cases, and ends with the inactive excipient
+/// list ("TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB MANNITOL ..."). A
+/// token belongs to the run while it is the element's first token or its
+/// case-insensitive form appears more than once in the element; the run ends
+/// at the first single-use token, which is the first inactive ingredient.
+/// Strength and lot codes that trail the names are single-use too.
+fn spl_active_name_run(element: &str) -> Vec<String> {
+    let tokens = identity_tokens(element);
+    if tokens.is_empty() {
+        return Vec::new();
     }
-    out
+    let mut counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+    for token in &tokens {
+        *counts.entry(token.as_str()).or_insert(0) += 1;
+    }
+    let mut run = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        if index > 0 && counts.get(token.as_str()).is_none_or(|count| *count < 2) {
+            break;
+        }
+        run.push(token.clone());
+    }
+    run
 }
 
 /// Whether a full-text result is the requested drug's own record.
@@ -592,21 +637,29 @@ fn result_identity_values(result: &serde_json::Value) -> Vec<String> {
 /// A full-text search for one drug routinely ranks other drugs' labels first
 /// because their section text mentions the queried name (a full-text
 /// "osimertinib" search returns amivantamab's label first). A result only
-/// counts when the requested name matches the record's own identity: the
-/// active ingredient, the openFDA generic/brand/substance names, or the SPL
-/// product data elements line.
+/// counts when the requested name matches the record's own identity fields as
+/// a word sequence within a single field — never a sequence joined across two
+/// fields — or the leading active-name run of an SPL product data element, so
+/// an inactive excipient such as mannitol never identifies a record.
 pub(super) fn label_result_matches_identity(result: &serde_json::Value, name: &str) -> bool {
     let name_tokens = identity_tokens(name);
     if name_tokens.is_empty() {
         return false;
     }
-    let identity = result_identity_values(result)
+    let mut identity_runs: Vec<Vec<String>> = result_identity_values(result)
         .iter()
-        .flat_map(|value| identity_tokens(value))
-        .collect::<Vec<_>>();
-    identity
-        .windows(name_tokens.len())
-        .any(|window| window == name_tokens.as_slice())
+        .map(|value| identity_tokens(value))
+        .collect();
+    identity_runs.extend(
+        spl_product_data_elements(result)
+            .iter()
+            .map(|element| spl_active_name_run(element)),
+    );
+    identity_runs.into_iter().any(|tokens| {
+        tokens
+            .windows(name_tokens.len())
+            .any(|window| window == name_tokens.as_slice())
+    })
 }
 
 fn label_response_has_result(response: &serde_json::Value) -> bool {
@@ -645,25 +698,58 @@ pub(super) fn filter_label_response_to_identity(
     Some(filtered)
 }
 
+/// What the openFDA label lookup established for a drug.
+pub(super) enum LabelLookup {
+    /// A label response to use.
+    Response(serde_json::Value),
+    /// Both lookups answered and no SPL record for the drug exists.
+    NoSplRecord,
+    /// The full-text fallback response exceeded the body read limit. The
+    /// same query would download the same oversize response, so this is a
+    /// confirmed inability to read a match, not a retryable fetch failure.
+    FulltextTooLarge,
+}
+
+/// Whether an openFDA error is the response-body read limit, including the
+/// source-context wrapping the transport layers add.
+fn is_body_limit_error(error: &BioMcpError) -> bool {
+    match error {
+        BioMcpError::WithSourceContext { source, .. } => is_body_limit_error(source),
+        BioMcpError::BodyLimit { .. } => true,
+        _ => false,
+    }
+}
+
 /// Field-scoped label lookup with the sparse-metadata full-text fallback.
 ///
 /// When the `openfda.generic_name`/`brand_name` query returns no match, fall
 /// back to a full-text search for the name and keep only results whose own
-/// identity matches. `Ok(None)` means openFDA answered and no SPL record for
-/// the drug exists; fetch errors surface as `Err`.
+/// identity matches. `NoSplRecord` means openFDA answered and no SPL record
+/// for the drug exists; real fetch errors surface as `Err`, except the
+/// oversize full-text response, which settles as `FulltextTooLarge` because
+/// no retry can succeed.
 pub(super) async fn lookup_label_response(
     client: &OpenFdaClient,
     name: &str,
-) -> Result<Option<serde_json::Value>, BioMcpError> {
+) -> Result<LabelLookup, BioMcpError> {
     if let Some(response) = client.label_search(name).await?
         && label_response_has_result(&response)
     {
-        return Ok(Some(response));
+        return Ok(LabelLookup::Response(response));
     }
-    let Some(fulltext) = client.label_fulltext_search(name).await? else {
-        return Ok(None);
+    let fulltext = match client.label_fulltext_search(name).await {
+        Ok(Some(response)) => response,
+        Ok(None) => return Ok(LabelLookup::NoSplRecord),
+        Err(error) => {
+            return if is_body_limit_error(&error) {
+                Ok(LabelLookup::FulltextTooLarge)
+            } else {
+                Err(error)
+            };
+        }
     };
-    Ok(filter_label_response_to_identity(&fulltext, name))
+    Ok(filter_label_response_to_identity(&fulltext, name)
+        .map_or(LabelLookup::NoSplRecord, LabelLookup::Response))
 }
 
 #[cfg(test)]

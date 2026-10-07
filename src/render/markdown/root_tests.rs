@@ -162,7 +162,6 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         top_adverse_events: vec!["Cough".to_string()],
         faers_query: None,
         label: None,
-        label_note: None,
         label_set_id: None,
         shortage: Some(Vec::new()),
         approvals: Some(Vec::new()),

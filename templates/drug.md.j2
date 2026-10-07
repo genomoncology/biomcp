@@ -44,14 +44,16 @@ Safety (OpenFDA FAERS): unavailable
 {% for row in label.indication_summary -%}
 - {{ row.name }}{% if row.approval_date or row.pivotal_trial %}{% if row.approval_date %} | approval: {{ row.approval_date }}{% endif %}{% if row.pivotal_trial %} | trial: {{ row.pivotal_trial }}{% endif %}{% endif %}
 {% endfor -%}
+{% if label_truncated -%}
 
-Markdown caps label sections at a short form. Use `biomcp get drug {{ name }} label --json` for whole sections, or `--raw` for the raw label text.
+Markdown caps label sections at a short form. Use `biomcp get drug {{ label_name_quoted }} label --json` for whole sections, or `--raw` for the raw label text.
+{% endif -%}
 {% elif label.indications -%}
 ### Indications and Usage
 {{ label.indications }}
 {% endif -%}
-{% elif label_note -%}
-{{ label_note }}
+{% elif label_missing_reason -%}
+{{ label_missing_reason }}
 {% endif -%}
 {% endif -%}
 {% if regulatory_block %}{{ regulatory_block }}

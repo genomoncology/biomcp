@@ -46,11 +46,11 @@ is mobocertinib. The identity guard must still pick the drug's own label.
 ## A drug with no SPL record says so in the section outcome
 
 Adavosertib has no openFDA SPL record at all: both searches answer with no
-match, so the label section settles as a source-confirmed empty that names the
-reason instead of a silent `label: null`.
+match, so the label section settles as a source-confirmed empty whose section
+outcome carries the reason, instead of a silent `label: null`.
 
 ```bash
-../../tools/biomcp-ci --json get drug adavosertib label | jq -e '(has("label") | not) and (.label_note == "No openFDA SPL label record matched this drug.") and (.section_outcomes.label == {"outcome":"empty","sources":["OpenFDA label"]}) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"empty","sources":["OpenFDA label"]}])' | mustmatch 'true'
+../../tools/biomcp-ci --json get drug adavosertib label | jq -e '(has("label") | not) and (.section_outcomes.label == {"outcome":"empty","sources":["OpenFDA label"],"message":"No openFDA SPL label record matched this drug."}) and ([._meta.section_sources[] | select(.key == "label")] == [{"key":"label","label":"FDA Label","outcome":"empty","sources":["OpenFDA label"]}])' | mustmatch 'true'
 ../../tools/biomcp-ci get drug adavosertib label | mustmatch like '## FDA Label
 No openFDA SPL label record matched this drug.'
 ../../tools/biomcp-ci get drug adavosertib label | mustmatch not like '(?i)unavailable'
@@ -62,7 +62,7 @@ outcome stays an empty that names the sparse record rather than a missing
 record.
 
 ```bash
-../../tools/biomcp-ci --json get drug pembrolizumab label | jq -e '(has("label") | not) and (.label_note == "The matched openFDA SPL record carries no label section text.") and (.section_outcomes.label.outcome == "empty")' | mustmatch 'true'
+../../tools/biomcp-ci --json get drug pembrolizumab label | jq -e '(has("label") | not) and (.section_outcomes.label == {"outcome":"empty","sources":["OpenFDA label"],"message":"The matched openFDA SPL record carries no label section text."})' | mustmatch 'true'
 ```
 
 ## JSON carries whole sections; Markdown keeps the short form
@@ -79,9 +79,12 @@ keeps the capped short form that points to the full DailyMed label.
 ```
 
 Summary mode keeps its approved-indication rows, and the whole-section rule
-never widens the safety section, which keeps its own capped warning text.
+never widens the safety section, which keeps its own capped warning text. The
+short-form pointer only prints when the Markdown view actually cut a section,
+so gefitinib's summary — nothing carried runs past the cap — points nowhere.
 
 ```bash
 ../../tools/biomcp-ci get drug gefitinib label | mustmatch like '## FDA Label
 ### Approved Indications'
+../../tools/biomcp-ci get drug gefitinib label | mustmatch not like 'Markdown caps label sections'
 ```

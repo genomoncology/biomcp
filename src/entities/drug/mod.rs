@@ -17,7 +17,7 @@ pub(crate) use self::get::{
 };
 pub use self::get::{get, get_with_region};
 pub(crate) use self::interactions::{DrugInteractionReport, interaction_report};
-pub(crate) use self::label::markdown_label_view;
+pub(crate) use self::label::{markdown_label_view, markdown_label_view_truncates};
 pub use self::query::search_query_summary;
 #[allow(unused_imports)]
 pub use self::search::{
@@ -107,11 +107,6 @@ pub struct Drug {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<DrugLabel>,
-
-    /// Why a requested label section came back empty: no SPL record matched,
-    /// or the matched record carries no label section text.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub label_note: Option<String>,
 
     #[serde(skip)]
     pub label_set_id: Option<String>,
