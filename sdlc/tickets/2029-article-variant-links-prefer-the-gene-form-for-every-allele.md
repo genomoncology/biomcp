@@ -23,6 +23,50 @@ Filed 2026-10-07 from the second review of the work since v0.9.1 (`sdlc/issues/2
 - Proof: a single-mention G12A article prints `biomcp get variant "KRAS p.G12A"`, and a test fails on `6b504219e`. A test covers one allele written as `p.G12D` and as `p.Gly12Asp`.
 - Defers: ClinGen allele ID support in `get variant`.
 
+## Root cause
+
+Ticket 2018 disambiguates an rsID only after the document's own annotations
+show that rsID naming two distinct protein changes
+(`MutationContext::collect` tallies the distinct changes per rsID). A
+document that mentions one allele shows one change per rsID, so
+`mutation_identity` keeps the rsID even though that rsID names several
+alleles in dbSNP. An article that mentions only KRAS G12A therefore prints
+`biomcp get variant rs121913529`, which opens G12D. The row's own data
+carries the precise form: its gene annotation (NCBI Gene 3845, symbol taken
+from the document's gene annotations) and its protein change (`p.G12A`).
+2018 consults that pair only after the document-level signal fires, and no
+offline signal exists that can tell a single-mention multi-allele rsID from
+a single-allele one. BioMCP has no offline rsID-to-alleles table, so the
+row's own gene-plus-change form is the only disambiguator that always
+names the allele the row mentions.
+
+## Success criteria
+## Success criteria
+
+- An article that mentions only KRAS G12A (`rs121913529`, gene 3845,
+  `p.G12A`) prints `biomcp get variant "KRAS p.G12A"`. A unit test pins
+  this and fails on `6b504219e`.
+- Every variant row with both parts — a gene annotation that resolves to a
+  symbol and a protein HGVS change — prints the gene-plus-change command,
+  whatever else the article mentions. Under this rule the spec page's G12C
+  and G13C rows CHANGE from `biomcp get variant rs121913530` and
+  `rs121913535` to `biomcp get variant "KRAS p.G12C"` and
+  `"KRAS p.G13C"`. This is a change of command form, not of the variant
+  opened: the recorded MyVariant responses resolve `KRAS p.G12C` to
+  `chr12:g.25398285C>A` (`rs121913530`) and `KRAS p.G13C` to
+  `chr12:g.25398282C>A` (`rs121913535`), exactly the variants those rsIDs
+  open. The G12A, G12D and G12V rows are unchanged, and the spec proves all
+  five rows open their own variant.
+- Rows without both parts keep 2018's behavior: an rsID that the document's
+  annotations show naming one change keeps its rsID link; a shared rsID
+  with a coding HGVS keeps the coding form, which names the allele alone; a
+  shared rsID with a protein change but no usable gene symbol carries no
+  identifier and keeps the mention-text command. The no-rsID HGVS fallback
+  and 1296's identifier and namespace contract stay.
+- A test covers one allele written two ways, `p.G12D` and `p.Gly12Asp`
+  under one rsID: the two writings count as one change, so the rows keep
+  their rsID links. This guards `distinct_change_key` against the raw-HGVS
+  shortcut the evidence bullet records.
 ## Build status
 
 - Built on branch `tickets/2029-article-variant-links-prefer-the-gene-form`,
