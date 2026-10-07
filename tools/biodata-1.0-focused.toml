@@ -76,6 +76,7 @@ rust = [
   "entities::article::variant_search::dbsnp_adoption_tests::confirmed_citations_use_canonical_hit_order_and_exclude_decoys",
   "sources::myvariant::tests::clinvar_adoption::clinvar_embedding_preserves_complete_hit_and_private_observations",
   "entities::variant::get::clinvar_adoption_transport_tests::clinvar_native_cards_keep_conditions_fallback_and_channels",
+  "entities::variant::get::direct_clinvar_record_transport_tests::complete_shared_direct_record_keeps_metadata_and_noncontributors_across_channels",
   "entities::variant::search::clinvar_adoption_tests::clinvar_search_preserves_fallback_gene_order_and_page",
   "mcp::shell::typed_get_tests::clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces",
   "sources::myvariant::tests::dbnsfp_adoption::dbnsfp_embedding_preserves_siblings_encoding_and_private_debug",

@@ -2,6 +2,7 @@
 
 mod coding_lookup;
 mod transcript_deletion_lookup;
+use biodata::ClinVarRecordProjection;
 use coding_lookup::candidate_matches_requested_identity;
 mod protein_lookup;
 mod rsid_lookup;
@@ -27,10 +28,10 @@ use super::gwas::add_gwas_section;
 use super::gwas::mark_gwas_unavailable;
 use super::resolution::parse_variant_id;
 use super::{
-    ClinvarRecord, GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus,
-    ResolvedPopulationCoordinate, TreatmentImplication, Variant, VariantCivicSection,
-    VariantIdFormat, VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
-    VariantOncoKbResult, classify_variant_input, gnomad_variant_slug, normalize_variant,
+    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, ResolvedPopulationCoordinate,
+    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
+    VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
+    classify_variant_input, gnomad_variant_slug, normalize_variant,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -1088,11 +1089,10 @@ pub(super) fn strip_clinvar_details(variant: &mut Variant) {
 /// Move the headline significance to the direct record-level germline
 /// classification when the NCBI ClinVar VCV record carries one. Without a
 /// record-level classification the derived value stays labeled as derived.
-pub(super) fn apply_record_level_headline(variant: &mut Variant, record: &ClinvarRecord) {
+pub(super) fn apply_record_level_headline(variant: &mut Variant, record: &ClinVarRecordProjection) {
     let derived = variant.significance.clone();
-    let record_level = record.germline_classification.as_ref().and_then(|row| {
-        row.classification
-            .as_deref()
+    let record_level = record.germline_classification().and_then(|row| {
+        row.classification()
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(|classification| (classification.to_string(), row))
@@ -1106,12 +1106,11 @@ pub(super) fn apply_record_level_headline(variant: &mut Variant, record: &Clinva
         return;
     };
     variant.significance = Some(classification.clone());
-    variant.significance_source = Some(record.source.clone());
-    variant.significance_evaluated = row.evaluation_date.clone();
-    variant.clinvar_review_status = row.review_status.clone();
+    variant.significance_source = Some(record.source().to_string());
+    variant.significance_evaluated = row.evaluation_date().map(str::to_string);
+    variant.clinvar_review_status = row.review_status().map(str::to_string);
     variant.clinvar_review_stars = row
-        .review_status
-        .as_deref()
+        .review_status()
         .and_then(crate::transform::variant::clinvar_review_stars);
     variant.significance_note = match derived.as_deref() {
         Some(value) if value != classification => Some(format!(
@@ -1432,9 +1431,9 @@ pub async fn get_with_workflow_signals(
 #[cfg(test)]
 mod clinvar_adoption_transport_tests;
 #[cfg(test)]
-mod direct_clinvar_record_transport_tests;
-#[cfg(test)]
 mod dbnsfp_transport_tests;
+#[cfg(test)]
+mod direct_clinvar_record_transport_tests;
 #[cfg(test)]
 mod protein_change_tests;
 #[cfg(test)]

@@ -489,13 +489,14 @@ fn indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count()
         }
     }))
     .expect("MyVariant fixture");
-    let record = super::super::clinvar::indirect_clinvar_record(&hit).expect("usable fallback");
-    let row = &record.aggregates[0];
-    assert_eq!(record.source, "MyVariant.info");
-    assert_eq!(row.accession, "RCV001251043");
-    assert_eq!(row.version, Some(2));
-    assert_eq!(row.evaluation_date.as_deref(), Some("2020-08-04"));
-    assert_eq!(row.number_submitters, Some(1));
+    let record = biodata::ClinVarRecordProjection::from_myvariant(hit.source().clinvar().unwrap())
+        .expect("usable fallback");
+    let row = &record.aggregates()[0];
+    assert_eq!(record.source(), "MyVariant.info");
+    assert_eq!(row.accession(), "RCV001251043");
+    assert_eq!(row.version(), Some(2));
+    assert_eq!(row.evaluation_date(), Some("2020-08-04"));
+    assert_eq!(row.number_submitters(), Some(1));
 }
 
 fn braf_variant_stub() -> Variant {
@@ -1283,14 +1284,16 @@ fn headline_follows_record_level_germline_classification_and_names_ncbi() {
         Some("2023-09-15")
     );
 
-    let mut record = super::super::clinvar::indirect_clinvar_record(&hit).expect("aggregates");
-    record.source = "NCBI ClinVar".into();
-    record.variation_id = 428884;
-    record.germline_classification = Some(super::super::ClinvarRecordClassification {
-        classification: Some("Uncertain significance".into()),
-        review_status: Some("reviewed by expert panel".into()),
-        evaluation_date: Some("2026-06-04".into()),
+    let mut record =
+        biodata::ClinVarRecordProjection::from_myvariant(hit.source().clinvar().unwrap())
+            .expect("aggregates");
+    let mut target = serde_json::to_value(record.as_record_target()).unwrap();
+    target["source"] = serde_json::json!("NCBI ClinVar");
+    target["germline_classification"] = serde_json::json!({
+        "classification":"Uncertain significance", "review_status":"reviewed by expert panel",
+        "evaluation_date":"2026-06-04"
     });
+    record = biodata::ClinVarRecordProjection::deserialize_record_target(target).unwrap();
     super::super::clinvar::apply_clinvar_result(&mut variant, None, Ok(Some(record)));
 
     assert_eq!(
@@ -1324,7 +1327,8 @@ fn record_without_germline_classification_keeps_derived_value_labeled() {
     }))
     .expect("fixture");
     let mut variant = crate::transform::variant::from_myvariant_hit(&hit);
-    let record = super::super::clinvar::indirect_clinvar_record(&hit).expect("aggregates");
+    let record = biodata::ClinVarRecordProjection::from_myvariant(hit.source().clinvar().unwrap())
+        .expect("aggregates");
     super::super::clinvar::apply_clinvar_result(&mut variant, None, Ok(Some(record)));
 
     assert_eq!(variant.significance.as_deref(), Some("Pathogenic"));
@@ -1348,13 +1352,16 @@ fn agreeing_record_level_classification_drops_the_cached_copy_note() {
     }))
     .expect("fixture");
     let mut variant = crate::transform::variant::from_myvariant_hit(&hit);
-    let mut record = super::super::clinvar::indirect_clinvar_record(&hit).expect("aggregates");
-    record.source = "NCBI ClinVar".into();
-    record.germline_classification = Some(super::super::ClinvarRecordClassification {
-        classification: Some("Likely pathogenic".into()),
-        review_status: Some("criteria provided, multiple submitters, no conflicts".into()),
-        evaluation_date: Some("2025-03-18".into()),
+    let mut record =
+        biodata::ClinVarRecordProjection::from_myvariant(hit.source().clinvar().unwrap())
+            .expect("aggregates");
+    let mut target = serde_json::to_value(record.as_record_target()).unwrap();
+    target["source"] = serde_json::json!("NCBI ClinVar");
+    target["germline_classification"] = serde_json::json!({
+        "classification":"Likely pathogenic", "review_status":"criteria provided, multiple submitters, no conflicts",
+        "evaluation_date":"2025-03-18"
     });
+    record = biodata::ClinVarRecordProjection::deserialize_record_target(target).unwrap();
     super::super::clinvar::apply_clinvar_result(&mut variant, None, Ok(Some(record)));
 
     assert_eq!(variant.significance.as_deref(), Some("Likely pathogenic"));

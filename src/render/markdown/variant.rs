@@ -100,7 +100,7 @@ pub fn variant_markdown(
         clinvar_review_status => &variant.clinvar_review_status,
         clinvar_review_stars => &variant.clinvar_review_stars,
         conditions => &variant.conditions,
-        clinvar => &variant.clinvar,
+        clinvar => variant.clinvar.as_ref().map(biodata::ClinVarRecordProjection::as_record_target),
         clinvar_conditions => &variant.clinvar_conditions,
         clinvar_condition_reports => &variant.clinvar_condition_reports,
         top_disease => &variant.top_disease,
