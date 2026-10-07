@@ -38,3 +38,16 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Code re-review (fold delta da0bf7969..fa51560e0): ACCEPT 2026-10-07.
   All three folds verified character-level; one residual P2 phrase in
   the 1287 record reworded by the coordinator in 4d85dff69.
+
+## Yellow failure record (2026-10-07)
+
+The first clean yellow run failed one spec block: the restored
+"Deadline Expiry Names Itself" fence (adf71898e). Root cause, proven on
+Yellow with the lane's env loaded: the routine article lane loads the
+full-text fixture's source env, so PubTator answers fast while Europe
+PMC is held past the deadline, and main's federated error pick surfaces
+PubTator's error — hiding the deadline error the block pins. The fence
+is correct; the code it exercises carries the precedence defect that
+ticket 2023 item 2 fixes on its branch. Landing order therefore runs
+2023 before 2020; 2020 re-gates after 2023 lands. The block passes solo
+without the lane env, which is why earlier checks missed it.
