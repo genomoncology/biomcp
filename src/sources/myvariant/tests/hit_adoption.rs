@@ -72,8 +72,8 @@ fn value_first_opaque_positions_keep_arity_and_independent_presence() {
         let hit = MyVariantHit::from_value(serde_json::Value::Array(positions));
         assert_eq!(hit.is_ok(), length == 12 || length == 13, "length {length}");
         if let Ok(hit) = hit {
-            assert_eq!(hit.cgi(), Some(&serde_json::Value::Bool(false)));
-            assert_eq!(hit.civic(), Some(&serde_json::json!([])));
+            assert_eq!(hit.source().cgi_json().unwrap().get(), "false");
+            assert_eq!(hit.source().civic_json().unwrap().get(), "[]");
             assert_eq!(
                 serde_json::to_string(&hit).unwrap(),
                 r#"{"_id":"x","cadd":null,"clinvar":null,"dbnsfp":null,"dbsnp":null,"gnomad_exome":null,"gnomad":null,"exac":null,"exac_nontcga":null,"cosmic":null,"cgi":false,"civic":[],"snpeff":null}"#

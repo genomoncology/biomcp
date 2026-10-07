@@ -126,12 +126,12 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 6160,
+      "baseline_lines": 6163,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, biodata-0698, 2011",
-        "delta": 1332,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration. Approved 2011 registers the complete-hit citation leaf.",
+        "ticket": "1150, qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, biodata-0698, 2011, 2012",
+        "delta": 1335,
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Refuse bare ClinVar VariationID on article lookup while retaining the migrated execution workflow. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Approved 0698 consumer wiring adds only the dbSNP adoption test module declaration. Approved 2011 registers the complete-hit citation leaf. Ticket 2012 adds exactly three lines to register the cached evidence behavior leaf.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
     },
@@ -238,12 +238,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1444,
+      "baseline_lines": 1447,
       "floor_lines": 1292,
       "authorized_increase": {
-        "ticket": "qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006",
-        "delta": 152,
-        "reason": "Integrate ClinVar VariationID and exact transcript coding alias fallback beside retained bounded 1.0 lookup owners. Review finding 1: refuse transcript assembly before transport and verify that caller boundary. Review finding 2: complete bounded ClinVar scans and one caller table for both routes. Review finding 3: project the exact complete source tuple through the retained transcript lookup owner. Review finding 4: confirm requested numeric ClinVar evidence in each candidate and one getter regression table. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression.",
+        "ticket": "qf-main-sync-variant-inputs-20261006, qf-main-sync-protein-resolution-20261006, 2012",
+        "delta": 155,
+        "reason": "Integrate ClinVar VariationID and exact transcript coding alias fallback beside retained bounded 1.0 lookup owners. Review finding 1: refuse transcript assembly before transport and verify that caller boundary. Review finding 2: complete bounded ClinVar scans and one caller table for both routes. Review finding 3: project the exact complete source tuple through the retained transcript lookup owner. Review finding 4: confirm requested numeric ClinVar evidence in each candidate and one getter regression table. Integrate 1297 candidate selection through the retained bounded protein lookup and the article refusal regression. Ticket 2012 adds exactly three lines to register the cached evidence behavior leaf.",
         "removal_condition": "Remove this allowance when the existing workflow is decomposed below the source-size threshold."
       }
     },
@@ -464,17 +464,6 @@
       }
     },
     {
-      "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1489,
-      "floor_lines": 1033,
-      "authorized_increase": {
-        "ticket": "1091, 1154, 1155, 1150, qf-main-sync-variant-inputs-20261006",
-        "delta": 456,
-        "reason": "Keep trusted MyGene alias probes, ClinVar fallback freshness, bounded SnpEff decoding, and deadline-aware construction beside the MyVariant request workflow. Add ClinVar coding aliases to GET fields and exact membership access; retain the current SnpEff decoder.",
-        "removal_condition": "Split MyVariant request planning and SnpEff decoding when the provider is next decomposed."
-      }
-    },
-    {
       "path": "src/sources/ncbi_efetch.rs",
       "baseline_lines": 1281,
       "floor_lines": 1000,
@@ -522,17 +511,6 @@
         "delta": 58,
         "reason": "The seeded gene-association helper and its tests.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
-      }
-    },
-    {
-      "path": "src/transform/variant.rs",
-      "baseline_lines": 1424,
-      "floor_lines": 1335,
-      "authorized_increase": {
-        "ticket": "1154, 1155, 1290",
-        "delta": 89,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner. Maintenance reconciliation adds 39 total lines for derived significance source and date labeling.",
-        "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }
   ],

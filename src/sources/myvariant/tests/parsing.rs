@@ -275,8 +275,8 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
             .and_then(|a| a.af())
             .is_some()
     );
-    assert!(hit.civic().is_some());
-    assert!(hit.cgi().is_some());
+    assert!(hit.source().civic_json().is_some());
+    assert!(hit.source().cgi_json().is_some());
 }
 
 #[test]

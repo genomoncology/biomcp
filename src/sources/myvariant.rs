@@ -58,52 +58,7 @@ pub struct MyVariantClient {
 }
 
 pub(crate) fn civic_pubmed_ids(hit: &MyVariantHit) -> Vec<String> {
-    let Some(profiles) = hit
-        .civic()
-        .and_then(|value| value.get("molecularProfiles"))
-        .and_then(serde_json::Value::as_array)
-    else {
-        return Vec::new();
-    };
-    let mut pmids = std::collections::BTreeSet::new();
-    for source in profiles
-        .iter()
-        .filter_map(|profile| profile.get("evidenceItems")?.as_array())
-        .flatten()
-        .filter_map(|item| item.get("source"))
-    {
-        let is_pubmed = source
-            .get("sourceType")
-            .and_then(serde_json::Value::as_str)
-            .is_some_and(|kind| kind.trim().eq_ignore_ascii_case("PUBMED"));
-        if !is_pubmed {
-            continue;
-        }
-        let citation = match source.get("citation") {
-            Some(serde_json::Value::String(value)) => value.trim(),
-            Some(serde_json::Value::Number(value)) => value.as_u64().map_or("", |_| "numeric"),
-            _ => "",
-        };
-        let parsed = if citation == "numeric" {
-            source.get("citation").and_then(serde_json::Value::as_u64)
-        } else {
-            let digits = citation
-                .split_once(':')
-                .filter(|(prefix, _)| prefix.trim().eq_ignore_ascii_case("PMID"))
-                .map(|(_, digits)| digits.trim())
-                .unwrap_or(citation);
-            (!digits.is_empty() && digits.chars().all(|ch| ch.is_ascii_digit()))
-                .then(|| digits.parse::<u64>().ok())
-                .flatten()
-        };
-        if let Some(pmid) = parsed
-            .filter(|pmid| *pmid > 0)
-            .and_then(|pmid| u32::try_from(pmid).ok())
-        {
-            pmids.insert(pmid.to_string());
-        }
-    }
-    pmids.into_iter().collect()
+    hit.cached_civic().pubmed_ids().to_vec()
 }
 
 pub struct VariantSearchParams {
@@ -828,14 +783,10 @@ pub struct MyVariantSearchResponse {
 #[derive(Clone)]
 pub struct MyVariantHit {
     source: biodata::MyVariantHitProjection,
-    cgi: Option<OpaqueView>,
-    civic: Option<OpaqueView>,
-}
-
-#[derive(Clone)]
-struct OpaqueView {
-    value: serde_json::Value,
-    normalized: Box<serde_json::value::RawValue>,
+    normalized_cgi: Option<Box<serde_json::value::RawValue>>,
+    normalized_civic: Option<Box<serde_json::value::RawValue>>,
+    cached_cgi: biodata::MyVariantCachedCgiProjection,
+    cached_civic: biodata::MyVariantCachedCivicProjection,
 }
 
 impl std::fmt::Debug for MyVariantHit {
@@ -844,35 +795,28 @@ impl std::fmt::Debug for MyVariantHit {
     }
 }
 
-impl std::fmt::Debug for OpaqueView {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("OpaqueView")
-    }
-}
-
 fn invalid_hit() -> serde_json::Error {
     <serde_json::Error as serde::de::Error>::custom("invalid_structure")
 }
 
-impl OpaqueView {
-    fn from_value(value: serde_json::Value) -> Result<Option<Self>, serde_json::Error> {
-        if value.is_null() {
-            return Ok(None);
-        }
-        let normalized = serde_json::value::to_raw_value(&value).map_err(|_| invalid_hit())?;
-        Ok(Some(Self { value, normalized }))
+fn normalized_fragment(
+    value: &serde_json::Value,
+) -> Result<Option<Box<serde_json::value::RawValue>>, serde_json::Error> {
+    if value.is_null() {
+        Ok(None)
+    } else {
+        serde_json::value::to_raw_value(value)
+            .map(Some)
+            .map_err(|_| invalid_hit())
     }
+}
 
-    fn from_source(
-        raw: Option<&serde_json::value::RawValue>,
-    ) -> Result<Option<Self>, serde_json::Error> {
-        raw.map(|raw| {
-            let value = serde_json::from_str(raw.get()).map_err(|_| invalid_hit())?;
-            Self::from_value(value)
-        })
+fn fragment_value(
+    raw: Option<&serde_json::value::RawValue>,
+) -> Result<serde_json::Value, serde_json::Error> {
+    raw.map(|raw| serde_json::from_str(raw.get()).map_err(|_| invalid_hit()))
         .transpose()
-        .map(Option::flatten)
-    }
+        .map(Option::unwrap_or_default)
 }
 
 impl MyVariantHit {
@@ -880,12 +824,12 @@ impl MyVariantHit {
         &self.source
     }
 
-    pub(crate) fn cgi(&self) -> Option<&serde_json::Value> {
-        self.cgi.as_ref().map(|view| &view.value)
+    pub(crate) fn cached_cgi(&self) -> &biodata::MyVariantCachedCgiProjection {
+        &self.cached_cgi
     }
 
-    pub(crate) fn civic(&self) -> Option<&serde_json::Value> {
-        self.civic.as_ref().map(|view| &view.value)
+    pub(crate) fn cached_civic(&self) -> &biodata::MyVariantCachedCivicProjection {
+        &self.cached_civic
     }
 
     pub(crate) fn from_value(mut value: serde_json::Value) -> Result<Self, serde_json::Error> {
@@ -901,15 +845,25 @@ impl MyVariantHit {
             ),
             _ => (serde_json::Value::Null, serde_json::Value::Null),
         };
-        let cgi = OpaqueView::from_value(cgi)?;
-        let civic = OpaqueView::from_value(civic)?;
+        let normalized_cgi = normalized_fragment(&cgi)?;
+        let normalized_civic = normalized_fragment(&civic)?;
+        let cached_cgi =
+            biodata::MyVariantCachedEvidence::deserialize_cgi(&cgi).map_err(|_| invalid_hit())?;
+        let cached_civic = biodata::MyVariantCachedEvidence::deserialize_civic(&civic)
+            .map_err(|_| invalid_hit())?;
         let source = biodata::MyVariantHit::deserialize_with_source_companions(
             value.into_deserializer(),
-            cgi.as_ref().map(|view| view.normalized.clone()),
-            civic.as_ref().map(|view| view.normalized.clone()),
+            normalized_cgi.clone(),
+            normalized_civic.clone(),
         )
         .map_err(|_| invalid_hit())?;
-        Ok(Self { source, cgi, civic })
+        Ok(Self {
+            source,
+            normalized_cgi,
+            normalized_civic,
+            cached_cgi,
+            cached_civic,
+        })
     }
 }
 
@@ -917,11 +871,24 @@ impl<'de> Deserialize<'de> for MyVariantHit {
     fn deserialize<D: serde::Deserializer<'de>>(decoder: D) -> Result<Self, D::Error> {
         let source = biodata::MyVariantHit::deserialize(decoder)
             .map_err(|_| serde::de::Error::custom("invalid_structure"))?;
-        let cgi = OpaqueView::from_source(source.cgi_json())
-            .map_err(|_| serde::de::Error::custom("invalid_structure"))?;
-        let civic = OpaqueView::from_source(source.civic_json())
-            .map_err(|_| serde::de::Error::custom("invalid_structure"))?;
-        Ok(Self { source, cgi, civic })
+        let project = || -> Result<Self, serde_json::Error> {
+            let cgi = fragment_value(source.cgi_json())?;
+            let civic = fragment_value(source.civic_json())?;
+            let normalized_cgi = normalized_fragment(&cgi)?;
+            let normalized_civic = normalized_fragment(&civic)?;
+            let cached_cgi = biodata::MyVariantCachedEvidence::deserialize_cgi(&cgi)
+                .map_err(|_| invalid_hit())?;
+            let cached_civic = biodata::MyVariantCachedEvidence::deserialize_civic(&civic)
+                .map_err(|_| invalid_hit())?;
+            Ok(Self {
+                source,
+                normalized_cgi,
+                normalized_civic,
+                cached_cgi,
+                cached_civic,
+            })
+        };
+        project().map_err(|_| serde::de::Error::custom("invalid_structure"))
     }
 }
 
@@ -929,8 +896,8 @@ impl Serialize for MyVariantHit {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         self.source
             .as_normalized_source(biodata::MyVariantHitNormalizedOpaque::new(
-                self.cgi.as_ref().map(|view| view.normalized.as_ref()),
-                self.civic.as_ref().map(|view| view.normalized.as_ref()),
+                self.normalized_cgi.as_deref(),
+                self.normalized_civic.as_deref(),
             ))
             .map_err(|_| serde::ser::Error::custom("invalid_structure"))?
             .serialize(serializer)

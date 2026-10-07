@@ -2175,7 +2175,7 @@ async fn citation_candidates(
     let Some(retained_hit) = context.source_hit.as_ref() else {
         return Ok((Vec::new(), false));
     };
-    let (hydrated_hit, hydration_unit) = if retained_hit.civic().is_none() {
+    let (hydrated_hit, hydration_unit) = if retained_hit.source().civic_json().is_none() {
         let Some(unit) = execution
             .begin_provider_unit("source_citation", "myvariant")
             .await
@@ -2558,7 +2558,7 @@ fn materialize_discovery_route_plans(
         context
             .source_hit
             .as_ref()
-            .map(|hit| usize::from(hit.civic().is_none()))
+            .map(|hit| usize::from(hit.source().civic_json().is_none()))
     })
     .flatten();
     execution.set_route_unit_plan("source_citation", "myvariant", citation_units);
@@ -6158,3 +6158,6 @@ mod dbsnp_adoption_tests;
 
 #[cfg(test)]
 mod hit_adoption_tests;
+
+#[cfg(test)]
+mod cached_evidence_tests;

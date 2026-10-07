@@ -1443,3 +1443,6 @@ mod cadd_adoption_tests;
 
 #[cfg(test)]
 mod hit_adoption_tests;
+
+#[cfg(test)]
+mod cached_evidence_transport_tests;

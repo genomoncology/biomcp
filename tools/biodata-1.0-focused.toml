@@ -2,6 +2,11 @@ version = 1
 
 [selection]
 rust = [
+  "entities::article::variant_search::cached_evidence_tests::cached_source_presence_plans_only_missing_hydration",
+  "entities::article::variant_search::cached_evidence_tests::citations_beyond_cached_display_cap_reach_article_route",
+  "entities::variant::get::cached_evidence_transport_tests::default_cached_sections_keep_cli_and_mcp_channels",
+  "entities::variant::get::cached_evidence_transport_tests::requested_cgi_keeps_cli_and_mcp_channels",
+  "sources::myvariant::tests::construction::civic_pubmed_ids_accepts_only_complete_canonical_pubmed_citations",
   "entities::article::variant_search::hit_adoption_tests::complete_hit_normalization_selects_confirmed_citations_in_both_orders",
   "entities::article::variant_search::hit_adoption_tests::opaque_civic_presence_controls_hydration_and_citation_provenance",
   "entities::variant::get::hit_adoption_tests::cached_opaque_detail_keeps_fallbacks_caps_and_requested_sections",

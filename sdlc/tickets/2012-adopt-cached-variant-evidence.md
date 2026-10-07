@@ -21,3 +21,9 @@ Use the accepted shared CGI therapy, CIViC evidence and publication-ID adapters 
 ## Authority and return
 
 PM allocated2012 in the single global sequence and automatically stamped milestone1.0. Keep that allocation. The accepted0708 design covers this producer and consumer contract. Root assigns a separate builder and fresh CODE review. Use this isolated branch and push complete fixes with [skip ci]. Return the exact checked candidate and concise handoff; Root owns landing and paired completion.
+
+## Build authority update
+
+Root qualified producer33b8ff13f1f445eadbfa10fb433852f5b77b4a1d for the final consumer pin. The producer CODE review accepted9e927ec9. Root's immutable Linux image3037 passed lint21.559 seconds and test129.138 seconds on that revision. The original ordinary spec found only alphabetic package-list ordering. The correction changes three expected entries and no product source. Root reran only the corrected ordinary spec and reported PASS35.794 seconds, runner41.93 seconds. The consumer retains the accepted API without further producer changes.
+
+The baseline channel check confirms requested CGI Markdown renders the focused CGI section. The default Markdown card retains the CIViC summary pointer. Each existing channel operation performs two variant reads. These source-grounded expectations preserve rendering and retrieval.

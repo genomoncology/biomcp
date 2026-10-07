@@ -363,177 +363,39 @@ fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
     }
 }
 
-fn value_first_string(value: &serde_json::Value) -> Option<String> {
-    match value {
-        serde_json::Value::String(s) => Some(s.trim().to_string()).filter(|v| !v.is_empty()),
-        serde_json::Value::Array(arr) => arr.iter().find_map(value_first_string),
-        serde_json::Value::Object(obj) => obj.values().find_map(value_first_string),
-        _ => None,
-    }
-}
-
 fn extract_cgi_associations(hit: &MyVariantHit) -> Vec<VariantCgiAssociation> {
-    let Some(cgi) = hit.cgi() else {
-        return Vec::new();
-    };
-
-    let rows: Vec<&serde_json::Value> = match cgi {
-        serde_json::Value::Array(arr) => arr.iter().collect(),
-        serde_json::Value::Object(_) => vec![cgi],
-        _ => Vec::new(),
-    };
-
-    let mut out: Vec<VariantCgiAssociation> = Vec::new();
-    for row in rows {
-        let Some(obj) = row.as_object() else { continue };
-        let Some(drug) = obj.get("drug").and_then(value_first_string) else {
-            continue;
-        };
-
-        let association = obj.get("association").and_then(value_first_string);
-        let tumor_type = obj
-            .get("primary_tumor_type")
-            .or_else(|| obj.get("tumor_type"))
-            .and_then(value_first_string);
-        let evidence_level = obj
-            .get("evidence_level")
-            .or_else(|| obj.get("evidence"))
-            .and_then(value_first_string);
-        let source = obj.get("source").and_then(value_first_string);
-
-        out.push(VariantCgiAssociation {
-            drug,
-            association,
-            tumor_type,
-            evidence_level,
-            source,
-        });
-        if out.len() >= 10 {
-            break;
-        }
-    }
-
-    out
+    hit.cached_cgi()
+        .associations()
+        .iter()
+        .map(|row| VariantCgiAssociation {
+            drug: row.drug().to_owned(),
+            association: row.association().map(str::to_owned),
+            tumor_type: row.tumor_type().map(str::to_owned),
+            evidence_level: row.evidence_level().map(str::to_owned),
+            source: row.source().map(str::to_owned),
+        })
+        .collect()
 }
 
 fn extract_civic_cached_evidence(hit: &MyVariantHit) -> Vec<CivicEvidenceItem> {
-    let Some(civic) = hit.civic() else {
-        return Vec::new();
-    };
-
-    let Some(molecular_profiles) = civic
-        .get("molecularProfiles")
-        .and_then(serde_json::Value::as_array)
-    else {
-        return Vec::new();
-    };
-
-    let mut out = Vec::new();
-    for profile in molecular_profiles {
-        let profile_name = profile
-            .get("name")
-            .and_then(serde_json::Value::as_str)
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-            .unwrap_or_default()
-            .to_string();
-        if profile_name.is_empty() {
-            continue;
-        }
-
-        let Some(items) = profile
-            .get("evidenceItems")
-            .and_then(serde_json::Value::as_array)
-        else {
-            continue;
-        };
-
-        for row in items {
-            let id = row
-                .get("id")
-                .and_then(serde_json::Value::as_i64)
-                .unwrap_or(0);
-            let name = row
-                .get("name")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-                .unwrap_or("cached")
-                .to_string();
-            let evidence_type = row
-                .get("evidenceType")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-                .unwrap_or("-")
-                .to_string();
-            let evidence_level = row
-                .get("evidenceLevel")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-                .unwrap_or("-")
-                .to_string();
-            let significance = row
-                .get("significance")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-                .unwrap_or("-")
-                .to_string();
-            let disease = row
-                .get("disease")
-                .and_then(|v| v.get("displayName").or_else(|| v.get("name")))
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-                .map(str::to_string);
-            let therapies = row
-                .get("therapies")
-                .and_then(serde_json::Value::as_array)
-                .map(|entries| {
-                    entries
-                        .iter()
-                        .filter_map(|entry| {
-                            entry
-                                .get("name")
-                                .and_then(serde_json::Value::as_str)
-                                .map(str::trim)
-                                .filter(|v| !v.is_empty())
-                                .map(str::to_string)
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default();
-            let status = row
-                .get("status")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-                .unwrap_or("-")
-                .to_string();
-
-            out.push(CivicEvidenceItem {
-                id,
-                name,
-                molecular_profile: profile_name.clone(),
-                evidence_type,
-                evidence_level,
-                significance,
-                disease,
-                therapies,
-                status,
-                citation: None,
-                source_type: None,
-                publication_year: None,
-            });
-            if out.len() >= 20 {
-                return out;
-            }
-        }
-    }
-
-    out
+    hit.cached_civic()
+        .evidence_items()
+        .iter()
+        .map(|row| CivicEvidenceItem {
+            id: row.id(),
+            name: row.name().to_owned(),
+            molecular_profile: row.molecular_profile().to_owned(),
+            evidence_type: row.evidence_type().to_owned(),
+            evidence_level: row.evidence_level().to_owned(),
+            significance: row.significance().to_owned(),
+            disease: row.disease().map(str::to_owned),
+            therapies: row.therapies().to_vec(),
+            status: row.status().to_owned(),
+            citation: None,
+            source_type: None,
+            publication_year: None,
+        })
+        .collect()
 }
 
 fn dedupe_limit(values: Vec<String>, max: usize) -> Vec<String> {
