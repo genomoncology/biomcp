@@ -23,6 +23,25 @@ passed it; reruns pass). The hang is intermittent — a race inside the
 test's own threading (the in-test fixture server plus the deadline
 future), not an environment conflict.
 
+## Second hang (same day)
+
+The 2024 checkout's test-phase rerun hung on
+`deadline_expiry_without_rows_names_the_deadline_error` with the
+identical signature (futex_do_wait, state S) at zero load and 13 GiB
+free — not resource pressure. Forensics:
+`yellow-hang-forensics-*.txt` (second file). The identical suite
+passes on GitHub's runners the same day (branch CIs and two
+merged-tree runs green). Host-specific intermittence until the stress
+loop says otherwise.
+
+## Gate-evidence rule while this stays open
+
+A landing's yellow evidence is: lint and spec yellow-green, the test
+phase attempted on yellow with any hang forensically captured and
+recorded here, and the identical suite green on the branch CI and the
+merged-tree CI. The issue must close or be accepted by Ian before the
+0.9.2 tag.
+
 ## Triage questions
 
 1. Reproduce under stress (loop the single test with nextest on a
