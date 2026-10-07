@@ -1,8 +1,8 @@
 # 2026 — Adopt shared Cancer Hotspots responses and recurrence
 
-Status: OPEN.
+Status: COMPLETE.
 Owner: Root; assigned consumer builder.
-Phase: CODE candidate qualified; Root fresh review, dedicated 1.0 landing and paired closure pending.
+Phase: Both variant callers use the shared producer; reviewed and landed on the dedicated 1.0 line.
 Milestone: 1.0
 Component: backend
 
@@ -29,3 +29,6 @@ Review: fresh paired DESIGN ACCEPT at BioData1e7c6172 and BioMCPd191a20b. Root a
 Root released BUILD on October 7 after BioData0714 landed at `edd138da0ba104039885fe213107003dfb626246`, version `0.0.41`. This branch merged dedicated target `582bbd492e64d0227517dcaef828425ab84b2e10` at `692bf15f`; the target incorporates maintenance `1c774def`. Both callers use the shared original-byte response and immutable recurrence. New caller owners passed before the source mapping claims retired. Root owns fresh review, dedicated 1.0 landing and paired closure. The ticket remains open until that outcome.
 
 Final qualification: both callers and channels passed. The [consumer record](../records/2026-adopt-cancerhotspots-recurrence.md) names the exact producer, target, candidate, 14 affected Rust tests, 147 Python checks, retired claims, measured costs and inherited gate limits. Root retains closure authority.
+
+CODE review: ACCEPT at d97fd21b by fresh read-only reviewer; no concrete findings.
+Landed: e87bb5981665c3d077e576058b9cf079aa7e3af0

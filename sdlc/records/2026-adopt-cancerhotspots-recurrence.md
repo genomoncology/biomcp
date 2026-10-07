@@ -63,3 +63,7 @@ Private structural/resource decoder failures now contain only a static applicati
 - `tools/rust-source-size-inventory.json`
 
 The design, fixture bytes, capture receipts, templates, shared transport, activation parsers and maintenance 0.9 source remain outside the implementation diff. Root owns review, landing and paired closure. Cleanup belongs to the separate owner. Code, build output and logs with prefix `biomcp-2026-` remain for that owner. No scratch cleanup ran.
+
+## Landing
+
+Fresh read-only CODE review accepted d97fd21b with no concrete findings. Merge e87bb5981665c3d077e576058b9cf079aa7e3af0 lands both callers on the dedicated 1.0 line. The merge contains no runtime changes beyond the reviewed candidate. Fourteen affected native cases and 147 Python cases passed; inherited whole-gate findings remain as recorded. BioData producer edd138da0ba104039885fe213107003dfb626246 is the paired dependency. Both actual callers now store and render the shared recurrence; eleven displaced tests and local mapping code are retired.
