@@ -1,6 +1,6 @@
 # 1304 — Track the WHO PQ export's real header set and degrade honestly
 
-Status: OPEN.
+Status: complete.
 Milestone: 0.9.2
 
 ## Outcome
