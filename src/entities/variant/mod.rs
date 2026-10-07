@@ -544,9 +544,39 @@ pub struct GnomadPopulationResult {
     pub resolved_coordinate: Option<ResolvedPopulationCoordinate>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    pub exome: Option<crate::sources::gnomad::GnomadSequencingPopulation>,
-    pub genome: Option<crate::sources::gnomad::GnomadSequencingPopulation>,
+    #[serde(default, with = "gnomad_population_target")]
+    pub exome: Option<biodata::GnomadSequencingPopulationProjection>,
+    #[serde(default, with = "gnomad_population_target")]
+    pub genome: Option<biodata::GnomadSequencingPopulationProjection>,
     pub faf_caveat: String,
+}
+
+mod gnomad_population_target {
+    use biodata::GnomadSequencingPopulationProjection;
+    use serde::{Deserialize, Serialize};
+
+    pub(super) fn serialize<S: serde::Serializer>(
+        value: &Option<GnomadSequencingPopulationProjection>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        value
+            .as_ref()
+            .map(GnomadSequencingPopulationProjection::as_population_target)
+            .serialize(serializer)
+    }
+
+    pub(super) fn deserialize<'de, D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<GnomadSequencingPopulationProjection>, D::Error> {
+        #[derive(Deserialize)]
+        struct Target(
+            #[serde(
+                deserialize_with = "GnomadSequencingPopulationProjection::deserialize_population_target"
+            )]
+            GnomadSequencingPopulationProjection,
+        );
+        Option::<Target>::deserialize(deserializer).map(|value| value.map(|target| target.0))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

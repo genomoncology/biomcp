@@ -919,20 +919,9 @@ async fn population_request_requires_a_grch38_genomic_coordinate() {
 
 #[test]
 fn population_result_names_the_pinned_dataset_and_keeps_sources_separate() {
-    let data = GnomadVariantPopulation {
-        variant_id: "7-140453136-A-T".into(),
-        exome: Some(crate::sources::gnomad::GnomadSequencingPopulation {
-            allele_frequency: Some(0.1),
-            ac: 1,
-            an: 10,
-            homozygote_count: 0,
-            hemizygote_count: 0,
-            filters: vec!["AC0".into()],
-            faf95: None,
-            populations: Vec::new(),
-        }),
-        genome: None,
-    };
+    let data = biodata::GnomadV4Population::deserialize_variant(
+        &mut serde_json::Deserializer::from_str(r#"{"variant_id":"7-140453136-A-T","exome":{"ac":1,"an":10,"homozygote_count":0,"hemizygote_count":0,"filters":["AC0"],"populations":[]},"genome":null}"#),
+    ).unwrap();
     let result = population_result(GnomadPopulationStatus::Data, None, Some(data), None);
 
     assert_eq!(result.status, GnomadPopulationStatus::Data);

@@ -405,22 +405,6 @@ fn population_test_variant(
     .expect("population test variant")
 }
 
-fn ancestry_row(
-    id: &str,
-    allele_frequency: Option<f64>,
-    ac: u64,
-    an: u64,
-) -> crate::sources::gnomad::GnomadAncestryPopulation {
-    crate::sources::gnomad::GnomadAncestryPopulation {
-        id: id.into(),
-        allele_frequency,
-        ac,
-        an,
-        homozygote_count: 0,
-        hemizygote_count: 0,
-    }
-}
-
 #[test]
 fn variant_population_maximum_is_order_independent_by_an_then_raw_id() {
     let smaller = serde_json::json!({
@@ -509,28 +493,16 @@ fn variant_population_maximum_keeps_zero_and_handles_null_nonfinite_and_partial_
     assert!(partial.contains("No exome result in gnomAD v4."));
     assert!(partial.contains("Genome highest observed population-row frequency: Not reported"));
 
-    let sequencing = crate::sources::gnomad::GnomadSequencingPopulation {
-        allele_frequency: None,
-        ac: 0,
-        an: 0,
-        homozygote_count: 0,
-        hemizygote_count: 0,
-        filters: vec![],
-        faf95: None,
-        populations: vec![
-            ancestry_row("infinite", Some(f64::INFINITY), 1, 1),
-            ancestry_row("finite", Some(0.25), 1, 4),
-        ],
-    };
-    assert_eq!(
-        highest_ancestry_frequency(&sequencing).unwrap().id,
-        "finite"
-    );
-    let only_nan = crate::sources::gnomad::GnomadSequencingPopulation {
-        populations: vec![ancestry_row("nan", Some(f64::NAN), 0, 1)],
-        ..sequencing
-    };
-    assert!(highest_ancestry_frequency(&only_nan).is_none());
+    // Nonfinite values cannot enter shared records; retain the display guard at its numeric boundary.
+    for frequency in [
+        None,
+        Some(f64::NAN),
+        Some(f64::INFINITY),
+        Some(f64::NEG_INFINITY),
+    ] {
+        assert!(!finite_ancestry_frequency(frequency));
+    }
+    assert!(finite_ancestry_frequency(Some(0.25)));
 }
 
 #[test]

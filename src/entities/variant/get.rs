@@ -1136,9 +1136,7 @@ fn population_result(
     data: Option<GnomadVariantPopulation>,
     resolved_coordinate: Option<ResolvedPopulationCoordinate>,
 ) -> GnomadPopulationResult {
-    let (exome, genome) = data
-        .map(|population| (population.exome, population.genome))
-        .unwrap_or_default();
+    let (exome, genome) = data.map(|data| data.into_parts()).unwrap_or_default();
     GnomadPopulationResult {
         status,
         dataset: GNOMAD_DATASET.into(),
@@ -1274,7 +1272,7 @@ async fn add_population(variant: &mut Variant, id_format: &VariantIdFormat) {
         Err(_) => Err(()),
     };
     let response = response.and_then(|data| match data {
-        Some(data) if data.variant_id != variant_id => Err(()),
+        Some(data) if data.variant_id() != variant_id => Err(()),
         data => Ok(data),
     });
     let dbsnp_assisted = resolved_coordinate.is_some();
@@ -1293,7 +1291,7 @@ async fn add_population(variant: &mut Variant, id_format: &VariantIdFormat) {
         }
     };
     match response {
-        Ok(Some(data)) if data.exome.is_some() || data.genome.is_some() => {
+        Ok(Some(data)) if data.exome().is_some() || data.genome().is_some() => {
             variant.population = Some(population_result(
                 GnomadPopulationStatus::Data,
                 None,
@@ -1445,3 +1443,5 @@ pub(super) mod tests;
 
 #[cfg(test)]
 mod cached_evidence_transport_tests;
+#[cfg(test)]
+mod direct_gnomad_population_transport_tests;

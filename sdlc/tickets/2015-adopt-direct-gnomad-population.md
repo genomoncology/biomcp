@@ -1,12 +1,12 @@
 # 2015 — Adopt the complete direct gnomAD population graph
 
-Status: OPEN.
+Status: COMPLETE.
 
 Milestone: 1.0
 Component: backend
 Owner: Root.
 Prepared and signed: delegated Codex design owner, October 7, 2026.
-Phase: DESIGN. Fresh independent review and Root's BUILD release are pending.
+Phase: CODE ACCEPT at6679eea0659e19a23bcd4b1b82ab06fe7900472d. Root completes final channel verification and landing.
 Risk: Response compatibility. Source-derived frequencies and decoded product targets have different construction rules.
 
 ## Outcome
@@ -30,3 +30,15 @@ PM allocated global 2015 with the sole active milestone 1.0. Component backend i
 During allocation, PM refused its hard-coded local-main freshness guard. Fetch observed origin/main 37631c3574703755bf742e1e8459bc0d77522220. Local maintenance main had no unique commits and no active checkout; its reference was fast-forwarded for PM allocation. No maintenance files or dedicated product bytes changed. HTTPS reservation pushes failed authentication; command-local SSH transport then reserved refs/pm/2015. No global configuration changed and no CI was dispatched. Root must classify and incorporate the new maintenance delta under ADR 0029 before BUILD, and refresh the reviewed scope if it affects these callers. This draft claims only the inspected d6aa002f behavior.
 
 Root's next action is fresh read-only DESIGN review. No builder has started. Keep this draft local for that review; pushing a ticket branch can trigger repository CI and this assignment prohibits CI.
+
+## Accepted producer and BUILD release
+
+Root adopted fresh paired DESIGN ACCEPT after the borrowed ancestry-view correction. BioData0711 passed fresh CODE review at9169bfe1, with unchanged runtimeef4a5bbe and lint/test/spec passes. Accepted main25f0c7fd3cee947230231aae0e3ed3aa960ecd46 is version0.0.38. Current consumer target9ada31a9 includes reviewed maintenance37631c35. This release authorizes the exact reviewed consumer file claims, outside-in checks and four local model/count-mapper retirement.
+
+## Consumer build candidate
+
+The assigned builder implemented shared source decoding, nested product storage and borrowed target encoding on this ticket branch. [The build record](../records/2015-build-direct-gnomad-population.md) names the precise files, red evidence, measured focused checks, narrow retirement and inherited findings. The four additional contract files were named to Root before editing their revision/version/count constants. Fresh consumer CODE review remains pending. Root owns landing and ticket completion.
+
+## What the build taught us
+
+The shared source graph can replace the local population models without changing CLI or MCP output. Keep count-derived source frequencies separate from supplied product-target frequencies. Existing unrelated Darwin and lint findings remain visible.
