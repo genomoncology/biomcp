@@ -82,6 +82,15 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
                 identifier: Some("NM_004333.6:c.1799T>A".to_string()),
                 ..Default::default()
             },
+            // rs121913529 spans G12A, G12D and G12V, so the rows carry the
+            // gene-qualified protein change instead of the shared rsID.
+            AnnotationCount {
+                text: "G12A".to_string(),
+                count: 1,
+                namespace: Some("HGVS".to_string()),
+                identifier: Some("KRAS p.G12A".to_string()),
+                ..Default::default()
+            },
         ],
     };
     let markdown =
@@ -93,6 +102,7 @@ fn article_entities_markdown_prints_get_commands_for_accepted_identifiers() {
     // Variant rsIDs and accepted HGVS expressions resolve exactly.
     assert!(markdown.contains("`biomcp get variant rs121913530`"));
     assert!(markdown.contains("`biomcp get variant \"NM_004333.6:c.1799T>A\"`"));
+    assert!(markdown.contains("`biomcp get variant \"KRAS p.G12A\"`"));
     // `get gene` takes symbols, not NCBI Gene identifiers, so the row keeps
     // its text search; `get drug` takes names, not MeSH identifiers.
     assert!(markdown.contains("`biomcp search gene -q KRAS`"));

@@ -1,8 +1,11 @@
 //! PubTator annotation aggregation for article detail views.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::entities::article::{AnnotationCount, AnnotationPosition, ArticleAnnotations};
+use crate::entities::variant::{
+    VariantIdFormat, VariantInputKind, VariantShorthand, classify_variant_input,
+};
 use crate::sources::pubtator::PubTatorDocument;
 
 /// Longest identifier or namespace value carried through to entity rows.
@@ -59,10 +62,12 @@ fn registry_identity(identifier: &str) -> Option<AnnotationIdentity> {
 
 /// Read the identifier PubTator3 gives for one annotation. Variant mentions
 /// carry a tmVar composite in `identifier`, so their typed-back identifier is
-/// the rsID when one exists and the HGVS expression otherwise.
+/// the rsID while that rsID names one allele in this document and the
+/// gene-qualified HGVS expression otherwise.
 fn annotation_identity(
     kind: AnnotationKind,
     infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
+    mutation_context: &MutationContext,
 ) -> Option<AnnotationIdentity> {
     match kind {
         AnnotationKind::Gene => clean_identifier(infons.identifier.as_deref()?)
@@ -70,23 +75,171 @@ fn annotation_identity(
         AnnotationKind::Disease | AnnotationKind::Chemical => {
             registry_identity(infons.identifier.as_deref()?)
         }
-        AnnotationKind::Mutation => {
-            if let Some(rsid) = infons.rsid.as_deref().and_then(clean_identifier) {
-                return Some(("rsID", rsid.to_string()));
-            }
-            if let Some(rsid) = infons
+        AnnotationKind::Mutation => mutation_identity(infons, mutation_context),
+    }
+}
+
+fn first_rsid(infons: &crate::sources::pubtator::PubTatorAnnotationInfons) -> Option<&str> {
+    infons
+        .rsid
+        .as_deref()
+        .and_then(clean_identifier)
+        .or_else(|| {
+            infons
                 .rsids
                 .as_ref()
                 .and_then(|rsids| rsids.first())
                 .and_then(|rsid| clean_identifier(rsid))
-            {
-                return Some(("rsID", rsid.to_string()));
-            }
-            if let Some(hgvs) = infons.hgvs.as_deref().and_then(clean_identifier) {
-                return Some(("HGVS", hgvs.to_string()));
-            }
-            None
+        })
+}
+
+fn is_protein_hgvs(hgvs: &str) -> bool {
+    hgvs.trim().to_ascii_lowercase().starts_with("p.")
+}
+
+/// One rsID legitimately names several alleles (KRAS G12A, G12D and G12V all
+/// carry rs121913529), so a mutation row keeps the rsID identity only while
+/// the document's own annotations show that rsID naming one change. Otherwise
+/// the row carries the allele-specific form: the gene symbol the document's
+/// gene annotations give plus the HGVS protein change, which `get variant`
+/// accepts as exact input. A coding HGVS names the allele alone. A protein
+/// change without a usable gene symbol has no typed-back form, so the row
+/// carries no identifier and keeps its mention-text command.
+fn mutation_identity(
+    infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
+    mutation_context: &MutationContext,
+) -> Option<AnnotationIdentity> {
+    if let Some(rsid) = first_rsid(infons) {
+        if !mutation_context
+            .multi_allele_rsids
+            .contains(&rsid.to_ascii_lowercase())
+        {
+            return Some(("rsID", rsid.to_string()));
         }
+        let hgvs = infons.hgvs.as_deref().and_then(clean_identifier)?;
+        if !is_protein_hgvs(hgvs) {
+            return Some(("HGVS", hgvs.to_string()));
+        }
+        return mutation_context
+            .gene_qualified_change(infons, hgvs)
+            .map(|form| ("HGVS", form));
+    }
+    infons
+        .hgvs
+        .as_deref()
+        .and_then(clean_identifier)
+        .map(|hgvs| ("HGVS", hgvs.to_string()))
+}
+
+/// Document-wide facts that disambiguate mutation identities: the gene symbol
+/// each NCBI Gene id carries, and the rsIDs whose mentions span more than one
+/// distinct protein change.
+struct MutationContext {
+    gene_symbols: HashMap<u64, String>,
+    multi_allele_rsids: HashSet<String>,
+}
+
+impl MutationContext {
+    fn collect(doc: &PubTatorDocument) -> Self {
+        let mut gene_tallies: HashMap<u64, HashMap<String, (u32, usize)>> = HashMap::new();
+        let mut rsid_changes: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut order = 0usize;
+
+        for passage in &doc.passages {
+            for ann in &passage.annotations {
+                if let (Some(text), Some(infons)) = (ann.text.as_deref(), ann.infons.as_ref())
+                    && let Some(kind) = infons.kind.as_deref().and_then(annotation_kind)
+                {
+                    match kind {
+                        AnnotationKind::Gene => {
+                            let text = text.trim();
+                            if let Some(identifier) = infons.identifier.as_deref().map(str::trim)
+                                && !text.is_empty()
+                                && text.len() <= 128
+                                && let Ok(gene_id) = identifier.parse::<u64>()
+                            {
+                                let tally = gene_tallies.entry(gene_id).or_default();
+                                tally
+                                    .entry(text.to_string())
+                                    .and_modify(|(count, _)| *count += 1)
+                                    .or_insert((1, order));
+                            }
+                        }
+                        AnnotationKind::Mutation => {
+                            if let Some(rsid) = first_rsid(infons)
+                                && let Some(hgvs) =
+                                    infons.hgvs.as_deref().and_then(clean_identifier)
+                            {
+                                rsid_changes
+                                    .entry(rsid.to_ascii_lowercase())
+                                    .or_default()
+                                    .insert(distinct_change_key(hgvs));
+                            }
+                        }
+                        AnnotationKind::Disease | AnnotationKind::Chemical => {}
+                    }
+                }
+                order += 1;
+            }
+        }
+
+        let gene_symbols = gene_tallies
+            .into_iter()
+            .map(|(gene_id, texts)| {
+                // Most-mentioned text wins; ties break to the earliest mention
+                // and then to the lexicographically smaller text.
+                let (symbol, _) = texts
+                    .into_iter()
+                    .min_by(
+                        |(left_text, (left_count, left_order)),
+                         (right_text, (right_count, right_order))| {
+                            right_count
+                                .cmp(left_count)
+                                .then_with(|| left_order.cmp(right_order))
+                                .then_with(|| left_text.cmp(right_text))
+                        },
+                    )
+                    .expect("tally entries are non-empty");
+                (gene_id, symbol)
+            })
+            .collect();
+        let multi_allele_rsids = rsid_changes
+            .into_iter()
+            .filter_map(|(rsid, changes)| (changes.len() > 1).then_some(rsid))
+            .collect();
+
+        Self {
+            gene_symbols,
+            multi_allele_rsids,
+        }
+    }
+
+    fn gene_qualified_change(
+        &self,
+        infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
+        hgvs: &str,
+    ) -> Option<String> {
+        let gene_id = infons.gene_id.or_else(|| {
+            infons
+                .gene_ids
+                .as_ref()
+                .and_then(|ids| ids.first().copied())
+        })?;
+        let symbol = self.gene_symbols.get(&gene_id)?;
+        let form = format!("{symbol} {hgvs}");
+        matches!(
+            classify_variant_input(&form),
+            VariantInputKind::Exact(VariantIdFormat::GeneProteinChange { .. })
+        )
+        .then_some(form)
+    }
+}
+
+/// Distinct-allele comparison key for the protein changes sharing one rsID.
+fn distinct_change_key(hgvs: &str) -> String {
+    match classify_variant_input(hgvs) {
+        VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly { change }) => change,
+        _ => hgvs.trim().to_string(),
     }
 }
 
@@ -165,6 +318,7 @@ pub fn extract_annotations(
     doc: &PubTatorDocument,
     include_positions: bool,
 ) -> Option<ArticleAnnotations> {
+    let mutation_context = MutationContext::collect(doc);
     let mut genes: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
     let mut diseases: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
     let mut chemicals: HashMap<AnnotationKey, AnnotationTally> = HashMap::new();
@@ -182,7 +336,7 @@ pub fn extract_annotations(
             let Some(kind) = infons.kind.as_deref().and_then(annotation_kind) else {
                 continue;
             };
-            let identity = annotation_identity(kind, infons);
+            let identity = annotation_identity(kind, infons, &mutation_context);
 
             match kind {
                 AnnotationKind::Gene => push_annotation_count(
