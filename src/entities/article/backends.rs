@@ -464,9 +464,7 @@ pub(super) async fn search_europepmc_page_with_context(
     let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
     let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
     let mut total: Option<usize> = None;
-    // Europe PMC ignores the `page` parameter, so paging is cursorMark-based:
-    // start at `*`, follow `nextCursorMark`, and serve `offset` by walking and
-    // discarding rows inside the fetched pages (bounded by MAX_PAGE_FETCHES).
+    // Walk cursor pages and discard offset rows within MAX_PAGE_FETCHES.
     let mut cursor: String = "*".to_string();
     let mut next_cursor: Option<String> = None;
     let mut local_skip = offset;
@@ -551,9 +549,6 @@ pub(super) async fn search_europepmc_page_with_context(
         if empty {
             break;
         }
-
-        // Cursor exhaustion: stop when the service omits `nextCursorMark`,
-        // repeats the cursor just sent, or every hit has been fetched.
         let Some(next) = next_cursor.take() else {
             break;
         };

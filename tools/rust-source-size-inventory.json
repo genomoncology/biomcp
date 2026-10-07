@@ -54,12 +54,12 @@
     },
     {
       "path": "src/entities/article/backends.rs",
-      "baseline_lines": 1032,
+      "baseline_lines": 1047,
       "floor_lines": 975,
       "authorized_increase": {
-        "ticket": "qf-maintenance-20261003",
-        "delta": 57,
-        "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions.",
+        "ticket": "qf-maintenance-20261003, 2013",
+        "delta": 72,
+        "reason": "Root migration coordinator adopts the independently reviewed exact ceiling. Minimal invocation-deadline correction retains typed page admission, completed rows, degraded source diagnostics and all existing assertions. Ticket 2013 carries the exact donor cursor change with 15 additional lines and retains the dedicated request wrapper.",
         "removal_condition": "Decompose the article backend or orchestration owner when its responsibility is next reorganized; retain all pagination, expiry and explicit variant admission proofs."
       }
     },
