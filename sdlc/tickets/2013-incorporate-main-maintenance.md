@@ -5,7 +5,7 @@ Status: OPEN.
 Milestone: 1.0
 Component: backend
 Owner: Root.
-Authority signature: Root owns routine incorporation under Ian's October 6 direction. Fresh ticket review is pending.
+Authority signature: Root owns routine incorporation under Ian's October 6 direction. Fresh DESIGN review ACCEPT at 985ac7e80bfff0a7d4a2193cd43532f59eae6ddd released the bounded build. Fresh CODE review remains pending.
 
 ## Outcome
 
@@ -69,3 +69,7 @@ Root must obtain a fresh read-only ticket review of this pushed design. After AC
 ## Review correction
 
 Fresh ticket review identified the stale AGENTS.md numbering paragraph. Root replaces it with the final global sequence, PM allocation, sole active1.0 declaration and backend component. The adjacent instruction still called for hosted verification; Root replaces it with the already authorized local focused checks. This amendment implements existing rulings and changes no product behavior or release declaration. Original product merge choices and scoped checks remain unchanged.
+
+## Build handoff
+
+The exact accepted donor is merged through normal Git history. The candidate also merges dedicated metadata revision 4817445c93c29551e6a66d3a29d897b5aebfe5f2 and retains the completed 2012 cleanup record. Both source histories remain ancestors. The BioData pin and active release declarations remain unchanged. The build record names checked revisions, measured costs and inherited failures. Ticket status stays OPEN pending fresh CODE review and Root landing.
