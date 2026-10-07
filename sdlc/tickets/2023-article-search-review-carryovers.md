@@ -23,3 +23,24 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: refuse offset plus limit above 1250 on every sort; prefer the deadline error when any source hit it; make the lock test independent of process state and fix the PubMed route; add a fixture whose last page has rows and no cursor; protect the inline elements that join word parts.
 - Proof: each item has a test that fails on `37631c357` and passes under plain `cargo test` as well as nextest.
 - Defers: nothing.
+
+## Build status
+
+- Built on branch `tickets/2023-article-search-review-carryovers`,
+  commits 5783f13d2 and a066bf6b9, 2026-10-07, across timeout
+  revivals with checkpoints (nothing lost); stopped before spec runs
+  under the Beelink disk directive, with the spec lane deferred to
+  Yellow — recorded here, and the branch claims no spec run.
+- Code review: ACCEPT 2026-10-07 (fresh reviewer; branch reviewed via
+  a materialized read-only diff after the worktree's removal). All
+  five items verified with recomputed arithmetic: the offset guard
+  before any request on every sort; deadline precedence over a fast
+  PubTator failure (both proof shapes); the process-independent lock
+  test with a test-only reset seam and the PubMed route fix requiring
+  both rows; the absent-cursor stop with the lying corpus's third page
+  carrying rows (45 rows over 3 requests, siblings unchanged); JATS
+  word-joining at both boundaries with the surname/given-names spacing
+  kept. One report-only P2: an empty word-joining element glues
+  neighboring words (degenerate markup; real elements carry text).
+  Yellow confirms the spec expectation on the release-shaped binary
+  before landing.
