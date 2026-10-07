@@ -192,10 +192,11 @@ const GENE_FIRST_ROUTING_TIMEOUT: std::time::Duration = std::time::Duration::fro
 /// How a free-text variant query's gene-symbol first token is recognized.
 ///
 /// `mygene` is the supported default because no offline gene list ships with
-/// BioMCP and MyGene's unique canonical symbol/alias resolution is the lookup
-/// the `discover` path already trusts for the same question. `off` restores
-/// the whole-phrase condition search for operators who must not spend a
-/// MyGene call on routing.
+/// BioMCP and MyGene's unique entrez-backed official-symbol confirmation is
+/// the lookup this routing uses; unlike the `discover` path's symbol/alias
+/// lookup, aliases never route (ticket 2022). `off` restores the
+/// whole-phrase condition search for operators who must not spend a MyGene
+/// call on routing.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(super) enum VariantQueryGeneRouting {
     #[default]

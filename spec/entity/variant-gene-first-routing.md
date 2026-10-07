@@ -71,11 +71,13 @@ biomcp --no-cache search variant 'HCC liver cancer' --limit 3 \
 ```
 
 A routed phrase with a leading protein change prints the split parse, and a
-routed zero states how the phrase was read beside the working alternative.
+routed zero states how the phrase was read beside the working alternative;
+the alternative repeats the same filters, so the hint says to drop or loosen
+one rather than promising rows.
 
 ```bash
 biomcp --no-cache search variant 'BRAF V600E melanoma' --limit 3 \
   | grep -E '^Query:|^No variants matched' \
   | mustmatch like 'Query: gene=BRAF, hgvsp=V600E, condition=melanoma
-No variants matched the routed phrase. Read as gene=BRAF, hgvsp=V600E, condition=melanoma. Try the working form: biomcp search variant -g BRAF --hgvsp V600E --condition melanoma'
+No variants matched the routed phrase. Read as gene=BRAF, hgvsp=V600E, condition=melanoma. Drop or loosen a filter in the working form: biomcp search variant -g BRAF --hgvsp V600E --condition melanoma'
 ```

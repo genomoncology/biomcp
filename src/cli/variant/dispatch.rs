@@ -451,7 +451,7 @@ async fn render_variant_search_outcome(
         ),
         Some(GeneFirstNote::Routed { parsed, working }) => format!(
             "{body}\n\nNo variants matched the routed phrase. Read as {parsed}. \
-             Try the working form: {working}"
+             Drop or loosen a filter in the working form: {working}"
         ),
         None => body,
     };

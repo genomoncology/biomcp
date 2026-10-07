@@ -73,14 +73,17 @@ future work. BioMCP resolves and parses the ordinary-provider bundle once per
 process, so set it before startup and restart BioMCP after rotating it.
 
 Free-text `search variant "GENE condition"` routes the first token to the gene
-filter only after the `BIOMCP_VARIANT_QUERY_GENE_ROUTING` source confirms it is
-a known gene symbol. The supported default is `mygene`: MyGene's unique
-canonical symbol/alias resolution is the same lookup `discover` already trusts
-for this question, and no offline gene list ships with BioMCP. A refused,
-ambiguous, timed-out, or unavailable lookup keeps the whole phrase as the
-condition search and prints the explicit `-g`/`--condition` working form when
-that search returns zero rows, because refusal beats wrong routing. `off`
-restores the whole-phrase condition search without the routing lookup.
+filter only after the `BIOMCP_VARIANT_QUERY_GENE_ROUTING` source confirms it
+is the gene's official symbol. The supported default is `mygene`: MyGene
+confirms a first token only when a unique entrez-backed row carries it as the
+official symbol, and refuses aliases, so phrases such as 'HCC liver cancer'
+(HYCC1), 'MODY diabetes' (HNF4A), and 'HHT telangiectasias' (ACVRL1) keep the
+whole-phrase condition search; no offline gene list ships with BioMCP. The
+`discover` path keeps its separate symbol/alias lookup. A refused, ambiguous,
+timed-out, or unavailable lookup keeps the whole phrase as the condition
+search and prints the explicit `-g`/`--condition` working form when that
+search returns zero rows, because refusal beats wrong routing. `off` restores
+the whole-phrase condition search without the routing lookup.
 
 ## Internal and Measurement Controls
 

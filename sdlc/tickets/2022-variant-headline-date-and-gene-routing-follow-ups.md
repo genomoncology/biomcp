@@ -20,7 +20,7 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Keeps: the current-classification headline and official-symbol routing.
 - Changes: print the newest date among records carrying the shown classification; route on official symbols only; recognise a protein change after the gene; when a routed search returns zero rows, print the parsed form and the working alternative.
 - Proof: outside-in tests for BRAF V600E's date, HCC, MODY and 'BRAF V600E melanoma', each failing on `37631c357`.
-- Defers: nothing.
+- Defers: fixture coverage for the phrase form `get variant 'BRAF V600E'` (the 2026-08-06 resolution search recording predates ClinVar fields; the spec pins the coordinate form and the phrase form is live-verified only).
 
 ## Root cause
 
@@ -53,7 +53,7 @@ Official symbols only means the familiar alias abbreviations stop routing too: '
 
 Red on pristine `37631c357` (built in a disposable clone; the worktree base is byte-identical across every file this ticket touches):
 
-1. BRAF V600E date: `get variant 'chr7:g.140453136A>T'` against the routine fixtures printed `Significance: Pathogenic — MyVariant.info (evaluated 2025-01-23)`, the Uncertain record's date.
+1. BRAF V600E date: `get variant 'chr7:g.140453136A>T'` against the routine fixtures printed `Significance: Pathogenic — MyVariant.info (evaluated 2025-01-23)`, the Uncertain record's date. The spec pins the coordinate form because the fixture's phrase-form resolution search recording (`search_braf_v600e_20260806.json`) predates ClinVar fields; the phrase form is live-verified only (its live search response carries the same 17 dated rows).
 2. HCC: `search variant 'HCC liver cancer'` with live sources printed `Query: gene=HYCC1, condition=liver cancer`, count 0, no hint.
 3. MODY: `search variant 'MODY diabetes'` with live sources printed `Query: gene=HNF4A, condition=diabetes`.
 4. 'BRAF V600E melanoma': `search variant 'BRAF V600E melanoma'` with live sources printed `Query: gene=BRAF, condition=V600E melanoma`.
