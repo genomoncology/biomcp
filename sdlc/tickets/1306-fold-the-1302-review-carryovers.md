@@ -1,6 +1,6 @@
 # 1306 — Fold the 1302 review carryovers
 
-Status: OPEN.
+Status: complete.
 Milestone: 0.9.2
 
 ## Build status
