@@ -324,6 +324,7 @@ local data, while the US and EU sections keep answering.
 ```bash
 who_saved_dir="${BIOMCP_WHO_DIR:-}"
 who_degraded="$(mktemp -d)"
+trap 'rm -rf "$who_degraded"' EXIT
 export BIOMCP_WHO_DIR="$who_degraded"
 export BIOMCP_WHO_PQ_URL="http://127.0.0.1:9/who_pq.csv"
 export BIOMCP_WHO_PQ_API_URL="http://127.0.0.1:9/who_api.csv"

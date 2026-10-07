@@ -77,7 +77,14 @@ column — never the generic #288 line.
   reasons and exit 1, older files kept; the self-referential sync hint
   is gone (network access and BIOMCP_WHO_DIR named); the failed-export
   fixture hermetic with the drift guard; inventory repins exact. One
-  P2 (temp-dir leaks in the two new spec blocks) folded in eb889a407.
+  P2 (temp-dir leaks in the two new spec blocks) folded in eb889a407:
+  `spec/entity/drug.md` removes its temp dir via the
+  `trap 'rm -rf …' EXIT` pattern from `spec/surface/cli.md`, and the
+  mcp.md Python block uses `tempfile.TemporaryDirectory`. Pages re-run
+  after the fold: `spec/entity/drug.md` 18/18; `spec/surface/mcp.md`
+  45/46 with only the pre-existing diagnostic-synonym failure, as
+  before and as already filed
+  (`sdlc/issues/2026-10-07-diagnostic-synonym-provenance-fails-spec-contracts.md`).
   A review minor note folded into this record: the mcp.md degrade block
   makes three forced-degrade searches (CLI JSON, raw MCP JSON, raw MCP
   Markdown), not two.
