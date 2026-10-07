@@ -24,3 +24,19 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: a hit counts as a match only when its protein change in the canonical (or ClinVar-named) transcript equals the query. ClinVar presence breaks ties among true matches only. Prefer the canonical transcript before refusing.
 - Proof: outside-in tests for TP53 C124Y, BRCA1 A314T, BRCA1 C61G, DICER1 and EGFR, from recorded MyVariant responses. Each fails on `37631c357`.
 - Defers: a full transcript-aware resolver.
+
+## Build status
+
+- Built on branch `tickets/2016-protein-change-resolution-keeps-the-named-variant`,
+  commits 1bf775733, 0663802e1, plus the review fold, 2026-10-07,
+  after one timeout revival with a checkpoint (nothing lost).
+- Code review: ACCEPT 2026-10-07. Verified: canonical_protein_change
+  shares the headline transcript selection with hgvs_p; the named-match
+  rule resolves TP53 C124Y, BRCA1 A314T, and BRCA1 C61G correctly while
+  1297's DICER1 and byte-identical EGFR refusal hold; the tests
+  genuinely encode the old rule's failures; the fixture serves only
+  recorded queries; receipts and inventory exact; the unannotated-set
+  refusal narrowing is safe, conservative, and now stated in the
+  ticket. Deferred honestly: the MANE/RefSeq-aware resolver stays with
+  the shared parser; variant.md reruns under the full fixture set
+  before tagging.
