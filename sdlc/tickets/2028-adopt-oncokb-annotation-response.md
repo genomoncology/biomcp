@@ -1,10 +1,10 @@
 # 2028 — Adopt the shared OncoKB annotation response
 
-Status: OPEN.
+Status: COMPLETE.
 Milestone: 1.0
 Component: backend
 Owner: Root owns the consumer queue and paired producer0716. A fresh builder will own only2028 after producer acceptance.
-Phase: Consumer BUILD released against accepted producerc46b3e6cfaf9659a8add076734b44afb4bccd002, BioData0.0.43.
+Phase: Reviewed, checked and landed through the actual helper.
 
 ## Outcome
 
@@ -33,3 +33,9 @@ Fresh Medium CODE review accepted producerbd6d0ae76609fe2afb55d6f7fc019013a5a54a
 The builder adopted the exact released0.0.43 Git pin in the assigned worktree. The actual helper owners passed before local schema and redundant test retirement. Runtime, retirement and focused registrations are ready for Root's fresh CODE review. Eleven affected Rust checks and154 distinct Python checks pass. The record separates the inherited Darwin isolation and workflow Ruff findings. The [build record](../records/2028-adopt-oncokb-annotation-response.md) records red evidence, preserved behavior and final affected checks. Root retains landing and pair ownership.
 
 The runtime CODE and registration correction are pushed. GitHub server errors block the final local qualification receipt push. Root receives that concrete delivery blocker in the owning build record.
+
+## Paired completion
+
+Reviews: accept
+Fresh Medium CODE review acceptedfe9d3f4ad01d3e6c5ba9a7e3242f805f7db6f4e4. Handoff72f521aa contains unchanged runtime, final receipts and minor test cleanup. Eleven affected Rust checks and154 distinct Python checks passed; inherited Darwin isolation and whole-gate findings remain separate. Five local source schema types and their successful decoder are retired.
+Landed: 15780faacade47553e17672f96f90de3614b89dc
