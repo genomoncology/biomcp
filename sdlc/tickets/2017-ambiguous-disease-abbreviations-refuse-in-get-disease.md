@@ -26,6 +26,71 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Proof: outside-in tests for MF, CAD, MM and MDS from recorded responses, each failing on `37631c357`, plus one single-holder abbreviation that still resolves.
 - Defers: curated abbreviation preferences.
 
+## Root cause
+
+Reproduced live on 2026-10-07 with a main-tree debug build at `bc8b1808b`
+against MyDisease.info; all four review cases confirmed.
+
+1. **Resolution picks one hit silently and the tie-break favours unlabelled
+   records.** The 1295 query now returns every disease that holds a token in
+   `disease_ontology.synonyms.exact` or `mondo.synonym.exact`.
+   `resolve_disease_hit_by_name` scores name and synonym labels equally
+   (an exact abbreviation synonym scores 320, the same as an exact name),
+   then breaks ties by shortest normalized canonical name
+   (`scored_best_candidate_for_queries`, `src/entities/disease/resolution.rs`).
+   A hit with no label in the search response falls back to its ID
+   (`name_from_mydisease_hit`), and `"mondo 0020481"` is shorter than
+   `"mycosis fungoides"`, so the unlabelled record wins: `MF` resolves to
+   MONDO:0020481 (Myotonia fluctuans), `CAD` to MONDO:0018922 (cold
+   agglutinin disease). Nothing counts exact holders, so one of several
+   holders is returned silently.
+2. **The card re-resolves the requested text per section.** The identity of
+   the card comes from one MyDisease hit, but the gene section queries
+   Open Targets with `disease.name` plus synonyms
+   (`add_genes_section`, `src/entities/disease/associations.rs`). When the
+   resolved record carries no label, `get_with_context` has already
+   overwritten `disease.name` with the requested abbreviation, so Open
+   Targets resolves `MF` on its own ontology (mycosis fungoides) and its
+   genes attach to the Myotonia fluctuans card; `CAD` gets coronary artery
+   disease genes the same way. Definition and genes therefore come from
+   different diseases.
+3. **`MM` resolves outright to Miyoshi muscular dystrophy.** MyDisease holds
+   `MM` as an exact synonym of exactly one record (MONDO:0009685), so rule 1
+   resolves it, but a clinician's `MM` is multiple myeloma, which holds no
+   `MM` synonym in the source. A single holder is not evidence the
+   abbreviation names that disease.
+4. **Search breaks exact-abbreviation ties by provider order**
+   (`rerank_disease_search_hits`): score, then display-name rank, then first
+   seen upstream. For `MDS` both holders tie at score 320, rank 0, and
+   MyDisease returns Miller-Dieker lissencephaly (score 10.81) above
+   myelodysplastic syndrome (10.03), so Miller-Dieker ranks first; unlabelled
+   abbreviation holders also surface above labelled ones.
+
+## Success criteria
+
+1. `get disease MF` and `get disease CAD` refuse with `invalid_argument`,
+   naming every exact holder (MF: MONDO:0020481 and mycosis fungoides;
+   CAD: all three holders), and never build a card that mixes one disease's
+   definition with another's genes.
+2. `get disease MDS` refuses the same way (Miller-Dieker lissencephaly
+   syndrome and myelodysplastic syndrome are both exact holders), and
+   `search disease MDS` ranks myelodysplastic syndrome first.
+3. `get disease MM` refuses: one source holder (Miyoshi muscular
+   dystrophy) is not enough for a two-letter abbreviation to name a disease;
+   the refusal names the holder. This also refuses two-letter tokens such as
+   `HD` (Huntington's disease in the source; Hodgkin disease in oncology
+   use), which is the honest cost of the rule.
+4. A single-holder abbreviation of three or more letters still resolves
+   (pinned on CRC), and the card's sections then come from that one record
+   only: when the resolved record has no label, the requested abbreviation
+   stays display-only and identity joins (genes, CIViC) use the record's own
+   terms or none.
+5. Labelled records outrank unlabelled ones in both `get` resolution and
+   `search` ranking; the 1295 spec table (NSCLC, DLBCL, CRC, AML, CAD
+   set-equality, HGSC miss, and the four full-name rows) stays green, and
+   the 1295 recall win survives because search still surfaces every exact
+   holder.
+
 ## Build status
 
 - Built on branch `tickets/2017-ambiguous-disease-abbreviations-refuse-in-get-disease`,

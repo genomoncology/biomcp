@@ -1,0 +1,240 @@
+{
+ "took": 1,
+ "total": 2,
+ "max_score": 11.1517,
+ "hits": [
+  {
+   "_id": "MONDO:0020481",
+   "_score": 11.1517,
+   "hpo": {
+    "phenotype_related_to_disease": [
+     {
+      "hpo_id": "HP:0001288"
+     },
+     {
+      "hpo_id": "HP:0001319"
+     },
+     {
+      "hpo_id": "HP:0002104"
+     },
+     {
+      "hpo_id": "HP:0003701"
+     },
+     {
+      "hpo_id": "HP:0003740"
+     },
+     {
+      "hpo_id": "HP:0010307"
+     },
+     {
+      "hpo_id": "HP:0025425"
+     },
+     {
+      "hpo_id": "HP:0030842"
+     },
+     {
+      "hpo_id": "HP:0003552"
+     },
+     {
+      "hpo_id": "HP:0100284"
+     },
+     {
+      "hpo_id": "HP:0002491"
+     },
+     {
+      "hpo_id": "HP:0008967"
+     },
+     {
+      "hpo_id": "HP:0012902"
+     },
+     {
+      "hpo_id": "HP:0012903"
+     },
+     {
+      "hpo_id": "HP:0000622"
+     },
+     {
+      "hpo_id": "HP:0000651"
+     },
+     {
+      "hpo_id": "HP:0003326"
+     },
+     {
+      "hpo_id": "HP:0012378"
+     },
+     {
+      "hpo_id": "HP:0012899"
+     },
+     {
+      "hpo_id": "HP:0012900"
+     },
+     {
+      "hpo_id": "HP:0000486"
+     }
+    ]
+   },
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "exercise-induced delayed-onset myotonia",
+      "Fluctuating myotonia",
+      "MF"
+     ]
+    }
+   }
+  },
+  {
+   "_id": "MONDO:0009691",
+   "_score": 5.4226236,
+   "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "name": "mycosis fungoides",
+    "synonyms": {
+     "exact": [
+      "mycosis fungoides lymphoma"
+     ]
+    }
+   },
+   "hpo": [
+    {
+     "phenotype_related_to_disease": [
+      {
+       "hpo_id": "HP:0008069"
+      },
+      {
+       "hpo_id": "HP:0000964"
+      },
+      {
+       "hpo_id": "HP:0002716"
+      },
+      {
+       "hpo_id": "HP:0000989"
+      },
+      {
+       "hpo_id": "HP:0200035"
+      },
+      {
+       "hpo_id": "HP:0010783"
+      },
+      {
+       "hpo_id": "HP:0002665"
+      },
+      {
+       "hpo_id": "HP:0003765"
+      }
+     ]
+    },
+    {
+     "phenotype_related_to_disease": [
+      {
+       "hpo_id": "HP:0000958"
+      },
+      {
+       "hpo_id": "HP:0000964"
+      },
+      {
+       "hpo_id": "HP:0000988"
+      },
+      {
+       "hpo_id": "HP:0000989"
+      },
+      {
+       "hpo_id": "HP:0002665"
+      },
+      {
+       "hpo_id": "HP:0004332"
+      },
+      {
+       "hpo_id": "HP:0008069"
+      },
+      {
+       "hpo_id": "HP:0010783"
+      },
+      {
+       "hpo_id": "HP:0200035"
+      },
+      {
+       "hpo_id": "HP:0001029"
+      },
+      {
+       "hpo_id": "HP:0001053"
+      },
+      {
+       "hpo_id": "HP:0001596"
+      },
+      {
+       "hpo_id": "HP:0002716"
+      },
+      {
+       "hpo_id": "HP:0007400"
+      },
+      {
+       "hpo_id": "HP:0012192"
+      },
+      {
+       "hpo_id": "HP:0025475"
+      },
+      {
+       "hpo_id": "HP:0000492"
+      },
+      {
+       "hpo_id": "HP:0000962"
+      },
+      {
+       "hpo_id": "HP:0000969"
+      },
+      {
+       "hpo_id": "HP:0001019"
+      },
+      {
+       "hpo_id": "HP:0001597"
+      },
+      {
+       "hpo_id": "HP:0001744"
+      },
+      {
+       "hpo_id": "HP:0002240"
+      },
+      {
+       "hpo_id": "HP:0005561"
+      },
+      {
+       "hpo_id": "HP:0007488"
+      },
+      {
+       "hpo_id": "HP:0200042"
+      },
+      {
+       "hpo_id": "HP:0001824"
+      },
+      {
+       "hpo_id": "HP:0001945"
+      },
+      {
+       "hpo_id": "HP:0030166"
+      }
+     ]
+    }
+   ],
+   "mondo": {
+    "synonym": {
+     "exact": [
+      "CTCL/ mycosis fungoides",
+      "cutaneous T-cell lymphoma/mycosis fungoides",
+      "MF",
+      "mycosis fungoides",
+      "mycosis fungoides (morphologic abnormality)",
+      "mycosis fungoides NOS (morphologic abnormality)",
+      "mycosis fungoides of unspecified site",
+      "mycosis fungoides, Alibert-Bazin type",
+      "mycosis fungoides, unspecified site, extranodal and solid organ sites"
+     ],
+     "related": [
+      "Alibert-Bazin syndrome",
+      "granuloma fungoides"
+     ]
+    }
+   }
+  }
+ ]
+}

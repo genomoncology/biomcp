@@ -211,14 +211,31 @@ pub(crate) async fn get_with_context(
     }
     let used_requested_label = disease.name.trim().is_empty()
         || disease.name.trim().eq_ignore_ascii_case(disease.id.trim());
-    if used_requested_label {
-        disease.name = name_or_id.to_string();
+    // The resolved record owns the card. When the record holds the requested
+    // term as a synonym (an abbreviation lookup), substituting the requested
+    // term for the missing label before enrichment would re-resolve the
+    // abbreviation in Open Targets and CIViC and attach another disease's
+    // genes, so the substitution stays display-only and the sections see the
+    // record's own terms (ticket 2017). A term the record does not hold as a
+    // synonym keeps the previous behavior: the caller's phrase is the best
+    // identity the record can offer.
+    let requested = name_or_id.trim();
+    let requested_is_record_alias = used_requested_label
+        && disease
+            .synonyms
+            .iter()
+            .any(|synonym| synonym.trim().eq_ignore_ascii_case(requested));
+    if used_requested_label && !requested_is_record_alias {
+        disease.name = requested.to_string();
     }
     disease.parents = resolve_parent_names(&client, &disease.parents).await;
     if !parsed_sections.explicit {
         enrich_base_context(&mut disease).await;
     }
     apply_requested_sections(&mut disease, parsed_sections, Some(name_or_id)).await?;
+    if used_requested_label {
+        disease.name = requested.to_string();
+    }
     Ok(DiseaseGetContext {
         disease,
         used_requested_label,

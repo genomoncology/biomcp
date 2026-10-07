@@ -6,6 +6,26 @@ use super::*;
 const EXACT_RESOLUTION_QUERY_SIZE: usize = 50;
 const MAX_EXACT_SYNONYMS: usize = 20;
 const MAX_PROVIDER_TERM_BYTES: usize = 256;
+/// Two-letter abbreviations never name one disease through `get disease`:
+/// `MM` names Miyoshi muscular dystrophy in the source while clinicians
+/// mean multiple myeloma, and `HD` names Huntington's disease while
+/// oncology means Hodgkin disease. A single source holder is not evidence
+/// for a token this short, so resolution refuses (ticket 2017).
+const SHORT_ABBREVIATION_MAX_LEN: usize = 2;
+
+fn is_short_abbreviation_token(token: &str) -> bool {
+    let token = token.trim();
+    !token.is_empty()
+        && token.len() <= SHORT_ABBREVIATION_MAX_LEN
+        && token.chars().all(|ch| ch.is_ascii_alphabetic())
+}
+
+/// A real label from the provider, as opposed to the ID fallback that
+/// `name_from_mydisease_hit` returns for records without a name.
+fn hit_label(hit: &MyDiseaseHit) -> Option<String> {
+    let name = transform::disease::name_from_mydisease_hit(hit);
+    (!name.eq_ignore_ascii_case(hit.id.trim())).then_some(name)
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ExactDiseaseTerms {
@@ -515,7 +535,7 @@ fn scored_best_candidate_for_queries(
         return None;
     }
 
-    let mut ranked: Vec<(i32, u8, usize, String, MyDiseaseHit)> = hits
+    let mut ranked: Vec<(i32, u8, u8, usize, String, MyDiseaseHit)> = hits
         .into_iter()
         .map(|hit| {
             let primary_name = transform::disease::name_from_mydisease_hit(&hit);
@@ -526,9 +546,14 @@ fn scored_best_candidate_for_queries(
                 .max()
                 .unwrap_or(0);
             let normalized_len = normalize_disease_text(&primary_name).len();
+            // Unlabelled records answer with their ID as the name, which is
+            // shorter than any real label and used to win the length
+            // tie-break (ticket 2017); a real label outranks the fallback.
+            let unlabelled = hit_label(&hit).is_none() as u8;
             (
                 best_score,
                 best_exact_rank,
+                unlabelled,
                 normalized_len,
                 hit.id.clone(),
                 hit,
@@ -541,8 +566,9 @@ fn scored_best_candidate_for_queries(
             .then_with(|| b.1.cmp(&a.1))
             .then_with(|| a.2.cmp(&b.2))
             .then_with(|| a.3.cmp(&b.3))
+            .then_with(|| a.4.cmp(&b.4))
     });
-    ranked.into_iter().next().map(|(_, _, _, _, hit)| hit)
+    ranked.into_iter().next().map(|(_, _, _, _, _, hit)| hit)
 }
 
 pub(super) fn resolver_queries(name_or_id: &str) -> Vec<String> {
@@ -623,6 +649,13 @@ pub(super) fn rerank_disease_search_hits(
             (
                 best_disease_candidate_score(query, &candidate.hit),
                 disease_exact_rank(&display_name, query),
+                // Ties among equal holders resolve to the labelled record
+                // first, then the shorter canonical name: `MDS` ranks
+                // myelodysplastic syndrome above Miller-Dieker lissencephaly,
+                // and unlabelled abbreviation holders must not surface above
+                // labelled ones (ticket 2017).
+                hit_label(&candidate.hit).is_none() as u8,
+                normalize_disease_text(&display_name).len(),
                 candidate.first_seen_query_idx,
                 candidate.first_seen_upstream_idx,
                 candidate.hit.id.clone(),
@@ -636,16 +669,87 @@ pub(super) fn rerank_disease_search_hits(
             .then_with(|| a.2.cmp(&b.2))
             .then_with(|| a.3.cmp(&b.3))
             .then_with(|| a.4.cmp(&b.4))
+            .then_with(|| a.5.cmp(&b.5))
+            .then_with(|| a.6.cmp(&b.6))
     });
-    ranked.into_iter().map(|(_, _, _, _, _, hit)| hit).collect()
+    ranked
+        .into_iter()
+        .map(|(_, _, _, _, _, _, _, hit)| hit)
+        .collect()
+}
+
+/// Diseases in a candidate set that hold `query` as an exact name or exact
+/// synonym, ordered by ID so refusal messages are stable.
+fn exact_token_holder_ids<'a>(
+    query: &str,
+    hits: impl IntoIterator<Item = &'a MyDiseaseHit>,
+) -> Vec<String> {
+    let mut holder_ids: Vec<String> = hits
+        .into_iter()
+        .filter(|hit| exact_hit_matches(query, hit))
+        .map(|hit| hit.id.clone())
+        .collect();
+    holder_ids.sort();
+    holder_ids
+}
+
+fn abbreviation_candidate_lines(holders: &[MyDiseaseHit]) -> String {
+    holders
+        .iter()
+        .map(|hit| match hit_label(hit) {
+            Some(label) => format!("- {label} ({})\n", hit.id),
+            None => format!("- {} (no label in the search response)\n", hit.id),
+        })
+        .collect()
+}
+
+fn ambiguous_abbreviation_error(
+    requested: &str,
+    holders: &[MyDiseaseHit],
+    short_token: bool,
+) -> BioMcpError {
+    let reason = if short_token {
+        format!(
+            "the source holds it on {} disease{}, but a token this short cannot name one disease reliably",
+            holders.len(),
+            if holders.len() == 1 { "" } else { "s" },
+        )
+    } else {
+        format!(
+            "{} diseases hold it as an exact name or synonym",
+            holders.len()
+        )
+    };
+    BioMcpError::InvalidArgument(format!(
+        "Ambiguous disease abbreviation '{requested}': {reason}; \
+BioMCP refuses rather than return one disease's definition with another's genes.\n\
+Candidates:\n{}\
+Retry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"{requested}\"` to see every match.",
+        abbreviation_candidate_lines(holders),
+    ))
 }
 
 pub(crate) async fn resolve_disease_hit_by_name(
     client: &MyDiseaseClient,
     name_or_id: &str,
 ) -> Result<MyDiseaseHit, BioMcpError> {
-    if let Some(best) = resolve_disease_hit_by_name_direct(client, name_or_id).await? {
-        return Ok(best);
+    match resolve_disease_hit_by_name_direct(client, name_or_id).await? {
+        DirectNameResolution::AmbiguousAbbreviation {
+            requested,
+            holders,
+        } => {
+            // Several holders explain the refusal on their own; the
+            // short-token reason is for the single-holder case like `MM`.
+            let short_token =
+                holders.len() == 1 && is_short_abbreviation_token(&requested);
+            return Err(ambiguous_abbreviation_error(
+                &requested,
+                &holders,
+                short_token,
+            ));
+        }
+        DirectNameResolution::Resolved(best) => return Ok(best),
+        DirectNameResolution::Unresolved => {}
     }
     if let Some(best) = resolve_disease_hit_via_discover_fallback(client, name_or_id).await? {
         return Ok(best);
@@ -658,13 +762,25 @@ pub(crate) async fn resolve_disease_hit_by_name(
     })
 }
 
+pub(super) enum DirectNameResolution {
+    Resolved(MyDiseaseHit),
+    Unresolved,
+    /// The requested token is held by several diseases, or by one disease
+    /// while being too short to name any disease; either way `get disease`
+    /// must refuse instead of picking silently (ticket 2017).
+    AmbiguousAbbreviation {
+        requested: String,
+        holders: Vec<MyDiseaseHit>,
+    },
+}
+
 pub(super) async fn resolve_disease_hit_by_name_direct(
     client: &MyDiseaseClient,
     name_or_id: &str,
-) -> Result<Option<MyDiseaseHit>, BioMcpError> {
+) -> Result<DirectNameResolution, BioMcpError> {
     let queries = resolver_queries(name_or_id);
     if queries.is_empty() {
-        return Ok(None);
+        return Ok(DirectNameResolution::Unresolved);
     }
 
     let mut candidates: HashMap<String, MyDiseaseHit> = HashMap::new();
@@ -675,13 +791,28 @@ pub(super) async fn resolve_disease_hit_by_name_direct(
         }
     }
 
+    let requested = name_or_id.trim();
+    let holder_ids = exact_token_holder_ids(requested, candidates.values());
+    if holder_ids.len() > 1 || (holder_ids.len() == 1 && is_short_abbreviation_token(requested)) {
+        let holders = holder_ids
+            .iter()
+            .filter_map(|id| candidates.remove(id))
+            .collect();
+        return Ok(DirectNameResolution::AmbiguousAbbreviation {
+            requested: requested.to_string(),
+            holders,
+        });
+    }
+
     Ok(
-        scored_best_candidate_for_queries(&queries, candidates.into_values().collect()).filter(
-            |hit| {
+        match scored_best_candidate_for_queries(&queries, candidates.into_values().collect())
+            .filter(|hit| {
                 best_disease_candidate_score_for_queries(&queries, hit)
                     >= MIN_DIRECT_DISEASE_MATCH_SCORE
-            },
-        ),
+            }) {
+            Some(hit) => DirectNameResolution::Resolved(hit),
+            None => DirectNameResolution::Unresolved,
+        },
     )
 }
 
