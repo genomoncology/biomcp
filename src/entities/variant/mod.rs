@@ -390,13 +390,19 @@ mod clinvar {
     /// digits. Provider spellings like "01 Apr 2019" or reordered forms are
     /// omitted rather than trusted.
     fn is_day_shaped(value: &str) -> bool {
+        let bytes = value.as_bytes();
+        let digits_at =
+            |indices: [usize; 8]| indices.iter().all(|index| bytes[*index].is_ascii_digit());
         value.len() == 10
-            && value.as_bytes()[4] == b'-'
-            && value.as_bytes()[7] == b'-'
-            && value
-                .bytes()
-                .enumerate()
-                .all(|(index, byte)| index == 4 || index == 7 || byte.is_ascii_digit())
+            && bytes[4] == b'-'
+            && bytes[7] == b'-'
+            && digits_at([0, 1, 2, 3, 5, 6, 8, 9])
+            && value[5..7]
+                .parse::<u8>()
+                .is_ok_and(|month| (1..=12).contains(&month))
+            && value[8..10]
+                .parse::<u8>()
+                .is_ok_and(|day| (1..=31).contains(&day))
     }
 
     fn fallback_evaluation_date(record: Option<&ClinvarRecord>) -> Option<&str> {
