@@ -95,6 +95,7 @@ prepare-spec:
 
 spec:
 	$(MAKE) prepare-spec
+	$(MAKE) sync-python-dev
 	tools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec
 	tools/run-offline -- $(MAKE) spec-static
 

@@ -13,10 +13,12 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 DOC = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
 
 RUST_JOBS = [
@@ -67,6 +69,32 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
         "CHANGELOG.md is read by tests/test_docs_changelog_refresh.py; "
         "a changelog-only push must run the lane that carries it"
     )
+
+
+def _assert_no_moving_ubuntu_label(text: str) -> None:
+    assert "ubuntu-latest" not in text, (
+        "ubuntu-latest is a moving label: GitHub moves it to Ubuntu 26 "
+        "on 2026-10-19, which can change a release without a repository "
+        "change. Pin the image version (ubuntu-24.04) instead."
+    )
+
+
+def test_no_workflow_job_runs_on_the_moving_ubuntu_latest_label() -> None:
+    """Ticket 2024: every workflow job runs on a pinned image.
+
+    The 2026-10-07 review found four release and contract jobs still
+    on ubuntu-latest while every other job pinned ubuntu-24.04. The
+    ban covers the file text, not only runs-on keys, so a matrix or
+    a reuse block cannot smuggle the label back in either.
+    """
+    for path in sorted(WORKFLOWS.glob("*.yml")):
+        _assert_no_moving_ubuntu_label(path.read_text(encoding="utf-8"))
+
+
+def test_the_ubuntu_label_ban_catches_a_planted_ubuntu_latest() -> None:
+    """Red proof: planting the moving label anywhere fails the ban."""
+    with pytest.raises(AssertionError, match="moving label"):
+        _assert_no_moving_ubuntu_label("    runs-on: ubuntu-latest\n")
 
 
 def test_every_rust_job_waits_on_the_changes_job() -> None:
