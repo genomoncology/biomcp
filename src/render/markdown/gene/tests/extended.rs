@@ -28,11 +28,10 @@ fn gene_markdown_section_only_shows_constraint_section() {
         gencc: None,
         clingen: None,
         constraint: Some(crate::entities::gene::GeneConstraint {
-            pli: None,
-            loeuf: None,
-            mis_z: None,
-            syn_z: None,
-            transcript: Some("ENST00000269305".to_string()),
+            record: biodata::GnomadGeneConstraintProjection::deserialize_constraint_target(
+                &serde_json::json!({"transcript": "ENST00000269305"}),
+            )
+            .unwrap(),
             source: "gnomAD".to_string(),
             source_version: "v4".to_string(),
             reference_genome: "GRCh38".to_string(),

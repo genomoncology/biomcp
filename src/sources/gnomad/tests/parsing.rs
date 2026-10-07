@@ -24,32 +24,6 @@ fn parse_fixture(name: &[u8]) -> Result<Option<GnomadConstraintData>, BioMcpErro
 }
 
 #[test]
-fn gene_constraint_maps_metrics_and_transcript() {
-    let constraint = parse_fixture(fixture!("constraint_tp53.json"))
-        .unwrap()
-        .expect("gene result");
-
-    assert_eq!(constraint.transcript.as_deref(), Some("ENST00000269305"));
-    assert_eq!(constraint.pli, Some(0.9979));
-    assert_eq!(constraint.loeuf, Some(0.449));
-    assert_eq!(constraint.mis_z, Some(1.1539));
-    assert_eq!(constraint.syn_z, Some(0.9583));
-}
-
-#[test]
-fn gene_constraint_returns_some_with_transcript_when_constraint_is_null() {
-    let constraint = parse_fixture(fixture!("constraint_ddx3x_null.json"))
-        .unwrap()
-        .expect("gene result");
-
-    assert_eq!(constraint.transcript.as_deref(), Some("ENST00000644876"));
-    assert_eq!(constraint.pli, None);
-    assert_eq!(constraint.loeuf, None);
-    assert_eq!(constraint.mis_z, None);
-    assert_eq!(constraint.syn_z, None);
-}
-
-#[test]
 fn gene_constraint_returns_none_for_gene_not_found() {
     let constraint =
         parse_fixture(fixture!("constraint_not_found.json")).expect("not found should degrade");

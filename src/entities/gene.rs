@@ -164,19 +164,22 @@ pub struct GeneInteraction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneConstraint {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pli: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub loeuf: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mis_z: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub syn_z: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub transcript: Option<String>,
+    #[serde(
+        flatten,
+        serialize_with = "serialize_constraint_record",
+        deserialize_with = "biodata::GnomadGeneConstraintProjection::deserialize_constraint_target"
+    )]
+    pub record: biodata::GnomadGeneConstraintProjection,
     pub source: String,
     pub source_version: String,
     pub reference_genome: String,
+}
+
+fn serialize_constraint_record<S: serde::Serializer>(
+    record: &biodata::GnomadGeneConstraintProjection,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    record.as_constraint_target().serialize(serializer)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -777,11 +780,11 @@ fn complete_gene_section_outcomes(gene: &mut Gene, include: &[GeneIncludeType]) 
             ),
             GeneIncludeType::Constraint => (
                 gene.constraint.as_ref().is_some_and(|value| {
-                    value.pli.is_some()
-                        || value.loeuf.is_some()
-                        || value.mis_z.is_some()
-                        || value.syn_z.is_some()
-                        || value.transcript.is_some()
+                    value.record.pli().is_some()
+                        || value.record.loeuf().is_some()
+                        || value.record.mis_z().is_some()
+                        || value.record.syn_z().is_some()
+                        || value.record.transcript().is_some()
                 }),
                 false,
                 "gnomAD",
@@ -1851,30 +1854,20 @@ fn merge_druggability_results(
     }
     merged
 }
-fn gnomad_constraint_section(
-    transcript: Option<String>,
-    pli: Option<f64>,
-    loeuf: Option<f64>,
-    mis_z: Option<f64>,
-    syn_z: Option<f64>,
-) -> GeneConstraint {
+fn gnomad_constraint_section(record: biodata::GnomadGeneConstraintProjection) -> GeneConstraint {
     GeneConstraint {
-        pli,
-        loeuf,
-        mis_z,
-        syn_z,
-        transcript,
+        record,
         source: "gnomAD".to_string(),
         source_version: GNOMAD_CONSTRAINT_VERSION.to_string(),
         reference_genome: GNOMAD_CONSTRAINT_REFERENCE_GENOME.to_string(),
     }
 }
 fn gnomad_constraint_outcome(constraint: &GeneConstraint) -> SectionOutcome {
-    if constraint.transcript.is_some()
-        || constraint.pli.is_some()
-        || constraint.loeuf.is_some()
-        || constraint.mis_z.is_some()
-        || constraint.syn_z.is_some()
+    if constraint.record.transcript().is_some()
+        || constraint.record.pli().is_some()
+        || constraint.record.loeuf().is_some()
+        || constraint.record.mis_z().is_some()
+        || constraint.record.syn_z().is_some()
     {
         SectionOutcome::data("gnomAD")
     } else {
@@ -1888,7 +1881,7 @@ async fn fetch_constraint_section(
     let symbol = symbol.trim();
     if symbol.is_empty() {
         return (
-            gnomad_constraint_section(None, None, None, None, None),
+            gnomad_constraint_section(biodata::GnomadGeneConstraintProjection::empty()),
             SectionOutcome::empty("gnomAD"),
         );
     }
@@ -1898,18 +1891,12 @@ async fn fetch_constraint_section(
     };
     match tokio::time::timeout(timeout, constraint_fut).await {
         Ok(Ok(Some(constraint))) => {
-            let section = gnomad_constraint_section(
-                constraint.transcript,
-                constraint.pli,
-                constraint.loeuf,
-                constraint.mis_z,
-                constraint.syn_z,
-            );
+            let section = gnomad_constraint_section(constraint);
             let outcome = gnomad_constraint_outcome(&section);
             (section, outcome)
         }
         Ok(Ok(None)) => (
-            gnomad_constraint_section(None, None, None, None, None),
+            gnomad_constraint_section(biodata::GnomadGeneConstraintProjection::empty()),
             SectionOutcome::empty("gnomAD"),
         ),
         Ok(Err(err)) => {
@@ -1918,7 +1905,7 @@ async fn fetch_constraint_section(
                 "gnomAD unavailable for gene constraint section: {err}"
             );
             (
-                gnomad_constraint_section(None, None, None, None, None),
+                gnomad_constraint_section(biodata::GnomadGeneConstraintProjection::empty()),
                 SectionOutcome::unavailable("gnomAD gene constraint is unavailable."),
             )
         }
@@ -1929,7 +1916,7 @@ async fn fetch_constraint_section(
                 "gnomAD gene constraint section timed out"
             );
             (
-                gnomad_constraint_section(None, None, None, None, None),
+                gnomad_constraint_section(biodata::GnomadGeneConstraintProjection::empty()),
                 SectionOutcome::unavailable("gnomAD gene constraint is unavailable."),
             )
         }
@@ -2844,11 +2831,11 @@ pub async fn get_with_report(
             "constraint",
             started,
             if gene.constraint.as_ref().is_some_and(|section| {
-                section.pli.is_some()
-                    || section.loeuf.is_some()
-                    || section.mis_z.is_some()
-                    || section.syn_z.is_some()
-                    || section.transcript.is_some()
+                section.record.pli().is_some()
+                    || section.record.loeuf().is_some()
+                    || section.record.mis_z().is_some()
+                    || section.record.syn_z().is_some()
+                    || section.record.transcript().is_some()
             }) {
                 "data"
             } else {
@@ -3337,12 +3324,21 @@ mod tests {
     }
     #[test]
     fn gnomad_constraint_without_metrics_is_healthy_empty() {
-        let empty = gnomad_constraint_section(None, None, None, None, None);
+        let empty = gnomad_constraint_section(biodata::GnomadGeneConstraintProjection::empty());
         assert_eq!(
             gnomad_constraint_outcome(&empty).outcome(),
             SectionOutcomeState::Empty
         );
-        let data = gnomad_constraint_section(Some("ENST0001".to_string()), None, None, None, None);
+        let data = gnomad_constraint_section(
+            biodata::GnomadGeneConstraintProjection::try_new(
+                Some("ENST0001".to_string()),
+                None,
+                None,
+                None,
+                None,
+            )
+            .unwrap(),
+        );
         assert_eq!(
             gnomad_constraint_outcome(&data).outcome(),
             SectionOutcomeState::Data
@@ -3869,3 +3865,6 @@ mod tests {
 
 #[cfg(test)]
 mod identity_surface_tests;
+
+#[cfg(test)]
+mod constraint_surface_tests;
