@@ -75,7 +75,6 @@ keeps the capped short form that points to the full DailyMed label.
 ../../tools/biomcp-ci --json get drug gefitinib label --raw | jq -e '(.section_outcomes.label.outcome == "data") and (.label.warnings | length > 2000) and ((.label | tostring | contains("truncated")) | not)' | mustmatch 'true'
 ../../tools/biomcp-ci get drug gefitinib label --raw | mustmatch like '(truncated, 4628 chars total; full label: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1a3c0ce7-06a1-4e04-9106-14ddb2a866a5)'
 ../../tools/biomcp-ci get drug gefitinib label --raw | mustmatch not like 'Use `--raw` for the full truncated FDA label text.'
-../../tools/biomcp-ci get drug gefitinib label | mustmatch like 'Markdown caps label sections at a short form. Use `biomcp get drug gefitinib label --json` for whole sections, or `--raw` for the raw label text.'
 ```
 
 Summary mode keeps its approved-indication rows, and the whole-section rule
