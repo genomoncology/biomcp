@@ -22,3 +22,18 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: also count `Land NNNN:` first-parent subjects on the release range, and any ticket whose status moved to complete in the range. Route `CHANGELOG.md` pushes through the changelog test.
 - Proof: a scratch-tag test over a range containing a `Land NNNN:` merge with no bullet fails the gate. On main after 0.9.2's queue lands, the gate lists 1290 through 1306 plus this round's tickets.
 - Defers: nothing.
+
+## Build status
+
+- Built on branch `tickets/2019-changelog-gate-counts-land-commits`,
+  commit 99f2f87e5, 2026-10-07.
+- Code review: ACCEPT 2026-10-07 for the lane's commit (the
+  Land-subject union, six new tests — the builder's report said seven,
+  six is correct —, real-main proof demanding exactly the 17-ticket
+  list with finding 4's six as the delta, release-process doc match,
+  no private names). Three P2s, none blocking the commit: the report's
+  test count, an all-subjects scan broader than the Changes' first-
+  parent wording (fail-closed direction, accepted), and the two
+  remaining Changes items — status-complete counting and ci-classify
+  CHANGELOG routing — which stay on this ticket and are being finished
+  on the lane before landing.

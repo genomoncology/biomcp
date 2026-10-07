@@ -55,6 +55,24 @@ the case-insensitive comparison, the recorded vaccines capture must
 preserve the raw trailing space byte, and the test must pin the
 trim-then-compare behavior against it.
 
+## Build status
+
+- Landed on main 2026-10-06 (merge ffc194bc3) after CI, yellow gates,
+  and the reporter follow-up fold. QA gate mooted by the QA-team
+  dissolution noted in the queue record.
+- Code review: ACCEPT 2026-10-07 (post-landing, filling the missing
+  review the 2026-10-07 adversarial review flagged as finding 7).
+  Verified: the re-derived header sets with case-insensitive trimmed
+  comparison, per-file sync outcomes with nonzero exit and named
+  missing files, EMA-style degrade only for region-less search with
+  explicit-region failures staying loud, validation errors naming the
+  file and column, and pre-1304 caches staying readable. Static
+  mutation check corroborated by the adversarial review's executed
+  mutations. Three report-only P2s: JSON/MCP gap visibility (ticket
+  2021, in flight), a self-referential "run who sync" hint inside the
+  sync error itself (folded to 2021's lane), and the missing changelog
+  bullet (owned by 1305 and 2019).
+
 ## Keeps
 
 - `--region us` and `--region eu` behavior stays unchanged.
