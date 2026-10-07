@@ -309,7 +309,10 @@ async fn guarded_legacy_detail_retains_long_abstract_and_license() {
     )
     .await
     .expect("guarded legacy detail");
-    assert_eq!(article.abstract_text.as_deref(), Some("A".repeat(1700).as_str()));
+    assert_eq!(
+        article.abstract_text.as_deref(),
+        Some("A".repeat(1700).as_str())
+    );
     assert_eq!(article.europepmc_license.as_deref(), Some("CC BY"));
 }
 
