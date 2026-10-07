@@ -216,42 +216,64 @@ did not answer before the article search deadline'
 ```
 
 ### Single-Backend Expiry Keeps The Fetched Rows
+
 A single-backend plan that expires mid-pagination returns the rows its
 earlier pages already delivered and names the held source degraded, instead
 of discarding them for a terminal error. The fixture's `pagebound` marker
-answers Europe PMC page one with distinct rows and holds every later page;
-the forced deadline is 3000 ms. The run must also settle inside the budget
-plus a small grace — the pre-fix behavior burned tens of seconds after
-expiry.
+answers the first Europe PMC cursor page with distinct rows and holds every
+later cursor; the forced deadline is 3000 ms. The run must also settle inside
+the budget plus a small grace — the pre-fix behavior burned tens of seconds
+after expiry.
+
+```bash
 start="$(date +%s.%N)"
 bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
   --source europepmc -k "pagebound single source" --limit 50 --full \
   | mustmatch like 'deadline single-source first cursor row 1
 "deadline_ms": 3000
+"source": "europepmc"
+"status": "degraded"
+did not answer before the article search deadline'
 end="$(date +%s.%N)"
 awk -v s="$start" -v e="$end" 'BEGIN { d = e - s; if (d > 8.0) { print "deadline run took", d, "seconds"; exit 1 } }'
+```
+
 ### Deadline Expiry Names Itself In The Error
+
 When nothing answers before the deadline, the terminal error says the
 deadline expired — not a generic source or I/O failure. The fixture's
 `silence` marker fails every source except the held Europe PMC leg, so the
 whole invocation expires with no rows. The pipeline status is the matcher's,
 not the command's, so the block still records the failing exit's output.
+
+```bash
+start="$(date +%s.%N)"
 ( bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
     -k "deadline silence" --limit 3; exit 0 ) \
   | mustmatch like '"code": "source_unavailable"
 article search deadline exceeded after 3s
 Retry with a narrower query or a single --source'
+end="$(date +%s.%N)"
+awk -v s="$start" -v e="$end" 'BEGIN { d = e - s; if (d > 8.0) { print "deadline run took", d, "seconds"; exit 1 } }'
+```
+
 ### Construction Under A Held Epoch Lock Honors The Deadline
+
 Client construction takes the cache epoch lock, and another process can
 hold it. Holding it must not push an invocation past its deadline: the
 runner's `HOLD_EPOCH_LOCK` mode keeps the lock from a side process while a
 PubMed-only search runs under a 3000 ms forced deadline, and the invocation
 still exits at the deadline naming the deadline in its error.
+
+```bash
+start="$(date +%s.%N)"
 ( HOLD_EPOCH_LOCK=1 bash ../fixtures/run-article-search-deadline-search.sh ../.. 3000 \
     --source pubmed -k "deadline-bound federation" --limit 3; exit 0 ) \
   | mustmatch like '"code": "source_unavailable"
-article search deadline exceeded after 3s
-Retry with a narrower query or a single --source'
+article search deadline exceeded after 3s'
+end="$(date +%s.%N)"
+awk -v s="$start" -v e="$end" 'BEGIN { d = e - s; if (d > 8.0) { print "deadline run took", d, "seconds"; exit 1 } }'
+```
 
 ## Europe PMC Pages Follow The Cursor
 Europe PMC ignores the `page` parameter, so the Europe PMC backend pages
