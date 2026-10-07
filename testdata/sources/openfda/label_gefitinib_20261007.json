@@ -1,0 +1,317 @@
+{
+ "meta": {
+  "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+  "terms": "https://open.fda.gov/terms/",
+  "license": "https://open.fda.gov/license/",
+  "last_updated": "2026-10-06",
+  "results": {
+   "skip": 0,
+   "limit": 5,
+   "total": 4
+  }
+ },
+ "results": [
+  {
+   "set_id": "1a3c0ce7-06a1-4e04-9106-14ddb2a866a5",
+   "effective_time": "20260310",
+   "openfda": {
+    "application_number": [
+     "ANDA212827"
+    ],
+    "brand_name": [
+     "Gefitinib"
+    ],
+    "generic_name": [
+     "GEFITINIB"
+    ],
+    "manufacturer_name": [
+     "Natco Pharma USA LLC"
+    ],
+    "product_ndc": [
+     "69339-168"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "GEFITINIB"
+    ],
+    "rxcui": [
+     "349472"
+    ],
+    "spl_id": [
+     "5a5b1155-767f-4e57-bd89-c67c80b40972"
+    ],
+    "spl_set_id": [
+     "1a3c0ce7-06a1-4e04-9106-14ddb2a866a5"
+    ],
+    "package_ndc": [
+     "69339-168-03"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0369339168035"
+    ],
+    "nui": [
+     "N0000175605",
+     "N0000175076"
+    ],
+    "pharm_class_epc": [
+     "Kinase Inhibitor [EPC]"
+    ],
+    "pharm_class_moa": [
+     "Protein Kinase Inhibitors [MoA]"
+    ],
+    "unii": [
+     "S65743JHBS"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Gefitinib Gefitinib GEFITINIB GEFITINIB LACTOSE MONOHYDRATE MICROCRYSTALLINE CELLULOSE 101 MICROCRYSTALLINE CELLULOSE 102 CROSCARMELLOSE SODIUM POVIDONE K30 SODIUM LAURYL SULFATE MAGNESIUM STEARATE POLYVINYL ALCOHOL POLYETHYLENE GLYCOL TALC FERRIC OXIDE YELLOW FERRIC OXIDE RED TITANIUM DIOXIDE N;250"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE Gefitinib tablets are indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test [see Clinical Studies (14) ]. Limitation of Use: Safety and efficacy of gefitinib tablets have not been established in patients with metastatic NSCLC whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations [see Clinical Studies (14) ]. Gefitinib tablets are tyrosine kinase inhibitor indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test. ( 1 ) Limitation of Use: Safety and efficacy of gefitinib tablets have not been established in patients whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations. ( 1 )"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Interstitial lung disease (ILD): ILD occurred in patients taking gefitinib tablets Withhold gefitinib tablets for worsening of respiratory symptoms. Discontinue gefitinib tablets if ILD is confirmed. ( 2.4 , 5.1 ) Hepatotoxicity: Obtain periodic liver function testing. Withhold gefitinib tablets for Grade 2 or higher for ALT and/or AST elevations. Discontinue for severe hepatic impairment. ( 2.4 , 5.2 ) Gastrointestinal perforation: Discontinue gefitinib tablets for gastrointestinal perforation. ( 2.4 , 5.3 ) Diarrhea: Withhold gefitinib tablets for Grade 3 or higher diarrhea. ( 2.4 , 5.4 ) Ocular Disorders including Keratitis: Withhold gefitinib tablets for signs and symptoms of severe or worsening ocular disorders including keratitis. Discontinue for persistent ulcerative keratitis. ( 2.4 , 5.5 ) Bullous and Exfoliative Skin Disorders: Withhold gefitinib tablets for Grade 3 or higher skin reactions or exfoliative conditions. ( 2.4 , 5.6 ) Embryo-fetal Toxicity: Can cause fetal harm. Advise of potential risk to a fetus and use of effective contraception. ( 5.7 , 8.1 , 8.3 ) 5.1 Interstitial Lung Disease (ILD) ILD or ILD-like adverse drug reactions (e.g., lung infiltration, pneumonitis, acute respiratory distress syndrome, or pulmonary fibrosis) occurred in 1.3% of the 2462 patients who received gefitinib tablets across clinical trials; of these, 0.7% were Grade 3 or higher and 3 cases were fatal. Withhold gefitinib tablets and promptly investigate for ILD in any patient who presents with worsening of respiratory symptoms such as dyspnea, cough and fever. Permanently discontinue gefitinib tablets if ILD is confirmed [see Dosage and Administration (2.4) , Adverse Reactions (6.1) ]. 5.2 Hepatotoxicity In patients who received gefitinib tablets across clinical trials, 11.4% of patients had increased alanine aminotransferase (ALT), 7.9% of patients had increased aspartate aminotransferase (AST), and 2.7% of patients had increased bilirubin. Grade 3 or higher liver test abnormalities occurred in 5.1% (ALT), 3.0% (AST), and 0.7% (bilirubin) of patients. The incidence of fatal hepatotoxicity was 0.04%. Obtain periodic liver function testing. Withhold gefitinib tablets in patients with worsening liver function and discontinue in patients with severe hepatic impairment [see Dosage and Administration (2.4) , Adverse Reactions (6.1) , Use in Specific Populations (8.7) ]. 5.3 Gastrointestinal Perforation Gastrointestinal perforation occurred in three (0.1%) of the 2462 gefitinib tablets-treated patients across clinical trials [see Adverse Reactions (6.1)]. Permanently discontinue gefitinib tablets in patients who develop gastrointestinal perforation [see Dosage and Administration (2.4) ]. 5.4 Severe or Persistent Diarrhea Grade 3 or 4 diarrhea occurred in 3% of 2462 gefitinib tablets-treated patients across clinical trials. Withhold gefitinib tablets for severe or persistent (up to 14 days) diarrhea [see Dosage and Administration (2.4) , Adverse Reactions (6.1) ]. 5.5 Ocular Disorders including Keratitis Ocular disorders [keratitis (0.1%), corneal erosion and aberrant eyelash growth (0.2%), conjunctivitis, blephritis and dry eye (6.7%)] occurred in the 2462 gefitinib tablets -treated patients across clinical trials. The incidence of Grade 3 ocular disorders was 0.1% [see Adverse Reactions (6.1) ]. Interrupt or discontinue gefitinib tablets for severe, or worsening ocular disorders [see Dosage and Administration (2.4) ]. 5.6 Bullous and Exfoliative Skin Disorders Bullous conditions including toxic epidermal necrolysis, Stevens Johnson syndrome and erythema multiforme have been reported from treatment with gefitinib tablets. Erythema multiforme and dermatitis bullous have been reported in two patients (0.08%) across NSCLC trials (Study 2, Study 3 and Study 4). Gefitinib tablets treatment should be interrupted or discontinued if the patient develops severe bullous, blistering or exfoliating conditions. 5.7 Embryo-fetal Toxicity Based on its mechanism of action and data from animal reproduction studies gefitinib tablets can cause fetal harm when administered to a pregnant woman. In animal reproductive studies, oral administration of gefitinib from organogenesis through weaning resulted in fetotoxicity and neonatal death at doses below the recommended human dose. Advise pregnant women of the potential risk to a fetus. Advise females of reproductive potential to use effective contraception during treatment with gefitinib tablets and for at least two weeks following completion of therapy [see Use in Specific Populations (8.1 , 8.3 )]."
+   ],
+   "dosage_and_administration": [
+    "2 DOSAGE AND ADMINISTRATION Recommended dose is 250 mg orally, once daily with or without food. ( 2.2 ) 2.1 Patient Selection Select patients for the first-line treatment of metastatic NSCLC with gefitinib tablets are based on the presence of EGFR exon 19 deletions or exon 21 (L858R) mutations in their tumor or plasma specimens [see Indications and Usage (1) , Clinical Studies (14) ]. If these mutations are not detected in a plasma specimen, test tumor tissue if feasible. Information on FDA-approved tests for the detection of EGFR mutations in NSCLC is available at: http://www.fda.gov/Companion Diagnostics. 2.2 Recommended Dose The recommended dose of gefitinib tablets is 250 mg orally once daily with or without food until disease progression or unacceptable toxicity. Do not take a missed dose within 12 hours of the next dose. 2.3 Administration to Patients Who Have Difficulty Swallowing Solids Immerse gefitinib tablet in 4 to 8 ounces of water by dropping the tablet in water, and stir for approximately 15 minutes. Immediately drink the liquid or administer through a naso-gastric tube. Rinse the container with 4 to 8 ounces of water and immediately drink or administer through the naso-gastric tube. 2.4 Dose Modification Dose Modifications for Adverse Drug Reactions Withhold gefitinib tablets (for up to 14 days) for any of the following: Acute onset or worsening of pulmonary symptoms (dyspnea, cough, fever) [see Warnings and Precautions (5.1) ] NCI CTCAE Grade 2 or higher in ALT and/or AST elevations [see Warnings and Precautions (5.2) ] NCI CTCAE Grade 3 or higher diarrhea [see Warnings and Precautions (5.4) ] Signs and symptoms of severe or worsening ocular disorders including keratitis [see Warnings and Precautions (5.5) ] NCI CTCAE Grade 3 or higher skin reactions [see Warnings and Precautions (5.6) ] Resume treatment with gefitinib tablets when the adverse reaction fully resolves or improves to NCI CTCAE Grade 1. Permanently discontinue gefitinib tablets for: Confirmed interstitial lung disease (ILD) [see Warnings and Precautions (5.1) ] Severe hepatic impairment [see Warnings and Precautions (5.2) ] Gastrointestinal perforation [see Warnings and Precautions (5.3) ] Persistent ulcerative keratitis [see Warnings and Precautions (5.5) ] Dose Modifications for Drug Interactions Strong CYP3A4 Inducers Increase gefitinib tablets to 500 mg daily in the absence of severe adverse drug reaction, and resume gefitinib tablets at 250 mg seven days after discontinuation of the strong CYP3A4 inducer [see Drug Interactions (7) , Clinical Pharmacology (12.3) ]."
+   ],
+   "drug_interactions": [
+    "7 DRUG INTERACTIONS CYP3A4 Inducer: Increase gefitinib tablets to 500 mg daily in patients receiving a strong CYP3A4 inducer. ( 2.4 , 7.1 ) CYP3A4 Inhibitor: Monitor adverse reactions if concomitant use with gefitinib tablets. ( 7.1 ) Drugs Affecting Gastric pH: Avoid concomitant use of gefitinib tablets with proton pump inhibitors, if possible. ( 7.1 ) Hemorrhage in patients taking warfarin: Monitor changes in prothrombin time or INR. ( 7.2 ) 7.1 Drugs Affecting Gefitinib Exposure CYP3A4 Inducer Drugs that are strong inducers of CYP3A4 increase the metabolism of gefitinib and decrease gefitinib plasma concentrations. Increase gefitinib tablets to 500 mg daily in patients receiving a strong CYP3A4 inducer (e.g., rifampicin, phenytoin, or tricyclic antidepressant) and resume gefitinib tablets at 250 mg 7 days after discontinuation of the strong inducer [see Dosage and Administration (2.4) , Clinical Pharmacology (12.3) ]. CYP3A4 Inhibitor Drugs that are strong inhibitors of CYP3A4 (e.g., ketoconazole and itraconazole) decrease gefitinib metabolism and increase gefitinib plasma concentrations. Monitor adverse reactions when administering strong CYP3A4 inhibitors with gefitinib tablets. Drugs Affecting Gastric pH Drugs that elevate gastric pH (e.g., proton pump inhibitors, histamine H2-receptor antagonists, and antacids) may reduce plasma concentrations of gefitinib. Avoid concomitant use of gefitinib tablets with proton pump inhibitors, if possible. If treatment with a proton-pump inhibitor is required, take gefitinib tablets 12 hours after the last dose or 12 hours before the next dose of the proton-pump inhibitor. Take gefitinib tablets 6 hours after or 6 hours before an H2-receptor antagonist or an antacid [see Clinical Pharmacology (12.3) ]. 7.2 Hemorrhage in Patients taking Warfarin International Normalized Ratio (INR) elevations and/or hemorrhage have been reported in some patients taking warfarin while on gefitinib tablets therapy. Patients taking warfarin should be monitored regularly for changes in prothrombin time or INR."
+   ]
+  },
+  {
+   "set_id": "6402435f-9f6a-4f02-91a2-6267d783fa78",
+   "effective_time": "20231228",
+   "openfda": {
+    "application_number": [
+     "ANDA211591"
+    ],
+    "brand_name": [
+     "Gefitinib"
+    ],
+    "generic_name": [
+     "GEFITINIB"
+    ],
+    "manufacturer_name": [
+     "Ingenus Pharmaceuticals, LLC"
+    ],
+    "product_ndc": [
+     "50742-366"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "GEFITINIB"
+    ],
+    "rxcui": [
+     "349472"
+    ],
+    "spl_id": [
+     "932e3701-75ae-438f-bb6a-2c2662c73ee5"
+    ],
+    "spl_set_id": [
+     "6402435f-9f6a-4f02-91a2-6267d783fa78"
+    ],
+    "package_ndc": [
+     "50742-366-30"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175605",
+     "N0000175076"
+    ],
+    "pharm_class_epc": [
+     "Kinase Inhibitor [EPC]"
+    ],
+    "pharm_class_moa": [
+     "Protein Kinase Inhibitors [MoA]"
+    ],
+    "unii": [
+     "S65743JHBS"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Gefitinib Gefitinib GEFITINIB GEFITINIB LACTOSE MONOHYDRATE CELLULOSE, MICROCRYSTALLINE CROSCARMELLOSE SODIUM POVIDONE K30 SODIUM LAURYL SULFATE MAGNESIUM STEARATE POLYVINYL ALCOHOL, UNSPECIFIED POLYETHYLENE GLYCOL 3350 TALC TITANIUM DIOXIDE FERRIC OXIDE RED FERROSOFERRIC OXIDE FERRIC OXIDE YELLOW biconvex QL"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE Gefitinib tablets are indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test [ see Clinical Studies (14) ]. Limitation of Use: Safety and efficacy of gefitinib tablets have not been established in patients with metastatic NSCLC whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations [ see Clinical Studies (14) ]. Gefitinib tablets are a tyrosine kinase inhibitor indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test. (1) Limitation of Use: Safety and efficacy of gefitinib tablets have not been established in patients whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations. (1)"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Interstitial lung disease (ILD): ILD occurred in patients taking gefitinib tablets. Withhold gefitinib tablets for worsening of respiratory symptoms. Discontinue gefitinib tablets if ILD is confirmed. ( 2.4 , 5.1 ) Hepatotoxicity: Obtain periodic liver function testing. Withhold gefitinib tablets for Grade 2 or higher for ALT and/or AST elevations. Discontinue for severe hepatic impairment. ( 2.4 , 5.2 ) Gastrointestinal perforation: Discontinue gefitinib tablets for gastrointestinal perforation. ( 2.4 , 5.3 ) Diarrhea: Withhold gefitinib tablets for Grade 3 or higher diarrhea. ( 2.4 , 5.4 ) Ocular Disorders including Keratitis: Withhold gefitinib tablets for signs and symptoms of severe or worsening ocular disorders including keratitis. Discontinue for persistent ulcerative keratitis. ( 2.4 , 5.5 ) Bullous and Exfoliative Skin Disorders: Withhold gefitinib tablets for Grade 3 or higher skin reactions or exfoliative conditions. ( 2.4 , 5.6 ) Embryo-fetal Toxicity: Can cause fetal harm. Advise of potential risk to a fetus and use of effective contraception. ( 5.7 , 8.1 , 8.3 ) 5.1 Interstitial Lung Disease (ILD) ILD or ILD-like adverse drug reactions (e.g., lung infiltration, pneumonitis, acute respiratory distress syndrome, or pulmonary fibrosis) occurred in 1.3% of the 2462 patients who received gefitinib tablets across clinical trials; of these, 0.7% were Grade 3 or higher and 3 cases were fatal. Withhold gefitinib tablets and promptly investigate for ILD in any patient who presents with worsening of respiratory symptoms such as dyspnea, cough and fever. Permanently discontinue gefitinib tablets if ILD is confirmed [ see Dosage and Administration (2.4) , Adverse Reactions (6.1) ]. 5.2 Hepatotoxicity In patients who received gefitinib tablets across clinical trials, 11.4% of patients had increased alanine aminotransferase (ALT), 7.9% of patients had increased aspartate aminotransferase (AST), and 2.7% of patients had increased bilirubin. Grade 3 or higher liver test abnormalities occurred in 5.1% (ALT), 3.0% (AST), and 0.7% (bilirubin) of patients. The incidence of fatal hepatotoxicity was 0.04%. Obtain periodic liver function testing. Withhold gefitinib tablets in patients with worsening liver function and discontinue in patients with severe hepatic impairment [ see Dosage and Administration (2.4) , Adverse Reactions (6.1) , Use in Specific Populations (8.7) ]. 5.3 Gastrointestinal Perforation Gastrointestinal perforation occurred in three (0.1%) of the 2462 gefitinib tablets-treated patients across clinical trials [ see Adverse Reactions (6.1) ]. Permanently discontinue gefitinib tablets in patients who develop gastrointestinal perforation [ see Dosage and Administration (2.4) ]. 5.4 Severe or Persistent Diarrhea Grade 3 or 4 diarrhea occurred in 3% of 2462 gefitinib tablets-treated patients across clinical trials. Withhold gefitinib tablets for severe or persistent (up to 14 days) diarrhea [ see Dosage and Administration (2.4) , Adverse Reactions (6.1) ]. 5.5 Ocular Disorders including Keratitis Ocular disorders [keratitis (0.1%), corneal erosion and aberrant eyelash growth (0.2%), conjunctivitis, blephritis and dry eye (6.7%)] occurred in the 2462 gefitinib tablets-treated patients across clinical trials. The incidence of Grade 3 ocular disorders was 0.1% [ see Adverse Reactions (6.1) ]. Interrupt or discontinue gefitinib tablets for severe, or worsening ocular disorders [ see Dosage and Administration (2.4) ]. 5.6 Bullous and Exfoliative Skin Disorders Bullous conditions including toxic epidermal necrolysis, Stevens Johnson syndrome and erythema multiforme have been reported from treatment with gefitinib tablets. Erythema multiforme and dermatitis bullous have been reported in two patients (0.08%) across NSCLC trials (Study 2, Study 3 and Study 4). Gefitinib tablets treatment should be interrupted or discontinued if the patient develops severe bullous, blistering or exfoliating conditions. 5.7 Embryo-fetal Toxicity Based on its mechanism of action and data from animal reproduction studies gefitinib tablets can cause fetal harm when administered to a pregnant woman. In animal reproductive studies, oral administration of gefitinib from organogenesis through weaning resulted in fetotoxicity and neonatal death at doses below the recommended human dose. Advise pregnant women of the potential risk to a fetus. Advise females of reproductive potential to use effective contraception during treatment with gefitinib tablets and for at least two weeks following completion of therapy [ see Use in Specific Populations ( 8.1 , 8.3 ) ]."
+   ],
+   "dosage_and_administration": [
+    "2 DOSAGE AND ADMINISTRATION Recommended dose is 250 mg orally, once daily with or without food. (2.2) 2.1 Patient Selection Select patients for the first-line treatment of metastatic NSCLC with gefitinib tablets based on the presence of EGFR exon 19 deletions or exon 21 L858R mutations in their tumor or plasma specimens[ see Indications and Usage (1) , Clinical Studies (14) ]. If these mutations are not detected in a plasma specimen, test tumor tissue if feasible. Information on FDA-approved tests for the detection of EGFR mutations in NSCLC is available at: http://www.fda.gov/CompanionDiagnostics . 2.2 Recommended Dose The recommended dose of gefitinib tablets is 250 mg orally once daily with or without food until disease progression or unacceptable toxicity. Do not take a missed dose within 12 hours of the next dose. 2.3 Administration to Patients Who Have Difficulty Swallowing Solids Immerse gefitinib tablets in 4 to 8 ounces of water by dropping the tablet in water, and stir for approximately 15 minutes. Immediately drink the liquid or administer through a naso-gastric tube. Rinse the container with 4 to 8 ounces of water and immediately drink or administer through the naso-gastric tube. 2.4 Dose Modification Dose Modifications for Adverse Drug Reactions Withhold gefitinib tablets (for up to 14 days) for any of the following: Acute onset or worsening of pulmonary symptoms (dyspnea, cough, fever) [ see Warnings and Precautions (5.1) ] NCI CTCAE Grade 2 or higher in ALT and/or AST elevations [ see Warnings and Precautions (5.2) ] NCI CTCAE Grade 3 or higher diarrhea [ see Warnings and Precautions (5.4) ] Signs and symptoms of severe or worsening ocular disorders including keratitis [ see Warnings and Precautions (5.5) ] NCI CTCAE Grade 3 or higher skin reactions [ see Warnings and Precautions (5.6) ] Resume treatment with gefitinib tablets when the adverse reaction fully resolves or improves to NCI CTCAE Grade 1. Permanently discontinue gefitinib tablets for: Confirmed interstitial lung disease (ILD) [ see Warnings and Precautions (5.1) ] Severe hepatic impairment [ see Warnings and Precautions (5.2) ] Gastrointestinal perforation [ see Warnings and Precautions (5.3) ] Persistent ulcerative keratitis [ see Warnings and Precautions (5.5) ] Dose Modifications for Drug Interactions Strong CYP3A4 Inducers Increase gefitinib tablets to 500 mg daily in the absence of severe adverse drug reaction, and resume gefitinib tablets at 250 mg seven days after discontinuation of the strong CYP3A4 inducer [ see Drug Interactions (7) , Clinical Pharmacology (12.3) ]."
+   ],
+   "drug_interactions": [
+    "7 DRUG INTERACTIONS CYP3A4 Inducer: Increase gefitinib tablets to 500 mg daily in patients receiving a strong CYP3A4 inducer. ( 2.4 , 7.1 ) CYP3A4 Inhibitor: Monitor adverse reactions if concomitant use with gefitinib tablets. ( 7.1 ) Drugs Affecting Gastric pH: Avoid concomitant use of gefitinib tablets with proton pump inhibitors, if possible. ( 7.1 ) Hemorrhage in patients taking warfarin: Monitor changes in prothrombin time or INR. ( 7.2 ) 7.1 Drugs Affecting Gefitinib Exposure CYP3A4 Inducer Drugs that are strong inducers of CYP3A4 increase the metabolism of gefitinib and decrease gefitinib plasma concentrations. Increase gefitinib tablets to 500 mg daily in patients receiving a strong CYP3A4 inducer (e.g., rifampicin, phenytoin, or tricyclic antidepressant) and resume gefitinib tablets at 250 mg 7 days after discontinuation of the strong inducer [ see Dosage and Administration (2.4) , Clinical Pharmacology (12.3) ]. CYP3A4 Inhibitor Drugs that are strong inhibitors of CYP3A4 (e.g., ketoconazole and itraconazole) decrease gefitinib metabolism and increase gefitinib plasma concentrations. Monitor adverse reactions when administering strong CYP3A4 inhibitors with gefitinib tablets. Drugs Affecting Gastric pH Drugs that elevate gastric pH (e.g., proton pump inhibitors, histamine H 2 -receptor antagonists, and antacids) may reduce plasma concentrations of gefitinib. Avoid concomitant use of gefitinib tablets with proton pump inhibitors, if possible. If treatment with a proton-pump inhibitor is required, take gefitinib tablets 12 hours after the last dose or 12 hours before the next dose of the proton-pump inhibitor. Take gefitinib tablets 6 hours after or 6 hours before an H 2 -receptor antagonist or an antacid [ see Clinical Pharmacology (12.3) ]. 7.2 Hemorrhage in Patients taking Warfarin International Normalized Ratio (INR) elevations and/or hemorrhage have been reported in some patients taking warfarin while on gefitinib tablets therapy. Patients taking warfarin should be monitored regularly for changes in prothrombin time or INR."
+   ]
+  },
+  {
+   "set_id": "827d60e8-7e07-41b7-c28b-49ef1c4a5a41",
+   "effective_time": "20230228",
+   "openfda": {
+    "application_number": [
+     "NDA206995"
+    ],
+    "brand_name": [
+     "IRESSA"
+    ],
+    "generic_name": [
+     "GEFITINIB"
+    ],
+    "manufacturer_name": [
+     "AstraZeneca Pharmaceuticals LP"
+    ],
+    "product_ndc": [
+     "0310-0482"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "GEFITINIB"
+    ],
+    "rxcui": [
+     "349472",
+     "402091"
+    ],
+    "spl_id": [
+     "508019dd-61d5-4459-9476-3f5897143f0c"
+    ],
+    "spl_set_id": [
+     "827d60e8-7e07-41b7-c28b-49ef1c4a5a41"
+    ],
+    "package_ndc": [
+     "0310-0482-30",
+     "0310-0482-93"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175605",
+     "N0000175076"
+    ],
+    "pharm_class_epc": [
+     "Kinase Inhibitor [EPC]"
+    ],
+    "pharm_class_moa": [
+     "Protein Kinase Inhibitors [MoA]"
+    ],
+    "unii": [
+     "S65743JHBS"
+    ]
+   },
+   "spl_product_data_elements": [
+    "IRESSA Gefitinib GEFITINIB GEFITINIB LACTOSE MONOHYDRATE MICROCRYSTALLINE CELLULOSE CROSCARMELLOSE SODIUM POVIDONE, UNSPECIFIED SODIUM LAURYL SULFATE MAGNESIUM STEARATE HYPROMELLOSE, UNSPECIFIED POLYETHYLENE GLYCOL 300 TITANIUM DIOXIDE FERRIC OXIDE RED FERRIC OXIDE YELLOW biconvex IRESSA;250"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE IRESSA is indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test [see Clinical Studies (14) ] . Limitation of Use: Safety and efficacy of IRESSA have not been established in patients with metastatic NSCLC whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations [see Clinical Studies (14) ] . IRESSA is a tyrosine kinase inhibitor indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test. (1) Limitation of Use: Safety and efficacy of IRESSA have not been established in patients whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations. (1)"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS \u2022 Interstitial lung disease (ILD): ILD occurred in patients taking IRESSA. Withhold IRESSA for worsening of respiratory symptoms. Discontinue IRESSA if ILD is confirmed. ( 2.4 , 5.1 ) \u2022 Hepatotoxicity: Obtain periodic liver function testing. Withhold IRESSA for Grade 2 or higher for ALT and/or AST elevations. Discontinue for severe hepatic impairment. ( 2.4 , 5.2 ) \u2022 Gastrointestinal perforation: Discontinue IRESSA for gastrointestinal perforation. ( 2.4 , 5.3 ) \u2022 Diarrhea: Withhold IRESSA for Grade 3 or higher diarrhea. ( 2.4 , 5.4 ) \u2022 Ocular Disorders including Keratitis: Withhold IRESSA for signs and symptoms of severe or worsening ocular disorders including keratitis. Discontinue for persistent ulcerative keratitis. ( 2.4 , 5.5 ) \u2022 Bullous and Exfoliative Skin Disorders: Withhold IRESSA for Grade 3 or higher skin reactions or exfoliative conditions. ( 2.4 , 5.6 ) \u2022 Embryo-fetal Toxicity: Can cause fetal harm. Advise of potential risk to a fetus and use of effective contraception. ( 5.7 , 8.1 , 8.3 ) 5.1 Interstitial Lung Disease (ILD) ILD or ILD-like adverse drug reactions (e.g., lung infiltration, pneumonitis, acute respiratory distress syndrome, or pulmonary fibrosis) occurred in 1.3% of the 2462 patients who received IRESSA across clinical trials; of these, 0.7% were Grade 3 or higher and 3 cases were fatal. Withhold IRESSA and promptly investigate for ILD in any patient who presents with worsening of respiratory symptoms such as dyspnea, cough and fever. Permanently discontinue IRESSA if ILD is confirmed [see Dosage and Administration (2.4) , Adverse Reactions (6.1) ] . 5.2 Hepatotoxicity In patients who received IRESSA across clinical trials, 11.4% of patients had increased alanine aminotransferase (ALT), 7.9% of patients had increased aspartate aminotransferase (AST), and 2.7% of patients had increased bilirubin. Grade 3 or higher liver test abnormalities occurred in 5.1% (ALT), 3.0% (AST), and 0.7% (bilirubin) of patients. The incidence of fatal hepatotoxicity was 0.04%. Obtain periodic liver function testing. Withhold IRESSA in patients with worsening liver function and discontinue in patients with severe hepatic impairment [see Dosage and Administration (2.4) , Adverse Reactions (6.1) , Use in Specific Populations (8.7) ] . 5.3 Gastrointestinal Perforation Gastrointestinal perforation occurred in three (0.1%) of the 2462 IRESSA-treated patients across clinical trials [see Adverse Reactions (6.1) ] . Permanently discontinue IRESSA in patients who develop gastrointestinal perforation [see Dosage and Administration (2.4) ] . 5.4 Severe or Persistent Diarrhea Grade 3 or 4 diarrhea occurred in 3% of 2462 IRESSA-treated patients across clinical trials. Withhold IRESSA for severe or persistent (up to 14 days) diarrhea [see Dosage and Administration (2.4) , Adverse Reactions (6.1) ] . 5.5 Ocular Disorders including Keratitis Ocular disorders [keratitis (0.1%), corneal erosion and aberrant eyelash growth (0.2%), conjunctivitis, blepharitis and dry eye (6.7%)] occurred in the 2462 IRESSA-treated patients across clinical trials. The incidence of Grade 3 ocular disorders was 0.1% [see Adverse Reactions (6.1) ] . Interrupt or discontinue IRESSA for severe, or worsening ocular disorders [see Dosage and Administration (2.4) ] . 5.6 Bullous and Exfoliative Skin Disorders Bullous conditions including toxic epidermal necrolysis, Stevens Johnson syndrome and erythema multiforme have been reported from treatment with IRESSA. Erythema multiforme and dermatitis bullous have been reported in two patients (0.08%) across NSCLC trials (Study 2, Study 3 and Study 4). IRESSA treatment should be interrupted or discontinued if the patient develops severe bullous, blistering or exfoliating conditions. 5.7 Embryo-fetal Toxicity Based on its mechanism of action and data from animal reproduction studies IRESSA can cause fetal harm when administered to a pregnant woman. In animal reproductive studies, oral administration of gefitinib from organogenesis through weaning resulted in fetotoxicity and neonatal death at doses below the recommended human dose. Advise pregnant women of the potential risk to a fetus. Advise females of reproductive potential to use effective contraception during treatment with IRESSA and for at least two weeks following completion of therapy [see Use in Specific Populations ( 8.1 , 8.3 )] ."
+   ],
+   "dosage_and_administration": [
+    "2 DOSAGE AND ADMINISTRATION Recommended dose is 250 mg orally, once daily with or without food. (2.2) 2.1 Patient Selection Select patients for the first-line treatment of metastatic NSCLC with IRESSA based on the presence of EGFR exon 19 deletions or exon 21 L858R mutations in their tumor or plasma specimens [see Indications and Usage (1) , Clinical Studies (14) ] . If these mutations are not detected in a plasma specimen, test tumor tissue if feasible. Information on FDA-approved tests for the detection of EGFR mutations in NSCLC is available at: http://www.fda.gov/CompanionDiagnostics . 2.2 Recommended Dose The recommended dose of IRESSA is 250 mg orally once daily with or without food until disease progression or unacceptable toxicity. Do not take a missed dose within 12 hours of the next dose. 2.3 Administration to Patients Who Have Difficulty Swallowing Solids Immerse IRESSA tablets in 4 to 8 ounces of water by dropping the tablet in water, and stir for approximately 15 minutes. Immediately drink the liquid or administer through a naso-gastric tube. Rinse the container with 4 to 8 ounces of water and immediately drink or administer through the naso-gastric tube. 2.4 Dose Modification Dose Modifications for Adverse Drug Reactions Withhold IRESSA (for up to 14 days) for any of the following: \u2022 Acute onset or worsening of pulmonary symptoms (dyspnea, cough, fever) [see Warnings and Precautions (5.1) ] \u2022 NCI CTCAE Grade 2 or higher in ALT and/or AST elevations [see Warnings and Precautions (5.2) ] \u2022 NCI CTCAE Grade 3 or higher diarrhea [see Warnings and Precautions (5.4) ] \u2022 Signs and symptoms of severe or worsening ocular disorders including keratitis [see Warnings and Precautions (5.5) ] \u2022 NCI CTCAE Grade 3 or higher skin reactions [see Warnings and Precautions (5.6) ] Resume treatment with IRESSA when the adverse reaction fully resolves or improves to NCI CTCAE Grade 1. Permanently discontinue IRESSA for: \u2022 Confirmed interstitial lung disease (ILD) [see Warnings and Precautions (5.1) ] \u2022 Severe hepatic impairment [see Warnings and Precautions (5.2) ] \u2022 Gastrointestinal perforation [see Warnings and Precautions (5.3) ] \u2022 Persistent ulcerative keratitis [see Warnings and Precautions (5.5) ] Dose Modifications for Drug Interactions Strong CYP3A4 Inducers Increase IRESSA to 500 mg daily in the absence of severe adverse drug reaction, and resume IRESSA at 250 mg seven days after discontinuation of the strong CYP3A4 inducer [see Drug Interactions (7) , Clinical Pharmacology (12.3) ] ."
+   ],
+   "drug_interactions": [
+    "7 DRUG INTERACTIONS \u2022 CYP3A4 Inducer: Increase IRESSA to 500 mg daily in patients receiving a strong CYP3A4 inducer. ( 2.4 , 7.1 ) \u2022 CYP3A4 Inhibitor: Monitor adverse reactions if concomitant use with IRESSA. ( 7.1 ) \u2022 Drugs Affecting Gastric pH: Avoid concomitant use of IRESSA with proton pump inhibitors, if possible. ( 7.1 ) \u2022 Hemorrhage in patients taking warfarin: Monitor changes in prothrombin time or INR. ( 7.2 ) 7.1 Drugs Affecting Gefitinib Exposure CYP3A4 Inducer Drugs that are strong inducers of CYP3A4 increase the metabolism of gefitinib and decrease gefitinib plasma concentrations. Increase IRESSA to 500 mg daily in patients receiving a strong CYP3A4 inducer (e.g., rifampicin, phenytoin, or tricyclic antidepressant) and resume IRESSA at 250 mg 7 days after discontinuation of the strong inducer [see Dosage and Administration (2.4) , Clinical Pharmacology (12.3) ] . CYP3A4 Inhibitor Drugs that are strong inhibitors of CYP3A4 (e.g., ketoconazole and itraconazole) decrease gefitinib metabolism and increase gefitinib plasma concentrations. Monitor adverse reactions when administering strong CYP3A4 inhibitors with IRESSA. Drugs Affecting Gastric pH Drugs that elevate gastric pH (e.g., proton pump inhibitors, histamine H 2 -receptor antagonists, and antacids) may reduce plasma concentrations of gefitinib. Avoid concomitant use of IRESSA with proton pump inhibitors, if possible. If treatment with a proton-pump inhibitor is required, take IRESSA 12 hours after the last dose or 12 hours before the next dose of the proton-pump inhibitor. Take IRESSA 6 hours after or 6 hours before an H 2 -receptor antagonist or an antacid [see Clinical Pharmacology (12.3) ] . 7.2 Hemorrhage in Patients taking Warfarin International Normalized Ratio (INR) elevations and/or hemorrhage have been reported in some patients taking warfarin while on IRESSA therapy. Patients taking warfarin should be monitored regularly for changes in prothrombin time or INR."
+   ]
+  },
+  {
+   "set_id": "0afc12dd-12f8-4def-9027-f38412a862b9",
+   "effective_time": "20230222",
+   "openfda": {
+    "application_number": [
+     "ANDA211591"
+    ],
+    "brand_name": [
+     "Gefitinib"
+    ],
+    "generic_name": [
+     "GEFITINIB"
+    ],
+    "manufacturer_name": [
+     "Qilu Pharmaceutical Co., Ltd."
+    ],
+    "product_ndc": [
+     "67184-0531"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "GEFITINIB"
+    ],
+    "rxcui": [
+     "349472"
+    ],
+    "spl_id": [
+     "8aa73f33-2813-4dfa-939f-e4291081449a"
+    ],
+    "spl_set_id": [
+     "0afc12dd-12f8-4def-9027-f38412a862b9"
+    ],
+    "package_ndc": [
+     "67184-0531-1",
+     "67184-0531-2",
+     "67184-0531-3"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0367184053124"
+    ],
+    "nui": [
+     "N0000175605",
+     "N0000175076"
+    ],
+    "pharm_class_epc": [
+     "Kinase Inhibitor [EPC]"
+    ],
+    "pharm_class_moa": [
+     "Protein Kinase Inhibitors [MoA]"
+    ],
+    "unii": [
+     "S65743JHBS"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Gefitinib Gefitinib GEFITINIB GEFITINIB LACTOSE MONOHYDRATE CELLULOSE, MICROCRYSTALLINE CROSCARMELLOSE SODIUM POVIDONE K30 SODIUM LAURYL SULFATE MAGNESIUM STEARATE POLYVINYL ALCOHOL, UNSPECIFIED POLYETHYLENE GLYCOL 3350 TALC TITANIUM DIOXIDE FERRIC OXIDE RED FERROSOFERRIC OXIDE FERRIC OXIDE YELLOW biconvex QL"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE Gefitinib tablets are indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test [ see Clinical Studies (14) ]. Limitation of Use: Safety and efficacy of gefitinib tablets have not been established in patients with metastatic NSCLC whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations [ see Clinical Studies (14) ]. Gefitinib tablets are a tyrosine kinase inhibitor indicated for the first-line treatment of patients with metastatic non-small cell lung cancer (NSCLC) whose tumors have epidermal growth factor receptor (EGFR) exon 19 deletions or exon 21 (L858R) substitution mutations as detected by an FDA-approved test. (1) Limitation of Use: Safety and efficacy of gefitinib tablets have not been established in patients whose tumors have EGFR mutations other than exon 19 deletions or exon 21 (L858R) substitution mutations. (1)"
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS \u2022Interstitial lung disease (ILD): ILD occurred in patients taking gefitinib tablets. Withhold gefitinib tablets for worsening of respiratory symptoms. Discontinue gefitinib tablets if ILD is confirmed. ( 2.4 , 5.1 ) \u2022Hepatotoxicity: Obtain periodic liver function testing. Withhold gefitinib tablets for Grade 2 or higher for ALT and/or AST elevations. Discontinue for severe hepatic impairment. ( 2.4 , 5.2 ) \u2022Gastrointestinal perforation: Discontinue gefitinib tablets for gastrointestinal perforation. ( 2.4 , 5.3 ) \u2022Diarrhea: Withhold gefitinib tablets for Grade 3 or higher diarrhea. ( 2.4 , 5.4 ) \u2022Ocular Disorders including Keratitis: Withhold gefitinib tablets for signs and symptoms of severe or worsening ocular disorders including keratitis. Discontinue for persistent ulcerative keratitis. ( 2.4 , 5.5 ) \u2022Bullous and Exfoliative Skin Disorders: Withhold gefitinib tablets for Grade 3 or higher skin reactions or exfoliative conditions. ( 2.4 , 5.6 ) \u2022Embryo-fetal Toxicity: Can cause fetal harm. Advise of potential risk to a fetus and use of effective contraception. ( 5.7 , 8.1 , 8.3 ) 5.1 Interstitial Lung Disease (ILD) ILD or ILD-like adverse drug reactions (e.g., lung infiltration, pneumonitis, acute respiratory distress syndrome, or pulmonary fibrosis) occurred in 1.3% of the 2462 patients who received gefitinib tablets across clinical trials; of these, 0.7% were Grade 3 or higher and 3 cases were fatal. Withhold gefitinib tablets and promptly investigate for ILD in any patient who presents with worsening of respiratory symptoms such as dyspnea, cough and fever. Permanently discontinue gefitinib tablets if ILD is confirmed [ see Dosage and Administration (2.4) , Adverse Reactions (6.1) ]. 5.2 Hepatotoxicity In patients who received gefitinib tablets across clinical trials, 11.4% of patients had increased alanine aminotransferase (ALT), 7.9% of patients had increased aspartate aminotransferase (AST), and 2.7% of patients had increased bilirubin. Grade 3 or higher liver test abnormalities occurred in 5.1% (ALT), 3.0% (AST), and 0.7% (bilirubin) of patients. The incidence of fatal hepatotoxicity was 0.04%. Obtain periodic liver function testing. Withhold gefitinib tablets in patients with worsening liver function and discontinue in patients with severe hepatic impairment [ see Dosage and Administration (2.4) , Adverse Reactions (6.1) , Use in Specific Populations (8.7) ]. 5.3 Gastrointestinal Perforation Gastrointestinal perforation occurred in three (0.1%) of the 2462 gefitinib tablets-treated patients across clinical trials [ see Adverse Reactions (6.1) ]. Permanently discontinue gefitinib tablets in patients who develop gastrointestinal perforation [ see Dosage and Administration (2.4) ]. 5.4 Severe or Persistent Diarrhea Grade 3 or 4 diarrhea occurred in 3% of 2462 gefitinib tablets-treated patients across clinical trials. Withhold gefitinib tablets for severe or persistent (up to 14 days) diarrhea [ see Dosage and Administration (2.4) , Adverse Reactions (6.1) ]. 5.5 Ocular Disorders including Keratitis Ocular disorders [keratitis (0.1%), corneal erosion and aberrant eyelash growth (0.2%), conjunctivitis, blephritis and dry eye (6.7%)] occurred in the 2462 gefitinib tablets-treated patients across clinical trials. The incidence of Grade 3 ocular disorders was 0.1% [ see Adverse Reactions (6.1) ]. Interrupt or discontinue gefitinib tablets for severe, or worsening ocular disorders [ see Dosage and Administration (2.4) ]. 5.6 Bullous and Exfoliative Skin Disorders Bullous conditions including toxic epidermal necrolysis, Stevens Johnson syndrome and erythema multiforme have been reported from treatment with gefitinib tablets. Erythema multiforme and dermatitis bullous have been reported in two patients (0.08%) across NSCLC trials (Study 2, Study 3 and Study 4). Gefitinib tablets treatment should be interrupted or discontinued if the patient develops severe bullous, blistering or exfoliating conditions. 5.7 Embryo-fetal Toxicity Based on its mechanism of action and data from animal reproduction studies gefitinib tablets can cause fetal harm when administered to a pregnant woman. In animal reproductive studies, oral administration of gefitinib from organogenesis through weaning resulted in fetotoxicity and neonatal death at doses below the recommended human dose. Advise pregnant women of the potential risk to a fetus. Advise females of reproductive potential to use effective contraception during treatment with gefitinib tablets and for at least two weeks following completion of therapy [ see Use in Specific Population ( 8.1 , 8.3 ) ]."
+   ],
+   "dosage_and_administration": [
+    "2 DOSAGE AND ADMINISTRATION Recommended dose is 250 mg orally, once daily with or without food. (2.2) 2.1 Patient Selection Select patients for the first-line treatment of metastatic NSCLC with gefitinib tablets based on the presence of EGFR exon 19 deletions or exon 21 L858R mutations in their tumor or plasma specimens[ see Indications and Usage (1) , Clinical Studies (14) ]. If these mutations are not detected in a plasma specimen, test tumor tissue if feasible. Information on FDA-approved tests for the detection of EGFR mutations in NSCLC is available at: http://www.fda.gov/CompanionDiagnostics . 2.2 Recommended Dose The recommended dose of gefitinib tablets is 250 mg orally once daily with or without food until disease progression or unacceptable toxicity. Do not take a missed dose within 12 hours of the next dose. 2.3 Administration to Patients Who Have Difficulty Swallowing Solids Immerse gefitinib tablets in 4 to 8 ounces of water by dropping the tablet in water, and stir for approximately 15 minutes. Immediately drink the liquid or administer through a naso-gastric tube. Rinse the container with 4 to 8 ounces of water and immediately drink or administer through the naso-gastric tube. 2.4 Dose Modification Dose Modifications for Adverse Drug Reactions Withhold gefitinib tablets (for up to 14 days) for any of the following: \u2022Acute onset or worsening of pulmonary symptoms (dyspnea, cough, fever) [ see Warnings and Precautions (5.1) ] \u2022NCI CTCAE Grade 2 or higher in ALT and/or AST elevations [ see Warnings and Precautions (5.2) ] \u2022NCI CTCAE Grade 3 or higher diarrhea [ see Warnings and Precautions (5.4) ] \u2022Signs and symptoms of severe or worsening ocular disorders including keratitis [ see Warnings and Precautions (5.5) ] \u2022NCI CTCAE Grade 3 or higher skin reactions [ see Warnings and Precautions (5.6) ] Resume treatment with gefitinib tablets when the adverse reaction fully resolves or improves to NCI CTCAE Grade 1. Permanently discontinue gefitinib tablets for: \u2022Confirmed interstitial lung disease (ILD) [ see Warnings and Precautions (5.1) ] \u2022Severe hepatic impairment [ see Warnings and Precautions (5.2) ] \u2022Gastrointestinal perforation [ see Warnings and Precautions (5.3) ] \u2022Persistent ulcerative keratitis [ see Warnings and Precautions (5.5) ] Dose Modifications for Drug Interactions Strong CYP3A4 Inducers Increase gefitinib tablets to 500 mg daily in the absence of severe adverse drug reaction, and resume gefitinib tablets at 250 mg seven days after discontinuation of the strong CYP3A4 inducer [ see Drug Interactions (7) , Clinical Pharmacology (12.3) ]."
+   ],
+   "drug_interactions": [
+    "7 DRUG INTERACTIONS \u2022CYP3A4 Inducer: Increase gefitinib tablets to 500 mg daily in patients receiving a strong CYP3A4 inducer. ( 2.4 , 7.1 ) \u2022CYP3A4 Inhibitor: Monitor adverse reactions if concomitant use with gefitinib tablets. ( 7.1 ) \u2022Drugs Affecting Gastric pH: Avoid concomitant use of gefitinib tablets with proton pump inhibitors, if possible. ( 7.1 ) \u2022Hemorrhage in patients taking warfarin: Monitor changes in prothrombin time or INR. ( 7.2 ) 7.1 Drugs Affecting Gefitinib Exposure CYP3A4 Inducer Drugs that are strong inducers of CYP3A4 increase the metabolism of gefitinib and decrease gefitinib plasma concentrations. Increase gefitinib tablets to 500 mg daily in patients receiving a strong CYP3A4 inducer (e.g., rifampicin, phenytoin, or tricyclic antidepressant) and resume gefitinib tablets at 250 mg 7 days after discontinuation of the strong inducer [ see Dosage and Administration (2.4) , Clinical Pharmacology (12.3) ]. CYP3A4 Inhibitor Drugs that are strong inhibitors of CYP3A4 (e.g., ketoconazole and itraconazole) decrease gefitinib metabolism and increase gefitinib plasma concentrations. Monitor adverse reactions when administering strong CYP3A4 inhibitors with gefitinib tablets. Drugs Affecting Gastric pH Drugs that elevate gastric pH (e.g., proton pump inhibitors, histamine H 2 -receptor antagonists, and antacids) may reduce plasma concentrations of gefitinib. Avoid concomitant use of gefitinib tablets with proton pump inhibitors, if possible. If treatment with a proton-pump inhibitor is required, take gefitinib tablets 12 hours after the last dose or 12 hours before the next dose of the proton-pump inhibitor. Take gefitinib tablets 6 hours after or 6 hours before an H 2 -receptor antagonist or an antacid [ see Clinical Pharmacology (12.3) ]. 7.2 Hemorrhage in Patients taking Warfarin International Normalized Ratio (INR) elevations and/or hemorrhage have been reported in some patients taking warfarin while on gefitinib tablets therapy. Patients taking warfarin should be monitored regularly for changes in prothrombin time or INR."
+   ]
+  }
+ ]
+}

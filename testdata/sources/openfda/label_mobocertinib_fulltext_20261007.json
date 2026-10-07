@@ -1,0 +1,738 @@
+{
+ "meta": {
+  "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+  "terms": "https://open.fda.gov/terms/",
+  "license": "https://open.fda.gov/license/",
+  "last_updated": "2026-10-06",
+  "results": {
+   "skip": 0,
+   "limit": 100,
+   "total": 15
+  }
+ },
+ "results": [
+  {
+   "set_id": "23126370-8d6a-4027-bd8f-860e2776ba3a",
+   "effective_time": "20260731",
+   "openfda": {
+    "application_number": [
+     "ANDA206741"
+    ],
+    "brand_name": [
+     "ITRACONAZOLE"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Alembic Pharmaceuticals Inc."
+    ],
+    "product_ndc": [
+     "62332-204"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "311204"
+    ],
+    "spl_id": [
+     "1364a325-41e4-44e0-bf4f-7e8e57f63782"
+    ],
+    "spl_set_id": [
+     "23126370-8d6a-4027-bd8f-860e2776ba3a"
+    ],
+    "package_ndc": [
+     "62332-204-30",
+     "62332-204-90",
+     "62332-204-71",
+     "62332-204-10",
+     "62332-204-04"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0362332204304"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "ITRACONAZOLE itraconazole ITRACONAZOLE ITRACONAZOLE SUCROSE HYPROMELLOSE, UNSPECIFIED POLYETHYLENE GLYCOL 20000 TITANIUM DIOXIDE D&C RED NO. 22 FD&C BLUE NO. 1 D&C RED NO. 28 GELATIN STARCH, CORN SHELLAC FERROSOFERRIC OXIDE POTASSIUM HYDROXIDE blue opaque pink transparent A;175"
+   ]
+  },
+  {
+   "set_id": "2ab38a8a-3708-4b97-9f7f-8e554a15348d",
+   "effective_time": "20260722",
+   "openfda": {
+    "application_number": [
+     "ANDA205080"
+    ],
+    "brand_name": [
+     "Itraconazole"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Amneal Pharmaceuticals LLC"
+    ],
+    "product_ndc": [
+     "65162-630"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "311204"
+    ],
+    "spl_id": [
+     "cf72da65-d17b-40fc-b5a8-02493d23643c"
+    ],
+    "spl_set_id": [
+     "2ab38a8a-3708-4b97-9f7f-8e554a15348d"
+    ],
+    "package_ndc": [
+     "65162-630-03"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0365162630039"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole ITRACONAZOLE ITRACONAZOLE FERROSOFERRIC OXIDE FD&C BLUE NO. 1 GELATIN HYPROMELLOSES CELLULOSE, MICROCRYSTALLINE POLYETHYLENE GLYCOL, UNSPECIFIED POTASSIUM HYDROXIDE PROPYLENE GLYCOL SHELLAC SODIUM LAURYL SULFATE STARCH, CORN AMMONIA SUCROSE TITANIUM DIOXIDE DEXTROSE transparent opaque AMNEAL;630"
+   ]
+  },
+  {
+   "set_id": "349ffcf4-b2cd-4c93-9411-13c39275b8f3",
+   "effective_time": "20250716",
+   "openfda": {
+    "application_number": [
+     "ANDA208591"
+    ],
+    "brand_name": [
+     "Itraconazole"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Ascend Laboratories, LLC"
+    ],
+    "product_ndc": [
+     "67877-454"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "311204"
+    ],
+    "spl_id": [
+     "17ebcbb4-d52b-44b8-a4ef-42ddae5034db"
+    ],
+    "spl_set_id": [
+     "349ffcf4-b2cd-4c93-9411-13c39275b8f3"
+    ],
+    "package_ndc": [
+     "67877-454-30",
+     "67877-454-90",
+     "67877-454-05",
+     "67877-454-33",
+     "67877-454-84"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole ITRACONAZOLE ITRACONAZOLE SUCROSE HYPROMELLOSE 2910 (5 MPA.S) POLOXAMER 188 ALCOHOL METHYLENE CHLORIDE POLYETHYLENE GLYCOL 20000 TALC SILICON DIOXIDE GELATIN, UNSPECIFIED TITANIUM DIOXIDE SODIUM LAURYL SULFATE FD&C BLUE NO. 1 FD&C RED NO. 40 FD&C RED NO. 3 SHELLAC ISOPROPYL ALCOHOL BUTYL ALCOHOL PROPYLENE GLYCOL AMMONIA POTASSIUM HYDROXIDE STARCH, CORN Blue Opaque Pink transparent ITR;100"
+   ]
+  },
+  {
+   "set_id": "43ded1aa-f825-40fe-aa9a-addd36a07f06",
+   "effective_time": "20260803",
+   "openfda": {
+    "application_number": [
+     "ANDA205573"
+    ],
+    "brand_name": [
+     "Itraconazole"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Amneal Pharmaceuticals LLC"
+    ],
+    "product_ndc": [
+     "65162-087"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "348506"
+    ],
+    "spl_id": [
+     "4e655ee7-8fc4-4b54-aa43-89aafb2077dc"
+    ],
+    "spl_set_id": [
+     "43ded1aa-f825-40fe-aa9a-addd36a07f06"
+    ],
+    "package_ndc": [
+     "65162-087-74",
+     "65162-087-13",
+     "65162-087-34"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0365162087741"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole ITRACONAZOLE ITRACONAZOLE HYDROCHLORIC ACID PROPYLENE GLYCOL WATER SODIUM HYDROXIDE SACCHARIN SODIUM SORBITOL clear-yellowish"
+   ]
+  },
+  {
+   "set_id": "57ee8148-e958-4732-9843-3b9c15bd4b8f",
+   "effective_time": "20250530",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "itraconazole itraconazole ITRACONAZOLE ITRACONAZOLE FD&C BLUE NO. 1 FD&C RED NO. 3 GELATIN HYPROMELLOSE 2910 (5 MPA.S) SODIUM LAURYL SULFATE SUCROSE TALC TITANIUM DIOXIDE BUTYL ALCOHOL ALCOHOL ISOPROPYL ALCOHOL POTASSIUM HYDROXIDE PROPYLENE GLYCOL WATER SHELLAC AMMONIA POLOXAMER 188 POLYETHYLENE GLYCOL 20000 BLUE CAPSULE ZA;65;100;mg"
+   ]
+  },
+  {
+   "set_id": "5af0b33d-bfa6-420b-86f0-067f95b402b2",
+   "effective_time": "20250129",
+   "openfda": {
+    "application_number": [
+     "ANDA212239"
+    ],
+    "brand_name": [
+     "Itraconazole"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Camber Pharmaceuticals, Inc."
+    ],
+    "product_ndc": [
+     "31722-006"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "348506"
+    ],
+    "spl_id": [
+     "2cd3622f-a50f-ec9c-e063-6294a90a3a30"
+    ],
+    "spl_set_id": [
+     "5af0b33d-bfa6-420b-86f0-067f95b402b2"
+    ],
+    "package_ndc": [
+     "31722-006-31"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0331722006316"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole ASCORBIC ACID HYDROCHLORIC ACID PROPYLENE GLYCOL WATER NONCRYSTALLIZING SORBITOL SOLUTION SACCHARIN SODIUM SODIUM HYDROXIDE ITRACONAZOLE ITRACONAZOLE colorless to yellowish brown"
+   ]
+  },
+  {
+   "set_id": "6242b7ad-eaa0-a524-b6e0-ec33e63407db",
+   "effective_time": "20250128",
+   "openfda": {
+    "application_number": [
+     "NDA020083"
+    ],
+    "brand_name": [
+     "itraconazole"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Patriot Pharmaceuticals"
+    ],
+    "product_ndc": [
+     "10147-1700"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "311204"
+    ],
+    "spl_id": [
+     "2cca3625-96e8-34cf-e063-6294a90ac975"
+    ],
+    "spl_set_id": [
+     "6242b7ad-eaa0-a524-b6e0-ec33e63407db"
+    ],
+    "package_ndc": [
+     "10147-1700-3",
+     "10147-1700-7"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0310147170079"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "itraconazole ITRACONAZOLE GELATIN, UNSPECIFIED HYPROMELLOSE, UNSPECIFIED POLYETHYLENE GLYCOL, UNSPECIFIED STARCH, CORN SUCROSE TITANIUM DIOXIDE FD&C BLUE NO. 1 FD&C BLUE NO. 2 D&C RED NO. 22 D&C RED NO. 28 ITRACONAZOLE ITRACONAZOLE blue opaque pink transparent PP;100"
+   ]
+  },
+  {
+   "set_id": "88e1955b-0336-4c1e-8f6d-aad0cebd7d25",
+   "effective_time": "20250403",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole SUCROSE HYPROMELLOSE 2910 (5 MPA.S) POLOXAMER 188 ALCOHOL METHYLENE CHLORIDE POLYETHYLENE GLYCOL 20000 TALC SILICON DIOXIDE GELATIN, UNSPECIFIED TITANIUM DIOXIDE SODIUM LAURYL SULFATE FD&C BLUE NO. 1 FD&C RED NO. 40 FD&C RED NO. 3 SHELLAC ISOPROPYL ALCOHOL BUTYL ALCOHOL PROPYLENE GLYCOL AMMONIA POTASSIUM HYDROXIDE STARCH, CORN ITRACONAZOLE ITRACONAZOLE Blue Opaque Pink transparent ITR;100"
+   ]
+  },
+  {
+   "set_id": "8aef87f2-8940-4d54-abe6-62ce3bce3259",
+   "effective_time": "20241015",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole D&C RED NO. 28 FD&C BLUE NO. 1 FD&C BLUE NO. 2 FERROSOFERRIC OXIDE GELATIN HYPROMELLOSE 2910 (5 MPA.S) POLYETHYLENE GLYCOL 20000 POTASSIUM HYDROXIDE PROPYLENE GLYCOL SHELLAC STARCH, CORN SUCROSE TALC TITANIUM DIOXIDE ITRACONAZOLE ITRACONAZOLE Blue opaque cap and pink transparent body 100;1463"
+   ]
+  },
+  {
+   "set_id": "8e41e42c-3ae0-4091-970b-bc0086755f1d",
+   "effective_time": "20250122",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "itraconazole itraconazole ADRABETADEX HYDROCHLORIC ACID PROPYLENE GLYCOL WATER SODIUM HYDROXIDE SACCHARIN SODIUM SORBITOL CHERRY CARAMEL ITRACONAZOLE ITRACONAZOLE clear and yellowish"
+   ]
+  },
+  {
+   "set_id": "a4d555fa-787c-40fb-bb7d-b0d4f7318fd0",
+   "effective_time": "20260713",
+   "openfda": {
+    "application_number": [
+     "NDA020083"
+    ],
+    "brand_name": [
+     "SPORANOX"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Janssen Pharmaceuticals, Inc."
+    ],
+    "product_ndc": [
+     "50458-290"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "311204",
+     "833164"
+    ],
+    "spl_id": [
+     "a79c080b-711a-4a15-af92-ff0c60cbfdf1"
+    ],
+    "spl_set_id": [
+     "a4d555fa-787c-40fb-bb7d-b0d4f7318fd0"
+    ],
+    "package_ndc": [
+     "50458-290-01",
+     "50458-290-04",
+     "50458-290-28"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0350458290042"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "SPORANOX ITRACONAZOLE ITRACONAZOLE ITRACONAZOLE GELATIN, UNSPECIFIED HYPROMELLOSE, UNSPECIFIED POLYETHYLENE GLYCOL, UNSPECIFIED STARCH, CORN SUCROSE TITANIUM DIOXIDE FD&C BLUE NO. 1 FD&C BLUE NO. 2 D&C RED NO. 22 D&C RED NO. 28 pink transparent blue opaque JANSSEN;SPORANOX;100"
+   ]
+  },
+  {
+   "set_id": "ae50721d-ee15-4ee7-9fe7-afd98c56461b",
+   "effective_time": "20260713",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "SPORANOX itraconazole ITRACONAZOLE ITRACONAZOLE HYDROXYPROPYL BETADEX HYDROCHLORIC ACID PROPYLENE GLYCOL WATER SODIUM HYDROXIDE SACCHARIN SODIUM SORBITOL CHERRY CARAMEL clear and yellowish"
+   ]
+  },
+  {
+   "set_id": "b1274d78-1096-4ae3-8299-a2e94eaa0ea5",
+   "effective_time": "20260730",
+   "openfda": {
+    "application_number": [
+     "ANDA209460"
+    ],
+    "brand_name": [
+     "Itraconazole"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "Torrent Pharmaceuticals Limited"
+    ],
+    "product_ndc": [
+     "13668-463"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "311204"
+    ],
+    "spl_id": [
+     "f902536c-20af-417f-bbca-f887d2d882c6"
+    ],
+    "spl_set_id": [
+     "b1274d78-1096-4ae3-8299-a2e94eaa0ea5"
+    ],
+    "package_ndc": [
+     "13668-463-30",
+     "13668-463-05",
+     "13668-463-37",
+     "13668-463-90"
+    ],
+    "is_original_packager": [
+     true
+    ],
+    "upc": [
+     "0313668463309"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole D&C RED NO. 28 FD&C BLUE NO. 1 FD&C BLUE NO. 2 FERROSOFERRIC OXIDE GELATIN HYPROMELLOSE 2910 (5 MPA.S) POLYETHYLENE GLYCOL 20000 POTASSIUM HYDROXIDE PROPYLENE GLYCOL SHELLAC STARCH, CORN SUCROSE TALC TITANIUM DIOXIDE ITRACONAZOLE ITRACONAZOLE Blue opaque cap and pink transparent body 100;1463"
+   ]
+  },
+  {
+   "set_id": "e564067e-e469-4c51-9076-75f89f5c5cdf",
+   "effective_time": "20250327",
+   "openfda": {
+    "application_number": [
+     "ANDA205080"
+    ],
+    "brand_name": [
+     "Itraconazole"
+    ],
+    "generic_name": [
+     "ITRACONAZOLE"
+    ],
+    "manufacturer_name": [
+     "American Health Packaging"
+    ],
+    "product_ndc": [
+     "60687-299"
+    ],
+    "product_type": [
+     "HUMAN PRESCRIPTION DRUG"
+    ],
+    "route": [
+     "ORAL"
+    ],
+    "substance_name": [
+     "ITRACONAZOLE"
+    ],
+    "rxcui": [
+     "311204"
+    ],
+    "spl_id": [
+     "31555f81-410c-9a69-e063-6394a90ab705"
+    ],
+    "spl_set_id": [
+     "e564067e-e469-4c51-9076-75f89f5c5cdf"
+    ],
+    "package_ndc": [
+     "60687-299-95",
+     "60687-299-25"
+    ],
+    "original_packager_product_ndc": [
+     "65162-630"
+    ],
+    "nui": [
+     "N0000175487",
+     "M0002083",
+     "N0000182141",
+     "N0000185503",
+     "N0000190113"
+    ],
+    "pharm_class_epc": [
+     "Azole Antifungal [EPC]"
+    ],
+    "pharm_class_cs": [
+     "Azoles [CS]"
+    ],
+    "pharm_class_moa": [
+     "Cytochrome P450 3A4 Inhibitors [MoA]",
+     "P-Glycoprotein Inhibitors [MoA]",
+     "Breast Cancer Resistance Protein Inhibitors [MoA]"
+    ],
+    "unii": [
+     "304NUG5GF4"
+    ]
+   },
+   "spl_product_data_elements": [
+    "Itraconazole Itraconazole SUCROSE FERROSOFERRIC OXIDE FD&C BLUE NO. 1 GELATIN, UNSPECIFIED HYPROMELLOSE, UNSPECIFIED DEXTROSE, UNSPECIFIED FORM MICROCRYSTALLINE CELLULOSE POLYETHYLENE GLYCOL, UNSPECIFIED POTASSIUM HYDROXIDE PROPYLENE GLYCOL SHELLAC SODIUM LAURYL SULFATE STARCH, CORN AMMONIA TITANIUM DIOXIDE ITRACONAZOLE ITRACONAZOLE transparent opaque AMNEAL;630"
+   ]
+  },
+  {
+   "set_id": "f1a91500-a944-4cb8-b4a8-ae278bcf728d",
+   "effective_time": "20250203",
+   "openfda": {},
+   "spl_product_data_elements": [
+    "EXKIVITY Mobocertinib Mobocertinib Mobocertinib 40mg;MB788"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE EXKIVITY is indicated for the treatment of adult patients with locally advanced or metastatic non-small cell lung cancer (NSCLC) with epidermal growth factor receptor (EGFR) exon 20 insertion mutations, as detected by an FDA-approved test [see Dosage and Administration (2.2) ] , whose disease has progressed on or after platinum-based chemotherapy. This indication is approved under accelerated approval based on overall response rate and duration of response [see Clinical Studies (14) ] . Continued approval for this indication may be contingent upon verification and description of clinical benefit in confirmatory trial(s). EXKIVITY is a kinase inhibitor indicated for the treatment of adult patients with locally advanced or metastatic non-small cell lung cancer (NSCLC) with epidermal growth factor receptor (EGFR) exon 20 insertion mutations, as detected by an FDA-approved test, whose disease has progressed on or after platinum-based chemotherapy. This indication is approved under accelerated approval based on overall response rate and duration of response. Continued approval for this indication may be contingent upon verification and description of clinical benefit in confirmatory trial(s). ( 1 , 2.2 )"
+   ],
+   "boxed_warning": [
+    "WARNING: QTc PROLONGATION AND TORSADES DE POINTES EXKIVITY can cause life-threatening heart rate-corrected QT (QTc) prolongation, including Torsades de Pointes, which can be fatal, and requires monitoring of QTc and electrolytes at baseline and periodically during treatment. Increase monitoring frequency in patients with risk factors for QTc prolongation [see Warnings and Precautions (5.1) ] . Avoid use of concomitant drugs which are known to prolong the QTc interval and use of strong or moderate CYP3A inhibitors with EXKIVITY, which may further prolong the QTc [see Warnings and Precautions (5.1) , Drug Interactions (7.1 , 7.3) ] . Withhold, reduce the dose, or permanently discontinue EXKIVITY based on the severity of QTc prolongation [see Dosage and Administration (2.4) ] . WARNING: QTc PROLONGATION AND TORSADES DE POINTES See full prescribing information for complete boxed warning. EXKIVITY can cause life-threatening heart rate-corrected QT (QTc) prolongation, including Torsades de Pointes, which can be fatal, and requires monitoring of QTc and electrolytes at baseline and periodically during treatment. Increase monitoring frequency in patients with risk factors for QTc prolongation ( 5.1 ). Avoid use of concomitant drugs which are known to prolong the QTc interval and use of strong or moderate CYP3A inhibitors with EXKIVITY, which may further prolong the QTc ( 5.1 , 7.1 , 7.3 ). Withhold, reduce the dose, or permanently discontinue EXKIVITY based on the severity of QTc prolongation ( 2.4 )."
+   ],
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Interstitial Lung Disease (ILD)/Pneumonitis : Monitor patients for new or worsening pulmonary symptoms indicative of ILD/pneumonitis. Immediately withhold EXKIVITY in patients with suspected ILD/pneumonitis and permanently discontinue EXKIVITY if ILD/pneumonitis is confirmed. ( 2.4 , 5.2 ) Cardiac Toxicity : Monitor cardiac function, including left ventricular ejection fraction, at baseline and during treatment. Withhold, resume at reduced dose or permanently discontinue based on severity. ( 2.4 , 5.3 ) Diarrhea : Diarrhea may lead to dehydration or electrolyte imbalance, with or without renal impairment. Monitor electrolytes and advise patients to start an antidiarrheal agent at first episode of diarrhea and to increase fluid and electrolyte intake. Withhold, reduce the dose, or permanently discontinue EXKIVITY based on the severity. ( 2.4 , 5.4 ) Embryo-Fetal Toxicity : Can cause fetal harm. Advise females of reproductive potential of the potential risk to a fetus and to use effective non-hormonal contraception. ( 5.5 , 8.1 , 8.3 ) 5.1 QTc Prolongation and Torsades de Pointes EXKIVITY can cause life-threatening heart rate-corrected QT (QTc) prolongation, including Torsades de Pointes, which can be fatal. In the 250 patient subset of the pooled EXKIVITY safety population who had scheduled and unscheduled electrocardiograms (ECGs) [see Adverse Reactions (6.1) , Clinical Pharmacology (12.2) ] , 1.2% of patients had a QTc interval >500 msec and 11% of patients had a change-from-baseline QTc interval >60 msec. Grade 4 Torsades de Pointes occurred in 1 patient (0.4%). Clinical trials of EXKIVITY did not enroll patients with baseline QTc greater than 470 msec. Assess QTc and electrolytes at baseline and correct abnormalities in sodium, potassium, calcium, and magnesium prior to initiating EXKIVITY. Monitor QTc and electrolytes periodically during treatment. Increase monitoring frequency in patients with risk factors for QTc prolongation, such as patients with congenital long QT syndrome, heart disease, severe renal impairment, or electrolyte abnormalities. Avoid use of concomitant drugs which are known to prolong the QTc interval. Avoid concomitant use of strong or moderate CYP3A inhibitors with EXKIVITY [see Drug Interactions (7.1) ] , which may further prolong the QTc [see Drug Interactions (7.3) ] . Withhold, reduce the dose, or permanently discontinue EXKIVITY based on the severity of the QTc prolongation [see Dosage and Administration (2.4) ] . 5.2 Interstitial Lung Disease (ILD)/Pneumonitis EXKIVITY can cause ILD/pneumonitis, which can be fatal. In the pooled EXKIVITY safety population [see Adverse Reactions (6.1) ] , ILD/pneumonitis occurred in 4.3% of patients including 0.8% Grade 3 events and 1.2% fatal events. Monitor patients for new or worsening pulmonary symptoms indicative of ILD/pneumonitis. Immediately withhold EXKIVITY in patients with suspected ILD/pneumonitis and permanently discontinue EXKIVITY if ILD/pneumonitis is confirmed [see Dosage and Administration (2.4) ] . 5.3 Cardiac Toxicity EXKIVITY can cause cardiac toxicity (including decreased ejection fraction, cardiomyopathy, and congestive heart failure) resulting in heart failure which can be fatal. In the pooled EXKIVITY safety population [see Adverse Reactions (6.1) ] , heart failure occurred in 2.7% of patients including 1.2% Grade 3 reactions, 0.4% Grade 4 reactions, and one (0.4%) fatal case of heart failure. EXKIVITY can cause QTc prolongation resulting in Torsades de Pointes [see Warnings and Precautions (5.1) ] . Atrial fibrillation (1.6%), ventricular tachycardia (0.4%), first degree atrioventricular block (0.4%), second degree atrioventricular block (0.4%), left bundle branch block (0.4%), supraventricular extrasystoles (0.4%) and ventricular extrasystoles (0.4%) also occurred in patients receiving EXKIVITY. Monitor cardiac function, including assessment of left ventricular ejection fraction at baseline and during treatment. Withhold, reduce the dose, or permanently discontinue EXKIVITY based on the severity [see Dosage and Administration (2.4) ] . 5.4 Diarrhea EXKIVITY can cause diarrhea, which can be severe. In the pooled EXKIVITY safety population [see Adverse Reactions (6.1) ] , diarrhea occurred in 93% of patients, including 20% Grade 3 and 0.4% Grade 4. The median time to first onset of diarrhea was 5 days but diarrhea has occurred within 24 hours after administration of EXKIVITY. In the 48% of patients whose diarrhea resolved, the median time to resolution was 3 days. Diarrhea may lead to dehydration or electrolyte imbalance, with or without renal impairment. Treat diarrhea promptly. Advise patients to start an antidiarrheal agent (e.g., loperamide) at first sign of diarrhea or increased bowel movement frequency and to increase fluid and electrolyte intake. Monitor electrolytes and withhold, reduce the dose or permanently discontinue EXKIVITY based on the severity [see Dosage and Administration (2.4) ] . 5.5 Embryo-Fetal Toxicity Based on findings from animal studies and its mechanism of action, EXKIVITY can cause fetal harm when administered to a pregnant woman. Oral administration of mobocertinib to pregnant rats during the period of organogenesis resulted in embryolethality at maternal exposures approximately 1.7 times the human exposure based on area under the curve (AUC) at the 160 mg once daily clinical dose. Advise pregnant women of the potential risk to a fetus. Advise females of reproductive potential to use effective non-hormonal contraception during treatment with EXKIVITY [see Drug Interactions (7.2) ] and for 1 month after the last dose. Advise males with female partners of reproductive potential to use effective contraception during treatment with EXKIVITY and for 1 week after the last dose of EXKIVITY [see Use in Specific Populations (8.1 , 8.3) ] ."
+   ],
+   "dosage_and_administration": [
+    "2 DOSAGE AND ADMINISTRATION Recommended Dosage : 160 mg orally once daily, with or without food. ( 2.3 ) Renal Impairment : Reduce the dose of EXKIVITY for patients with severe renal impairment. ( 2.6 , 8.6 ) 2.1 Recommended Evaluation and Testing Before Initiating EXKIVITY Before initiating EXKIVITY, evaluate QTc and electrolytes and correct abnormalities in sodium, potassium, calcium, and magnesium [see Warnings and Precautions (5.1) ] . 2.2 Patient Selection Select patients with locally advanced or metastatic NSCLC for treatment with EXKIVITY based on the presence of EGFR exon 20 insertion mutations [see Clinical Studies (14) ] . Information on FDA-approved tests is available at: http://www.fda.gov/CompanionDiagnostics. 2.3 Recommended Dosage The recommended dosage of EXKIVITY is 160 mg orally once daily until disease progression or unacceptable toxicity. Take EXKIVITY with or without food [see Clinical Pharmacology 12.3 ] , at the same time each day. Swallow EXKIVITY capsules whole. Do not open, chew or dissolve the contents of the capsules. If a dose is missed by more than 6 hours, skip the dose and take the next dose the following day at its regularly scheduled time. If a dose is vomited, do not take an additional dose. Take the next dose as prescribed the following day. 2.4 Dosage Modifications for Adverse Reactions EXKIVITY dose reduction levels for adverse reactions are summarized in Table 1. Table 1: Recommended EXKIVITY Dose Reductions Dose Reductions Dose Level First dose reduction 120 mg once daily Second dose reduction 80 mg once daily Recommended dosage modifications of EXKIVITY for adverse reactions are provided in Table 2. Table 2: Recommended Dosage Modifications for EXKIVITY Adverse Reactions Adverse Reaction Severity Graded per Common Terminology Criteria for Adverse Events Version 5.0 EXKIVITY Dosage Modification ULN = upper limit of normal QTc Interval Prolongation and Torsades de Pointes [see Warnings and Precautions (5.1) ] Grade 2 (QTc interval 481-500 msec) First Occurrence Withhold EXKIVITY until \u2264 Grade 1 or baseline. Upon recovery, resume EXKIVITY at the same dose. Recurrence Withhold EXKIVITY until \u2264 Grade 1 or baseline. Upon recovery, resume EXKIVITY at the next lower dose or permanently discontinue EXKIVITY. Grade 3 (QTc interval \u2265501 msec or QTc interval increase of >60 msec from baseline) First Occurrence Withhold EXKIVITY until \u2264 Grade 1 or baseline. Upon recovery, resume EXKIVITY at the next lower dose or permanently discontinue EXKIVITY. Recurrence Permanently discontinue EXKIVITY. Grade 4 (Torsades de Pointes; polymorphic ventricular tachycardia; signs/symptoms of serious arrhythmia) Permanently discontinue EXKIVITY. Interstitial Lung Disease (ILD)/pneumonitis [see Warnings and Precautions (5.2) ] Any grade Withhold EXKVITY if ILD/pneumonitis is suspected. Permanently discontinue EXKIVITY if ILD/pneumonitis is confirmed. Decreased Ejection Fraction or Heart Failure [see Warnings and Precautions (5.3) ] Grade 2 decreased ejection fraction Withhold EXKIVITY until \u2264 Grade 1 or baseline. If recovered to baseline within 2 weeks, resume EXKIVITY at the same dose or the next lower dose. If not recovered to baseline within 2 weeks, permanently discontinue EXKIVITY. \u2265 Grade 2 heart failure or Grade 3 or 4 decreased ejection fraction Permanently discontinue EXKIVITY. Diarrhea [see Warnings and Precautions (5.4) ] Intolerable or recurrent Grade 2 or Grade 3 Withhold EXKIVITY until \u2264 Grade 1. Resume EXKIVITY at the same dose or the next lower dose. Grade 4 First Occurrence Withhold EXKIVITY until \u2264 Grade 1. Resume EXKIVITY at the next lower dose. Recurrence Permanently discontinue EXKIVITY. Increased Amylase or Lipase [see Adverse Reactions (6.1) ] Grade 3 without signs or symptoms Withhold EXKIVITY until \u2264 Grade 1. Resume EXKIVITY at the same dose or next lower dose. If not recovered to \u2264 Grade 1 within 2 weeks, permanently discontinue EXKIVITY. Grade 3 with signs or symptoms Withhold EXKIVITY until \u2264 Grade 1. Resume EXKIVITY at the next lower dose. If not recovered to \u2264 Grade 1 within 2 weeks, permanently discontinue EXKIVITY. Grade 4 First Occurrence Withhold EXKIVITY until \u2264 Grade 1. Resume EXKIVITY at the next lower dose if recovery occurs within 2 weeks. Permanently discontinue EXKIVITY if recovery does not occur within 2 weeks. Recurrence Permanently discontinue EXKIVITY. Other Adverse Reactions [see Adverse Reactions (6.1) ] Intolerable or recurrent Grade 2 or Grade 3 Withhold EXKIVITY until \u2264 Grade 1. Resume EXKIVITY at the same dose or the next lower dose. Grade 4 First Occurrence Withhold EXKIVITY until \u2264 Grade 1. Resume EXKIVITY at the next lower dose if recovery occurs within 2 weeks. Permanently discontinue EXKIVITY if recovery does not occur within 2 weeks. Recurrence Permanently discontinue EXKIVITY. 2.5 Dosage Modifications for Moderate CYP3A Inhibitors Avoid concomitant use of moderate CYP3A inhibitors with EXKIVITY. If concomitant use of a moderate CYP3A inhibitor cannot be avoided, reduce the EXKIVITY dose by approximately 50% (i.e., from 160 to 80 mg, 120 to 40 mg, or 80 to 40 mg) and monitor the QTc interval more frequently. After the moderate CYP3A inhibitor has been discontinued for 3 to 5 elimination half-lives, resume EXKIVITY at the dose taken prior to initiating the moderate CYP3A inhibitor [see Drug Interactions (7.1) ] . 2.6 Dosage Modifications for Patients with Severe Renal Impairment Reduce the EXKIVITY dose by approximately 50% (i.e., from 160 to 80 mg, 120 to 40 mg, or 80 to 40 mg) and monitor the QTc interval more frequently for patients with severe renal impairment [see Use in Specific Populations (8.6) ] ."
+   ],
+   "drug_interactions": [
+    "7 DRUG INTERACTIONS CYP3A Inhibitors : Avoid concomitant use of EXKIVITY with strong or moderate CYP3A inhibitors. If concomitant use of a moderate CYP3A inhibitor is unavoidable, reduce the dose of EXKIVITY. ( 2.5 , 7.1 ) CYP3A Inducers : Avoid concomitant use of EXKIVITY with strong or moderate CYP3A inducers. ( 7.1 ) 7.1 Effect of Other Drugs on EXKIVITY Strong or Moderate CYP3A Inhibitors Clinical Impact Coadministration of EXKIVITY with strong or moderate CYP3A inhibitors increased mobocertinib plasma concentrations [see Clinical Pharmacology (12.3) ] , which may increase the risk of adverse reactions, including QTc interval prolongation. Prevention or Management Avoid concomitant use of strong or moderate CYP3A inhibitors with EXKIVITY. If concomitant use of moderate CYP3A inhibitors cannot be avoided, reduce the EXKIVITY dose and monitor the QTc interval more frequently with ECGs [see Dosage and Administration (2.5) , Warnings and Precautions (5.1) ] . Strong or Moderate CYP3A Inducers Clinical Impact Coadministration of EXKIVITY with strong or moderate CYP3A inducers decreased mobocertinib plasma concentrations [see Clinical Pharmacology (12.3) ] , which may reduce EXKIVITY anti-tumor activity. Prevention or Management Avoid concomitant use of strong or moderate CYP3A inducers with EXKIVITY. 7.2 Effect of EXKIVITY on Other Drugs CYP3A Substrates Clinical Impact Coadministration of EXKIVITY with CYP3A substrates may decrease plasma concentrations of CYP3A substrates [see Clinical Pharmacology (12.3) ] , which may reduce the efficacy of these substrates. Prevention or Management Avoid concomitant use of hormonal contraceptives with EXKIVITY [see Warnings and Precautions (5.5) , Use in Specific Populations (8.3) ] . Avoid concomitant use of EXKIVITY with other CYP3A substrates where minimal concentration changes may lead to serious therapeutic failures. If concomitant use is unavoidable, increase the CYP3A substrate dosage in accordance with the approved product Prescribing Information. 7.3 Drugs that Prolong the QTc Interval Drugs that Prolong the QTc Interval Clinical Impact EXKIVITY can cause QTc interval prolongation [see Warnings and Precautions (5.1) , Clinical Pharmacology (12.2) ] . Coadministration of EXKIVITY with drugs known to prolong the QTc interval may increase the risk of QTc interval prolongation [see Warnings and Precautions (5.1) , Clinical Pharmacology (12.2) ] . Prevention or Management Avoid concomitant use of other medications known to prolong the QTc interval with EXKIVITY. If concomitant use is unavoidable, monitor the QTc interval more frequently with ECGs [see Warnings and Precautions (5.1) ] ."
+   ]
+  }
+ ]
+}
