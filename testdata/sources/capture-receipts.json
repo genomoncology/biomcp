@@ -3100,6 +3100,42 @@
       }
     },
     {
+      "path": "who-pq/finished-pharmaceutical-products_export_20261006.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "WHO Prequalification",
+        "request": "https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&_format=csv",
+        "captured_at": "2026-10-06T19:41:00Z",
+        "sha256": "db815ff20c4fe2ed45d08687d445ecf3a6bd3e419fb14ae35f62f01a0c95ca3f",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful. The minimized spec fixture spec/fixtures/who-pq/who_pq.csv is derived from this capture.",
+        "provider_origin_statement": "Bytes recorded from the public WHO Prequalification finished-pharmaceutical-products CSV export with an anonymous request (HTTP 200, text/csv). The export ships title-case headers and no longer carries a 'Basis of Alternative Listing' column, which is the recorded shape behind ticket 1304 and issue #288."
+      }
+    },
+    {
+      "path": "who-pq/active-pharmaceutical-ingredients_export_20261006.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "WHO Prequalification",
+        "request": "https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&_format=csv",
+        "captured_at": "2026-10-06T19:41:00Z",
+        "sha256": "19c7ee444d109618014eae7a3ca9f9a46f2de316d495403729fc349f365ed979",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful. The minimized spec fixture spec/fixtures/who-pq/who_api.csv is derived from this capture.",
+        "provider_origin_statement": "Bytes recorded from the public WHO Prequalification active-pharmaceutical-ingredients CSV export with an anonymous request (HTTP 200, text/csv). The applicant header is now 'Applicant' rather than 'Applicant Organization', which is the recorded shape behind ticket 1304 and issue #288."
+      }
+    },
+    {
+      "path": "who-pq/vaccines_prequalified_export_20261006.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "WHO Prequalification",
+        "request": "https://extranet.who.int/prequal/vaccines/prequalified/export",
+        "captured_at": "2026-10-06T19:41:00Z",
+        "sha256": "46c09550c222263518e4712bcdd7536df513eeec844a7d9638d426646e5d440d",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful, including the trailing space inside the first header cell's quotes. The minimized spec fixture spec/fixtures/who-pq/who_vaccines.csv preserves that byte too.",
+        "provider_origin_statement": "Bytes recorded from the public WHO Prequalification vaccines CSV export with an anonymous request (HTTP 200, text/csv). The first header cell ships as 'Date of Prequalification ' with a trailing space inside the quotes, which is the recorded shape behind ticket 1304 and issue #288."
+      }
+    },
+    {
       "path": "ncbi_efetch/pmc6172658.xml",
       "classification": "real_and_receipted",
       "receipt": {

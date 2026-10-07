@@ -4,6 +4,7 @@ use super::{CvxCommand, DdinterCommand, EmaCommand, GtrCommand, WhoCommand, WhoI
 use crate::cli::{Cli, Commands, execute};
 
 mod dev2_contracts;
+mod who_sync;
 
 fn parse_built_cli<I, T>(args: I) -> Cli
 where
