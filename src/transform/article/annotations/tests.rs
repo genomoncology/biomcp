@@ -320,7 +320,7 @@ fn positions_land_only_when_requested() {
 }
 
 #[test]
-fn multi_allele_rsid_rows_carry_gene_qualified_hgvs() {
+fn rows_with_gene_and_change_prefer_the_gene_qualified_form() {
     let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
         "pmid": 30738221,
         "passages": [
@@ -385,8 +385,11 @@ fn multi_allele_rsid_rows_carry_gene_qualified_hgvs() {
     .expect("valid JSON");
 
     let ann = extract_annotations(&doc, false).expect("annotations should exist");
-    // rs121913529 spans three alleles, so each row names its own change with
-    // the gene symbol the document's gene annotations give.
+    // Every row with a gene id and a protein change carries the
+    // gene-qualified form, so the multi-allele rs121913529 rows and the
+    // single-allele rs121913530 row all name their own allele. G13C carries
+    // no gene id, so its rsID, which this document shows naming one change,
+    // keeps the link.
     assert_eq!(
         ann.mutations,
         vec![
@@ -400,8 +403,8 @@ fn multi_allele_rsid_rows_carry_gene_qualified_hgvs() {
             AnnotationCount {
                 text: "G12C".into(),
                 count: 1,
-                namespace: Some("rsID".into()),
-                identifier: Some("rs121913530".into()),
+                namespace: Some("HGVS".into()),
+                identifier: Some("KRAS p.G12C".into()),
                 ..Default::default()
             },
             AnnotationCount {
@@ -423,6 +426,106 @@ fn multi_allele_rsid_rows_carry_gene_qualified_hgvs() {
                 count: 1,
                 namespace: Some("rsID".into()),
                 identifier: Some("rs121913535".into()),
+                ..Default::default()
+            }
+        ]
+    );
+}
+
+#[test]
+fn single_mention_allele_of_a_multi_allele_rsid_carries_the_gene_form() {
+    let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
+        "pmid": 8,
+        "passages": [
+            {
+                "infons": {"type": "title"},
+                "text": "KRAS G12A in NSCLC",
+                "annotations": [
+                    {"text": "KRAS", "infons": {"type": "Gene", "identifier": "3845"}},
+                    {
+                        "text": "G12A",
+                        "infons": {
+                            "type": "Variant",
+                            "identifier": "tmVar:p|SUB|G|12|A",
+                            "hgvs": "p.G12A",
+                            "rsid": "rs121913529",
+                            "gene_id": 3845
+                        }
+                    }
+                ]
+            }
+        ]
+    }))
+    .expect("valid JSON");
+
+    // This document shows rs121913529 naming one change, yet that rsID opens
+    // G12D, so the row names its own allele with the gene-qualified form
+    // instead of the rsID.
+    let ann = extract_annotations(&doc, false).expect("annotations should exist");
+    assert_eq!(
+        ann.mutations,
+        vec![AnnotationCount {
+            text: "G12A".into(),
+            count: 1,
+            namespace: Some("HGVS".into()),
+            identifier: Some("KRAS p.G12A".into()),
+            ..Default::default()
+        }]
+    );
+}
+
+#[test]
+fn one_allele_written_two_ways_stays_one_rsid_change() {
+    let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
+        "pmid": 9,
+        "passages": [
+            {
+                "infons": {"type": "abstract"},
+                "text": "G12D and Gly12Asp",
+                "annotations": [
+                    {
+                        "text": "G12D",
+                        "infons": {
+                            "type": "Mutation",
+                            "identifier": "tmVar:p|SUB|G|12|D",
+                            "hgvs": "p.G12D",
+                            "rsid": "rs121913529"
+                        }
+                    },
+                    {
+                        "text": "Gly12Asp",
+                        "infons": {
+                            "type": "Mutation",
+                            "identifier": "tmVar:p|SUB|Gly|12|Asp",
+                            "hgvs": "p.Gly12Asp",
+                            "rsid": "rs121913529"
+                        }
+                    }
+                ]
+            }
+        ]
+    }))
+    .expect("valid JSON");
+
+    // One allele written two ways is still one change, so the rsID keeps its
+    // link for both rows. The document annotates no gene, so these rows take
+    // the rsID fallback path.
+    let ann = extract_annotations(&doc, false).expect("annotations should exist");
+    assert_eq!(
+        ann.mutations,
+        vec![
+            AnnotationCount {
+                text: "G12D".into(),
+                count: 1,
+                namespace: Some("rsID".into()),
+                identifier: Some("rs121913529".into()),
+                ..Default::default()
+            },
+            AnnotationCount {
+                text: "Gly12Asp".into(),
+                count: 1,
+                namespace: Some("rsID".into()),
+                identifier: Some("rs121913529".into()),
                 ..Default::default()
             }
         ]
