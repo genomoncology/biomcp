@@ -24,3 +24,17 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 - Changes: delete the probe and lower `MAX_PACKAGE_FILES` by one with a true comment; move the forbidden names out of the public repository into a local, untracked config that `pm lint forbidden-name` reads; restore the 1299 spec fences and matcher lines from `921f17c75`; clean the inventory metadata; run fresh code reviews on the 1304 landing and on the post-review deltas of 1299, 1302 and 1298, and record them; correct the 1298 design-review line; correct the 1284 records, the lane table and the milestone exit criteria, and record who waived the QA step.
 - Proof: `cargo package --list` has no probe; `mustmatch test -v article.md` runs the three 1299 blocks; `git grep` finds no private names in the tree; the reviews are recorded on the tickets.
 - Defers: rewriting public history that already carries leaked names. That is Ian's call, recorded in the review file.
+
+## Build status
+
+- Built on branch `tickets/2020-clear-main-before-the-0-9-2-tag`,
+  commits 04df5d21d through 4d85dff69, 2026-10-07, across two timeout
+  revivals with checkpoints (nothing lost).
+- Code review: REJECT 2026-10-07, both findings fixed the same day.
+  P1 (the who_pq removal_condition join surviving the item-4 repair)
+  fixed in fa51560e0, verified by grep-zero, the bare tool's
+  byte-identity, and ratchet exit 0. P2 (two team-sense phrases)
+  neutralized in the same commit, plus the sixth-go billing phrases.
+- Code re-review (fold delta da0bf7969..fa51560e0): ACCEPT 2026-10-07.
+  All three folds verified character-level; one residual P2 phrase in
+  the 1287 record reworded by the coordinator in 4d85dff69.
