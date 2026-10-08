@@ -130,6 +130,45 @@ impl OpenFdaClient {
         ))
     }
 
+    /// The identity-field fallback: openFDA phrase search over each label's
+    /// own `spl_product_data_elements`.
+    ///
+    /// Some current SPL records carry no populated `openfda.generic_name` or
+    /// `brand_name`, so the field-scoped plan misses them while their product
+    /// data elements list their names. The query also stays small where the
+    /// unfielded full-text search does not: section text mentions most drug
+    /// names in hundreds of other labels (a full-text "cisapride" answer is
+    /// 16.4 MB against the 8 MiB body read limit), while a label's product
+    /// data elements hold only its own names and excipients. The small limit
+    /// keeps the answer well under the read limit; results are unsorted so
+    /// provider relevance ranking decides the order, and callers must still
+    /// confirm any result's own identity before using it.
+    pub(crate) fn label_elements_search_plan(
+        drug_name: &str,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let drug_name = drug_name.trim();
+        if drug_name.is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "Drug name is required. Example: biomcp get drug vemurafenib label".into(),
+            ));
+        }
+        if drug_name.len() > 256 {
+            return Err(BioMcpError::InvalidArgument(
+                "Drug name is too long.".into(),
+            ));
+        }
+
+        let escaped = Self::escape_query_value(drug_name);
+        let q = format!("spl_product_data_elements:\"{escaped}\"");
+        Ok(with_api_key(
+            RequestPlan::get("drug/label.json")
+                .query("search", q)
+                .query("limit", "10"),
+            api_key,
+        ))
+    }
+
     pub(crate) fn drugsfda_search_plan(
         query: &str,
         limit: usize,
@@ -364,6 +403,15 @@ impl OpenFdaClient {
         drug_name: &str,
     ) -> Result<Option<serde_json::Value>, BioMcpError> {
         let plan = Self::label_search_plan(drug_name, self.api_key.as_deref())?;
+        self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .await
+    }
+
+    pub async fn label_elements_search(
+        &self,
+        drug_name: &str,
+    ) -> Result<Option<serde_json::Value>, BioMcpError> {
+        let plan = Self::label_elements_search_plan(drug_name, self.api_key.as_deref())?;
         self.get_json_optional(request_from_plan(&self.client, self.base.as_ref(), &plan))
             .await
     }

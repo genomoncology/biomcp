@@ -1,0 +1,90 @@
+{
+ "took": 3,
+ "total": 3,
+ "max_score": 30.73845,
+ "hits": [
+  {
+   "_id": "AZSRSNUQCUDCGG-UHFFFAOYSA-N",
+   "_score": 30.73845,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "mobocertinib"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "drug_mechanisms": [
+     {
+      "action_type": "INHIBITOR",
+      "target_name": "Epidermal growth factor receptor"
+     }
+    ],
+    "molecule_chembl_id": "CHEMBL4650319",
+    "molecule_type": "Small molecule",
+    "pref_name": "MOBOCERTINIB"
+   },
+   "drugbank": {
+    "_license": "https://bit.ly/3Hikpvm",
+    "id": "DB16390",
+    "name": "Mobocertinib",
+    "synonyms": [
+     "Mobocertinib"
+    ]
+   },
+   "drugcentral": {
+    "_license": "http://bit.ly/2SeEhUy",
+    "approval": {
+     "agency": "FDA",
+     "date": "2021-09-15"
+    },
+    "drug_use": {
+     "indication": {
+      "concept_name": "Advanced or metastatic non-small cell lung cancer with EGFR exon 20 insertion mutations"
+     }
+    }
+   },
+   "gtopdb": {
+    "_license": "https://www.guidetopharmacology.org/download.jsp",
+    "interaction_targets": [
+     {
+      "symbol": "EGFR"
+     }
+    ],
+    "name": "mobocertinib"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "MOBOCERTINIB",
+    "unii": "39HBQ4A67L"
+   }
+  },
+  {
+   "_id": "YXYAEUMTJQGKHS-UHFFFAOYSA-N",
+   "_score": 23.345608,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "mobocertinib succinate"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "drug_mechanisms": [
+     {
+      "action_type": "INHIBITOR",
+      "target_name": "Epidermal growth factor receptor"
+     }
+    ],
+    "molecule_chembl_id": "CHEMBL4802239",
+    "molecule_type": "Small molecule",
+    "pref_name": "MOBOCERTINIB SUCCINATE"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "MOBOCERTINIB SUCCINATE",
+    "unii": "53QIA92ZEE"
+   }
+  },
+  {
+   "_id": "C5418176",
+   "_score": 17.143324
+  }
+ ]
+}

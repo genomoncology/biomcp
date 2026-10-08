@@ -354,13 +354,19 @@ fn render_us_safety_block(
     // both label and safety are requested (both read the same DailyMed
     // field); printing them here too would show the text twice under
     // two Warnings headings. The caller says whether that section is
-    // actually rendering them on this card.
+    // actually rendering them on this card. The comparison uses the
+    // Markdown label projection, because the entity keeps whole label
+    // sections while the safety field keeps its capped extraction; both
+    // sides must be the capped text a combined card would print.
     let duplicated_by_raw_label = label_section_renders_warnings
         && drug
             .label
             .as_ref()
-            .and_then(|label| label.warnings.as_deref())
-            .is_some_and(|text| Some(text) == drug.us_safety_warnings.as_deref());
+            .and_then(|label| {
+                crate::entities::drug::markdown_label_view(label, drug.label_set_id.as_deref())
+                    .warnings
+            })
+            .is_some_and(|text| Some(&text) == drug.us_safety_warnings.as_ref());
     if !duplicated_by_raw_label {
         out.push_str("\n### Warnings\n");
         if let Some(warnings) = drug.us_safety_warnings.as_deref() {

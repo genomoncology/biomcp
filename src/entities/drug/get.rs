@@ -16,8 +16,9 @@ use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
 
 use super::label::{
-    extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
-    extract_label_warnings_text,
+    ELEMENTS_SEARCH_OVERSIZE_NOTE, LABEL_UNAVAILABLE_MESSAGE, LabelLookup, NO_LABEL_TEXT_NOTE,
+    NO_SPL_RECORD_NOTE, extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
+    extract_label_warnings_text, lookup_label_response,
 };
 use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
@@ -259,6 +260,7 @@ pub(super) struct ResolvedDrugBase {
     pub(super) drug: Drug,
     pub(super) label_response: Option<serde_json::Value>,
     pub(super) label_attempt_failed: bool,
+    pub(super) label_elements_oversize: bool,
     trial_alias_candidates: Vec<TrialAlias>,
     selected_hits: Vec<MyChemHit>,
 }
@@ -559,7 +561,7 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
         return Ok(resolution);
     }
 
-    let lookup = resolve_drug_base(requested_name, false, false)
+    let lookup = resolve_drug_base(requested_name, false)
         .await
         .map(|resolved| TrialAliasLookup {
             canonical_name: resolved.drug.name,
@@ -597,7 +599,6 @@ pub(crate) async fn resolve_trial_canonical_name(name: &str) -> Result<String, B
 pub(super) async fn resolve_drug_base(
     name: &str,
     fetch_label_response: bool,
-    label_required: bool,
 ) -> Result<ResolvedDrugBase, BioMcpError> {
     let name = name.trim();
     if name.is_empty() {
@@ -694,23 +695,19 @@ pub(super) async fn resolve_drug_base(
 
     let mut label_response_opt: Option<serde_json::Value> = None;
     let mut label_attempt_failed = false;
+    let mut label_elements_oversize = false;
     if fetch_label_response {
+        // A failed label fetch degrades the label section to an unavailable
+        // outcome instead of failing the card; sparse-metadata misses resolve
+        // through the guarded identity-field fallback in `lookup_label_response`.
         match OpenFdaClient::new() {
-            Ok(client) => match client.label_search(&drug.name).await {
-                Ok(v) => label_response_opt = v,
-                Err(err) => {
-                    if label_required {
-                        return Err(err);
-                    }
-                    label_attempt_failed = true;
-                }
+            Ok(client) => match lookup_label_response(&client, &drug.name).await {
+                Ok(LabelLookup::Response(response)) => label_response_opt = Some(response),
+                Ok(LabelLookup::NoSplRecord) => {}
+                Ok(LabelLookup::ElementsSearchTooLarge) => label_elements_oversize = true,
+                Err(_) => label_attempt_failed = true,
             },
-            Err(err) => {
-                if label_required {
-                    return Err(err);
-                }
-                label_attempt_failed = true;
-            }
+            Err(_) => label_attempt_failed = true,
         }
     }
 
@@ -724,6 +721,7 @@ pub(super) async fn resolve_drug_base(
         drug,
         label_response: label_response_opt,
         label_attempt_failed,
+        label_elements_oversize,
         trial_alias_candidates,
         selected_hits: selected.into_iter().cloned().collect(),
     })
@@ -734,6 +732,7 @@ async fn populate_common_sections(
     drug: &mut Drug,
     label_response: Option<&serde_json::Value>,
     label_attempt_failed: bool,
+    label_elements_oversize: bool,
     section_flags: &DrugSections,
     raw_label: bool,
 ) -> Result<(), BioMcpError> {
@@ -752,6 +751,21 @@ async fn populate_common_sections(
     } else {
         None
     };
+
+    if section_flags.include_label {
+        let outcome = if label_attempt_failed {
+            SectionOutcome::unavailable(LABEL_UNAVAILABLE_MESSAGE)
+        } else if drug.label.is_some() {
+            SectionOutcome::data("OpenFDA label")
+        } else if label_response.is_some() {
+            SectionOutcome::empty_with_reason("OpenFDA label", NO_LABEL_TEXT_NOTE)
+        } else if label_elements_oversize {
+            SectionOutcome::empty_with_reason("OpenFDA label", ELEMENTS_SEARCH_OVERSIZE_NOTE)
+        } else {
+            SectionOutcome::empty_with_reason("OpenFDA label", NO_SPL_RECORD_NOTE)
+        };
+        drug.section_outcomes.complete("label", outcome);
+    }
 
     if section_flags.include_interactions {
         super::interactions::populate_card_interactions(
@@ -993,13 +1007,13 @@ async fn get_with_region_owned(
         || section_flags.include_interactions
         || (region.includes_us() && section_flags.include_safety);
 
-    let mut resolved =
-        resolve_drug_base(&name, fetch_label_response, section_flags.include_label).await?;
+    let mut resolved = resolve_drug_base(&name, fetch_label_response).await?;
     populate_common_sections(
         &name,
         &mut resolved.drug,
         resolved.label_response.as_ref(),
         resolved.label_attempt_failed,
+        resolved.label_elements_oversize,
         &section_flags,
         raw_label,
     )

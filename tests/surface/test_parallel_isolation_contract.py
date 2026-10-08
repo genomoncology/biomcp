@@ -1257,6 +1257,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/drug.md",
     "spec/entity/gene.md",
     "spec/entity/drug-interactions.md",
+    "spec/entity/drug-label-sections.md",
     "spec/entity/pgx.md",
     "spec/entity/section-outcomes.md",
     "spec/entity/study.md",

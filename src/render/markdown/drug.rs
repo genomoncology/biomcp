@@ -55,6 +55,17 @@ pub fn drug_markdown_with_region(
         &drug.section_outcomes,
         Some(&discovery.recovery),
     );
+    // Markdown keeps a capped short form of label sections; JSON carries the
+    // whole section text stored on the entity.
+    let markdown_label = drug.label.as_ref().map(|label| {
+        crate::entities::drug::markdown_label_view(label, drug.label_set_id.as_deref())
+    });
+    // The short-form pointer only prints when the capped view actually cut
+    // content; nothing was omitted when every section fits the cap.
+    let label_truncated = drug
+        .label
+        .as_ref()
+        .is_some_and(crate::entities::drug::markdown_label_view_truncates);
     let safety_state = source_states
         .get("safety")
         .expect("registered drug safety state");
@@ -98,7 +109,14 @@ pub fn drug_markdown_with_region(
             Some(crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage) => Some("in the DDInter coverage set"),
             None => None,
         },
-        label => &drug.label,
+        label => &markdown_label,
+        label_missing_reason => drug.section_outcomes.get("label").and_then(|outcome| {
+            (outcome.outcome() == SectionOutcomeState::Empty)
+                .then_some(outcome.message())
+                .flatten()
+        }),
+        label_truncated => label_truncated,
+        label_name_quoted => shell_quote_arg(&drug.name),
         raw_label => raw_label,
         civic => &drug.civic,
         show_label_section => show_label_section,

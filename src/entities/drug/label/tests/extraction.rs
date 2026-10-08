@@ -58,7 +58,7 @@ fn extract_label_set_id_falls_back_to_spl_set_id() {
 }
 
 #[test]
-fn extract_inline_label_raw_mode_preserves_truncated_raw_subsections() {
+fn extract_inline_label_raw_mode_preserves_whole_raw_subsections() {
     let response = serde_json::json!({
         "results": [{
             "indications_and_usage": [
@@ -75,6 +75,50 @@ fn extract_inline_label_raw_mode_preserves_truncated_raw_subsections() {
     assert!(label.indications.as_deref().is_some());
     assert!(label.warnings.as_deref().is_some());
     assert!(label.dosage.as_deref().is_some());
+}
+
+#[test]
+fn extract_inline_label_carries_whole_sections_past_the_markdown_cap() {
+    let long_text = "x".repeat(LABEL_MAX_CHARS + 137);
+    let response = serde_json::json!({
+        "results": [{
+            "set_id": "whole-set-1",
+            "indications_and_usage": [long_text.clone()],
+            "boxed_warning": ["y".repeat(LABEL_MAX_CHARS + 1)],
+        }]
+    });
+
+    // JSON carries the whole section with no truncation note (ticket 1300);
+    // only the Markdown view keeps the capped short form.
+    let label = extract_inline_label(&response, true).expect("label");
+    assert_eq!(label.indications.as_deref(), Some(long_text.as_str()));
+    assert_eq!(
+        label
+            .boxed_warning
+            .as_deref()
+            .map(|text| text.chars().count()),
+        Some(LABEL_MAX_CHARS + 1)
+    );
+    let view = markdown_label_view(&label, label.indications.as_deref().map(|_| "whole-set-1"));
+    assert!(view.indications.as_deref().is_some_and(|text| text.contains(
+        "(truncated, 2137 chars total; full label: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=whole-set-1)"
+    )));
+    assert!(view
+        .boxed_warning
+        .as_deref()
+        .is_some_and(|text| text.ends_with("(truncated, 2001 chars total; full label: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=whole-set-1)")));
+    // Sections at or under the cap pass through unchanged in Markdown.
+    let short_label = DrugLabel {
+        indication_summary: Vec::new(),
+        indications: Some("short".to_string()),
+        boxed_warning: None,
+        warnings: None,
+        dosage: None,
+    };
+    assert_eq!(
+        markdown_label_view(&short_label, None).indications,
+        short_label.indications
+    );
 }
 
 #[test]

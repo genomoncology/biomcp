@@ -23,6 +23,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/cell-line.md
   spec/entity/pathway.md
   spec/entity/trial.md
+  spec/entity/drug-label-sections.md
   spec/entity/drug.md
   spec/entity/gene.md
   spec/entity/drug-interactions.md

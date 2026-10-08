@@ -449,13 +449,6 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        drug.label.is_some(),
-        "label",
-        "FDA Label",
-        ["OpenFDA label"],
-    );
-    push_section(
-        &mut out,
         drug.shortage.is_some(),
         "shortage",
         "Shortage",
@@ -473,6 +466,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         &drug.section_outcomes,
         &[
             ("approvals", "Drugs@FDA Approvals"),
+            ("label", "FDA Label"),
             ("cell_lines", "Cell lines"),
             ("safety", "Safety"),
             ("targets", "Targets"),

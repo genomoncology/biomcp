@@ -1001,4 +1001,5 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
     );
 }
 
+mod label_sections;
 mod label_warnings;

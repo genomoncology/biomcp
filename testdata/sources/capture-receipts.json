@@ -3206,6 +3206,90 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
       }
+    },
+    {
+      "path": "mychem/query_osimertinib_get_20261007.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=osimertinib&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-10-07T12:00:00Z",
+        "sha256": "8619d58e3e0ecea731b5942fdfc7a08ff8cfca65e93f127f5b624cf439bf7060",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_gefitinib_get_20261007.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=gefitinib&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-10-07T12:00:00Z",
+        "sha256": "3f0e84e31d411fec1684df38e582ce7072b2b6334f6cfb8c96d0089a54d9cc57",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_mobocertinib_get_20261007.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=mobocertinib&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-10-07T12:00:00Z",
+        "sha256": "dee74007b1b9efae2ad443b28770f8090f0aa6195a6798c1062f49a0abdff768",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_adavosertib_get_20261007.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=adavosertib&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-10-07T12:00:00Z",
+        "sha256": "fa7cfe7bf02884d051457dc8d63d08031de727631f7865d3d74f30529f2a7e5f",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "openfda/label_gefitinib_20261007.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "openFDA",
+        "request": "https://api.fda.gov/drug/label.json?search=openfda.generic_name%3A%22gefitinib%22+OR+openfda.brand_name%3A%22gefitinib%22&limit=5&sort=effective_time%3Adesc",
+        "captured_at": "2026-10-07T12:00:00Z",
+        "sha256": "3ddfb3c292059e9fceac40549c017a0515b0c7ecc78214e34cf8d073134de838",
+        "minimization_or_redaction": "Reduced to result metadata, record identity fields, and the label section fields BioMCP extracts; other SPL sections and tables were removed.",
+        "provider_origin_statement": "Bytes were recorded from the public openFDA response through BioMCP's production request path before permitted minimization."
+      }
+    },
+    {
+      "path": "openfda/label_osimertinib_fulltext_20261007.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "openFDA",
+        "request": "https://api.fda.gov/drug/label.json?search=%22osimertinib%22&limit=100",
+        "captured_at": "2026-10-07T12:00:00Z",
+        "sha256": "2bcd3a692ca02111c1e583e8d5705fd66f98678cd74c9bcbcd1dd7ea2f6999fd",
+        "minimization_or_redaction": "Reduced to result metadata and record identity fields; only the record whose identity matches the queried drug keeps the label section fields BioMCP extracts.",
+        "provider_origin_statement": "Bytes were recorded from the public openFDA response through BioMCP's production request path before permitted minimization."
+      }
+    },
+    {
+      "path": "openfda/label_mobocertinib_fulltext_20261007.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "openFDA",
+        "request": "https://api.fda.gov/drug/label.json?search=%22mobocertinib%22&limit=100",
+        "captured_at": "2026-10-07T12:00:00Z",
+        "sha256": "3bd4e11cdd145ee785dab5d2470380d07c810c0a41ab7c6901826258b8c6a11c",
+        "minimization_or_redaction": "Reduced to result metadata and record identity fields; only the record whose identity matches the queried drug keeps the label section fields BioMCP extracts.",
+        "provider_origin_statement": "Bytes were recorded from the public openFDA response through BioMCP's production request path before permitted minimization."
+      }
     }
   ],
   "fixture_key_contract": {

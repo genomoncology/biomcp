@@ -17,6 +17,7 @@ pub(crate) use self::get::{
 };
 pub use self::get::{get, get_with_region};
 pub(crate) use self::interactions::{DrugInteractionReport, interaction_report};
+pub(crate) use self::label::{markdown_label_view, markdown_label_view_truncates};
 pub use self::query::search_query_summary;
 #[allow(unused_imports)]
 pub use self::search::{
@@ -678,6 +679,7 @@ mod outcome_tests {
                 "civic",
                 "indications",
                 "interactions",
+                "label",
                 "safety",
                 "targets",
             ]

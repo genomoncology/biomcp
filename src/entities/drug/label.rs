@@ -6,8 +6,17 @@ use std::sync::OnceLock;
 use regex::Regex;
 
 use super::{DrugLabel, DrugLabelIndication};
+use crate::error::BioMcpError;
+use crate::sources::openfda::OpenFdaClient;
 
 const LABEL_MAX_CHARS: usize = 2000;
+
+pub(super) const LABEL_UNAVAILABLE_MESSAGE: &str =
+    "OpenFDA label evidence is temporarily unavailable.";
+pub(super) const NO_SPL_RECORD_NOTE: &str = "No openFDA SPL label record matched this drug.";
+pub(super) const NO_LABEL_TEXT_NOTE: &str =
+    "The matched openFDA SPL record carries no label section text.";
+pub(super) const ELEMENTS_SEARCH_OVERSIZE_NOTE: &str = "The openFDA label product-data-elements search response was too large to read, so no label record could be confirmed.";
 
 fn label_text(value: Option<&serde_json::Value>) -> Option<String> {
     let value = value?;
@@ -53,6 +62,39 @@ fn truncate_with_note(value: &str, max_chars: usize, label_set_id: Option<&str>)
         Some(url) => format!("{truncated}\n\n(truncated, {total} chars total; full label: {url})"),
         None => format!("{truncated}\n\n(truncated, {total} chars total)"),
     }
+}
+
+/// The Markdown view of a label: whole sections stay in JSON, while readable
+/// output keeps a capped short form that points to the rest of the label.
+pub(crate) fn markdown_label_view(label: &DrugLabel, label_set_id: Option<&str>) -> DrugLabel {
+    let shorten = |value: &Option<String>| {
+        value
+            .as_deref()
+            .map(|text| truncate_with_note(text, LABEL_MAX_CHARS, label_set_id))
+    };
+    DrugLabel {
+        indication_summary: label.indication_summary.clone(),
+        indications: shorten(&label.indications),
+        boxed_warning: shorten(&label.boxed_warning),
+        warnings: shorten(&label.warnings),
+        dosage: shorten(&label.dosage),
+    }
+}
+
+/// Whether the Markdown view cuts any label section it carries.
+///
+/// The short-form pointer may only print when the output actually omits
+/// content, so a view whose sections all fit the cap points nowhere.
+pub(crate) fn markdown_label_view_truncates(label: &DrugLabel) -> bool {
+    [
+        label.indications.as_deref(),
+        label.boxed_warning.as_deref(),
+        label.warnings.as_deref(),
+        label.dosage.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    .any(|text| text.chars().count() > LABEL_MAX_CHARS)
 }
 
 fn label_subsection_boundary_regex() -> &'static Regex {
@@ -372,37 +414,17 @@ pub(super) fn extract_inline_label(
         .and_then(|v| v.first())?;
 
     let indication_summary = extract_label_indication_summary(label_response);
-    let label_set_id = label_set_id_from_result(top);
-    let raw_indications = label_text(top.get("indications_and_usage")).map(|v| {
-        truncate_with_note(
-            &normalize_label_whitespace(&v),
-            LABEL_MAX_CHARS,
-            label_set_id,
-        )
-    });
-    let boxed_warning = label_text(top.get("boxed_warning")).map(|v| {
-        truncate_with_note(
-            &normalize_label_whitespace(&v),
-            LABEL_MAX_CHARS,
-            label_set_id,
-        )
-    });
+    // JSON carries whole label sections; Markdown applies its own cap through
+    // `markdown_label_view` at render time.
+    let raw_indications =
+        label_text(top.get("indications_and_usage")).map(|v| normalize_label_whitespace(&v));
+    let boxed_warning =
+        label_text(top.get("boxed_warning")).map(|v| normalize_label_whitespace(&v));
     let raw_warnings = label_text(top.get("warnings_and_cautions"))
         .or_else(|| label_text(top.get("warnings")))
-        .map(|v| {
-            truncate_with_note(
-                &normalize_label_whitespace(&v),
-                LABEL_MAX_CHARS,
-                label_set_id,
-            )
-        });
-    let raw_dosage = label_text(top.get("dosage_and_administration")).map(|v| {
-        truncate_with_note(
-            &normalize_label_whitespace(&v),
-            LABEL_MAX_CHARS,
-            label_set_id,
-        )
-    });
+        .map(|v| normalize_label_whitespace(&v));
+    let raw_dosage =
+        label_text(top.get("dosage_and_administration")).map(|v| normalize_label_whitespace(&v));
 
     let indications = if raw_mode || indication_summary.is_empty() {
         raw_indications
@@ -546,6 +568,235 @@ pub(super) fn extract_openfda_values(label_response: &serde_json::Value, key: &s
     }
     out
 }
+
+/// Lowercased alphanumeric tokens, so hyphenated and punctuated identity
+/// names compare by word rather than by raw substring.
+fn identity_tokens(value: &str) -> Vec<String> {
+    value
+        .split(|ch: char| !ch.is_ascii_alphanumeric())
+        .filter(|token| !token.is_empty())
+        .map(str::to_ascii_lowercase)
+        .collect()
+}
+
+fn result_identity_values(result: &serde_json::Value) -> Vec<String> {
+    let mut out = Vec::new();
+    for key in ["generic_name", "brand_name", "substance_name"] {
+        out.extend(extract_openfda_values_from_result(result, key));
+    }
+    if let Some(ingredients) = result.get("active_ingredients").and_then(|v| v.as_array()) {
+        for ingredient in ingredients {
+            if let Some(name) = ingredient.get("name").and_then(|v| v.as_str()) {
+                out.push(name.to_string());
+            }
+        }
+    }
+    out
+}
+
+fn spl_product_data_elements(result: &serde_json::Value) -> Vec<&str> {
+    let Some(elements) = result
+        .get("spl_product_data_elements")
+        .and_then(|v| v.as_array())
+    else {
+        return Vec::new();
+    };
+    elements.iter().filter_map(|v| v.as_str()).collect()
+}
+
+/// The identity token runs of one SPL product data element.
+///
+/// A real element concatenates one entry per strength, and every entry
+/// opens with the same names ("TAGRISSO osimertinib OSIMERTINIB OSIMERTINIB
+/// MANNITOL ... AZ;40 TAGRISSO ..."), so an inactive excipient repeats
+/// across strengths and raw repetition cannot separate names from
+/// excipients. Entries split where the element's leading two-token name
+/// window recurs, which is each next strength's opening. Within one entry
+/// the identity is the leading name run: the entry's first token, then the
+/// established name's tokens, which the entry spells out and then lists
+/// again whole or componentwise, so the longest prefix of the remaining
+/// tokens that recurs later marks them. The run ends at the first token the
+/// name never repeats, which is the entry's first inactive excipient or
+/// strength code.
+fn spl_element_identity_heads(element: &str) -> Vec<Vec<String>> {
+    let tokens = identity_tokens(element);
+    if tokens.is_empty() {
+        return Vec::new();
+    }
+    let window = tokens.len().min(2);
+    let mut heads = Vec::new();
+    let mut entry_start = 0;
+    for position in 1..=(tokens.len() - window) {
+        if tokens[position..position + window] == tokens[..window] {
+            heads.push(entry_name_run(&tokens[entry_start..position]));
+            entry_start = position;
+        }
+    }
+    heads.push(entry_name_run(&tokens[entry_start..]));
+    heads
+}
+
+/// The leading identity run of one element entry: the first token, then the
+/// recurring established-name tokens, ending at the first token the name
+/// never repeats.
+fn entry_name_run(entry: &[String]) -> Vec<String> {
+    if entry.is_empty() {
+        return Vec::new();
+    }
+    let mut name_end = 1;
+    loop {
+        let end = name_end + 1;
+        if end > entry.len() {
+            break;
+        }
+        let prefix = &entry[1..end];
+        let recurs = entry[end..]
+            .windows(prefix.len())
+            .any(|window| window == prefix);
+        if !recurs {
+            break;
+        }
+        name_end = end;
+    }
+    let name: std::collections::HashSet<&str> =
+        entry[1..name_end].iter().map(String::as_str).collect();
+    let mut run = vec![entry[0].clone()];
+    for token in &entry[1..] {
+        if !name.contains(token.as_str()) {
+            break;
+        }
+        run.push(token.clone());
+    }
+    run
+}
+
+/// Whether a broad-search result is the requested drug's own record.
+///
+/// A broad search for one drug routinely ranks other drugs' labels first
+/// because their section text mentions the queried name. A result only
+/// counts when the requested name matches the record's own identity fields
+/// as a word sequence within a single field — never a sequence joined across
+/// two fields — or the per-strength name runs of an SPL product data element,
+/// so an inactive excipient such as mannitol never identifies a record.
+pub(super) fn label_result_matches_identity(result: &serde_json::Value, name: &str) -> bool {
+    let name_tokens = identity_tokens(name);
+    if name_tokens.is_empty() {
+        return false;
+    }
+    let mut identity_runs: Vec<Vec<String>> = result_identity_values(result)
+        .iter()
+        .map(|value| identity_tokens(value))
+        .collect();
+    identity_runs.extend(
+        spl_product_data_elements(result)
+            .iter()
+            .flat_map(|element| spl_element_identity_heads(element)),
+    );
+    identity_runs.into_iter().any(|tokens| {
+        tokens
+            .windows(name_tokens.len())
+            .any(|window| window == name_tokens.as_slice())
+    })
+}
+
+fn label_response_has_result(response: &serde_json::Value) -> bool {
+    response
+        .get("results")
+        .and_then(|v| v.as_array())
+        .is_some_and(|results| !results.is_empty())
+}
+
+/// Keep only broad-search results whose own identity matches the drug name.
+pub(super) fn filter_label_response_to_identity(
+    response: &serde_json::Value,
+    name: &str,
+) -> Option<serde_json::Value> {
+    let results = response.get("results")?.as_array()?;
+    let matching = results
+        .iter()
+        .filter(|result| label_result_matches_identity(result, name))
+        .cloned()
+        .collect::<Vec<_>>();
+    if matching.is_empty() {
+        return None;
+    }
+    let mut filtered = response.clone();
+    if let Some(counts) = filtered
+        .get_mut("meta")
+        .and_then(|v| v.get_mut("results"))
+        .and_then(|v| v.as_object_mut())
+    {
+        counts.insert(
+            "total".to_string(),
+            serde_json::Value::from(matching.len() as u64),
+        );
+    }
+    filtered["results"] = serde_json::Value::Array(matching);
+    Some(filtered)
+}
+
+/// What the openFDA label lookup established for a drug.
+pub(super) enum LabelLookup {
+    /// A label response to use.
+    Response(serde_json::Value),
+    /// Both lookups answered and no SPL record for the drug exists.
+    NoSplRecord,
+    /// The product-data-elements fallback response exceeded the body read
+    /// limit. The same query would download the same oversize response, so
+    /// this is a confirmed inability to read a match, not a retryable fetch
+    /// failure.
+    ElementsSearchTooLarge,
+}
+
+/// Whether an openFDA error is the response-body read limit, including the
+/// source-context wrapping the transport layers add.
+fn is_body_limit_error(error: &BioMcpError) -> bool {
+    match error {
+        BioMcpError::WithSourceContext { source, .. } => is_body_limit_error(source),
+        BioMcpError::BodyLimit { .. } => true,
+        _ => false,
+    }
+}
+
+/// Field-scoped label lookup with the sparse-metadata elements fallback.
+///
+/// When the `openfda.generic_name`/`brand_name` query returns no match, fall
+/// back to a phrase search of the records' own `spl_product_data_elements`
+/// and keep only results whose own identity matches. `NoSplRecord` means
+/// openFDA answered and no SPL record for the drug exists; real fetch errors
+/// surface as `Err`, except the oversize elements response, which settles as
+/// `ElementsSearchTooLarge` because no retry can succeed.
+pub(super) async fn lookup_label_response(
+    client: &OpenFdaClient,
+    name: &str,
+) -> Result<LabelLookup, BioMcpError> {
+    if let Some(response) = client.label_search(name).await?
+        && label_response_has_result(&response)
+    {
+        return Ok(LabelLookup::Response(response));
+    }
+    let elements = match client.label_elements_search(name).await {
+        Ok(Some(response)) => response,
+        Ok(None) => return Ok(LabelLookup::NoSplRecord),
+        Err(error) => {
+            return if is_body_limit_error(&error) {
+                Ok(LabelLookup::ElementsSearchTooLarge)
+            } else {
+                Err(error)
+            };
+        }
+    };
+    Ok(filter_label_response_to_identity(&elements, name)
+        .map_or(LabelLookup::NoSplRecord, LabelLookup::Response))
+}
+
+/// The withdrawn Propulsid record's product data elements exactly as openFDA
+/// serves them (captured 2026-10-07): three per-strength entries with
+/// differing inactive excipient lists and no populated `openfda` identity
+/// fields. Shared by the identity-guard tests and the fallback fixture
+/// server.
+#[cfg(test)]
+pub(crate) const PROPULSID_ELEMENTS: &str = "Propulsid cisapride cisapride cisapride silicon dioxide lactose monohydrate magnesium stearate cellulose, microcrystalline polysorbate 20 povidone Janssen;P;10 Propulsid cisapride cisapride cisapride silicon dioxide lactose monohydrate magnesium stearate cellulose, microcrystalline polysorbate 20 povidone FD&C Blue No. 2 aluminum oxide Janssen;P;20 Propulsid cisapride cisapride cisapride methylparaben cellulose, microcrystalline carboxymethylcellulose sodium polysorbate 20 propylparaben sodium chloride sorbitol FD&C Red No. 40 water bright pink cherry cream";
 
 #[cfg(test)]
 mod tests;

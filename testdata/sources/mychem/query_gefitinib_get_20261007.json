@@ -1,0 +1,157 @@
+{
+ "took": 4,
+ "total": 5,
+ "max_score": 35.85582,
+ "hits": [
+  {
+   "_id": "XGALLCVXEZPNRQ-UHFFFAOYSA-N",
+   "_score": 35.85582,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "gefitinib"
+   },
+   "chembl": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "drug_mechanisms": [
+     {
+      "action_type": "INHIBITOR",
+      "target_name": "Epidermal growth factor receptor"
+     }
+    ],
+    "molecule_chembl_id": "CHEMBL939",
+    "molecule_type": "Small molecule",
+    "pref_name": "GEFITINIB"
+   },
+   "drugbank": {
+    "_license": "https://bit.ly/3Hikpvm",
+    "id": "DB00317",
+    "name": "Gefitinib",
+    "synonyms": [
+     "4-(3'-chloro-4'-fluoroanilino)-7-methoxy-6-(3-morpholinopropoxy)quinazoline",
+     "Gefitinib",
+     "N-(3-chloro-4-fluorophenyl)-7-methoxy-6-(3-(4-morpholinyl)propoxy)-4-quinazolinamine"
+    ]
+   },
+   "drugcentral": {
+    "_license": "http://bit.ly/2SeEhUy",
+    "approval": {
+     "agency": "FDA",
+     "date": "2003-05-05"
+    },
+    "drug_use": {
+     "indication": [
+      {
+       "concept_name": "Non-small cell lung cancer"
+      },
+      {
+       "concept_name": "Non-small cell lung cancer, positive for epidermal growth factor receptor expression"
+      }
+     ]
+    }
+   },
+   "gtopdb": {
+    "_license": "https://www.guidetopharmacology.org/download.jsp",
+    "interaction_targets": [
+     {
+      "symbol": "EGFR"
+     }
+    ],
+    "name": "gefitinib"
+   },
+   "ndc": [
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Gefitinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ]
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Gefitinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ]
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Gefitinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ]
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Gefitinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ]
+    },
+    {
+     "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+     "nonproprietaryname": "Gefitinib",
+     "pharm_classes": [
+      "Protein Kinase Inhibitors [MoA]",
+      "Kinase Inhibitor [EPC]"
+     ]
+    }
+   ],
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "GEFITINIB",
+    "unii": "S65743JHBS"
+   }
+  },
+  {
+   "_id": "IFMMYZUUCFPEHR-UHFFFAOYSA-N",
+   "_score": 26.00888,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "O-desmethyl Gefitinib"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "O-DESMETHYL GEFITINIB",
+    "unii": "53LPA3P6SI"
+   }
+  },
+  {
+   "_id": "IQWXTDMHBQBADK-UHFFFAOYSA-N",
+   "_score": 24.06902,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "4-defluoro-4-hydroxy Gefitinib"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "M-387783",
+    "unii": "M4EV2Y7TJI"
+   }
+  },
+  {
+   "_id": "JLVTVCRXFMLUIF-UHFFFAOYSA-N",
+   "_score": 22.871944,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "O-Desmorpholinopropyl Gefitinib"
+   },
+   "unii": {
+    "_license": "http://bit.ly/2Pg8Oo9",
+    "display_name": "M-295820",
+    "unii": "V26QDI5C8D"
+   }
+  },
+  {
+   "_id": "IJCUTMPLJMWBTB-UHFFFAOYSA-N",
+   "_score": 22.871944,
+   "chebi": {
+    "_license": "http://bit.ly/2KAUCAm",
+    "name": "linkable gefitinib analogue"
+   }
+  }
+ ]
+}

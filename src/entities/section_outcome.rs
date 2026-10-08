@@ -60,6 +60,19 @@ impl SectionOutcome {
         Self::successful(SectionOutcomeState::Empty, sources)
     }
 
+    /// A source-confirmed zero that names which zero it was.
+    ///
+    /// An empty section can carry one bounded reason so callers reading the
+    /// outcome alone learn why the section is empty (for example, a drug
+    /// label lookup that matched no SPL record).
+    pub fn empty_with_reason(source: impl Into<String>, message: &'static str) -> Self {
+        Self {
+            outcome: SectionOutcomeState::Empty,
+            sources: successful_sources([source]),
+            message: Some(bounded_message(message)),
+        }
+    }
+
     pub fn degraded<I, S>(sources: I, message: &'static str) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -182,9 +195,10 @@ impl<'de> Deserialize<'de> for SectionOutcome {
             SectionOutcomeState::NotRequested => {
                 value.sources.is_empty() && value.message.is_none()
             }
-            SectionOutcomeState::Data | SectionOutcomeState::Empty => {
-                !value.sources.is_empty() && value.message.is_none()
-            }
+            SectionOutcomeState::Data => !value.sources.is_empty() && value.message.is_none(),
+            // Empty keeps its source-confirmed-zero claim and may name which
+            // zero it was through `empty_with_reason`.
+            SectionOutcomeState::Empty => !value.sources.is_empty(),
             SectionOutcomeState::Degraded => !value.sources.is_empty() && value.message.is_some(),
             SectionOutcomeState::Inapplicable => {
                 value.sources.is_empty()
@@ -266,8 +280,17 @@ mod tests {
 
     #[test]
     fn registry_serializes_all_states_and_safe_messages() {
-        let mut outcomes = SectionOutcomes::with_keys(&["empty", "inapplicable", "unavailable"]);
+        let mut outcomes = SectionOutcomes::with_keys(&[
+            "empty",
+            "empty_with_reason",
+            "inapplicable",
+            "unavailable",
+        ]);
         outcomes.complete("empty", SectionOutcome::empty("Source"));
+        outcomes.complete(
+            "empty_with_reason",
+            SectionOutcome::empty_with_reason("Source", "No record matched this query."),
+        );
         outcomes.complete(
             "inapplicable",
             SectionOutcome::inapplicable("A required input is missing."),
@@ -279,6 +302,12 @@ mod tests {
         let value = serde_json::to_value(outcomes).unwrap();
         assert_eq!(value["empty"]["outcome"], "empty");
         assert_eq!(value["empty"]["sources"][0], "Source");
+        assert!(value["empty"].get("message").is_none());
+        let round_trip = serde_json::from_value::<SectionOutcomes>(value.clone()).unwrap();
+        assert_eq!(
+            round_trip.get("empty_with_reason").unwrap().message(),
+            Some("No record matched this query.")
+        );
         assert_eq!(value["inapplicable"]["outcome"], "inapplicable");
         assert_eq!(value["inapplicable"]["sources"], serde_json::json!([]));
         let round_trip = serde_json::from_value::<SectionOutcomes>(value.clone()).unwrap();
@@ -330,6 +359,9 @@ mod tests {
     fn deserialization_rejects_illegal_shapes_and_unsafe_messages() {
         for json in [
             r#"{"outcome":"data","sources":[]}"#,
+            r#"{"outcome":"data","sources":["Provider"],"message":"Data."}"#,
+            r#"{"outcome":"empty","sources":[]}"#,
+            r#"{"outcome":"empty","sources":["Provider"],"message":"See https://example.test"}"#,
             r#"{"outcome":"inapplicable","sources":[]}"#,
             r#"{"outcome":"inapplicable","sources":[],"message":"  "}"#,
             r#"{"outcome":"inapplicable","sources":["Provider"],"message":"Not applicable."}"#,
