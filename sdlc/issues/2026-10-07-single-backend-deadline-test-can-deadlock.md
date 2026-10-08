@@ -64,7 +64,7 @@ otherwise record as a known flake with the forensics path.
 ## GitHub runners hit the same hang (2026-10-07 night)
 
 The Finding's claim that the identical suite passes on GitHub's
-runers no longer holds. Between 21:23Z and 00:24Z the CI workflow
+runners no longer holds. Between 21:23Z and 00:24Z the CI workflow
 cancelled canonical-gates at its 45-minute cap five times on this
 signature, on main and on the 2024 fix branch, while one main run
 (37695115787, 22:16Z) passed the whole lane in 23m54s:
