@@ -622,6 +622,34 @@ biomcp --no-cache get variant 'TP53 G105S' clinvar \
   | mustmatch like '- Record-level germline classification: Uncertain significance; reviewed by expert panel; evaluated 2026-06-04'
 ```
 
+### A slow NCBI answer names the timeout and the fallback copy's age
+
+The fixture for this case is synthetic, not a recorded exchange. The switch to
+MyVariant.info never reproduced live: in the recorded reproduction runs NCBI's
+ClinVar efetch answered within 1.4 seconds, well inside the
+optional-enrichment deadline, and no provider control forces an eight-second
+server hold, so a live recording of the trigger is not reproducible on demand.
+The fixture stands in by holding the NCBI efetch answer open past the deadline.
+When NCBI ClinVar does not answer in time, the section keeps the MyVariant.info
+fallback but labels the section `degraded`, names the deadline miss as the
+reason the direct source dropped, and reports the newest evaluation date in
+the fallback copy so a reader can see how old it may be. The wording admits
+that a sustained rate limit causes the same deadline miss: the rate-limit
+retry waits run inside the dropped request, so the deadline cannot tell the
+two apart.
+
+```bash
+biomcp --json --no-cache get variant 'TP53 R273H' clinvar \
+  | jq -c '{outcome: .section_outcomes.clinvar.outcome, sources: .section_outcomes.clinvar.sources, message: .section_outcomes.clinvar.message, record_source: .clinvar.source, headline_source: .significance_source, headline_evaluated: .significance_evaluated}' \
+  | mustmatch like '{"outcome":"degraded","sources":["MyVariant.info"],"message":"NCBI ClinVar timed out (slow answer or sustained rate limiting); showing MyVariant.info fallback data (newest evaluation 2021-03-11).","record_source":"MyVariant.info","headline_source":"MyVariant.info","headline_evaluated":"2021-03-11"}'
+```
+
+```bash
+biomcp --no-cache get variant 'TP53 R273H' clinvar \
+  | grep -F 'ClinVar status' \
+  | mustmatch like '**ClinVar status (NCBI ClinVar / MyVariant.info):** degraded (partial/incomplete) — NCBI ClinVar timed out (slow answer or sustained rate limiting); showing MyVariant.info fallback data (newest evaluation 2021-03-11).'
+```
+
 ## Population Frequency
 
 Population frequency also stays opt-in. The markdown and JSON views should keep

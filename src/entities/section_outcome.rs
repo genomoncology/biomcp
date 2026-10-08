@@ -73,7 +73,7 @@ impl SectionOutcome {
         }
     }
 
-    pub fn degraded<I, S>(sources: I, message: &'static str) -> Self
+    pub fn degraded<I, S>(sources: I, message: impl Into<String>) -> Self
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
@@ -81,7 +81,7 @@ impl SectionOutcome {
         Self {
             outcome: SectionOutcomeState::Degraded,
             sources: successful_sources(sources),
-            message: Some(bounded_message(message)),
+            message: Some(bounded_message(&message.into())),
         }
     }
 
@@ -159,7 +159,7 @@ fn message_is_safe(message: &str) -> bool {
             .any(|word| word.starts_with('/') || word.contains(":\\"))
 }
 
-fn bounded_message(message: &'static str) -> String {
+fn bounded_message(message: &str) -> String {
     let message = message
         .chars()
         .filter(|ch| !ch.is_control())
