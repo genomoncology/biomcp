@@ -133,6 +133,38 @@ fn holder_candidate_lines_fill_the_mondo_label() {
     assert_eq!(lines, "- cold agglutinin disease (MONDO:0018922)\n");
 }
 
+/// Ticket 2032: a refusal names the clinical reading the source cannot
+/// see as a pointer line, never as a source candidate, and only for the
+/// abbreviations the table records.
+#[test]
+fn clinical_reading_pointer_is_a_pointer_not_a_candidate() {
+    let holder: MyDiseaseHit = serde_json::from_value(serde_json::json!({
+        "_id": "MONDO:0009685",
+        "disease_ontology": {
+            "name": "Miyoshi muscular dystrophy",
+            "synonyms": {"exact": ["MM"]}
+        }
+    }))
+    .expect("single MM holder");
+    let message = ambiguous_abbreviation_error("MM", &[holder], true).to_string();
+    assert!(
+        message.contains("- Miyoshi muscular dystrophy (MONDO:0009685)\n"),
+        "{message}"
+    );
+    assert!(
+        message.contains("Clinical reading: 'MM' usually means multiple myeloma (MONDO:0009693)"),
+        "{message}"
+    );
+    assert!(
+        message.contains("get disease \"multiple myeloma\""),
+        "{message}"
+    );
+    assert!(!message.contains("- multiple myeloma"), "{message}");
+
+    let untouched = ambiguous_abbreviation_error("CAD", &holder_hits(), false).to_string();
+    assert!(!untouched.contains("Clinical reading"), "{untouched}");
+}
+
 #[test]
 fn normalize_disease_id_basic() {
     assert_eq!(

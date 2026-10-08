@@ -13,6 +13,29 @@ const MAX_PROVIDER_TERM_BYTES: usize = 256;
 /// for a token this short, so resolution refuses (ticket 2017).
 const SHORT_ABBREVIATION_MAX_LEN: usize = 2;
 
+/// Abbreviations whose common clinical meaning the source cannot see.
+/// MyDisease holds `MM` on Miyoshi muscular dystrophy alone, and no
+/// myeloma record carries `MM` in any indexed field (checked live
+/// 2026-10-08), so the exact-holder list alone hides the disease
+/// oncology usually means. The refusal stands; this table only adds a
+/// pointer line naming the reading. Curated abbreviation preferences
+/// stay deferred (ticket 2032).
+const CLINICAL_ABBREVIATION_READINGS: &[(&str, &str, &str)] =
+    &[("MM", "multiple myeloma", "MONDO:0009693")];
+
+fn clinical_reading_line(requested: &str) -> Option<String> {
+    let requested = requested.trim();
+    CLINICAL_ABBREVIATION_READINGS
+        .iter()
+        .find(|(token, _, _)| token.eq_ignore_ascii_case(requested))
+        .map(|(_, label, ontology_id)| {
+            format!(
+                "Clinical reading: '{requested}' usually means {label} ({ontology_id}); \
+try `biomcp get disease \"{label}\"`."
+            )
+        })
+}
+
 fn is_short_abbreviation_token(token: &str) -> bool {
     let token = token.trim();
     !token.is_empty()
@@ -795,10 +818,13 @@ fn ambiguous_abbreviation_error(
     } else {
         format!("{} diseases carry it as their exact name", holders.len())
     };
+    let reading = clinical_reading_line(requested)
+        .map(|line| format!("{line}\n"))
+        .unwrap_or_default();
     BioMcpError::InvalidArgument(format!(
         "Ambiguous disease {subject} '{requested}': {reason}; \
 BioMCP refuses rather than return one disease's definition with another's genes.\n\
-Candidates:\n{}\
+Candidates:\n{}{reading}\
 Retry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"{requested}\"` to see every match.",
         abbreviation_candidate_lines(holders),
     ))
