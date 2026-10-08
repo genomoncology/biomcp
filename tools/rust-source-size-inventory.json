@@ -248,17 +248,6 @@
       }
     },
     {
-      "path": "src/entities/variant/mod.rs",
-      "baseline_lines": 1006,
-      "floor_lines": 1000,
-      "authorized_increase": {
-        "ticket": "2016",
-        "delta": 6,
-        "reason": "The protein_numbering_note field on Variant: the one-line numbering note for a gene+protein resolution whose headline change does not spell the request. The file sat exactly at the 1000-line threshold before this field.",
-        "removal_condition": "Remove when the note moves into shared resolution plumbing or the shared HGVS parser owns transcript numbering."
-      }
-    },
-    {
       "path": "src/entities/variant/resolution.rs",
       "baseline_lines": 1436,
       "floor_lines": 1291,
