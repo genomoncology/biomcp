@@ -93,3 +93,14 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   neighboring words (degenerate markup; real elements carry text).
   Yellow confirms the spec expectation on the release-shaped binary
   before landing.
+
+## Landing gates record
+
+- Branch CI green at ec27dfbcf (run on the rebased tip).
+- Yellow: lint green, spec green, test phase attempted under the
+  interim deadlock rule (fourth futex hang captured; the issue
+  sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md
+  carries the forensics and the rule).
+- Post-review delta ACCEPT (the rebase unions, the two coordinator
+  commits, the repin) at ec27dfbcf; the cosmetic seam fold at
+  9187de358. Merged-tree CI running at 05eeda3f3.
