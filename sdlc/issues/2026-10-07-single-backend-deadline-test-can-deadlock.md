@@ -75,11 +75,21 @@ signature, on main and on the 2024 fix branch, while one main run
   (a branch that changes no Rust), attempt 2 — nextest reported SLOW
   above 2220s on `entities::article::search::tests::deadline::
 deadline_expiry_without_rows_names_the_deadline_error` and
-`overall_deadline_returns_partial_rows_and_names_the_held_source`
-until the cap killed the job; the log shows two `biomcp_cli-*` test
-processes terminated as orphans. Attempt 1 cancelled the same step.
-The expiry test is the one the issue names; the overall-deadline test
-is the same module and signature.
+  `overall_deadline_returns_partial_rows_and_names_the_held_source`
+  until the cap killed the job; the log shows two `biomcp_cli-*` test
+  processes terminated as orphans. Attempt 1 cancelled the same step.
+  Attempt 3 cleared the deadline tests and failed only on the source
+  package file-count ratchet (the branch adds one test file; recounted
+  in 059c61cb5).
+- branch head run 37709695813 (059c61cb5, still no Rust changes) —
+  SLOW above 2220s on `single_backend_deadline_keeps_fetched_rows_
+  and_names_the_source`, the first test this issue names, until the
+  cap. Third hang on the branch, three different tests of the same
+  deadline module.
+
+Main went green twice in ~20 minutes at 00:59Z and 01:00Z (runs
+37710581502 and 37710742254) between these branch hangs, so the
+intermittence is per run, not per branch.
 
 Every other job in 37698460019, including windows-contracts, was
 green. The interim gate-evidence rule's branch-CI clause cannot be
