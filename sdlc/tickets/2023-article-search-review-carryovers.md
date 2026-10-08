@@ -72,6 +72,7 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 5. Words wrapped in small caps, styled content, monospace and footnote
    markers render unsplit, while the surname/given-names boundary space
    and the marker-attached runs keep their behavior.
+
 ## Build status
 
 - Built on branch `tickets/2023-article-search-review-carryovers`,
