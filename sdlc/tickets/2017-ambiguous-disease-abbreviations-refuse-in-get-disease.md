@@ -1,6 +1,6 @@
 # 2017 — Ambiguous disease abbreviations refuse in get disease
 
-Status: OPEN (second-review fix round built; fresh review of the head
+Status: complete.
 follows). Build record:
 `sdlc/records/2017-ambiguous-disease-abbreviations-build.md`.
 
@@ -177,3 +177,7 @@ The post-review delta (fixture-key pin in the NCI degrade-note test
 per the trial/get pattern; the error.rs repin to its measured 1428
 with ticket-2017 attribution) is ACCEPTed by the delta review of
 2026-10-08; both are part of the landed tree at d8afa297f.
+
+## Delta verdict grammar
+
+- Code re-review (post-review delta through 84a647904): ACCEPT 2026-10-08.

@@ -60,7 +60,6 @@ which lands before the 0.9.2 tag.
   base-stale run; the main-merged run at 407940cad is green. Recorded
   here so the record carries both.
 
-D
 ## Fix-round review
 
 - Code re-review (head 804f07967): ACCEPT 2026-10-07. Verified at
@@ -82,5 +81,5 @@ landing chain, before the landcheck-2024fix run completed green at
 merged-tree CI run completed after the content, not before. Evidence:
 branch run 37714318974 all eight jobs green on the fix head
 804f07967 (Windows wrapper step included); the landcheck run at
-60c0e090c green; every main CI run since eae20df65 green. The
+60c0e090c green; main runs since eae20df65 completed green or were runner-cancelled (seven cancellations in the window; the green completions cover the tree). The
 reopening closes complete.
