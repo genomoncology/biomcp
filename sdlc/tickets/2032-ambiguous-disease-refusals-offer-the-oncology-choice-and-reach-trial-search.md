@@ -20,3 +20,15 @@ Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, fi
 - Changes: draw refusal candidates from the abbreviation's synonyms as well as exact labels, so MM lists multiple myeloma; make trial search return the refusal and its choices.
 - Proof: `get disease MM` lists multiple myeloma (MONDO:0009693); `search trial -c MF` refuses with choices; tests pin both.
 - Defers: nothing.
+
+## Build status addendum
+
+- Code review: ACCEPT 2026-10-08. All six points verified at the code
+  level: the one-entry clinical-reading table renders a pointer line
+  that never joins the candidates; the NCI InvalidArgument arm
+  propagates the ambiguity refusal with zero requests while NotFound
+  keeps the visible keyword degrade; the tests pin both plus the kept
+  2017/2021 pins; the lint opt-out matches the sibling sections; the
+  lint-fix commit story is consistent; nothing else in the branch. CI
+  run 37798569759 green at the code tip 6815a33b7; the record-only tip
+  74414629c rides the docs lane.
