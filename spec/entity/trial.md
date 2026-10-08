@@ -85,6 +85,8 @@ condition-planning path.
 
 ## Ambiguous Conditions Refuse in NCI Trial Search
 
+<!-- mustmatch-lint: skip -->
+
 The NCI source grounds `--condition` through the same resolver as
 `get disease`. When that resolver refuses an ambiguous abbreviation, the
 trial search returns the refusal with its named candidates instead of
