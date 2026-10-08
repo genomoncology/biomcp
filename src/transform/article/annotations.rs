@@ -62,8 +62,10 @@ fn registry_identity(identifier: &str) -> Option<AnnotationIdentity> {
 
 /// Read the identifier PubTator3 gives for one annotation. Variant mentions
 /// carry a tmVar composite in `identifier`, so their typed-back identifier is
-/// the rsID while that rsID names one allele in this document and the
-/// gene-qualified HGVS expression otherwise.
+/// the gene-qualified HGVS expression whenever the row's own annotations
+/// carry a gene and a protein change, the rsID while the document shows that
+/// rsID naming one change and the row lacks that pair, and the HGVS
+/// expression otherwise.
 fn annotation_identity(
     kind: AnnotationKind,
     infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
@@ -97,18 +99,28 @@ fn is_protein_hgvs(hgvs: &str) -> bool {
     hgvs.trim().to_ascii_lowercase().starts_with("p.")
 }
 
-/// One rsID legitimately names several alleles (KRAS G12A, G12D and G12V all
-/// carry rs121913529), so a mutation row keeps the rsID identity only while
-/// the document's own annotations show that rsID naming one change. Otherwise
-/// the row carries the allele-specific form: the gene symbol the document's
-/// gene annotations give plus the HGVS protein change, which `get variant`
-/// accepts as exact input. A coding HGVS names the allele alone. A protein
-/// change without a usable gene symbol has no typed-back form, so the row
-/// carries no identifier and keeps its mention-text command.
+/// A mutation row's typed-back identifier is the allele-specific form
+/// whenever both parts exist in the row's own data: the gene symbol the
+/// document's gene annotations give for the row's gene id plus the HGVS
+/// protein change, which `get variant` accepts as exact input. One rsID
+/// legitimately names several alleles (KRAS G12A, G12D and G12V all carry
+/// rs121913529) and BioMCP has no offline rsID-to-alleles table, so the
+/// gene-qualified form is preferred even when the document mentions only
+/// one allele of the rsID. Rows without both parts keep the document-based
+/// fallbacks: the rsID while the document's own annotations show that rsID
+/// naming one change, a coding HGVS that names the allele alone, and no
+/// identifier when a shared rsID has no allele-specific form, so the row
+/// keeps its mention-text command.
 fn mutation_identity(
     infons: &crate::sources::pubtator::PubTatorAnnotationInfons,
     mutation_context: &MutationContext,
 ) -> Option<AnnotationIdentity> {
+    if let Some(hgvs) = infons.hgvs.as_deref().and_then(clean_identifier)
+        && is_protein_hgvs(hgvs)
+        && let Some(form) = mutation_context.gene_qualified_change(infons, hgvs)
+    {
+        return Some(("HGVS", form));
+    }
     if let Some(rsid) = first_rsid(infons) {
         if !mutation_context
             .multi_allele_rsids
@@ -120,9 +132,10 @@ fn mutation_identity(
         if !is_protein_hgvs(hgvs) {
             return Some(("HGVS", hgvs.to_string()));
         }
-        return mutation_context
-            .gene_qualified_change(infons, hgvs)
-            .map(|form| ("HGVS", form));
+        // A shared rsID with a protein change reached here because no
+        // gene-qualified exact form exists, so no typed-back form names the
+        // row's allele.
+        return None;
     }
     infons
         .hgvs
@@ -133,7 +146,9 @@ fn mutation_identity(
 
 /// Document-wide facts that disambiguate mutation identities: the gene symbol
 /// each NCBI Gene id carries, and the rsIDs whose mentions span more than one
-/// distinct protein change.
+/// distinct protein change. The gene symbols feed the gene-qualified form;
+/// the multi-allele set guards the rsID fallback for rows that lack both
+/// parts of that form.
 struct MutationContext {
     gene_symbols: HashMap<u64, String>,
     multi_allele_rsids: HashSet<String>,
