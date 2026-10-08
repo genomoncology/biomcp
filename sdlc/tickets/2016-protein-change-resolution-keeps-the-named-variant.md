@@ -61,3 +61,16 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   it over for the first time); no other changes in the commit
   (git show --stat confirms one file, the inventory). The lane head is
   d6801ed8b.
+
+## Fix-round-3 review
+
+- Code re-review (head 86aadbc88, the false-note fix closing the third
+  review's blocker 3): ACCEPT 2026-10-08. Verified: the residue rule
+  (request parse, UniProt canonical sequence, MANE-stem guard
+  protecting I1568N); the three false-note cases refuse with full
+  messages against their captures; the honest notes survive with
+  graceful degradation; the fixture wiring across the routine lane; the
+  inventory re-measures; the 342-entry receipts union with the digest
+  repin; the ticket grammar. No findings. Minor notes recorded: miss-
+  path latency (two sequential lookups), the record describing round 1
+  only, an em-dash cosmetic.
