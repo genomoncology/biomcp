@@ -78,6 +78,11 @@ KRAS_G12A_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12a_2026100
 KRAS_G12D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12d_20261007.json").read_bytes()
 KRAS_G12V_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12v_20261007.json").read_bytes()
 RS121913529_RESPONSE = (ROOT / "testdata/sources/myvariant/query_rsid_rs121913529_20261007.json").read_bytes()
+# Ticket 2029: recorded KRAS codon-12/13 queries for the G12C and G13C rows,
+# which now print the gene+protein command; each resolves to the one variant
+# its rsID (rs121913530, rs121913535) opens.
+KRAS_G12C_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g12c_20261007.json").read_bytes()
+KRAS_G13C_RESPONSE = (ROOT / "testdata/sources/myvariant/query_kras_g13c_20261007.json").read_bytes()
 # Ticket 2016: recorded gene+protein queries where the alias also names a
 # ClinVar-recorded lookalike on another isoform. The named change must win.
 TP53_C124Y_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_c124y_20261007.json").read_bytes()
