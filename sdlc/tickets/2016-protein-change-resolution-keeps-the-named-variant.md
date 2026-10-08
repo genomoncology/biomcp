@@ -159,3 +159,34 @@ first-NM_ fallback `p.Ile1589Asn` on NM_007300.3, note). The spec page adds
 a numbering table on these rows, and unit tests cover the cohort rule past
 the insert (composed from the recorded I1568N and ClinVar 55588 hits) and
 the marker-less fallback.
+
+## Fix round 3 (2026-10-08, ticket 2033 finding 3)
+
+The numbering note never checked the requested reference residue against the
+MANE sequence, so it could be false: when the MANE-numbered change has no
+MyVariant record, the alias search still returns an isoform lookalike, and
+the note claimed the request followed another transcript's numbering.
+`TP53 R209Q` (UniProt P04637 has Arg at 209) resolved to `p.Arg248Gln`,
+`TP53 G112D` (Gly at 112) to `p.Gly244Asp`, and `TP53 R174H` (Arg at 174) to
+`p.Arg333His`; a live scan found 40 such TP53 positions.
+
+Fix: before the note prints, BioMCP checks the requested reference residue
+against the gene's canonical (MANE Select) protein sequence from UniProt
+(`uniprot_reference_residue` through the existing MyGene symbol resolution).
+When the residue matches and no annotation on the MANE transcript spells the
+request (`mane_annotation_names_change`), the request's own numbering is
+valid on MANE and the only alias match names a different change, so `get
+variant` refuses with the lookalike as the candidate instead of printing the
+other-transcript note. The note still prints when the residue differs
+(`TP53 R116Q`: residue 116 is Ser), when the response marks no MANE
+transcript, when the hit names the request on the MANE transcript under a
+fallback headline (`BRCA1 I1568N`), and when the sequence lookup is
+unavailable (an unavailable sequence proves nothing either way).
+
+New recorded captures: `query_tp53_r209q_20261008.json`,
+`query_tp53_g112d_20261008.json`, `query_tp53_r174h_20261008.json`, and the
+minimized `uniprot/get_p04637_20261008.json` (accession and sequence; the
+original response's SHA-256 is in the receipt). The variant-identity fixture
+serves the queries and the UniProt record, and the complexportal fixture —
+which owns the routine lane's UniProt base — serves the same record bytes.
+The spec page pins the three refusals plus `TP53 R116Q`'s honest note.
