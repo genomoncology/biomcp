@@ -71,11 +71,11 @@
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 2258,
+      "baseline_lines": 2263,
       "floor_lines": 998,
       "authorized_increase": {
-        "ticket": "1246, 1302, 1306",
-        "delta": 1260,
+        "ticket": "1246, 1302, 1306, 2030",
+        "delta": 1265,
         "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, answered-index-no-edge, and fail-fast tests. Ticket 1306: the cited-seed-refused fixture reply, the citing-seed reuse case, the malformed-OCI wording case, and the DOI-resolution status pin.",
         "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
       }
