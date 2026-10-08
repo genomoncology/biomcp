@@ -1,6 +1,6 @@
 # 2029 — Article variant links prefer the gene form for every allele
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
