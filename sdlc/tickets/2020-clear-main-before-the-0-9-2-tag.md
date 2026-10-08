@@ -1,6 +1,6 @@
 # 2020 — Clear main before the 0.9.2 tag
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
