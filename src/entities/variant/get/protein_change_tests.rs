@@ -465,3 +465,91 @@ fn protein_change_resolution_skips_the_note_when_the_hit_spells_the_request() {
         None
     );
 }
+
+#[test]
+fn requested_reference_residue_parses_compact_substitutions() {
+    assert_eq!(requested_reference_residue("R209Q"), Some(('R', 209)));
+    assert_eq!(requested_reference_residue("p.Gly112Asp"), Some(('G', 112)));
+    assert_eq!(requested_reference_residue("E746_A750del"), None);
+    assert_eq!(requested_reference_residue("600E"), None);
+}
+
+#[test]
+fn mane_annotation_names_change_reads_the_mane_stem_only() {
+    // Recorded BRCA1 I1568N shape (query_brca1_i1568n_20261007.json): the
+    // hit's NM_007294 annotation names I1568N even though the first-NM_
+    // headline picks NM_007300's p.Ile1589Asn.
+    let hit = brca1_i1568n_snpeff(ProteinHitBuilder::default()).hit(
+        "chr17:g.41223228A>T",
+        "BRCA1",
+        "p.Ile1589Asn, p.I1568N, p.I1589N",
+    );
+    assert!(transform::variant::mane_annotation_names_change(
+        &hit,
+        "I1568N",
+        Some("NM_007294")
+    ));
+    assert!(!transform::variant::mane_annotation_names_change(
+        &hit,
+        "I1568N",
+        Some("NM_007300")
+    ));
+    // No known MANE stem: nothing can be named on one.
+    assert!(!transform::variant::mane_annotation_names_change(
+        &hit, "I1568N", None
+    ));
+
+    // Recorded TP53 R209Q shape (query_tp53_r209q_20261008.json): the hit
+    // names p.Arg248Gln on NM_000546 and never R209Q there.
+    let lookalike = ProteinHitBuilder::default()
+        .clinvar(12356, "NM_000546.6(TP53):c.743G>A (p.Arg248Gln)")
+        .with_snpeff("NM_000546.5", "c.743G>A", Some("p.Arg248Gln"))
+        .with_snpeff("NM_001126118.1", "c.626G>A", Some("p.Arg209Gln"))
+        .hit(
+            "chr17:g.7577538C>T",
+            "TP53",
+            "p.Arg248Gln, p.R209Q, p.R248Q",
+        );
+    assert!(!transform::variant::mane_annotation_names_change(
+        &lookalike,
+        "R209Q",
+        Some("NM_000546")
+    ));
+}
+
+#[test]
+fn mane_numbering_refusal_names_the_residue_and_the_lookalike() {
+    // Recorded TP53 R209Q shape: UniProt P04637 (the canonical/MANE Select
+    // protein) has Arg at 209, so the request's numbering is valid on MANE
+    // while the only alias match names p.Arg248Gln — a different change.
+    // The refusal must say both facts instead of the other-transcript note.
+    let error = mane_numbering_refusal_message(
+        "TP53 R209Q",
+        "P04637",
+        "Arg",
+        209,
+        "p.Arg248Gln",
+        "NM_000546.5",
+        "chr17:g.7577538C>T (ClinVar VariationID 12356)",
+    );
+    let BioMcpError::InvalidArgument(message) = &error else {
+        panic!("a MANE-numbered request refuses as invalid argument, got: {error}");
+    };
+    for expected in [
+        "No MANE-numbered variant matches 'TP53 R209Q'",
+        "canonical protein (UniProt P04637) has Arg at 209",
+        "no matching record names that change",
+        "the only alias match is p.Arg248Gln on NM_000546.5",
+        "- chr17:g.7577538C>T (ClinVar VariationID 12356)",
+        "ClinVar VariationID, rsID, or a transcript-qualified HGVS",
+    ] {
+        assert!(
+            message.contains(expected),
+            "missing {expected:?} in: {message}"
+        );
+    }
+    assert!(
+        !message.contains("follows another transcript's numbering"),
+        "the refusal must not carry the other-transcript note: {message}"
+    );
+}

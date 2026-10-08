@@ -29,6 +29,9 @@ fixture; the fixture answers only the recorded queries.
 | BRCA1 A314T | ok | chr17:g.41246608C>T | 0 |
 | BRCA1 C61G | ok | chr17:g.41258504A>C | 0 |
 | DICER1 p.Met1483Ile | ok | chr14:g.95562808C>T | 0 |
+| TP53 R209Q | invalid_argument | none | 1 |
+| TP53 G112D | invalid_argument | none | 1 |
+| TP53 R174H | invalid_argument | none | 1 |
 | EGFR M766I | invalid_argument | none | 3 |
 
 ```bash each_row="Variant Protein-Change Resolution"
@@ -55,6 +58,18 @@ isoform's numbering, and `BRCA1 A1844T` (the long isoform's spelling, past
 the insert) resolves to the MANE spelling `p.Ala1823Thr` — both with the
 note; `BRCA1 I1568N` shows the fallback, answered on NM_007300.3 with the
 note.
+
+The note is only honest when the request's numbering genuinely differs from
+MANE's, so BioMCP checks the requested reference residue against the gene's
+canonical (MANE Select) protein sequence from UniProt before printing it.
+When that protein carries the requested residue at the requested position,
+the request's own numbering is valid on MANE — and if no matching record
+names the change there, the only alias match is a lookalike naming a
+different change, so `get variant` refuses instead of returning it with the
+other-transcript note: `TP53 R209Q` (Arg at 209, only match `p.Arg248Gln`),
+`TP53 G112D` (Gly at 112, only match `p.Gly244Asp`), and `TP53 R174H` (Arg
+at 174, only match `p.Arg333His`). An unavailable sequence proves nothing
+either way, and the answer keeps its note.
 
 | query | id | hgvs_p | transcript | note |
 |---|---|---|---|---|
@@ -92,6 +107,19 @@ biomcp --json --no-cache get variant 'EGFR M766I'
   "error": {
     "code": "invalid_argument",
     "message": "Invalid argument: Ambiguous protein change 'EGFR M766I': 3 variants match and none of them carries a ClinVar record that names one; BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr7:g.55249000G>A (rs1322818258)\n- chr7:g.55249000G>C (rs1322818258)\n- chr7:g.55249000G>T (rs1322818258)\nRetry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS."
+  }
+}
+```
+
+```bash run id=mane-numbering-refusal exit=2
+biomcp --json --no-cache get variant 'TP53 R209Q'
+```
+
+```json expect=mane-numbering-refusal contains
+{
+  "error": {
+    "code": "invalid_argument",
+    "message": "Invalid argument: No MANE-numbered variant matches 'TP53 R209Q': the gene's canonical protein (UniProt P04637) has Arg at 209, so the requested numbering is valid there, but no matching record names that change; the only alias match is p.Arg248Gln on NM_000546.5 — a different change. BioMCP refuses rather than return the wrong variant.\nCandidates:\n- chr17:g.7577538C>T (ClinVar VariationID 12356)\nRetry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS."
   }
 }
 ```

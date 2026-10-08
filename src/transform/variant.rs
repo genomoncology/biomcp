@@ -173,6 +173,49 @@ pub(crate) fn canonical_transcript(hit: &MyVariantHit, mane_stem: Option<&str>) 
     paired_annotation(hit, mane_stem).and_then(|annotation| annotation.transcript)
 }
 
+/// True when any SnpEff annotation on the given transcript stem — or the
+/// hit's ClinVar-preferred annotation when it names that stem — spells the
+/// requested change. The headline annotation picks one isoform; this says
+/// whether the MANE transcript itself names the request, so the numbering
+/// rules never refuse a hit that does name it (ticket 2033 finding 3).
+pub(crate) fn mane_annotation_names_change(
+    hit: &MyVariantHit,
+    change: &str,
+    mane_stem: Option<&str>,
+) -> bool {
+    let Some(mane_stem) = mane_stem else {
+        return false;
+    };
+    let snpeff_names = hit.snpeff.as_ref().is_some_and(|snpeff| {
+        snpeff.ann.iter().any(|ann| {
+            ann.feature_id
+                .as_deref()
+                .is_some_and(|feature| accession_stem(feature) == mane_stem)
+                && ann
+                    .hgvs_p
+                    .as_deref()
+                    .and_then(crate::entities::variant::normalize_protein_change)
+                    .is_some_and(|protein| {
+                        crate::entities::variant::protein_changes_equivalent(change, &protein)
+                    })
+        })
+    });
+    snpeff_names
+        || clinvar_preferred_annotation(hit).is_some_and(|annotation| {
+            annotation
+                .transcript
+                .as_deref()
+                .is_some_and(|transcript| accession_stem(transcript) == mane_stem)
+                && annotation
+                    .protein
+                    .as_deref()
+                    .and_then(crate::entities::variant::normalize_protein_change)
+                    .is_some_and(|protein| {
+                        crate::entities::variant::protein_changes_equivalent(change, &protein)
+                    })
+        })
+}
+
 fn legacy_name(gene: &str, protein: Option<&str>) -> Option<String> {
     let gene = gene.trim();
     let normalized = normalize_protein_change(protein?)?;

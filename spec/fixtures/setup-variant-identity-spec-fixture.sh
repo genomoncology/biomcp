@@ -89,6 +89,18 @@ BRCA1_C61G_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_c61g_20261
 TP53_R116Q_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r116q_20261007.json").read_bytes()
 BRCA1_A1844T_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_a1844t_20261007.json").read_bytes()
 BRCA1_I1568N_RESPONSE = (ROOT / "testdata/sources/myvariant/query_brca1_i1568n_20261007.json").read_bytes()
+# Ticket 2016 fix round 3 (ticket 2033 finding 3): requests whose numbering
+# is valid on the MANE protein while no record names the change there. The
+# alias search returns only the isoform lookalike; BioMCP must refuse
+# instead of resolving it with the other-transcript note.
+TP53_R209Q_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r209q_20261008.json").read_bytes()
+TP53_G112D_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_g112d_20261008.json").read_bytes()
+TP53_R174H_RESPONSE = (ROOT / "testdata/sources/myvariant/query_tp53_r174h_20261008.json").read_bytes()
+# The reference-residue check reads the gene's canonical (MANE Select)
+# protein sequence from UniProt; the record is minimized to the accession
+# and sequence. The complexportal fixture owns the routine lane's UniProt
+# base (it sources later) and serves the same bytes.
+UNIPROT_P04637_RESPONSE = (ROOT / "testdata/sources/uniprot/get_p04637_20261008.json").read_bytes()
 CLINVAR_428884_XML = (ROOT / "testdata/sources/ncbi_efetch/clinvar_428884_20261003.xml").read_bytes()
 H3F3A_K28M_HIT = {
     "_id": "chr1:g.226252135A>T",
@@ -471,7 +483,20 @@ class Handler(BaseHTTPRequestHandler):
             if query == 'dbnsfp.genename:BRCA1 AND dbnsfp.hgvsp:"p.I1568N"':
                 send_json(self, 200, json.loads(BRCA1_I1568N_RESPONSE))
                 return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.R209Q"':
+                send_json(self, 200, json.loads(TP53_R209Q_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.G112D"':
+                send_json(self, 200, json.loads(TP53_G112D_RESPONSE))
+                return
+            if query == 'dbnsfp.genename:TP53 AND dbnsfp.hgvsp:"p.R174H"':
+                send_json(self, 200, json.loads(TP53_R174H_RESPONSE))
+                return
             send_json(self, 400, {"error": "unexpected fixture query"})
+            return
+
+        if parsed.path == "/uniprotkb/P04637.json" and not parse_qs(parsed.query):
+            send_json(self, 200, UNIPROT_P04637_RESPONSE)
             return
 
         if parsed.path in CANCERHOTSPOTS_RESPONSES:
@@ -571,6 +596,7 @@ PY
   printf 'export BIOMCP_MUTALYZER_BASE_URL=%q\n' "$base_url/api"
   printf 'export BIOMCP_VARIANTVALIDATOR_BASE_URL=%q\n' "$base_url"
   printf 'export BIOMCP_CLINGEN_CAR_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_UNIPROT_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"

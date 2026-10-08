@@ -339,6 +339,105 @@ fn protein_change_numbering_note(
     ))
 }
 
+/// The requested reference residue and position of a compact substitution
+/// (`R209Q` → `('R', 209)`), when the request names one.
+fn requested_reference_residue(change: &str) -> Option<(char, u32)> {
+    let normalized = super::normalize_protein_substitution(change)?;
+    let bytes = normalized.as_bytes();
+    let digits = bytes.iter().position(|b| b.is_ascii_digit())?;
+    let end = bytes[digits..]
+        .iter()
+        .position(|b| !b.is_ascii_digit())
+        .map(|idx| digits + idx)?;
+    if digits != 1 || end < 2 || end + 1 != bytes.len() {
+        return None;
+    }
+    let position = normalized[digits..end].parse::<u32>().ok()?;
+    Some((normalized.as_bytes()[0] as char, position))
+}
+
+/// Fetch the reference residue at `position` of the gene's canonical
+/// (MANE Select) protein from UniProt, with the accession used. Any lookup
+/// failure returns None and the answer keeps its numbering note: the
+/// residue check narrows a note that could be false, and an unavailable
+/// sequence cannot prove the request's numbering either way.
+async fn uniprot_reference_residue(gene: &str, position: u32) -> Option<(String, char)> {
+    if position == 0 {
+        return None;
+    }
+    let accession = crate::entities::protein::resolve_accession(gene)
+        .await
+        .ok()?;
+    let record = crate::sources::uniprot::UniProtClient::new()
+        .ok()?
+        .get_record(&accession)
+        .await
+        .ok()?;
+    let sequence = record.sequence?.value?;
+    let residue = sequence.chars().nth(position as usize - 1)?;
+    Some((accession, residue))
+}
+
+/// A resolved hit whose headline does not spell the request, where no
+/// annotation on the MANE transcript spells it either, and the gene's
+/// canonical protein carries the requested reference residue at the
+/// requested position: the request's numbering is valid on MANE, no record
+/// names that change there, and the hit names a different change. The
+/// other-transcript note would be false here (`TP53 R209Q` matching
+/// `p.Arg248Gln` through a shorter isoform), so BioMCP refuses rather than
+/// return the lookalike (ticket 2033 finding 3).
+async fn refuse_when_request_is_mane_numbered(
+    id: &str,
+    gene: &str,
+    change: &str,
+    hit: &crate::sources::myvariant::MyVariantHit,
+    mane_stem: Option<&str>,
+) -> Option<BioMcpError> {
+    mane_stem?;
+    if transform::variant::mane_annotation_names_change(hit, change, mane_stem) {
+        return None;
+    }
+    let (from, position) = requested_reference_residue(change)?;
+    let (accession, residue) = uniprot_reference_residue(gene, position).await?;
+    if residue != from {
+        return None;
+    }
+    let reference = super::amino_acid_three_letter(residue)?;
+    let protein = transform::variant::canonical_protein_change(hit, mane_stem)?;
+    let transcript = transform::variant::canonical_transcript(hit, mane_stem)?;
+    Some(mane_numbering_refusal_message(
+        id,
+        &accession,
+        reference,
+        position,
+        &protein,
+        &transcript,
+        &protein_change_candidate(hit),
+    ))
+}
+
+/// The refusal text for a request whose numbering is valid on the MANE
+/// protein while no matching record names it there (ticket 2033 finding 3).
+fn mane_numbering_refusal_message(
+    id: &str,
+    accession: &str,
+    reference: &str,
+    position: u32,
+    protein: &str,
+    transcript: &str,
+    candidate: &str,
+) -> BioMcpError {
+    BioMcpError::InvalidArgument(format!(
+        "No MANE-numbered variant matches '{id}': the gene's canonical protein \
+         (UniProt {accession}) has {reference} at {position}, so the requested \
+         numbering is valid there, but no matching record names that change; \
+         the only alias match is {protein} on {transcript} — a different \
+         change. BioMCP refuses rather than return the wrong variant.\n\
+Candidates:\n- {candidate}\n\
+Retry `biomcp get variant` with one candidate's exact form: its genomic HGVS, ClinVar VariationID, rsID, or a transcript-qualified HGVS.",
+    ))
+}
+
 fn candidate_matches_requested_identity(
     requested: &super::RequestedVariantIdentity,
     hit: &crate::sources::myvariant::MyVariantHit,
@@ -785,6 +884,18 @@ pub(super) async fn resolve_base_with_hit(
                 .collect::<Vec<_>>();
             let mane_stem = transform::variant::clinvar_mane_transcript_stem(&compatible_hits);
             let hit = resolve_protein_change_hit(id, gene, change, compatible_hits)?;
+            if !hit_names_requested_change(&hit, change, mane_stem.as_deref())
+                && let Some(error) = refuse_when_request_is_mane_numbered(
+                    id,
+                    gene,
+                    change,
+                    &hit,
+                    mane_stem.as_deref(),
+                )
+                .await
+            {
+                return Err(error);
+            }
             let note = protein_change_numbering_note(&hit, change, mane_stem.as_deref());
             (
                 hit,

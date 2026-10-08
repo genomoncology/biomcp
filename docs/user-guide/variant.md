@@ -44,8 +44,12 @@ spellings on different variants. `get variant` counts a hit as a match only
 when the transcript BioMCP headlines for it spells the requested change, and
 that headline prefers the MANE transcript the response marks (ClinVar names
 variants on MANE Select) over the first NM_ annotation. When the resolved
-change does not spell the request, the answer carries a numbering note
-naming the transcript and spelling that matched. When exactly one matching
+change does not spell the request, the answer checks the requested reference
+residue against the gene's canonical (MANE Select) protein sequence: a
+matching residue means the request's own numbering is valid on MANE, and if
+no record names the change there, `get variant` refuses with the only alias
+match as a candidate; otherwise the answer carries a numbering note naming
+the transcript and spelling that matched. When exactly one matching
 variant carries the ClinVar record for that
 change, `get variant` resolves to it; when several variants match and none
 or several carry ClinVar records, it refuses with the candidates and a
