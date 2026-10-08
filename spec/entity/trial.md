@@ -83,6 +83,30 @@ condition-planning path.
   | mustmatch 'true'
 ```
 
+## Ambiguous Conditions Refuse in NCI Trial Search
+
+The NCI source grounds `--condition` through the same resolver as
+`get disease`. When that resolver refuses an ambiguous abbreviation, the
+trial search returns the refusal with its named candidates instead of
+quietly running a keyword search for the raw token, which would mix the
+holders' trials behind a degrade note (ticket 2032). A condition that
+simply fails to ground keeps the visible keyword degrade. This row
+replays the recorded MyDisease `MF` response through the routine disease
+fixture; the refusal names every holder exactly as `get disease MF` does.
+
+```bash run id=nci-ambiguous-condition-refusal exit=2
+"$BIOMCP_BIN" --json search trial -c MF --source nci --limit 1
+```
+
+```json expect=nci-ambiguous-condition-refusal contains
+{
+  "error": {
+    "code": "invalid_argument",
+    "message": "Invalid argument: Ambiguous disease abbreviation 'MF': 2 diseases hold it as an exact name or synonym; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- mycosis fungoides (MONDO:0009691)\n- myotonia fluctuans (MONDO:0020481)\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MF\"` to see every match."
+  }
+}
+```
+
 ## Complete JSON Conditions and Disclosed Markdown Abbreviation
 
 JSON search results retain every condition in the recorded provider response.
@@ -489,4 +513,5 @@ grep -F '/api/v2/studies/NCT02576665?fields=' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_
 grep -F '/api/v2/studies/NCT00791778?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00791778?fields='
 grep -F '/api/v2/studies/NCT00000000?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00000000?fields='
 grep -F 'GET /nci/api/v2/trials?keyword=melanoma&size=1&from=0' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'keyword=melanoma'
+printf 'nci_mf_keyword_requests=%s\n' "$(grep -c -F 'keyword=MF' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" || true)" | mustmatch like 'nci_mf_keyword_requests=0'
 ```
