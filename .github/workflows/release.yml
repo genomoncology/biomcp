@@ -88,10 +88,10 @@ jobs:
           - os: macos-14
             target: aarch64-apple-darwin
             artifact: biomcp-darwin-arm64.tar.gz
-          - os: macos-latest
+          - os: macos-15
             target: x86_64-apple-darwin
             artifact: biomcp-darwin-x86_64.tar.gz
-          - os: windows-latest
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
             artifact: biomcp-windows-x86_64.zip
     runs-on: ${{ matrix.os }}
@@ -212,9 +212,9 @@ jobs:
             container: quay.io/pypa/manylinux_2_28_aarch64
           - os: macos-14
             target: aarch64-apple-darwin
-          - os: macos-latest
+          - os: macos-15
             target: x86_64-apple-darwin
-          - os: windows-latest
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     steps:
@@ -317,17 +317,17 @@ jobs:
             artifact: wheel-aarch64-apple-darwin
             executable: bin/biomcp
             python: bin/python
-          # 2026-10-01 rehearsal (run 36885506628): GitHub moved
-          # macos-latest to arm64 (image macos-26-arm64), so pip
-          # refuses this x86_64 wheel on that host. The build legs
-          # cross-compile with an explicit --target and stay on the
-          # moving label; the smoke needs a matching host, so it pins
-          # the Intel image.
+          # 2026-10-01 rehearsal (run 36885506628): GitHub moved the
+          # macOS moving label to arm64 (image macos-26-arm64), so
+          # pip refuses this x86_64 wheel on that host. The build
+          # legs cross-compile with an explicit --target and pin the
+          # arm64 image (macos-15, ticket 2024's reopening); the
+          # smoke needs a matching host, so it pins the Intel image.
           - os: macos-15-intel
             artifact: wheel-x86_64-apple-darwin
             executable: bin/biomcp
             python: bin/python
-          - os: windows-latest
+          - os: windows-2022
             artifact: wheel-x86_64-pc-windows-msvc
             executable: Scripts/biomcp.exe
             python: Scripts/python.exe

@@ -71,30 +71,89 @@ def test_the_skip_rule_reads_the_changed_files_never_the_message() -> None:
     )
 
 
-def _assert_no_moving_ubuntu_label(text: str) -> None:
-    assert "ubuntu-latest" not in text, (
-        "ubuntu-latest is a moving label: GitHub moves it to Ubuntu 26 "
-        "on 2026-10-19, which can change a release without a repository "
-        "change. Pin the image version (ubuntu-24.04) instead."
-    )
+MOVING_RUNNER_LABELS = ("ubuntu-latest", "macos-latest", "windows-latest")
 
 
-def test_no_workflow_job_runs_on_the_moving_ubuntu_latest_label() -> None:
+def _assert_no_moving_runner_label(text: str) -> None:
+    for label in MOVING_RUNNER_LABELS:
+        assert label not in text, (
+            f"{label} is a moving label: GitHub retargets it to a new "
+            "image on its own schedule, which can change a release "
+            "without a repository change. Pin the image version "
+            "instead (ubuntu-24.04, macos-15, windows-2022)."
+        )
+
+
+def test_no_workflow_job_runs_on_a_moving_runner_label() -> None:
     """Ticket 2024: every workflow job runs on a pinned image.
 
     The 2026-10-07 review found four release and contract jobs still
-    on ubuntu-latest while every other job pinned ubuntu-24.04. The
-    ban covers the file text, not only runs-on keys, so a matrix or
-    a reuse block cannot smuggle the label back in either.
+    on ubuntu-latest while every other job pinned ubuntu-24.04; the
+    reopening also pinned the remaining macos-latest and
+    windows-latest matrix legs to macos-15 and windows-2022. The ban
+    covers the file text, not only runs-on keys, so a matrix or a
+    reuse block cannot smuggle a label back in either.
     """
     for path in sorted(WORKFLOWS.glob("*.yml")):
-        _assert_no_moving_ubuntu_label(path.read_text(encoding="utf-8"))
+        _assert_no_moving_runner_label(path.read_text(encoding="utf-8"))
 
 
-def test_the_ubuntu_label_ban_catches_a_planted_ubuntu_latest() -> None:
-    """Red proof: planting the moving label anywhere fails the ban."""
+@pytest.mark.parametrize("label", MOVING_RUNNER_LABELS)
+def test_the_label_ban_catches_a_planted_moving_label(label: str) -> None:
+    """Red proof: planting any moving label anywhere fails the ban."""
     with pytest.raises(AssertionError, match="moving label"):
-        _assert_no_moving_ubuntu_label("    runs-on: ubuntu-latest\n")
+        _assert_no_moving_runner_label(f"    runs-on: {label}\n")
+
+
+def _assert_windows_wrapper_step(doc: dict) -> None:
+    """Ticket 2024 reopening: the Windows CI job must run
+    tools/with-build-identity and fail unless the child's exit code
+    propagates. os.execvpe exited 0 at once on Windows while the
+    child kept running, so a build step passed with no binary.
+    """
+    steps = doc["jobs"]["windows-contracts"]["steps"]
+    wrapper_steps = [
+        step for step in steps if "with-build-identity" in str(step.get("run", ""))
+    ]
+    assert len(wrapper_steps) == 1, (
+        "windows-contracts must exercise tools/with-build-identity on "
+        "windows-2022; before this step no job ever ran the script there"
+    )
+    step = wrapper_steps[0]
+    assert step.get("shell") == "bash"
+    run = step["run"]
+    assert "with-build-identity cargo --version" in run, (
+        "the wrapper step must run a trivial cargo command to a green exit"
+    )
+    # A failing child must surface as a nonzero wrapper exit: the
+    # captured status is compared against 0, and the branch fails.
+    assert '|| status=$?' in run and 'if [ "$status" -eq 0 ]; then' in run, (
+        "the wrapper step must fail when a failing child exits 0 through "
+        "the wrapper (the os.execvpe behavior on Windows)"
+    )
+    assert "raise SystemExit(42)" in run and '[ "$status" -ne 42 ]; then' in run, (
+        "the wrapper step must assert an exact exit code passes through, "
+        "not merely a nonzero one"
+    )
+
+
+def test_windows_contracts_runs_the_build_identity_wrapper() -> None:
+    _assert_windows_wrapper_step(DOC)
+
+
+def test_the_windows_wrapper_contract_catches_a_dropped_step() -> None:
+    """Red proof: removing the wrapper step from the Windows job
+    fails the contract."""
+    import copy
+
+    doc = copy.deepcopy(DOC)
+    doc["jobs"]["windows-contracts"]["steps"] = [
+        step
+        for step in doc["jobs"]["windows-contracts"]["steps"]
+        if "with-build-identity" not in str(step.get("run", ""))
+    ]
+    with pytest.raises(AssertionError, match="must exercise"):
+        _assert_windows_wrapper_step(doc)
 
 
 def test_every_rust_job_waits_on_the_changes_job() -> None:

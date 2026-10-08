@@ -60,6 +60,7 @@ which lands before the 0.9.2 tag.
   base-stale run; the main-merged run at 407940cad is green. Recorded
   here so the record carries both.
 
+D
 ## Fix-round review
 
 - Code re-review (head 804f07967): ACCEPT 2026-10-07. Verified at

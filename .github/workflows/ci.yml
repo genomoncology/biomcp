@@ -300,12 +300,38 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           cache-workspace-crates: true
+      - name: Install pinned Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: 3.12.3
       - name: Compile Windows CSpec and managed-state boundaries
         run: |
           cargo check --locked
           cargo test --locked --test managed_state_permissions
           cargo test --locked --test windows_stdio_contract
           cargo test --locked --lib cache::private
+      # Ticket 2024 reopening: tools/with-build-identity handed off
+      # with os.execvpe, which on Windows exits 0 at once while the
+      # child keeps running, so a release build step passed with no
+      # binary. This step runs the wrapper on Windows and fails
+      # unless it waits for the child and passes the exit code
+      # through.
+      - name: Check with-build-identity passes exit codes through
+        shell: bash
+        run: |
+          python tools/with-build-identity cargo --version
+          status=0
+          python tools/with-build-identity cargo build --locked --unknown-2024-flag >/dev/null 2>&1 || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "with-build-identity returned 0 while the cargo command failed" >&2
+            exit 1
+          fi
+          status=0
+          python tools/with-build-identity python -c 'raise SystemExit(42)' || status=$?
+          if [ "$status" -ne 42 ]; then
+            echo "with-build-identity passed exit $status instead of the child's 42" >&2
+            exit 1
+          fi
 
   repository-contracts:
     # Always runs, including docs-only pushes: these are the
