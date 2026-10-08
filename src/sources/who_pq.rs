@@ -101,9 +101,16 @@ pub(crate) const WHO_PQ_SYNC_FAILURE_REASON_PREFIX: &str =
 /// Recovery sentence shared by the sync failure error and its public
 /// projection, so every surface states one spelling (ticket 2021). `who
 /// sync` itself just failed, so the sentence names network access and the
-/// manual preseed paths instead of the command that failed (1304
-/// post-landing review finding 2).
-pub(crate) const WHO_PQ_SYNC_FAILURE_RECOVERY: &str = "Retry with network access, place the three WHO Prequalification CSV exports in the data directory, or set BIOMCP_WHO_DIR.";
+/// manual preseed path instead of the command that failed (1304
+/// post-landing review finding 2). The sentence names the resolved data
+/// directory so the preseed has a destination, as `who_preseed_suggestion`
+/// does (second review finding 17).
+pub(crate) fn who_pq_sync_failure_recovery(root: &Path) -> String {
+    format!(
+        "Retry with network access, place the three WHO Prequalification CSV exports in {}, or set BIOMCP_WHO_DIR.",
+        root.display()
+    )
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum WhoPqSyncMode {
@@ -1047,11 +1054,11 @@ fn sync_intro(state: SyncState, mode: WhoPqSyncMode) -> &'static str {
     }
 }
 
-fn who_pq_sync_error(detail: impl Into<String>) -> BioMcpError {
+fn who_pq_sync_error(root: &Path, detail: impl Into<String>) -> BioMcpError {
     BioMcpError::SourceUnavailable {
         source_name: SOURCE_NAME.to_string(),
         reason: format!("{WHO_PQ_SYNC_FAILURE_REASON_PREFIX}{}", detail.into()),
-        suggestion: WHO_PQ_SYNC_FAILURE_RECOVERY.to_string(),
+        suggestion: who_pq_sync_failure_recovery(root),
     }
 }
 
@@ -1150,11 +1157,14 @@ async fn sync_who_pq_root_inner(
     // The failing file and its reason stay in the final error, not only on
     // stderr, so terminal, JSON and MCP callers all see them (ticket 2021,
     // finishing 1304 item 4).
-    Err(who_pq_sync_error(format!(
-        " {} Missing required WHO Prequalification file(s) after the run: {}.",
-        report.failure_sentences(),
-        missing.join(", ")
-    )))
+    Err(who_pq_sync_error(
+        root,
+        format!(
+            " {} Missing required WHO Prequalification file(s) after the run: {}.",
+            report.failure_sentences(),
+            missing.join(", ")
+        ),
+    ))
 }
 
 async fn sync_export(

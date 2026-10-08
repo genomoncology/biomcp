@@ -222,6 +222,16 @@ async fn sync_names_the_failing_file_and_column_in_its_final_error() {
         "recovery: {:?}",
         projection.recovery
     );
+    // The recovery names the resolved data directory so the manual preseed
+    // has a destination (second review finding 17).
+    let root_path = root.path().display().to_string();
+    assert!(
+        projection
+            .recovery
+            .is_some_and(|recovery| recovery.contains(&root_path)),
+        "recovery: {:?}",
+        projection.recovery
+    );
     // The rendered error names the file and column once, with no doubled
     // period from the recovery suffix (the slip finding 12 reported).
     let rendered = err.to_string();

@@ -271,12 +271,12 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1442,
+      "baseline_lines": 1446,
       "floor_lines": 1122,
       "authorized_increase": {
         "ticket": "1256, 1302, 1304 | 1299 | 2021",
-        "delta": 320,
-        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests. Ticket 1304: the WHO Prequalification header-mismatch projection arm and its test. | merged deadline-projection guard beside the citation-evidence carve-outs and the WHO PQ mismatch arm | The WHO Prequalification sync-failure projection arm carries the sync reason and recovery through the public error surface instead of the generic source-down line.",
+        "delta": 324,
+        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests. Ticket 1304: the WHO Prequalification header-mismatch projection arm and its test. | merged deadline-projection guard beside the citation-evidence carve-outs and the WHO PQ mismatch arm | The WHO Prequalification sync-failure projection arm carries the sync reason and recovery through the public error surface instead of the generic source-down line. The projection recovery borrows from the error so the WHO recovery names the resolved data directory instead of holding a second static spelling.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures. | the shared error-projection redesign collapses the per-surface carve-outs | Fold the per-surface reason-prefix projection arms into shared plumbing when the error-projection redesign lands."
       }
     },
@@ -305,13 +305,13 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1590,
+      "baseline_lines": 1592,
       "floor_lines": 1561,
       "authorized_increase": {
-        "delta": 29,
-        "ticket": "1241, 1300",
-        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, bundle-error naming, and the label_note field on Drug test cards.",
-        "removal_condition": "Shrink when the drug card model is next refactored and the label note moves into the label section payload."
+        "delta": 31,
+        "ticket": "1241, 1300 | 2021",
+        "reason": "DDInter coverage on the drug card, cached-basis freshness, synonyms, bundle-error naming, and the label_note field on Drug test cards. | The error JSON recovery borrows from the projection so a recovery can name a runtime location.",
+        "removal_condition": "Shrink when the drug card model is next refactored and the label note moves into the label section payload. | Fold the borrowed recovery into the shared error-response shape when the projection redesign lands."
       }
     },
     {
@@ -493,12 +493,12 @@
     },
     {
       "path": "src/sources/who_pq.rs",
-      "baseline_lines": 1283,
+      "baseline_lines": 1293,
       "floor_lines": 1117,
       "authorized_increase": {
         "ticket": "1196, 1304 | 1196 | 1196, 1304 | 2021",
-        "delta": 166,
-        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The per-file sync failure carries its public reason, the failure sentences feed the final sync error, and the sync-failure reason prefix and recovery constants name themselves.",
+        "delta": 176,
+        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The per-file sync failure carries its public reason, the failure sentences feed the final sync error, and the sync-failure reason prefix and recovery sentence name themselves, the recovery naming the resolved data directory.",
         "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed. | Fold the per-file sync reports into one shared sync wrapper when the sync layer is next decomposed."
       }
     },

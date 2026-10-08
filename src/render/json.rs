@@ -364,13 +364,15 @@ pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> 
 }
 
 #[derive(Serialize)]
-struct AliasError {
+struct AliasError<'a> {
     code: &'static str,
     message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     source: Option<&'static str>,
+    // The recovery may name a runtime location, so it borrows from the
+    // projection instead of holding a static spelling (ticket 2021).
     #[serde(skip_serializing_if = "Option::is_none")]
-    recovery: Option<&'static str>,
+    recovery: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     limit_bytes: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -380,8 +382,8 @@ struct AliasError {
 }
 
 #[derive(Serialize)]
-struct ErrorJsonResponse {
-    error: AliasError,
+struct ErrorJsonResponse<'a> {
+    error: AliasError<'a>,
     _meta: ErrorMeta,
 }
 
@@ -422,7 +424,7 @@ pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> 
 
 #[derive(Serialize)]
 struct AliasJsonResponse<'a> {
-    error: AliasError,
+    error: AliasError<'a>,
     _meta: AliasMeta<'a>,
 }
 
@@ -466,7 +468,7 @@ enum AliasResolution<'a> {
 
 #[derive(Serialize)]
 struct VariantGuidanceJsonResponse<'a> {
-    error: AliasError,
+    error: AliasError<'a>,
     _meta: VariantGuidanceMeta<'a>,
 }
 
