@@ -526,11 +526,11 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1496,
+      "baseline_lines": 1499,
       "floor_lines": 1335,
       "authorized_increase": {
         "ticket": "2022",
-        "delta": 161,
+        "delta": 164,
         "reason": "Ticket 2022: pair the ClinVar headline evaluation date with the shown classification and cover the recorded BRAF V600E rows with unit tests.",
         "removal_condition": "Drop to the prior floor when the BRAF V600E date tests move out of the transform module."
       }
