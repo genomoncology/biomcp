@@ -22,3 +22,20 @@ Filed 2026-10-07 from the second review of the work since v0.9.1 (`sdlc/issues/2
 - Changes: prefer the gene-plus-change command whenever both parts exist, whatever else the article mentions.
 - Proof: a single-mention G12A article prints `biomcp get variant "KRAS p.G12A"`, and a test fails on `6b504219e`. A test covers one allele written as `p.G12D` and as `p.Gly12Asp`.
 - Defers: ClinGen allele ID support in `get variant`.
+
+## Build status
+
+- Built on branch `tickets/2029-article-variant-links-prefer-the-gene-form`,
+  head 476da62c5 (8f6527201 plus the review folds), 2026-10-07. The
+  lane escalated a jointly-unsatisfiable pin set; the supervisor
+  confirmed following the ticket Outcome, with the G12C/G13C spec-row
+  flip recorded plainly in the ticket.
+- Code review: ACCEPT 2026-10-07. Verified: the row-own-data rule
+  ahead of rsID consideration with 2018's fallbacks intact; the
+  approved flip's factual basis in the real capture; the two new
+  receipts following the 2018 convention; the guard test genuinely red
+  against the raw-HGVS shortcut; the red-on-parent shape statically
+  conclusive; no regressions in the no-gene-symbol contracts. Two P2s
+  (a comment narrower than the code; a missing named pin for the
+  no-rsID + gene path) folded in 476da62c5 with the annotations scope
+  green on the build host.
