@@ -8,4 +8,4 @@ Imported from March ticket 386. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/386-article-assets-manifest-and-canonical-oa-package-fetch-bytes-not-parsing
+Artifacts: ~/workspace/planning/biomcp/artifacts/386-article-assets-manifest-and-canonical-oa-package-fetch-bytes-not-parsing

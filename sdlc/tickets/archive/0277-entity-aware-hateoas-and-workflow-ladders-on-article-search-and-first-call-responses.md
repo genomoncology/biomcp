@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/277-entity-aware-hateoas-and-workflow-ladders-on-article-search-and-first-call-responses
+    ~/workspace/planning/biomcp/artifacts/277-entity-aware-hateoas-and-workflow-ladders-on-article-search-and-first-call-responses

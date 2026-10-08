@@ -8,4 +8,4 @@ Imported from March ticket 478. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/478-add-homebrew-formula-and-release-automation-via-a-tap
+Artifacts: ~/workspace/planning/biomcp/artifacts/478-add-homebrew-formula-and-release-automation-via-a-tap

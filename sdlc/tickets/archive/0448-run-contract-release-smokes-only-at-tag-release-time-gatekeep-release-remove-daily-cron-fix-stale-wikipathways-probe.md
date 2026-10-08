@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/448-run-contract-release-smokes-only-at-tag-release-time-gatekeep-release-remove-daily-cron-fix-stale-wikipathways-probe
+    ~/workspace/planning/biomcp/artifacts/448-run-contract-release-smokes-only-at-tag-release-time-gatekeep-release-remove-daily-cron-fix-stale-wikipathways-probe

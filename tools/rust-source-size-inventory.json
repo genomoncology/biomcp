@@ -71,12 +71,12 @@
     },
     {
       "path": "src/entities/article/graph/tests.rs",
-      "baseline_lines": 2263,
+      "baseline_lines": 2258,
       "floor_lines": 998,
       "authorized_increase": {
-        "ticket": "1246, 1302, 1306 | 1246 | 1246, 1302 | 2030",
-        "delta": 1265,
-        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, answered-index-no-edge, and fail-fast tests. Ticket 1306: the cited-seed-refused fixture reply, the citing-seed reuse case, the malformed-OCI wording case, and the DOI-resolution status pin. | cfg(unix) gates so the Windows contract job can compile the lib tests. | cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, answered-index-no-edge, and fail-fast tests. | Ticket 2030: the delayed full-text reply holds the connection and a timer task releases it, so the fixture parks the runtime timer instead of a worker thread.",
+        "ticket": "1246, 1302, 1306",
+        "delta": 1260,
+        "reason": "cfg(unix) gates so the Windows contract job can compile the lib tests. Ticket 1302: the degradation fixtures and the refusal, both-refused, answered-index-no-edge, and fail-fast tests. Ticket 1306: the cited-seed-refused fixture reply, the citing-seed reuse case, the malformed-OCI wording case, and the DOI-resolution status pin.",
         "removal_condition": "Move the unix-only tests behind a shared cfg or split them out."
       }
     },
@@ -96,10 +96,10 @@
       "baseline_lines": 1432,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "1144, 1293, 1296 | 1299 | 1144, 1293, 1296",
+        "ticket": "1144, 1293, 1296, 1299",
         "delta": 118,
-        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them. | Re-export the article-search deadline budget and error text for the exact-keyword lookup and the public error projection | Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them.",
-        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary. | Return to the prior baseline when the deadline seam moves to the sources layer | Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary."
+        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract; ticket 1293 adds the article search diagnostics record beside the search page contract it describes; ticket 1296 adds the annotation row identifier, namespace, and passage-position fields plus the get-options gate that collects them; ticket 1299 re-exports the article-search deadline budget and error text for the exact-keyword lookup and the public error projection.",
+        "removal_condition": "Extract article graph and annotation row types when a package-neutral module split can preserve the exact source package boundary; the deadline re-export returns to the prior baseline when the deadline seam moves to the sources layer."
       }
     },
     {
@@ -107,10 +107,10 @@
       "baseline_lines": 6303,
       "floor_lines": 4828,
       "authorized_increase": {
-        "ticket": "1150, 1292, 1297 | 1299",
+        "ticket": "1150, 1292, 1297, 1299",
         "delta": 1475,
-        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Ticket 1292: the article entry refuses a bare ClinVar VariationID instead of silently resolving an empty identity. Ticket 1297: the folded-scope bare-VariationID refusal test. | cursorMark fixture adaptation in the strict-leg deadline test after ticket 1298 changed the Europe PMC wire",
-        "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed. | the deadline fixtures move to recorded captures"
+        "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator. Ticket 1292: the article entry refuses a bare ClinVar VariationID instead of silently resolving an empty identity. Ticket 1297: the folded-scope bare-VariationID refusal test. Ticket 1299: cursorMark fixture adaptation in the strict-leg deadline test after ticket 1298 changed the Europe PMC wire.",
+        "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed; the deadline fixtures move to recorded captures."
       }
     },
     {
@@ -129,10 +129,10 @@
       "baseline_lines": 4060,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "1243 | 1299 | 1243",
+        "ticket": "1243, 1299",
         "delta": 366,
-        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. | Bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it | Boxed the four-way OLS/UMLS/Medline/identity join onto the heap.",
-        "removal_condition": "None; the boxing is the point. | Return to the prior baseline when the OLS client gains an unconditional deadline constructor | None; the boxing is the point."
+        "reason": "Boxed the four-way OLS/UMLS/Medline/identity join onto the heap. Ticket 1299: bound the exact-keyword OLS lookup construction by the invocation deadline budget so a held epoch lock cannot stall it.",
+        "removal_condition": "None for the boxing; the deadline-bound construction returns to the prior baseline when the OLS client gains an unconditional deadline constructor."
       }
     },
     {
@@ -276,8 +276,8 @@
       "authorized_increase": {
         "ticket": "1256, 1302, 1304, 1299, 2017",
         "delta": 306,
-        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests. Ticket 1304: the WHO Prequalification header-mismatch projection arm and its test. | merged deadline-projection guard beside the citation-evidence carve-outs and the WHO PQ mismatch arm",
-        "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures. | the shared error-projection redesign collapses the per-surface carve-outs"
+        "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests. Ticket 1304: the WHO Prequalification header-mismatch projection arm and its test. Ticket 1299: merged deadline-projection guard beside the citation-evidence carve-outs and the WHO PQ mismatch arm.",
+        "removal_condition": "Shrink when the note and seed logic move into shared plumbing, the tests fold into shared fixtures, or the shared error-projection redesign collapses the per-surface carve-outs."
       }
     },
     {
@@ -474,9 +474,9 @@
       "baseline_lines": 1048,
       "floor_lines": 959,
       "authorized_increase": {
-        "ticket": "1143, 1302 | 1143 | 1143, 1302",
+        "ticket": "1143, 1302",
         "delta": 89,
-        "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier. | The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. | The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier.",
+        "reason": "The rich author-papers wire contract adds full-page field lists, rich response fields, and page validation beside the existing client; dead-code allowances for now-live items were pruned. Ticket 1302: the refusal message constants and the refusal classifier.",
         "removal_condition": "Extract the author-papers wire types and validation when the source module is next decomposed."
       }
     },
@@ -496,10 +496,10 @@
       "baseline_lines": 1229,
       "floor_lines": 1117,
       "authorized_increase": {
-        "ticket": "1196, 1304 | 1196 | 1196, 1304",
+        "ticket": "1196, 1304",
         "delta": 112,
-        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. | The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches.",
-        "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers into one shared wrapper when the sync layer is next decomposed. | Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed."
+        "reason": "The sync change-flag wrapper records a before/after bundle fingerprint so WHO Prequalification sync reports a real changed value. Ticket 1304: the per-file sync report, its summary line, the attempt-every-export loop, the header-mismatch marker, the file-named validation errors, and the legacy Applicant Organization alias for pre-1304 caches.",
+        "removal_condition": "Fold the per-source sync fingerprint wrappers and per-file sync reports into one shared wrapper when the sync layer is next decomposed."
       }
     },
     {

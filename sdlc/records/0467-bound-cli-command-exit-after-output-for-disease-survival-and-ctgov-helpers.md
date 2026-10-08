@@ -8,4 +8,4 @@ Imported from March ticket 467. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/467-bound-cli-command-exit-after-output-for-disease-survival-and-ctgov-helpers
+Artifacts: ~/workspace/planning/biomcp/artifacts/467-bound-cli-command-exit-after-output-for-disease-survival-and-ctgov-helpers

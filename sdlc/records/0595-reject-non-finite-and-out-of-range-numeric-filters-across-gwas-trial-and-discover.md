@@ -8,4 +8,4 @@ Imported from March ticket 595. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/595-reject-non-finite-and-out-of-range-numeric-filters-across-gwas-trial-and-discover
+Artifacts: ~/workspace/planning/biomcp/artifacts/595-reject-non-finite-and-out-of-range-numeric-filters-across-gwas-trial-and-discover

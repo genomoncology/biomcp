@@ -11,7 +11,7 @@ CLI (release, no default features):
 
 - `biomcp --json --no-cache get variant 'DICER1 p.Met1483Ile'` returns
   `chr14:g.95562808C>A`, `hgvs_c c.4449G>T`, no `clinvar_id`, no `rsid`. That
-  genomic variant has no ClinVar record. This matches the KB QA 0002 finding.
+  genomic variant has no ClinVar record. This matches the QA 0002 finding.
 - The CLI queries the normalized alias
   `dbnsfp.genename:DICER1 AND dbnsfp.hgvsp:"p.M1483I"`. MyVariant ranked the
   hits `C>A` (score 27.89), `C>T` (27.73, `clinvar.variant_id` 577152,

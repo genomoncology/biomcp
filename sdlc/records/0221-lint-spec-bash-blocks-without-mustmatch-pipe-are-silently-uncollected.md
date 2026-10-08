@@ -8,4 +8,4 @@ Imported from March ticket 221. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/221-lint-spec-bash-blocks-without-mustmatch-pipe-are-silently-uncollected
+Artifacts: ~/workspace/planning/biomcp/artifacts/221-lint-spec-bash-blocks-without-mustmatch-pipe-are-silently-uncollected

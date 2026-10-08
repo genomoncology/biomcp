@@ -8,4 +8,4 @@ Imported from March ticket 619. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/619-bind-pubtator-article-confirmation-to-typed-gene-variant-linkage-and-pmid
+Artifacts: ~/workspace/planning/biomcp/artifacts/619-bind-pubtator-article-confirmation-to-typed-gene-variant-linkage-and-pmid

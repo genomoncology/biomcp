@@ -20,16 +20,16 @@ Experiment 421 showed the opposite case. On old BioASQ recall questions, tools t
 - Answer keys come from the raw provider, never from BioMCP, so a tool cannot grade itself.
 - Every JSON shape the harness reads gets an assertion before the data reaches a model. Experiment 421's empty-abstract bug is the reason.
 - Exact matching never grades free text alone. A grader is calibrated against a hand-checked sample before any number leaves the folder.
-- GLM-5.3 runs on the Z.ai coding endpoint at no cost to Ian. ThinkThen runs on Jev. Each experiment caps ThinkThen spend at $2 with `--max-requests-total` and records actual spend.
+- GLM-5.3 runs on the Z.ai coding endpoint. ThinkThen runs on a local host. Each experiment caps ThinkThen spend at $2 with `--max-requests-total` and records actual spend.
 - BioMCP under test is the published 0.9.1 wheel: `uvx --from biomcp-cli==0.9.1 biomcp`.
 - Work stays on cancer care decisions for clinicians.
 
 ## Who does what
 
-- The BioMCP owner (Opus) designs experiments, reviews results, and writes every conclusion.
-- SWE-2 implementers build harnesses and data pulls, one per experiment folder.
-- Fresh SWE-2 researchers review designs and code. A fresh Opus reviewer checks clinical question wording and any claim headed for the paper.
-- Pi on GLM-5.3 runs the agent legs through `pi-job`. The owner verifies every report against raw output.
+- The BioMCP owner designs experiments, reviews results, and writes every conclusion.
+- Implementers build harnesses and data pulls, one per experiment folder.
+- Fresh researchers review designs and code. A fresh reviewer checks clinical question wording and any claim headed for the paper.
+- The GLM-5.3 agent runs the agent legs through `pi-job`. The owner verifies every report against raw output.
 
 ## Experiment queue
 
@@ -51,7 +51,7 @@ Published benchmarks to adopt after wave 1, in order:
 4. GeneTuring and GeneHop: gene name, location and multi-step lookups, with GeneGPT as the published tool baseline.
 5. LAB-Bench DbQA and LitQA2, restricted to clinical and genomic items.
 
-The docs team's other asks (decorate JSON, Markdown cleanup) fold into 434 and 437 as steps, not separate experiments.
+The remaining documentation asks (decorate JSON, Markdown cleanup) fold into 434 and 437 as steps, not separate experiments.
 
 ## The paper
 
@@ -68,7 +68,7 @@ The outline and drafts live in `repos/mktg/content/biomcp/papers/` once 431 to 4
 
 ## Articles
 
-Each article comes from a recorded experiment and links its folder's numbers. The backlog stays in `notes/ideas/biomcp-marketing-thread.md` and drafts stay in `repos/mktg/content/biomcp/drafts/`. ThinkThen pairs follow the docs team's message, `repos/sdlc/inbox/biomcp/2026-10-03-docs-joint-marketing-with-thinkthen.md`.
+Each article comes from a recorded experiment and links its folder's numbers. The backlog stays in `notes/ideas/biomcp-marketing-thread.md` and drafts stay in `repos/mktg/content/biomcp/drafts/`. ThinkThen pairs follow the joint documentation message, `repos/sdlc/inbox/biomcp/2026-10-03-docs-joint-marketing-with-thinkthen.md`.
 
 ## Where results go
 

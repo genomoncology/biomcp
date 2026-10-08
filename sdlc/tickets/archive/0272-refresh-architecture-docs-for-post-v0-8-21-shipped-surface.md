@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/272-refresh-architecture-docs-for-post-v0-8-21-shipped-surface
+    ~/workspace/planning/biomcp/artifacts/272-refresh-architecture-docs-for-post-v0-8-21-shipped-surface

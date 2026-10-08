@@ -1,6 +1,6 @@
 # 1302 — degrade citation-evidence honestly when Semantic Scholar refuses
 
-Filed 2026-10-05 by the BioMCP 0.9 lead, promoting the issue of 2026-10-02 after reproduction; supersedes that issue.
+Filed 2026-10-05 by the 0.9 release lane, promoting the issue of 2026-10-02 after reproduction; supersedes that issue.
 
 Status: complete.
 Milestone: 0.9.2

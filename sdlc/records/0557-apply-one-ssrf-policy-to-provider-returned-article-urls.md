@@ -8,4 +8,4 @@ Imported from March ticket 557. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/557-apply-one-ssrf-policy-to-provider-returned-article-urls
+Artifacts: ~/workspace/planning/biomcp/artifacts/557-apply-one-ssrf-policy-to-provider-returned-article-urls

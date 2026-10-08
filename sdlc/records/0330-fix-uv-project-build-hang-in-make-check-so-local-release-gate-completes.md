@@ -8,4 +8,4 @@ Imported from March ticket 330. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/330-fix-uv-project-build-hang-in-make-check-so-local-release-gate-completes
+Artifacts: ~/workspace/planning/biomcp/artifacts/330-fix-uv-project-build-hang-in-make-check-so-local-release-gate-completes

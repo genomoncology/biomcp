@@ -8,4 +8,4 @@ Imported from March ticket 341. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/341-polish-embedded-biomcp-skill-how-tos-with-verified-multi-step-examples
+Artifacts: ~/workspace/planning/biomcp/artifacts/341-polish-embedded-biomcp-skill-how-tos-with-verified-multi-step-examples

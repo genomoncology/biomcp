@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/435-typed-mcp-tool-surface-schema-typed-tools-replace-single-command-string
+    ~/workspace/planning/biomcp/artifacts/435-typed-mcp-tool-surface-schema-typed-tools-replace-single-command-string

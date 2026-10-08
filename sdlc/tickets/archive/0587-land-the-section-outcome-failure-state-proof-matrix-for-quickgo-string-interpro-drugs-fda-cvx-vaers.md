@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/587-land-the-section-outcome-failure-state-proof-matrix-for-quickgo-string-interpro-drugs-fda-cvx-vaers
+    ~/workspace/planning/biomcp/artifacts/587-land-the-section-outcome-failure-state-proof-matrix-for-quickgo-string-interpro-drugs-fda-cvx-vaers

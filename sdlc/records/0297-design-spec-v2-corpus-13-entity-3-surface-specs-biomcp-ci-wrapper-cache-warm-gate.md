@@ -8,4 +8,4 @@ Imported from March ticket 297. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/297-design-spec-v2-corpus-13-entity-3-surface-specs-biomcp-ci-wrapper-cache-warm-gate
+Artifacts: ~/workspace/planning/biomcp/artifacts/297-design-spec-v2-corpus-13-entity-3-surface-specs-biomcp-ci-wrapper-cache-warm-gate

@@ -8,4 +8,4 @@ Imported from March ticket 418. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/418-survey-and-blueprint-federated-article-search-latency-bound-the-source-all-2-minute-tail
+Artifacts: ~/workspace/planning/biomcp/artifacts/418-survey-and-blueprint-federated-article-search-latency-bound-the-source-all-2-minute-tail

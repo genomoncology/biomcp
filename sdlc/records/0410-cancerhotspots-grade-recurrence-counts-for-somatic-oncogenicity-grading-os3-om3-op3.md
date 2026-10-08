@@ -8,4 +8,4 @@ Imported from March ticket 410. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/410-cancerhotspots-grade-recurrence-counts-for-somatic-oncogenicity-grading-os3-om3-op3
+Artifacts: ~/workspace/planning/biomcp/artifacts/410-cancerhotspots-grade-recurrence-counts-for-somatic-oncogenicity-grading-os3-om3-op3

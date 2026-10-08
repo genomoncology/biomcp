@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/282-workflow-ladder-emission-and-sidecar-schema-for-first-call-hateoas
+    ~/workspace/planning/biomcp/artifacts/282-workflow-ladder-emission-and-sidecar-schema-for-first-call-hateoas

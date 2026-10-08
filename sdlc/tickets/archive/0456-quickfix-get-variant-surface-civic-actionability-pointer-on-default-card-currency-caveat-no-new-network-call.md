@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/456-quickfix-get-variant-surface-civic-actionability-pointer-on-default-card-currency-caveat-no-new-network-call
+    ~/workspace/planning/biomcp/artifacts/456-quickfix-get-variant-surface-civic-actionability-pointer-on-default-card-currency-caveat-no-new-network-call

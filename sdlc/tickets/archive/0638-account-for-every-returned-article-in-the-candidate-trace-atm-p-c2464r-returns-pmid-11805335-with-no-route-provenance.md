@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/638-account-for-every-returned-article-in-the-candidate-trace-atm-p-c2464r-returns-pmid-11805335-with-no-route-provenance
+    ~/workspace/planning/biomcp/artifacts/638-account-for-every-returned-article-in-the-candidate-trace-atm-p-c2464r-returns-pmid-11805335-with-no-route-provenance

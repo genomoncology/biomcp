@@ -8,4 +8,4 @@ Imported from March ticket 647. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/647-close-the-provider-capture-directory-symlink-toctou-race
+Artifacts: ~/workspace/planning/biomcp/artifacts/647-close-the-provider-capture-directory-symlink-toctou-race

@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/285-review-post-246-shipped-surface-and-v0-8-22-release-readiness
+    ~/workspace/planning/biomcp/artifacts/285-review-post-246-shipped-surface-and-v0-8-22-release-readiness
 
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the

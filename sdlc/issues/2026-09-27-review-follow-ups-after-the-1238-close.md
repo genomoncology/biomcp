@@ -4,7 +4,7 @@ Filed 2026-09-27 from an independent read-only review of main at `79573b59`. Fiv
 
 ## Ian's direction, 2026-09-27
 
-- The developer runs the DDInter real-bundle checks on the M5, BioMCP's home machine. The Mac-run issue no longer waits on Ian.
+- The developer runs the DDInter real-bundle checks on the local Mac host. The Mac-run issue no longer waits on Ian.
 - The developer owns the source licensing review, including the 2027-03 review-date crossing and DepMap's terms. Research the sources, decide, and record the decision with citations. Bring Ian only a decision that spends money, signs an agreement, or contacts a data provider.
 
 ## Product
@@ -86,6 +86,6 @@ Checks — rebuilt structurally (1258, gate 3f6916db): one review grammar with s
 
 Records — fixed through ticket 1259's commits: both review files carry dispositions (this section and the 2026-09-26 file's); the four no-decision files have Decision or Resolved sections; the ticket contradictions, frontmatter heads, credentials claim, Status lines, yellow-lock wording, 1253 counts (26 plus the #284 close), 1.0 owners and triggers (variant transcripts → ticket 1260), and the shorthand rewrites are all on main.
 
-Direction items — done: the Mac DDInter run executed on the M5 at a7d503be with all three checks passing (its issue file carries the run and numbers); the licensing review pass covered all 48 sources due 2026-03-20 (45 verified after the 2026-09-28 corrections, COSMIC and CPIC materially changed and updated, Enrichr unverifiable and kept dated, record `sdlc/records/2026-09-27-source-licensing-review-pass.md`); DepMap decided under the delegation with citations (stays out; the 2026-09-19 note's reservation superseded by the recorded decision); the 2027-03 crossing handled for 47 of 48 — Enrichr fails 2027-03-21 unless its terms page is fixed and verified first.
+Direction items — done: the Mac DDInter run executed on the local Mac host at a7d503be with all three checks passing (its issue file carries the run and numbers); the licensing review pass covered all 48 sources due 2026-03-20 (45 verified after the 2026-09-28 corrections, COSMIC and CPIC materially changed and updated, Enrichr unverifiable and kept dated, record `sdlc/records/2026-09-27-source-licensing-review-pass.md`); DepMap decided under the delegation with citations (stays out; the 2026-09-19 note's reservation superseded by the recorded decision); the 2027-03 crossing handled for 47 of 48 — Enrichr fails 2027-03-21 unless its terms page is fixed and verified first.
 
 Beyond this file: ticket 1261 fixed the cache-mode leak from GitHub #286 (Ian's filing; close #286 at the release).

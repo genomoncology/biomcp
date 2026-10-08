@@ -8,4 +8,4 @@ Imported from March ticket 651. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/651-enforce-receipt-backed-real-captures-for-tier-3-source-tests
+Artifacts: ~/workspace/planning/biomcp/artifacts/651-enforce-receipt-backed-real-captures-for-tier-3-source-tests

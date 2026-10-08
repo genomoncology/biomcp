@@ -8,4 +8,4 @@ Imported from March ticket 484. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/484-fix-variant-normalize-json-contract-test-to-run-prebuilt-binary-not-cargo-run
+Artifacts: ~/workspace/planning/biomcp/artifacts/484-fix-variant-normalize-json-contract-test-to-run-prebuilt-binary-not-cargo-run

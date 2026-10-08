@@ -8,4 +8,4 @@ Imported from March ticket 286. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/286-restore-make-test-contracts-to-green-by-resolving-landing-copy-bullet-count-drift
+Artifacts: ~/workspace/planning/biomcp/artifacts/286-restore-make-test-contracts-to-green-by-resolving-landing-copy-bullet-count-drift

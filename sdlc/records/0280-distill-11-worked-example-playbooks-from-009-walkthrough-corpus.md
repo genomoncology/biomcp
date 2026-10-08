@@ -8,4 +8,4 @@ Imported from March ticket 280. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/280-distill-11-worked-example-playbooks-from-009-walkthrough-corpus
+Artifacts: ~/workspace/planning/biomcp/artifacts/280-distill-11-worked-example-playbooks-from-009-walkthrough-corpus

@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/350-fix-mcp-stdio-no-input-guidance-classifier-and-pin-behavior-with-regression-test
+    ~/workspace/planning/biomcp/artifacts/350-fix-mcp-stdio-no-input-guidance-classifier-and-pin-behavior-with-regression-test

@@ -8,4 +8,4 @@ Imported from March ticket 314. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/314-reconcile-skill-md-diagnostic-content-to-standard-surface-template
+Artifacts: ~/workspace/planning/biomcp/artifacts/314-reconcile-skill-md-diagnostic-content-to-standard-surface-template

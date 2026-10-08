@@ -8,4 +8,4 @@ Imported from March ticket 449. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/449-spike-scope-variant-to-protein-structure-annotation-residue-domain-pdb-alphafold-no-ddg
+Artifacts: ~/workspace/planning/biomcp/artifacts/449-spike-scope-variant-to-protein-structure-annotation-residue-domain-pdb-alphafold-no-ddg

@@ -8,4 +8,4 @@ Imported from March ticket 208. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/208-fix-make-test-contracts-7-failures
+Artifacts: ~/workspace/planning/biomcp/artifacts/208-fix-make-test-contracts-7-failures

@@ -8,4 +8,4 @@ Imported from March ticket 493. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/493-rip-out-clinical-features-curated-answer-key-reroute-directly-to-monarch-hpo-backend-no-compat-projection
+Artifacts: ~/workspace/planning/biomcp/artifacts/493-rip-out-clinical-features-curated-answer-key-reroute-directly-to-monarch-hpo-backend-no-compat-projection

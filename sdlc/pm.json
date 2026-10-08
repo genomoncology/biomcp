@@ -188,12 +188,6 @@
     "pending-review-check.md",
     "review-fixes-for-1251-and-1252.md"
   ],
-  "forbiddenNames": [
-    "biomcp-thinkthen-kb",
-    "thinkthen-qa",
-    "beatles-bench",
-    "factory2"
-  ],
   "mailroom": {
     "repo": "sdlc",
     "name": "biomcp"

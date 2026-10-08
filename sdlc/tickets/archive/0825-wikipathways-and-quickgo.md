@@ -11,7 +11,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/025-wikipathways-and-quickgo
+    ~/workspace/planning/biomcp/artifacts/025-wikipathways-and-quickgo
 
 Numbered 0825 rather than 0025: March issued 0025
 to two tickets that both completed, and ticket identity here has to

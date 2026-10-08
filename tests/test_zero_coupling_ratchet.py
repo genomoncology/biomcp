@@ -459,3 +459,92 @@ def test_archive_scan_rejects_forbidden_member_name_with_clean_contents(
 def test_repository_historical_inventory_is_exact_and_current() -> None:
     checker = _module()
     assert checker.scan_files(ROOT, checker.tracked(ROOT)) == []
+
+
+PRIVATE_NAME = "acme" + "-kb"
+EXAMPLE_NAME = "example" + "-private-project"
+
+
+def _declare(root: Path, relative: str, names: list[str]) -> None:
+    path = root / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"forbiddenNames": names}), encoding="utf-8")
+
+
+def test_real_declaration_flags_plants_in_text_and_paths(tmp_path: Path) -> None:
+    checker = _module()
+    assert checker.declared_names(tmp_path) == ()
+    _declare(
+        tmp_path,
+        "sdlc/pm-forbidden-names.json",
+        [base64.b64encode(PRIVATE_NAME.encode()).decode()],
+    )
+    assert checker.declared_names(tmp_path) == (PRIVATE_NAME,)
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    planted = "sdlc/records/note.md"
+    path = tmp_path / planted
+    path.parent.mkdir(parents=True)
+    path.write_text(f"the plan lives in {PRIVATE_NAME}\n", encoding="utf-8")
+    named = "docs/" + PRIVATE_NAME + ".md"
+    (tmp_path / named).parent.mkdir(parents=True)
+    (tmp_path / named).write_text("clean contents\n", encoding="utf-8")
+    assert checker.scan_files(tmp_path, [planted, named], inventory) == [
+        named,
+        planted,
+    ]
+
+
+def test_plaintext_declaration_still_flags(tmp_path: Path) -> None:
+    checker = _module()
+    _declare(tmp_path, "sdlc/pm-forbidden-names.json", [PRIVATE_NAME])
+    assert checker.declared_names(tmp_path) == (PRIVATE_NAME,)
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    planted = "sdlc/records/note.md"
+    path = tmp_path / planted
+    path.parent.mkdir(parents=True)
+    path.write_text(f"see {PRIVATE_NAME}\n", encoding="utf-8")
+    assert checker.scan_files(tmp_path, [planted], inventory) == [planted]
+
+
+def test_both_declaration_files_union_their_names(tmp_path: Path) -> None:
+    checker = _module()
+    _declare(
+        tmp_path,
+        "sdlc/pm-forbidden-names.json",
+        [PRIVATE_NAME],
+    )
+    _declare(
+        tmp_path,
+        "sdlc/pm-forbidden-names.example.json",
+        [base64.b64encode(EXAMPLE_NAME.encode()).decode()],
+    )
+    assert checker.declared_names(tmp_path) == (PRIVATE_NAME, EXAMPLE_NAME)
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    cases = {
+        "sdlc/records/note.md": f"runs on {PRIVATE_NAME}\n",
+        "docs/example.md": f"copied from {EXAMPLE_NAME}\n",
+    }
+    for name, text in cases.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True)
+        path.write_text(text, encoding="utf-8")
+    assert checker.scan_files(tmp_path, list(cases), inventory) == sorted(cases)
+
+
+def test_repository_declares_only_the_inert_example_names() -> None:
+    checker = _module()
+    names = checker.declared_names(ROOT)
+    assert names, "the tracked example must declare forbidden names"
+    assert all(name.startswith("example-") for name in names), (
+        "the tracked example must carry inert placeholders only"
+    )
+    config = json.loads((ROOT / "sdlc" / "pm.json").read_text(encoding="utf-8"))
+    assert "forbiddenNames" not in config, (
+        "pm.json must not declare names; they live in the local declaration"
+    )
+    example = (ROOT / "sdlc" / "pm-forbidden-names.example.json").read_text(
+        encoding="utf-8"
+    )
+    assert not any(name in example.casefold() for name in names), (
+        "the example's names must stay encoded so the scan never matches them"
+    )

@@ -8,4 +8,4 @@ Imported from March ticket 443. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/443-generalize-get-pathway-identifier-redirect-beyond-uniprot-ensembl-gene-symbol-rsid
+Artifacts: ~/workspace/planning/biomcp/artifacts/443-generalize-get-pathway-identifier-redirect-beyond-uniprot-ensembl-gene-symbol-rsid

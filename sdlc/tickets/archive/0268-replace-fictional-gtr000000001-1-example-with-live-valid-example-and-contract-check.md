@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/268-replace-fictional-gtr000000001-1-example-with-live-valid-example-and-contract-check
+    ~/workspace/planning/biomcp/artifacts/268-replace-fictional-gtr000000001-1-example-with-live-valid-example-and-contract-check

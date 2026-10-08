@@ -8,4 +8,4 @@ Imported from March ticket 251. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/251-exclude-architecture-experiments-scripts-from-production-ruff-scope
+Artifacts: ~/workspace/planning/biomcp/artifacts/251-exclude-architecture-experiments-scripts-from-production-ruff-scope

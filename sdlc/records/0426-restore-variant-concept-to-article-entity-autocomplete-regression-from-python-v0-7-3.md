@@ -8,4 +8,4 @@ Imported from March ticket 426. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/426-restore-variant-concept-to-article-entity-autocomplete-regression-from-python-v0-7-3
+Artifacts: ~/workspace/planning/biomcp/artifacts/426-restore-variant-concept-to-article-entity-autocomplete-regression-from-python-v0-7-3

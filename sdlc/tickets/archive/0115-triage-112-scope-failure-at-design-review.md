@@ -9,7 +9,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/115-triage-112-scope-failure-at-design-review
+    ~/workspace/planning/biomcp/artifacts/115-triage-112-scope-failure-at-design-review
 
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the

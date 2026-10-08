@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/606-add-provider-specific-strict-variant-queries-and-honest-query-provenance
+    ~/workspace/planning/biomcp/artifacts/606-add-provider-specific-strict-variant-queries-and-honest-query-provenance

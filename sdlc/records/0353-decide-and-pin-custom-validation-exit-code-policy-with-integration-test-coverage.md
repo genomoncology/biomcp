@@ -8,4 +8,4 @@ Imported from March ticket 353. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/353-decide-and-pin-custom-validation-exit-code-policy-with-integration-test-coverage
+Artifacts: ~/workspace/planning/biomcp/artifacts/353-decide-and-pin-custom-validation-exit-code-policy-with-integration-test-coverage

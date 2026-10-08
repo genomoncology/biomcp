@@ -8,7 +8,7 @@ the branch lead.
 ## Prior evidence
 
 The owner measured abstracts of 1,467 to 5,057 characters (median about
-3,550); 0.9.1 served a 1,500-byte truncated form. The KB QA pass showed
+3,550); 0.9.1 served a 1,500-byte truncated form. The QA pass showed
 the truncation marker in reading output.
 
 ## Changes

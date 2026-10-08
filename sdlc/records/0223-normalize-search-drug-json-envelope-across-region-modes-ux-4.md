@@ -8,4 +8,4 @@ Imported from March ticket 223. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/223-normalize-search-drug-json-envelope-across-region-modes-ux-4
+Artifacts: ~/workspace/planning/biomcp/artifacts/223-normalize-search-drug-json-envelope-across-region-modes-ux-4

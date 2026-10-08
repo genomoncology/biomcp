@@ -8,4 +8,4 @@ Imported from March ticket 623. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/623-reconcile-the-final-v0-8-26-live-canaries-with-route-attributed-diagnostics
+Artifacts: ~/workspace/planning/biomcp/artifacts/623-reconcile-the-final-v0-8-26-live-canaries-with-route-attributed-diagnostics

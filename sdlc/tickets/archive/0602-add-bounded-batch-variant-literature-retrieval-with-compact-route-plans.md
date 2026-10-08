@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/602-add-bounded-batch-variant-literature-retrieval-with-compact-route-plans
+    ~/workspace/planning/biomcp/artifacts/602-add-bounded-batch-variant-literature-retrieval-with-compact-route-plans

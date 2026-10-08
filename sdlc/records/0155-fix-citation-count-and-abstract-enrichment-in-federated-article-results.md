@@ -8,4 +8,4 @@ Imported from March ticket 155. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/155-fix-citation-count-and-abstract-enrichment-in-federated-article-results
+Artifacts: ~/workspace/planning/biomcp/artifacts/155-fix-citation-count-and-abstract-enrichment-in-federated-article-results

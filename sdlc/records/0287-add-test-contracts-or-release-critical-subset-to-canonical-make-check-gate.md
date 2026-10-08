@@ -8,4 +8,4 @@ Imported from March ticket 287. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/287-add-test-contracts-or-release-critical-subset-to-canonical-make-check-gate
+Artifacts: ~/workspace/planning/biomcp/artifacts/287-add-test-contracts-or-release-critical-subset-to-canonical-make-check-gate

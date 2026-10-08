@@ -8,4 +8,4 @@ Imported from March ticket 640. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/640-terminate-trial-pagination-stop-promising-more-results-past-the-end
+Artifacts: ~/workspace/planning/biomcp/artifacts/640-terminate-trial-pagination-stop-promising-more-results-past-the-end

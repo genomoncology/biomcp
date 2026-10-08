@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/625-feature-gate-the-alphagenome-grpc-client-so-routine-gates-stop-building-it
+    ~/workspace/planning/biomcp/artifacts/625-feature-gate-the-alphagenome-grpc-client-so-routine-gates-stop-building-it

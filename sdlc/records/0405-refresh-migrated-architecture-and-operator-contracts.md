@@ -8,4 +8,4 @@ Imported from March ticket 405. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/405-refresh-migrated-architecture-and-operator-contracts
+Artifacts: ~/workspace/planning/biomcp/artifacts/405-refresh-migrated-architecture-and-operator-contracts

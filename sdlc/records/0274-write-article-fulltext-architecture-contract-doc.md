@@ -8,4 +8,4 @@ Imported from March ticket 274. The commit range was
 recovered after the fact (merge subject matches the ticket name), not written by the factory at
 landing time.
 
-Artifacts: /home/ian/workspace/planning/biomcp/artifacts/274-write-article-fulltext-architecture-contract-doc
+Artifacts: ~/workspace/planning/biomcp/artifacts/274-write-article-fulltext-architecture-contract-doc

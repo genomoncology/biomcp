@@ -71,7 +71,7 @@ the reviewer verified every item against current code).
    in records (naming an owner ticket in the overview would itself go
    stale); the 1244 record carries the correction.
 9. Residual dispositions (recorded in the ticket when implemented):
-   1219's M5 credential-helper hang is machine-local; the M5 DDInter
+   1219's credential-helper hang is machine-local; the Mac DDInter
    leg is record 1235's residual; 1221's client-per-call gap is
    superseded by 1236 (parse-once across all builders; non-UTF-8 and
    mixed-bundle tests landed with 1231/1236), its unreadable-bundle
@@ -89,8 +89,8 @@ the reviewer verified every item against current code).
 
 ## Dispositions (record residuals)
 
-- 1219: the M5 credential-helper hang is machine-local; no repo action.
-  The M5 DDInter leg is record 1235's residual and stays open.
+- 1219: the credential-helper hang is machine-local; no repo action.
+  The Mac DDInter leg is record 1235's residual and stays open.
 - 1221: client-per-call superseded by 1236 (parse-once across all
   builders; non-UTF-8 and mixed-bundle tests landed with 1231/1236).
   The unreadable-bundle-passes-silently-on-privileged-runner

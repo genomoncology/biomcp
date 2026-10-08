@@ -167,7 +167,7 @@ The refactor preserves the optimized concurrency settings (`max_workers=8` for c
 Validation suite:
 
 - Python import smoke with `PYTHONPATH=.../lib uv run --no-project --python 3.12 python`: passed; 18 default HTTP probes, 21 matrix candidates, 6 boundary rows, 4 follow-ups.
-- `/home/ian/workspace/scripts/lint-planning.sh biomcp`: passed (`all clean`).
+- `~/workspace/scripts/lint-planning.sh biomcp`: passed (`all clean`).
 - `cargo test --workspace --all-targets`: passed; 1965 lib tests plus integration suites, 0 failures, one pre-existing ignored EMA test.
 
 ## Reusable Assets

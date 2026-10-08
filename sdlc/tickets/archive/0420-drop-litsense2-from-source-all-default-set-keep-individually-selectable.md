@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/420-drop-litsense2-from-source-all-default-set-keep-individually-selectable
+    ~/workspace/planning/biomcp/artifacts/420-drop-litsense2-from-source-all-default-set-keep-individually-selectable

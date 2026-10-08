@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/081-disease-phenotypes-distinguish-defining-features-from-comprehensive-hpo-list
+    ~/workspace/planning/biomcp/artifacts/081-disease-phenotypes-distinguish-defining-features-from-comprehensive-hpo-list

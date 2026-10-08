@@ -11,4 +11,4 @@ repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
-    /home/ian/workspace/planning/biomcp/artifacts/264-restore-make-test-contracts-to-green-before-v0-8-22-cut
+    ~/workspace/planning/biomcp/artifacts/264-restore-make-test-contracts-to-green-before-v0-8-22-cut
