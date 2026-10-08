@@ -67,7 +67,7 @@ names the allele the row mentions.
   under one rsID: the two writings count as one change, so the rows keep
   their rsID links. This guards `distinct_change_key` against the raw-HGVS
   shortcut the evidence bullet records.
-<<<<<<< HEAD
+
 ## Build status
 
 - Built on branch `tickets/2029-article-variant-links-prefer-the-gene-form`,
@@ -84,7 +84,6 @@ names the allele the row mentions.
   (a comment narrower than the code; a missing named pin for the
   no-rsID + gene path) folded in 476da62c5 with the annotations scope
   green on the build host.
-=======
 
 - Scoped verification at cf7280710: `cargo fmt --check` clean;
   `cargo clippy --no-default-features --lib --tests -- -D warnings` clean;
