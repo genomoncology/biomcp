@@ -274,7 +274,7 @@
       "baseline_lines": 1428,
       "floor_lines": 1122,
       "authorized_increase": {
-        "ticket": "1256, 1302, 1304 | 1299",
+        "ticket": "1256, 1302, 1304, 1299, 2017",
         "delta": 306,
         "reason": "The DDInter HTML-download projection arm and its test. Ticket 1302: the citation-evidence refusal summary and deadline projections, and their tests. Ticket 1304: the WHO Prequalification header-mismatch projection arm and its test. | merged deadline-projection guard beside the citation-evidence carve-outs and the WHO PQ mismatch arm",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures. | the shared error-projection redesign collapses the per-surface carve-outs"

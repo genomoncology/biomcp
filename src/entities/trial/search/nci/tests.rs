@@ -5,7 +5,7 @@ use super::*;
 use crate::entities::trial::TrialSource;
 use crate::sources::nci_cts::NciCtsClient;
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicUsize, Ordering},
 };
 
@@ -15,7 +15,7 @@ fn mydisease_hit(value: serde_json::Value) -> crate::sources::mydisease::MyDisea
 
 #[test]
 fn nci_search_prefers_grounded_disease_concept_id() {
-    let filter = nci_disease_filter_from_hit(
+    let grounding = nci_disease_grounding_from_hit(
         "melanoma",
         mydisease_hit(serde_json::json!({
             "_id": "MONDO:0005105",
@@ -27,10 +27,11 @@ fn nci_search_prefers_grounded_disease_concept_id() {
             }
         })),
     );
+    assert!(grounding.degrade_note.is_none());
     let plan = NciCtsClient::search_plan(
         "test-key",
         &NciSearchParams {
-            disease: Some(filter),
+            disease: Some(grounding.filter),
             size: 1,
             from: 0,
             ..NciSearchParams::default()
@@ -67,7 +68,7 @@ fn nci_search_falls_back_to_keyword_when_grounding_is_unavailable() {
 
 #[test]
 fn nci_search_falls_back_to_keyword_when_best_hit_lacks_nci_xref() {
-    let filter = nci_disease_filter_from_hit(
+    let grounding = nci_disease_grounding_from_hit(
         "melanoma",
         mydisease_hit(serde_json::json!({
             "_id": "MONDO:0005105",
@@ -77,10 +78,16 @@ fn nci_search_falls_back_to_keyword_when_best_hit_lacks_nci_xref() {
         })),
     );
 
-    match filter {
+    match grounding.filter {
         NciDiseaseFilter::Keyword(value) => assert_eq!(value, "melanoma"),
         other => panic!("expected keyword fallback, got {other:?}"),
     }
+    let note = grounding
+        .degrade_note
+        .expect("missing xref degrades visibly");
+    assert!(note.contains("keyword"), "{note}");
+    assert!(note.contains("no NCI concept ID"), "{note}");
+    assert!(note.contains("'melanoma'"), "{note}");
 }
 
 #[test]
@@ -358,6 +365,130 @@ async fn nci_age_rejection_precedes_both_provider_requests() {
     );
     assert_eq!(nci_count.load(Ordering::SeqCst), 0);
     assert_eq!(disease_count.load(Ordering::SeqCst), 0);
+}
+
+/// Ticket 2017: when MyDisease grounding fails, the NCI search still runs
+/// as a keyword search, and the degrade reaches the response as a page
+/// note (the 2021 pattern), not only a log line.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn nci_keyword_degrade_note_reaches_the_search_page() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    async fn json_server(
+        respond: impl Fn(&str) -> Option<(u16, String)> + Send + Sync + 'static,
+    ) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let captured = requests.clone();
+        let respond = Arc::new(respond);
+        let task = tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let captured = captured.clone();
+                let respond = respond.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let Ok(len) = stream.read(&mut request).await else {
+                        return;
+                    };
+                    let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                    let first_line = request.lines().next().unwrap_or("").to_string();
+                    captured
+                        .lock()
+                        .expect("lock degrade-note fixture requests")
+                        .push(first_line.clone());
+                    let (status, body) = respond(&request)
+                        .unwrap_or((404, r#"{"error":"fixture route not found"}"#.to_string()));
+                    let response = format!(
+                        "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    );
+                    let _ = stream.write_all(response.as_bytes()).await;
+                });
+            }
+        });
+        (base, requests, task)
+    }
+
+    let (nci_base, nci_requests, nci_server) = json_server(|request| {
+        request
+            .contains("keyword=melanoma")
+            .then(|| (200, r#"{"total":0,"data":[]}"#.to_string()))
+    })
+    .await;
+    let (disease_base, _disease_requests, disease_server) = json_server(|_| {
+        // 404 avoids the 5xx retry backoff; the query endpoint has no
+        // route for a synthetic grounding failure.
+        Some((
+            404,
+            r#"{"error":"synthetic grounding failure"}"#.to_string(),
+        ))
+    })
+    .await;
+
+    struct Restore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+    impl Restore {
+        fn set(&mut self, key: &'static str, value: &str) {
+            self.0.push((key, std::env::var_os(key)));
+            // SAFETY: this test holds the serial-test process-wide environment lock.
+            unsafe { std::env::set_var(key, value) };
+        }
+    }
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            for (key, value) in self.0.drain(..).rev() {
+                // SAFETY: this test holds the serial-test process-wide environment lock.
+                unsafe {
+                    if let Some(value) = value {
+                        std::env::set_var(key, value)
+                    } else {
+                        std::env::remove_var(key)
+                    }
+                }
+            }
+        }
+    }
+    let mut restore = Restore(Vec::new());
+    // The NCI client constructor demands NCI_API_KEY even against a
+    // fixture base (CI runs keyless), so pin a fixture key like the
+    // trial get tests do; the fixture ignores it.
+    restore.set("NCI_API_KEY", "fixture-key");
+    restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
+    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+
+    let page = super::super::search_page(
+        &TrialSearchFilters {
+            source: TrialSource::NciCts,
+            condition: Some("melanoma".into()),
+            ..Default::default()
+        },
+        1,
+        0,
+        None,
+    )
+    .await
+    .expect("the degraded search still runs");
+    nci_server.abort();
+    disease_server.abort();
+    drop(restore);
+
+    let note = page
+        .partial_note
+        .expect("the degrade note reaches the page");
+    assert!(note.contains("plain keyword search"), "{note}");
+    assert!(note.contains("'melanoma'"), "{note}");
+    assert!(note.contains("grounding failed"), "{note}");
+    let requests = nci_requests
+        .lock()
+        .expect("lock degrade-note requests")
+        .clone();
+    assert!(
+        requests
+            .iter()
+            .any(|line| line.contains("keyword=melanoma")),
+        "the NCI request must stay a keyword search: {requests:?}"
+    );
 }
 
 #[test]

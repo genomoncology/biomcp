@@ -10,7 +10,11 @@ use crate::sources::{RequestPlan, request_from_plan};
 const MYDISEASE_BASE: &str = "https://mydisease.info/v1";
 const MYDISEASE_BASE_ENV: &str = "BIOMCP_MYDISEASE_BASE";
 
-pub(crate) const MYDISEASE_SEARCH_FIELDS: &str = "_id,mondo.name,mondo.synonym,disease_ontology.name,disease_ontology.synonyms,hpo.inheritance.hpo_id,hpo.inheritance.hpo_name,hpo.phenotype_related_to_disease.hpo_id,hpo.clinical_course.hpo_name";
+// `mondo.label` and `mondo.ancestors` feed disease-name resolution: many
+// MONDO records carry no `name` in the search response but do carry the
+// ontology `label` (so refusal candidate lists can name the disease), and
+// ancestry under MONDO:0005583 marks non-human animal records.
+pub(crate) const MYDISEASE_SEARCH_FIELDS: &str = "_id,mondo.name,mondo.label,mondo.synonym,mondo.ancestors,disease_ontology.name,disease_ontology.synonyms,hpo.inheritance.hpo_id,hpo.inheritance.hpo_name,hpo.phenotype_related_to_disease.hpo_id,hpo.clinical_course.hpo_name";
 pub(crate) const MYDISEASE_GET_FIELDS: &str = "_id,mondo.name,mondo.definition,mondo.parents,mondo.synonym,mondo.xrefs,disease_ontology.name,disease_ontology.doid,disease_ontology.def,disease_ontology.parents,disease_ontology.synonyms,disease_ontology.xrefs,umls.mesh,umls.nci,umls.snomed,umls.icd10am,disgenet.genes_related_to_disease,hpo.phenotype_related_to_disease.hpo_id,hpo.phenotype_related_to_disease.evidence,hpo.phenotype_related_to_disease.hp_freq,hpo.inheritance.hpo_id";
 
 // dead-code reason: mydisease::MyDiseaseQueryRequestPlan preserves the provider shape used by source contract fixtures

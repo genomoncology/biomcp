@@ -16,7 +16,17 @@ pub(super) async fn add_genes_section(disease: &mut Disease) -> Result<(), BioMc
         }
         queries.push(candidate.to_string());
     };
-    let synonym_candidates = disease.synonyms.iter().take(3).map(String::as_str);
+    // Single-word synonyms are abbreviations (MF, CML, aCML); querying Open
+    // Targets with one resolves the abbreviation on its ontology and can
+    // return another disease's genes. Only multi-word, name-shaped synonyms
+    // join by identity; the resolved record's own name and ID come first
+    // (ticket 2017).
+    let synonym_candidates = disease
+        .synonyms
+        .iter()
+        .take(3)
+        .map(String::as_str)
+        .filter(|candidate| candidate.contains(char::is_whitespace));
     for candidate in std::iter::once(disease.name.as_str())
         .chain(synonym_candidates)
         .chain(std::iter::once(disease.id.as_str()))
