@@ -266,6 +266,7 @@ fn indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count()
 fn braf_variant_stub() -> Variant {
     Variant {
         section_outcomes: super::super::default_variant_section_outcomes(),
+        protein_numbering_note: None,
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         genome_build: None,
@@ -568,6 +569,7 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
         hgvs_p: Some("p.V600E".into()),
         legacy_name: None,
         hgvs_c: None,
+        protein_numbering_note: None,
         transcript: None,
         rsid: None,
         cosmic_id: None,

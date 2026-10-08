@@ -31,7 +31,11 @@
   "c2RsYy90aWNrZXRzL2FyY2hpdmUvMTEzNy1hLXN0b3BwZWQtbmNpLXRyaWFsLWNhbm5vdC1zYXktd2h5LWJlY2F1c2UtdGhlLXJlYXNvbi1pcy1oYXJkY29kZWQtYWJzZW50Lm1k": "30754ee56d95ab43dc23ab039cc7a2365174b8c4c4f167d0c1ec8347513157ec",
   "c2RsYy90aWNrZXRzL2FyY2hpdmUvMTE2NS10aGUtbmNpLXRyaWFsLXJlYWRlci1jbG9uZXMtdGhlLWVsaWdpYmlsaXR5LW9iamVjdC1wZXItZmllbGQubWQ=": "a9a1f4d932d6c46322019224d5f5949d1c3f8875758e5f10283af4460f02ac6d",
   "c2RsYy90aWNrZXRzL2FyY2hpdmUvMTE4Mi1wcm92ZS1jbGluaWNhbC10cmlhbC1jb25mb3JtYW5jZS1jYXNlLTIxLm1k": "f94610fed652bc2897eb73366e2991f68a74f73cf5b9941a28b9ed6399e7716e",
+<<<<<<< HEAD
   "dGVzdGRhdGEvc291cmNlcy9jYXB0dXJlLXJlY2VpcHRzLmpzb24=": "f3e5bcca2a8acf8bbcb035e99016f4ef94a5952833b9af2d29b6879890b310bd",
+=======
+  "dGVzdGRhdGEvc291cmNlcy9jYXB0dXJlLXJlY2VpcHRzLmpzb24=": "4619b90e1991f63bc9a237b623be78ffea32d8220dbfd36c56a022ed4c2e9b7a",
+>>>>>>> origin/tickets/2016-protein-change-resolution-keeps-the-named-variant
   "c2RsYy9yZWNvcmRzLzExODMtcmVtb3ZlLWJpb2RhdGEtZnJvbS1iaW9tY3AtMC05Lm1k": {
     "version": 1,
     "mode": "hosted-evidence-v1",

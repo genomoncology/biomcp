@@ -884,7 +884,7 @@ fn retain_compatible_hits(
                 if seen.insert(source.normalized_key()) {
                     let mut row = transform::variant::from_myvariant_search_hit(&hit);
                     let displayed_snpeff_index =
-                        transform::variant::selected_snpeff_annotation_index(&hit);
+                        transform::variant::selected_snpeff_annotation_index(&hit, None);
                     row.source_identity = Some(source);
                     row.matched_alias = Some(matched_alias);
                     retained.push(RetainedVariant {

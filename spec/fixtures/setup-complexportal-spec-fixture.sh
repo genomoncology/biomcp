@@ -83,6 +83,14 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, (Path(sys.argv[3]) / "get_p15056_20260812.json").read_bytes())
             return
 
+        # Ticket 2016 (ticket 2033 finding 3): this fixture owns the routine
+        # lane's UniProt base because it sources after the variant-identity
+        # fixture; serve the minimized TP53 record the MANE-numbering residue
+        # check reads (same bytes the variant-identity fixture serves).
+        if parsed.path == "/uniprotkb/P04637.json" and not query:
+            send_json(self, 200, (Path(sys.argv[3]) / "get_p04637_20261008.json").read_bytes())
+            return
+
         if parsed.path == "/uniprotkb/search":
             expected = {
                 "query": ["(BRAF) AND organism_id:9606 AND reviewed:true"],

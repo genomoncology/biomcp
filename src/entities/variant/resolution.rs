@@ -549,6 +549,35 @@ fn amino_acid_one_letter(token: &str) -> Option<char> {
     }
 }
 
+/// The three-letter amino-acid name for a one-letter code, for answers that
+/// name a reference residue (ticket 2033 finding 3).
+pub(crate) fn amino_acid_three_letter(one: char) -> Option<&'static str> {
+    match one.to_ascii_uppercase() {
+        'A' => Some("Ala"),
+        'R' => Some("Arg"),
+        'N' => Some("Asn"),
+        'D' => Some("Asp"),
+        'C' => Some("Cys"),
+        'Q' => Some("Gln"),
+        'E' => Some("Glu"),
+        'G' => Some("Gly"),
+        'H' => Some("His"),
+        'I' => Some("Ile"),
+        'L' => Some("Leu"),
+        'K' => Some("Lys"),
+        'M' => Some("Met"),
+        'F' => Some("Phe"),
+        'P' => Some("Pro"),
+        'S' => Some("Ser"),
+        'T' => Some("Thr"),
+        'W' => Some("Trp"),
+        'Y' => Some("Tyr"),
+        'V' => Some("Val"),
+        '*' => Some("Ter"),
+        _ => None,
+    }
+}
+
 pub(crate) fn protein_change_segment(value: &str) -> &str {
     let trimmed = value.trim();
     trimmed

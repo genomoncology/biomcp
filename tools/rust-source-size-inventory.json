@@ -227,34 +227,45 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1452,
+      "baseline_lines": 1664,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297",
-        "delta": 324,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback.",
+        "ticket": "1022, 1035, 1086, 1154, 1290, 1292, 1297, 2016",
+        "delta": 536,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, direct ClinVar section dispatch, and the record-level headline application helper. Ticket 1292: the ClinVar VariationID lookup arm, the transcript coding-alias fallback, and working-form refusal suggestions. Ticket 1297: protein-change disambiguation resolves the ClinVar-named hit or refuses with candidates, merged beside 1292's alias fallback. Ticket 2016: a hit matches a gene+protein query only when its MANE or ClinVar-named transcript spells the change; the MANE stem from the query's ClinVar-preferred names, the numbering note, and the MANE-numbering refusal.",
         "removal_condition": "Revisit when the 1.0 shared HGVS parser replaces the resolution arms."
       }
     },
     {
       "path": "src/entities/variant/get/tests.rs",
       "floor_lines": 965,
-      "baseline_lines": 1074,
+      "baseline_lines": 1076,
       "authorized_increase": {
-        "ticket": "1292",
-        "delta": 109,
-        "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary.",
+        "ticket": "1292, 2016",
+        "delta": 111,
+        "reason": "Pin the transcript coding-alias fallback end to end against a local fixture server without adding a package file beyond the fixed source package boundary. Ticket 2016: protein-change resolution sidecar tests and the protein_numbering_note fields on the Variant test literals.",
         "removal_condition": "Split the transcript-alias fixture tests when a package-neutral module extraction can preserve the exact source package boundary."
       }
     },
     {
+      "path": "src/entities/variant/mod.rs",
+      "baseline_lines": 1006,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "2016",
+        "delta": 6,
+        "reason": "The protein_numbering_note field on Variant: the one-line numbering note for a gene+protein resolution whose headline change does not spell the request. The file sat exactly at the 1000-line threshold before this field.",
+        "removal_condition": "Remove when the note moves into shared resolution plumbing or the shared HGVS parser owns transcript numbering."
+      }
+    },
+    {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1407,
+      "baseline_lines": 1436,
       "floor_lines": 1291,
       "authorized_increase": {
-        "ticket": "1056, 1155, 1292",
-        "delta": 116,
-        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable, and one shared protein equivalence helper prevents exact admission and transcript-role drift. Ticket 1292: ClinVar VariationID classification, protein-range deletion normalization, and the ClinVar-style name working-form refusal.",
+        "ticket": "1056, 1155, 1292, 2016",
+        "delta": 145,
+        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable, and one shared protein equivalence helper prevents exact admission and transcript-role drift. Ticket 1292: ClinVar VariationID classification, protein-range deletion normalization, and the ClinVar-style name working-form refusal. Ticket 2016: the three-letter amino-acid display for the MANE-numbering refusal.",
         "removal_condition": "Remove this allowance when variant identity resolution is decomposed."
       }
     },
@@ -360,12 +371,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1913,
+      "baseline_lines": 1914,
       "floor_lines": 1847,
       "authorized_increase": {
-        "delta": 66,
-        "ticket": "1256, 1290, 1300",
-        "reason": "The DisGeNET seed contribution, the significance provenance fields, and the label row's move from payload presence to the registered section outcome.",
+        "delta": 67,
+        "ticket": "1256, 1290, 1300, 2016",
+        "reason": "The DisGeNET seed contribution, the significance provenance fields, and the label row's move from payload presence to the registered section outcome. Ticket 2016: one protein_numbering_note field on the test literal.",
         "removal_condition": "Shrink when the note and seed logic move into shared plumbing or the tests fold into shared fixtures."
       }
     },
@@ -526,12 +537,12 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1424,
+      "baseline_lines": 1530,
       "floor_lines": 1335,
       "authorized_increase": {
-        "ticket": "1154, 1155, 1290",
-        "delta": 89,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner.",
+        "ticket": "1154, 1155, 1290, 2016",
+        "delta": 195,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields, selected SnpEff annotation identity, and the derived-significance source and date labeling explicit in the existing transformation owner. Ticket 2016: the ClinVar-preferred MANE transcript stem helper and the MANE-aware SnpEff annotation ranking.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }

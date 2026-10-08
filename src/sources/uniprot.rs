@@ -390,6 +390,9 @@ pub struct UniProtOrganism {
 #[derive(Debug, Clone, Deserialize)]
 pub struct UniProtSequence {
     pub length: Option<u32>,
+    /// The sequence string itself; the MANE-numbering check reads one
+    /// residue at the requested position (ticket 2033 finding 3).
+    pub value: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
