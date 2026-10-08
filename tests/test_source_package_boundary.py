@@ -13,7 +13,7 @@ import pytest
 
 pytestmark = [pytest.mark.needs_binary]  # runs cargo; docs-only CI excludes this module
 
-ROOT = Path(__file__, plus ticket 2029's mutation identity tests module).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 ZERO_COUPLING_CHECKER = ROOT / "tools/check-zero-coupling.py"
 OFFLINE = ROOT / "tools/run-offline"
