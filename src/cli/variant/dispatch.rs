@@ -398,11 +398,11 @@ async fn render_variant_search_outcome(
     let mut pagination = PaginationMeta::offset(offset, limit, results.len(), page.total);
     pagination.has_more = page.has_more.unwrap_or(pagination.has_more);
     let zero_row_note = gene_first_note.as_ref().filter(|_| results.is_empty());
-    let working_form = zero_row_note.map(|note| match note {
+    let zero_row_command = zero_row_note.map(|note| match note {
         GeneFirstNote::Refused { gene, condition } => {
             gene_first_working_form(gene, None, condition)
         }
-        GeneFirstNote::Routed { working, .. } => working.clone(),
+        GeneFirstNote::Routed { alternative, .. } => alternative.clone(),
     });
     if json_output {
         let mut next_commands = crate::render::markdown::search_next_commands_variant(
@@ -410,7 +410,7 @@ async fn render_variant_search_outcome(
             filters.gene.as_deref(),
             filters.condition.as_deref(),
         );
-        if let Some(command) = working_form.as_ref() {
+        if let Some(command) = zero_row_command.as_ref() {
             next_commands.push(command.clone());
         }
         let output = search_json_with_meta(results, pagination, next_commands)?;
@@ -449,9 +449,12 @@ async fn render_variant_search_outcome(
              try the working form: {}",
             gene_first_working_form(gene, None, condition)
         ),
-        Some(GeneFirstNote::Routed { parsed, working }) => format!(
+        Some(GeneFirstNote::Routed {
+            parsed,
+            alternative,
+        }) => format!(
             "{body}\n\nNo variants matched the routed phrase. Read as {parsed}. \
-             Drop or loosen a filter in the working form: {working}"
+             Try the same filters without the condition: {alternative}"
         ),
         None => body,
     };

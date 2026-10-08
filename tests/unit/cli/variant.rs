@@ -395,13 +395,14 @@ fn apply_gene_first_routing_routes_confirmed_symbols_and_refuses_the_rest() {
     );
     assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
     assert_eq!(resolved.condition.as_deref(), Some("Brugada syndrome"));
-    // A routed phrase carries its parsed form and working alternative so a
-    // zero-row search can say how it was read (ticket 2022).
+    // A routed phrase carries its parsed form and a loosened alternative so a
+    // zero-row search can say how it was read without repeating itself
+    // (ticket 2022; the alternative drops the condition filter).
     assert_eq!(
         note.as_ref(),
         Some(&GeneFirstNote::Routed {
             parsed: "gene=SCN5A, condition=Brugada syndrome".into(),
-            working: "biomcp search variant -g SCN5A --condition \"Brugada syndrome\"".into(),
+            alternative: "biomcp search variant -g SCN5A".into(),
         })
     );
 
@@ -454,7 +455,7 @@ fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
         note.as_ref(),
         Some(&GeneFirstNote::Routed {
             parsed: "gene=BRAF, hgvsp=V600E, condition=melanoma".into(),
-            working: "biomcp search variant -g BRAF --hgvsp V600E --condition melanoma".into(),
+            alternative: "biomcp search variant -g BRAF --hgvsp V600E".into(),
         })
     );
 

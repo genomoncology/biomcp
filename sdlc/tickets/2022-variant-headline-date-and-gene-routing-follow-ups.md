@@ -34,7 +34,7 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 2. The date helper keeps one rule: a record's date counts only when the record carries the shown classification, and only day-shaped `YYYY-MM-DD` values surface, aligned with the 1291 fallback label's day-shape rule so the branches merge into one helper.
 3. `search variant 'HCC liver cancer'`, `'MODY diabetes'` and `'HHT telangiectasias'` do not route an alias first token; each keeps the whole-phrase condition search.
 4. `search variant 'BRAF V600E melanoma'` reads `gene=BRAF, hgvsp=V600E, condition=melanoma`, not `condition='V600E melanoma'`.
-5. A routed search that returns zero rows prints the parsed form and the working alternative; a refused zero-row search keeps the 1301 hint.
+5. A routed search that returns zero rows prints the parsed form and a loosened alternative that names one dropped filter; a refused zero-row search keeps the 1301 hint.
 6. The 1301 wins hold: SCN5A routes, BRUGADA refuses with the working-form hint, and `BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` still restores the whole-phrase condition search.
 
 ## Decision: MODY and HHT stop routing
@@ -46,7 +46,7 @@ Official symbols only means the familiar alias abbreviations stop routing too: '
 - `src/transform/variant.rs`: `newest_rcv_evaluation_date` now takes the shown classification and counts only records that carry it, so the headline date belongs to the printed term. The 1291-aligned day-shape gate lives in one shared helper, `crate::utils::date::is_day_shaped`, so the transform headline and 1291's fallback label use the same rule and can collapse into one helper at merge.
 - `src/entities/gene.rs`: `resolve_unique_official_symbol` confirms a first token only when it is the gene's official symbol; `resolve_unique_canonical_alias` keeps serving the `discover` path unchanged.
 - `src/cli/variant/query.rs`: `split_leading_protein_change` moves a leading protein change to the hgvsp filter; `GeneFirstNote` replaces `GeneFirstFallback` so both the refused and the routed zero-row case carry their hint.
-- `src/cli/variant/dispatch.rs`: a routed zero-row search prints the parsed form and the working alternative in markdown and pushes the working alternative into JSON `next_commands`.
+- `src/cli/variant/dispatch.rs`: a routed zero-row search prints the parsed form and the same filters with the condition dropped (repeating the parsed filters repeats the empty result), and pushes that alternative into JSON `next_commands`.
 - Fixtures: recorded the dated MyVariant GRCh37 BRAF V600E GET (`get_braf_v600e_grch37_20261007.json`, receipted) and the MyGene shapes for HCC (HYCC1), MODY (HNF4A) and HHT (ACVRL1).
 
 ## Proof

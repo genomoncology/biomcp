@@ -13,7 +13,8 @@ protein change, and condition instead of `condition='V600E melanoma'`.
 Refusal beats wrong routing: an uppercase non-gene first token such as BRUGADA
 is refused, the whole phrase stays a condition search, and a zero-row refusal
 prints the explicit `-g`/`--condition` working form. A routed search that
-returns nothing prints the parsed form and the working alternative. These rows
+returns nothing prints the parsed form and the same filters with the condition
+dropped, so the hint never repeats the command that returned nothing. These rows
 replay recorded MyGene and MyVariant responses through the routine fixture
 bases.
 
@@ -25,7 +26,7 @@ bases.
 | HCC liver cancer | 1 | condition | none | alias abbreviation refuses (HYCC1) |
 | MODY diabetes | 1 | condition | none | alias abbreviation refuses (HNF4A) |
 | HHT telangiectasias | 1 | condition | none | alias abbreviation refuses (ACVRL1) |
-| BRAF V600E melanoma | 0 | condition,gene,hgvsp | biomcp search variant -g BRAF --hgvsp V600E --condition melanoma | protein change splits out of the condition |
+| BRAF V600E melanoma | 0 | condition,gene,hgvsp | biomcp search variant -g BRAF --hgvsp V600E | protein change splits out of the condition |
 
 ```bash each_row="Variant Gene-Symbol First Free-Text Routing"
 biomcp --json --no-cache search variant '{{phrase}}' --limit 3 \
@@ -71,13 +72,13 @@ biomcp --no-cache search variant 'HCC liver cancer' --limit 3 \
 ```
 
 A routed phrase with a leading protein change prints the split parse, and a
-routed zero states how the phrase was read beside the working alternative;
-the alternative repeats the same filters, so the hint says to drop or loosen
-one rather than promising rows.
+routed zero states how the phrase was read beside a loosened alternative; the
+alternative drops the condition filter, so it differs from the search that
+returned nothing.
 
 ```bash
 biomcp --no-cache search variant 'BRAF V600E melanoma' --limit 3 \
   | grep -E '^Query:|^No variants matched' \
   | mustmatch like 'Query: gene=BRAF, hgvsp=V600E, condition=melanoma
-No variants matched the routed phrase. Read as gene=BRAF, hgvsp=V600E, condition=melanoma. Drop or loosen a filter in the working form: biomcp search variant -g BRAF --hgvsp V600E --condition melanoma'
+No variants matched the routed phrase. Read as gene=BRAF, hgvsp=V600E, condition=melanoma. Try the same filters without the condition: biomcp search variant -g BRAF --hgvsp V600E'
 ```

@@ -103,8 +103,9 @@ pub(super) enum GeneFirstNote {
     /// condition, so the hint names the untried `-g`/`--condition` form.
     Refused { gene: String, condition: String },
     /// The oracle confirmed the official symbol: the phrase was routed, so
-    /// the hint states the parsed form and its explicit working alternative.
-    Routed { parsed: String, working: String },
+    /// the hint states the parsed form and the same filters with the
+    /// condition dropped, which differs from the command that ran.
+    Routed { parsed: String, alternative: String },
 }
 
 /// Apply the gene-symbol oracle verdict to a gene-first candidate (tickets
@@ -128,7 +129,7 @@ pub(super) fn apply_gene_first_routing(
     match confirmed_symbol {
         Some(symbol) => {
             let parsed = gene_first_parsed_form(&symbol, protein_change.as_deref(), &condition);
-            let working = gene_first_working_form(&symbol, protein_change.as_deref(), &condition);
+            let alternative = gene_first_alternative_form(&symbol, protein_change.as_deref());
             let hgvsp = protein_change.or(hgvsp_flag);
             (
                 VariantSearchPlan::finalize(ResolvedVariantQuery {
@@ -138,7 +139,10 @@ pub(super) fn apply_gene_first_routing(
                     condition: Some(condition),
                     ..Default::default()
                 }),
-                Some(GeneFirstNote::Routed { parsed, working }),
+                Some(GeneFirstNote::Routed {
+                    parsed,
+                    alternative,
+                }),
             )
         }
         None => {
@@ -184,6 +188,19 @@ pub(super) fn gene_first_working_form(gene: &str, hgvsp: Option<&str>, condition
         command = command.args(["--hgvsp", hgvsp]);
     }
     command.args(["--condition", condition]).render_shell()
+}
+
+/// The alternative a routed zero-row search suggests: the parsed filters with
+/// the condition dropped. The routed search already applied every parsed
+/// filter, so repeating them repeats the empty result; naming one dropped
+/// filter keeps the hint useful (ticket 2022).
+pub(super) fn gene_first_alternative_form(gene: &str, hgvsp: Option<&str>) -> String {
+    let mut command =
+        crate::next_command::NextCommand::biomcp().args(["search", "variant", "-g", gene]);
+    if let Some(hgvsp) = hgvsp {
+        command = command.args(["--hgvsp", hgvsp]);
+    }
+    command.render_shell()
 }
 
 const VARIANT_QUERY_GENE_ROUTING_ENV: &str = "BIOMCP_VARIANT_QUERY_GENE_ROUTING";
