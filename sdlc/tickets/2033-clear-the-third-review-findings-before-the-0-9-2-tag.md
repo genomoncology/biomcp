@@ -1,8 +1,22 @@
-# Third review of the work since 0.9.1
+# 2033 — Clear the third review findings before the 0.9.2 tag
 
-Status: open
+Status: OPEN.
 
-Filed 2026-10-08 from an independent read-only review of main from `01af0a72b` to `7d17fd099` and the open branches for 1291, 1305, 2016, 2020, 2021, 2022 and 2029. Four fresh reviewers worked in scratch clones. They built the code, ran mutations and the offline suite, and checked answers against live public sources. Follows `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`.
+Milestone: 0.9.2
+
+## Outcome
+
+Every finding below is fixed, or carries a recorded reason in this ticket, before 0.9.2 is tagged.
+
+## Evidence
+
+Filed 2026-10-08 from an independent read-only review of main from `01af0a72b` to `7d17fd099` and the open branches for 1291, 1305, 2016, 2020, 2021, 2022 and 2029. Four fresh reviewers worked in scratch clones. They built the code, ran mutations and the offline suite, and checked answers against live public sources. Follows `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`. Tickets 2030, 2031 and 2032 carry findings 1, 2 and 17; this ticket carries the rest.
+
+- Starts from: the second review's issue file and the branch heads named below.
+- Keeps: the fixes this review confirmed.
+- Changes: the findings below.
+- Proof: a fresh pre-tag review finds each item fixed or answered.
+- Defers: nothing.
 
 ## Verdict
 

@@ -10,7 +10,7 @@ Milestone: 0.9.2
 
 ## Evidence
 
-Filed 2026-10-08 from the third review of the work since v0.9.1 (`sdlc/issues/2026-10-08-third-review-of-the-work-since-0.9.1.md`, finding 2). Ticket 1300 did not cause this; its diff does not touch name resolution.
+Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, finding 2). Ticket 1300 did not cause this; its diff does not touch name resolution.
 
 - Live on main `7d17fd099`: `get drug terfenadine` returns the fexofenadine hydrochloride card and fexofenadine's label.
 - `get drug mannitol` returns a card named "analgesic" with a minor-burns label. Edetate disodium resolves to a urea foot cream, and ferric oxide to calamine.

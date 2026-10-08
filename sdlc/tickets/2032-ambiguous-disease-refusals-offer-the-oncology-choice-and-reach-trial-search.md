@@ -10,7 +10,7 @@ When `get disease` refuses an ambiguous abbreviation, the choices include the co
 
 ## Evidence
 
-Filed 2026-10-08 from the third review of the work since v0.9.1 (`sdlc/issues/2026-10-08-third-review-of-the-work-since-0.9.1.md`, finding 3). Follows ticket 2017, landed in `d8afa297f`.
+Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, finding 17). Follows ticket 2017, landed in `d8afa297f`.
 
 - Live on main: `get disease MM` refuses and offers only Miyoshi muscular dystrophy. A clinician who means multiple myeloma gets no myeloma choice.
 - `src/entities/trial/search/nci.rs`: `-c MF` gets the refusal back as an error, then falls back to a plain keyword search for "MF" with the refusal text in a note.

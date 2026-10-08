@@ -10,7 +10,7 @@ The article deadline tests never hang. A held fixture reply waits without blocki
 
 ## Evidence
 
-Filed 2026-10-08 from the third review of the work since v0.9.1 (`sdlc/issues/2026-10-08-third-review-of-the-work-since-0.9.1.md`, finding 1).
+Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, finding 1).
 
 - `canonical-gates` hit its 45-minute cap in all seven main runs from `c51a19743` to `5248f291f` (37726916710 through 37757120357). The 2024 check run 37717723539 went green only on its seventh attempt.
 - `src/entities/article/test_support.rs:87-88`: a held fixture reply calls a blocking `release.lock().recv()` inside `tokio::spawn`, and the tests run four worker threads. Each held request blocks one worker, and later held requests queue on the mutex (`futex_wait`, which matches the forensics in `sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md`). With the workers blocked, the runtime's timers stop, including the test's own 60-second watchdog.
