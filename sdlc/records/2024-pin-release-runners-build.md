@@ -16,3 +16,12 @@ forensics captured and filed at
 sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md,
 with the identical suite green on the branch CI (the interim
 gate-evidence rule recorded there). Record filed at landing.
+
+## Fix round (2026-10-08, landed via eae20df65)
+
+subprocess.run in tools/with-build-identity with exit-code pass-through
+(proven on the windows-2022 CI leg); the release matrix pinned to
+macos-15 and windows-2022 so no moving label remains in any workflow;
+the package count recounted. Branch run 37714318974 green on all eight
+jobs; the content reached main inside the 2023 landing chain (deviation
+recorded on the ticket); the landcheck run at 60c0e090c is green.

@@ -1,6 +1,6 @@
 # 2024 — Pin release runners before Ubuntu 26
 
-Status: OPEN (reopened 2026-10-07 by the second review).
+Status: complete.
 
 Milestone: 0.9.2
 
@@ -72,3 +72,15 @@ D
   smuggled (workflow-diff audited). Two report-only P2s folded at
   landing: a typo in the deadlock issue file and an internal-process
   phrase. Landing cites run 37714318974.
+
+## Fix-round landing (bookkeeping correction)
+
+The fix branch's content reached main as merge eae20df65 — carried by
+the coordinator's grammar-fix commit made on top of it during the 2023
+landing chain, before the landcheck-2024fix run completed green at
+60c0e090c on the same tree. Process deviation, recorded honestly: the
+merged-tree CI run completed after the content, not before. Evidence:
+branch run 37714318974 all eight jobs green on the fix head
+804f07967 (Windows wrapper step included); the landcheck run at
+60c0e090c green; every main CI run since eae20df65 green. The
+reopening closes complete.
