@@ -160,3 +160,14 @@ Finding 14 of `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`.
   fields), holder-rule unit tests pin the non-human exclusion and the
   full-word rule, and an NCI fixture test pins the degrade note on the
   page. The five-row spec table gains the myeloma row.
+
+## Landing
+
+Landed 2026-10-08, merge d8afa297f. Evidence: branch CI green at
+84a647904; yellow gates fully green at the same sha (lint, spec, and
+test all rc=0 in the isolated gate clone); code review ACCEPT at
+5b2ee79c2 plus delta ACCEPT through 84a647904. Process deviation,
+recorded honestly: the merge reached main through the coordinator's
+local-chain push before the landcheck run finished — the landcheck at
+d8afa297f completed green afterward, and main's own CI on the landing
+push covers the same tree.
