@@ -44,3 +44,18 @@ Status: OPEN.
   (direction-safe; a cut section still shows its own truncation note
   with the full-label URL), and two inventory reason strings still
   cite the removed label_note field (refresh on next touch).
+
+## Second-fix review
+
+- Built on the rebased branch through c6966f982, 2026-10-07 (the
+  rebase unions 326 receipts in main's formatting; the 1-space
+  re-indent is gone).
+- Code re-review (second-fix round): ACCEPT 2026-10-07 with an
+  independent exhaustive hand-trace of every element in all three
+  captures plus the Propulsid record — zero inactive-ingredient leaks;
+  every named rejection and match holds; the Datroway histidine leak
+  (unnamed by the review, real under the old rule) is rejected and
+  pinned; the elements-field fallback returns the Propulsid label with
+  terfenadine honestly empty and the oversize settle surviving;
+  MAX_PACKAGE_FILES 1_404 measured. No findings. Merge-time recount
+  expected (finding 12 rule).
