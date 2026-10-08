@@ -51,3 +51,13 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   named-match rule, 1297 tiebreak, and byte-identical EGFR refusal
   surviving the rebase; the branch ticket's review-line grammar
   passing the scanner's own rules; receipts and inventory exact.
+
+## Repin review
+
+- Code re-review (delta c172e04d7..d6801ed8b, the ratchet repin):
+  ACCEPT 2026-10-07. All three entries verified against measured
+  counts; variant/mod.rs confirmed as a genuinely new entry (main sits
+  at exactly 1000, under the threshold; the fix's 5-line field pushed
+  it over for the first time); no other changes in the commit
+  (git show --stat confirms one file, the inventory). The lane head is
+  d6801ed8b.
