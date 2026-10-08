@@ -43,3 +43,15 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   (pre-existing), a pre-existing '/' synonym split in associations,
   and the resolution-layer tie-break carried by outside-in pins
   rather than unit pins.
+
+## Fix-round review
+
+- Code re-review (rebased head 5b2ee79c2): ACCEPT 2026-10-07. All
+  four finding-14 items verified at code level with hand-checked
+  holder sets; the rebase unions correct (ticket grammar, 325 receipts
+  with no re-indent, digest repinned); the BIOMCP_BIN spec fix closes
+  the stale-binary hole; the incident disclosure judged with no
+  surviving contamination path for the builder's verification. Minor
+  notes recorded: full words with zero exact-name holders resolve
+  through scoring (intended), the top-15 window stays pre-existing,
+  lowercase two-letter wording odd but accurate.
