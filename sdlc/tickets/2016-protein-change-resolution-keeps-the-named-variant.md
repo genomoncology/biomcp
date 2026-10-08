@@ -1,6 +1,6 @@
 # 2016 — Protein-change resolution keeps the named variant
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
