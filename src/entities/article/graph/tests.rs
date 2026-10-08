@@ -1034,7 +1034,8 @@ enum JatsReply {
     Absent,
     /// A 200 full-text document.
     Document(&'static str),
-    /// A 404 that blocks the shared test runtime past a shrunk deadline.
+    /// A full-text reply that stays in flight for the delay, so a shrunk
+    /// command budget expires while the attempt is still blocked.
     Delayed(std::time::Duration),
 }
 
@@ -1115,12 +1116,16 @@ async fn spawn_opencitations_fixture(
                     body.as_bytes(),
                 )),
                 JatsReply::Delayed(delay) => {
-                    std::thread::sleep(delay);
-                    TestHttpReply::Bytes(test_http_response(
-                        "404 Not Found",
-                        "text/plain",
-                        b"absent",
-                    ))
+                    // The slow reply holds the connection and a timer task
+                    // releases it after the delay. The old blocking wait
+                    // here parked the connection task's runtime worker and
+                    // froze every deadline timer with it (ticket 2030).
+                    let (release_tx, hold) = held_reply_gate();
+                    tokio::spawn(async move {
+                        tokio::time::sleep(delay).await;
+                        let _ = release_tx.send(()).await;
+                    });
+                    TestHttpReply::Hold(hold)
                 }
             }
         } else if target.contains("/references") {

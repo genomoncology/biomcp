@@ -54,7 +54,24 @@ pub(super) enum TestHttpReply {
     /// Write nothing until every clone of the sender side has dropped, then
     /// close the socket. The wait is the release signal, so a held request
     /// models a hung source without any clock assumption.
-    Hold(std::sync::Arc<std::sync::Mutex<std::sync::mpsc::Receiver<()>>>),
+    Hold(HeldReplyGate),
+}
+
+/// The receiver side a held reply waits on: a tokio mpsc receiver under a
+/// tokio mutex, so the wait parks an async task on the runtime instead of a
+/// worker thread, and the runtime's timers keep firing while the hold lasts
+/// (ticket 2030). The hold releases when every clone of the sender side
+/// drops.
+pub(super) type HeldReplyGate = std::sync::Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<()>>>;
+
+/// Create a held-reply gate. Keep the sender alive while the reply must
+/// stay held; dropping every clone releases it.
+pub(super) fn held_reply_gate() -> (tokio::sync::mpsc::Sender<()>, HeldReplyGate) {
+    let (release, receiver) = tokio::sync::mpsc::channel(1);
+    (
+        release,
+        std::sync::Arc::new(tokio::sync::Mutex::new(receiver)),
+    )
 }
 
 pub(super) struct TestHttpFixture {
@@ -85,7 +102,9 @@ impl TestHttpFixture {
                             let _ = stream.write_all(&response).await;
                         }
                         TestHttpReply::Hold(release) => {
-                            let _ = release.lock().expect("held reply lock").recv();
+                            // The hold waits on async primitives, so it never
+                            // parks a runtime worker thread (ticket 2030).
+                            let _ = release.lock().await.recv().await;
                         }
                     }
                 });
@@ -101,6 +120,25 @@ impl TestHttpFixture {
 impl Drop for TestHttpFixture {
     fn drop(&mut self) {
         self.task.abort();
+    }
+}
+
+/// Wrap a fixture-driven test body in a watchdog that names the test. A
+/// future hang fails that test with its own name in the panic message once
+/// the scaled bound expires, instead of stalling the lane until the CI cap
+/// (ticket 2030). The bound stretches with `BIOMCP_TEST_TIMEOUT_SCALE`
+/// like every other watchdog.
+pub(super) async fn hang_guard<T>(
+    test: &'static str,
+    seconds: u64,
+    body: impl std::future::Future<Output = T>,
+) -> T {
+    let bound = crate::test_support::watchdog(seconds);
+    match tokio::time::timeout(bound, body).await {
+        Ok(value) => value,
+        Err(_expired) => {
+            panic!("{test} exceeded its {bound:?} hang watchdog; the fixture or the search hung")
+        }
     }
 }
 
