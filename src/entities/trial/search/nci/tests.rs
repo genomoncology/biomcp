@@ -450,6 +450,10 @@ async fn nci_keyword_degrade_note_reaches_the_search_page() {
         }
     }
     let mut restore = Restore(Vec::new());
+    // The NCI client constructor demands NCI_API_KEY even against a
+    // fixture base (CI runs keyless), so pin a fixture key like the
+    // trial get tests do; the fixture ignores it.
+    restore.set("NCI_API_KEY", "fixture-key");
     restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
     restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
 
