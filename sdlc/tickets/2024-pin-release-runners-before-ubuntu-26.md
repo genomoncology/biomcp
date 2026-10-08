@@ -71,8 +71,16 @@ Built on branch `tickets/2024-runner-windows-fix`.
   under the identity environment.
 - The windows-2022 CI job runs the wrapper with a trivial cargo
   command and fails unless a failing child exits nonzero through the
-  wrapper and a child exit of 42 arrives as 42. The branch CI run is
-  the proof.
+  wrapper and a child exit of 42 arrives as 42. Branch CI run
+  37698460019 (head d07642eb3) shows windows-contracts green with
+  that step; every job except canonical-gates is green in it.
+- canonical-gates in that run cancelled twice at its 45-minute cap
+  on the known deadline-test deadlock
+  (sdlc/issues/2026-10-07-single-backend-deadline-test-can-deadlock.md,
+  which also records the same cancellations on main that night). The
+  branch changes no Rust; the green lane evidence is make lint and
+  the Python contracts on the build host plus the run's other seven
+  jobs, and a rerun may be needed to clear the flake.
 - The macos-latest and windows-latest matrix legs in release.yml are
   pinned to macos-15 and windows-2022. This supersedes the
   Ubuntu-only scope clarification above: every workflow job now runs
