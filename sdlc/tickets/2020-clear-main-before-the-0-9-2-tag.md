@@ -51,3 +51,14 @@ is correct; the code it exercises carries the precedence defect that
 ticket 2023 item 2 fixes on its branch. Landing order therefore runs
 2023 before 2020; 2020 re-gates after 2023 lands. The block passes solo
 without the lane env, which is why earlier checks missed it.
+
+## Second-fix review
+
+- Code re-review (the post-4d85dff69 coverage the second review
+  demanded; branch tickets/2020-names-and-records head 185d8e458):
+  ACCEPT 2026-10-08. The names are fully out of tracked files with the
+  untracked-declaration guard proven by planted-name test; the rebase
+  unions carry main's landed history; MAX_PACKAGE_FILES 1_404 measured;
+  the lanes table, the 1284 records, and the QA waiver naming Ian's
+  dissolution are in; the restored deadline fences pass beside main's
+  cursor rewrite.
