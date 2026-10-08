@@ -625,7 +625,7 @@ biomcp --no-cache get variant 'TP53 G105S' clinvar \
 ### A slow NCBI answer names the timeout and the fallback copy's age
 
 The fixture for this case is synthetic, not a recorded exchange. The switch to
-MyVariant.info never reproduced live: in experiment 439's recorded runs NCBI's
+MyVariant.info never reproduced live: in the recorded reproduction runs NCBI's
 ClinVar efetch answered within 1.4 seconds, well inside the
 optional-enrichment deadline, and no provider control forces an eight-second
 server hold, so a live recording of the trigger is not reproducible on demand.
