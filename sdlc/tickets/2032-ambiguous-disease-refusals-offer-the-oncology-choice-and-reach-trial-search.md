@@ -61,3 +61,16 @@ Verified live against MyDisease.info on 2026-10-08.
 4. A condition that cannot ground still degrades to the NCI keyword search
    with the visible partial note (the 2021 pattern); the existing degrade
    tests and the recorded request log stay green.
+
+## Build status
+
+- Built on branch `tickets/2032-disease-refusal-choices`, commits
+  ce648b2b9, 3a17d6421, 33800d255, 6815a33b7, 2026-10-08.
+- Verified on the build host at 6815a33b7: `make lint` green; `make spec`
+  green with the two changed pages passing (disease.md 18 assertions,
+  trial.md 40); the disease and trial-search nextest scopes pass 202
+  tests, including the new MM pointer pin, the NCI refusal pin, and the
+  kept keyword-degrade pin. The first lint run failed the spec lint on
+  the new trial.md section (a run-and-expect section with no mustmatch
+  assertion); it now carries the same lint opt-out the other
+  run-and-expect sections use.
