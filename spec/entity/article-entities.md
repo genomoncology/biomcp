@@ -104,15 +104,16 @@ symbols, not NCBI Gene identifiers.
 rs121913529 names a KRAS codon-12 position, not one allele. The recorded
 MyVariant response for that rsID carries three hits (G12A, G12D and G12V), and
 `get variant rs121913529` opens G12D, so a row that mentions G12A or G12V
-must not link through it. Every variant row of this capture carries a gene
-annotation and a protein change, so every variant row prints the
-gene-plus-protein command, which names the row's own allele whatever else the
-article mentions. The G12C and G13C rows changed from their rsID commands in
-ticket 2029: their rsIDs (rs121913530, rs121913535) each name one allele, but
-a document that mentions only one allele of a multi-allele rsID shows the
-same single-change shape, and BioMCP has no offline rsID-to-alleles table to
-tell the two apart. Each gene-plus-protein command opens the same variant its
-rsID opens, so the change is to the command's form, not the variant it opens.
+must not link through it. rs121913530 and rs121913535 also name several
+alleles each — MyVariant lists G12S, G12R and G12C under the first and G13S,
+G13R and G13C under the second — so their old links opened the row's allele
+only when the provider's ranking picked it. Every variant row of this
+capture carries a gene annotation and a protein change, so every variant row
+prints the gene-plus-protein command, which names the row's own allele
+whatever else the article mentions and whatever else its rsID names. A
+document that mentions one allele of any of these rsIDs shows the same
+single-change shape, and BioMCP has no offline rsID-to-alleles table, so the
+row's own gene-plus-change form is the only link that names the row's allele.
 
 ```bash
 ../../tools/biomcp-ci article entities 30738221 \

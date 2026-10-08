@@ -6,7 +6,7 @@ Milestone: 0.9.2
 
 ## Outcome
 
-Every variant row in `biomcp article entities <PMID>` that has a gene symbol and a protein change prints the gene-plus-change command. This holds when the article mentions only one allele of a multi-allele rsID. A row never prints an rsID link that opens a different allele.
+Every variant row in `biomcp article entities <PMID>` that has a gene symbol and a protein change prints the gene-plus-change command. This holds when the article mentions only one allele of a multi-allele rsID. Rows without either part keep 2018's fallbacks, so a gene-less single-mention row can still print an rsID that names several alleles; BioMCP has no allele-specific form for that row.
 
 ## Evidence
 
@@ -51,12 +51,13 @@ names the allele the row mentions.
   whatever else the article mentions. Under this rule the spec page's G12C
   and G13C rows CHANGE from `biomcp get variant rs121913530` and
   `rs121913535` to `biomcp get variant "KRAS p.G12C"` and
-  `"KRAS p.G13C"`. This is a change of command form, not of the variant
-  opened: the recorded MyVariant responses resolve `KRAS p.G12C` to
-  `chr12:g.25398285C>A` (`rs121913530`) and `KRAS p.G13C` to
-  `chr12:g.25398282C>A` (`rs121913535`), exactly the variants those rsIDs
-  open. The G12A, G12D and G12V rows are unchanged, and the spec proves all
-  five rows open their own variant.
+  `"KRAS p.G13C"`. The recorded MyVariant responses resolve `KRAS p.G12C`
+  to `chr12:g.25398285C>A` and `KRAS p.G13C` to `chr12:g.25398282C>A`, one
+  hit each. Those rsIDs also name several alleles — MyVariant lists G12S,
+  G12R and G12C under rs121913530 and G13S, G13R and G13C under rs121913535
+  — so an rsID link opens the row's allele only when the provider's ranking
+  picks it. The G12A, G12D and G12V rows are unchanged, and the spec proves
+  all five rows open their own variant.
 - Rows without both parts keep 2018's behavior: an rsID that the document's
   annotations show naming one change keeps its rsID link; a shared rsID
   with a coding HGVS keeps the coding form, which names the allele alone; a
@@ -67,6 +68,20 @@ names the allele the row mentions.
   under one rsID: the two writings count as one change, so the rows keep
   their rsID links. This guards `distinct_change_key` against the raw-HGVS
   shortcut the evidence bullet records.
+
+## Third review correction
+
+The third review (ticket 2033, finding 5) caught two faults in this ticket's
+records. The spec page claimed rs121913530 and rs121913535 each name one
+allele, and the Outcome's last sentence promised no row ever prints an rsID
+that opens a different allele. Both were false: rs121913530 names G12S, G12R
+and G12C, and rs121913535 names G13S, G13R and G13C (verified against
+MyVariant 2026-10-08), so the old G12C and G13C links worked only through
+MyVariant's ranking. The spec and this ticket now state the multi-allele
+truth, and the Outcome is narrowed to what the code does: rows with both
+parts print the gene-plus-change command; rows without a gene symbol keep
+2018's fallbacks, and a gene-less single-mention row still prints its rsID
+because no allele-specific form exists for it.
 
 ## Build status
 
