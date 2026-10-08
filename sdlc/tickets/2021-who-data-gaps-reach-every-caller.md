@@ -1,6 +1,6 @@
 # 2021 — WHO data gaps reach every caller
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
