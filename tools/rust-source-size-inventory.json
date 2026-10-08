@@ -432,13 +432,13 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2796,
+      "baseline_lines": 2834,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1268",
-        "delta": 949,
-        "reason": "Ticket 1268: the no-trust-failure retry strategy (a RetryableStrategy wrapper walking the error chain for certificate-trust markers), plus the 2026-09-29 follow-up: the chain walk extracted into error_chain_carries with the strategy's unit tests in their own file (src/sources/trust_failure_tests.rs) so only the delegation and the module declaration live here. The 2026-09-29 second review round added the trust-failure stop to the plain-send retry loop (Enrichr, UniProt) beside the existing strategy.",
-        "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears."
+        "ticket": "1268, 2023",
+        "delta": 987,
+        "reason": "Ticket 1268: the no-trust-failure retry strategy (a RetryableStrategy wrapper walking the error chain for certificate-trust markers) and its extracted error-chain walk. Ticket 2023: the shared HTTP client slot moved from a OnceLock to a RwLock with a test-only reset seam, so deadline construction tests rerun client construction regardless of process state.",
+        "removal_condition": "Fold the handle helpers into the shared task-local plumbing if a second production spawn appears (1268); fold the reset seam into shared test support and extract client construction from mod.rs when the sources module is next restructured (2023)."
       }
     },
     {

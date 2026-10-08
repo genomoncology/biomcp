@@ -89,8 +89,9 @@ class Handler(BaseHTTPRequestHandler):
             # the hit count, without a third request.
             phrase = query.get("query", [""])[0]
             short = "short" in phrase
-            # The lying corpus reports a hitCount above its real rows, so the
-            # walk requests a third page that exists but is exhausted.
+            # The lying corpus reports a hitCount above its real rows and its
+            # final page answers with rows but no nextCursorMark, so the
+            # third request stops on the absent cursor with rows on the page.
             lying = "lying" in phrase
             reported = HIT_COUNT if (lying or not short) else 40
             if cursor == "*":
@@ -106,8 +107,13 @@ class Handler(BaseHTTPRequestHandler):
                     "resultList": {"result": rows_for_page(2, 15 if (short or lying) else PAGE_SIZE)},
                 }
             elif cursor == "CUR3":
-                # Exhausted: Europe PMC omits nextCursorMark and serves no rows.
-                payload = {"hitCount": reported, "resultList": {"result": []}}
+                # Exhausted: Europe PMC omits nextCursorMark. The final page
+                # still carries rows, so the walk stops on the absent cursor
+                # itself and not on the empty-page stop (ticket 2023).
+                payload = {
+                    "hitCount": reported,
+                    "resultList": {"result": rows_for_page(3, 5)},
+                }
             else:
                 payload = {"hitCount": reported, "resultList": {"result": []}}
             self.send_json(payload)

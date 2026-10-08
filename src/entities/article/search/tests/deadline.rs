@@ -1,5 +1,6 @@
 use super::*;
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
@@ -19,6 +20,10 @@ fn fixture_reply(
         .nth(1)
         .expect("fixture request line carries a target");
     let query = target.split_once('?').map(|(_, rest)| rest).unwrap_or("");
+    // Route on the bare path: eutils targets always carry the query string,
+    // so matching `ends_with("/esearch.fcgi")` on the raw target never
+    // matched and the PubMed leg read a 404 (ticket 2023).
+    let path = target.split('?').next().unwrap_or(target);
     // Distinct fixture keywords route one server across the deadline
     // scenarios: "deadline silence" holds or fails every source, and
     // "pagebound" answers Europe PMC page one and holds every later page.
@@ -77,9 +82,9 @@ fn fixture_reply(
     }
     let body = if target.starts_with("/search/") && target.contains("text=") {
         br#"{"results":[{"_id":"pt-418","pmid":41800001,"title":"deadline fixture PubTator row","journal":"Fixture Journal","date":"2026-01-01","score":42.0}],"count":1,"total_pages":1,"current":1,"page_size":25,"facets":{}}"#.as_slice()
-    } else if target.ends_with("/esearch.fcgi") {
+    } else if path.ends_with("/esearch.fcgi") {
         br#"{"esearchresult":{"count":"1","idlist":["41800002"]}}"#.as_slice()
-    } else if target.ends_with("/esummary.fcgi") {
+    } else if path.ends_with("/esummary.fcgi") {
         br#"{"result":{"uids":["41800002"],"41800002":{"uid":"41800002","title":"deadline fixture PubMed row","sortpubdate":"2026/01/02 00:00","pubdate":"2026 Jan 2","fulljournalname":"Fixture Journal","source":"Fixture Journal"}}}"#
             .as_slice()
     } else if target.starts_with("/graph/v1/paper/batch") {
@@ -223,10 +228,16 @@ async fn failed_primaries_still_return_answered_rows() {
     .expect("partial rows survive two failed primaries");
 
     assert!(
+        page.results.iter().any(|row| row.pmid == "41800002"),
+        "PubMed rows survive the failed primaries: {:?}",
         page.results
             .iter()
-            .any(|row| matches!(row.pmid.as_str(), "41800002" | "41800003")),
-        "PubMed/Semantic Scholar rows survive the failed primaries: {:?}",
+            .map(|row| row.pmid.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert!(
+        page.results.iter().any(|row| row.pmid == "41800003"),
+        "Semantic Scholar rows survive the failed primaries: {:?}",
         page.results
             .iter()
             .map(|row| row.pmid.as_str())
@@ -391,9 +402,17 @@ async fn deadline_expiry_without_rows_names_the_deadline_error() {
 async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
     // Hold the cache epoch lock so shared-client construction cannot take
     // it; the invocation must still exit at its deadline (ticket 1299).
+    // Process-state independence (ticket 2023): the shared client is built
+    // once per process, so the test first builds it and then clears the
+    // slot. Without that reset the test passes only when it runs before
+    // every other shared-client test — nextest gives each test a fresh
+    // process, plain `cargo test` does not.
     let fixture = TestHttpFixture::spawn(move |request| fixture_reply(request, None)).await;
     let cache = TempDirGuard::new("article-search-deadline-epoch-lock");
     std::fs::create_dir_all(cache.path()).expect("cache root");
+    let _env = deadline_env(&fixture, cache.path(), "1200");
+    crate::sources::shared_client().expect("shared client builds before the lock is held");
+    crate::sources::reset_shared_http_client_for_tests();
     let lock_path = cache.path().join(".body-limit-cache-v1.lock");
     let held = std::fs::OpenOptions::new()
         .create(true)
@@ -403,7 +422,6 @@ async fn construction_under_a_held_epoch_lock_honors_the_deadline() {
         .open(&lock_path)
         .expect("epoch lock file");
     fs2::FileExt::lock_exclusive(&held).expect("hold epoch lock");
-    let _env = deadline_env(&fixture, cache.path(), "1200");
 
     let budget = std::time::Duration::from_millis(1200);
     let started = std::time::Instant::now();
@@ -454,4 +472,145 @@ fn deadline_recognition_covers_the_io_cancellation_shape() {
         "some other timeout",
     ));
     assert!(!is_search_deadline_error(&other_io));
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn deep_offset_is_refused_on_every_sort_before_any_request() {
+    // The relevance arms already refused --offset + --limit above the fetch
+    // window; the date and citations arms walked provider pages instead and
+    // answered `has_more: true` on an empty page (ticket 2023).
+    let requests = Arc::new(AtomicUsize::new(0));
+    let counter = Arc::clone(&requests);
+    let fixture = TestHttpFixture::spawn(move |request| {
+        counter.fetch_add(1, Ordering::SeqCst);
+        fixture_reply(request, None)
+    })
+    .await;
+    let cache = TempDirGuard::new("article-search-deep-offset");
+    let _env = deadline_env(&fixture, cache.path(), "60000");
+
+    for sort in [ArticleSort::Date, ArticleSort::Citations] {
+        let mut filters = deadline_filters();
+        filters.sort = sort;
+        let error = search_page(&filters, 5, 1300, ArticleSourceFilter::EuropePmc)
+            .await
+            .expect_err("a deep offset is refused on every sort");
+        match error {
+            BioMcpError::InvalidArgument(message) => assert!(
+                message.contains("--offset + --limit must be <= 1250"),
+                "the refusal names the fetch window: {message}"
+            ),
+            other => panic!("expected an invalid-argument refusal, got {other:?}"),
+        }
+    }
+
+    assert_eq!(
+        requests.load(Ordering::SeqCst),
+        0,
+        "the window guard fires before any provider request"
+    );
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn fast_pubtator_failure_does_not_hide_the_deadline_error() {
+    // PubTator fails fast and non-retryably (400) while Europe PMC is held
+    // past the deadline: the terminal error must still name the deadline,
+    // not the fast failure (ticket 2023).
+    let (_release_tx, hold_rx) = mpsc::channel::<()>();
+    let hold = Arc::new(Mutex::new(hold_rx));
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let target = request
+            .split_whitespace()
+            .nth(1)
+            .expect("fixture request line carries a target");
+        if target.starts_with("/search") && target.contains("query=") {
+            return TestHttpReply::Hold(Arc::clone(&hold));
+        }
+        if target.starts_with("/search") && target.contains("text=") {
+            return TestHttpReply::Bytes(test_http_response(
+                "400 Bad Request",
+                "application/json",
+                b"{}",
+            ));
+        }
+        fixture_reply(request, Some(&hold))
+    })
+    .await;
+    let cache = TempDirGuard::new("article-search-fast-failure-deadline");
+    let _env = deadline_env(&fixture, cache.path(), "1200");
+    let mut filters = deadline_filters();
+    filters.keyword = Some("deadline silence".into());
+
+    let budget = std::time::Duration::from_millis(1200);
+    let started = std::time::Instant::now();
+    let error = tokio::time::timeout(
+        crate::test_support::watchdog(60),
+        search_page(&filters, 5, 0, ArticleSourceFilter::All),
+    )
+    .await
+    .expect("fast-failure search exceeds its watchdog")
+    .expect_err("a search where nothing answered is an error");
+
+    assert!(
+        started.elapsed() <= budget + DEADLINE_WALL_GRACE,
+        "fast-failure expiry honors the deadline: {:?} elapsed",
+        started.elapsed()
+    );
+    match &error {
+        BioMcpError::SourceUnavailable { reason, .. } => assert!(
+            reason.starts_with(crate::entities::article::ARTICLE_SEARCH_DEADLINE_REASON_PREFIX),
+            "the terminal error names the deadline, not the fast PubTator failure: {reason}"
+        ),
+        other => panic!("expected a source-unavailable deadline error, got {other:?}"),
+    }
+}
+
+#[test]
+fn both_primaries_failing_prefers_a_deadline_error_over_the_fast_failure() {
+    // When both primaries fail, the federated terminal error prefers a
+    // deadline error from either primary over PubTator's fast failure
+    // (ticket 2023).
+    let fast_failure = BioMcpError::Api {
+        api: "pubtator".into(),
+        message: "HTTP 400".into(),
+    };
+    let deadline_failure = BioMcpError::Io(std::io::Error::new(
+        std::io::ErrorKind::TimedOut,
+        "variant article invocation deadline exceeded",
+    ));
+    let unavailable = |source, error| FederatedSourceOutcome::Unavailable {
+        error: Some(error),
+        status: source_degraded_status(source, "provider unavailable".into()),
+    };
+    let semantic_status = ArticleSourceStatus {
+        source: ArticleSource::SemanticScholar,
+        enabled: true,
+        auth_mode: None,
+        status: Some(ArticleSourceAvailability::Ok),
+        message: None,
+    };
+
+    let federated = collect_federated_article_rows(
+        unavailable(ArticleSource::PubTator, fast_failure),
+        unavailable(ArticleSource::EuropePmc, deadline_failure),
+        None,
+        FederatedSourceOutcome::Available(
+            crate::entities::article::backends::SemanticScholarCandidateOutcome {
+                rows: Vec::new(),
+                status: semantic_status,
+            },
+        ),
+        FederatedSourceOutcome::Available(Vec::new()),
+    )
+    .expect("both primaries failing still collects rows");
+
+    let error = federated
+        .primary_error
+        .expect("both primaries failing carries a terminal error");
+    assert!(
+        is_search_deadline_error(&error),
+        "the deadline error wins over the fast failure: {error:?}"
+    );
 }

@@ -591,3 +591,97 @@ fn litsense2_candidates_apply_hydrated_journal_and_date_filters() {
     assert_eq!(rows[0].journal.as_deref(), Some("Journal One"));
     assert_eq!(rows[0].date.as_deref(), Some("2024-01-15"));
 }
+
+/// A `no-store` JSON reply: the cursor walk must see every page request the
+/// walk makes, so the fixture responses opt out of the HTTP cache.
+fn uncached_json(body: String) -> TestHttpReply {
+    let response = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    TestHttpReply::Bytes(response.into_bytes())
+}
+
+fn cursor_page_body(hit_count: usize, next_cursor: Option<&str>, pmids: &[u64]) -> String {
+    let rows: Vec<String> = pmids
+        .iter()
+        .map(|pmid| {
+            format!(
+                r#"{{"id":"{pmid}","pmid":"{pmid}","title":"cursor stop row {pmid}","journalTitle":"Fixture Journal","firstPublicationDate":"2026-01-01","authorString":"Fixture Author"}}"#
+            )
+        })
+        .collect();
+    let cursor = next_cursor
+        .map(|cursor| format!(r#","nextCursorMark":"{cursor}""#))
+        .unwrap_or_default();
+    format!(
+        r#"{{"hitCount":{hit_count}{cursor},"resultList":{{"result":[{}]}}}}"#,
+        rows.join(",")
+    )
+}
+
+#[serial_test::serial(source_env)]
+#[tokio::test]
+async fn europepmc_cursor_walk_stops_on_an_absent_cursor_after_a_page_with_rows() {
+    // The lying corpus: the reported hit count exceeds the real rows, the
+    // final page carries rows but omits nextCursorMark, and the walk must
+    // stop on that absent cursor. An empty final page would let the
+    // empty-page stop end the walk first, so this corpus isolates the
+    // absent-cursor stop: removing both cursor stops leaves the cursor
+    // parked on the final page and this count grows past three (ticket 2023).
+    let searches = Arc::new(AtomicUsize::new(0));
+    let counter = Arc::clone(&searches);
+    let fixture = TestHttpFixture::spawn(move |request| {
+        let target = request
+            .split_whitespace()
+            .nth(1)
+            .expect("fixture request line carries a target");
+        let path = target.split('?').next().unwrap_or(target);
+        let query = target.split_once('?').map(|(_, rest)| rest).unwrap_or("");
+        if path != "/search" || !query.contains("cursorstopfixture") {
+            return TestHttpReply::Bytes(test_http_response(
+                "404 Not Found",
+                "application/json",
+                b"{}",
+            ));
+        }
+        counter.fetch_add(1, Ordering::SeqCst);
+        let cursor = query
+            .split('&')
+            .find_map(|pair| pair.strip_prefix("cursorMark="))
+            .unwrap_or_default();
+        let body = match cursor {
+            "*" => cursor_page_body(130, Some("CUR2"), &(1..=25).collect::<Vec<_>>()),
+            "CUR2" => cursor_page_body(130, Some("CUR3"), &(26..=35).collect::<Vec<_>>()),
+            // The final page: rows present, cursor absent.
+            "CUR3" => cursor_page_body(130, None, &(36..=40).collect::<Vec<_>>()),
+            _ => cursor_page_body(130, None, &[]),
+        };
+        uncached_json(body)
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("europepmc-cursor-stop");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let mut filters = empty_filters();
+    filters.keyword = Some("cursorstopfixture".into());
+
+    let partial = search_europepmc_page(&filters, 50, 0)
+        .await
+        .expect("cursor walk answers");
+
+    assert_eq!(searches.load(Ordering::SeqCst), 3, "absent-cursor stop");
+    assert_eq!(partial.page.results.len(), 40);
+    assert!(
+        partial.page.results.iter().any(|row| row.pmid == "40"),
+        "the final page's rows are kept: {:?}",
+        partial
+            .page
+            .results
+            .iter()
+            .map(|row| row.pmid.as_str())
+            .collect::<Vec<_>>()
+    );
+}
