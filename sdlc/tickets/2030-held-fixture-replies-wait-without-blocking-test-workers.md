@@ -32,3 +32,9 @@ Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, fi
 - Every deadline test whose fixture can hold a reply for the test's whole life runs inside `hang_guard`, a named per-test watchdog with a 120-second base bound scaled by `BIOMCP_TEST_TIMEOUT_SCALE`, so a future hang fails that test with its own name in the panic message instead of stalling the lane. `failed_primaries_still_return_answered_rows` constructs a gate but its handler intercepts every route that could reach it, so it cannot hold.
 - The deadline scope passes three consecutive runs on the build host through `yr`, and `make test`, `make lint`, and `make spec` each pass once through `yr`.
 - The interim gate-evidence rule in the deadlock issue retires at landing, once main runs `canonical-gates` to completion; this branch cannot produce that evidence before it lands.
+
+## Build status
+
+- Code review: ACCEPT 2026-10-08. Branch CI run 37772471619 green on
+  all jobs at head 925f8a0e; the full verified detail lives in main's
+  ticket record history.
