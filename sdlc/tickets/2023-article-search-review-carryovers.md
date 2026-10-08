@@ -1,6 +1,6 @@
 # 2023 — Article search review carryovers
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
