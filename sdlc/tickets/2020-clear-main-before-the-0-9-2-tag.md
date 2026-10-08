@@ -39,18 +39,19 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   All three folds verified character-level; one residual P2 phrase in
   the 1287 record reworded by the coordinator in 4d85dff69.
 
-## Yellow failure record (2026-10-07)
+## Yellow failure record (2026-10-07; root cause corrected 2026-10-08)
 
 The first clean yellow run failed one spec block: the restored
-"Deadline Expiry Names Itself" fence (adf71898e). Root cause, proven on
-Yellow with the lane's env loaded: the routine article lane loads the
-full-text fixture's source env, so PubTator answers fast while Europe
-PMC is held past the deadline, and main's federated error pick surfaces
-PubTator's error — hiding the deadline error the block pins. The fence
-is correct; the code it exercises carries the precedence defect that
-ticket 2023 item 2 fixes on its branch. Landing order therefore runs
-2023 before 2020; 2020 re-gates after 2023 lands. The block passes solo
-without the lane env, which is why earlier checks missed it.
+"Deadline Expiry Names Itself" fence (adf71898e). The reading recorded
+here first blamed the full-text fixture env; the second review proved
+that wrong (its blocker 7). The real root cause is a race: the deadline
+fixture overrides every article source, PubTator's 503 is retried
+three times with full-jitter backoff, and when the retry settles inside
+the block's 3-second deadline — about 38% of runs — the federated
+error pick returns PubTator's error and hides the deadline the block
+pins. Solo passes were luck, not the env. Ticket 2023's precedence fix
+closes the race and has landed, so 2020 gates again on the current
+bar; the fence itself was always correct.
 
 ## Second-fix review
 
@@ -68,6 +69,10 @@ without the lane env, which is why earlier checks missed it.
 The Changes line's "that pm lint forbidden-name reads" is amended: the
 delivered design has the repo's own zero-coupling check read the
 untracked declaration; pm lint stays inert on the absent key by
-design. The pm-side change (teach pm to read the local declaration
-file) is handed to the sdlc repo by the inbox message filed today
+design. No guard on the real names runs in a checkout without the
+local untracked names file — that is the design, and the third review
+(ticket 2033, finding 11) confirmed it; the tracked example keeps the
+declaration's shape and the placeholder scan running everywhere. The
+pm-side change (teach pm to read the local declaration file) is handed
+to the sdlc repo by the inbox message filed today
 (repos/sdlc/inbox/biomcp/2026-10-08-pm-read-the-local-forbidden-name-declaration.md).
