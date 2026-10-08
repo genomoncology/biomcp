@@ -1,6 +1,6 @@
 # 2022 — Variant headline date and gene routing follow-ups
 
-Status: IMPLEMENTED (unreviewed).
+Status: OPEN.
 
 Milestone: 0.9.2
 
@@ -68,11 +68,14 @@ Green after the fix:
 - `make sync-python-dev` ran before every spec run.
 
 Environment note: the full `biomcp-cli` suite currently flakes on cache/network-sensitive tests under this machine's parallel lane load (`stale_json_note_tests`, stale disease cards, one 595 s population timeout). The identical failure set reproduces on pristine `37631c357`, and every flake passes on retry in isolation, so none of it comes from this change.
+
 ## Build status
 
 - Built on branch `tickets/2022-variant-headline-date-and-gene-routing-follow-ups`,
   commits 15225975b, fe6b3ae8f, fold aa8317a4f, 2026-10-07, across two
-  timeout revivals with checkpoints (nothing lost).
+  timeout revivals with checkpoints (nothing lost). The 2026-10-08 rebase
+  onto main (after 2023 and 1300 landed) rewrote those as 77003a2e7,
+  3c021ab0d, and fd2522e16; the work is unchanged.
 - Code review: REJECT 2026-10-07, findings fixed the same day. The P1
   (configuration.md still describing alias routing after the change)
   and two P2s (the contradicting enum doc; the ticket's missing
@@ -82,3 +85,22 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
 - Code re-review (fold delta fe6b3ae8f..aa8317a4f): ACCEPT 2026-10-07.
   All four folds verified at the named seams with no collateral edits
   and no stale wording anywhere.
+
+## Second-review fix round
+
+- Code re-review (the 2026-10-07 second review of the work since 0.9.1,
+  `sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`,
+  findings 12 and 15 and the review-line gap of findings 10 and 11):
+  REJECT 2026-10-07, fixed 2026-10-08. Finding 12: the branch re-indented
+  `capture-receipts.json` from two spaces to one; the rebase unions by
+  path in main's two-space formatting (327 entries, the branch's one
+  MyVariant receipt over main's 326) and the re-indent folds away.
+  Finding 15: the routed zero-row hint repeated the command that
+  returned zero rows; the hint now drops the condition filter and
+  prints the same filters without it (845ae0719). Finding 10: the
+  recorded REJECT-and-ACCEPT history now sits on the branch ticket in
+  the house grammar instead of main's copy alone. Finding 11: the
+  branch no longer conflicts with main; receipts, the size inventory,
+  and the ticket union with measured counts kept (gene.rs 3963,
+  transform/variant.rs 1496; main's 1_405 package count holds because
+  `testdata/` is package-excluded). Re-review of this round pending.
