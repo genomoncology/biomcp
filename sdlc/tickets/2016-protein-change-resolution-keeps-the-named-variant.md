@@ -40,3 +40,14 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   ticket. Deferred honestly: the MANE/RefSeq-aware resolver stays with
   the shared parser; variant.md reruns under the full fixture set
   before tagging.
+
+## Fix-round review
+
+- Code re-review (rebased head c172e04d7, covering the MANE fix and
+  the whole landed shape): ACCEPT 2026-10-07. No findings. Verified:
+  the MANE preference with the past-insert BRCA1 pin (A1844T on
+  NM_007294 numbering) and the fallback pin with its note (I1568N);
+  the numbering note end to end on the TP53 R116Q shape; the original
+  named-match rule, 1297 tiebreak, and byte-identical EGFR refusal
+  surviving the rebase; the branch ticket's review-line grammar
+  passing the scanner's own rules; receipts and inventory exact.
