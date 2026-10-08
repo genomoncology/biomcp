@@ -125,3 +125,14 @@ because no allele-specific form exists for it.
   `no_rsid_row_with_gene_and_change_gains_the_gene_qualified_form` pins the
   no-rsID row with a gene and a protein change upgrading from the bare
   `p.G12A` to the gene-qualified `KRAS p.G12A`.
+
+## Delta review
+
+- Code re-review (post-ACCEPT delta through df760a463): ACCEPT
+  2026-10-08. The cap split is a pure move; the coordinator fixes are
+  correct (the boundary root line intact, the merged-tree count
+  measured 1_405 with ticket 2020's probe removal accounted); the
+  third-review correction states the multi-allele truth and narrows the
+  Outcome honestly; nothing else in the delta. Two P2s: the duplicated
+  success-criteria heading (folded in the landing merge) and the lane
+  report's stale 1_406 arithmetic (noted here as a record error).
