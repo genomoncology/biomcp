@@ -75,7 +75,9 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
   commits 15225975b, fe6b3ae8f, fold aa8317a4f, 2026-10-07, across two
   timeout revivals with checkpoints (nothing lost). The 2026-10-08 rebase
   onto main (after 2023 and 1300 landed) rewrote those as 77003a2e7,
-  3c021ab0d, and fd2522e16; the work is unchanged.
+  3c021ab0d, and fd2522e16; a second rebase the same day, after 2017
+  landed, rewrote the chain again to b427eb233..c3bf14929; the work is
+  unchanged.
 - Code review: REJECT 2026-10-07, findings fixed the same day. The P1
   (configuration.md still describing alias routing after the change)
   and two P2s (the contradicting enum doc; the ticket's missing
@@ -108,3 +110,22 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
   main's formatting; the hint carries the dropped-condition alternative
   with the refused path unchanged; the review history parses; the
   inventory unions are measured.
+
+## Third-review fix round
+
+- Code re-review (ticket 2033 finding 13): REJECT 2026-10-08, fixed
+  2026-10-08. Item 1: the routed zero-row alternative dropped explicit
+  `--hgvsp` and `--consequence` flags while the hint said "the same
+  filters"; the alternative now keeps the resolved `--hgvsp` filter and
+  any explicit `--consequence` flag, so it differs from the routed search
+  by exactly the dropped condition (c3bf14929, with unit pins for both
+  flags). Item 2: the transform and date comments claimed ticket 1291
+  already uses `is_day_shaped`; they now state the pre-merge truth, that
+  1291 still carries its own inline check on its branch, and success
+  criterion 2 records the collapse rule: whichever of tickets 2022 and
+  1291 lands second collapses the duplicate onto the shared helper. The
+  stale "no longer conflicts" sentence is replaced by the dated rebase
+  notes in Build status. This round's rebase lands on main at `b872c234a`
+  (2017 landed, third-review tickets filed): receipts union to 333 entries
+  in main's formatting, the zero-coupling digest is repinned, and the
+  inventory keeps the measured counts. Re-review of this round pending.
