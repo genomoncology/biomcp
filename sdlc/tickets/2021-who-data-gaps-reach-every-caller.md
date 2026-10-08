@@ -36,3 +36,14 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
   is gone (network access and BIOMCP_WHO_DIR named); the failed-export
   fixture hermetic with the drift guard; inventory repins exact. One
   P2 (temp-dir leaks in the two new spec blocks) folded in eb889a407.
+
+## Fix-round review
+
+- Code re-review (fix-round delta 168e8d866+5796172f9): FIX 2026-10-08,
+  one P1 — the error.rs baseline pinned 1446 against a measured 1447
+  (the projection lifetime change grew the file one line). Everything
+  else verified sound: the recovery names the resolved directory with
+  the no-self-reference wording kept; the lifetime threading is
+  mechanical; the ticket record parses as grammar. The P1 is fixed in
+  d41d5e3ca (measured 1447, ratchet green); a fresh re-review of that
+  one-line pin resolves this line.
