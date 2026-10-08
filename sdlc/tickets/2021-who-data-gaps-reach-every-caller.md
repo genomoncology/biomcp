@@ -88,3 +88,11 @@ column — never the generic #288 line.
   A review minor note folded into this record: the mcp.md degrade block
   makes three forced-degrade searches (CLI JSON, raw MCP JSON, raw MCP
   Markdown), not two.
+- Fix round for the second review of the work since 0.9.1
+  (`sdlc/issues/2026-10-07-second-review-of-the-work-since-0.9.1.md`),
+  2026-10-08: rebased onto main (2023 and 1300 landed; the size
+  inventory unioned by path with measured baselines), merged the two
+  Build status sections into this one and put every review line in the
+  house grammar (finding 11), and named the resolved data directory in
+  the sync recovery again, with the public projection carrying the
+  error's own recovery sentence (finding 17) at 168e8d866.
