@@ -129,8 +129,13 @@ pub(super) fn apply_gene_first_routing(
     match confirmed_symbol {
         Some(symbol) => {
             let parsed = gene_first_parsed_form(&symbol, protein_change.as_deref(), &condition);
-            let alternative = gene_first_alternative_form(&symbol, protein_change.as_deref());
             let hgvsp = protein_change.or(hgvsp_flag);
+            // The alternative keeps every filter the routed search applied
+            // except the condition, explicit `--hgvsp` and `--consequence`
+            // flags included, so it differs from the command that ran by
+            // exactly the dropped condition (ticket 2033, finding 13).
+            let alternative =
+                gene_first_alternative_form(&symbol, hgvsp.as_deref(), consequence_flag.as_deref());
             (
                 VariantSearchPlan::finalize(ResolvedVariantQuery {
                     gene: Some(symbol),
@@ -190,15 +195,24 @@ pub(super) fn gene_first_working_form(gene: &str, hgvsp: Option<&str>, condition
     command.args(["--condition", condition]).render_shell()
 }
 
-/// The alternative a routed zero-row search suggests: the parsed filters with
-/// the condition dropped. The routed search already applied every parsed
-/// filter, so repeating them repeats the empty result; naming one dropped
-/// filter keeps the hint useful (ticket 2022).
-pub(super) fn gene_first_alternative_form(gene: &str, hgvsp: Option<&str>) -> String {
+/// The alternative a routed zero-row search suggests: every filter the
+/// routed search applied, with the condition dropped. The routed search
+/// already applied every parsed filter, so repeating them repeats the empty
+/// result; the resolved `--hgvsp` filter and any explicit `--consequence`
+/// flag stay, so the command differs by exactly the dropped condition
+/// (tickets 2022 and 2033).
+pub(super) fn gene_first_alternative_form(
+    gene: &str,
+    hgvsp: Option<&str>,
+    consequence: Option<&str>,
+) -> String {
     let mut command =
         crate::next_command::NextCommand::biomcp().args(["search", "variant", "-g", gene]);
     if let Some(hgvsp) = hgvsp {
         command = command.args(["--hgvsp", hgvsp]);
+    }
+    if let Some(consequence) = consequence {
+        command = command.args(["--consequence", consequence]);
     }
     command.render_shell()
 }

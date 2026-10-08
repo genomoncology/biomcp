@@ -687,8 +687,11 @@ fn pick_significance(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
 /// Newest `last_evaluated` day among the records carrying the shown
 /// classification (ticket 2022), so the headline date belongs to the printed
 /// term instead of a newer, differently classified record. Only strict
-/// day-shaped dates surface, under the one day-shape rule the ClinVar
-/// fallback label also uses (ticket 1291): `crate::utils::date::is_day_shaped`.
+/// day-shaped dates surface, under this branch's one day-shape rule,
+/// `crate::utils::date::is_day_shaped`. Ticket 1291 still carries its own
+/// inline day-shape check for the ClinVar fallback label; whichever of
+/// tickets 2022 and 1291 lands second collapses the duplicate onto the
+/// shared helper.
 fn newest_rcv_evaluation_date(
     rcvs: &[MyVariantClinVarRcv],
     significance: Option<&str>,

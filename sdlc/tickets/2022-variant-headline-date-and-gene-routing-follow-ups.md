@@ -31,7 +31,7 @@ Filed 2026-10-07 from the review of the work since v0.9.1 (`sdlc/issues/2026-10-
 ## Success criteria
 
 1. `get variant 'BRAF V600E'` prints the Pathogenic headline with `evaluated 2023-10-22` (the newest date among the Pathogenic records, RCV003458334), not `2025-01-23` (the Uncertain significance record RCV005089260).
-2. The date helper keeps one rule: a record's date counts only when the record carries the shown classification, and only day-shaped `YYYY-MM-DD` values surface, aligned with the 1291 fallback label's day-shape rule so the branches merge into one helper.
+2. The date helper keeps one rule: a record's date counts only when the record carries the shown classification, and only day-shaped `YYYY-MM-DD` values surface, aligned with the 1291 fallback label's day-shape rule. Whichever of tickets 2022 and 1291 lands second collapses the two checks into one helper.
 3. `search variant 'HCC liver cancer'`, `'MODY diabetes'` and `'HHT telangiectasias'` do not route an alias first token; each keeps the whole-phrase condition search.
 4. `search variant 'BRAF V600E melanoma'` reads `gene=BRAF, hgvsp=V600E, condition=melanoma`, not `condition='V600E melanoma'`.
 5. A routed search that returns zero rows prints the parsed form and a loosened alternative that names one dropped filter; a refused zero-row search keeps the 1301 hint.
@@ -43,7 +43,7 @@ Official symbols only means the familiar alias abbreviations stop routing too: '
 
 ## Implementation
 
-- `src/transform/variant.rs`: `newest_rcv_evaluation_date` now takes the shown classification and counts only records that carry it, so the headline date belongs to the printed term. The 1291-aligned day-shape gate lives in one shared helper, `crate::utils::date::is_day_shaped`, so the transform headline and 1291's fallback label use the same rule and can collapse into one helper at merge.
+- `src/transform/variant.rs`: `newest_rcv_evaluation_date` now takes the shown classification and counts only records that carry it, so the headline date belongs to the printed term. The day-shape gate lives in one helper, `crate::utils::date::is_day_shaped`. Ticket 1291 still carries its own inline check on its branch; whichever of tickets 2022 and 1291 lands second collapses the duplicate onto the shared helper.
 - `src/entities/gene.rs`: `resolve_unique_official_symbol` confirms a first token only when it is the gene's official symbol; `resolve_unique_canonical_alias` keeps serving the `discover` path unchanged.
 - `src/cli/variant/query.rs`: `split_leading_protein_change` moves a leading protein change to the hgvsp filter; `GeneFirstNote` replaces `GeneFirstFallback` so both the refused and the routed zero-row case carry their hint.
 - `src/cli/variant/dispatch.rs`: a routed zero-row search prints the parsed form and the same filters with the condition dropped (repeating the parsed filters repeats the empty result), and pushes that alternative into JSON `next_commands`.
@@ -100,8 +100,8 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
   prints the same filters without it (845ae0719). Finding 10: the
   recorded REJECT-and-ACCEPT history now sits on the branch ticket in
   the house grammar instead of main's copy alone. Finding 11: the
-  branch no longer conflicts with main; receipts, the size inventory,
-  and the ticket union with measured counts kept (gene.rs 3963,
+  the 2026-10-08 rebase onto main after 2023 and 1300 landed unions receipts,
+  the size inventory, and the ticket with measured counts kept (gene.rs 3963,
   transform/variant.rs 1496; main's 1_405 package count holds because
   `testdata/` is package-excluded). Re-review of this round: ACCEPT 2026-10-08 (fresh reviewer, head
   7b0e8bfd6). The receipts delta is exactly the 12 real entry lines in

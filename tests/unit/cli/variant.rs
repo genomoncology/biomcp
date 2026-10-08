@@ -487,7 +487,8 @@ fn apply_gene_first_routing_moves_a_leading_protein_change_to_hgvsp() {
 #[test]
 fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
     // Confirmed path: the phrase routes gene-first and the explicit
-    // consequence filter survives beside it.
+    // consequence filter survives beside it, in the search and in the
+    // zero-row alternative (ticket 2033, finding 13).
     let (resolved, note) = apply_gene_first_routing(
         "SCN5A".into(),
         None,
@@ -499,7 +500,32 @@ fn apply_gene_first_routing_keeps_explicit_filters_on_both_paths() {
     assert_eq!(resolved.gene.as_deref(), Some("SCN5A"));
     assert_eq!(resolved.condition.as_deref(), Some("Brugada"));
     assert_eq!(resolved.consequence.as_deref(), Some("missense_variant"));
-    assert!(matches!(note.as_ref(), Some(GeneFirstNote::Routed { .. })));
+    assert!(matches!(
+        note.as_ref(),
+        Some(GeneFirstNote::Routed {
+            alternative,
+            ..
+        }) if alternative == "biomcp search variant -g SCN5A --consequence missense_variant"
+    ));
+
+    // Confirmed path with an explicit --hgvsp flag and no parsed protein
+    // change: the alternative keeps the flag, so it differs from the routed
+    // search by exactly the dropped condition.
+    let (_resolved, note) = apply_gene_first_routing(
+        "BRAF".into(),
+        None,
+        "melanoma".into(),
+        Some("BRAF".into()),
+        Some("p.Val600Glu".into()),
+        Some("missense_variant".into()),
+    );
+    assert!(matches!(
+        note.as_ref(),
+        Some(GeneFirstNote::Routed {
+            alternative,
+            ..
+        }) if alternative == "biomcp search variant -g BRAF --hgvsp p.Val600Glu --consequence missense_variant"
+    ));
 
     // Refused path: the whole phrase stays the condition and the explicit
     // hgvsp filter survives, normalized exactly as the standard path does.

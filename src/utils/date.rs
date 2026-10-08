@@ -91,8 +91,9 @@ pub(crate) fn validate_since(value: &str) -> Result<String, BioMcpError> {
 /// Strict day shape for provider-supplied ClinVar evaluation dates: exactly
 /// `YYYY-MM-DD`, naming a real Gregorian day. Provider spellings such as
 /// "01 Apr 2019" or reordered forms are omitted rather than trusted. The
-/// variant headline date (ticket 2022) and the ClinVar fallback label's age
-/// (ticket 1291) share this one rule.
+/// variant headline date (ticket 2022) uses this rule; ticket 1291 still
+/// carries its own inline check on its branch, and whichever of the two
+/// lands second collapses the duplicate onto this helper.
 pub(crate) fn is_day_shaped(value: &str) -> bool {
     let bytes = value.as_bytes();
     let digits_at =
