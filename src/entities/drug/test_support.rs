@@ -498,3 +498,260 @@ async fn label_elements_fallback_no_match_settles_as_the_honest_empty() {
     assert!(drug.label.is_none());
     server.abort();
 }
+
+/// Percent-decode one query-parameter value, so a fixture server can route on
+/// the decoded MyChem `q` term (ticket 2031).
+fn decoded_query_param(request_target: &str, key: &str) -> Option<String> {
+    let query = request_target.split_once('?')?.1;
+    for pair in query.split('&') {
+        let (name, value) = pair.split_once('=')?;
+        if name != key {
+            continue;
+        }
+        let mut out = String::with_capacity(value.len());
+        let bytes = value.as_bytes();
+        let mut index = 0;
+        while index < bytes.len() {
+            match bytes[index] {
+                b'%' if index + 2 < bytes.len() => {
+                    let hex = std::str::from_utf8(&bytes[index + 1..index + 3]).ok()?;
+                    out.push(u8::from_str_radix(hex, 16).ok()? as char);
+                    index += 3;
+                }
+                b'+' => {
+                    out.push(' ');
+                    index += 1;
+                }
+                byte => {
+                    out.push(byte as char);
+                    index += 1;
+                }
+            }
+        }
+        return Some(out);
+    }
+    None
+}
+
+/// A fixture server for the name-resolution flows (ticket 2031): MyChem
+/// answers by decoded query term, and each openFDA label search answers with
+/// the body the caller registered or a no-match 404.
+async fn name_resolution_fixture_server(
+    mychem: Vec<(String, String)>,
+    label_searches: Vec<(String, String)>,
+) -> (String, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind name-resolution fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let mychem = mychem.clone();
+            let label_searches = label_searches.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 64 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]);
+                let target = request
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or_default()
+                    .to_string();
+                let (status, body): (&str, Vec<u8>) = if target.starts_with("/v1/query?") {
+                    let term = decoded_query_param(&target, "q").unwrap_or_default();
+                    match mychem.iter().find(|(query, _)| *query == term) {
+                        Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                        None => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND"}}"#.to_vec(),
+                        ),
+                    }
+                } else if target.starts_with("/drug/label.json?") {
+                    let term = decoded_query_param(&target, "search").unwrap_or_default();
+                    let term = term
+                        .replace("openfda.generic_name:", "")
+                        .replace("openfda.brand_name:", "");
+                    match label_searches
+                        .iter()
+                        .find(|(query, _)| term.contains(query))
+                    {
+                        Some((_, body)) => ("200 OK", body.clone().into_bytes()),
+                        None => (
+                            "404 Not Found",
+                            br#"{"error":{"code":"NOT_FOUND","message":"No matches found!"}}"#
+                                .to_vec(),
+                        ),
+                    }
+                } else {
+                    (
+                        "404 Not Found",
+                        r#"{"error":"unplanned"}"#.as_bytes().to_vec(),
+                    )
+                };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write fixture response head");
+                stream
+                    .write_all(&body)
+                    .await
+                    .expect("write fixture response body");
+            });
+        }
+    });
+    (base, task)
+}
+
+async fn name_resolution_fixture_drug(base: &str, name: &str) -> super::Drug {
+    let root = crate::test_support::TempDirGuard::new("name-resolution-ddinter");
+    let missing_ddinter = root.path().join("missing-ddinter");
+    // Point the shared HTTP client's cache walk at the fixture's own tree
+    // (see the discover fixture's note on client construction).
+    let cache_root = crate::test_support::TempDirGuard::new("name-resolution-cache");
+    let _cache_mode = crate::sources::test_cache_mode::off();
+    let mut env = RequiredLabelFixtureEnv(Vec::new());
+    env.set(
+        "BIOMCP_CACHE_DIR",
+        cache_root.path().to_string_lossy().as_ref(),
+    );
+    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_OPENFDA_BASE", base);
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", base);
+    env.set(
+        "BIOMCP_DDINTER_DIR",
+        missing_ddinter.to_str().expect("UTF-8 fixture path"),
+    );
+    super::get(name, &["label".to_string()])
+        .await
+        .expect("name-resolution fixture settles a card")
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn terfenadine_returns_terfenadines_card_with_an_honest_empty_label() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "terfenadine".to_string(),
+            crate::transform::drug::name_resolution_tests::TERFENADINE_CAPTURE.to_string(),
+        )],
+        Vec::new(),
+    )
+    .await;
+
+    // Ticket 2031: MyChem's text query also returns fexofenadine through its
+    // "Terfenadine carboxylate" synonyms, but only terfenadine's own record
+    // (DB00342) may resolve the card; openFDA holds no terfenadine SPL
+    // record, so the label settles as the honest empty.
+    let drug = name_resolution_fixture_drug(&base, "terfenadine").await;
+    assert_eq!(drug.name, "terfenadine");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00342"));
+    assert!(
+        !serde_json::to_string(&drug)
+            .expect("card serializes")
+            .to_ascii_lowercase()
+            .contains("fexofenadine")
+    );
+    let outcome = drug
+        .section_outcomes
+        .get("label")
+        .expect("label outcome completed");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
+    assert_eq!(
+        outcome.message(),
+        Some("No openFDA SPL label record matched this drug.")
+    );
+    assert!(drug.label.is_none());
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_text_only_match_refuses_and_names_what_matched() {
+    let (base, server) = name_resolution_fixture_server(
+        vec![(
+            "ferric oxide".to_string(),
+            crate::transform::drug::name_resolution_tests::FERRIC_OXIDE_TEXT_ONLY_CAPTURE
+                .to_string(),
+        )],
+        Vec::new(),
+    )
+    .await;
+
+    let root = crate::test_support::TempDirGuard::new("refusal-ddinter");
+    let missing_ddinter = root.path().join("missing-ddinter");
+    let cache_root = crate::test_support::TempDirGuard::new("refusal-cache");
+    let _cache_mode = crate::sources::test_cache_mode::off();
+    let mut env = RequiredLabelFixtureEnv(Vec::new());
+    env.set(
+        "BIOMCP_CACHE_DIR",
+        cache_root.path().to_string_lossy().as_ref(),
+    );
+    env.set("BIOMCP_MYCHEM_BASE", &format!("{base}/v1"));
+    env.set("BIOMCP_OPENFDA_BASE", &base);
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+    env.set(
+        "BIOMCP_DDINTER_DIR",
+        missing_ddinter.to_str().expect("UTF-8 fixture path"),
+    );
+
+    // Ticket 2031: when no record names the query and openFDA's identity
+    // fields cannot resolve it either, the lookup refuses and says which
+    // other drugs the text search matched.
+    let err = super::get("ferric oxide", &["label".to_string()])
+        .await
+        .expect_err("a text-only match must refuse");
+    let message = err.to_string();
+    assert!(
+        message.contains("No drug card matches \"ferric oxide\""),
+        "{message}"
+    );
+    assert!(
+        message.contains("zinc oxide, titanium dioxide"),
+        "{message}"
+    );
+    assert!(
+        message.contains("calamine and pramoxine hydrochloride"),
+        "{message}"
+    );
+    assert!(
+        message.contains("biomcp search drug -q \"ferric oxide\""),
+        "{message}"
+    );
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn a_brand_query_resolves_through_openfda_identity_fields() {
+    let tagrisso_capture =
+        crate::transform::drug::name_resolution_tests::TAGRISSO_CAPTURE.to_string();
+    let (base, server) = name_resolution_fixture_server(
+        vec![
+            ("TAGRISSO".to_string(), tagrisso_capture.clone()),
+            ("osimertinib".to_string(), tagrisso_capture),
+        ],
+        vec![(
+            "TAGRISSO".to_string(),
+            r#"{"meta":{"results":{"total":1}},"results":[{"set_id":"tagrisso-setid","openfda":{"brand_name":["TAGRISSO"],"generic_name":["osimertinib"]}}]}"#.to_string(),
+        )],
+    )
+    .await;
+
+    // Ticket 2031 keep-list: no fetched MyChem name field carries the brand,
+    // so the lookup resolves the brand through openFDA's own identity fields
+    // and lands on the generic identity.
+    let drug = name_resolution_fixture_drug(&base, "TAGRISSO").await;
+    assert_eq!(drug.name, "osimertinib");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB09330"));
+    server.abort();
+}

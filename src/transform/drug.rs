@@ -9,12 +9,21 @@ fn normalize_name(value: &str) -> String {
     value.trim().trim_matches('.').to_ascii_lowercase()
 }
 
-fn ndc_nonproprietaryname(hit: &MyChemHit) -> Option<&str> {
-    let ndc = hit.ndc.as_ref()?;
+fn ndc_nonproprietary_names(hit: &MyChemHit) -> Vec<&str> {
+    let Some(ndc) = hit.ndc.as_ref() else {
+        return Vec::new();
+    };
     match ndc {
-        MyChemNdcField::One(v) => v.nonproprietaryname.as_deref(),
-        MyChemNdcField::Many(v) => v.iter().find_map(|n| n.nonproprietaryname.as_deref()),
+        MyChemNdcField::One(v) => v.nonproprietaryname.as_deref().into_iter().collect(),
+        MyChemNdcField::Many(v) => v
+            .iter()
+            .filter_map(|n| n.nonproprietaryname.as_deref())
+            .collect(),
     }
+}
+
+fn ndc_nonproprietaryname(hit: &MyChemHit) -> Option<&str> {
+    ndc_nonproprietary_names(hit).into_iter().next()
 }
 
 fn ndc_pharm_classes(hit: &MyChemHit) -> Vec<&str> {
@@ -69,12 +78,34 @@ fn unii_id(hit: &MyChemHit) -> Option<&str> {
     hit.unii.as_ref().and_then(|u| u.unii())
 }
 
+fn string_or_vec_values(value: &crate::utils::serde::StringOrVec) -> Vec<&str> {
+    match value {
+        crate::utils::serde::StringOrVec::None => Vec::new(),
+        crate::utils::serde::StringOrVec::Single(v) => vec![v.as_str()],
+        crate::utils::serde::StringOrVec::Multiple(v) => v.iter().map(String::as_str).collect(),
+    }
+}
+
+fn openfda_generic_names(hit: &MyChemHit) -> Vec<&str> {
+    hit.openfda
+        .as_ref()
+        .map(|o| string_or_vec_values(&o.generic_name))
+        .unwrap_or_default()
+}
+
+fn openfda_brand_names(hit: &MyChemHit) -> Vec<&str> {
+    hit.openfda
+        .as_ref()
+        .map(|o| string_or_vec_values(&o.brand_name))
+        .unwrap_or_default()
+}
+
 fn openfda_generic_name(hit: &MyChemHit) -> Option<&str> {
-    hit.openfda.as_ref().and_then(|o| o.generic_name.first())
+    openfda_generic_names(hit).into_iter().next()
 }
 
 fn openfda_brand_name(hit: &MyChemHit) -> Option<&str> {
-    hit.openfda.as_ref().and_then(|o| o.brand_name.first())
+    openfda_brand_names(hit).into_iter().next()
 }
 
 fn best_name_from_hit(hit: &MyChemHit) -> Option<String> {
@@ -99,14 +130,14 @@ fn best_name_from_hit(hit: &MyChemHit) -> Option<String> {
 
 fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
-    if let Some(v) = ndc_nonproprietaryname(hit) {
-        out.push(normalize_name(v));
+    for value in ndc_nonproprietary_names(hit) {
+        out.push(normalize_name(value));
     }
-    if let Some(v) = openfda_generic_name(hit) {
-        out.push(normalize_name(v));
+    for value in openfda_generic_names(hit) {
+        out.push(normalize_name(value));
     }
-    if let Some(v) = openfda_brand_name(hit) {
-        out.push(normalize_name(v));
+    for value in openfda_brand_names(hit) {
+        out.push(normalize_name(value));
     }
     if let Some(v) = hit.drugbank.as_ref().and_then(|d| d.name.as_deref()) {
         out.push(normalize_name(v));
@@ -115,6 +146,38 @@ fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
         for synonym in &drugbank.synonyms {
             out.push(normalize_name(synonym));
         }
+    }
+    if let Some(v) = hit.chembl.as_ref().and_then(|c| c.pref_name.as_deref()) {
+        out.push(normalize_name(v));
+    }
+    if let Some(v) = hit.gtopdb.as_ref().and_then(|g| g.name.as_deref()) {
+        out.push(normalize_name(v));
+    }
+    if let Some(v) = unii_display_name(hit) {
+        out.push(normalize_name(v));
+    }
+    if let Some(v) = chebi_name(hit) {
+        out.push(normalize_name(v));
+    }
+    out
+}
+
+/// The hit's own identity names, in canonical preference order: every NDC
+/// established name (MyChem merges product rows into the ingredient's
+/// record, so one record carries many products' names), every openFDA
+/// generic name, the DrugBank name, the ChEMBL preferred name, the GtoPdb
+/// name, the UNII display name, and the ChEBI name. Brand names are kept
+/// out: a brand query canonicalizes to the generic identity (ticket 2031).
+fn hit_canonical_names(hit: &MyChemHit) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for value in ndc_nonproprietary_names(hit) {
+        out.push(normalize_name(value));
+    }
+    for value in openfda_generic_names(hit) {
+        out.push(normalize_name(value));
+    }
+    if let Some(v) = hit.drugbank.as_ref().and_then(|d| d.name.as_deref()) {
+        out.push(normalize_name(v));
     }
     if let Some(v) = hit.chembl.as_ref().and_then(|c| c.pref_name.as_deref()) {
         out.push(normalize_name(v));
@@ -342,6 +405,15 @@ fn name_matches_requested(candidate: &str, requested: &str) -> bool {
         || candidate.contains(&format!(" {requested} "))
 }
 
+/// A qualified form of the requested drug: the request followed by more
+/// words (salt, hydrate, combination, strength). The request merely
+/// appearing inside a longer name does not identify the drug —
+/// "Zinc Oxide, Ferric Oxide Red, and Pramoxine Hydrochloride" is not
+/// ferric oxide's record (ticket 2031).
+fn name_extends_request(candidate: &str, requested: &str) -> bool {
+    candidate.starts_with(&format!("{requested} "))
+}
+
 fn json_first_string(value: &serde_json::Value) -> Option<String> {
     match value {
         serde_json::Value::String(s) => Some(s.trim().to_string()).filter(|v| !v.is_empty()),
@@ -410,17 +482,26 @@ pub fn from_mychem_search_hit(hit: &MyChemHit) -> Option<DrugSearchResult> {
 
 pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a MyChemHit> {
     let target = normalize_name(name);
+    // Ticket 2031: a MyChem full-text query returns any drug whose record
+    // mentions the term. Only a hit whose own name, brand, or synonym equals
+    // the query identifies the drug; when no exact name exists, a qualified
+    // form of the same drug (salt, hydrate: "edetate disodium anhydrous")
+    // still does. Nothing else is admitted, and there is no all-hits
+    // fallback: the caller refuses honestly instead of merging another
+    // drug's record.
     let mut out: Vec<&MyChemHit> = hits
         .iter()
-        .filter(|h| {
-            hit_all_names(h)
-                .iter()
-                .any(|n| name_matches_requested(n, &target))
-        })
+        .filter(|h| hit_all_names(h).iter().any(|n| n == &target))
         .collect();
-
     if out.is_empty() {
-        out = hits.iter().collect();
+        out = hits
+            .iter()
+            .filter(|h| {
+                hit_all_names(h)
+                    .iter()
+                    .any(|n| name_extends_request(n, &target))
+            })
+            .collect();
     }
 
     // Prefer richer hits first (more sources).
@@ -448,10 +529,28 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
     out
 }
 
+/// The card name a hit contributes for a request: the first canonical name
+/// that itself matches the request, so an NDC combination-product row
+/// ("Analgesic", "urea, glycerin, aloe, disodium edta") never renames the
+/// drug the query actually matched (ticket 2031). Brand names are not
+/// candidates; a brand that matches while no canonical name does falls back
+/// to the generic identity instead.
+fn canonical_name_matching_request(hit: &MyChemHit, requested: &str) -> Option<String> {
+    let target = normalize_name(requested);
+    hit_canonical_names(hit)
+        .into_iter()
+        .find(|name| name_matches_requested(name, &target))
+}
+
 pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut name = hits
         .iter()
-        .find_map(|hit| best_name_from_hit(hit))
+        .find_map(|hit| canonical_name_matching_request(hit, requested_name))
+        .or_else(|| {
+            hits.iter()
+                .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
+        })
+        .or_else(|| hits.iter().find_map(|hit| best_name_from_hit(hit)))
         .unwrap_or_else(|| normalize_name(requested_name));
     let mut drugbank_id: Option<String> = None;
     let mut chembl_id: Option<String> = None;
@@ -682,6 +781,9 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
 }
 
 #[cfg(test)]
+pub(crate) mod name_resolution_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -868,7 +970,11 @@ mod tests {
     }
 
     #[test]
-    fn select_hits_for_name_matches_salt_forms() {
+    fn select_hits_for_name_prefers_exact_hits_and_admits_salt_forms_only_when_alone() {
+        // Ticket 2031: an exact name match identifies the drug, so only
+        // exact hits merge. A qualified form of the same drug (salt, hydrate)
+        // still matches when it alone leads with the query, and a query no
+        // hit names refuses instead of falling back to every hit.
         let base: MyChemHit = serde_json::from_value(serde_json::json!({
             "_id": "1",
             "_score": 1.0,
@@ -889,9 +995,67 @@ mod tests {
         }))
         .expect("valid salt hit");
 
-        let hits = [base, salt];
-        let selected = select_hits_for_name(&hits, "dabrafenib");
-        assert_eq!(selected.len(), 2);
+        let foreign: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "3",
+            "_score": 5.0,
+            "drugbank": {
+                "id": "DBFOREIGN",
+                "name": "Dabrafenib carboxylate"
+            }
+        }))
+        .expect("valid foreign hit");
+
+        let exact_and_beyond = [base.clone(), salt.clone(), foreign];
+        let selected = select_hits_for_name(&exact_and_beyond, "dabrafenib");
+        assert_eq!(selected.len(), 1);
+        assert_eq!(
+            selected[0]
+                .drugbank
+                .as_ref()
+                .and_then(|d| d.name.as_deref()),
+            Some("Dabrafenib")
+        );
+
+        let salt_alone = [salt];
+        let selected = select_hits_for_name(&salt_alone, "dabrafenib");
+        assert_eq!(selected.len(), 1);
+
+        let unrelated: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "4",
+            "_score": 1.0,
+            "drugbank": {"id": "DBOTHER", "name": "Nivolumab"}
+        }))
+        .expect("valid unrelated hit");
+        let nothing_matches = [unrelated];
+        assert!(select_hits_for_name(&nothing_matches, "dabrafenib").is_empty());
+    }
+
+    #[test]
+    fn merge_mychem_hits_keeps_the_matching_canonical_name_over_the_first_ndc_row() {
+        // Ticket 2031: MyChem merges NDC product rows into the ingredient's
+        // record, and the first row can be another product's name. The card
+        // is named for the field that matched the request.
+        let mannitol: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "FBPFZTCFMRRESA-KVTDHHQDSA-N",
+            "_score": 30.6,
+            "drugbank": {"id": "DB00742", "name": "Mannitol"},
+            "ndc": [
+                {"nonproprietaryname": "Analgesic"},
+                {"nonproprietaryname": "mannitol"},
+                {"nonproprietaryname": "MANNITOL"}
+            ]
+        }))
+        .expect("valid mannitol hit");
+
+        let drug = merge_mychem_hits(&[&mannitol], "mannitol");
+        assert_eq!(drug.name, "mannitol");
+        assert_eq!(drug.drugbank_id.as_deref(), Some("DB00742"));
+        assert!(
+            !serde_json::to_string(&drug)
+                .expect("card serializes")
+                .to_ascii_lowercase()
+                .contains("analgesic")
+        );
     }
 
     #[test]
