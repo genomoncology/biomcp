@@ -83,57 +83,138 @@ pub(super) fn split_gene_first_candidate(query: &str) -> Option<(String, String)
     Some((gene.to_string(), remainder))
 }
 
-/// A gene-first phrase the oracle refused, kept so a zero-row search can
-/// print the working form.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) struct GeneFirstFallback {
-    pub(super) gene: String,
-    pub(super) condition: String,
+/// Split a protein change off the front of a gene-first remainder
+/// (ticket 2022), so `BRAF V600E melanoma` reads as gene=BRAF,
+/// hgvsp=V600E, condition=melanoma instead of condition=`V600E melanoma`.
+/// A remainder that is only the protein change never reaches this split;
+/// the exact "GENE CHANGE" form parses it earlier in the chain.
+pub(super) fn split_leading_protein_change(remainder: &str) -> Option<(String, String)> {
+    let mut tokens = remainder.split_whitespace();
+    let change = tokens.next()?;
+    let change = crate::entities::variant::normalize_protein_change(change)?;
+    let condition = tokens.collect::<Vec<_>>().join(" ");
+    (!condition.is_empty()).then_some((change, condition))
 }
 
-/// Apply the gene-symbol oracle verdict to a gene-first candidate (ticket 1301).
+/// What a zero-row gene-first search prints (tickets 1301 and 2022).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum GeneFirstNote {
+    /// The oracle refused the first token: the whole phrase ran as a
+    /// condition, so the hint names the untried `-g`/`--condition` form.
+    Refused { gene: String, condition: String },
+    /// The oracle confirmed the official symbol: the phrase was routed, so
+    /// the hint states the parsed form and the same filters with the
+    /// condition dropped, which differs from the command that ran.
+    Routed { parsed: String, alternative: String },
+}
+
+/// Apply the gene-symbol oracle verdict to a gene-first candidate (tickets
+/// 1301 and 2022).
 ///
-/// A confirmed symbol routes the first token to the gene filter and the
-/// remainder to the condition. Refusal, ambiguity, and preference `off` all
-/// keep today's whole-phrase condition search and remember the phrase so a
-/// zero-row result can print the explicit `-g`/`--condition` form. Both
-/// branches attach the leftover `--hgvsp` and `--consequence` flags exactly
-/// as the whole-phrase fallthrough did, so no explicit filter is dropped.
+/// A confirmed official symbol routes the first token to the gene filter, a
+/// leading protein change to the hgvsp filter, and the rest to the
+/// condition. Refusal, ambiguity, and preference `off` all keep today's
+/// whole-phrase condition search and remember the phrase so a zero-row
+/// result can print the explicit `-g`/`--condition` form. Both branches
+/// attach the leftover `--hgvsp` and `--consequence` flags exactly as the
+/// whole-phrase fallthrough did, so no explicit filter is dropped.
 pub(super) fn apply_gene_first_routing(
     gene: String,
+    protein_change: Option<String>,
     condition: String,
     confirmed_symbol: Option<String>,
     hgvsp_flag: Option<String>,
     consequence_flag: Option<String>,
-) -> (ResolvedVariantQuery, Option<GeneFirstFallback>) {
+) -> (ResolvedVariantQuery, Option<GeneFirstNote>) {
     match confirmed_symbol {
-        Some(symbol) => (
-            VariantSearchPlan::finalize(ResolvedVariantQuery {
-                gene: Some(symbol),
-                hgvsp: hgvsp_flag,
-                consequence: consequence_flag,
-                condition: Some(condition),
-                ..Default::default()
-            }),
-            None,
-        ),
-        None => (
-            VariantSearchPlan::finalize(ResolvedVariantQuery {
-                hgvsp: hgvsp_flag,
-                consequence: consequence_flag,
-                condition: Some(format!("{gene} {condition}")),
-                ..Default::default()
-            }),
-            Some(GeneFirstFallback { gene, condition }),
-        ),
+        Some(symbol) => {
+            let parsed = gene_first_parsed_form(&symbol, protein_change.as_deref(), &condition);
+            let hgvsp = protein_change.or(hgvsp_flag);
+            // The alternative keeps every filter the routed search applied
+            // except the condition, explicit `--hgvsp` and `--consequence`
+            // flags included, so it differs from the command that ran by
+            // exactly the dropped condition (ticket 2033, finding 13).
+            let alternative =
+                gene_first_alternative_form(&symbol, hgvsp.as_deref(), consequence_flag.as_deref());
+            (
+                VariantSearchPlan::finalize(ResolvedVariantQuery {
+                    gene: Some(symbol),
+                    hgvsp,
+                    consequence: consequence_flag,
+                    condition: Some(condition),
+                    ..Default::default()
+                }),
+                Some(GeneFirstNote::Routed {
+                    parsed,
+                    alternative,
+                }),
+            )
+        }
+        None => {
+            // Refusal keeps the whole phrase, protein change included, so
+            // the condition search and the working form see the original
+            // remainder.
+            let remainder = match protein_change.as_deref() {
+                Some(change) => format!("{change} {condition}"),
+                None => condition.clone(),
+            };
+            (
+                VariantSearchPlan::finalize(ResolvedVariantQuery {
+                    hgvsp: hgvsp_flag,
+                    consequence: consequence_flag,
+                    condition: Some(format!("{gene} {remainder}")),
+                    ..Default::default()
+                }),
+                Some(GeneFirstNote::Refused {
+                    gene,
+                    condition: remainder,
+                }),
+            )
+        }
     }
 }
 
-/// The explicit form a gene-first phrase routing would have used.
-pub(super) fn gene_first_working_form(gene: &str, condition: &str) -> String {
-    crate::next_command::NextCommand::biomcp()
-        .args(["search", "variant", "-g", gene, "--condition", condition])
-        .render_shell()
+/// The filters a routed phrase parsed into, stated in the query summary's
+/// spelling so the hint and the query line agree.
+pub(super) fn gene_first_parsed_form(gene: &str, hgvsp: Option<&str>, condition: &str) -> String {
+    let mut parts = vec![format!("gene={gene}")];
+    if let Some(hgvsp) = hgvsp {
+        parts.push(format!("hgvsp={hgvsp}"));
+    }
+    parts.push(format!("condition={condition}"));
+    parts.join(", ")
+}
+
+/// The explicit form a routed gene-first phrase searched as.
+pub(super) fn gene_first_working_form(gene: &str, hgvsp: Option<&str>, condition: &str) -> String {
+    let mut command =
+        crate::next_command::NextCommand::biomcp().args(["search", "variant", "-g", gene]);
+    if let Some(hgvsp) = hgvsp {
+        command = command.args(["--hgvsp", hgvsp]);
+    }
+    command.args(["--condition", condition]).render_shell()
+}
+
+/// The alternative a routed zero-row search suggests: every filter the
+/// routed search applied, with the condition dropped. The routed search
+/// already applied every parsed filter, so repeating them repeats the empty
+/// result; the resolved `--hgvsp` filter and any explicit `--consequence`
+/// flag stay, so the command differs by exactly the dropped condition
+/// (tickets 2022 and 2033).
+pub(super) fn gene_first_alternative_form(
+    gene: &str,
+    hgvsp: Option<&str>,
+    consequence: Option<&str>,
+) -> String {
+    let mut command =
+        crate::next_command::NextCommand::biomcp().args(["search", "variant", "-g", gene]);
+    if let Some(hgvsp) = hgvsp {
+        command = command.args(["--hgvsp", hgvsp]);
+    }
+    if let Some(consequence) = consequence {
+        command = command.args(["--consequence", consequence]);
+    }
+    command.render_shell()
 }
 
 const VARIANT_QUERY_GENE_ROUTING_ENV: &str = "BIOMCP_VARIANT_QUERY_GENE_ROUTING";
@@ -142,10 +223,11 @@ const GENE_FIRST_ROUTING_TIMEOUT: std::time::Duration = std::time::Duration::fro
 /// How a free-text variant query's gene-symbol first token is recognized.
 ///
 /// `mygene` is the supported default because no offline gene list ships with
-/// BioMCP and MyGene's unique canonical symbol/alias resolution is the lookup
-/// the `discover` path already trusts for the same question. `off` restores
-/// the whole-phrase condition search for operators who must not spend a
-/// MyGene call on routing.
+/// BioMCP and MyGene's unique entrez-backed official-symbol confirmation is
+/// the lookup this routing uses; unlike the `discover` path's symbol/alias
+/// lookup, aliases never route (ticket 2022). `off` restores the
+/// whole-phrase condition search for operators who must not spend a MyGene
+/// call on routing.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub(super) enum VariantQueryGeneRouting {
     #[default]
@@ -178,22 +260,22 @@ impl VariantQueryGeneRouting {
 }
 
 /// Confirm a free-text first token is a known gene symbol (ticket 1301).
-///
-/// MyGene's unique canonical symbol/alias resolution is the admitted in-repo
-/// oracle: it requires exactly one canonical entrez-backed match, so an
-/// uppercase non-gene word such as BRUGADA is refused instead of routed.
-/// Refusal, ambiguity, timeout, and MyGene outages all return `None`.
+/// Ticket 2022 narrows the oracle to official symbols: MyGene's unique
+/// entrez-backed resolution must return the query itself as the official
+/// symbol, so aliases such as HCC (HYCC1), MODY (HNF4A), or HHT (ACVRL1)
+/// no longer route. Refusal, ambiguity, timeout, and MyGene outages all
+/// return `None`.
 pub(super) async fn confirm_gene_first_candidate(gene: &str) -> Option<String> {
     if VariantQueryGeneRouting::from_env() == VariantQueryGeneRouting::Off {
         return None;
     }
     match tokio::time::timeout(
         GENE_FIRST_ROUTING_TIMEOUT,
-        crate::entities::gene::resolve_unique_canonical_alias(gene),
+        crate::entities::gene::resolve_unique_official_symbol(gene),
     )
     .await
     {
-        Ok(Ok(Some(alias))) => Some(alias.symbol),
+        Ok(Ok(Some(official))) => Some(official.symbol),
         _ => None,
     }
 }
@@ -398,8 +480,21 @@ pub(super) fn resolve_variant_query(
     if gene_flag.is_none()
         && let Some((gene, condition)) = split_gene_first_candidate(&query)
     {
+        // A leading protein change belongs to the hgvsp filter, not the
+        // condition (ticket 2022): 'BRAF V600E melanoma' must not become
+        // condition='V600E melanoma'.
+        let (protein_change, condition) = match split_leading_protein_change(&condition) {
+            Some((change, rest)) => (Some(change), rest),
+            None => (None, condition),
+        };
+        if protein_change.is_some() && hgvsp_flag.is_some() {
+            return Err(crate::error::BioMcpError::InvalidArgument(
+                "Positional protein change conflicts with --hgvsp".into(),
+            ));
+        }
         return Ok(VariantSearchPlan::GeneFirstCandidate {
             gene,
+            protein_change,
             condition,
             hgvsp: hgvsp_flag,
             consequence: consequence_flag,

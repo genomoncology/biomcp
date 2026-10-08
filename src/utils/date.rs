@@ -88,9 +88,47 @@ pub(crate) fn validate_since(value: &str) -> Result<String, BioMcpError> {
     Ok(normalized)
 }
 
+/// Strict day shape for provider-supplied ClinVar evaluation dates: exactly
+/// `YYYY-MM-DD`, naming a real Gregorian day. Provider spellings such as
+/// "01 Apr 2019" or reordered forms are omitted rather than trusted. The
+/// variant headline date (ticket 2022) uses this rule; ticket 1291 still
+/// carries its own inline check on its branch, and whichever of the two
+/// lands second collapses the duplicate onto this helper.
+pub(crate) fn is_day_shaped(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let digits_at =
+        |indices: [usize; 8]| indices.iter().all(|index| bytes[*index].is_ascii_digit());
+    if value.len() != 10
+        || bytes[4] != b'-'
+        || bytes[7] != b'-'
+        || !digits_at([0, 1, 2, 3, 5, 6, 8, 9])
+    {
+        return false;
+    }
+    let (year, month, day) = match (
+        value[0..4].parse::<u32>(),
+        value[5..7].parse::<u8>(),
+        value[8..10].parse::<u8>(),
+    ) {
+        // Digit-only fixed-width slices always parse; the arms below are the
+        // real gate: a real month and a day that month can hold.
+        (Ok(year), Ok(month), Ok(day)) => (year, month, day),
+        _ => return false,
+    };
+    if !(1..=12).contains(&month) {
+        return false;
+    }
+    let max_day = if month == 2 && is_leap_year(year) {
+        29
+    } else {
+        DAYS_IN_MONTH[usize::from(month) - 1]
+    };
+    (1..=max_day).contains(&day)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::validate_since;
+    use super::{is_day_shaped, validate_since};
 
     #[test]
     fn expands_year_only() {
@@ -155,6 +193,29 @@ mod tests {
                 err.to_string().contains("--since"),
                 "unexpected error for {value:?}: {err}"
             );
+        }
+    }
+
+    #[test]
+    fn is_day_shaped_accepts_real_days_only() {
+        for value in ["2014-09-04", "2025-01-23", "2024-02-29"] {
+            assert!(is_day_shaped(value), "expected day shape: {value}");
+        }
+    }
+
+    #[test]
+    fn is_day_shaped_rejects_provider_spellings_and_impossible_days() {
+        for value in [
+            "",
+            "01 Apr 2019",
+            "2019-4-11",
+            "2019-13-01",
+            "2021-02-30",
+            "2023-02-29",
+            "2023-00-10",
+            "2023-10-00",
+        ] {
+            assert!(!is_day_shaped(value), "expected rejection: {value:?}");
         }
     }
 }

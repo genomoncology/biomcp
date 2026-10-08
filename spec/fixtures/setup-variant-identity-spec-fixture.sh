@@ -46,7 +46,7 @@ BRAF_MISSENSE_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_missens
 BRAF_REVEL_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_bytes()
 BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_v600e_20260806.json").read_bytes()
 BRAF_V600E_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch38_20260806.json").read_bytes()
-BRAF_V600E_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e.json").read_bytes()
+BRAF_V600E_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch37_20261007.json").read_bytes()
 GRID1_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch37_20260806.json").read_bytes()
 GRID1_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch38_20260806.json").read_bytes()
 PTEN_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_pten_grch38_20260806.json").read_bytes()
@@ -162,6 +162,29 @@ SCN5A_BRUGADA_HITS = [
 BRUGADA_CONDITION_HIT = {
     "_id": "chr12:g.50879715G>A",
     "dbnsfp": {"genename": "PKP2", "hgvsp": "p.Q63K"},
+}
+# Ticket 2022: condition rows for the alias-abbreviation phrases that keep
+# the whole-phrase condition search, and the gene-only/probe rows the
+# zero-classification of a routed gene+protein+condition search issues.
+HCC_CONDITION_HIT = {
+    "_id": "chr2:g.47461951C>T",
+    "dbnsfp": {"genename": "CTNNB1", "hgvsp": "p.S37F"},
+}
+MODY_CONDITION_HIT = {
+    "_id": "chr20:g.43036542C>T",
+    "dbnsfp": {"genename": "HNF4A", "hgvsp": "p.R127W"},
+}
+HHT_CONDITION_HIT = {
+    "_id": "chr12:g.52294067C>T",
+    "dbnsfp": {"genename": "ACVRL1", "hgvsp": "p.R189W"},
+}
+MELANOMA_CONDITION_HIT = {
+    "_id": "chr4:g.55138637C>T",
+    "dbnsfp": {"genename": "KIT", "hgvsp": "p.L576P"},
+}
+BRAF_GENE_ONLY_HIT = {
+    "_id": "chr7:g.140753336A>T",
+    "dbnsfp": {"genename": "BRAF", "hgvsp": "p.V600E"},
 }
 HSD17B4_TRANSCRIPT_HIT = {
     "_id": "chr5:g.118860951A>G",
@@ -440,6 +463,32 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == 'clinvar.rcv.conditions.name:"brugada syndrome"':
                 send_json(self, 200, {"total": 1, "hits": [BRUGADA_CONDITION_HIT]})
+                return
+            # Ticket 2022: alias abbreviations keep the whole-phrase condition
+            # search, so each phrase answers as a condition-only query.
+            if query == 'clinvar.rcv.conditions.name:"HCC liver cancer"':
+                send_json(self, 200, {"total": 1, "hits": [HCC_CONDITION_HIT]})
+                return
+            if query == 'clinvar.rcv.conditions.name:"MODY diabetes"':
+                send_json(self, 200, {"total": 1, "hits": [MODY_CONDITION_HIT]})
+                return
+            if query == 'clinvar.rcv.conditions.name:"HHT telangiectasias"':
+                send_json(self, 200, {"total": 1, "hits": [HHT_CONDITION_HIT]})
+                return
+            # Ticket 2022: a routed gene+protein+condition phrase with no
+            # intersection. Exact-match branch first so the generic
+            # gene+protein branch below cannot answer the three-filter query.
+            if (
+                query
+                == 'dbnsfp.genename:BRAF AND dbnsfp.hgvsp:"p.V600E" AND clinvar.rcv.conditions.name:"melanoma"'
+            ):
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
+            if query == 'clinvar.rcv.conditions.name:"melanoma"':
+                send_json(self, 200, {"total": 1, "hits": [MELANOMA_CONDITION_HIT]})
+                return
+            if query == "dbnsfp.genename:BRAF":
+                send_json(self, 200, {"total": 1, "hits": [BRAF_GENE_ONLY_HIT]})
                 return
             if query == "dbnsfp.genename:H3F3A AND cadd.phred:[99 TO *]":
                 send_json(self, 200, {"total": 0, "hits": []})

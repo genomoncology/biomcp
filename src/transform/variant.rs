@@ -781,10 +781,31 @@ fn pick_significance(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-fn newest_rcv_evaluation_date(rcvs: &[MyVariantClinVarRcv]) -> Option<String> {
+/// Newest `last_evaluated` day among the records carrying the shown
+/// classification (ticket 2022), so the headline date belongs to the printed
+/// term instead of a newer, differently classified record. Only strict
+/// day-shaped dates surface, under this branch's one day-shape rule,
+/// `crate::utils::date::is_day_shaped`. Ticket 1291 still carries its own
+/// inline day-shape check for the ClinVar fallback label; whichever of
+/// tickets 2022 and 1291 lands second collapses the duplicate onto the
+/// shared helper.
+fn newest_rcv_evaluation_date(
+    rcvs: &[MyVariantClinVarRcv],
+    significance: Option<&str>,
+) -> Option<String> {
+    let significance = significance?.trim();
+    if significance.is_empty() {
+        return None;
+    }
     rcvs.iter()
+        .filter(|rcv| {
+            rcv.clinical_significance
+                .as_deref()
+                .map(str::trim)
+                .is_some_and(|value| value.eq_ignore_ascii_case(significance))
+        })
         .filter_map(|rcv| rcv.last_evaluated.as_deref().map(str::trim))
-        .filter(|value| !value.is_empty())
+        .filter(|value| crate::utils::date::is_day_shaped(value))
         .max()
         .map(str::to_string)
 }
@@ -984,7 +1005,7 @@ pub(crate) fn from_myvariant_hit_with_mane(hit: &MyVariantHit, mane_stem: Option
     let significance_evaluated = hit
         .clinvar
         .as_ref()
-        .and_then(|c| newest_rcv_evaluation_date(&c.rcv));
+        .and_then(|c| newest_rcv_evaluation_date(&c.rcv, significance.as_deref()));
     let (significance_source, significance_note) = if significance.is_some() {
         (
             Some("MyVariant.info".to_string()),
@@ -1078,7 +1099,7 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
     let significance_evaluated = hit
         .clinvar
         .as_ref()
-        .and_then(|c| newest_rcv_evaluation_date(&c.rcv));
+        .and_then(|c| newest_rcv_evaluation_date(&c.rcv, significance.as_deref()));
     let clinvar_stars = hit
         .clinvar
         .as_ref()
@@ -1279,6 +1300,60 @@ mod tests {
             pick_significance(&rcvs).as_deref(),
             Some("Likely pathogenic")
         );
+    }
+
+    #[test]
+    fn newest_rcv_evaluation_date_belongs_to_the_shown_classification() {
+        // Recorded BRAF V600E shape (MyVariant 2026-08-06): the newest date
+        // belongs to an Uncertain significance record while the shown
+        // classification is Pathogenic.
+        let rcvs = vec![
+            test_rcv("Pathogenic", Some("2014-09-04")),
+            test_rcv("Pathogenic", Some("2023-10-22")),
+            test_rcv("Uncertain significance", Some("2025-01-23")),
+            test_rcv("Pathogenic", None),
+        ];
+        let shown = pick_significance(&rcvs);
+        assert_eq!(shown.as_deref(), Some("Pathogenic"));
+        assert_eq!(
+            newest_rcv_evaluation_date(&rcvs, shown.as_deref()),
+            Some("2023-10-22".to_string())
+        );
+    }
+
+    #[test]
+    fn newest_rcv_evaluation_date_skips_non_day_shaped_and_unshown_records() {
+        let rcvs = vec![
+            test_rcv("Pathogenic", Some("01 Apr 2019")),
+            test_rcv("Pathogenic", Some("2015-06-15")),
+            test_rcv("Likely pathogenic", Some("2024-12-31")),
+        ];
+        assert_eq!(
+            newest_rcv_evaluation_date(&rcvs, Some("Pathogenic")),
+            Some("2015-06-15".to_string())
+        );
+        // No day-shaped date on the shown classification omits the date
+        // rather than trusting a provider spelling or another record's date.
+        let undated = vec![test_rcv("Pathogenic", Some("01 Apr 2019"))];
+        assert_eq!(
+            newest_rcv_evaluation_date(&undated, Some("Pathogenic")),
+            None
+        );
+        assert_eq!(newest_rcv_evaluation_date(&rcvs, None), None);
+        assert_eq!(newest_rcv_evaluation_date(&rcvs, Some("")), None);
+    }
+
+    fn test_rcv(significance: &str, last_evaluated: Option<&str>) -> MyVariantClinVarRcv {
+        MyVariantClinVarRcv {
+            clinical_significance: Some(significance.to_string()),
+            review_status: None,
+            conditions: None,
+            preferred_name: None,
+            accession: None,
+            version: None,
+            last_evaluated: last_evaluated.map(str::to_string),
+            number_submitters: None,
+        }
     }
 
     #[test]

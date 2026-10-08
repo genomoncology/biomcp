@@ -901,6 +901,13 @@ pub(crate) struct CanonicalGeneAlias {
 
 fn matching_canonical_aliases(query: &str, hits: &[MyGeneHit]) -> Vec<CanonicalGeneAlias> {
     let symbols = matching_canonical_alias_symbols(query, hits);
+    canonical_aliases_for_symbols(symbols, hits)
+}
+
+fn canonical_aliases_for_symbols(
+    symbols: Vec<String>,
+    hits: &[MyGeneHit],
+) -> Vec<CanonicalGeneAlias> {
     symbols
         .into_iter()
         .filter_map(|symbol| {
@@ -936,6 +943,47 @@ pub(crate) async fn resolve_unique_canonical_alias(
         .search(&mygene_query_term(query), 10, 0, None)
         .await?;
     let mut matches = matching_canonical_aliases(query, &resp.hits);
+    Ok((matches.len() == 1).then(|| matches.remove(0)))
+}
+
+/// Matching rows whose official symbol IS the query, so alias matches never
+/// confirm (ticket 2022): search routing accepts a first token only when it
+/// is the gene's official symbol.
+fn matching_official_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<String> {
+    let query = normalized_alias_key(query);
+    let mut out = Vec::new();
+    for hit in hits {
+        let Some(symbol) = hit
+            .symbol
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            continue;
+        };
+        if hit.entrezgene.is_none() {
+            continue;
+        }
+        if normalized_alias_key(symbol) == query && !out.iter().any(|existing| existing == symbol) {
+            out.push(symbol.to_string());
+        }
+    }
+    out
+}
+
+/// Resolve a first token that must BE one gene's official symbol, refusing
+/// aliases, ambiguity, and entrez-less rows (ticket 2022). Variant search
+/// gene-first routing uses this oracle; `resolve_unique_canonical_alias`
+/// keeps accepting aliases for the `discover` path.
+pub(crate) async fn resolve_unique_official_symbol(
+    query: &str,
+) -> Result<Option<CanonicalGeneAlias>, BioMcpError> {
+    let client = MyGeneClient::new()?;
+    let resp = client
+        .search(&mygene_query_term(query), 10, 0, None)
+        .await?;
+    let symbols = matching_official_symbols(query, &resp.hits);
+    let mut matches = canonical_aliases_for_symbols(symbols, &resp.hits);
     Ok((matches.len() == 1).then(|| matches.remove(0)))
 }
 
@@ -3419,6 +3467,50 @@ mod tests {
         let aliases = matching_canonical_aliases("ERBB1", &[mygene_hit("EGFR", &["ERBB1"])]);
         assert_eq!(
             aliases,
+            vec![CanonicalGeneAlias {
+                symbol: "EGFR".into(),
+                entrez_id: "1".into(),
+            }]
+        );
+    }
+    #[test]
+    fn official_symbol_matches_refuse_aliases() {
+        let hits = vec![
+            mygene_hit("HYCC1", &["HCC"]),
+            mygene_hit("HNF4A", &["MODY", "MODY1"]),
+            mygene_hit("ACVRL1", &["HHT"]),
+            mygene_hit("SCN5A", &["ALIAS_OF_SCN5A"]),
+        ];
+        // Ticket 2022: only the official symbol routes, so the alias
+        // abbreviations from the review keep their whole-phrase search.
+        assert_eq!(
+            matching_official_symbols("HCC", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            matching_official_symbols("MODY", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            matching_official_symbols("HHT", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            matching_official_symbols("ALIAS_OF_SCN5A", &hits),
+            Vec::<String>::new()
+        );
+        assert_eq!(matching_official_symbols("SCN5A", &hits), vec!["SCN5A"]);
+        // The normalized key still compares, so case differences match.
+        assert_eq!(matching_official_symbols("scn5a", &hits), vec!["SCN5A"]);
+    }
+    #[test]
+    fn official_symbol_identity_keeps_the_entrez_identifier() {
+        let official = canonical_aliases_for_symbols(
+            matching_official_symbols("EGFR", &[mygene_hit("EGFR", &["ERBB1"])]),
+            &[mygene_hit("EGFR", &["ERBB1"])],
+        );
+        assert_eq!(
+            official,
             vec![CanonicalGeneAlias {
                 symbol: "EGFR".into(),
                 entrez_id: "1".into(),
