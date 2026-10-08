@@ -59,3 +59,15 @@ which lands before the 0.9.2 tag.
 - The review's "no green CI run" names run 37658260567, the branch's
   base-stale run; the main-merged run at 407940cad is green. Recorded
   here so the record carries both.
+
+## Fix-round review
+
+- Code re-review (head 804f07967): ACCEPT 2026-10-07. Verified at
+  source level: subprocess.run with exit-code pass-through and the env
+  mode intact; the Windows CI proof with real discriminating
+  assertions (run 37714318974, all eight jobs green); the macos-15 and
+  windows-2022 pins with the Outcome holding as written; the contract
+  tests extended with red proofs; the recount to 1_402; nothing
+  smuggled (workflow-diff audited). Two report-only P2s folded at
+  landing: a typo in the deadlock issue file and an internal-process
+  phrase. Landing cites run 37714318974.
