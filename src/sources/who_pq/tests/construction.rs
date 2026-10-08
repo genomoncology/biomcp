@@ -1,6 +1,7 @@
 //! Tier 2 - local-data construction. Pure: checks required-file detection and
 //! stale/missing sync decisions. No network.
 
+use std::path::Path;
 use std::time::{Duration, SystemTime};
 
 use super::super::*;
@@ -104,14 +105,36 @@ fn sync_intro_matches_missing_stale_and_force_modes() {
 }
 
 #[test]
-fn who_pq_sync_error_mentions_recovery_paths() {
-    let root = TempDirGuard::new("who-pq-sync-error");
-    let err = who_pq_sync_error(root.path(), "who_api.csv is missing required column: inn");
+fn who_pq_sync_error_carries_its_detail_and_recovery() {
+    let root = Path::new("/tmp/who-pq-data");
+    let err = who_pq_sync_error(
+        root,
+        " Refresh failed for who_api.csv: WHO Prequalification export headers did not match: who_api.csv: missing required column INN.",
+    );
     let message = format!("{err:?}");
 
-    assert!(message.contains("WHO Prequalification"));
-    assert!(message.contains("who_api.csv is missing required column: inn"));
-    assert!(message.contains("biomcp who sync"));
+    assert!(message.contains(WHO_PQ_SYNC_FAILURE_REASON_PREFIX));
+    assert!(message.contains("who_api.csv: missing required column INN"));
+    // The recovery never tells the user to run the command that just
+    // failed; it names network access and the resolved data directory so
+    // the manual preseed has a destination (1304 post-landing review
+    // finding 2; second review finding 17).
+    assert!(!message.contains("Run `biomcp who sync`"));
+    assert!(message.contains("network access"));
     assert!(message.contains("BIOMCP_WHO_DIR"));
-    assert!(message.contains(&root.path().display().to_string()));
+    assert!(
+        message.contains("place the three WHO Prequalification CSV exports in /tmp/who-pq-data")
+    );
+    // The full sentence also reaches the public surface (ticket 2021).
+    let projection = err.public_projection();
+    assert_eq!(
+        projection.message,
+        format!(
+            "{WHO_PQ_SYNC_FAILURE_REASON_PREFIX} Refresh failed for who_api.csv: WHO Prequalification export headers did not match: who_api.csv: missing required column INN."
+        )
+    );
+    assert_eq!(
+        projection.recovery,
+        Some(who_pq_sync_failure_recovery(root).as_str())
+    );
 }

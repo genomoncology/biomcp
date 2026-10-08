@@ -593,6 +593,11 @@ pub enum DrugSearchPageWithRegion {
         us: RankedDrugSearchPage<DrugSearchResult>,
         eu: RankedDrugSearchPage<EmaDrugSearchResult>,
         who: RankedDrugSearchPage<WhoPrequalificationSearchResult>,
+        /// Why the WHO section is empty instead of a true negative: set when
+        /// the region-less search degraded after a WHO Prequalification sync
+        /// failure, so Markdown, JSON and MCP callers all read the same
+        /// reason (ticket 2021).
+        who_note: Option<String>,
     },
 }
 

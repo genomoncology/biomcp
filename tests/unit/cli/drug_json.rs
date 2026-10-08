@@ -315,6 +315,7 @@ fn drug_search_json_all_region_uses_unified_regions_envelope() {
                 Some(1),
             )
             .into(),
+            who_note: None,
         },
         Some("keytruda"),
         0,
@@ -400,6 +401,7 @@ fn drug_search_json_all_region_keeps_empty_buckets() {
             )
             .into(),
             who: crate::entities::SearchPage::offset(Vec::new(), Some(0)).into(),
+            who_note: None,
         },
         Some("keytruda"),
         0,
@@ -417,6 +419,47 @@ fn drug_search_json_all_region_keeps_empty_buckets() {
         value["_meta"]["next_commands"][0],
         serde_json::Value::String("biomcp get drug Keytruda".into())
     );
+}
+
+#[test]
+fn drug_search_json_all_region_carries_the_who_degrade_note() {
+    // A lost WHO section is not a negative finding: the envelope names the
+    // source and the failing export file the same way the Markdown and MCP
+    // surfaces do (ticket 2021).
+    let json = drug_search_json(
+        crate::entities::drug::DrugSearchPageWithRegion::All {
+            us: crate::entities::SearchPage::offset(Vec::new(), Some(0)).into(),
+            eu: crate::entities::SearchPage::offset(Vec::new(), Some(0)).into(),
+            who: crate::entities::SearchPage::offset(Vec::new(), Some(0)).into(),
+            who_note: Some(
+                "WHO Prequalification data is unavailable (Could not prepare WHO Prequalification data. Refresh failed for who_pq.csv: WHO Prequalification export headers did not match: who_pq.csv: missing required column BASIS OF LISTING. Missing required WHO Prequalification file(s) after the run: who_pq.csv.), so this search omits the WHO section. Run `biomcp who sync` with network access or set BIOMCP_WHO_DIR.".to_string(),
+            ),
+        },
+        Some("zidovudine"),
+        0,
+        5,
+        None,
+    )
+    .expect("degraded all-region drug search json");
+
+    let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+    let note = value["regions"]["who"]["note"]
+        .as_str()
+        .expect("the WHO bucket carries the degrade note");
+    assert!(note.contains("omits the WHO section"));
+    assert!(note.contains("who_pq.csv"));
+    assert!(note.contains("missing required column"));
+    // The honest empty bucket stays an empty bucket; only the note differs.
+    assert_eq!(value["regions"]["who"]["count"], 0);
+    assert_eq!(value["regions"]["who"]["results"], serde_json::json!([]));
+    assert!(
+        value["regions"]["who"]
+            .get("continuation_command")
+            .is_none()
+    );
+    // Other region buckets never grow the field.
+    assert!(value["regions"]["us"].get("note").is_none());
+    assert!(value["regions"]["eu"].get("note").is_none());
 }
 
 #[test]

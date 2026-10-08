@@ -90,6 +90,28 @@ const VACCINE_REQUIRED_HEADERS: &[&str] = &[
 pub(crate) const WHO_PQ_HEADER_MISMATCH_MARKER: &str =
     "WHO Prequalification export headers did not match: ";
 
+/// Message prefix marking the final `who sync` failure. A source whose
+/// reason starts with this sentence carries its reason and suggestion
+/// through the public error surface instead of the generic source-down
+/// line, so the failing file and missing column reach the terminal, JSON
+/// and MCP callers (ticket 2021, mirroring the article deadline prefix).
+pub(crate) const WHO_PQ_SYNC_FAILURE_REASON_PREFIX: &str =
+    "Could not prepare WHO Prequalification data.";
+
+/// Recovery sentence shared by the sync failure error and its public
+/// projection, so every surface states one spelling (ticket 2021). `who
+/// sync` itself just failed, so the sentence names network access and the
+/// manual preseed path instead of the command that failed (1304
+/// post-landing review finding 2). The sentence names the resolved data
+/// directory so the preseed has a destination, as `who_preseed_suggestion`
+/// does (second review finding 17).
+pub(crate) fn who_pq_sync_failure_recovery(root: &Path) -> String {
+    format!(
+        "Retry with network access, place the three WHO Prequalification CSV exports in {}, or set BIOMCP_WHO_DIR.",
+        root.display()
+    )
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum WhoPqSyncMode {
     Auto,
@@ -148,28 +170,54 @@ pub(crate) struct WhoPqClient {
     root: PathBuf,
 }
 
+/// One failed export refresh: the local file name and why the refresh
+/// failed, in the words the public error surface already uses, so every
+/// caller sees the same reason (ticket 2021). The reason carries no
+/// trailing period; sentences that embed it add exactly one.
+#[derive(Debug, Clone)]
+pub(crate) struct WhoPqSyncFileFailure {
+    pub(crate) file: &'static str,
+    pub(crate) reason: String,
+}
+
 /// Per-file outcome of one WHO Prequalification sync run. `refreshed` and
 /// `failed` name the local export files in the order the run attempted them.
 #[derive(Debug, Default)]
 pub(crate) struct WhoPqSyncReport {
     pub(crate) refreshed: Vec<&'static str>,
-    pub(crate) failed: Vec<&'static str>,
+    pub(crate) failed: Vec<WhoPqSyncFileFailure>,
     pub(crate) changed: bool,
 }
 
 impl WhoPqSyncReport {
-    /// One-line outcome used for the stderr summary and the missing-files
-    /// error detail. The sync loop attempts every export, so at least one
-    /// part is always present.
+    /// One-line outcome used for the stderr summary. The sync loop attempts
+    /// every export, so at least one part is always present.
     pub(crate) fn summary_line(&self) -> String {
         let mut parts = Vec::new();
         if !self.refreshed.is_empty() {
             parts.push(format!("refreshed {}", self.refreshed.join(", ")));
         }
         if !self.failed.is_empty() {
-            parts.push(format!("failed {}", self.failed.join(", ")));
+            let failed = self
+                .failed
+                .iter()
+                .map(|failure| failure.file)
+                .collect::<Vec<_>>()
+                .join(", ");
+            parts.push(format!("failed {failed}"));
         }
         format!("WHO Prequalification sync outcome: {}.", parts.join("; "))
+    }
+
+    /// One sentence per failed refresh, naming the file and its reason.
+    /// Feeds the final sync error so the failing file and, for a validation
+    /// failure, the missing column reach every caller (ticket 2021).
+    pub(crate) fn failure_sentences(&self) -> String {
+        self.failed
+            .iter()
+            .map(|failure| format!("Refresh failed for {}: {}.", failure.file, failure.reason))
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 }
 
@@ -1009,13 +1057,22 @@ fn sync_intro(state: SyncState, mode: WhoPqSyncMode) -> &'static str {
 fn who_pq_sync_error(root: &Path, detail: impl Into<String>) -> BioMcpError {
     BioMcpError::SourceUnavailable {
         source_name: SOURCE_NAME.to_string(),
-        reason: format!(
-            "Could not prepare WHO Prequalification data under {}. {}",
-            root.display(),
-            detail.into()
-        ),
-        suggestion: who_preseed_suggestion(root),
+        reason: format!("{WHO_PQ_SYNC_FAILURE_REASON_PREFIX}{}", detail.into()),
+        suggestion: who_pq_sync_failure_recovery(root),
     }
+}
+
+/// The reason one failed refresh carries into the report and the stderr
+/// warning: the error's public message, with its trailing period trimmed so
+/// sentences that embed it add exactly one (ticket 2021). Only words the
+/// public surface already composes appear here; upstream body text never
+/// does.
+fn public_failure_reason(err: &BioMcpError) -> String {
+    err.public_projection()
+        .message
+        .trim_end()
+        .trim_end_matches('.')
+        .to_string()
 }
 
 async fn sync_who_pq_root(
@@ -1071,16 +1128,20 @@ async fn sync_who_pq_root_inner(
         if let Err(err) =
             sync_export(root, file_name, &export_url, max_body_bytes, mode, parser).await
         {
+            let reason = public_failure_reason(&err);
             if has_readable_local_file(&path) {
                 write_stderr_line(&format!(
-                    "Warning: WHO Prequalification refresh failed for {file_name}: {err}. Using existing data.",
+                    "Warning: WHO Prequalification refresh failed for {file_name}: {reason}. Using existing data.",
                 ))?;
             } else {
                 write_stderr_line(&format!(
-                    "Warning: WHO Prequalification refresh failed for {file_name}: {err}.",
+                    "Warning: WHO Prequalification refresh failed for {file_name}: {reason}.",
                 ))?;
             }
-            report.failed.push(file_name);
+            report.failed.push(WhoPqSyncFileFailure {
+                file: file_name,
+                reason,
+            });
         } else {
             report.refreshed.push(file_name);
         }
@@ -1093,11 +1154,14 @@ async fn sync_who_pq_root_inner(
         return Ok(report);
     }
 
+    // The failing file and its reason stay in the final error, not only on
+    // stderr, so terminal, JSON and MCP callers all see them (ticket 2021,
+    // finishing 1304 item 4).
     Err(who_pq_sync_error(
         root,
         format!(
-            "{} Missing required WHO Prequalification file(s) after the run: {}",
-            report.summary_line(),
+            " {} Missing required WHO Prequalification file(s) after the run: {}.",
+            report.failure_sentences(),
             missing.join(", ")
         ),
     ))

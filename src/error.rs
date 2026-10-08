@@ -274,10 +274,13 @@ impl SourceContext {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PublicErrorProjection {
+pub struct PublicErrorProjection<'a> {
     pub message: String,
     pub source: Option<&'static str>,
-    pub recovery: Option<&'static str>,
+    // The recovery borrows from the error: a surface recovery that names a
+    // runtime location (the WHO sync directory) rides on the error's own
+    // suggestion instead of a second static spelling (ticket 2021).
+    pub recovery: Option<&'a str>,
 }
 const EXTERNAL_FAILURE_MESSAGE_MAX_BYTES: usize = 512;
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -644,7 +647,7 @@ impl BioMcpError {
         }
     }
 
-    pub fn public_projection(&self) -> PublicErrorProjection {
+    pub fn public_projection(&self) -> PublicErrorProjection<'_> {
         // The article-search deadline names itself in its reason; carry that
         // sentence and its suggestion instead of the generic source-down
         // message, so an expired search says what happened (ticket 1299).
@@ -655,6 +658,22 @@ impl BioMcpError {
                 message: reason.clone(),
                 source: None,
                 recovery: Some(crate::entities::article::ARTICLE_SEARCH_DEADLINE_SUGGESTION),
+            };
+        }
+        // The WHO Prequalification sync failure names its files, and for a
+        // validation failure the missing column, in its reason; carry that
+        // sentence and its suggestion instead of the generic source-down
+        // message, so a failed export says what happened (ticket 2021,
+        // mirroring the article deadline reason prefix).
+        if let Self::SourceUnavailable {
+            reason, suggestion, ..
+        } = self.underlying()
+            && reason.starts_with(crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX)
+        {
+            return PublicErrorProjection {
+                message: reason.clone(),
+                source: None,
+                recovery: Some(suggestion.as_str()),
             };
         }
         // The citation-evidence surface reports its own refusal summary and

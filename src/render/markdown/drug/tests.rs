@@ -872,6 +872,28 @@ fn drug_search_eu_empty_state_includes_discover_hint() {
 }
 
 #[test]
+fn drug_search_all_region_degraded_who_section_states_the_reason_instead_of_a_bare_negative() {
+    let note = "WHO Prequalification data is unavailable (Could not prepare WHO Prequalification data. Refresh failed for who_pq.csv: WHO Prequalification export headers did not match: who_pq.csv: missing required column BASIS OF LISTING.), so this search omits the WHO section. Run `biomcp who sync` with network access or set BIOMCP_WHO_DIR.";
+    let markdown = drug_search_markdown_all_regions(
+        "zidovudine",
+        &[],
+        Some(0),
+        &[],
+        Some(0),
+        &[],
+        Some(0),
+        &crate::render::markdown::DrugSearchRegionFooters::default(),
+        Some(note),
+    )
+    .expect("markdown");
+
+    assert!(markdown.contains("## WHO (WHO Prequalification)"));
+    assert!(markdown.contains(&format!("> {note}")));
+    // The degraded section must not claim a checked-and-absent finding.
+    assert!(!markdown.contains("No WHO-prequalified drugs found"));
+}
+
+#[test]
 fn drug_search_all_region_empty_state_calls_out_regulatory_absence() {
     let markdown = drug_search_markdown_with_region(
         "indication=Marfan syndrome",
@@ -978,6 +1000,7 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
             ),
             ..Default::default()
         },
+        None,
     )
     .expect("markdown");
 

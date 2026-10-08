@@ -722,10 +722,10 @@ pub async fn search_name_query_with_region(
     } else {
         None
     };
-    let (who_client, who_degraded) = if region.includes_who() {
+    let (who_client, who_note) = if region.includes_who() {
         who_ready_for_region(query, region, WhoPqClient::ready(WhoPqSyncMode::Auto).await)?
     } else {
-        (None, false)
+        (None, None)
     };
 
     match region {
@@ -752,9 +752,10 @@ pub async fn search_name_query_with_region(
                 .search_medicines(&eu_identity, limit, offset)?,
             who: match &who_client {
                 Some(client) => client.search(&who_identity, limit, offset, product_type)?,
-                None if who_degraded => empty_who_search_page(),
+                None if who_note.is_some() => empty_who_search_page(),
                 None => unreachable!("WHO client should exist for all region"),
             },
+            who_note,
         }),
     }
 }
@@ -763,29 +764,33 @@ pub async fn search_name_query_with_region(
 /// when its data is absent and the auto-refresh fails, the search degrades
 /// to the U.S. and EU sections with a visible warning instead of aborting,
 /// the way per-source failures degrade elsewhere (ticket 1304, issue #288).
+/// The returned note names the source and the reason; every caller surface
+/// (stderr, Markdown, JSON, MCP) reads that one sentence (ticket 2021).
 /// An explicit `--region who` search still fails loudly.
 fn who_ready_for_region(
     query: &str,
     region: DrugRegion,
     ready: Result<WhoPqClient, BioMcpError>,
-) -> Result<(Option<WhoPqClient>, bool), BioMcpError> {
+) -> Result<(Option<WhoPqClient>, Option<String>), BioMcpError> {
     match ready {
-        Ok(client) => Ok((Some(client), false)),
+        Ok(client) => Ok((Some(client), None)),
         Err(err) if matches!(region, DrugRegion::All) => {
             warn!(
                 query = %query,
                 "WHO Prequalification auto-sync unavailable for all-region search: {err}"
             );
-            write_search_warning_line(&who_pq_degradation_warning(&err))?;
-            Ok((None, true))
+            let note = who_pq_degradation_note(&err);
+            write_search_warning_line(&format!("Warning: {note}"))?;
+            Ok((None, Some(note)))
         }
         Err(err) => Err(err),
     }
 }
 
-fn who_pq_degradation_warning(err: &BioMcpError) -> String {
+fn who_pq_degradation_note(err: &BioMcpError) -> String {
     format!(
-        "Warning: WHO Prequalification data is unavailable ({err}), so this search omits the WHO section. Run `biomcp who sync` with network access or set BIOMCP_WHO_DIR."
+        "WHO Prequalification data is unavailable ({}), so this search omits the WHO section. Run `biomcp who sync` with network access or set BIOMCP_WHO_DIR.",
+        err.public_projection().message
     )
 }
 
