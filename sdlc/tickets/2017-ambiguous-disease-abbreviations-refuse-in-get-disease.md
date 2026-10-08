@@ -122,7 +122,6 @@ curated abbreviation preferences.
   and the resolution-layer tie-break carried by outside-in pins
   rather than unit pins.
 
-D
 ## Fix-round review
 
 - Code re-review (rebased head 5b2ee79c2): ACCEPT 2026-10-07. All
@@ -171,3 +170,10 @@ recorded honestly: the merge reached main through the coordinator's
 local-chain push before the landcheck run finished — the landcheck at
 d8afa297f completed green afterward, and main's own CI on the landing
 push covers the same tree.
+
+## Delta proof line
+
+The post-review delta (fixture-key pin in the NCI degrade-note test
+per the trial/get pattern; the error.rs repin to its measured 1428
+with ticket-2017 attribution) is ACCEPTed by the delta review of
+2026-10-08; both are part of the landed tree at d8afa297f.
