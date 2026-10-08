@@ -1,6 +1,6 @@
 # 2030 — Held fixture replies wait without blocking test workers
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 

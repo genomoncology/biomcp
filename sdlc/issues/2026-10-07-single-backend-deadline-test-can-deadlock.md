@@ -34,7 +34,7 @@ passes on GitHub's runners the same day (branch CIs and two
 merged-tree runs green). Host-specific intermittence until the stress
 loop says otherwise.
 
-## Gate-evidence rule while this stays open
+## Interim rule (RETIRED 2026-10-08 — ticket 2030 landed)
 
 A landing's yellow evidence is: lint and spec yellow-green, the test
 phase attempted on yellow with any hang forensically captured and
@@ -96,3 +96,12 @@ green. The interim gate-evidence rule's branch-CI clause cannot be
 satisfied while a rerun can land on this deadlock; the coordinator
 needs to treat a cancelled canonical-gates with this signature as
 the known flake, or the cap has to rise until the fix lands.
+
+## Closure (2026-10-08)
+
+Ticket 2030 replaced the blocking receives with async primitives and
+added hang guards naming the test; its branch CI and merged-tree run
+are green, and it landed as 9b23236f8. The interim gate-evidence rule
+above is retired: landings again require the ordinary green gates. The
+pre-existing blocking waits outside the article fixtures (noted in the
+2030 review) stay recorded here for a future ticket.
