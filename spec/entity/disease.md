@@ -174,7 +174,7 @@ disease fixture.
 | myeloma | {"code":"ok","candidates":0,"id":"MONDO:0009693","name":"multiple myeloma"} |
 
 ```bash each_row="Ambiguous Abbreviations Refuse in Get Disease"
-biomcp --json --no-cache get disease '{{query}}' \
+"$BIOMCP_BIN" --json --no-cache get disease '{{query}}' \
   | jq -c 'if .error then {code: .error.code, candidates: ([.error.message | scan("- [^\\n]+")] | length)} else {code: "ok", candidates: 0, id: .id, name: .name} end' \
   | mustmatch like '{{outcome}}'
 ```
