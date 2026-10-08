@@ -62,3 +62,12 @@ without the lane env, which is why earlier checks missed it.
   the lanes table, the 1284 records, and the QA waiver naming Ian's
   dissolution are in; the restored deadline fences pass beside main's
   cursor rewrite.
+
+## Fix2 review fold (2026-10-08)
+
+The Changes line's "that pm lint forbidden-name reads" is amended: the
+delivered design has the repo's own zero-coupling check read the
+untracked declaration; pm lint stays inert on the absent key by
+design. The pm-side change (teach pm to read the local declaration
+file) is handed to the sdlc repo by the inbox message filed today
+(repos/sdlc/inbox/biomcp/2026-10-08-pm-read-the-local-forbidden-name-declaration.md).
