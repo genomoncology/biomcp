@@ -137,12 +137,12 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1201,
+      "baseline_lines": 1203,
       "floor_lines": 1103,
       "authorized_increase": {
-        "delta": 98,
+        "delta": 100,
         "ticket": "1254, 1300, 2031",
-        "reason": "Poison-recovery scoping plus the guarded label fallback call with its oversize and no-match settle reasons, and the label section outcome completion in the base resolution path. Ticket 2031: the openFDA identity fallback for queries no MyChem name matches and the refusal that names what the text search matched.",
+        "reason": "Poison-recovery scoping plus the guarded label fallback call with its oversize and no-match settle reasons, and the label section outcome completion in the base resolution path. Ticket 2031: the openFDA identity fallback for queries no MyChem name matches, the refusal that names what the text search matched, and the discover rescue guard that adopts only name-matched canonical candidates.",
         "removal_condition": "Revisit when the trial-alias cache moves behind a type, the panic arm shrinks, and the label outcome settles in a dedicated section owner module."
       }
     },

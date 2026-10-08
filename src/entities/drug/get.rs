@@ -744,9 +744,11 @@ pub(super) async fn resolve_drug_base(
     if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
         match discover_sparse_drug_rescue(name).await {
             SparseDrugDiscoverRescue::Canonical(candidate) => {
-                if let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
-                    && !fallback_resp.hits.is_empty()
-                {
+                // Adopt the canonical candidate only when its own MyChem
+                // record names it; a sparse card that matched the query by
+                // name stays put instead of becoming a name-only card
+                // rebuilt from another record's text hits (ticket 2031).
+                if let Some(fallback_resp) = named_drug_response(&candidate).await {
                     lookup_name = candidate;
                     resp = fallback_resp;
                     selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
