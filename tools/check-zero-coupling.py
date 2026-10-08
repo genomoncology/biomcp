@@ -73,32 +73,51 @@ def _text(data: bytes) -> str | None:
         return None
 
 
-def declared_names(root: Path) -> tuple[str, ...]:
-    """Private project names `sdlc/pm.json` declares as forbidden.
+DECLARATION_FILES = (
+    "sdlc/pm-forbidden-names.json",
+    "sdlc/pm-forbidden-names.example.json",
+)
 
-    This repository is public, so pm.json carries the names base64-encoded,
-    the same convention the coupling receipts use. A declared value that
-    does not decode is matched literally, so a plaintext declaration still
-    guards. An absent or malformed config declares nothing.
+
+def declared_names(root: Path) -> tuple[str, ...]:
+    """Private project names the local forbidden-name declaration carries.
+
+    This repository is public, so no tracked file may spell a real private
+    name. The declaration lives in two files: the gitignored
+    sdlc/pm-forbidden-names.json holds the real names where they are known,
+    and the checked-in sdlc/pm-forbidden-names.example.json holds inert
+    placeholders that document the shape. Both are read and unioned, so the
+    guard runs everywhere the example ships and tightens wherever the real
+    file exists. Each entry may be base64-encoded, the same convention the
+    coupling receipts use; a declared value that does not decode is matched
+    literally, so a plaintext declaration still guards. An absent or
+    malformed file declares nothing.
     """
-    try:
-        declared = json.loads((root / "sdlc" / "pm.json").read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return ()
-    entries = declared.get("forbiddenNames") if isinstance(declared, dict) else None
-    if not isinstance(entries, list):
-        return ()
     names: list[str] = []
-    for entry in entries:
-        if not isinstance(entry, str) or not entry:
-            continue
+    for relative in DECLARATION_FILES:
         try:
-            name = base64.b64decode(entry.encode("ascii"), validate=True).decode(
-                "utf-8"
+            declared = json.loads(
+                (root / relative).read_text(encoding="utf-8")
             )
-        except (UnicodeError, ValueError):
-            name = entry
-        names.append(name.casefold())
+        except (OSError, json.JSONDecodeError):
+            continue
+        entries = (
+            declared.get("forbiddenNames") if isinstance(declared, dict) else None
+        )
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, str) or not entry:
+                continue
+            try:
+                name = base64.b64decode(entry.encode("ascii"), validate=True).decode(
+                    "utf-8"
+                )
+            except (UnicodeError, ValueError):
+                name = entry
+            name = name.casefold()
+            if name not in names:
+                names.append(name)
     return tuple(names)
 
 

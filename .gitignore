@@ -28,4 +28,8 @@ zig-out/
 # Transient uv lock files from concurrent invocations (cargo package lists them otherwise)
 uv-*.lock
 
+# Local forbidden-name declaration read by tools/check-zero-coupling.py;
+# sdlc/pm-forbidden-names.example.json documents the shape.
+/sdlc/pm-forbidden-names.json
+
 .review-artifacts/

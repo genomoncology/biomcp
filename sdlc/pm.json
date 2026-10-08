@@ -188,12 +188,6 @@
     "pending-review-check.md",
     "review-fixes-for-1251-and-1252.md"
   ],
-  "forbiddenNames": [
-    "YmlvbWNwLXRoaW5rdGhlbi1rYg==",
-    "dGhpbmt0aGVuLXFh",
-    "YmVhdGxlcy1iZW5jaA==",
-    "ZmFjdG9yeTI="
-  ],
   "mailroom": {
     "repo": "sdlc",
     "name": "biomcp"
