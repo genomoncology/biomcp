@@ -103,4 +103,8 @@ Environment note: the full `biomcp-cli` suite currently flakes on cache/network-
   branch no longer conflicts with main; receipts, the size inventory,
   and the ticket union with measured counts kept (gene.rs 3963,
   transform/variant.rs 1496; main's 1_405 package count holds because
-  `testdata/` is package-excluded). Re-review of this round pending.
+  `testdata/` is package-excluded). Re-review of this round: ACCEPT 2026-10-08 (fresh reviewer, head
+  7b0e8bfd6). The receipts delta is exactly the 12 real entry lines in
+  main's formatting; the hint carries the dropped-condition alternative
+  with the refused path unchanged; the review history parses; the
+  inventory unions are measured.
