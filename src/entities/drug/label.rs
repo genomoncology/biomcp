@@ -747,7 +747,6 @@ pub(super) enum LabelLookup {
     /// failure.
     ElementsSearchTooLarge,
 }
-
 /// Whether an openFDA error is the response-body read limit, including the
 /// source-context wrapping the transport layers add.
 fn is_body_limit_error(error: &BioMcpError) -> bool {
@@ -758,24 +757,161 @@ fn is_body_limit_error(error: &BioMcpError) -> bool {
     }
 }
 
-/// Field-scoped label lookup with the sparse-metadata elements fallback.
+/// Whether a product name names a combination: a second ingredient joined
+/// by "and" or a comma-separated list. Salts and hydrates ("niraparib
+/// tosylate monohydrate", "erlotinib hydrochloride") are single-ingredient
+/// qualified names, not combinations (ticket 2043).
+fn is_combination_product_name(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    lower.contains(" and ") || lower.contains(',')
+}
+
+/// The plain ingredient of an under-the-skin pairing: subcutaneous antibody
+/// products carry one "ingredient and hyaluronidase-xxxx" generic name, and
+/// the ingredient before "and" is the drug itself ("daratumumab and
+/// hyaluronidase-fihj" names daratumumab). A comma-list combination names
+/// no single plain ingredient and returns the whole name (ticket 2043).
+pub(super) fn plain_paired_ingredient_name(name: &str) -> &str {
+    let lower = name.to_ascii_lowercase();
+    match lower.find(" and ") {
+        Some(index) => name[..index].trim(),
+        None => name.trim(),
+    }
+}
+
+/// The rank tiers of one label result for the requested drug (ticket
+/// 2043). The request decides between the two sides of the rule: a brand
+/// query takes the record whose own brand name equals it, and an ingredient
+/// query takes the plain single-ingredient product's record, never a
+/// combination, biosimilar or under-the-skin form.
+const LABEL_RANK_BRAND_MATCH: u8 = 3;
+const LABEL_RANK_PLAIN_INGREDIENT: u8 = 2;
+const LABEL_RANK_QUALIFIED_FORM: u8 = 1;
+const LABEL_RANK_OPENFDA_ORDER: u8 = 0;
+
+fn generic_name_matches(result: &serde_json::Value, matches: impl Fn(&str) -> bool) -> bool {
+    extract_openfda_values_from_result(result, "generic_name")
+        .iter()
+        .any(|name| {
+            let lower = name.trim().to_ascii_lowercase();
+            !lower.is_empty() && matches(&lower)
+        })
+}
+
+fn label_result_rank(result: &serde_json::Value, requested: &str, card: &str) -> u8 {
+    let requested = requested.trim().to_ascii_lowercase();
+    let card = card.trim().to_ascii_lowercase();
+    if extract_openfda_values_from_result(result, "brand_name")
+        .iter()
+        .any(|brand| brand.trim().to_ascii_lowercase() == requested)
+    {
+        return LABEL_RANK_BRAND_MATCH;
+    }
+    if !requested.is_empty()
+        && generic_name_matches(result, |name| {
+            !is_combination_product_name(name) && (name == requested || name == card)
+        })
+    {
+        return LABEL_RANK_PLAIN_INGREDIENT;
+    }
+    if !requested.is_empty()
+        && generic_name_matches(result, |name| {
+            !is_combination_product_name(name)
+                && (name.starts_with(&format!("{requested} "))
+                    || name.starts_with(&format!("{requested}-"))
+                    || name.starts_with(&format!("{card} "))
+                    || name.starts_with(&format!("{card}-")))
+        })
+    {
+        return LABEL_RANK_QUALIFIED_FORM;
+    }
+    LABEL_RANK_OPENFDA_ORDER
+}
+
+/// Choose the response's label record for the requested drug: the
+/// highest-ranked result moves to the front and the rest keep openFDA's
+/// order behind it, so every downstream reader of `results[0]` sees the
+/// chosen record. Returns the reordered response with the chosen record's
+/// rank (ticket 2043).
+fn choose_label_response(
+    response: serde_json::Value,
+    requested: &str,
+    card: &str,
+) -> Option<(serde_json::Value, u8)> {
+    let results = response.get("results")?.as_array()?.clone();
+    if results.is_empty() {
+        return None;
+    }
+    let mut best_index = 0;
+    let mut best_rank = LABEL_RANK_OPENFDA_ORDER;
+    for (index, result) in results.iter().enumerate() {
+        let rank = label_result_rank(result, requested, card);
+        if rank > best_rank {
+            best_rank = rank;
+            best_index = index;
+        }
+    }
+    let mut reordered = results;
+    let chosen = reordered.remove(best_index);
+    reordered.insert(0, chosen);
+    let mut chosen_response = response;
+    chosen_response["results"] = serde_json::Value::Array(reordered);
+    Some((chosen_response, best_rank))
+}
+
+/// Field-scoped label lookup with the two-sided label choice and the
+/// sparse-metadata elements fallback (tickets 2043 and 1300).
 ///
-/// When the `openfda.generic_name`/`brand_name` query returns no match, fall
-/// back to a phrase search of the records' own `spl_product_data_elements`
-/// and keep only results whose own identity matches. `NoSplRecord` means
-/// openFDA answered and no SPL record for the drug exists; real fetch errors
-/// surface as `Err`, except the oversize elements response, which settles as
-/// `ElementsSearchTooLarge` because no retry can succeed.
+/// The request's own name runs first, the card's canonical name second,
+/// and a brand-equal or plain-ingredient record locks the answer. When the
+/// newest-first page holds only biosimilars and qualified forms, the
+/// exact-field escalation asks for the plain product's own record
+/// directly; a surviving qualified form (a salt or a proper-name suffix
+/// such as "amivantamab-vmjw") serves next, and openFDA's own order is the
+/// last resort, so a brand keeps a biosimilar's label only when nothing
+/// else answers. `NoSplRecord` means openFDA answered and no SPL record for
+/// the drug exists; real fetch errors surface as `Err`, except the oversize
+/// elements response, which settles as `ElementsSearchTooLarge` because no
+/// retry can succeed.
 pub(super) async fn lookup_label_response(
     client: &OpenFdaClient,
-    name: &str,
+    requested_name: &str,
+    card_name: &str,
 ) -> Result<LabelLookup, BioMcpError> {
-    if let Some(response) = client.label_search(name).await?
+    let mut fallback: Option<serde_json::Value> = None;
+    let mut queries: Vec<&str> = Vec::new();
+    for query in [requested_name, card_name] {
+        if !queries
+            .iter()
+            .any(|seen| seen.trim().eq_ignore_ascii_case(query.trim()))
+        {
+            queries.push(query);
+        }
+    }
+    for query in queries {
+        let Some(response) = client.label_search(query).await? else {
+            continue;
+        };
+        let Some((chosen, rank)) = choose_label_response(response, requested_name, card_name)
+        else {
+            continue;
+        };
+        if rank >= LABEL_RANK_PLAIN_INGREDIENT {
+            return Ok(LabelLookup::Response(chosen));
+        }
+        fallback = fallback.or(Some(chosen));
+    }
+    if let Ok(Some(response)) = client
+        .label_generic_exact_search(&card_name.trim().to_ascii_uppercase())
+        .await
         && label_response_has_result(&response)
     {
         return Ok(LabelLookup::Response(response));
     }
-    let elements = match client.label_elements_search(name).await {
+    if let Some(fallback) = fallback {
+        return Ok(LabelLookup::Response(fallback));
+    }
+    let elements = match client.label_elements_search(card_name).await {
         Ok(Some(response)) => response,
         Ok(None) => return Ok(LabelLookup::NoSplRecord),
         Err(error) => {
@@ -786,7 +922,7 @@ pub(super) async fn lookup_label_response(
             };
         }
     };
-    Ok(filter_label_response_to_identity(&elements, name)
+    Ok(filter_label_response_to_identity(&elements, card_name)
         .map_or(LabelLookup::NoSplRecord, LabelLookup::Response))
 }
 

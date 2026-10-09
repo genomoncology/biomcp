@@ -18,7 +18,7 @@ use crate::transform;
 use super::label::{
     ELEMENTS_SEARCH_OVERSIZE_NOTE, LABEL_UNAVAILABLE_MESSAGE, LabelLookup, NO_LABEL_TEXT_NOTE,
     NO_SPL_RECORD_NOTE, extract_inline_label, extract_label_boxed_warning, extract_label_set_id,
-    extract_label_warnings_text, lookup_label_response,
+    extract_label_warnings_text, lookup_label_response, plain_paired_ingredient_name,
 };
 use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, map_drugsfda_approvals, orphan_aliases,
@@ -265,6 +265,7 @@ pub(super) struct ResolvedDrugBase {
     selected_hits: Vec<MyChemHit>,
 }
 
+#[derive(Clone)]
 enum SparseDrugDiscoverRescue {
     Canonical(String),
     AliasFallback,
@@ -279,7 +280,9 @@ enum SparseDrugDiscoverRescue {
 /// some label records carry no openFDA identity block at all, so this
 /// path can miss (a brand MyChem itself carries, such as TAGRISSO on
 /// `drugcentral.synonyms`/`ndc.proprietaryname`, resolves through the
-/// MyChem record instead).
+/// MyChem record instead). A brand whose only current label is an
+/// under-the-skin pairing resolves to the plain ingredient that pairing
+/// names (Darzalex to daratumumab, ticket 2043).
 async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
     let client = OpenFdaClient::new().ok()?;
     let response = client.label_search(name).await.ok()??;
@@ -287,7 +290,8 @@ async fn openfda_label_identity_candidate(name: &str) -> Option<String> {
         .into_iter()
         .next()
         .map(|row| row.name)
-        .filter(|candidate| !candidate.eq_ignore_ascii_case(name))
+        .map(|generic| plain_paired_ingredient_name(&generic).to_string())
+        .filter(|candidate| !candidate.is_empty() && !candidate.eq_ignore_ascii_case(name))
 }
 
 /// A MyChem response for `name` whose own names match `name`: `None` when
@@ -368,6 +372,22 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
     }
 
     SparseDrugDiscoverRescue::AliasFallback
+}
+
+/// The discover rescue for one query, run at most once per card lookup:
+/// the name-miss path and the sparse-card path can both need it, and a
+/// refusal that runs both must not pay the OLS4 lookup twice (ticket
+/// 2043).
+async fn cached_discover_rescue(
+    cache: &mut Option<SparseDrugDiscoverRescue>,
+    name: &str,
+) -> SparseDrugDiscoverRescue {
+    if let Some(cached) = cache {
+        return cached.clone();
+    }
+    let value = discover_sparse_drug_rescue(name).await;
+    *cache = Some(value.clone());
+    value
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -707,6 +727,7 @@ pub(super) async fn resolve_drug_base(
     }
 
     let mut selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    let mut discover_rescue: Option<SparseDrugDiscoverRescue> = None;
     if selected.is_empty() {
         // The MyChem full-text query matched only other drugs' records. The
         // query may still be a real brand whose identity openFDA knows, so
@@ -730,7 +751,7 @@ pub(super) async fn resolve_drug_base(
                 // label and lives in MyChem only on a record with no name,
                 // so resolve it through the guarded discover rescue before
                 // refusing (ticket 2037).
-                let rescue = match discover_sparse_drug_rescue(name).await {
+                let rescue = match cached_discover_rescue(&mut discover_rescue, name).await {
                     SparseDrugDiscoverRescue::Canonical(candidate) => {
                         named_drug_response(&candidate)
                             .await
@@ -770,7 +791,7 @@ pub(super) async fn resolve_drug_base(
     }
 
     if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
-        match discover_sparse_drug_rescue(name).await {
+        match cached_discover_rescue(&mut discover_rescue, name).await {
             SparseDrugDiscoverRescue::Canonical(candidate) => {
                 // Adopt the canonical candidate only when its own MyChem
                 // record names it; a sparse card that matched the query by
@@ -795,8 +816,11 @@ pub(super) async fn resolve_drug_base(
         // A failed label fetch degrades the label section to an unavailable
         // outcome instead of failing the card; sparse-metadata misses resolve
         // through the guarded identity-field fallback in `lookup_label_response`.
+        // The label must match the brand or plain ingredient the user asked
+        // for, so the request's own name travels with the card's canonical
+        // name (ticket 2043).
         match OpenFdaClient::new() {
-            Ok(client) => match lookup_label_response(&client, &drug.name).await {
+            Ok(client) => match lookup_label_response(&client, name, &drug.name).await {
                 Ok(LabelLookup::Response(response)) => label_response_opt = Some(response),
                 Ok(LabelLookup::NoSplRecord) => {}
                 Ok(LabelLookup::ElementsSearchTooLarge) => label_elements_oversize = true,

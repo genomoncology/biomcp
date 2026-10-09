@@ -137,13 +137,13 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1260,
+      "baseline_lines": 1284,
       "floor_lines": 1103,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038",
-        "delta": 157,
-        "reason": "The 2038 code lane: the WHO card degrade and its note seam, the error projection split, the serialized who_note, the provenance surfaces, the projected recovery constant, and the explicit-filter hint threading",
-        "removal_condition": "the WHO terminal-only rule and the shared day rule are retired"
+        "ticket": "1254, 1300, 2031, 2037, 2038, 2043",
+        "delta": 181,
+        "reason": "The label lookup carries the requested name beside the card name, the identity candidate strips an under-the-skin pairing to its plain ingredient, and the discover rescue runs at most once per card through a memoized cache.",
+        "removal_condition": "Shrink when the label choice moves into label.rs entirely and the rescue cache folds into the discover client."
       }
     },
     {
@@ -515,13 +515,13 @@
     },
     {
       "path": "src/transform/drug.rs",
-      "baseline_lines": 1310,
+      "baseline_lines": 1324,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1254, 1300, 2031, 2037, 2038",
-        "delta": 310,
-        "reason": "The 2038 code lane: the WHO card degrade and its note seam, the error projection split, the serialized who_note, the provenance surfaces, the projected recovery constant, and the explicit-filter hint threading",
-        "removal_condition": "the WHO terminal-only rule and the shared day rule are retired"
+        "ticket": "1254, 1300, 2031, 2037, 2038, 2043",
+        "delta": 324,
+        "reason": "Combination names no longer count as qualified forms or canonical names of one requested ingredient.",
+        "removal_condition": "Shrink when the name-matching helpers split into their own module."
       }
     },
     {
