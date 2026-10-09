@@ -365,13 +365,13 @@ jobs:
       - name: Run the wheel inside the manylinux 2_28 container
         if: runner.os == 'Linux'
         run: |
-          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" -e EXPECTED_VERSION="${TAG#v}" "${{ matrix.container }}" bash -euo pipefail -c '
+          docker run --rm -v "$RUNNER_TEMP/wheel:/wheel:ro" "${{ matrix.container }}" bash -euo pipefail -c '
             /opt/python/cp312-cp312/bin/python -m pip install --no-cache-dir /wheel/*.whl
             printed="$(/opt/python/cp312-cp312/bin/biomcp --version)"
             printf "%s\n" "$printed"
             case "$printed" in
-              "biomcp ${EXPECTED_VERSION} "*) ;;
-              *) echo "wheel --version must print biomcp ${EXPECTED_VERSION}, got: $printed" >&2; exit 1 ;;
+              "biomcp '"${TAG#v}"' "*) ;;
+              *) echo "wheel --version must print biomcp '"${TAG#v}"', got: $printed" >&2; exit 1 ;;
             esac
             stats="$(/opt/python/cp312-cp312/bin/biomcp cache stats --json)"
             case "$stats" in
