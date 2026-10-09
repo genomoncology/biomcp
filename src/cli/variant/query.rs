@@ -108,6 +108,13 @@ pub(super) enum GeneFirstNote {
     Routed { parsed: String, alternative: String },
 }
 
+/// The explicit filter flags a gene-first phrase keeps, stated in the
+/// command line's own spelling (`--significance benign`, `--max-frequency
+/// 0.01`, ...) so a zero-row hint repeats exactly what the caller typed
+/// (ticket 2022's promise; ticket 2038 finding 7 restored it). Used behind
+/// a reference, like a slice.
+pub(super) type ExplicitFilterFlags = [(&'static str, String)];
+
 /// Apply the gene-symbol oracle verdict to a gene-first candidate (tickets
 /// 1301 and 2022).
 ///
@@ -117,7 +124,8 @@ pub(super) enum GeneFirstNote {
 /// whole-phrase condition search and remember the phrase so a zero-row
 /// result can print the explicit `-g`/`--condition` form. Both branches
 /// attach the leftover `--hgvsp` and `--consequence` flags exactly as the
-/// whole-phrase fallthrough did, so no explicit filter is dropped.
+/// whole-phrase fallthrough did, and `explicit_filters` carries every other
+/// explicit flag into the hints, so no explicit filter is dropped.
 pub(super) fn apply_gene_first_routing(
     gene: String,
     protein_change: Option<String>,
@@ -125,17 +133,22 @@ pub(super) fn apply_gene_first_routing(
     confirmed_symbol: Option<String>,
     hgvsp_flag: Option<String>,
     consequence_flag: Option<String>,
+    explicit_filters: &ExplicitFilterFlags,
 ) -> (ResolvedVariantQuery, Option<GeneFirstNote>) {
     match confirmed_symbol {
         Some(symbol) => {
             let parsed = gene_first_parsed_form(&symbol, protein_change.as_deref(), &condition);
             let hgvsp = protein_change.or(hgvsp_flag);
             // The alternative keeps every filter the routed search applied
-            // except the condition, explicit `--hgvsp` and `--consequence`
-            // flags included, so it differs from the command that ran by
-            // exactly the dropped condition (ticket 2033, finding 13).
-            let alternative =
-                gene_first_alternative_form(&symbol, hgvsp.as_deref(), consequence_flag.as_deref());
+            // except the condition, parsed and explicit flags included, so
+            // it differs from the command that ran by exactly the dropped
+            // condition (ticket 2033, finding 13; ticket 2038 finding 7).
+            let alternative = gene_first_alternative_form(
+                &symbol,
+                hgvsp.as_deref(),
+                consequence_flag.as_deref(),
+                explicit_filters,
+            );
             (
                 VariantSearchPlan::finalize(ResolvedVariantQuery {
                     gene: Some(symbol),
@@ -186,25 +199,51 @@ pub(super) fn gene_first_parsed_form(gene: &str, hgvsp: Option<&str>, condition:
 }
 
 /// The explicit form a routed gene-first phrase searched as.
-pub(super) fn gene_first_working_form(gene: &str, hgvsp: Option<&str>, condition: &str) -> String {
+pub(super) fn gene_first_working_form(
+    gene: &str,
+    hgvsp: Option<&str>,
+    condition: &str,
+    explicit_filters: &ExplicitFilterFlags,
+) -> String {
     let mut command =
         crate::next_command::NextCommand::biomcp().args(["search", "variant", "-g", gene]);
     if let Some(hgvsp) = hgvsp {
         command = command.args(["--hgvsp", hgvsp]);
     }
-    command.args(["--condition", condition]).render_shell()
+    command = command.args(["--condition", condition]);
+    append_explicit_filters(command, explicit_filters).render_shell()
+}
+
+/// Append the caller's explicit filter flags to a hint command, in flag
+/// spelling, so the hint repeats every filter the search applied. An empty
+/// value renders the flag alone (`--lof`).
+fn append_explicit_filters(
+    command: crate::next_command::NextCommand,
+    explicit_filters: &ExplicitFilterFlags,
+) -> crate::next_command::NextCommand {
+    let mut command = command;
+    for (flag, value) in explicit_filters {
+        if value.is_empty() {
+            command = command.arg(*flag);
+        } else {
+            command = command.args([*flag, value.as_str()]);
+        }
+    }
+    command
 }
 
 /// The alternative a routed zero-row search suggests: every filter the
 /// routed search applied, with the condition dropped. The routed search
 /// already applied every parsed filter, so repeating them repeats the empty
 /// result; the resolved `--hgvsp` filter and any explicit `--consequence`
-/// flag stay, so the command differs by exactly the dropped condition
-/// (tickets 2022 and 2033).
+/// flag stay beside the caller's other explicit filters, so the command
+/// differs by exactly the dropped condition (tickets 2022, 2033 and 2038
+/// finding 7).
 pub(super) fn gene_first_alternative_form(
     gene: &str,
     hgvsp: Option<&str>,
     consequence: Option<&str>,
+    explicit_filters: &ExplicitFilterFlags,
 ) -> String {
     let mut command =
         crate::next_command::NextCommand::biomcp().args(["search", "variant", "-g", gene]);
@@ -214,7 +253,7 @@ pub(super) fn gene_first_alternative_form(
     if let Some(consequence) = consequence {
         command = command.args(["--consequence", consequence]);
     }
-    command.render_shell()
+    append_explicit_filters(command, explicit_filters).render_shell()
 }
 
 const VARIANT_QUERY_GENE_ROUTING_ENV: &str = "BIOMCP_VARIANT_QUERY_GENE_ROUTING";
