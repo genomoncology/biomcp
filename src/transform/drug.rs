@@ -559,6 +559,13 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
 /// drug the query actually matched (ticket 2031). Brand names are not
 /// candidates; a brand that matches while no canonical name does falls back
 /// to the generic identity instead.
+fn canonical_name_matching_request(hit: &MyChemHit, requested: &str) -> Option<String> {
+    let target = normalize_name(requested);
+    hit_canonical_names(hit)
+        .into_iter()
+        .find(|name| name_matches_requested(name, &target))
+}
+
 /// The nonproprietary name MyChem pairs with the requested brand on one
 /// NDC row. MyChem merges many products' rows into one ingredient record,
 /// and the rows themselves carry the pairing: proprietaryname ZEJULA sits on
@@ -583,27 +590,51 @@ fn brand_paired_nonproprietary_name(hit: &MyChemHit, requested: &str) -> Option<
     })
 }
 
-fn canonical_name_matching_request(hit: &MyChemHit, requested: &str) -> Option<String> {
-    let target = normalize_name(requested);
-    hit_canonical_names(hit)
-        .into_iter()
-        .find(|name| name_matches_requested(name, &target))
+/// A hit with its own stable identifier: an identity-bearing drug record,
+/// not a bare NDC product row. Only such a record's pairing may name the
+/// card (ticket 2037): a naked product row shares a record with nothing,
+/// so its row name arrives through the generic fallback anyway, and letting
+/// it rename the card would take a salt form such as "amivantamab-vmjw"
+/// from a Rybrevant row over the identity record's own name.
+fn hit_has_identity(hit: &MyChemHit) -> bool {
+    hit.drugbank
+        .as_ref()
+        .and_then(|d| d.id.as_deref())
+        .is_some()
+        || hit
+            .chembl
+            .as_ref()
+            .and_then(|c| c.molecule_chembl_id.as_deref())
+            .is_some()
+        || unii_id(hit).is_some()
 }
 
 pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
-    let mut name = hits
+    // Ticket 2037: a brand query names the card for the drug its own
+    // product row pairs. A canonical name that merely equals the brand
+    // string (a CHEBI record named "Lonsurf") or no canonical match at all
+    // yields to that pairing; a canonical name that extends the query
+    // ("imatinib mesylate" for imatinib) keeps naming the card, and the
+    // pairing counts only on identity-bearing records.
+    let requested = normalize_name(requested_name);
+    let canonical = hits
         .iter()
-        .find_map(|hit| canonical_name_matching_request(hit, requested_name))
-        .or_else(|| {
-            hits.iter()
-                .find_map(|hit| brand_paired_nonproprietary_name(hit, requested_name))
-        })
-        .or_else(|| {
-            hits.iter()
-                .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
-        })
-        .or_else(|| hits.iter().find_map(|hit| best_name_from_hit(hit)))
-        .unwrap_or_else(|| normalize_name(requested_name));
+        .find_map(|hit| canonical_name_matching_request(hit, requested_name));
+    let brand_paired = hits.iter().find_map(|hit| {
+        hit_has_identity(hit)
+            .then(|| brand_paired_nonproprietary_name(hit, requested_name))
+            .flatten()
+    });
+    let mut name = match (canonical, brand_paired) {
+        (Some(canonical), _) if canonical != requested => canonical,
+        (_, Some(brand_paired)) => brand_paired,
+        (Some(canonical), None) => canonical,
+        (None, None) => hits
+            .iter()
+            .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
+            .or_else(|| hits.iter().find_map(|hit| best_name_from_hit(hit)))
+            .unwrap_or_else(|| requested.clone()),
+    };
     let mut drugbank_id: Option<String> = None;
     let mut chembl_id: Option<String> = None;
     let mut unii: Option<String> = None;

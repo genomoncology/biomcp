@@ -654,12 +654,14 @@ fn keytruda_keeps_the_pembrolizumab_card_name() {
     assert_eq!(drug.name, "pembrolizumab");
     assert!(
         !drug.name.contains("berahyaluronidase"),
-        "the card keeps the plain product name the KEYTRUDA row pairs"
+        "the single-row record keeps its own established name, never the QLEX row's"
     );
 }
 
 /// `q=Lonsurf` recorded 2026-10-09 (ticket 2037): both ingredient records
-/// carry Lonsurf product rows. Fieldless hits removed.
+/// carry Lonsurf product rows, and a bare CHEBI record named "Lonsurf"
+/// also matches the brand exactly, so the exact tier holds all three.
+/// NDC rows deduplicated to first occurrences; the fieldless hit removed.
 pub(crate) const LONSURF_CAPTURE: &str = r#"
 {
   "total": 4,
@@ -668,6 +670,10 @@ pub(crate) const LONSURF_CAPTURE: &str = r#"
       "_id": "VSQQQLOSPVPRAZ-RRKCRQDMSA-N",
       "_score": 23.3516,
       "drugbank": {"id": "DB00432", "name": "Trifluridine"},
+      "chembl": {"molecule_chembl_id": "CHEMBL1129", "pref_name": "TRIFLURIDINE"},
+      "unii": {"unii": "RMW9V5RW38", "display_name": "TRIFLURIDINE"},
+      "chebi": {"name": "trifluridine"},
+      "gtopdb": {"name": "trifluridine"},
       "ndc": [
         {"nonproprietaryname": "trifluridine and tipiracil", "proprietaryname": "LONSURF"},
         {"nonproprietaryname": "trifluridine", "proprietaryname": "Trifluridine"}
@@ -678,6 +684,11 @@ pub(crate) const LONSURF_CAPTURE: &str = r#"
       "_score": 23.344343,
       "drugbank": {"id": "DB09343", "name": "Tipiracil"},
       "ndc": {"nonproprietaryname": "trifluridine and tipiracil", "proprietaryname": "LONSURF"}
+    },
+    {
+      "_id": "CHEBI:90876",
+      "_score": 17.141884,
+      "chebi": {"name": "Lonsurf"}
     }
   ]
 }
@@ -685,13 +696,51 @@ pub(crate) const LONSURF_CAPTURE: &str = r#"
 
 #[test]
 fn lonsurf_says_trifluridine_and_tipiracil_again() {
-    // Ticket 2037: the brand card takes the established name the LONSURF
-    // rows pair, which names the combination product, not the bare brand.
+    // Ticket 2037: the exact tier also holds a bare CHEBI record whose own
+    // canonical name is the brand string "Lonsurf", and that name must not
+    // win: the card takes the established name the LONSURF rows pair on the
+    // identity-bearing records.
     let capture = hits(serde_json::from_str(LONSURF_CAPTURE).expect("valid capture"));
     let selected = select_hits_for_name(&capture, "lonsurf");
-    assert_eq!(selected.len(), 2);
+    assert_eq!(selected.len(), 3);
     let drug = merge_mychem_hits(&selected, "lonsurf");
     assert_eq!(drug.name, "trifluridine and tipiracil");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB00432"));
+}
+
+/// `q=Rybrevant` recorded 2026-10-09 (ticket 2037): the exact tier holds the
+/// identity-bearing amivantamab record, whose DrugCentral synonyms carry the
+/// brand, beside a bare NDC product row that pairs the brand with
+/// "amivantamab-vmjw". The naked row must not rename the card that the
+/// identity record already names.
+pub(crate) const RYBREVANT_CAPTURE: &str = r#"
+{
+  "total": 7,
+  "hits": [
+    {
+      "_id": "0JSR7Z0NB6",
+      "_score": 16.336586,
+      "drugbank": {"id": "DB16695", "name": "Amivantamab"},
+      "unii": {"unii": "0JSR7Z0NB6", "display_name": "AMIVANTAMAB"},
+      "drugcentral": {"synonyms": ["amivantamab", "amivantamab-vmjw", "rybrevant"]}
+    },
+    {
+      "_id": "57894-501",
+      "_score": 17.143324,
+      "ndc": {"nonproprietaryname": "amivantamab-vmjw", "proprietaryname": "Rybrevant"}
+    }
+  ]
+}
+"#;
+
+#[test]
+fn rybrevant_keeps_the_identity_records_name_over_the_naked_product_row() {
+    let capture = hits(serde_json::from_str(RYBREVANT_CAPTURE).expect("valid capture"));
+    let selected = select_hits_for_name(&capture, "rybrevant");
+    assert_eq!(selected.len(), 2);
+    let drug = merge_mychem_hits(&selected, "rybrevant");
+    assert_eq!(drug.name, "amivantamab");
+    assert_eq!(drug.drugbank_id.as_deref(), Some("DB16695"));
 }
 
 /// The osimertinib record carrying its brand only as a DrugCentral synonym:
