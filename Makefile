@@ -37,7 +37,7 @@ prepare-test: prepare-routine-test-tmp prepare-test-contracts
 
 test:
 	$(MAKE) prepare-test
-	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)"
+	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)" --config-file "$(CURDIR)/.config/nextest.toml"
 	$(MAKE) test-contracts-prepared
 
 prepare-test-contracts:
