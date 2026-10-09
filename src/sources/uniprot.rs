@@ -450,6 +450,19 @@ pub struct UniProtPdbStructure {
 }
 
 impl UniProtRecord {
+    /// The MANE Select RefSeq mRNA accession this record's canonical
+    /// sequence corresponds to, with its current version, from the record's
+    /// MANE-Select cross-reference (ticket 2036). UniProt's RefSeq entries
+    /// carry no MANE status of their own, so this cross-reference is the
+    /// record's only MANE statement.
+    pub fn mane_select_transcript(&self) -> Option<String> {
+        self.uni_prot_kb_cross_references
+            .iter()
+            .find(|xref| xref.database.as_deref() == Some("MANE-Select"))
+            .and_then(|xref| cross_ref_property(xref, "RefSeqNucleotideId"))
+            .filter(|value| value.starts_with("NM_"))
+    }
+
     pub fn display_name(&self) -> String {
         if let Some(desc) = self.protein_description.as_ref() {
             if let Some(value) = desc

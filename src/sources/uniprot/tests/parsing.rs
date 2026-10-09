@@ -140,6 +140,78 @@ fn record_helpers_extract_display_function_and_structures() {
 }
 
 #[test]
+fn record_mane_select_transcript_reads_the_committed_capture() {
+    // The minimized P04637 capture (uniprot/get_p04637_20261008.json) keeps
+    // the record's MANE-Select cross-reference: its RefSeqNucleotideId names
+    // the MANE transcript with the current version while MyVariant's SnpEff
+    // build still headlines NM_000546.5 (ticket 2036).
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/uniprot/get_p04637_20261008.json"
+    ));
+    let record: UniProtRecord = serde_json::from_slice(bytes).expect("capture parses");
+    assert_eq!(record.primary_accession, "P04637");
+    assert_eq!(
+        record.mane_select_transcript().as_deref(),
+        Some("NM_000546.6")
+    );
+    let residue = record
+        .sequence
+        .as_ref()
+        .and_then(|sequence| sequence.value.as_deref())
+        .and_then(|value| value.chars().nth(182));
+    assert_eq!(residue, Some('S'));
+}
+
+#[test]
+fn record_mane_select_transcript_takes_only_the_refseq_nucleotide_id() {
+    let record: UniProtRecord = serde_json::from_value(serde_json::json!({
+        "primaryAccession": "P38398",
+        "uniProtKBCrossReferences": [
+            {"database": "RefSeq", "id": "NP_009225.1", "properties": [
+                {"key": "NucleotideSequenceId", "value": "NM_007294.4"}
+            ]},
+            {"database": "MANE-Select", "id": "ENST00000357654.9", "properties": [
+                {"key": "ProteinId", "value": "ENSP00000350283.3"},
+                {"key": "RefSeqProteinId", "value": "NP_009225.1"},
+                {"key": "RefSeqNucleotideId", "value": "NM_007294.4"}
+            ]}
+        ]
+    }))
+    .unwrap();
+    // The RefSeq mRNA property is the MANE fact; the Ensembl id and the
+    // protein accession stay out of the answer.
+    assert_eq!(
+        record.mane_select_transcript().as_deref(),
+        Some("NM_007294.4")
+    );
+
+    let without_mane: UniProtRecord = serde_json::from_value(serde_json::json!({
+        "primaryAccession": "P15056",
+        "uniProtKBCrossReferences": [
+            {"database": "RefSeq", "id": "NP_004324.1", "properties": [
+                {"key": "NucleotideSequenceId", "value": "NM_004333.6"}
+            ]}
+        ]
+    }))
+    .unwrap();
+    assert_eq!(without_mane.mane_select_transcript(), None);
+
+    // A MANE-Select row without an NM_ RefSeq mRNA names no transcript the
+    // SnpEff annotations could match, so it marks nothing.
+    let without_refseq_mrna: UniProtRecord = serde_json::from_value(serde_json::json!({
+        "primaryAccession": "P99999",
+        "uniProtKBCrossReferences": [
+            {"database": "MANE-Select", "id": "ENST9999999999.1", "properties": [
+                {"key": "RefSeqNucleotideId", "value": "XM_999999.1"}
+            ]}
+        ]
+    }))
+    .unwrap();
+    assert_eq!(without_refseq_mrna.mane_select_transcript(), None);
+}
+
+#[test]
 fn protein_isoforms_prefer_synonyms_and_track_displayed_status() {
     let record: UniProtRecord = serde_json::from_value(serde_json::json!({
         "primaryAccession": "P01116",
