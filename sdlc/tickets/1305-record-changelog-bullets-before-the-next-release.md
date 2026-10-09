@@ -1,6 +1,6 @@
 # 1305 — Record changelog bullets before the next release
 
-Status: OPEN.
+Status: complete.
 Milestone: 0.9.2
 
 ## Outcome
