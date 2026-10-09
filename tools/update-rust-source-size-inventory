@@ -85,6 +85,28 @@ def main() -> int:
                     },
                 }
             )
+        elif lines == baseline and args.authorize == path and baseline > floor:
+            # Reason-only re-authorization (ticket 2044): a file can sit at
+            # its pinned baseline while its recorded history is wrong — an
+            # inline rewrite of this inventory once replaced every earlier
+            # ticket's reason and removal condition with one shared
+            # sentence. Re-running --authorize re-stamps the metadata
+            # without moving the baseline or the floor, so a history repair
+            # stays a tool edit rather than a hand edit. A file at its floor
+            # carries no allowance to re-authorize.
+            entries.append(
+                {
+                    "path": path,
+                    "baseline_lines": lines,
+                    "floor_lines": floor,
+                    "authorized_increase": {
+                        "ticket": args.ticket,
+                        "delta": lines - floor,
+                        "reason": args.reason,
+                        "removal_condition": args.removal_condition,
+                    },
+                }
+            )
         elif lines < baseline:
             entries.append(
                 {
