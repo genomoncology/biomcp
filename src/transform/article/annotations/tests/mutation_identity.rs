@@ -526,11 +526,22 @@ fn gene_without_symbol_shaped_mention_uses_the_official_symbol() {
 
     // The document names both G12V and G12D under rs121913529, so with no
     // official symbol the old fallbacks stand: no gene form exists, the
-    // shared rsID loses its link, and the rows keep their mention text.
+    // shared rsID loses its link, and only the rsID this document shows
+    // naming one change (rs121913530 → G12C) keeps it.
     let ann = extract_annotations(&doc, false).expect("annotations should exist");
     assert_eq!(
         ann.mutations,
-        vec![row("G12C", 1), row("G12V", 1), row("G12D", 1)]
+        vec![
+            AnnotationCount {
+                text: "G12C".into(),
+                count: 1,
+                namespace: Some("rsID".into()),
+                identifier: Some("rs121913530".into()),
+                ..Default::default()
+            },
+            row("G12V", 1),
+            row("G12D", 1)
+        ]
     );
 }
 
