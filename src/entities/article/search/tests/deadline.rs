@@ -490,6 +490,27 @@ fn deadline_recognition_covers_the_io_cancellation_shape() {
     assert!(!is_search_deadline_error(&other_io));
 }
 
+#[tokio::test(start_paused = true)]
+async fn held_fixture_replies_self_release_at_their_own_bound() {
+    // Probe for ticket 2045: on main the hold has no bound of its own, so
+    // under paused time this test waits forever — the hang class the
+    // ticket names. The fix bounds the hold; the caller then fails fast.
+    let (_release_tx, hold) = held_reply_gate();
+    let fixture = TestHttpFixture::spawn(move |_request| TestHttpReply::Hold(Arc::clone(&hold)))
+        .await;
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get(format!("{}/never-released", fixture.base))
+        .send()
+        .await;
+
+    assert!(
+        response.is_err(),
+        "the self-released hold closes the connection before any reply"
+    );
+}
+
 #[serial_test::serial(source_env)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn deep_offset_is_refused_on_every_sort_before_any_request() {
