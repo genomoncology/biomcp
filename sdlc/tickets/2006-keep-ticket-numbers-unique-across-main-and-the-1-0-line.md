@@ -20,7 +20,7 @@ Milestone: 1.0
 
 ## Current Facts
 
-- Main files tickets in the 1000s. The 1.0 line files tickets numbered 2001 and up (`AGENTS.md`, "BioData 1.0 migration verification"; ticket 2001's own numbering note).
+- Main files tickets in the 1000s. The 1.0 line files tickets numbered 2001 and up (`AGENTS.md`, "the data platform 1.0 migration verification"; ticket 2001's own numbering note).
 - The two lines once collided on ticket numbers 1234 through 1236, one file on each line sharing a number.
 - `make lint` already runs `tools/check-quality-ratchet.sh` and other repository-owned checks (`Makefile`, `lint` target).
 

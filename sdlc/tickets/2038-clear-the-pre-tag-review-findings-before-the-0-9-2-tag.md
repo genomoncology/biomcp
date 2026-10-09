@@ -99,3 +99,30 @@ First remove the queue report so main is green. Then 2036 and 2037, and the code
   keeps its hint. That is the project's existing rule.
 - Finding 5 — Ian authorizes one full release rehearsal in the public
   scratch repository on the tag candidate, after the fixes land.
+
+## Finding-7 code lane (2026-10-10)
+
+- Built on `tickets/2038-code-pre-tag`, head `e4f10fad3` (nine commits
+  over `203daec02`): one shared day-shape rule with its tests; every
+  explicit filter kept in the routed and refused hints (pinned by
+  `apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints`
+  and the dispatch spelling tests); the WHO local path terminal-only
+  with the drug card degrading under a path-free note; the per-test
+  kill budget (`.config/nextest.toml` slow-timeout 120s,
+  terminate-after 2, carried into the archive lane by the Makefile, plus
+  a 20-minute bound on the CI tool-install step); the loud
+  `--require-local-names` mode with CI provisioning from the
+  `PM_FORBIDDEN_NAMES` secret; the day-zero gate tested; and the MyGene
+  and UniProt surfaces listed in the sources registry and licensing
+  page.
+- Kill proof: a scratch hanging test with period 2s and
+  terminate-after 2 on nextest 0.9.132 (older than CI's 0.9.146) was
+  marked TIMEOUT at 4.003s, the run cancelled and failed — the
+  process-level kill the planted-hang request asked for; run on the
+  build host with the config file honored through the archive lane.
+- Code review: ACCEPT 2026-10-10, head `e4f10fad3`, fresh read-only
+  reviewer, verdict and findings recorded in
+  `/tmp/review-2038-code.md` and mirrored here: items 1-8 confirmed
+  with file:line evidence; two report-only P2s — this kill-proof record
+  (folded here at landing) and a full diff-file-list check against the
+  landing-time main (the landing step owns it).

@@ -8,7 +8,7 @@ Verification (carried ticket): ACCEPT 2026-10-09 — carried from the 1.0 branch
 
 ## Outcome
 
-PM reports the BioMCP 1.0 programme against `biodata/biomcp-1.0` with an explicit lane table, honest legacy unknowns and required landing proof. Root receives an isolated pushed administrative branch for fresh review.
+PM reports the BioMCP 1.0 programme against `the 1.0 release branch` with an explicit lane table, honest legacy unknowns and required landing proof. Root receives an isolated pushed administrative branch for fresh review.
 
 ## Evidence
 

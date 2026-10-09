@@ -45,7 +45,7 @@ biomcp get patient <id> conditions
 
 ## Exclusions
 
-No search, which is ticket 2003. No FHIRPath evaluator. No sign-in or token. No section beyond `conditions`. No BioData dependency. No new MCP tool. No live server in any gate.
+No search, which is ticket 2003. No FHIRPath evaluator. No sign-in or token. No section beyond `conditions`. No the data platform dependency. No new MCP tool. No live server in any gate.
 
 ## Acceptance
 

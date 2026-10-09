@@ -12,10 +12,10 @@ After this merge, the branch merges `main` daily, and a day that cannot merge cl
 
 ## Evidence
 
-- Starts from: `main` at its current tip and the long-lived branch `biodata/biomcp-1.0`.
+- Starts from: `main` at its current tip and the long-lived branch `the 1.0 release branch`.
 - Keeps: every commit on both sides. The merge direction is `main` into the branch, never the reverse.
 - Changes: `.github/workflows` if the daily merge needs a check; otherwise no tracked file changes outside the merge commit itself.
-- Proof: `git rev-list --left-right --count origin/biodata/biomcp-1.0...origin/main` reports zero on the right, and the branch's own test run passes after the merge.
+- Proof: `git rev-list --left-right --count origin/the 1.0 release branch...origin/main` reports zero on the right, and the branch's own test run passes after the merge.
 - Defers: the 1.0 feature work itself. This ticket only ends the drift.
 
 ## Risk this reduces
