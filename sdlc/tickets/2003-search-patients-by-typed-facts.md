@@ -19,6 +19,10 @@ biomcp search patient --gender female --born-after 1950-01-01 --condition "http:
 biomcp search patient --condition "http://snomed.info/sct|44054006" --count
 ```
 
+## Evidence
+
+- Changes: `src/cli/patient/mod.rs` `src/cli/patient/dispatch.rs` `src/sources/fhir.rs` `tests/patient_fhir_contract.rs`
+
 ## Current Facts
 
 - Ticket 2002 supplies `BIOMCP_FHIR_BASE`, URL encoding, the 2002 patient ID rule, and the serve-http refusal. Its one private request function in `src/sources/fhir.rs` sets every header.

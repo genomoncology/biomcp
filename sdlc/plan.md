@@ -40,11 +40,10 @@ Exit: every 1.0 ticket lives on `main` with its milestone, a check refuses a tic
 
 Open 1.0 tickets only, in the order I want them taken. Status comes from pm, never from this list.
 
+- 2041
 - 2006
 - 2005
 - 2003
 - 2004
 
-2006 leads because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 follows because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.
-
-Returning the 1.0 line to current `main` needs its own ticket and does not yet have a number. Drawing one requires push access this lane does not currently hold.
+2041 leads because the 1.0 branch sits hundreds of commits behind the release line, and every other ticket on this list merges into a branch that cannot absorb `main`. 2006 follows because it is the check that stops the two lines colliding again, and milestone 4 cannot close without it. 2005 comes next because it removes the reason a developer bypasses the commit hook, which is how unchecked work reaches a branch. 2003 and 2004 are the remaining patient-facing capability work.

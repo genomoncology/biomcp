@@ -14,6 +14,10 @@ Milestone: 1.0
 
 `make lint` fails when a ticket number on the 1.0 line duplicates a number main already uses in a different file, or when a 1.0-only ticket uses a number below 2001. Main's 1000s and the 1.0 line's 2000s never collide again.
 
+## Evidence
+
+- Changes: `Makefile` `tools/check-ticket-numbers.sh`
+
 ## Current Facts
 
 - Main files tickets in the 1000s. The 1.0 line files tickets numbered 2001 and up (`AGENTS.md`, "BioData 1.0 migration verification"; ticket 2001's own numbering note).

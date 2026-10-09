@@ -14,6 +14,10 @@ Milestone: 1.0
 
 `get patient <id> conditions` marks the section `degraded` only when a Condition breaks FHIR R4 invariant con-3. Each row shows its own clinical status, or shows it as absent when the source omits it. On the blue demo server, patients whose Conditions all satisfy con-3 come back `data`, not `degraded`.
 
+## Evidence
+
+- Changes: `src/entities/section_outcome.rs` `spec/entity/patient.md`
+
 ## Current Facts
 
 - Ticket 2002 marks the section `degraded` whenever any Condition lacks `clinicalStatus` (`sdlc/tickets/2002-get-a-patient-and-conditions-from-fhir.md`, Scope).

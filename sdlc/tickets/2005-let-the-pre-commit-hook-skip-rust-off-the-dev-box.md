@@ -14,6 +14,10 @@ Milestone: 1.0
 
 `scripts/pre-commit` runs its non-Rust checks and skips `cargo fmt` and `cargo clippy` on its own, on the development machine, without `--no-verify`. It prints which path it took. Rust builds still run only on the yellow build host, from pushed SHAs.
 
+## Evidence
+
+- Changes: `scripts/pre-commit`
+
 ## Current Facts
 
 - `scripts/pre-commit` runs `cargo fmt --check` and `cargo clippy` for any change that touches a non-documentation path (`scripts/pre-commit`, final block). It skips them today only for a documentation-only commit.
