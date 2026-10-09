@@ -386,12 +386,15 @@ def main(argv: list[str] | None = None) -> int:
         "(continuous integration); local runs print a note instead",
     )
     args = parser.parse_args(argv)
+    # The declaration resolves under the scanned tree (`--root`), not beside
+    # the script: a scan of a fixture or a second checkout must read that
+    # tree's own gitignored declaration (ticket 2044).
     if args.require_local_names:
-        message = missing_local_names_error(ROOT)
+        message = missing_local_names_error(args.root)
         if message is not None:
             print(message)
             return 2
-    elif not local_declaration_names(ROOT):
+    elif not local_declaration_names(args.root):
         # Say it plainly instead of passing silently: an inert guard is a
         # fact the operator should see (ticket 2038 finding 7, 2035 #11).
         print(
@@ -400,7 +403,7 @@ def main(argv: list[str] | None = None) -> int:
             "names",
             file=sys.stderr,
         )
-    private = declared_names(ROOT)
+    private = declared_names(args.root)
     violations = (
         scan_archive(args.archive, private)
         if args.archive
