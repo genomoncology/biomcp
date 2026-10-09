@@ -8,6 +8,7 @@ use std::sync::{
     Arc, Mutex,
     atomic::{AtomicUsize, Ordering},
 };
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn mydisease_hit(value: serde_json::Value) -> crate::sources::mydisease::MyDiseaseHit {
     serde_json::from_value(value).expect("valid MyDisease hit")
@@ -373,44 +374,6 @@ async fn nci_age_rejection_precedes_both_provider_requests() {
 #[tokio::test]
 #[serial_test::serial(source_env)]
 async fn nci_keyword_degrade_note_reaches_the_search_page() {
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
-    async fn json_server(
-        respond: impl Fn(&str) -> Option<(u16, String)> + Send + Sync + 'static,
-    ) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let base = format!("http://{}", listener.local_addr().unwrap());
-        let requests = Arc::new(Mutex::new(Vec::new()));
-        let captured = requests.clone();
-        let respond = Arc::new(respond);
-        let task = tokio::spawn(async move {
-            while let Ok((mut stream, _)) = listener.accept().await {
-                let captured = captured.clone();
-                let respond = respond.clone();
-                tokio::spawn(async move {
-                    let mut request = vec![0_u8; 16 * 1024];
-                    let Ok(len) = stream.read(&mut request).await else {
-                        return;
-                    };
-                    let request = String::from_utf8_lossy(&request[..len]).into_owned();
-                    let first_line = request.lines().next().unwrap_or("").to_string();
-                    captured
-                        .lock()
-                        .expect("lock degrade-note fixture requests")
-                        .push(first_line.clone());
-                    let (status, body) = respond(&request)
-                        .unwrap_or((404, r#"{"error":"fixture route not found"}"#.to_string()));
-                    let response = format!(
-                        "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                        body.len()
-                    );
-                    let _ = stream.write_all(response.as_bytes()).await;
-                });
-            }
-        });
-        (base, requests, task)
-    }
-
     let (nci_base, nci_requests, nci_server) = json_server(|request| {
         request
             .contains("keyword=melanoma")
@@ -427,29 +390,7 @@ async fn nci_keyword_degrade_note_reaches_the_search_page() {
     })
     .await;
 
-    struct Restore(Vec<(&'static str, Option<std::ffi::OsString>)>);
-    impl Restore {
-        fn set(&mut self, key: &'static str, value: &str) {
-            self.0.push((key, std::env::var_os(key)));
-            // SAFETY: this test holds the serial-test process-wide environment lock.
-            unsafe { std::env::set_var(key, value) };
-        }
-    }
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            for (key, value) in self.0.drain(..).rev() {
-                // SAFETY: this test holds the serial-test process-wide environment lock.
-                unsafe {
-                    if let Some(value) = value {
-                        std::env::set_var(key, value)
-                    } else {
-                        std::env::remove_var(key)
-                    }
-                }
-            }
-        }
-    }
-    let mut restore = Restore(Vec::new());
+    let mut restore = TrialSearchEnvRestore(Vec::new());
     // The NCI client constructor demands NCI_API_KEY even against a
     // fixture base (CI runs keyless), so pin a fixture key like the
     // trial get tests do; the fixture ignores it.
@@ -488,6 +429,192 @@ async fn nci_keyword_degrade_note_reaches_the_search_page() {
             .iter()
             .any(|line| line.contains("keyword=melanoma")),
         "the NCI request must stay a keyword search: {requests:?}"
+    );
+}
+
+async fn json_server(
+    respond: impl Fn(&str) -> Option<(u16, String)> + Send + Sync + 'static,
+) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let respond = Arc::new(respond);
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            let respond = respond.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let Ok(len) = stream.read(&mut request).await else {
+                    return;
+                };
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                let first_line = request.lines().next().unwrap_or("").to_string();
+                captured
+                    .lock()
+                    .expect("lock fixture server requests")
+                    .push(first_line.clone());
+                let (status, body) = respond(&request)
+                    .unwrap_or((404, r#"{"error":"fixture route not found"}"#.to_string()));
+                let response = format!(
+                    "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+struct TrialSearchEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl TrialSearchEnvRestore {
+    fn set(&mut self, key: &'static str, value: &str) {
+        self.0.push((key, std::env::var_os(key)));
+        // SAFETY: this test holds the serial-test process-wide environment lock.
+        unsafe { std::env::set_var(key, value) };
+    }
+}
+
+impl Drop for TrialSearchEnvRestore {
+    fn drop(&mut self) {
+        for (key, value) in self.0.drain(..).rev() {
+            // SAFETY: this test holds the serial-test process-wide environment lock.
+            unsafe {
+                if let Some(value) = value {
+                    std::env::set_var(key, value)
+                } else {
+                    std::env::remove_var(key)
+                }
+            }
+        }
+    }
+}
+
+/// Ticket 2032: `--condition MF` grounds through the same resolver as
+/// `get disease`. When the resolver refuses the abbreviation, the NCI
+/// search returns the refusal with its named candidates and never sends
+/// the keyword request a degrade would send.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn nci_ambiguous_condition_refuses_instead_of_keyword_search() {
+    let mf_hits =
+        include_str!("../../../../../testdata/sources/mydisease/query_mf.json").to_string();
+    let (disease_base, _disease_requests, disease_server) =
+        json_server(move |request| request.contains("/query?").then(|| (200, mf_hits.clone())))
+            .await;
+    let (nci_base, nci_requests, nci_server) =
+        json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
+
+    let mut restore = TrialSearchEnvRestore(Vec::new());
+    // The NCI client constructor demands NCI_API_KEY even against a
+    // fixture base (CI runs keyless); the fixture ignores it.
+    restore.set("NCI_API_KEY", "fixture-key");
+    restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
+    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+
+    let error = super::super::search_page(
+        &TrialSearchFilters {
+            source: TrialSource::NciCts,
+            condition: Some("MF".into()),
+            ..Default::default()
+        },
+        1,
+        0,
+        None,
+    )
+    .await
+    .expect_err("the refusal must reach the caller");
+    tokio::task::yield_now().await;
+    nci_server.abort();
+    disease_server.abort();
+    drop(restore);
+
+    let message = error.to_string();
+    assert!(
+        message.contains("Ambiguous disease abbreviation 'MF'"),
+        "{message}"
+    );
+    assert!(
+        message.contains("mycosis fungoides (MONDO:0009691)"),
+        "{message}"
+    );
+    assert!(
+        message.contains("myotonia fluctuans (MONDO:0020481)"),
+        "{message}"
+    );
+    let requests = nci_requests
+        .lock()
+        .expect("lock NCI fixture requests")
+        .clone();
+    assert!(
+        requests.is_empty(),
+        "the refusal must send no NCI request: {requests:?}"
+    );
+}
+
+/// Ticket 2032: a condition that fails to ground keeps the visible
+/// keyword degrade (the 2021 pattern); only the resolver's refusal of
+/// the input itself propagates.
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn nci_ungroundable_condition_keeps_the_keyword_degrade() {
+    let (disease_base, _disease_requests, disease_server) = json_server(|request| {
+        request
+            .contains("/query?")
+            .then(|| (200, r#"{"total":0,"hits":[]}"#.to_string()))
+    })
+    .await;
+    let (nci_base, nci_requests, nci_server) =
+        json_server(|_| Some((200, r#"{"total":0,"data":[]}"#.to_string()))).await;
+
+    let mut restore = TrialSearchEnvRestore(Vec::new());
+    restore.set("NCI_API_KEY", "fixture-key");
+    restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
+    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+    // The discover fallback must stay off the network when the direct
+    // resolution has nothing to hold.
+    restore.set("BIOMCP_OLS4_BASE", "://unavailable-discover-fixture");
+    restore.set("BIOMCP_UMLS_BASE", "://unavailable-discover-fixture");
+    restore.set("BIOMCP_MEDLINEPLUS_BASE", "://unavailable-discover-fixture");
+
+    let page = super::super::search_page(
+        &TrialSearchFilters {
+            source: TrialSource::NciCts,
+            condition: Some("ungroundable fixture condition".into()),
+            ..Default::default()
+        },
+        1,
+        0,
+        None,
+    )
+    .await
+    .expect("the degraded search still runs");
+    tokio::task::yield_now().await;
+    nci_server.abort();
+    disease_server.abort();
+    drop(restore);
+
+    let note = page
+        .partial_note
+        .expect("the degrade note reaches the page");
+    assert!(note.contains("plain keyword search"), "{note}");
+    assert!(
+        note.contains("does not ground to a disease concept in MyDisease"),
+        "{note}"
+    );
+    assert!(note.contains("'ungroundable fixture condition'"), "{note}");
+    let requests = nci_requests
+        .lock()
+        .expect("lock NCI fixture requests")
+        .clone();
+    assert!(
+        requests
+            .iter()
+            .any(|line| line.contains("keyword=ungroundable")),
+        "the NCI request stays a keyword search: {requests:?}"
     );
 }
 

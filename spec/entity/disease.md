@@ -194,6 +194,27 @@ A refusal names every holder with a working retry form.
 }
 ```
 
+A short abbreviation's refusal also names the clinical reading the source
+cannot see (ticket 2032): MyDisease holds `MM` on Miyoshi muscular
+dystrophy alone, and no myeloma record carries `MM` in any indexed field,
+so the candidate list alone would hide the disease oncology usually means.
+The reading arrives as a pointer line with a working command, never as a
+source candidate, and `MM` still refuses — curated abbreviation
+preferences stay deferred.
+
+```bash run id=ambiguous-abbreviation-mm-refusal exit=2
+../../tools/biomcp-ci --json get disease MM
+```
+
+```json expect=ambiguous-abbreviation-mm-refusal contains
+{
+  "error": {
+    "code": "invalid_argument",
+    "message": "Invalid argument: Ambiguous disease abbreviation 'MM': the source holds it on 1 disease, but a token this short cannot name one disease reliably; BioMCP refuses rather than return one disease's definition with another's genes.\nCandidates:\n- Miyoshi muscular dystrophy (MONDO:0009685)\nClinical reading: 'MM' usually means multiple myeloma (MONDO:0009693); try `biomcp get disease \"multiple myeloma\"`.\nRetry `biomcp get disease` with one candidate's ontology ID or full name, or run `biomcp search disease -q \"MM\"` to see every match."
+  }
+}
+```
+
 Search keeps surfacing every holder and now breaks exact-abbreviation ties
 by labelled first, then shorter canonical name: `MDS` ranks myelodysplastic
 syndrome above Miller-Dieker lissencephaly, and `CAD` leads with the
