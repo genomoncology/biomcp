@@ -100,7 +100,9 @@ pub(super) fn split_leading_protein_change(remainder: &str) -> Option<(String, S
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum GeneFirstNote {
     /// The oracle refused the first token: the whole phrase ran as a
-    /// condition, so the hint names the untried `-g`/`--condition` form.
+    /// condition, so the hint names the condition search without the
+    /// leading word, the form the phrase search never tried (the gene
+    /// filter needs the official symbol the oracle did not confirm).
     Refused { gene: String, condition: String },
     /// The oracle confirmed the official symbol: the phrase was routed, so
     /// the hint states the parsed form and the same filters with the
@@ -122,10 +124,10 @@ pub(super) type ExplicitFilterFlags = [(&'static str, String)];
 /// leading protein change to the hgvsp filter, and the rest to the
 /// condition. Refusal, ambiguity, and preference `off` all keep today's
 /// whole-phrase condition search and remember the phrase so a zero-row
-/// result can print the explicit `-g`/`--condition` form. Both branches
-/// attach the leftover `--hgvsp` and `--consequence` flags exactly as the
-/// whole-phrase fallthrough did, and `explicit_filters` carries every other
-/// explicit flag into the hints, so no explicit filter is dropped.
+/// result can print the condition search without the leading word. Both
+/// branches attach the leftover `--hgvsp` and `--consequence` flags exactly
+/// as the whole-phrase fallthrough did, and `explicit_filters` carries every
+/// other explicit flag into the hints, so no explicit filter is dropped.
 pub(super) fn apply_gene_first_routing(
     gene: String,
     protein_change: Option<String>,
@@ -198,19 +200,18 @@ pub(super) fn gene_first_parsed_form(gene: &str, hgvsp: Option<&str>, condition:
     parts.join(", ")
 }
 
-/// The explicit form a routed gene-first phrase searched as.
+/// The explicit form a refused gene-first phrase suggests: the phrase as a
+/// condition without the leading word. The search that returned nothing ran
+/// the whole phrase as the condition, and the gene filter needs an official
+/// symbol the oracle did not confirm, so the condition alone is the looser
+/// form that can still return rows (ticket 2038, following 2022 and 2035's
+/// smaller items).
 pub(super) fn gene_first_working_form(
-    gene: &str,
-    hgvsp: Option<&str>,
     condition: &str,
     explicit_filters: &ExplicitFilterFlags,
 ) -> String {
-    let mut command =
-        crate::next_command::NextCommand::biomcp().args(["search", "variant", "-g", gene]);
-    if let Some(hgvsp) = hgvsp {
-        command = command.args(["--hgvsp", hgvsp]);
-    }
-    command = command.args(["--condition", condition]);
+    let command = crate::next_command::NextCommand::biomcp()
+        .args(["search", "variant", "--condition", condition]);
     append_explicit_filters(command, explicit_filters).render_shell()
 }
 

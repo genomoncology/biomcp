@@ -619,8 +619,8 @@ fn apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints() {
         })
     );
     assert_eq!(
-        gene_first_working_form("BRUGADA", None, "syndrome", &filters),
-        "biomcp search variant -g BRUGADA --condition syndrome --significance benign \
+        gene_first_working_form("syndrome", &filters),
+        "biomcp search variant --condition syndrome --significance benign \
          --tumor-site skin --max-frequency 0.01 --min-cadd 20 --review-status 2"
     );
 }
@@ -628,12 +628,12 @@ fn apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints() {
 #[test]
 fn gene_first_working_form_quotes_multi_word_conditions() {
     assert_eq!(
-        gene_first_working_form("SCN5A", None, "Brugada syndrome", &[]),
-        "biomcp search variant -g SCN5A --condition \"Brugada syndrome\""
+        gene_first_working_form("Brugada syndrome", &[]),
+        "biomcp search variant --condition \"Brugada syndrome\""
     );
     assert_eq!(
-        gene_first_working_form("BRAF", Some("V600E"), "melanoma", &[]),
-        "biomcp search variant -g BRAF --hgvsp V600E --condition melanoma"
+        gene_first_working_form("V600E melanoma", &[]),
+        "biomcp search variant --condition \"V600E melanoma\""
     );
 }
 
