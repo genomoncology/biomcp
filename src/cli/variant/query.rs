@@ -101,7 +101,15 @@ pub(super) fn split_leading_protein_change(remainder: &str) -> Option<(String, S
 pub(super) enum GeneFirstNote {
     /// The oracle refused the first token: the whole phrase ran as a
     /// condition, so the hint names the untried `-g`/`--condition` form.
-    Refused { gene: String, condition: String },
+    /// The note keeps the explicit `--hgvsp` and `--consequence` flags in
+    /// the spelling the search applied, so the working form repeats every
+    /// filter instead of dropping them (ticket 2044).
+    Refused {
+        gene: String,
+        condition: String,
+        hgvsp: Option<String>,
+        consequence: Option<String>,
+    },
     /// The oracle confirmed the official symbol: the phrase was routed, so
     /// the hint states the parsed form and the same filters with the
     /// condition dropped, which differs from the command that ran.
@@ -166,21 +174,27 @@ pub(super) fn apply_gene_first_routing(
         None => {
             // Refusal keeps the whole phrase, protein change included, so
             // the condition search and the working form see the original
-            // remainder.
+            // remainder. The note carries the explicit flags in the
+            // normalized spelling the search applied, so the refused hint
+            // repeats them beside the other explicit filters (ticket 2044).
             let remainder = match protein_change.as_deref() {
                 Some(change) => format!("{change} {condition}"),
                 None => condition.clone(),
             };
             (
                 VariantSearchPlan::finalize(ResolvedVariantQuery {
-                    hgvsp: hgvsp_flag,
-                    consequence: consequence_flag,
+                    hgvsp: hgvsp_flag.clone(),
+                    consequence: consequence_flag.clone(),
                     condition: Some(format!("{gene} {remainder}")),
                     ..Default::default()
                 }),
                 Some(GeneFirstNote::Refused {
                     gene,
                     condition: remainder,
+                    hgvsp: hgvsp_flag
+                        .as_deref()
+                        .map(normalize_search_hgvsp),
+                    consequence: consequence_flag,
                 }),
             )
         }
@@ -198,11 +212,15 @@ pub(super) fn gene_first_parsed_form(gene: &str, hgvsp: Option<&str>, condition:
     parts.join(", ")
 }
 
-/// The explicit form a routed gene-first phrase searched as.
+/// The explicit form a refused gene-first phrase points at: the untried
+/// `-g`/`--condition` split with every filter the condition search
+/// applied, the caller's `--hgvsp` and `--consequence` flags included in
+/// the spelling the search used (ticket 2044).
 pub(super) fn gene_first_working_form(
     gene: &str,
     hgvsp: Option<&str>,
     condition: &str,
+    consequence: Option<&str>,
     explicit_filters: &ExplicitFilterFlags,
 ) -> String {
     let mut command =
@@ -211,6 +229,9 @@ pub(super) fn gene_first_working_form(
         command = command.args(["--hgvsp", hgvsp]);
     }
     command = command.args(["--condition", condition]);
+    if let Some(consequence) = consequence {
+        command = command.args(["--consequence", consequence]);
+    }
     append_explicit_filters(command, explicit_filters).render_shell()
 }
 
