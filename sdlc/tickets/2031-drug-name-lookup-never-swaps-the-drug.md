@@ -1,6 +1,6 @@
 # 2031 — Drug name lookup never swaps the drug
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
