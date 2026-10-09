@@ -406,10 +406,11 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         previous_release_block, "### New features"
     )
 
-    # After the 0.9.1 release the changelog opens with the release
-    # heading; a fresh Unreleased section returns with the next dev
-    # cycle.
-    assert changelog.startswith("# Changelog\n\n## 0.9.1 — 2026-10-01\n")
+    # The changelog opens with the current release heading, or with
+    # a fresh Unreleased section ahead of it during the dev cycle.
+    assert changelog.startswith(
+        f"# Changelog\n\n{current_release_heading}\n"
+    ) or changelog.startswith("# Changelog\n\n## Unreleased\n")
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
     assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
