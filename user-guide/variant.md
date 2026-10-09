@@ -43,17 +43,21 @@ several genomic variants; provider alias lists even carry other isoforms'
 spellings on different variants. `get variant` counts a hit as a match only
 when the transcript BioMCP headlines for it spells the requested change, and
 that headline prefers the MANE transcript the response marks (ClinVar names
-variants on MANE Select) over the first NM_ annotation. When the resolved
-change does not spell the request, the answer checks the requested reference
-residue against the gene's canonical (MANE Select) protein sequence: a
-matching residue means the request's own numbering is valid on MANE, and if
-no record names the change there, `get variant` refuses with the only alias
-match as a candidate; otherwise the answer carries a numbering note naming
-the transcript and spelling that matched. When exactly one matching
-variant carries the ClinVar record for that
-change, `get variant` resolves to it; when several variants match and none
-or several carry ClinVar records, it refuses with the candidates and a
-working input form instead of guessing. Retry with one of the listed genomic
+variants on MANE Select) over the annotation naming the request and the
+first NM_ annotation, so a response without any ClinVar name still resolves
+on the transcript that spells the request. When the resolved change does not
+spell the request, the answer checks the requested reference residue against
+the gene's canonical (MANE Select) protein sequence: a matching residue means
+the request's own numbering is valid on MANE, and if no record names the
+change there, `get variant` refuses with the only alias match as a candidate;
+a different residue means the request follows another transcript's numbering,
+and the answer says so with a note naming the transcript and spelling that
+matched. When the check cannot run — the request names no residue, or the
+sequence lookup is unavailable — the answer carries no note rather than an
+unproven claim. When exactly one matching variant carries the ClinVar record
+for that change, `get variant` resolves to it; when several variants match
+and none or several carry ClinVar records, it refuses with the candidates and
+a working input form instead of guessing. Retry with one of the listed genomic
 HGVS, rsID, ClinVar VariationID, or transcript-qualified HGVS spellings.
 
 ## ClinGen Allele Registry normalization
