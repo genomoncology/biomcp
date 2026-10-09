@@ -4,6 +4,8 @@ Status: complete.
 
 Milestone: 0.9.2
 
+Reviews: revision cd257afe8, accept
+
 ## Outcome
 
 The variant headline pairs a ClinVar classification with that classification's own evaluation date. Variant search routes a first token to a gene only when it is an official symbol, and a routed search that returns nothing says how it was read.
