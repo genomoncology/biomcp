@@ -21,3 +21,16 @@ Filed 2026-10-08 from the third review of the work since v0.9.1 (ticket 2033, fi
 - Changes: accept a MyChem hit only when the query matches its name, a brand name or a listed synonym; otherwise report no match, or list the candidates with a note.
 - Proof: terfenadine and mannitol return no wrong card, and a test pins each against recorded captures; the five correct resolutions above still pass.
 - Defers: nothing.
+
+## Head review (fourth-review fix round)
+
+- Code re-review (full head through c0dc28edf, covering the discover
+  rescue and the brand fix the prior ACCEPT missed): ACCEPT 2026-10-08.
+  Verified: the TAGRISSO resolution through MyChem's brand fields
+  against the real capture (get and search agree); the rescue-miss
+  keeps the sparse card; the four pinned cases hold; the keep-list
+  resolves live; the parent-acid nuance and the pooling residuals
+  recorded. Two report-only P2s: no automated pin on the rescue-miss
+  path (deferred to the merge-pooling lane the ticket names), and the
+  capture-header minimization sentence under-describes the dropped
+  non-name field blocks.
