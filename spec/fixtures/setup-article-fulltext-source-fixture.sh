@@ -59,6 +59,8 @@ def source_bytes(path):
 POW_INTERSTITIAL = source_bytes("pmc_article/pmc3040717-supplementary-tables-pow.html")
 PUBTATOR_20516115 = source_bytes("pubtator/export_20516115.json")
 PUBTATOR_30738221 = source_bytes("pubtator/export_30738221.json")
+PUBTATOR_37887282 = source_bytes("pubtator/export_37887282.json")
+MYGENE_GENE_SYMBOLS_3845 = source_bytes("mygene/gene_symbols_3845_20261008.json")
 EUROPEPMC_20516115 = source_bytes("europepmc/search_pmid_20516115.json")
 PMC_OA_3040717_VERSIONS = source_bytes("pmc_oa/pmc3040717-versions.xml")
 PMC_OA_3040717_METADATA = source_bytes("pmc_oa/pmc3040717.1.json")
@@ -899,6 +901,19 @@ class Handler(BaseHTTPRequestHandler):
             ])
             return
 
+        if decoded_path == "/gene":
+            # Ticket 2034: the recorded batch-symbol reply answers NCBI Gene
+            # 3845 (KRAS) for the K-Ras/K-RAS-spelled capture. Other ids get
+            # an empty batch, which the caller treats as no official symbol.
+            form = parse_qs(body.decode("utf-8"))
+            ids = form.get("ids", [""])[0]
+            append_request_log(f"mygene:gene:{ids}")
+            if ids == "3845":
+                send_bytes(self, 200, MYGENE_GENE_SYMBOLS_3845, "application/json")
+                return
+            send_json(self, 200, [])
+            return
+
         send_json(self, 404, {"error": "not found"})
 
     def do_GET(self):
@@ -926,6 +941,11 @@ class Handler(BaseHTTPRequestHandler):
             # Ticket 1296: provider-faithful PubTator3 capture carrying
             # identifiers, namespaces, and document-global locations.
             send_bytes(self, 200, PUBTATOR_30738221, "application/json")
+            return
+        if decoded_path == "/publications/export/biocjson" and pmids == ["37887282"]:
+            # Ticket 2034: provider-faithful PubTator3 capture whose every
+            # human KRAS mention spells the gene "K-Ras" or "K-RAS".
+            send_bytes(self, 200, PUBTATOR_37887282, "application/json")
             return
         if decoded_path == "/publications/export/biocjson" and pmids and pmids[0] in ARTICLES:
             send_json(self, 200, pubtator_payload(pmids[0]))
@@ -1732,6 +1752,7 @@ base_url="$(cat "$ready_file")"
 printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url" >"$env_file"
 printf 'export BIOMCP_CACHE_DIR=%q\n' "$fixture_root/cache" >>"$env_file"
 printf 'export BIOMCP_PUBTATOR_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export BIOMCP_MYGENE_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_EUROPEPMC_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_PUBMED_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_PMC_OA_BASE=%q\n' "$base_url" >>"$env_file"

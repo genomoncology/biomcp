@@ -255,6 +255,50 @@ impl MyGeneClient {
         let rows: Vec<MyGeneBatchGeneHit> = self.get_json(req).await?;
         Ok(Self::dedupe_symbols_in_order(rows, &ids))
     }
+
+    /// Official symbol for each requested NCBI Entrez gene id (pure — Tier-3).
+    /// Keys are the ids as passed, so a row keyed by an unrequested id is
+    /// dropped rather than trusted.
+    pub(crate) fn symbol_map_for_entrez_ids(
+        rows: Vec<MyGeneBatchGeneHit>,
+        ids: &[String],
+    ) -> HashMap<String, String> {
+        let requested: HashSet<&str> = ids.iter().map(String::as_str).collect();
+        let mut symbol_by_id = HashMap::new();
+        for row in rows {
+            let Some(symbol) = row
+                .symbol
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+            else {
+                continue;
+            };
+            let Some(key) = row
+                .query
+                .or(row.id)
+                .map(|value| value.as_string())
+                .filter(|value| !value.is_empty())
+            else {
+                continue;
+            };
+            if requested.contains(key.as_str()) {
+                symbol_by_id.entry(key).or_insert(symbol);
+            }
+        }
+        symbol_by_id
+    }
+
+    /// Official symbols keyed by NCBI Entrez gene id, for rows whose own
+    /// document never spells a usable symbol (ticket 2034).
+    pub async fn symbols_by_entrez_id(
+        &self,
+        ids: &[String],
+    ) -> Result<HashMap<String, String>, BioMcpError> {
+        let (plan, ids) = Self::batch_symbols_plan(ids)?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let rows: Vec<MyGeneBatchGeneHit> = self.get_json(req).await?;
+        Ok(Self::symbol_map_for_entrez_ids(rows, &ids))
+    }
 }
 
 fn first_string_value(value: &serde_json::Value) -> Option<String> {
@@ -628,6 +672,7 @@ mod tests {
         };
         use reqwest::StatusCode;
         use reqwest::header::HeaderValue;
+        use std::collections::HashMap;
 
         macro_rules! fixture {
             ($name:expr) => {
@@ -772,6 +817,37 @@ mod tests {
             assert_eq!(
                 MyGeneClient::dedupe_symbols_in_order(rows, &ids),
                 vec!["EGFR", "TP53"]
+            );
+        }
+
+        #[test]
+        fn symbol_map_parses_recorded_batch_and_drops_unrequested_keys() {
+            // Ticket 2034's recorded response: MyGene answers NCBI Gene 3845
+            // with the official symbol KRAS for a document that spells the
+            // gene "K-Ras" and "K-RAS".
+            let rows: Vec<MyGeneBatchGeneHit> = decode_json(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+                StatusCode::OK,
+                Some(&json_ct()),
+                fixture!("gene_symbols_3845_20261008.json"),
+                true,
+            )
+            .unwrap();
+            let expected = HashMap::from([("3845".to_string(), "KRAS".to_string())]);
+            assert_eq!(
+                MyGeneClient::symbol_map_for_entrez_ids(rows, &["3845".to_string()]),
+                expected
+            );
+
+            // A row keyed by an id the caller never asked for stays out of
+            // the map, and a blank symbol never reaches it.
+            let rows: Vec<MyGeneBatchGeneHit> = serde_json::from_str(
+                r#"[{"query":"3845","_id":"3845","symbol":"KRAS"},{"query":"673","_id":"673","symbol":"BRAF"},{"query":"864","_id":"864","symbol":"  "}]"#,
+            )
+            .unwrap();
+            assert_eq!(
+                MyGeneClient::symbol_map_for_entrez_ids(rows, &["3845".to_string()]),
+                expected
             );
         }
 

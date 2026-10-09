@@ -4,7 +4,7 @@ use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::europepmc::{EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse};
 use crate::sources::pubmed::{PubMedCitation, PubMedCitationErrorKind, PubMedClient};
-use crate::sources::pubtator::PubTatorClient;
+use crate::sources::pubtator::{PubTatorClient, PubTatorDocument};
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 use crate::transform;
 
@@ -280,6 +280,34 @@ where
     Some(result)
 }
 
+/// Official symbols for gene identifiers a spelled gene name hides. The
+/// document's own annotations pair the gene with a protein change, but every
+/// mention spells the gene "K-ras" or "K-RAS", so no mention text can head
+/// the exact gene-plus-change form. MyGene answers from the NCBI Gene id
+/// (ticket 2034); a failed lookup keeps the mention-text fallbacks.
+async fn official_gene_symbols_for_spelled_genes(
+    doc: &PubTatorDocument,
+) -> std::collections::HashMap<u64, String> {
+    let ids = transform::article::gene_ids_needing_official_symbols(doc);
+    if ids.is_empty() {
+        return std::collections::HashMap::new();
+    }
+    let requested = ids.iter().map(u64::to_string).collect::<Vec<_>>();
+    let Ok(mygene) = crate::sources::mygene::MyGeneClient::new() else {
+        return std::collections::HashMap::new();
+    };
+    match mygene.symbols_by_entrez_id(&requested).await {
+        Ok(symbols) => symbols
+            .into_iter()
+            .filter_map(|(id, symbol)| Some((id.parse::<u64>().ok()?, symbol)))
+            .collect(),
+        Err(error) => {
+            tracing::warn!("official gene symbol lookup unavailable: {error}");
+            std::collections::HashMap::new()
+        }
+    }
+}
+
 pub(super) async fn resolve_article_from_pmid(
     pmid: u32,
     not_found_id: &str,
@@ -353,8 +381,12 @@ pub(super) async fn resolve_article_from_pmid_with_context(
             {
                 transform::article::merge_europepmc_metadata(&mut article, &hit);
             }
-            article.annotations =
-                transform::article::extract_annotations(&doc, include_annotation_positions);
+            let official_gene_symbols = official_gene_symbols_for_spelled_genes(&doc).await;
+            article.annotations = transform::article::extract_annotations_with_official_symbols(
+                &doc,
+                include_annotation_positions,
+                &official_gene_symbols,
+            );
             Ok(article)
         }
         Err(err) => {
