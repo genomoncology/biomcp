@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +78,7 @@ DECLARATION_FILES = (
     "sdlc/pm-forbidden-names.json",
     "sdlc/pm-forbidden-names.example.json",
 )
+LOCAL_DECLARATION_FILE = DECLARATION_FILES[0]
 
 
 def declared_names(root: Path) -> tuple[str, ...]:
@@ -95,30 +97,45 @@ def declared_names(root: Path) -> tuple[str, ...]:
     """
     names: list[str] = []
     for relative in DECLARATION_FILES:
-        try:
-            declared = json.loads(
-                (root / relative).read_text(encoding="utf-8")
-            )
-        except (OSError, json.JSONDecodeError):
-            continue
-        entries = (
-            declared.get("forbiddenNames") if isinstance(declared, dict) else None
-        )
-        if not isinstance(entries, list):
-            continue
-        for entry in entries:
-            if not isinstance(entry, str) or not entry:
-                continue
-            try:
-                name = base64.b64decode(entry.encode("ascii"), validate=True).decode(
-                    "utf-8"
-                )
-            except (UnicodeError, ValueError):
-                name = entry
-            name = name.casefold()
-            if name not in names:
-                names.append(name)
+        _declare_into(names, root, relative)
     return tuple(names)
+
+
+def _names_from(root: Path, files: tuple[str, ...]) -> tuple[str, ...]:
+    """Read the named declaration files and union what they declare."""
+    names: list[str] = []
+    for relative in files:
+        _declare_into(names, root, relative)
+    return tuple(names)
+
+
+def _declare_into(names: list[str], root: Path, relative: str) -> None:
+    try:
+        declared = json.loads((root / relative).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    entries = declared.get("forbiddenNames") if isinstance(declared, dict) else None
+    if not isinstance(entries, list):
+        return
+    for entry in entries:
+        if not isinstance(entry, str) or not entry:
+            continue
+        try:
+            name = base64.b64decode(entry.encode("ascii"), validate=True).decode("utf-8")
+        except (UnicodeError, ValueError):
+            name = entry
+        name = name.casefold()
+        if name not in names:
+            names.append(name)
+
+
+def local_declaration_names(root: Path) -> tuple[str, ...]:
+    """Names only the gitignored local declaration carries.
+
+    Split out of declared_names so a run that requires the real names can
+    tell an inert guard (example placeholders only) from a live one.
+    """
+    return _names_from(root, (LOCAL_DECLARATION_FILE,))
 
 
 def _forbidden_text(text: str, private: tuple[str, ...] = ()) -> bool:
@@ -337,12 +354,52 @@ def tracked(root: Path) -> list[str]:
     ]
 
 
-def main() -> int:
+def missing_local_names_error(root: Path) -> str | None:
+    """Loud failure sentence when a required local declaration is absent.
+
+    A run with `--require-local-names` (continuous integration) must not
+    pass silently while guarding only inert example placeholders: without
+    the real names the scan cannot catch a planted private name, so the
+    checker refuses to pretend it guarded anything (ticket 2038 finding 7,
+    2035 #11).
+    """
+    if local_declaration_names(root):
+        return None
+    return (
+        f"the local forbidden-name declaration {LOCAL_DECLARATION_FILE} is "
+        "missing or declares no names, so this run cannot guard private "
+        "project names. Copy sdlc/pm-forbidden-names.example.json to "
+        f"{LOCAL_DECLARATION_FILE}, list the real private project names, "
+        "and re-run."
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--archive", type=Path)
     parser.add_argument("--inventory", type=Path, default=INVENTORY)
-    args = parser.parse_args()
+    parser.add_argument(
+        "--require-local-names",
+        action="store_true",
+        help="fail when the gitignored local declaration is absent "
+        "(continuous integration); local runs print a note instead",
+    )
+    args = parser.parse_args(argv)
+    if args.require_local_names:
+        message = missing_local_names_error(ROOT)
+        if message is not None:
+            print(message)
+            return 2
+    elif not local_declaration_names(ROOT):
+        # Say it plainly instead of passing silently: an inert guard is a
+        # fact the operator should see (ticket 2038 finding 7, 2035 #11).
+        print(
+            f"note: no local forbidden-name declaration at "
+            f"{LOCAL_DECLARATION_FILE}; guarding only the tracked example "
+            "names",
+            file=sys.stderr,
+        )
     private = declared_names(ROOT)
     violations = (
         scan_archive(args.archive, private)
