@@ -91,3 +91,11 @@ Do not tag 0.9.2. The work since the fourth review fixed the named problems: Tag
 ## Landing order
 
 First remove the queue report so main is green. Then 2036 and 2037, and the code items in finding 7, each rebased on main with a review covering its head recorded in the ticket and a green merged-tree run on the exact landing tree before main moves. Then the records and docs items, the changelog fixes, and the version bump in one candidate commit. Run the rehearsal on that candidate. Then ask for the pre-tag review.
+
+## Decisions recorded 2026-10-10 (Ian)
+
+- Finding 7, 2035 #6 — the WHO local path stays terminal-only. JSON
+  error.recovery and MCP callers never carry local paths; the terminal
+  keeps its hint. That is the project's existing rule.
+- Finding 5 — Ian authorizes one full release rehearsal in the public
+  scratch repository on the tag candidate, after the fixes land.
