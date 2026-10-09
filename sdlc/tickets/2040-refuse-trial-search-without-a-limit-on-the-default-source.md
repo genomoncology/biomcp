@@ -2,7 +2,7 @@
 
 Status: OPEN.
 
-Milestone: 0.9.3
+Milestone: 0.9.2
 
 ## Outcome
 

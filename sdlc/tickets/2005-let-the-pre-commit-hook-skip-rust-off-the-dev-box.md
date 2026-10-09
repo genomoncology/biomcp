@@ -6,7 +6,7 @@ deps: []
 
 # 2005: Let the pre-commit hook skip Rust off the dev box
 
-Status: OPEN.
+Status: withdrawn 2026-10-10 by Ian's ruling (decisions/2026-10-09-biomcp-0-9-2-is-a-clean-release.md, item 2): the pre-commit hook is deleted from the checkout entirely instead of made conditional; nothing runs on commit on either machine. CONTRIBUTING.md stops telling agents to install it.
 
 Milestone: 1.0
 
