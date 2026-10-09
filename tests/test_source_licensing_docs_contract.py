@@ -530,3 +530,35 @@ def test_the_evidence_table_keeps_one_row_per_line() -> None:
     assert set(separator.replace("|", "").replace("-", "").strip()) == set(), (
         "the second table line must be the pure separator row"
     )
+
+
+def test_variant_and_article_mygene_uniprot_surfaces_are_listed() -> None:
+    """2038 finding 6: free-text variant routing, the variant numbering
+    check, and article gene-symbol resolution call MyGene (and UniProt for
+    the numbering check), and the registry and this page must list them so
+    the sources list matches the code.
+    """
+    mygene = _inventory_item("MyGene.info")
+    uniprot = _inventory_item("UniProt")
+    for surface in (
+        "search variant <free-text query>",
+        "get variant <gene> <change>",
+        "get article <id>; article entities",
+    ):
+        assert surface in mygene["bioMcp_surfaces"], surface
+    assert "get variant <gene> <change>" in uniprot["bioMcp_surfaces"]
+
+    licensing = _read("docs/reference/source-licensing.md")
+    mygene_section = _markdown_section_block(
+        licensing, "### MyGene.info\n", "\n### MyVariant.info"
+    )
+    uniprot_section = _markdown_section_block(
+        licensing, "### UniProt\n", "\n### VariantValidator"
+    )
+    for surface in (
+        "search variant <free-text query>",
+        "get variant <gene> <change>",
+        "get article <id>; article entities",
+    ):
+        assert surface in mygene_section, surface
+    assert "get variant <gene> <change>" in uniprot_section

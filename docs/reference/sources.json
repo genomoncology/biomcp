@@ -1005,7 +1005,10 @@
     "via": null,
     "bioMcp_surfaces": [
       "search gene",
-      "get gene <symbol>"
+      "get gene <symbol>",
+      "search variant <free-text query>",
+      "get variant <gene> <change>",
+      "get article <id>; article entities"
     ],
     "bioMcp_auth": "none",
     "env_var": null,
@@ -1015,7 +1018,7 @@
     "terms_url": "https://docs.mygene.info/en/latest/",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data."
+    "notes": "BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data. Free-text variant search confirms a gene-symbol first token, `get variant <gene> <change>` resolves the gene's UniProt accession for the numbering check, and article cards and article entities resolve official symbols for spelled gene names."
   },
   {
     "id": "myvariant-info",
@@ -1491,7 +1494,8 @@
     "via": null,
     "bioMcp_surfaces": [
       "get protein <id>",
-      "get gene <symbol> protein"
+      "get gene <symbol> protein",
+      "get variant <gene> <change>"
     ],
     "bioMcp_auth": "none",
     "env_var": null,
@@ -1501,7 +1505,7 @@
     "terms_url": "https://www.uniprot.org/help/license",
     "key_url": null,
     "reviewed_on": "2026-09-27",
-    "notes": "BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly."
+    "notes": "BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly. `get variant <gene> <change>` reads the canonical (MANE Select) protein sequence to check a requested reference residue."
   },
   {
     "id": "vaers",
