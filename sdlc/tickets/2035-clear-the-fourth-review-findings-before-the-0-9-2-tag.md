@@ -1,6 +1,6 @@
 # 2035 — Clear the fourth review findings before the 0.9.2 tag
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
@@ -76,3 +76,8 @@ Do not tag 0.9.2. Main is in much better shape. 2030 fixed the CI hang: every ma
 ## Landing order
 
 2032 first, after the ticket-file merge and finding 19's Outcome fix. Then 2031, 2034, 2016 and 2022, each rebased on main with a review covering its head and a green merged-tree run on the exact landing tree before main moves. The records and gate items here can land with any of them. 1305 lands last, with bullets checked against main at that point.
+
+## Disposition (2026-10-09)
+
+Every finding is fixed or carries a recorded reason: the Tagrisso brand break (fixed in 2031's landed fourth-review round), the spelled gene names (2034 landed), the MANE-without-ClinVar false note (2016's fix-round-4 landed), the smaller items (2032's records amended on main; 1291's, 2021's, 2029's smaller items carried in their lanes' records or the merge-pooling deferral). The
+pre-tag review may verify each against its landing record.

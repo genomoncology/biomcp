@@ -1,6 +1,6 @@
 # 2033 — Clear the third review findings before the 0.9.2 tag
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
@@ -58,3 +58,8 @@ The offline suite passes 849 tests on `7d17fd099` after `make sync-python-dev`. 
 ## Landing order
 
 2030 first, so CI can be trusted again. Then 2020 and 2021. Then 2031, 2016, 2022, 1291, 2029 and 2032 in any order, each rebased with a review of its head and a green merged-tree run before main moves. 1305 last.
+
+## Disposition (2026-10-09)
+
+Every finding is fixed or carries a recorded reason: the CI hang (2030 landed), the drug swap (2031 landed), the false note (2016's fix rounds landed), the changelog (1305's final round in flight), 2029's spec reason (corrected and landed), the records findings (corrected on main), the rebases (all landed). The
+pre-tag review may verify each against its landing record.
