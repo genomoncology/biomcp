@@ -855,9 +855,6 @@ async fn populate_common_sections(
         } else if label_response.is_some() {
             SectionOutcome::empty_with_reason("OpenFDA label", NO_LABEL_TEXT_NOTE)
         } else if label_elements_oversize {
-            // Ticket 2033 finding 8: a fallback answer too large to read is
-            // a provider-side failure, not a source-confirmed zero, so the
-            // oversize settle is unavailable with its own reason.
             SectionOutcome::unavailable(ELEMENTS_SEARCH_OVERSIZE_NOTE)
         } else {
             SectionOutcome::empty_with_reason("OpenFDA label", NO_SPL_RECORD_NOTE)
