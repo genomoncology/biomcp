@@ -253,3 +253,11 @@ note) and the unified transcript versions, and the R209Q refusal block pins
 the new retry line. Unit tests pin the ClinVar-free naming tier (single-hit
 and two-hit cohorts), the marker outranking the naming annotation, the
 version upgrade on a recorded BRAF V600E shape, and the refusal retry line.
+
+## Fix-round-4 residual (recorded from the review)
+
+A ClinVar-free response whose only naming annotation sits on a
+non-MANE isoform resolves on that annotation: no MANE source exists in
+this data to overrule it. The answer names the exact transcript and
+spelling, and the ClinVar-marked equivalent still refuses. The full
+transcript-aware resolver stays deferred to the shared parser.
