@@ -1043,7 +1043,7 @@ async fn tarceva_resolves_erlotinib_through_the_guarded_discover_rescue() {
                 crate::transform::drug::name_resolution_tests::TARCEVA_CAPTURE.to_string(),
             ),
             (
-                "Erlotinib Hydrochloride".to_string(),
+                "erlotinib hydrochloride".to_string(),
                 crate::transform::drug::name_resolution_tests::ERLOTINIB_HYDROCHLORIDE_CAPTURE
                     .to_string(),
             ),
@@ -1058,8 +1058,9 @@ async fn tarceva_resolves_erlotinib_through_the_guarded_discover_rescue() {
 
     // Ticket 2037: MyChem holds Tarceva only on a record with no name and
     // openFDA holds no Tarceva label, so the guarded discover rescue must
-    // run before the name-miss refusal. The rescue resolves the brand to
-    // erlotinib hydrochloride and the card carries the erlotinib label.
+    // run before the name-miss refusal. The rescue's top concept is the
+    // merged erlotinib hydrochloride entry (CHEBI:53509 label spelling),
+    // and the card carries the erlotinib label.
     let drug = name_resolution_fixture_drug(&base, "Tarceva").await;
     assert_eq!(drug.name, "erlotinib hydrochloride");
     assert_eq!(drug.drugbank_id.as_deref(), Some("DB00530"));
