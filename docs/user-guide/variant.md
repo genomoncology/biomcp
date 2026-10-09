@@ -124,6 +124,15 @@ biomcp search variant -g PTPN22 R620W --limit 5
 Standalone protein shorthand like `R620W` returns variant-specific recovery
 guidance instead of falling back to gene or condition discovery.
 
+A free-text phrase whose first word is a gene's official symbol routes that
+word to the gene filter and searches the remaining words as the condition:
+`biomcp search variant "SCN5A Brugada"` reads as `gene=SCN5A,
+condition=Brugada`. Aliases and other words never route, so
+`"HCC liver cancer"` stays one whole-phrase condition search. Set
+`BIOMCP_VARIANT_QUERY_GENE_ROUTING=off` to restore the whole-phrase search
+for every phrase. A phrase search that returns nothing states how it was
+read and prints a working alternative.
+
 Protein searches using `--hgvsp` or positional `GENE CHANGE`, plus coding-HGVS and rsID searches, are exact identity routes. BioMCP keeps
 the supplied spelling, normalizes aliases only for comparison, and excludes
 MyVariant candidates whose source gene or allele facts contradict the request.
