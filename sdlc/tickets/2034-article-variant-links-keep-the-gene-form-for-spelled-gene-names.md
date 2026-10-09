@@ -1,6 +1,6 @@
 # 2034 — Article variant links keep the gene form for spelled gene names
 
-Status: OPEN.
+Status: complete.
 
 Milestone: 0.9.2
 
