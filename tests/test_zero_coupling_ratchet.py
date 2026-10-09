@@ -628,9 +628,13 @@ def test_main_requires_local_names_and_notes_the_inert_mode(
 ) -> None:
     checker = _module()
     inventory = _inventory(tmp_path / "inventory.json", {})
-    # Root the declaration lookup at the fixture tree so the test does not
-    # depend on whether the machine running the suite keeps a local file.
-    monkeypatch.setattr(checker, "ROOT", tmp_path)
+    # The declaration must resolve under `--root`, not beside the script
+    # (ticket 2044): point the module's own ROOT at a decoy tree with no
+    # declaration, so a lookup beside the script would wrongly fail the
+    # require mode while the scanned tree carries the real declaration.
+    decoy = tmp_path / "decoy-script-tree"
+    decoy.mkdir()
+    monkeypatch.setattr(checker, "ROOT", decoy)
     # The scan walks tracked files, so the fixture needs a repository.
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
 
@@ -652,6 +656,13 @@ def test_main_requires_local_names_and_notes_the_inert_mode(
         "sdlc/pm-forbidden-names.json",
         [base64.b64encode(PRIVATE_NAME.encode()).decode()],
     )
+    code = checker.main(
+        ["--root", str(tmp_path), "--inventory", str(inventory), "--require-local-names"]
+    )
+    assert code == 0, "the required declaration resolves under --root, not beside the script"
+    err = capsys.readouterr().err
+    assert "guarding only the tracked example names" not in err
+
     code = checker.main(
         ["--root", str(tmp_path), "--inventory", str(inventory)]
     )

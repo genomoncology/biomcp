@@ -1866,6 +1866,118 @@ mod tests {
         assert_eq!(resource["contents"][0]["text"], "# Help\nBadlabel");
     }
 
+    /// SAFETY: this test owns the `source_env` serial-test key, so the
+    /// process-global WHO Prequalification variables are exclusive while
+    /// it runs.
+    struct WhoMcpFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+    impl WhoMcpFixtureEnv {
+        fn set(name: &'static str, value: impl AsRef<std::ffi::OsStr>) -> Self {
+            let mut guard = Self(Vec::new());
+            guard.0.push((name, std::env::var_os(name)));
+            // SAFETY: this test owns the source_env serial-test key.
+            unsafe { std::env::set_var(name, value) };
+            guard
+        }
+    }
+
+    impl Drop for WhoMcpFixtureEnv {
+        fn drop(&mut self) {
+            for (name, value) in self.0.drain(..).rev() {
+                // SAFETY: this test owns the source_env serial-test key.
+                unsafe {
+                    match value {
+                        Some(value) => std::env::set_var(name, value),
+                        None => std::env::remove_var(name),
+                    }
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(source_env)]
+    async fn mcp_who_region_search_error_carries_no_local_data_path() {
+        // Ticket 2038 finding 7, ticket 2044: when WHO Prequalification
+        // data cannot be prepared, `search drug <name> --region who` fails
+        // and the failure's terminal suggestion names the resolved data
+        // directory. The MCP error text must come from the public error
+        // projection, so it names the failure and the recovery without
+        // the local path.
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind WHO Prequalification MCP fixture");
+        let base = format!(
+            "http://{}",
+            listener.local_addr().expect("fixture address")
+        );
+        let server = tokio::spawn(async move {
+            // Every export answers a CSV whose headers do not match, so the
+            // sync fails per file and the final error names the exports.
+            let body = "WRONG,HEADER,ROW\n1,2,3\n";
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let mut request = [0_u8; 4096];
+                let read = stream.read(&mut request).await.unwrap_or(0);
+                let target = String::from_utf8_lossy(&request[..read])
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or_default()
+                    .to_string();
+                let status = if target.starts_with("/") { "200 OK" } else { "404 Not Found" };
+                let response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Type: text/csv\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = stream.write_all(response.as_bytes()).await;
+            }
+        });
+        let who_dir = crate::test_support::TempDirGuard::new("mcp-who-region-root");
+        let cache = crate::test_support::TempDirGuard::new("mcp-who-region-cache");
+        let _url_fpp = WhoMcpFixtureEnv::set(
+            crate::sources::who_pq::WHO_PQ_EXPORT_URL_ENV,
+            format!("{base}/fpp.csv"),
+        );
+        let _url_api = WhoMcpFixtureEnv::set(
+            crate::sources::who_pq::WHO_PQ_API_EXPORT_URL_ENV,
+            format!("{base}/api.csv"),
+        );
+        let _url_vaccines = WhoMcpFixtureEnv::set(
+            crate::sources::who_pq::WHO_VACCINES_EXPORT_URL_ENV,
+            format!("{base}/vaccines.csv"),
+        );
+        let _who_dir = WhoMcpFixtureEnv::set("BIOMCP_WHO_DIR", who_dir.path());
+        let _cache = WhoMcpFixtureEnv::set("BIOMCP_CACHE_DIR", cache.path());
+
+        let result = BioMcpServer::new()
+            .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+                command: "biomcp search drug aspirin --region who".into(),
+                json: false,
+            }))
+            .await
+            .expect("WHO region search returns a tool result");
+        server.abort();
+
+        let value = serde_json::to_value(&result).expect("serialize MCP result");
+        assert_eq!(value["isError"], true, "the WHO failure is a tool error");
+        let text = value["content"][0]["text"]
+            .as_str()
+            .expect("WHO failure text");
+        assert!(
+            text.starts_with(
+                "Error: Could not prepare WHO Prequalification data."
+            ),
+            "the projected message names the failure: {text}"
+        );
+        assert!(text.contains("BIOMCP_WHO_DIR"), "recovery names the env: {text}");
+        let root = who_dir.path().display().to_string();
+        assert!(
+            !text.contains(&root),
+            "the MCP error text must stay path-free: {text}"
+        );
+    }
+
     #[test]
     fn mcp_full_text_path_redaction_is_field_driven_for_text_and_json() {
         let path = "/tmp/BioMCP cache/naïve article.md";

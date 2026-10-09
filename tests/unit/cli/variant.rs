@@ -625,6 +625,109 @@ fn apply_gene_first_routing_keeps_every_explicit_filter_in_both_hints() {
     );
 }
 
+/// Restores search-source environment variables after one test; the
+/// setter shares the `source_env` serial group, which serializes every
+/// other test that mutates provider variables.
+struct SearchEnvRestore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl SearchEnvRestore {
+    /// SAFETY: callers hold the source_env serial-test process-wide lock.
+    unsafe fn set(name: &'static str, value: impl AsRef<std::ffi::OsStr>) -> Self {
+        let prior = std::env::var_os(name);
+        unsafe { std::env::set_var(name, value) };
+        Self(vec![(name, prior)])
+    }
+}
+
+impl Drop for SearchEnvRestore {
+    fn drop(&mut self) {
+        // SAFETY: see SearchEnvRestore::set.
+        unsafe {
+            for (name, value) in self.0.drain(..).rev() {
+                match value {
+                    Some(value) => std::env::set_var(name, value),
+                    None => std::env::remove_var(name),
+                }
+            }
+        }
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn refused_zero_row_search_hint_keeps_the_callers_flags_end_to_end() {
+    // Ticket 2044, end to end: a refused gene-first phrase whose search
+    // returns zero rows prints the working form, and that form must keep
+    // the caller's explicit `--hgvsp` and `--significance` flags. The
+    // myvariant fixture answers an empty page and gene routing is off, so
+    // the oracle refuses BRUGADA deterministically offline.
+    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind myvariant fixture");
+    let base = format!(
+        "http://{}",
+        listener.local_addr().expect("fixture address")
+    );
+    let server = tokio::spawn(async move {
+        let body = r#"{"total":0,"hits":[]}"#;
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let mut request = [0_u8; 8192];
+            let _ = stream.read(&mut request).await;
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = stream.write_all(response.as_bytes()).await;
+        }
+    });
+    let cache = tempfile::Builder::new()
+        .prefix("biomcp-test-variant-search-hint-")
+        .tempdir()
+        .expect("temp cache dir");
+    // SAFETY: this test owns the source_env serial-test key.
+    let _myvariant =
+        unsafe { SearchEnvRestore::set("BIOMCP_MYVARIANT_BASE", &base) };
+    // SAFETY: this test owns the source_env serial-test key.
+    let _cache = unsafe { SearchEnvRestore::set("BIOMCP_CACHE_DIR", cache.path()) };
+    // SAFETY: this test owns the source_env serial-test key.
+    let _routing =
+        unsafe { SearchEnvRestore::set("BIOMCP_VARIANT_QUERY_GENE_ROUTING", "off") };
+
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "search",
+        "variant",
+        "BRUGADA syndrome",
+        "--hgvsp",
+        "V600E",
+        "--significance",
+        "benign",
+    ])
+    .expect("parse refused search");
+    let outcome = run_outcome(cli).await.expect("zero-row search outcome");
+    server.abort();
+
+    assert_eq!(outcome.stream, OutputStream::Stdout);
+    assert_eq!(outcome.exit_code, 0);
+    assert!(
+        outcome
+            .text
+            .contains("No variants matched the phrase as a condition"),
+        "the refused zero-row hint prints: {}",
+        outcome.text
+    );
+    assert!(
+        outcome.text.contains(
+            "biomcp search variant -g BRUGADA --hgvsp V600E --condition syndrome \
+             --significance benign"
+        ),
+        "the working form keeps every explicit flag: {}",
+        outcome.text
+    );
+}
+
 #[test]
 fn gene_first_working_form_quotes_multi_word_conditions() {
     assert_eq!(
