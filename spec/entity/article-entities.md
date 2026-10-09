@@ -7,9 +7,9 @@ text. Rows that share a mention text but differ in identifier stay separate
 rows, and rows that share an identifier but differ in text stay separate too:
 the row is the mention group, not the registry entry.
 
-The page runs against the provider-faithful PubTator3 capture for PMID
-30738221, recorded from the public export endpoint and served by the shared
-article fixture.
+The page runs against the provider-faithful PubTator3 captures for PMIDs
+30738221 and 37887282, recorded from the public export endpoint and served
+by the shared article fixture.
 
 ## Rows Carry Identifier and Namespace
 
@@ -162,4 +162,36 @@ what `rs121913529` alone opens: G12D, not the allele every other row names.
 biomcp --json --no-cache get variant '{{query}}' \
   | jq -c '{id: .id, protein: .hgvs_p}' \
   | mustmatch like '{"id":"{{id}}","protein":"{{protein}}"}'
+```
+
+## Spelled Gene Names Keep the Gene Form
+
+PMID 37887282 spells the gene "K-Ras" and "K-RAS" in every human mention,
+so no gene annotation text can head an exact gene-plus-change form. The
+rows' own data still carries NCBI Gene 3845, and the recorded MyGene
+batch-symbol response answers that identifier with the official symbol
+KRAS, so every row prints the gene-plus-protein command. A spelled name must
+not send the row to the rsID: rs121913530 names G12S, G12R and G12C, and
+rs121913529 names G12A, G12D and G12V, so either link opens whichever allele
+the provider ranks first, and the bare mention text is shorthand, not exact
+input.
+
+```bash
+../../tools/biomcp-ci article entities 37887282 \
+  | mustmatch '/\| G12C \| 1 \| `biomcp get variant "KRAS p.G12C"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 37887282 \
+  | mustmatch '/\| G12V \| 1 \| `biomcp get variant "KRAS p.G12V"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 37887282 \
+  | mustmatch '/\| G12D \| 1 \| `biomcp get variant "KRAS p.G12D"` \|/'
+```
+
+```bash
+../../tools/biomcp-ci article entities 37887282 \
+  | mustmatch not '/get variant rs121913529|get variant rs121913530|get variant G12[CVD]/'
 ```

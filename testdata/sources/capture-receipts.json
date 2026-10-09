@@ -3518,6 +3518,30 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
       }
+    },
+    {
+      "path": "pubtator/export_37887282.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=37887282",
+        "captured_at": "2026-10-08T00:00:00Z",
+        "sha256": "ac0103f7d4978761b0d079baa2684251852607309a5351b02c27a97333e744ea",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2034)."
+      }
+    },
+    {
+      "path": "mygene/gene_symbols_3845_20261008.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/gene (POST ids=3845&fields=symbol&species=human)",
+        "captured_at": "2026-10-08T00:00:00Z",
+        "sha256": "532fceedabb29adb3bcdcbdf59193195f9b78c4f7e89a8f18166220fe6174078",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization (ticket 2034)."
+      }
     }
   ],
   "fixture_key_contract": {

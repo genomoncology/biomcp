@@ -22,3 +22,43 @@ Filed 2026-10-08 from the fourth independent review of main at `cf8113f3a` (tick
 - Changes: choose the most-mentioned gene text that passes the symbol check; when a row has a gene identifier and no usable symbol text, build the gene form from the gene identifier's official symbol or the mention text, not the rsID.
 - Proof: a test with "K-ras" mentions and a single G12A row prints `biomcp get variant "KRAS p.G12A"` and fails on `cf8113f3a`; a test covers a gene with no symbol-shaped mention.
 - Defers: gene-less multi-allele rsID rows, which 2029 records as a known limit.
+
+## Root cause
+
+`MutationContext::collect` (`src/transform/article/annotations.rs`) takes each
+gene's most-mentioned text as its symbol without checking the text's shape, and
+`gene_qualified_change` builds the gene-plus-change form only when that text
+is an exact gene token — all capitals and digits after the first letter
+(`is_exact_gene_token`, `src/entities/variant/resolution.rs`). An article that
+spells the gene "K-ras" or "K-RAS" has a most-mentioned text that fails the
+check, so the form never classifies as exact input and the row falls to the
+document-based fallbacks: an rsID the document shows naming one change keeps
+its link, and a multi-allele rsID with a protein change loses its identifier
+entirely. The row's own data still carries the gene's NCBI identifier
+(`gene_id` 3845 for the capture above) and the protein change, and MyGene
+resolves 3845 to the official symbol KRAS, but nothing consults the
+identifier when the mention text fails the shape check. The symbol-shaped
+mention also loses to a more-mentioned spelled form: a document mentioning
+"K-ras" twice and "KRAS" once picks "K-ras" today.
+
+## Success criteria
+
+- A document that mentions "K-ras" twice and "KRAS" once with a single G12A
+  row on `rs121913529` prints `biomcp get variant "KRAS p.G12A"`: the
+  most-mentioned gene text that passes the symbol check wins. A named test
+  pins this and fails on `cf8113f3a`, where the row prints
+  `biomcp get variant rs121913529`.
+- A document whose every gene mention fails the symbol check ("K-Ras",
+  "K-RAS") still prints the gene form when the gene identifier resolves to an
+  official symbol: MyGene's batch gene lookup answers NCBI Gene 3845 with
+  KRAS, so the G12C, G12V and G12D rows of the recorded PMID 37887282 capture
+  print `biomcp get variant "KRAS p.G12C"`, `"KRAS p.G12V"` and
+  `"KRAS p.G12D"` on the spec page. A named unit test pins the official-symbol
+  path, and a test pins that a non-symbol official symbol builds no form.
+- The official-symbol lookup runs only for gene identifiers that a mutation
+  row carrying a protein change references and whose mentions are never
+  symbol-shaped, so ordinary documents add no MyGene traffic. A failed lookup
+  keeps 2029's fallbacks.
+- 2029's keeps hold: rows with no gene keep their rsID links, rows with no
+  usable form keep the mention-text command, and the existing named tests stay
+  green.
