@@ -83,6 +83,6 @@ Synthetic bundles only, served by the existing spec fixture runner:
 
 ## Review
 
-- Design review: rejected and split (2026-09-23). Search moved to 2003. Added ID validation, same-origin paging and redirects, a page cap, one retry layer, one no-store request function, trace-level leak proof, and one serve-http check with a test per MCP path.
-- Design re-review: accepted with required change (2026-09-23). Set level 4 by the security floor, defined `search patient` before 2003, restored the CA-bundle client with its own redirect policy, added the `Patient/{id}` redirect case.
-- Code review: pending
+- Design review (item batch): REJECT 2026-09-23, resolved by the split below. Search moved to 2003. Added ID validation, same-origin paging and redirects, a page cap, one retry layer, one no-store request function, trace-level leak proof, and one serve-http check with a test per MCP path.
+- Design re-review (item batch): ACCEPT 2026-09-23 with the required change folded. Set level 4 by the security floor, defined `search patient` before 2003, restored the CA-bundle client with its own redirect policy, added the `Patient/{id}` redirect case.
+- Code review: PENDING (the 1.0 line owns it; ticket 2041 returns that branch to main first)

@@ -4,7 +4,7 @@ Status: complete.
 
 Milestone: 1.0
 Landed: 12a299a64620adbaff2019dbd8c55ecbdf0e0595
-Review: accept.
+Verification (carried ticket): ACCEPT 2026-10-09 — carried from the 1.0 branch with its landing history intact.
 
 ## Outcome
 

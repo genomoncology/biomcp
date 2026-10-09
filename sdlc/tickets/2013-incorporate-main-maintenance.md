@@ -76,7 +76,7 @@ The exact accepted donor is merged through normal Git history. The candidate als
 
 ## Acceptance and landing
 
-Review: accept. Fresh CODE ACCEPT at 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff. Root accepts the documented inherited Darwin, Linux isolation, Clippy and source-size findings for this bounded incorporation.
+Verification (carried ticket): ACCEPT 2026-10-09 — carried from the 1.0 branch with its landing history intact. Fresh CODE ACCEPT at 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff. Root accepts the documented inherited Darwin, Linux isolation, Clippy and source-size findings for this bounded incorporation.
 
 Landed: 3a836563af98b06fbdc2fe53daef8e8bf1b3ceff. This reviewed candidate retains the qualified runtime from 510077760477781ab9b24611656e394984264753. The subsequent Land 2013 commit records completion and acceptance. See the [existing build record](../records/2013-incorporate-main-maintenance-build.md).
 

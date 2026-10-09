@@ -82,7 +82,7 @@ Synthetic bundles only, served by the existing spec fixture runner. "Sends no re
 
 ## Review
 
-- Design review: split from 2002 (2026-09-23). Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
-- Design re-review: accepted (2026-09-23). Stated the `--limit` range and where `_has` must be declared.
-- Design review after 2002 landed: rejected (2026-09-23). Revised to check every search parameter against `metadata`, send `Prefer: handling=strict`, check value forms and commas, keep only id, gender, and birth date in output, state the transport work, keep typed MCP search filterless, and run the serve-http case with filters.
+- Design review (item batch): ACCEPT 2026-09-23, split from 2002. Added the no-total count case, `--limit`, strict `gt` and `lt` date bounds, and the live `_has` check in the smoke run.
+- Design re-review (item batch): ACCEPT 2026-09-23. Stated the `--limit` range and where `_has` must be declared.
+- Design re-review (item batch, after 2002 landed): REJECT 2026-09-23, revisions folded into the Changes line below. Revised to check every search parameter against `metadata`, send `Prefer: handling=strict`, check value forms and commas, keep only id, gender, and birth date in output, state the transport work, keep typed MCP search filterless, and run the serve-http case with filters.
 - Code review: pending

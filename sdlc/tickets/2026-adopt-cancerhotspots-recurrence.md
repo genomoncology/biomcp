@@ -22,7 +22,7 @@ Replace the local Cancer Hotspots response decoder, recurrence mapper and author
 
 PM allocated2026 in the global repository sequence and stamped active1.0. Backend names this component. This design writer claims only this ticket and its linked design. Root assigns fresh paired DESIGN review of both exact candidates before any BUILD release. Cost of delay: replacing both finite active callers now advances1.0; a broad source audit or completed-slice redesign does not.
 
-Review: fresh paired DESIGN ACCEPT at BioData1e7c6172 and BioMCPd191a20b. Root adopts the nonblocking correction that removes dedicated benchmark ceremony. Functional contracts remain unchanged. Root released BUILD after producer0714 landing and the dedicated target merge.
+Verification (carried ticket, paired design): ACCEPT 2026-10-09 — paired design review ACCEPT at BioData1e7c6172 and BioMCPd191a20b; the nonblocking correction removing dedicated benchmark ceremony was adopted; functional contracts unchanged; BUILD released after the producer landing and the target merge.
 
 ## BUILD release
 
@@ -30,5 +30,5 @@ Root released BUILD on October 7 after BioData0714 landed at `edd138da0ba1040398
 
 Final qualification: both callers and channels passed. The [consumer record](../records/2026-adopt-cancerhotspots-recurrence.md) names the exact producer, target, candidate, 14 affected Rust tests, 147 Python checks, retired claims, measured costs and inherited gate limits. Root retains closure authority.
 
-CODE review: ACCEPT at d97fd21b by fresh read-only reviewer; no concrete findings.
+- Code review: ACCEPT 2026-10-09 at d97fd21b by a fresh read-only reviewer; no concrete findings.
 Landed: e87bb5981665c3d077e576058b9cf079aa7e3af0

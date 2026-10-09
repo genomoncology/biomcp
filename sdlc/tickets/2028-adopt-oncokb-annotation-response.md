@@ -22,7 +22,7 @@ Reuse existing source parsing, authentication/request construction, helper trunc
 
 Root reconciles maintenance before consumer BUILD and exact CODE review, obtains fresh read-only review, verifies relevant checks, lands on biodata/biomcp-1.0 and pushes. Whole pair completes when the accepted producer is pinned, the actual helper preserves reviewed outputs, and displaced schema ownership is retired. Producer API alone does not close either outcome. BUILD waits for the exact accepted producer pin, not whole-pair COMPLETE; Root releases it explicitly.
 
-Reviews: accept
+Verification (carried ticket): ACCEPT 2026-10-09 — the 1.0 branch's review chain is intact in its landing record.
 
 ## BUILD release
 
@@ -36,6 +36,6 @@ The runtime CODE and registration correction are pushed. GitHub server errors bl
 
 ## Paired completion
 
-Reviews: accept
+Verification (carried ticket): ACCEPT 2026-10-09 — the 1.0 branch's review chain is intact in its landing record.
 Fresh Medium CODE review acceptedfe9d3f4ad01d3e6c5ba9a7e3242f805f7db6f4e4. Handoff72f521aa contains unchanged runtime, final receipts and minor test cleanup. Eleven affected Rust checks and154 distinct Python checks passed; inherited Darwin isolation and whole-gate findings remain separate. Five local source schema types and their successful decoder are retired.
 Landed: 15780faacade47553e17672f96f90de3614b89dc

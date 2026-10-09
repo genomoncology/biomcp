@@ -42,4 +42,4 @@ The four new cases keep separate channel, route-plan and uncapped-citation claim
 
 ## Completion
 
-Review: accept. Fresh High CODE ACCEPT a871bbc3b8b67cb5f196f33ea4819d5187a921c8. Landed: a871bbc3b8b67cb5f196f33ea4819d5187a921c8. Paired producer33b8ff13f1f445eadbfa10fb433852f5b77b4a1d passed its required Linux checks. See [record](../records/2012-adopt-cached-variant-evidence.md). Root accepts the documented inherited whole-gate findings for this bounded change.
+Verification (carried ticket): ACCEPT 2026-10-09 — carried from the 1.0 branch with its landing history intact. Fresh High CODE ACCEPT a871bbc3b8b67cb5f196f33ea4819d5187a921c8. Landed: a871bbc3b8b67cb5f196f33ea4819d5187a921c8. Paired producer33b8ff13f1f445eadbfa10fb433852f5b77b4a1d passed its required Linux checks. See [record](../records/2012-adopt-cached-variant-evidence.md). Root accepts the documented inherited whole-gate findings for this bounded change.

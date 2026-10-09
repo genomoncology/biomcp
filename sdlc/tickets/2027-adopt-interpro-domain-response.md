@@ -35,6 +35,5 @@ Checked consumer candidate: `ef17e572ec5f5f812e71e46799bdd191c9b5a3b5`. Exact pr
 
 ## Landing
 
-Reviews: accept
-Fresh Medium CODE review accepted ef17e572ec5f5f812e71e46799bdd191c9b5a3b5. Twelve affected Rust checks and147 Python checks passed, with one established Darwin deselection. Inherited whole-gate findings stay separate.
+Verification (carried ticket): ACCEPT 2026-10-09 — code review ACCEPT at ef17e572ec5f5f812e71e46799bdd191c9b5a3b5 by a fresh reviewer; twelve affected Rust checks and 147 Python checks passed, with one established Darwin deselection; inherited whole-gate findings stay separate.
 Landed: 22945b5ee0c31c97c79f6b2511068ca68f8c7dbb

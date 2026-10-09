@@ -23,6 +23,6 @@ Adopt the accepted complete MyVariant source projection and encoder. Preserve th
 Root ruled that this newly started consumer needs its own global BioMCP reservation. pm reserved refs/pm/2011. This ticket retains that allocated number. BioData 0706 is the producer and paired authority; it is not a BioMCP ticket number. The owning branch is ticket/2011-adopt-shared-myvariant-hit. The provisional biodata/ticket-0706-myvariant-whole-hit-adoption branch and its pushed history remain preserved. No existing ticket or reservation is renumbered or released. The sole active 1.0 configuration from the consumer base remains unchanged.
 
 Landed: 118464eaef19929ab216bf9df4cbdbba5c559d39
-Review: accept.
+Verification (carried ticket): ACCEPT 2026-10-09 — carried from the 1.0 branch with its landing history intact.
 
 Root accepted fresh CODE review and paired verification with BioData766c4321. Inherited unrelated gate findings are recorded. This completes the scoped backend migration, not release1.0.
