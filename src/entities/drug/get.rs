@@ -995,11 +995,39 @@ async fn populate_who_sections(
 ) -> Result<(), BioMcpError> {
     if !section_flags.include_regulatory {
         drug.who_prequalification = None;
+        drug.who_note = None;
         return Ok(());
     }
 
-    let client = WhoPqClient::ready(WhoPqSyncMode::Auto).await?;
+    let ready = WhoPqClient::ready(WhoPqSyncMode::Auto).await;
+    apply_who_sections_result(drug, requested_name, ready)
+}
+
+/// Apply the WHO bundle readiness to the card's WHO section. A readable
+/// bundle fills the section; a bundle that cannot be read degrades the
+/// section with a path-free note instead of failing the whole card, the
+/// way the all-region search degrades (ticket 2038 finding 7, 2035 #6):
+/// a JSON or MCP caller still gets the rest of the card, the note names
+/// the WHO gap, and the local data path stays terminal-only.
+fn apply_who_sections_result(
+    drug: &mut Drug,
+    requested_name: &str,
+    ready: Result<WhoPqClient, BioMcpError>,
+) -> Result<(), BioMcpError> {
+    let client = match ready {
+        Ok(client) => client,
+        Err(err) => {
+            warn!(
+                name = %drug.name,
+                "WHO Prequalification data unavailable for drug card: {err}"
+            );
+            drug.who_prequalification = None;
+            drug.who_note = Some(crate::entities::drug::who_pq_degradation_note(&err, "card"));
+            return Ok(());
+        }
+    };
     let identity = build_who_identity(requested_name, drug);
+    drug.who_note = None;
     drug.who_prequalification = Some(client.regulatory(&identity, WhoProductTypeFilter::Both)?);
     Ok(())
 }
@@ -1128,6 +1156,7 @@ async fn get_with_region_owned(
         populate_who_sections(&mut resolved.drug, &name, &section_flags).await?;
     } else {
         resolved.drug.who_prequalification = None;
+        resolved.drug.who_note = None;
     }
 
     if section_flags.include_safety && (region.includes_us() || region.includes_eu()) {

@@ -662,18 +662,20 @@ impl BioMcpError {
         }
         // The WHO Prequalification sync failure names its files, and for a
         // validation failure the missing column, in its reason; carry that
-        // sentence and its suggestion instead of the generic source-down
-        // message, so a failed export says what happened (ticket 2021,
-        // mirroring the article deadline reason prefix).
-        if let Self::SourceUnavailable {
-            reason, suggestion, ..
-        } = self.underlying()
+        // sentence through instead of the generic source-down message, so a
+        // failed export says what happened (ticket 2021, mirroring the
+        // article deadline reason prefix). The recovery here serves the
+        // projected surfaces — JSON `error.recovery` and MCP callers — so
+        // it carries no local data path; the terminal keeps the sentence
+        // that names the resolved directory (ticket 2038 finding 7,
+        // 2035 #6).
+        if let Self::SourceUnavailable { reason, .. } = self.underlying()
             && reason.starts_with(crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX)
         {
             return PublicErrorProjection {
                 message: reason.clone(),
                 source: None,
-                recovery: Some(suggestion.as_str()),
+                recovery: Some(crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY),
             };
         }
         // The citation-evidence surface reports its own refusal summary and
@@ -821,6 +823,18 @@ impl fmt::Display for BioMcpError {
             | Self::SourceUnavailable { .. }
             | Self::CaBundle { .. }
             | Self::WithSourceContext { .. } => {
+                // The WHO Prequalification sync failure keeps its local data
+                // path on the terminal, which is the only surface allowed
+                // to carry one; JSON and MCP read the path-free recovery
+                // from the projection instead (ticket 2038 finding 7,
+                // 2035 #6).
+                if let Self::SourceUnavailable {
+                    reason, suggestion, ..
+                } = self.underlying()
+                    && reason.starts_with(crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX)
+                {
+                    return write!(formatter, "{reason} {suggestion}");
+                }
                 let projection = self.public_projection();
                 formatter.write_str(&projection.message)?;
                 if let Some(recovery) = projection.recovery {

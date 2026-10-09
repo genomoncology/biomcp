@@ -1128,6 +1128,7 @@ mod tests {
             ema_safety: None,
             ema_shortage: None,
             who_prequalification: None,
+            who_note: None,
             civic: None,
             cell_lines: None,
         };
@@ -1205,6 +1206,7 @@ mod tests {
                 manufacturer: None,
                 responsible_nra: None,
             }]),
+            who_note: None,
             civic: None,
             cell_lines: None,
         };
@@ -1257,6 +1259,7 @@ mod tests {
             ema_safety: None,
             ema_shortage: None,
             who_prequalification: None,
+            who_note: None,
             civic: None,
             cell_lines: None,
         };

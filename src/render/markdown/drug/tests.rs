@@ -50,6 +50,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -103,6 +104,7 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -226,6 +228,7 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -277,6 +280,7 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -329,6 +333,7 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -427,6 +432,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
             last_updated_date: Some("13/01/2026".to_string()),
         }]),
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -476,8 +482,40 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
 }
 
 #[test]
-fn drug_markdown_with_region_who_renders_regulatory_block() {
+fn drug_markdown_with_region_who_names_the_gap_when_the_bundle_cannot_be_read() {
+    // Ticket 2038 finding 7, 2035 #6: an unreadable WHO bundle degrades the
+    // card instead of failing it, and the printed note names the gap without
+    // any local data path.
     let drug = Drug {
+        name: "zidovudine".to_string(),
+        who_prequalification: None,
+        who_note: Some(crate::entities::drug::who_pq_degradation_note(
+            &BioMcpError::SourceUnavailable {
+                source_name: "WHO Prequalification".to_string(),
+                reason: format!(
+                    "{} Refresh failed for who_pq.csv.",
+                    crate::sources::who_pq::WHO_PQ_SYNC_FAILURE_REASON_PREFIX
+                ),
+                suggestion: crate::sources::who_pq::who_pq_sync_failure_recovery(
+                    std::path::Path::new("/home/who/private-data"),
+                ),
+            },
+            "card",
+        )),
+        ..test_who_regulatory_drug()
+    };
+    let markdown =
+        drug_markdown_with_region(&drug, &["regulatory".to_string()], DrugRegion::Who, false)
+            .expect("markdown");
+    assert!(markdown.contains("## Regulatory (WHO Prequalification)"));
+    assert!(markdown.contains("so this card omits the WHO section"));
+    assert!(markdown.contains("biomcp who sync"));
+    assert!(!markdown.contains("/home/who"));
+    assert!(!markdown.contains("Not WHO-prequalified"));
+}
+
+fn test_who_regulatory_drug() -> Drug {
+    Drug {
         section_outcomes: Default::default(),
         name: "trastuzumab".to_string(),
         drugbank_id: Some("DB00072".to_string()),
@@ -539,9 +577,15 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
             manufacturer: None,
             responsible_nra: None,
         }]),
+        who_note: None,
         civic: None,
         cell_lines: None,
-    };
+    }
+}
+
+#[test]
+fn drug_markdown_with_region_who_renders_regulatory_block() {
+    let drug = test_who_regulatory_drug();
 
     let markdown =
         drug_markdown_with_region(&drug, &["regulatory".to_string()], DrugRegion::Who, false)
@@ -734,6 +778,7 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         }),
         ema_shortage: Some(Vec::new()),
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };
@@ -808,6 +853,7 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         }),
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     };

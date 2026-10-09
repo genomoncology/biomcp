@@ -799,6 +799,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         ema_safety: None,
         ema_shortage: None,
         who_prequalification: None,
+        who_note: None,
         civic: None,
         cell_lines: None,
     }

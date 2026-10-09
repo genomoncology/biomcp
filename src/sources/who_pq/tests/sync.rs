@@ -222,19 +222,27 @@ async fn sync_names_the_failing_file_and_column_in_its_final_error() {
         "recovery: {:?}",
         projection.recovery
     );
-    // The recovery names the resolved data directory so the manual preseed
-    // has a destination (second review finding 17).
+    // The projected recovery (JSON `error.recovery`, MCP callers) never
+    // carries the resolved data directory: local paths stay terminal-only
+    // (ticket 2038 finding 7, 2035 #6).
     let root_path = root.path().display().to_string();
-    assert!(
-        projection
-            .recovery
-            .is_some_and(|recovery| recovery.contains(&root_path)),
+    assert_eq!(
+        projection.recovery,
+        Some(WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY),
         "recovery: {:?}",
         projection.recovery
     );
-    // The rendered error names the file and column once, with no doubled
-    // period from the recovery suffix (the slip finding 12 reported).
+    assert!(
+        !WHO_PQ_SYNC_FAILURE_PROJECTED_RECOVERY.contains(&root_path),
+        "the projected recovery must stay path-free"
+    );
+    // The terminal keeps the manual preseed destination: the rendered
+    // error names the resolved data directory (second review finding 17).
     let rendered = err.to_string();
+    assert!(
+        rendered.contains(&root_path),
+        "rendered terminal error must keep the local data path: {rendered}"
+    );
     assert!(rendered.contains("who_pq.csv"));
     assert!(!rendered.contains(".."));
 }
