@@ -85,6 +85,7 @@ jobs:
           version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install canonical gate tools
+        timeout-minutes: 20
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \

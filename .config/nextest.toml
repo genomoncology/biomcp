@@ -1,0 +1,7 @@
+# A hung test must die, not stall the gate: nextest marks a test SLOW when
+# it passes the slow-timeout period and terminates it after the second
+# period elapses, so a blocking wait fails its test instead of hanging the
+# run forever (ticket 2038 finding 7, 2035 #10). The suite's own watchdogs
+# bound legitimate waits well under one period.
+[profile.default]
+slow-timeout = { period = "120s", terminate-after = 2 }
