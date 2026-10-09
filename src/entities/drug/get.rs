@@ -724,7 +724,31 @@ pub(super) async fn resolve_drug_base(
                 resp = candidate_resp;
                 selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
             }
-            None => return Err(name_miss_not_found(name, &resp.hits)),
+            None => {
+                // The query may still be a real brand that no current label
+                // names: a withdrawn brand such as Tarceva holds no openFDA
+                // label and lives in MyChem only on a record with no name,
+                // so resolve it through the guarded discover rescue before
+                // refusing (ticket 2037).
+                let rescue = match discover_sparse_drug_rescue(name).await {
+                    SparseDrugDiscoverRescue::Canonical(candidate) => {
+                        named_drug_response(&candidate)
+                            .await
+                            .map(|candidate_resp| (candidate, candidate_resp))
+                    }
+                    SparseDrugDiscoverRescue::AliasFallback | SparseDrugDiscoverRescue::None => {
+                        None
+                    }
+                };
+                match rescue {
+                    Some((candidate, candidate_resp)) => {
+                        lookup_name = candidate;
+                        resp = candidate_resp;
+                        selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+                    }
+                    None => return Err(name_miss_not_found(name, &resp.hits)),
+                }
+            }
         }
     }
     let mut drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);

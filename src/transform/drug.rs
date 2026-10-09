@@ -559,6 +559,30 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
 /// drug the query actually matched (ticket 2031). Brand names are not
 /// candidates; a brand that matches while no canonical name does falls back
 /// to the generic identity instead.
+/// The nonproprietary name MyChem pairs with the requested brand on one
+/// NDC row. MyChem merges many products' rows into one ingredient record,
+/// and the rows themselves carry the pairing: proprietaryname ZEJULA sits on
+/// rows whose nonproprietaryname is niraparib, while the Akeega combination
+/// rows sit first. A brand card takes the name its own product row carries,
+/// never another product's row (ticket 2037).
+fn brand_paired_nonproprietary_name(hit: &MyChemHit, requested: &str) -> Option<String> {
+    let target = normalize_name(requested);
+    let ndc = hit.ndc.as_ref()?;
+    let rows = match ndc {
+        MyChemNdcField::One(v) => std::slice::from_ref(v),
+        MyChemNdcField::Many(v) => v.as_slice(),
+    };
+    rows.iter().find_map(|row| {
+        let brand = row.proprietaryname.as_deref().map(normalize_name)?;
+        let plain = row
+            .nonproprietaryname
+            .as_deref()
+            .map(normalize_name)
+            .filter(|plain| !plain.is_empty())?;
+        (brand == target).then_some(plain)
+    })
+}
+
 fn canonical_name_matching_request(hit: &MyChemHit, requested: &str) -> Option<String> {
     let target = normalize_name(requested);
     hit_canonical_names(hit)
@@ -570,6 +594,10 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut name = hits
         .iter()
         .find_map(|hit| canonical_name_matching_request(hit, requested_name))
+        .or_else(|| {
+            hits.iter()
+                .find_map(|hit| brand_paired_nonproprietary_name(hit, requested_name))
+        })
         .or_else(|| {
             hits.iter()
                 .find_map(|hit| openfda_generic_name(hit).map(normalize_name))
