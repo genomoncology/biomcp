@@ -104,7 +104,20 @@ impl TestHttpFixture {
                         TestHttpReply::Hold(release) => {
                             // The hold waits on async primitives, so it never
                             // parks a runtime worker thread (ticket 2030).
-                            let _ = release.lock().await.recv().await;
+                            // The wait also carries its own bound, above
+                            // every legitimate test bound (the 60 s search
+                            // deadline, the 60-120 s watchdogs): nextest
+                            // kills a hung test at its slow-timeout, but a
+                            // bare `cargo test` run has no such budget, so
+                            // a hold that outlives its test self-releases
+                            // and closes the connection. The caller waiting
+                            // on the reply then fails instead of hanging
+                            // the runner (ticket 2045).
+                            let _ = tokio::time::timeout(
+                                crate::test_support::watchdog(180),
+                                release.lock().await.recv().await,
+                            )
+                            .await;
                         }
                     }
                 });
